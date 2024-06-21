@@ -195,14 +195,6 @@
                     <a href="#" onclick="javascript:$('#gpu_check_modal').modal('show')">Do I?</a> You can learn more about <a href="https://github.com/comfyanonymous/ComfyUI">ComfyUI here</a>.
                 </div>
             </div>
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="backend_radio" id="backend_radio_stabilityapi" value="stabilityapi">
-                <label class="form-check-label" for="backend_radio_stabilityapi">Stability API (Remote)</label>
-                <div class="install_hint">The Stability API powers DreamStudio and services like it. If you don't have a powerful local PC, you can use the Stability API to power your generations.
-                    You must have a valid API key to use this. <a href="https://platform.stability.ai/docs/getting-started/authentication" target="_blank" rel="noopener noreferrer">Click Here for info about the Stability API and how to get an API key.</a>
-                </div>
-                <input type="password" id="stability_api_key" name="Stability API Key" placeholder="Stability API Key">
-            </div>
             <hr>
             <h3>For Experienced Users: Skip Backend Install</h3>
             <div class="install_hint">You can configure custom backends post-install.</div>
@@ -217,7 +209,7 @@
 
     <div id="installer_section_models" style="display: none;">
         <div class="install_q_head">Download Models</div>
-        <div class="install_hint">You can select models to automatically download for local running here. If you selected 'Stability API' on the previous page, you can skip this page.</div>
+        <div class="install_hint">You can select models to automatically download for local running here.</div>
         Note: by downloading Stable Diffusion models, you agree to the terms of <a href="https://github.com/Stability-AI/stablediffusion/blob/main/LICENSE-MODEL" target="_blank" rel="noopener noreferrer">The CreativeML Open RAIL++-M License</a>.
         <br>
         <fieldset class="form-group" id="models_fieldset">
@@ -243,7 +235,7 @@
             </div>
         </fieldset>
         <label>Or community models!</label>
-        <div class="install_hint">You can download an endless variety of community-made models from online sites such as <a href="https://huggingface.co/spaces/huggingface-projects/diffusers-gallery" target="_blank" rel="noopener noreferrer">HuggingFace</a> or <a href="https://civitai.com/" target="_blank" rel="noopener noreferrer">Civitai</a>. (NOTICE: These are examples of third-party websites featuring user-submitted models, Stability.AI offers no guarantees about what content may exist there, browse with caution.) Remember to only download '.safetensors' files, never '.ckpt' ones.</div>
+        <div class="install_hint">You can download an endless variety of community-made models from online sites such as <a href="https://huggingface.co/spaces/huggingface-projects/diffusers-gallery" target="_blank" rel="noopener noreferrer">HuggingFace</a> or <a href="https://civitai.com/" target="_blank" rel="noopener noreferrer">Civitai</a>. (NOTICE: These are examples of third-party websites featuring user-submitted models, We offer no guarantees about what content may exist there, browse with caution.) Remember to only download '.safetensors' files, never '.ckpt' ones.</div>
     </div>
 
     <div id="installer_section_end" style="display: none;">

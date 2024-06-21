@@ -97,9 +97,6 @@ class InstallerClass {
                 if (backend == null) {
                     return false;
                 }
-                if (backend == 'stabilityapi') {
-                    return getRequiredElementById('stability_api_key').value != '';
-                }
                 return true;
             case 'models':
                 return true;

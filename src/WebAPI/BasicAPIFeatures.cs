@@ -256,16 +256,6 @@ public static class BasicAPIFeatures
                     Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = gpu, ExtraArgs = extraArgs.Trim() });
                     break;
                 }
-            case "stabilityapi":
-                if (string.IsNullOrWhiteSpace(stability_api_key))
-                {
-                    await output($"Invalid stability API key!");
-                    await socket.SendJson(new JObject() { ["error"] = $"Invalid stability API key!" }, API.WebsocketTimeout);
-                    return null;
-                }
-                File.WriteAllText("Data/sapi_key.dat", stability_api_key);
-                Program.Backends.AddNewOfType(Program.Backends.BackendTypes["stability_api"]);
-                break;
             case "none":
                 await output("Not installing any backend.");
                 break;

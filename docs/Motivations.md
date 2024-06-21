@@ -12,9 +12,9 @@ It is also hoped that building Stable Diffusion tools in C# will enable a wider 
 
 ## Modularity
 
-The project was designed to be heavily modular, such that backends are fully separated from the middle-layer which is fully separated from the frontend UI, and all components are interswappable. This is to enable extensibility and customization. For example, an extension can easily provide alternative backend generators (this project comes with several built-in, such as ComfyUI, Auto WebUI, StabilityAPI, ...) without having to edit anything else to work.
+The project was designed to be heavily modular, such that backends are fully separated from the middle-layer which is fully separated from the frontend UI, and all components are interswappable. This is to enable extensibility and customization. For example, an extension can easily provide alternative backend generators (this project comes with several built-in, such as ComfyUI, Auto WebUI, ...) without having to edit anything else to work.
 
-The limitation of this approach is some tools may not easily be intercompatible, eg the StabilityAPI backend has only a select few limited inputs, vs the local backends that have a wider range, and many parameters don't work with StabilityAPI.
+The limitation of this approach is some tools may not easily be intercompatible, limiting power users to only the most well supported tools.
 
 ## Comfy
 
@@ -24,6 +24,7 @@ For the goal of maximizing capabilities, a 'main' backend needed to be chosen to
 - The code inside is extremely clean and well written.
 - It provides bonus features that other UIs can't match (ie: the workflow node editor).
 - The lead developer of Comfy was hired to Stability, and was able to directly help in ensuring the SwarmUI-ComfyUI integration works as best it can.
+    - (June 2024 note: we now continue to work together in the independent [Comfy Org](https://www.comfy.org/))
 
 ## Web Frontend
 
