@@ -138,7 +138,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.ModelRoot);
             string yaml = $"""
-            stableswarmui:
+            swarmui:
                 base_path: {root}
                 checkpoints: {Program.ServerSettings.Paths.SDModelFolder}
                 vae: |

@@ -21,4 +21,4 @@ Want to help translate Swarm into another language?
 
 # Legal
 
-By submitting a contribution to this repo, you agree to grant a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to the Stability.AI organization to use, copy, modify, and distribute your contribution under the terms of the MIT License, view [LICENSE.txt](/LICENSE.txt) for details, and under any future license we may change to.
+By submitting a contribution to this repo, you agree to grant a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to Alex "mcmonkey" Goodwin to use, copy, modify, and distribute your contribution under the terms of the MIT License, view [LICENSE.txt](/LICENSE.txt) for details, and under any future license we may change to.
