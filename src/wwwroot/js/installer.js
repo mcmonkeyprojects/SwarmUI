@@ -24,7 +24,6 @@ class InstallerClass {
         for (let elem of document.getElementsByTagName('fieldset')) {
             elem.addEventListener('change', this.check.bind(this));
         }
-        getRequiredElementById('stability_api_key').addEventListener('input', this.check.bind(this));
         getRequiredElementById('installer_button_confirm').addEventListener('click', this.submit.bind(this));
         getSession(() => {
             language = language || 'en';
