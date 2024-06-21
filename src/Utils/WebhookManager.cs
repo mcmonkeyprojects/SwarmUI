@@ -1,10 +1,10 @@
 ﻿using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
+using SwarmUI.Backends;
+using SwarmUI.Core;
 using System.Net.Http;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Central class for processing webhooks.</summary>
 public static class WebhookManager

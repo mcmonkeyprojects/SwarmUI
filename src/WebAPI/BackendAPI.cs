@@ -1,12 +1,12 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Utils;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 [API.APIClass("API routes to manage the server's backends.")]
 public class BackendAPI

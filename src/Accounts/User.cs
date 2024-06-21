@@ -1,15 +1,15 @@
 ﻿using FreneticUtilities.FreneticToolkit;
 using FreneticUtilities.FreneticDataSyntax;
 using LiteDB;
-using StableSwarmUI.Core;
-using StableSwarmUI.DataHolders;
-using StableSwarmUI.Utils;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Core;
+using SwarmUI.DataHolders;
+using SwarmUI.Utils;
+using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticExtensions;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
 
-namespace StableSwarmUI.Accounts;
+namespace SwarmUI.Accounts;
 
 /// <summary>Represents a single user account.</summary>
 public class User

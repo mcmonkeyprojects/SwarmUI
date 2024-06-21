@@ -1,8 +1,8 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Utils;
+using SwarmUI.Backends;
+using SwarmUI.Utils;
 
-namespace StableSwarmUI.Core;
+namespace SwarmUI.Core;
 
 /// <summary>Central default settings list.</summary>
 public class Settings : AutoConfiguration

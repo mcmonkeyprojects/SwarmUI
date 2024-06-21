@@ -1,9 +1,9 @@
 ﻿
 using FreneticUtilities.FreneticToolkit;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
 
-namespace StableSwarmUI.Builtin_StabilityAPIExtension;
+namespace SwarmUI.Builtin_StabilityAPIExtension;
 
 public class StabilityAPIExtension : Extension
 {

@@ -2,17 +2,17 @@
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Utils;
 using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Net;
-using StableSwarmUI.WebAPI;
-using StableSwarmUI.Accounts;
+using SwarmUI.WebAPI;
+using SwarmUI.Accounts;
 
-namespace StableSwarmUI.Builtin_ComfyUIBackend;
+namespace SwarmUI.Builtin_ComfyUIBackend;
 
 /// <summary>Helper class for network redirections for the '/ComfyBackendDirect' url path.</summary>
 public class ComfyUIRedirectHelper

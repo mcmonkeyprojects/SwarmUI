@@ -7,13 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
-using StableSwarmUI.WebAPI;
+using SwarmUI.Accounts;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 using System.IO;
 
-namespace StableSwarmUI.Core;
+namespace SwarmUI.Core;
 
 /// <summary>Core handler for the web-server (mid-layer & front-end).</summary>
 public class WebServer

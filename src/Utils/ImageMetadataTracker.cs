@@ -2,10 +2,10 @@
 using FreneticUtilities.FreneticToolkit;
 using LiteDB;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.IO;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Helper class to track image file metadata.</summary>
 public static class ImageMetadataTracker

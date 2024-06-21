@@ -1,10 +1,10 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.IO;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Central class for processing wildcard files.</summary>
 public class WildcardsHelper

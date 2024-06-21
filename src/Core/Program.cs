@@ -7,16 +7,16 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
-using StableSwarmUI.WebAPI;
+using SwarmUI.Accounts;
+using SwarmUI.Backends;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.Loader;
 
-namespace StableSwarmUI.Core;
+namespace SwarmUI.Core;
 
 /// <summary>Class that handles the core entry-point access to the program, and initialization of program layers.</summary>
 public class Program

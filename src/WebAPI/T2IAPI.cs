@@ -3,11 +3,11 @@ using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 using System.Data;
 using System.Diagnostics;
 using System.IO;
@@ -18,7 +18,7 @@ using Image = StableSwarmUI.Utils.Image;
 using ISImage = SixLabors.ImageSharp.Image;
 using ISImageRGBA = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 [API.APIClass("API routes for actual text-to-image processing and directly related features.")]
 public static class T2IAPI

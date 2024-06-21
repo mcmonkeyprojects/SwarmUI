@@ -2,7 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System.IO;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Small helper class to track what languages are available.</summary>
 public class LanguagesHelper

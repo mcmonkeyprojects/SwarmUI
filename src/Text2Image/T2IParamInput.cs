@@ -2,11 +2,11 @@
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Core;
+using SwarmUI.Utils;
 
-namespace StableSwarmUI.Text2Image;
+namespace SwarmUI.Text2Image;
 
 /// <summary>Represents user-input for a Text2Image request.</summary>
 public class T2IParamInput

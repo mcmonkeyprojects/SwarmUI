@@ -3,16 +3,16 @@ using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Hardware.Info;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 [API.APIClass("Administrative APIs related to server management.")]
 public static class AdminAPI

@@ -1,10 +1,10 @@
 ﻿
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Builtin_ComfyUIBackend;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Builtin_ComfyUIBackend;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
 
-namespace StableSwarmUI.Builtin_DynamicThresholding;
+namespace SwarmUI.Builtin_DynamicThresholding;
 
 public class DynamicThresholdingExtension : Extension
 {

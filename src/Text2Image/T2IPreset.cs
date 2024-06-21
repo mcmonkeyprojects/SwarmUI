@@ -1,8 +1,8 @@
 ﻿using LiteDB;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Utils;
+using SwarmUI.Utils;
 
-namespace StableSwarmUI.Text2Image;
+namespace SwarmUI.Text2Image;
 
 /// <summary>User-saved Text2Image preset.</summary>
 public class T2IPreset

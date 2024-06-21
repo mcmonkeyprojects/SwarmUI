@@ -1,16 +1,16 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 using System.IO;
 using System.Net.WebSockets;
 using System.Text.RegularExpressions;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 [API.APIClass("API routes related to handling models (including loras, wildcards, etc).")]
 public static class ModelsAPI

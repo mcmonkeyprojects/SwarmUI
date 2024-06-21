@@ -2,15 +2,15 @@
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 using System;
 using System.IO;
 using System.Net.Http;
 
-namespace StableSwarmUI.Builtin_StabilityAPIExtension;
+namespace SwarmUI.Builtin_StabilityAPIExtension;
 
 public class StabilityAPIBackend : AbstractT2IBackend
 {

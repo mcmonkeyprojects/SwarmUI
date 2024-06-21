@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace StableSwarmUI.Text2Image;
+namespace SwarmUI.Text2Image;
 
 /// <summary>Represents a class of models (eg SDv1).</summary>
 public record class T2IModelClass

@@ -2,14 +2,14 @@
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Core;
+using SwarmUI.Utils;
 using System.IO;
 using System.Net.WebSockets;
 using System.Reflection;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 /// <summary>Entry point for processing calls to the web API.</summary>
 public class API

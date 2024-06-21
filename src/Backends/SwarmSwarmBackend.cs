@@ -2,15 +2,15 @@
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
-using StableSwarmUI.WebAPI;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
 
-namespace StableSwarmUI.Backends;
+namespace SwarmUI.Backends;
 
 /// <summary>A backend for Swarm to connect to other Swarm instances to use as the backend.</summary>
 public class SwarmSwarmBackend : AbstractT2IBackend

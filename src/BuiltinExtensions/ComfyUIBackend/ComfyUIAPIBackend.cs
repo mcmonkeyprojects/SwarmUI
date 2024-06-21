@@ -1,8 +1,8 @@
 ﻿
 using FreneticUtilities.FreneticDataSyntax;
-using StableSwarmUI.DataHolders;
+using SwarmUI.DataHolders;
 
-namespace StableSwarmUI.Builtin_ComfyUIBackend;
+namespace SwarmUI.Builtin_ComfyUIBackend;
 
 public class ComfyUIAPIBackend : ComfyUIAPIAbstractBackend
 {

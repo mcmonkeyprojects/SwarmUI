@@ -3,15 +3,15 @@ using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Builder;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
-using StableSwarmUI.WebAPI;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 using System.IO;
 using System.Net.Http;
 
-namespace StableSwarmUI.Builtin_ComfyUIBackend;
+namespace SwarmUI.Builtin_ComfyUIBackend;
 
 /// <summary>Main class for the ComfyUI Backend extension.</summary>
 public class ComfyUIBackendExtension : Extension

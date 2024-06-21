@@ -1,8 +1,8 @@
 ﻿using FreneticUtilities.FreneticToolkit;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.Diagnostics;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Helpers for reading Nvidia GPU data.</summary>
 public static class NvidiaUtil

@@ -1,8 +1,8 @@
 ﻿using FreneticUtilities.FreneticToolkit;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.IO;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Central internal logging handler.</summary>
 public static class Logs

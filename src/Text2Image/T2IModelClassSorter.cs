@@ -1,9 +1,9 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Utils;
+using SwarmUI.Utils;
 using System.IO;
 
-namespace StableSwarmUI.Text2Image;
+namespace SwarmUI.Text2Image;
 
 /// <summary>Helper to determine what classification a model should receive.</summary>
 public class T2IModelClassSorter

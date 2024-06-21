@@ -1,12 +1,12 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 using System.Diagnostics;
 using System.IO;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 [API.APIClass("General utility API routes.")]
 public static class UtilAPI

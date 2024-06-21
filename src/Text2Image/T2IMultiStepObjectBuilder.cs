@@ -2,14 +2,14 @@
 using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Utils;
 using ISImage = SixLabors.ImageSharp.Image;
 using Image = StableSwarmUI.Utils.Image;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 
-namespace StableSwarmUI.Text2Image;
+namespace SwarmUI.Text2Image;
 
 /// <summary>This special utility class generates prompts that have multi-step object generation included.
 /// Called by <see cref="T2IEngine"/>, should not be called directly.</summary>

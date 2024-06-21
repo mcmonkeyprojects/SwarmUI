@@ -1,8 +1,8 @@
 ﻿using FreneticUtilities.FreneticExtensions;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.IO;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Helper for custom word autocomplete lists.</summary>
 public class AutoCompleteListHelper

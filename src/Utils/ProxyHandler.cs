@@ -1,10 +1,10 @@
 ﻿using FreneticUtilities.FreneticExtensions;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.Diagnostics;
 using System.IO;
 using System.Net.NetworkInformation;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Helper class to handle public proxy forwarding.</summary>
 public class PublicProxyHandler

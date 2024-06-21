@@ -3,8 +3,8 @@ using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
+using SwarmUI.Backends;
+using SwarmUI.Core;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -16,10 +16,10 @@ using System.Security.Cryptography;
 using System;
 using System.Net;
 using System.Diagnostics;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Text2Image;
 using System.Net.Sockets;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>General utilities holder.</summary>
 public static class Utilities

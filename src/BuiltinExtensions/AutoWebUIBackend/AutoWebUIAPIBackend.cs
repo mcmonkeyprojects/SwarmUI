@@ -1,8 +1,8 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
-using StableSwarmUI.DataHolders;
-using StableSwarmUI.Backends;
+using SwarmUI.DataHolders;
+using SwarmUI.Backends;
 
-namespace StableSwarmUI.Builtin_AutoWebUIExtension;
+namespace SwarmUI.Builtin_AutoWebUIExtension;
 
 public class AutoWebUIAPIBackend : AutoWebUIAPIAbstractBackend
 {

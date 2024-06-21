@@ -1,6 +1,6 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Helper class to regionalize a prompt.</summary>
 public class PromptRegion

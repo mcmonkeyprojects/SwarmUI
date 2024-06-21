@@ -1,12 +1,12 @@
-﻿using StableSwarmUI.Utils;
-using StableSwarmUI.Core;
+﻿using SwarmUI.Utils;
+using SwarmUI.Core;
 using System.Collections.Concurrent;
 using LiteDB;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticToolkit;
 using FreneticUtilities.FreneticExtensions;
 
-namespace StableSwarmUI.Accounts;
+namespace SwarmUI.Accounts;
 
 /// <summary>Core manager for sessions.</summary>
 public class SessionHandler

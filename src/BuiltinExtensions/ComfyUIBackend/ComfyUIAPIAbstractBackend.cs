@@ -3,10 +3,10 @@ using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Backends;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
+using SwarmUI.Backends;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 using System;
 using System.IO;
 using System.Net.Http;
@@ -15,7 +15,7 @@ using System.Web;
 using Newtonsoft.Json;
 using System.Buffers.Binary;
 
-namespace StableSwarmUI.Builtin_ComfyUIBackend;
+namespace SwarmUI.Builtin_ComfyUIBackend;
 
 public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 {

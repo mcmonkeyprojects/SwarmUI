@@ -20,13 +20,13 @@ Here's some general info:
 Save this file as `src/Extensions/MyExtension/MyCoolExtensionName.cs`:
 
 ```cs
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Builtin_ComfyUIBackend;
+using SwarmUI.Core;
+using SwarmUI.Utils;
+using SwarmUI.Text2Image;
+using SwarmUI.Builtin_ComfyUIBackend;
 using Newtonsoft.Json.Linq;
 
-// NOTE: Namespace must NOT contain "StableSwarmUI" (this is reserved for built-ins)
+// NOTE: Namespace must NOT contain "SwarmUI" (this is reserved for built-ins)
 namespace MonkeysDocs.CoolExtensions.MyExtension;
 
 // NOTE: Classname must match filename

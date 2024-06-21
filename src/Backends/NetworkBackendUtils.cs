@@ -1,15 +1,15 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
+using SwarmUI.Core;
+using SwarmUI.Utils;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 
-namespace StableSwarmUI.Backends;
+namespace SwarmUI.Backends;
 
 /// <summary>General utility for backends that self-start or use network APIs.</summary>
 public static class NetworkBackendUtils

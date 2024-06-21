@@ -1,7 +1,7 @@
 ﻿using Hardware.Info;
 using System.Diagnostics;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Utility to monitor system usage.</summary>
 public static class SystemStatusMonitor

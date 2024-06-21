@@ -1,12 +1,12 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Core;
+using SwarmUI.Utils;
 using System.IO;
 
-namespace StableSwarmUI.Text2Image;
+namespace SwarmUI.Text2Image;
 
 /// <summary>Represents the data-type of a Text2Image parameter type.</summary>
 public enum T2IParamDataType

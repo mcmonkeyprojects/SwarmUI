@@ -1,22 +1,22 @@
 ﻿using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
-using StableSwarmUI.Utils;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Core;
+using SwarmUI.Utils;
+using SwarmUI.Accounts;
+using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Http;
 using FreneticUtilities.FreneticDataSyntax;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 using System.IO;
-using StableSwarmUI.Builtin_ComfyUIBackend;
-using StableSwarmUI.Backends;
+using SwarmUI.Builtin_ComfyUIBackend;
+using SwarmUI.Backends;
 using System.Diagnostics;
 using System.Net.Http;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Primitives;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 [API.APIClass("Basic general API routes, primarily for users and session handling.")]
 public static class BasicAPIFeatures

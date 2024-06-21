@@ -3,7 +3,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>This class can interpret a CLIP-like token set and tokenize it properly (compatible/equivalent with OpenCLIP tokenization results).</summary>
 public partial class CliplikeTokenizer

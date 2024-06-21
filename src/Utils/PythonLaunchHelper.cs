@@ -1,10 +1,10 @@
 ﻿using FreneticUtilities.FreneticExtensions;
-using StableSwarmUI.Core;
+using SwarmUI.Core;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Tiny specialty class to help launch python programs easily.</summary>
 public class PythonLaunchHelper

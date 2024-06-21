@@ -1,13 +1,13 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
-using StableSwarmUI.Core;
-using StableSwarmUI.DataHolders;
-using StableSwarmUI.Utils;
+using SwarmUI.Core;
+using SwarmUI.DataHolders;
+using SwarmUI.Utils;
 using System.Diagnostics;
-using StableSwarmUI.Backends;
+using SwarmUI.Backends;
 using System.IO;
 
-namespace StableSwarmUI.Builtin_AutoWebUIExtension;
+namespace SwarmUI.Builtin_AutoWebUIExtension;
 
 public class AutoWebUISelfStartBackend : AutoWebUIAPIAbstractBackend
 {

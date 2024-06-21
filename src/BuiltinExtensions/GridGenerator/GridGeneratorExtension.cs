@@ -1,11 +1,11 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.Core;
-using StableSwarmUI.Text2Image;
-using StableSwarmUI.Utils;
-using StableSwarmUI.WebAPI;
+using SwarmUI.Accounts;
+using SwarmUI.Core;
+using SwarmUI.Text2Image;
+using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 using System.IO;
 using System.Net.WebSockets;
 using SixLabors.Fonts;
@@ -17,7 +17,7 @@ using Image = StableSwarmUI.Utils.Image;
 using ISImage = SixLabors.ImageSharp.Image;
 using ISImageRGBA = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 
-namespace StableSwarmUI.Builtin_GridGeneratorExtension;
+namespace SwarmUI.Builtin_GridGeneratorExtension;
 
 /// <summary>Extension that adds a tool to generate grids of images.</summary>
 public class GridGeneratorExtension : Extension

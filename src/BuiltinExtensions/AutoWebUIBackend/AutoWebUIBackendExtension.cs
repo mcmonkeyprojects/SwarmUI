@@ -1,10 +1,10 @@
 ﻿using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Core;
-using StableSwarmUI.DataHolders;
-using StableSwarmUI.Text2Image;
+using SwarmUI.Core;
+using SwarmUI.DataHolders;
+using SwarmUI.Text2Image;
 
-namespace StableSwarmUI.Builtin_AutoWebUIExtension;
+namespace SwarmUI.Builtin_AutoWebUIExtension;
 
 /// <summary>Main class for the Automatic1111 Stable-Diffusion-WebUI Backend extension.</summary>
 public class AutoWebUIBackendExtension : Extension

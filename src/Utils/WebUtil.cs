@@ -1,7 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Html;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Helper utilities for web content generation.</summary>
 public static class WebUtil

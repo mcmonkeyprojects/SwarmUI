@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
-using StableSwarmUI.Accounts;
-using StableSwarmUI.DataHolders;
+using SwarmUI.Accounts;
+using SwarmUI.DataHolders;
 using System;
 using System.Net.WebSockets;
 using System.Reflection;
 using static StableSwarmUI.DataHolders.DataHolderHelper;
 
-namespace StableSwarmUI.WebAPI;
+namespace SwarmUI.WebAPI;
 
 /// <summary>Uses reflection to automatically build an API call route handler.</summary>
 public class APICallReflectBuilder

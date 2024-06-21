@@ -1,7 +1,7 @@
-﻿using StableSwarmUI.Core;
-using StableSwarmUI.WebAPI;
+﻿using SwarmUI.Core;
+using SwarmUI.WebAPI;
 
-namespace StableSwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Simple utility class that keeps memory cleared up automatically over time based on user settings.</summary>
 public static class MemCleaner
