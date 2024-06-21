@@ -38,8 +38,7 @@ function automaticWelcomeMessage(override = null) {
     let messages = [
         /* Generic welcome messages, order-sensitive, keep at top */
         `Type your prompt below and hit Generate!`,
-        `<h2>Important Migration Notice</h2><br>StableSwarmUI will no longer be maintained under Stability AI.<br>To migrate to new independent repository, see <a href="https://github.com/mcmonkeyprojects/SwarmUI/discussions/2">the migration guide here</a>`,
-        `Join the StableSwarmUI <a href="https://discord.gg/q2y38cqjNw">official Discord!</a>`,
+        `Join the SwarmUI <a href="https://discord.gg/q2y38cqjNw">official Discord!</a>`,
         /* "Did you know" facts - interesting things you can do in swarm */
         `Did you know:\nyou can drag and drop images onto the prompt box to use them as an image-prompt.`,
         `Did you know:\nyou can create multiple variations of one image by locking in your seed, then enabling the <b>Variation Seed</b> parameter.`,
@@ -47,7 +46,7 @@ function automaticWelcomeMessage(override = null) {
         `Did you know:\nWant to compare how different values of a parameter affect your generations?\nHead to the <b>Tools</b> tab below and select the <b>Grid Generator</b> tool.`,
         `Did you know:\nYou can create a <b>Preset</b> and name it exactly <b>Default</b>\nand that preset will automatically be used to load your default params when you launch Swarm.`,
         `Did you know:\nSomething going wrong?\nCheck the <b>Server</b> tab for debug logs, system resource usage, etc.`,
-        `Did you know:\nWant to try some fancy prompting?\nJust type a '&lt;' symbol and watch the suggestions for prompt-syntax tools appear! Give the syntax features a try! <a href="https://github.com/Stability-AI/StableSwarmUI/blob/master/docs/Features/Prompt%20Syntax.md">(Documentation Here)</a>`,
+        `Did you know:\nWant to try some fancy prompting?\nJust type a '&lt;' symbol and watch the suggestions for prompt-syntax tools appear! Give the syntax features a try! <a href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md">(Documentation Here)</a>`,
         /* Recent feature updates */
         `New feature (2024-03-10): Comfy Workflow Browser\nAn easy browser for Comfy workflows in the Comfy tab. <a href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-8736304">(Feature Announcement Link)</a>`,
         `New feature (2024-04-18): Modern Dark and Light themes!\nBuilt by an actual designer this time! <a href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-9153506">(Feature Announcement Link)</a>\n<button class="btn btn-secondary" onclick="aggressivelySetTheme('modern_dark')">Click here to try Modern Dark</button>\n(go to User Settings to change back)`,

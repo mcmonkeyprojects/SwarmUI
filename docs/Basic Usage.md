@@ -1,6 +1,6 @@
-# Basic Usage of StableSwarmUI
+# Basic Usage of SwarmUI
 
-So you want to know how to get started with StableSwarmUI, huh? It's easy!
+So you want to know how to get started with SwarmUI, huh? It's easy!
 
 For the most part, just download the installer and follow the instructions on screen. Everything explains itself, even the settings and parameters all have `?` clickables that explain what they do!
 
@@ -8,7 +8,7 @@ Nonetheless, here's a step-by-step you can follow:
 
 ## Installing
 
-Step one: [Install StableSwarmUI](/README.md#installing-on-windows).
+Step one: [Install SwarmUI](/README.md#installing-on-windows).
 
 Once you've ran the basic program-installation, if all went well, it will open a web interface to select basic install settings.
 - Agree to the SD license
@@ -48,7 +48,7 @@ If you have pre-existing Stable Diffusion files, you'll want to configure settin
 
 - If all went well, you should have a nice picture of a cat in the center of your screen!
 
-If it didn't go well, ... well it's alpha software, hopefully there's an error message telling you what went wrong. If you can't figure it out, open an [issue here](https://github.com/Stability-AI/StableSwarmUI/issues) or ask on [discord](https://discord.gg/q2y38cqjNw).
+If it didn't go well, ... well it's alpha software, hopefully there's an error message telling you what went wrong. If you can't figure it out, open an [issue here](https://github.com/mcmonkeyprojects/SwarmUI/issues) or ask on [discord](https://discord.gg/q2y38cqjNw).
 
 ## Using The SDXL Refiner
 
@@ -64,7 +64,7 @@ So, you want *refined* images, huh? Well, if the base isn't enough, and you down
 
 ## Getting Advanced: Playing With Parameters
 
-StableSwarmUI is designed on the principle of exposing all the parameters to you, but making them approachable. To that end:
+SwarmUI is designed on the principle of exposing all the parameters to you, but making them approachable. To that end:
 - All the parameters are grouped. You can toggle groups open/closed, and where relevant there's sliders to toggle groups on/off.
 - All the parameters have a lil purple `?` icon next to them. Clicking this will open a popup with an explanation of the parameter and some examples.
 - When in doubt, with most parameters, just play with them and see what happens. Lock in your `Seed` to a constant one before trying to avoid unrelated changes.
@@ -88,7 +88,7 @@ You want more images more faster right now hurry up and tell me how quick quick 
     - Got close friends with GPUs? If you can figure out the network routing (and the interpersonal agreements), you can use those!
 - Go to the `Server` -> `Backends` page
 - Pick the backend type that you want, and click the button to add it.
-    - For remote hosts, you'll want to set up StableSwarmUI over there, get a remote connection working, and then add `Swarm-API-Backend`, and give the URL to it.
+    - For remote hosts, you'll want to set up SwarmUI over there, get a remote connection working, and then add `Swarm-API-Backend`, and give the URL to it.
     - For more GPUs in your one machine, you can eg use multiple `ComfyUI Self-Starting` and just change the GPU ID for each.
 - If it doesn't error out, you can immediately start using it.
     - When you generate images, your first generation goes to the first backend, your second to the second one, etc.
@@ -115,7 +115,7 @@ What's the fun in testing changes one by one, when you can unleash your machine 
 
 - Want to use [IP-Adapter](/docs/Features/IPAdapter-ReVision.md) with a [Video](/docs/Features/Video.md)?
     - No problem! Just... do both! Swarm is so easy it's crazy sometimes - you can just enable multiple different features at the same time, and generally trust Swarm will automatically figure out how to combine them appropriately.
-    - If you ever find a case that doesn't work, you can just [file an issue](https://github.com/Stability-AI/StableSwarmUI/issues) to get that fixed.
+    - If you ever find a case that doesn't work, you can just [file an issue](https://github.com/mcmonkeyprojects/SwarmUI/issues) to get that fixed.
 
 ## Take It Further: Advanced Usage
 

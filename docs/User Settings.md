@@ -1,4 +1,4 @@
-# User Settings in StableSwarmUI
+# User Settings in SwarmUI
 
 (TODO: general info about settings)
 

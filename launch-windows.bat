@@ -35,11 +35,11 @@ if exist .\src\bin\must_rebuild (
 )
 
 rem Build the program if it isn't already built
-if not exist src\bin\live_release\StableSwarmUI.dll (
+if not exist src\bin\live_release\SwarmUI.dll (
     rem For some reason Microsoft's nonsense is missing the official nuget source? So forcibly add that to be safe.
     dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source"
 
-    dotnet build src/StableSwarmUI.csproj --configuration Release -o src/bin/live_release
+    dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD2=%%i
     echo !CUR_HEAD2!> src/bin/last_build
 )
@@ -48,7 +48,7 @@ rem Default env configuration, gets overwritten by the C# code's settings handle
 set ASPNETCORE_ENVIRONMENT="Production"
 set ASPNETCORE_URLS="http://*:7801"
 
-dotnet src\bin\live_release\StableSwarmUI.dll %*
+dotnet src\bin\live_release\SwarmUI.dll %*
 
 rem Exit code 42 means restart, anything else = don't.
 if %ERRORLEVEL% EQU 42 (

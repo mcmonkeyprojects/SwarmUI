@@ -12,11 +12,11 @@ Remove-Item 'src/bin/' -Recurse
 Remove-Item 'src/obj/' -Recurse
 
 # Building first is more reliable than running directly from src
-dotnet build src/StableSwarmUI.csproj --configuration Debug -o src/bin/live_release
+dotnet build src/SwarmUI.csproj --configuration Debug -o src/bin/live_release
 
 # Default env configuration, gets overwritten by the C# code's settings handler
 $Env:ASPNETCORE_ENVIRONMENT = "Production"
 $Env:ASPNETCORE_URLS = "http://*:7801"
 
 # Actual runner.
-dotnet src\bin\live_release\StableSwarmUI.dll --environment dev @args
+dotnet src\bin\live_release\SwarmUI.dll --environment dev @args

@@ -31,8 +31,8 @@ else
 fi
 
 # Build the program if it isn't already built
-if [ ! -f src/bin/live_release/StableSwarmUI.dll ]; then
-    dotnet build src/StableSwarmUI.csproj --configuration Release -o ./src/bin/live_release
+if [ ! -f src/bin/live_release/SwarmUI.dll ]; then
+    dotnet build src/SwarmUI.csproj --configuration Release -o ./src/bin/live_release
     cur_head=`git rev-parse HEAD`
     echo $cur_head > src/bin/last_build
 fi
@@ -41,7 +41,7 @@ fi
 export ASPNETCORE_ENVIRONMENT="Production"
 export ASPNETCORE_URLS="http://*:7801"
 # Actual runner.
-dotnet src/bin/live_release/StableSwarmUI.dll $@
+dotnet src/bin/live_release/SwarmUI.dll $@
 
 # Exit code 42 means restart, anything else = don't.
 if [ $? == 42 ]; then

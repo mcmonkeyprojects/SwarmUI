@@ -1,4 +1,4 @@
-# StableSwarmUI API Documentation - GridGeneratorExtension
+# SwarmUI API Documentation - GridGeneratorExtension
 
 > This is a subset of the API docs, see [/docs/API.md](/docs/API.md) for general info.
 

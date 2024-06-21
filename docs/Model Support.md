@@ -1,4 +1,4 @@
-# Model Type Support In StableSwarmUI
+# Model Type Support In SwarmUI
 
 Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata and can import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
 

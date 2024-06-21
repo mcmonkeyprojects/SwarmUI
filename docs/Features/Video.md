@@ -1,6 +1,6 @@
-# Video Generation in StableSwarmUI
+# Video Generation in SwarmUI
 
-- Video generation in StableSwarmUI is powered by [Stable Video Diffusion](https://arxiv.org/abs/2311.15127)
+- Video generation in SwarmUI is powered by [Stable Video Diffusion](https://arxiv.org/abs/2311.15127)
 - You can find the official SVD XT 1.1 model [here](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt-1-1) (requires a HuggingFace account to download)
     - Store the model in your Stable-Diffusion models folder
 - To use Video, simply enable the Video parameter group

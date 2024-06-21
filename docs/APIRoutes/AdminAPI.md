@@ -1,4 +1,4 @@
-# StableSwarmUI API Documentation - AdminAPI
+# SwarmUI API Documentation - AdminAPI
 
 > This is a subset of the API docs, see [/docs/API.md](/docs/API.md) for general info.
 

@@ -5,18 +5,18 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
 # Accidental run prevention
-if [ -d "StableSwarmUI" ]; then
-    echo "StableSwarmUI already exists in this directory. Please remove it before installing."
+if [ -d "SwarmUI" ]; then
+    echo "SwarmUI already exists in this directory. Please remove it before installing."
     exit 1
 fi
-if [ -f "StableSwarmUI.sln" ]; then
-    echo "StableSwarmUI already exists in this directory. Please remove it before installing."
+if [ -f "SwarmUI.sln" ]; then
+    echo "SwarmUI already exists in this directory. Please remove it before installing."
     exit 1
 fi
 
 # Download swarm
-git clone https://github.com/Stability-AI/StableSwarmUI
-cd StableSwarmUI
+git clone https://github.com/mcmonkeyprojects/SwarmUI
+cd SwarmUI
 
 # install dotnet
 cd launchtools

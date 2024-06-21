@@ -19,6 +19,6 @@ if exist src\bin\live_release\ (
 )
 
 rem Now build the new copy
-dotnet build src/StableSwarmUI.csproj --configuration Release -o src/bin/live_release
+dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
 
 timeout 3

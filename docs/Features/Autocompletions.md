@@ -1,4 +1,4 @@
-# StableSwarmUI Autocompletions Engine
+# SwarmUI Autocompletions Engine
 
 When you're typing into a prompt box within Swarm, the **autocompletions engine** is looking for ways to help you.
 
@@ -19,7 +19,7 @@ If you want to have autocompletions for word lists (*such as anime booru tags*),
 - Find a word-list file. There are [several here you can use](https://github.com/DominikDoom/a1111-sd-webui-tagcomplete/tree/main/tags).
     - Any `.csv` will do (if the word is the first entry per row). Optionally second column can be an ID number 0-5 for unique colorations to distinguish categories.
     - or `.txt` files (for newline-separated wordlists, allowing `#` to mark comments).
-- Save the file into `StableSwarmUI/Data/Autocompletions`.
+- Save the file into `SwarmUI/Data/Autocompletions`.
 - Restart swarm or reload parameter values if necessary.
 - Go to `User` -> `User Settings`
 - find the option `AutoCompletionsSource` and select your word list file of choice.

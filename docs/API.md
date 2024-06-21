@@ -1,6 +1,6 @@
-# StableSwarmUI API Documentation
+# SwarmUI API Documentation
 
-StableSwarmUI has a full-capability network API that you can use from external programs, both to use Swarm features (eg generate images) and to manage the Swarm instance (eg modify backends).
+SwarmUI has a full-capability network API that you can use from external programs, both to use Swarm features (eg generate images) and to manage the Swarm instance (eg modify backends).
 
 Swarm uses its own API - you can simply open the web interface, open your browser tools, and interact with Swarm to watch what API calls are made, and then replicate those from your own code.
 

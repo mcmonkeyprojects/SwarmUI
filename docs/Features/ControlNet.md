@@ -1,4 +1,4 @@
-# ControlNets in StableSwarmUI
+# ControlNets in SwarmUI
 
 - ControlNets are a form of guidance for Stable Diffusion that take in a reference image, and copy some feature set from it
     - For example, "Canny" controlnets copy the linework for images. This is useful for image to easily turn a sketch into a photo, while keeping the same structure.

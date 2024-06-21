@@ -2,14 +2,14 @@
 
 cd /d "%~dp0"
 
-if exist StableSwarmUI (
-    echo StableSwarmUI is already installed in this folder. If this is incorrect, delete the 'StableSwarmUI' folder and try again.
+if exist SwarmUI (
+    echo SwarmUI is already installed in this folder. If this is incorrect, delete the 'SwarmUI' folder and try again.
     pause
     exit
 )
 
-if exist StableSwarmUI.sln (
-    echo StableSwarmUI is already installed in this folder. If this is incorrect, delete 'StableSwarmUI.sln' and try again.
+if exist SwarmUI.sln (
+    echo SwarmUI is already installed in this folder. If this is incorrect, delete 'SwarmUI.sln' and try again.
     pause
     exit
 )
@@ -17,8 +17,8 @@ if exist StableSwarmUI.sln (
 winget install Microsoft.DotNet.SDK.8 --accept-source-agreements --accept-package-agreements
 winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements
 
-git clone https://github.com/Stability-AI/StableSwarmUI
-cd StableSwarmUI
+git clone https://github.com/mcmonkeyprojects/SwarmUI
+cd SwarmUI
 
 call .\make-shortcut.bat
 

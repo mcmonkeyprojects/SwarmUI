@@ -1,4 +1,4 @@
-# StableSwarmUI API Documentation - BackendAPI
+# SwarmUI API Documentation - BackendAPI
 
 > This is a subset of the API docs, see [/docs/API.md](/docs/API.md) for general info.
 

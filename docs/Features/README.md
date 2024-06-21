@@ -1,4 +1,4 @@
-# StableSwarmUI Feature List & Documentation
+# SwarmUI Feature List & Documentation
 
 See [The Docs Readme](/docs/README.md) for general listing of documentation and basic usage info, this section here is a subfolder for specific individual features listed out file-by-file.
 

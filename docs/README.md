@@ -1,4 +1,4 @@
-# StableSwarmUI Documentation
+# SwarmUI Documentation
 
 - [Basic Usage](/docs/Basic%20Usage.md) to learn how to get started.
 - [Why Use Swarm](/docs/Why%20Use%20Swarm.md) to see what advanced Swarm offers you

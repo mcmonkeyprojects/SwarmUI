@@ -1601,7 +1601,7 @@ function updateAllModels(models) {
     pickle2safetensor_load();
 }
 
-let shutdownConfirmationText = translatable("Are you sure you want to shut StableSwarmUI down?");
+let shutdownConfirmationText = translatable("Are you sure you want to shut SwarmUI down?");
 
 function shutdown_server() {
     if (confirm(shutdownConfirmationText.get())) {
@@ -1611,7 +1611,7 @@ function shutdown_server() {
     }
 }
 
-let restartConfirmationText = translatable("Are you sure you want to update and restart StableSwarmUI?");
+let restartConfirmationText = translatable("Are you sure you want to update and restart SwarmUI?");
 let checkingForUpdatesText = translatable("Checking for updates...");
 
 function update_and_restart_server() {

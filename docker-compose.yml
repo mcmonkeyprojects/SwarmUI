@@ -1,8 +1,8 @@
 services:
-  stableswarmui:
-    image: stableswarmui
+  swarmui:
+    image: swarmui
     build: .
-    container_name: stableswarmui
+    container_name: swarmui
     # uncomment `networks: host` if you want to access other services on the host network (eg a separated comfy instance)
     # networks: host
     volumes:

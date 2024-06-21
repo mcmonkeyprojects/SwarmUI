@@ -4,7 +4,7 @@ This document explains the reasoning behind some core choices for the design of 
 
 ## Language Choice
 
-This project is built with a C# backend server to maximize performance while only minimally increasing code complexity. While most ML projects tend to be written in Python, that language is simply insufficient to meet the performance goals of this project\* (ie to provide a very fast and responsive multi-user-ready multi-backend service), notably it lacks "true" multithreading capabilities (due to Python GIL), which was deemed strongly necessary for StableSwarmUI (it must be able to use available CPU cores while serving user requests and managing internal data to be able to respond to all requests as quickly as possible).
+This project is built with a C# backend server to maximize performance while only minimally increasing code complexity. While most ML projects tend to be written in Python, that language is simply insufficient to meet the performance goals of this project\* (ie to provide a very fast and responsive multi-user-ready multi-backend service), notably it lacks "true" multithreading capabilities (due to Python GIL), which was deemed strongly necessary for SwarmUI (it must be able to use available CPU cores while serving user requests and managing internal data to be able to respond to all requests as quickly as possible).
 
 It is also hoped that building Stable Diffusion tools in C# will enable a wider range of developers to make use of Stable Diffusion (vs being limited to the Python ecosystem).
 
@@ -23,7 +23,7 @@ For the goal of maximizing capabilities, a 'main' backend needed to be chosen to
 - It is highly performant and compatible.
 - The code inside is extremely clean and well written.
 - It provides bonus features that other UIs can't match (ie: the workflow node editor).
-- The lead developer of Comfy was hired to Stability, and was able to directly help in ensuring the StableSwarmUI-ComfyUI integration works as best it can.
+- The lead developer of Comfy was hired to Stability, and was able to directly help in ensuring the SwarmUI-ComfyUI integration works as best it can.
 
 ## Web Frontend
 

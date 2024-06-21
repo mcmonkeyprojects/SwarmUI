@@ -88,7 +88,7 @@ public class Program
     {
         SpecialTools.Internationalize(); // Fix for MS's broken localization
         BsonMapper.Global.EmptyStringToNull = false; // Fix for LiteDB's broken handling of empty strings
-        Logs.Init($"=== StableSwarmUI v{Utilities.Version} Starting at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss} ===");
+        Logs.Init($"=== SwarmUI v{Utilities.Version} Starting at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss} ===");
         Utilities.LoadTimer timer = new();
         AssemblyLoadContext.Default.Unloading += (_) => Shutdown();
         AppDomain.CurrentDomain.ProcessExit += (_, _) => Shutdown();
@@ -139,7 +139,7 @@ public class Program
                 Logs.Debug($"Local version is {local}, remote version is {remote}, relative is {local.CompareTo(remote)}");
                 if (remote > local)
                 {
-                    Logs.Warning($"A new version of StableSwarmUI is available: {versId}! You are running version {Utilities.Version}. Has message: {message}");
+                    Logs.Warning($"A new version of SwarmUI is available: {versId}! You are running version {Utilities.Version}. Has message: {message}");
                     VersionUpdateMessage = $"Update available: {versId} (you are running {Utilities.Version}):\n{message}";
                 }
                 else

@@ -1,4 +1,4 @@
-# Making Extensions for StableSwarmUI
+# Making Extensions for SwarmUI
 
 So, you want to make a Swarm extension, eh? You've come to the right place!
 
@@ -9,10 +9,10 @@ Here's some general info:
 - Every extension has a root `.cs` C# class file that extends `Extension`, in a file named the same as the class, eg `src/Extensions/MyExtension/MyCoolExtensionName.cs` contains `public class MyCoolExtensionName : Extension`
 - There's a variety of initialization points, and you can choose the one that fits your needs, and then register any usage/callbacks/etc.
 - When writing a Swarm extension, you need to meet Swarm's code requirements -- most notably, that means you need to write code that won't explode if it's called from multiple threads (in most cases this won't be an issue, it's just something to consider when you're getting very advanced).
-- All of Swarm is open source, including a pile of built-in-extensions ([see here](https://github.com/Stability-AI/StableSwarmUI/tree/master/src/BuiltinExtensions)), so you can reference any existing code to get examples of things
+- All of Swarm is open source, including a pile of built-in-extensions ([see here](https://github.com/mcmonkeyprojects/SwarmUI/tree/master/src/BuiltinExtensions)), so you can reference any existing code to get examples of things
 - Swarm uses C#, a compiled language, so it only recompiles if (A) you do so manually, (B) you run the `update` script in the swarm root, or (C) you launch using the `launch-dev` scripts (builds fresh every time). When working on extensions, you need to either use the dev scripts, or remember to run the update every time.
 - You can add custom tabs by just making a folder inside your extension of `Tabs/Text2Image/` and inside of that put `Your Tab Name.html`
-- See the [`Extension` class source here](https://github.com/Stability-AI/StableSwarmUI/blob/master/src/Core/Extension.cs) for more things you can do.
+- See the [`Extension` class source here](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/src/Core/Extension.cs) for more things you can do.
     - This has several different launch points (eg `OnInit`, `OnPreInit`, etc.) and some registration points (eg `ScriptFiles` and `StyleSheetFiles` to register custom web assets to the main page).
 
 ## Example: A Custom Comfy-Node-Backed Parameter

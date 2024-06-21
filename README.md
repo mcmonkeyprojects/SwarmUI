@@ -1,26 +1,14 @@
-# StableSwarmUI
+# SwarmUI
 
-**StableSwarmUI 0.6.4.1 Beta**.
+**SwarmUI 0.9.0.0 Beta**.
 
 A Modular Stable Diffusion Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility.
 
-![ui-screenshot](.github/images/stableswarmui.jpg)
+![ui-screenshot](.github/images/swarmui.jpg)
 
 Join the [Discord](https://discord.gg/q2y38cqjNw) to discuss the project, get support, see announcements, etc.
 
-Follow the [Feature Announcements Thread](https://github.com/Stability-AI/StableSwarmUI/discussions/11) for updates on new features.
-
-# Migration Notice
-
-As of 2024/06/21 StableSwarmUI will no longer be maintained under Stability AI.
-
-The original developer will be maintaining an independent version of this project as [mcmonkeyprojects/SwarmUI](https://github.com/mcmonkeyprojects/SwarmUI)
-
-Windows users can migrate to the new independent repo by simply updating and then running `migrate-windows.bat`
-
-For Linux, Mac, or manual Windows: open a terminal in your Swarm folder then run `git remote set-url origin https://github.com/mcmonkeyprojects/SwarmUI`
-
-See full migration guide here: https://github.com/mcmonkeyprojects/SwarmUI/discussions/2
+Follow the [Feature Announcements Thread](https://github.com/mcmonkeyprojects/SwarmUI/discussions/1) for updates on new features.
 
 ----
 
@@ -45,7 +33,7 @@ Key feature targets not yet implemented:
 
 **WARNING**: Google Colab does not necessarily allow remote WebUIs, particularly for free accounts, use at your own risk.
 
-Colab link if you want to try Swarm: https://colab.research.google.com/github/Stability-AI/StableSwarmUI/blob/master/colab/colab-notebook.ipynb
+Colab link if you want to try Swarm: https://colab.research.google.com/github/mcmonkeyprojects/SwarmUI/blob/master/colab/colab-notebook.ipynb
 
 ### Runpod
 
@@ -57,11 +45,11 @@ Note it may take several minutes to start up the first time. Check the container
 
 Note: if you're on Windows 10, you may need to manually install [git](https://git-scm.com/download/win) and [DotNET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) first. (Windows 11 this is automated).
 
-- Download [The Install-Windows.bat file](https://github.com/Stability-AI/StableSwarmUI/releases/download/0.6.1-Beta/install-windows.bat), store it somewhere you want to install at (not `Program Files`), and run it.
+- Download [The Install-Windows.bat file](https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-windows.bat), store it somewhere you want to install at (not `Program Files`), and run it.
     - It should open a command prompt and install itself.
     - If it closes without going further, try running it again, it sometimes needs to run twice. (TODO: Fix that)
     - It will place an icon on your desktop that you can use to re-launch the server at any time.
-    - When the installer completes, it will automatically launch the StableSwarmUI server, and open a browser window to the install page.
+    - When the installer completes, it will automatically launch the SwarmUI server, and open a browser window to the install page.
     - Follow the install instructions on the page.
     - After you submit, be patient, some of the install processing take a few minutes (downloading models and etc).
 
@@ -71,16 +59,16 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 - Install git from https://git-scm.com/download/win
 - Install DotNET 8 SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (Make sure to get the SDK x64 for Windows)
-- open a terminal to the folder you want swarm in and run `git clone https://github.com/Stability-AI/StableSwarmUI`
+- open a terminal to the folder you want swarm in and run `git clone https://github.com/mcmonkeyprojects/SwarmUI`
 - open the folder and run `launch-windows.bat`
 
 # Installing on Linux
 
 - Install `git`, `python3` via your OS package manager if they are not already installed (make sure to include `pip` and `venv` on distros that do not include them in python directly)
     - For example, on recent Ubuntu versions, `sudo apt install git python3-pip python3-venv`
-- Download [the install-linux.sh file](https://github.com/Stability-AI/StableSwarmUI/releases/download/0.6.1-Beta/install-linux.sh), store it somewhere you want to install at, and run it
+- Download [the install-linux.sh file](https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh), store it somewhere you want to install at, and run it
     - If you like terminals, you can open a terminal to the folder and run the following commands:
-        - `wget https://github.com/Stability-AI/StableSwarmUI/releases/download/0.6.1-Beta/install-linux.sh -O install-linux.sh`
+        - `wget https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh -O install-linux.sh`
         - `chmod +x install-linux.sh`
 - Run the `./install-linux.sh` script, it will install everything for you and eventually open the webpage in your browser.
 - Follow the install instructions on-page.
@@ -96,8 +84,8 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
     - Some users [have said](https://github.com/Stability-AI/StableSwarmUI/pull/6) that certain Linux distros expect `aspnet-runtime` to be installed separately
 - Open a shell terminal and `cd` to a directory you want to install into
 - Run shell commands:
-    - `git clone https://github.com/Stability-AI/StableSwarmUI`
-    - cd `StableSwarmUI`
+    - `git clone https://github.com/mcmonkeyprojects/SwarmUI`
+    - cd `SwarmUI`
     - `./launch-linux.sh`
 - open `http://localhost:7801/Install` (if it doesn't launch itself)
 - Follow the install instructions on-page.
@@ -106,28 +94,28 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 # Installing on Mac
 
-> **Note**: You can only run StableSwarmUI on Mac computers with M1 or M2 (Mx) Apple silicon processors.
+> **Note**: You can only run SwarmUI on Mac computers with M1 or M2 (Mx) Apple silicon processors.
 
 - Open Terminal.
 - Ensure your `brew` packages are updated with `brew update`.
 - Verify your `brew` installation with `brew doctor`. You should not see any error in the command output.
 - Install .NET for macOS: `brew install dotnet`.
 - If you don't have Python, install it: `brew install python@3.10` and `brew install virtualenv`
-- Change the directory (`cd`) to the folder where you want to install StableSwarmUI.
-- Clone the StableSwarmUI GitHub repository: `git clone https://github.com/Stability-AI/StableSwarmUI`.
-- `cd StableSwarmUI` and run the installation script: `./launch-macos.sh`.
+- Change the directory (`cd`) to the folder where you want to install SwarmUI.
+- Clone the SwarmUI GitHub repository: `git clone https://github.com/mcmonkeyprojects/SwarmUI`.
+- `cd eSwarmUI` and run the installation script: `./launch-macos.sh`.
 
-The installation starts now and downloads the Stable Diffusion models from the internet. Depending on your internet connection, this may take several minutes. Wait for your web browser to open the StableSwarmUI window.
+The installation starts now and downloads the Stable Diffusion models from the internet. Depending on your internet connection, this may take several minutes. Wait for your web browser to open the SwarmUI window.
 
-> During the StableSwarmUI installation, you are prompted for the type of backend you want to use. For Mac computers with M1 or M2, you can safely choose the ComfyUI backend and choose the Stable Diffusion XL Base and Refiner models in the Download Models screen.
+> During the SwarmUI installation, you are prompted for the type of backend you want to use. For Mac computers with M1 or M2, you can safely choose the ComfyUI backend and choose the Stable Diffusion XL Base and Refiner models in the Download Models screen.
 
 # Running with Docker
 
 - To forward an Nvidia GPU, you must have the Nvidia Container Toolkit installed: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
 - Open a shell terminal and `cd` to a directory you want to install into
 - Run shell commands:
-    - `git clone https://github.com/Stability-AI/StableSwarmUI`
-    - cd `StableSwarmUI`
+    - `git clone https://github.com/mcmonkeyprojects/SwarmUI`
+    - cd `SwarmUI`
     - `./launch-docker.sh`
     - Open your browser to `localhost:7801`
 - Note that it will forward the `Models` and `Output` directory, and will mount `Data` and `dlbackend` as independent persistent volumes.
@@ -140,7 +128,7 @@ See [the documentation folder](/docs/README.md).
 
 The "Swarm" name is in reference to the original key function of the UI: enabling a 'swarm' of GPUs to all generate images for the same user at once (especially for large grid generations). This is just the feature that inspired the name and not the end all of what Swarm is.
 
-The overall goal of StableSwarmUI is to a be full-featured one-stop-shop for all things Stable Diffusion.
+The overall goal of SwarmUI is to a be full-featured one-stop-shop for all things Stable Diffusion.
 
 See [the motivations document](/docs/Motivations.md) for motivations on technical choices.
 
@@ -161,13 +149,20 @@ This project:
 - has the option to connect to remote servers to use [the Stability AI API](https://platform.stability.ai/) as a backend.
 - supports user-built extensions which may have their own licenses or legal conditions.
 
-StableSwarmUI itself is under the MIT license, however some usages may be affected by the GPL variant licenses of connected projects list above, and note that any models used have their own licenses.
+SwarmUI itself is under the MIT license, however some usages may be affected by the GPL variant licenses of connected projects list above, and note that any models used have their own licenses.
+
+### Previous License
+
+(For updates prior to June 2024)
+
+The MIT License (MIT)
+Copyright (c) 2024 Stability AI
 
 ### License
 
 The MIT License (MIT)
 
-Copyright (c) 2024 Stability AI
+Copyright (c) 2024 Alex "mcmonkey" Goodwin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

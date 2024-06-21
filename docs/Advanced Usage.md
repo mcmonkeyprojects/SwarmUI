@@ -2,16 +2,16 @@
 
 (TODO: More examples of advanced usage with explanation)
 
-# Accessing StableSwarmUI From Other Devices
+# Accessing SwarmUI From Other Devices
 
-- To access StableSwarmUI from another device over LAN:
-    - Simply open StableSwarmUI to the `Server` -> `Server Configuration` tab, find `Host` (default value is `localhost`) and change the value to `0.0.0.0`, then save and restart
-        - Note you may also need to allow StableSwarmUI through your firewall.
-- To access StableSwarmUI over open internet without port forwarding:
+- To access SwarmUI from another device over LAN:
+    - Simply open SwarmUI to the `Server` -> `Server Configuration` tab, find `Host` (default value is `localhost`) and change the value to `0.0.0.0`, then save and restart
+        - Note you may also need to allow SwarmUI through your firewall.
+- To access SwarmUI over open internet without port forwarding:
     - You can either launch use Cloudflared or Ngrok
-        - For **Cloudflared:** Install Cloudflared according to [their readme](https://github.com/cloudflare/cloudflared?tab=readme-ov-file#installing-cloudflared) (note: ignore the stuff about accounts/domains/whatever, only the `cloudflared` software install is relevant), and launch StableSwarmUI with `--cloudflared-path [...]` or set the path in Server Configuration `CloudflaredPath` option and restart
+        - For **Cloudflared:** Install Cloudflared according to [their readme](https://github.com/cloudflare/cloudflared?tab=readme-ov-file#installing-cloudflared) (note: ignore the stuff about accounts/domains/whatever, only the `cloudflared` software install is relevant), and launch SwarmUI with `--cloudflared-path [...]` or set the path in Server Configuration `CloudflaredPath` option and restart
             - For Debian Linux servers, look at how the [Colab Notebook](/colab/colab-notebook.ipynb) installs and uses cloudflared.
-        - For **ngrok:**  Install ngrok according to [their documentation](https://ngrok.com/) and login to your ngrok account, and launch StableSwarmUI with `--ngrok-path [...]`
+        - For **ngrok:**  Install ngrok according to [their documentation](https://ngrok.com/) and login to your ngrok account, and launch SwarmUI with `--ngrok-path [...]`
 
 ## Custom Workflows (ComfyUI)
 

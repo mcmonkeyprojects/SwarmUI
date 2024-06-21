@@ -1,4 +1,4 @@
-# StableSwarmUI API Documentation - T2IAPI
+# SwarmUI API Documentation - T2IAPI
 
 > This is a subset of the API docs, see [/docs/API.md](/docs/API.md) for general info.
 

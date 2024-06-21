@@ -1,4 +1,4 @@
-# StableSwarmUI API Documentation - ModelsAPI
+# SwarmUI API Documentation - ModelsAPI
 
 > This is a subset of the API docs, see [/docs/API.md](/docs/API.md) for general info.
 

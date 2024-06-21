@@ -244,7 +244,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Whether your files save to server data drive or not.")]
         public bool SaveFiles = true;
 
-        [ConfigComment("If true, folders will be discard from starred image paths.")]
+        [ConfigComment("If true, folders will be discarded from starred image paths.")]
         public bool StarNoFolders = false;
 
         public class ThemesImpl : SettingsOptionsAttribute.AbstractImpl

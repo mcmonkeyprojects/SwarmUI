@@ -1,4 +1,4 @@
-# StableSwarmUI API Documentation - UtilAPI
+# SwarmUI API Documentation - UtilAPI
 
 > This is a subset of the API docs, see [/docs/API.md](/docs/API.md) for general info.
 
