@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - StableSwarmUI</title>
+    <title>@ViewData["Title"] - SwarmUI</title>
     @{
         string themeId = "modern_dark";
         // TODO: Identify user by auth header and use their settings to determine theme
@@ -39,6 +39,6 @@
     @RenderBody()
     <script src="/js/site.js?vary=@Utilities.VaryID"></script>
     @RenderSection("Scripts", required: false)
-    <div id="version_display" class="version-display">StableSwarmUI v<span>@Utilities.Version</span><span> (@Program.CurrentGitDate)</span></div>
+    <div id="version_display" class="version-display">SwarmUI v<span>@Utilities.Version</span><span> (@Program.CurrentGitDate)</span></div>
 </body>
 </html>

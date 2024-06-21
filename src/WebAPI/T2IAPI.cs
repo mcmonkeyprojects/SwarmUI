@@ -14,7 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
-using Image = StableSwarmUI.Utils.Image;
+using Image = SwarmUI.Utils.Image;
 using ISImage = SixLabors.ImageSharp.Image;
 using ISImageRGBA = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
 

@@ -1,8 +1,8 @@
-# ComfyUI Backend Extension For StableSwarmUI
+# ComfyUI Backend Extension For SwarmUI
 
-This extension enables the use of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) as a backend provider for StableSwarmUI.
+This extension enables the use of [ComfyUI](https://github.com/comfyanonymous/ComfyUI) as a backend provider for SwarmUI.
 
-Among other benefits, this enables you to use custom ComfyUI-API workflow files within StableSwarmUI.
+Among other benefits, this enables you to use custom ComfyUI-API workflow files within SwarmUI.
 
 You can also view the ComfyUI node graph and work with custom workflows directly in the UI when any comfy backend is enabled.
 
@@ -14,24 +14,24 @@ You can also view the ComfyUI node graph and work with custom workflows directly
 
 ### Installation (Self-Start)
 
-- First: Have a valid ComfyUI install. The StableSwarmUI installer automatically provides you one (if not disabled) as `dlbackend/comfy/ComfyUI/main.py`.
+- First: Have a valid ComfyUI install. The SwarmUI installer automatically provides you one (if not disabled) as `dlbackend/comfy/ComfyUI/main.py`.
 - Go to `Server` -> `Backends`, and click `ComfyUI Self-Starting`, and fill in the `StartScript` path as above. Other values can be left default or configured to your preference.
 - Save the backend, and it should just work.
 
 ### Installation (API)
 
 - First: have a valid and working ComfyUI installation.
-- Make sure it uses the exact same model paths as your StableSwarmUI instance does. This means that if you have eg `OfficialStableDiffusion/sd_xl_base_1.0.safetensors` in Swarm, you need have *EXACTLY* that in ComfyUI. The only exception is Windows paths that use `\` instead of `/` are fine, Swarm will automatically correct for that (If you use Self-Start, this is automatically managed from your Swarm settings).
+- Make sure it uses the exact same model paths as your SwarmUI instance does. This means that if you have eg `OfficialStableDiffusion/sd_xl_base_1.0.safetensors` in Swarm, you need have *EXACTLY* that in ComfyUI. The only exception is Windows paths that use `\` instead of `/` are fine, Swarm will automatically correct for that (If you use Self-Start, this is automatically managed from your Swarm settings).
 - Note that swarm may leave stray Input or Output images in the ComfyUI folder that you may wish to clean up (if you use Self-Start, this will be prevented automatically).
 - Swarm provides extra Comfy nodes automatically to Self-Start ComfyUI instances from folders within the ComfyUI extension folder, including `DLNodes` and `ExtraNodes` - it is highly recommended you copy these to your remote Comfy's `custom_nodes` path.
 
-### Basic Usage Within StableSwarmUI
+### Basic Usage Within SwarmUI
 
 (TODO)
 
 ### Using Workflows In The UI
 
-(TODO): explain the Node tab and how to use it within StableSwarmUI, link out to Comfy docs for usage of the node editor itself.
+(TODO): explain the Node tab and how to use it within SwarmUI, link out to Comfy docs for usage of the node editor itself.
 
 - When using a custom workflow in the main Generate tab:
     - Default nodes (KSampler, LoadCheckpoint, etc) will automatically detect and link to standard Swarm workflows.

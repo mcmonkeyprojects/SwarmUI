@@ -19,7 +19,7 @@ public static class NetworkBackendUtils
     public static HttpClient MakeHttpClient()
     {
         HttpClient client = new(new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromMinutes(10) });
-        client.DefaultRequestHeaders.UserAgent.ParseAdd($"StableSwarmUI/{Utilities.Version}");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"SwarmUI/{Utilities.Version}");
         client.Timeout = TimeSpan.FromMinutes(10);
         return client;
     }

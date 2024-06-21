@@ -63,7 +63,7 @@ public class BackendHandler
 
     public BackendHandler()
     {
-        RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connection StableSwarmUI to another instance of StableSwarmUI as a backend.", true, true);
+        RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
         Program.ModelRefreshEvent += () =>
         {
             foreach (SwarmSwarmBackend backend in RunningBackendsOfType<SwarmSwarmBackend>())

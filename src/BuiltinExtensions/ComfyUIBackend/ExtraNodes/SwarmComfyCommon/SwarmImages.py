@@ -14,7 +14,7 @@ class SwarmImageScaleForMP:
             }
         }
 
-    CATEGORY = "StableSwarmUI/images"
+    CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "scale"
 
@@ -46,7 +46,7 @@ class SwarmImageCrop:
             }
         }
 
-    CATEGORY = "StableSwarmUI/images"
+    CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "crop"
 
@@ -67,7 +67,7 @@ class SwarmVideoBoomerang:
             }
         }
 
-    CATEGORY = "StableSwarmUI/video"
+    CATEGORY = "SwarmUI/video"
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "boomerang"
 

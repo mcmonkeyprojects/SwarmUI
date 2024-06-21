@@ -36,7 +36,7 @@ class SwarmModelTiling:
             }
         }
 
-    CATEGORY = "StableSwarmUI/sampling"
+    CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "adapt"
 
@@ -63,7 +63,7 @@ class SwarmTileableVAE:
             }
         }
 
-    CATEGORY = "StableSwarmUI/sampling"
+    CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("VAE",)
     FUNCTION = "adapt"
 

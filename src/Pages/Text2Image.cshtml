@@ -240,7 +240,7 @@
                             <h5>Format:</h5>
                             <div class="btn-group" role="group">
                                 <input type="radio" class="btn-check" name="btnradio" id="export_preset_format_json" autocomplete="off" checked="" onchange="exportPresetsButton()">
-                                <label class="btn btn-outline-primary translate" for="export_preset_format_json">StableSwarmUI JSON</label>
+                                <label class="btn btn-outline-primary translate" for="export_preset_format_json">SwarmUI JSON</label>
                                 <input type="radio" class="btn-check" name="btnradio" id="export_preset_format_csv" autocomplete="off" onchange="exportPresetsButton()">
                                 <label class="btn btn-outline-primary translate" for="export_preset_format_csv">Prompt only CSV</label>
                             </div>
@@ -616,7 +616,7 @@
                     <div class="card-header translate">Stability API Key</div>
                     <div class="card-body">
                         <p class="card-text translate">
-                            To use the Stability API in StableSwarmUI, you must set your key.
+                            To use the Stability API in SwarmUI, you must set your key.
                             <br>To get your key, <a href="https://platform.stability.ai/account/keys" target="_blank" rel="noreferrer noopener">go here</a>.
                             <br>
                             <br>Once you have your key, enter it below and click save:
@@ -709,7 +709,7 @@
                     <div class="card-header translate">Server</div>
                     <div class="card-body">
                         <p class="card-text">
-                            The "Server" tab provides access to StableSwarmUI's server internals, including:
+                            The "Server" tab provides access to SwarmUI's server internals, including:
                             <br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)
                             <br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)
                             <br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)
@@ -771,7 +771,7 @@
                             <div class="card-header">DotNET @Utilities.DotNetVersMissing Missing</div>
                             <div class="card-body">
                                 <p id="dotnet_missing_message" class="card-text">
-                                    You do not seem to have DotNET @Utilities.DotNetVersMissing installed - this will be required in a future version of StableSwarmUI.
+                                    You do not seem to have DotNET @Utilities.DotNetVersMissing installed - this will be required in a future version of SwarmUI.
                                     <br>Please install DotNET SDK @(Utilities.DotNetVersMissing).0 from <a href="https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0">https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0</a>
                                 </p>
                             </div>

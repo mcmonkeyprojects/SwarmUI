@@ -14,7 +14,7 @@ class SwarmReferenceOnly:
             }
         }
 
-    CATEGORY = "StableSwarmUI/sampling"
+    CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("MODEL", "LATENT")
     FUNCTION = "reference_only"
 

@@ -25,7 +25,7 @@ class SwarmLoadImageB64:
             }
         }
 
-    CATEGORY = "StableSwarmUI/images"
+    CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "load_image_b64"
 

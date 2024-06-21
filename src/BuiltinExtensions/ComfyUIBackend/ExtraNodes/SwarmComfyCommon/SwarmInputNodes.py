@@ -19,7 +19,7 @@ class SwarmInputGroup:
             },
         }
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("GROUP",)
     FUNCTION = "do_input"
 
@@ -55,7 +55,7 @@ class SwarmInputInteger:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("INT",)
     FUNCTION = "do_input"
 
@@ -78,7 +78,7 @@ class SwarmInputFloat:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("FLOAT",)
     FUNCTION = "do_input"
 
@@ -97,7 +97,7 @@ class SwarmInputText:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("STRING",)
     FUNCTION = "do_input"
 
@@ -116,7 +116,7 @@ class SwarmInputModelName:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("",)
     FUNCTION = "do_input"
 
@@ -134,7 +134,7 @@ class SwarmInputCheckpoint:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("MODEL", "CLIP", "VAE")
     FUNCTION = "do_input"
 
@@ -153,7 +153,7 @@ class SwarmInputDropdown:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("STRING", "",)
     FUNCTION = "do_input"
 
@@ -171,7 +171,7 @@ class SwarmInputBoolean:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("BOOLEAN",)
     FUNCTION = "do_input"
 
@@ -190,7 +190,7 @@ class SwarmInputImage:
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
-    CATEGORY = "StableSwarmUI/inputs"
+    CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("IMAGE","MASK",)
     FUNCTION = "do_input"
 

@@ -17,7 +17,7 @@ class SwarmClipTextEncodeAdvanced:
             }
         }
 
-    CATEGORY = "StableSwarmUI/clip"
+    CATEGORY = "SwarmUI/clip"
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "encode"
 

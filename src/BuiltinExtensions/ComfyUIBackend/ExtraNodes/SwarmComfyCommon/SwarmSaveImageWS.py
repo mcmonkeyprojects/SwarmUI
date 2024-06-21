@@ -16,7 +16,7 @@ class SwarmSaveImageWS:
             }
         }
 
-    CATEGORY = "StableSwarmUI/images"
+    CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ()
     FUNCTION = "save_images"
     OUTPUT_NODE = True
@@ -52,7 +52,7 @@ class SwarmSaveAnimatedWebpWS:
             },
         }
 
-    CATEGORY = "StableSwarmUI/video"
+    CATEGORY = "SwarmUI/video"
     RETURN_TYPES = ()
     FUNCTION = "save_images"
     OUTPUT_NODE = True

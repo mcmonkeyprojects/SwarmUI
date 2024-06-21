@@ -12,7 +12,7 @@ class SwarmRemBg:
             }
         }
 
-    CATEGORY = "StableSwarmUI/images"
+    CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE", "MASK",)
     FUNCTION = "rem"
 

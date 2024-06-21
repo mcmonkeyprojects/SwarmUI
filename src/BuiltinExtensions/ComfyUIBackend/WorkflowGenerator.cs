@@ -423,7 +423,7 @@ public class WorkflowGenerator
         {
             return CreateNode("SaveImage", new JObject()
             {
-                ["filename_prefix"] = $"StableSwarmUI_{Random.Shared.Next():X4}_",
+                ["filename_prefix"] = $"SwarmUI_{Random.Shared.Next():X4}_",
                 ["images"] = image
             }, id);
         }

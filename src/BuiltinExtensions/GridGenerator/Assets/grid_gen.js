@@ -465,7 +465,7 @@ class GridGenClass {
             </div>
             <div class="hoverable-minor-hint-text">
                 When using numbered parameters, you can type for example "<code>1, 2, .., 10</code>" to automatically have the "<code>..</code>" part filled in.
-                &emsp;You can prefix any value with "<code>SKIP:</code>" (in all caps) to automatically skip that value (but keep it listed in the grid).&emsp;<a href="https://github.com/Stability-AI/StableSwarmUI/blob/master/src/BuiltinExtensions/GridGenerator/README.md" target="_blank">Full README/docs here</a>
+                &emsp;You can prefix any value with "<code>SKIP:</code>" (in all caps) to automatically skip that value (but keep it listed in the grid).&emsp;<a href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/src/BuiltinExtensions/GridGenerator/README.md" target="_blank">Full README/docs here</a>
             </div>`;
         this.mainDiv.appendChild(this.settingsDiv);
         this.mainDiv.appendChild(this.axisDiv);

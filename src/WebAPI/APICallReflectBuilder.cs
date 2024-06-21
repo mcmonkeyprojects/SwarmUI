@@ -5,7 +5,7 @@ using SwarmUI.DataHolders;
 using System;
 using System.Net.WebSockets;
 using System.Reflection;
-using static StableSwarmUI.DataHolders.DataHolderHelper;
+using static SwarmUI.DataHolders.DataHolderHelper;
 
 namespace SwarmUI.WebAPI;
 

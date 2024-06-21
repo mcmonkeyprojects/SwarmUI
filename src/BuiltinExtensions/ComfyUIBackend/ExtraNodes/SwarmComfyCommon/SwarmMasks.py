@@ -13,7 +13,7 @@ class SwarmSquareMaskFromPercent:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_from_perc"
 
@@ -48,7 +48,7 @@ class SwarmOverMergeMasksForOverlapFix:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_overmerge"
 
@@ -68,7 +68,7 @@ class SwarmCleanOverlapMasks:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK","MASK",)
     FUNCTION = "mask_overlap"
 
@@ -91,7 +91,7 @@ class SwarmCleanOverlapMasksExceptSelf:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_clean"
 
@@ -112,7 +112,7 @@ class SwarmExcludeFromMask:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_exclude"
 
@@ -133,7 +133,7 @@ class SwarmMaskBounds:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("INT", "INT", "INT", "INT")
     RETURN_NAMES = ("x", "y", "width", "height")
     FUNCTION = "get_bounds"
@@ -180,7 +180,7 @@ class SwarmMaskBlur:
     RETURN_TYPES = ("MASK",)
     FUNCTION = "blur"
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
 
     def blur(self, mask, blur_radius, sigma):
         if blur_radius == 0:
@@ -211,7 +211,7 @@ class SwarmMaskThreshold:
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "threshold"
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
 
     def threshold(self, mask, min, max):
         mask = mask.clamp(min, max)

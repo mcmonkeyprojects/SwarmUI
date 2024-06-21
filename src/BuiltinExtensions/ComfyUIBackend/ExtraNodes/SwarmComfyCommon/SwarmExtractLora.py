@@ -103,7 +103,7 @@ class SwarmExtractLora:
             }
         }
 
-    CATEGORY = "StableSwarmUI/models"
+    CATEGORY = "SwarmUI/models"
     RETURN_TYPES = ()
     FUNCTION = "extract_lora"
     OUTPUT_NODE = True
@@ -131,7 +131,7 @@ class SwarmExtractLora:
         # Can't easily autodetect all the correct modelspec info, but at least supply some basics
         out_metadata = {
             "modelspec.title": f"(Extracted LoRA) {save_filename}",
-            "modelspec.description": f"LoRA extracted in StableSwarmUI"
+            "modelspec.description": f"LoRA extracted in SwarmUI"
         }
         if metadata:
             out_metadata.update(json.loads(metadata))

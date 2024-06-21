@@ -626,7 +626,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     "comfy_sampler" or "comfyui_sampler" or "sampler" => user_input.GetString(ComfyUIBackendExtension.SamplerParam) ?? (string.IsNullOrWhiteSpace(defVal) ? "euler" : defVal),
                     "comfy_scheduler" or "comfyui_scheduler" or "scheduler" => user_input.GetString(ComfyUIBackendExtension.SchedulerParam) ?? (string.IsNullOrWhiteSpace(defVal) ? "normal" : defVal),
                     "model" => user_input.Get(T2IParamTypes.Model).ToString(ModelFolderFormat),
-                    "prefix" => $"StableSwarmUI_{Random.Shared.Next():X4}_",
+                    "prefix" => $"SwarmUI_{Random.Shared.Next():X4}_",
                     "loras" => getLoras(),
                     _ => fillDynamic()
                 };

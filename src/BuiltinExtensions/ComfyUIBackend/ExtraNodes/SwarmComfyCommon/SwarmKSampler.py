@@ -222,7 +222,7 @@ class SwarmKSampler:
             }
         }
 
-    CATEGORY = "StableSwarmUI/sampling"
+    CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "run_sampling"
 

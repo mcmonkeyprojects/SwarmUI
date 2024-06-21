@@ -16,7 +16,7 @@ class SwarmLoraLoader:
             }
         }
 
-    CATEGORY = "StableSwarmUI/models"
+    CATEGORY = "SwarmUI/models"
     RETURN_TYPES = ("MODEL", "CLIP")
     FUNCTION = "load_loras"
 

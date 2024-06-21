@@ -1,6 +1,6 @@
 @page
 @{
-    ViewData["Title"] = "StableSwarmUI Installer";
+    ViewData["Title"] = "SwarmUI Installer";
 }
 @section Header {
     <link rel="stylesheet" href="/css/installer.css?vary=@Utilities.VaryID" />
@@ -17,7 +17,7 @@
 }
 
 <div class="headline">
-    <h1>StableSwarmUI Installer</h1>
+    <h1>SwarmUI Installer</h1>
     <span class="auto-input-name translate">Language</span>
     <ul class="nav" style="display:inline-block" role="tablist">
         <li class="nav-item dropdown">
@@ -47,7 +47,7 @@
         All Stable Diffusion models are subject to licensing defined by Stability AI and/or the model creator.
         Generally all are free for personal usage, but commercial usage may come under restrictions.
         For example, the SDXL 1.0 Base license can be found <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md">Here</a>.
-        <br>StableSwarmUI itself is free for personal usage as well, and licensing specifics can be found <a href="https://github.com/Stability-AI/StableSwarmUI/blob/master/LICENSE.txt">Here</a>.
+        <br>SwarmUI itself is free for personal usage as well, and licensing specifics can be found <a href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/LICENSE.txt">Here</a>.
         <br>By using this software you agree to follow its license and the applicable licenses of any models included or separately downloaded.
     </div>
 
@@ -137,7 +137,7 @@
     </div>
 
     <div id="installer_section_installed_for" style="display: none;">
-        <div class="install_q_head">Who is this StableSwarmUI installation going to be used by?</div>
+        <div class="install_q_head">Who is this SwarmUI installation going to be used by?</div>
         <div class="install_hint">This is to determine a preset of core settings. You can always change this later.</div>
         <br>
         <fieldset class="form-group" id="installed_for_selection_field">
@@ -172,10 +172,10 @@
         <div class="modal-body">
             Generally, you want a GPU with at least 8 GiB of VRAM to run properly. More is better. If you have at least 4, you'll be able to run SDv1 with lowered settings, but SDXL may be out of reach.
             <br>&bullet; An Nvidia RTX 20-series or newer is recommended, though some older cards can still work.
-            <br>&bullet; AMD GPUs should work, but are not currently correctly scanned by StableSwarmUI.
+            <br>&bullet; AMD GPUs should work, but are not currently correctly scanned by SwarmUI.
             <br>&bullet; Intel or Mac GPUs may work, but will require special configuration that this installer does not yet perform for you.
             <br>&bullet; CPU execution is possible, but is extremely slow and not recommended.
-            <br>&bullet; If you have multiple GPUs, StableSwarmUI can use all of them. You will have to configure this manually in the Server Backends settings page later.
+            <br>&bullet; If you have multiple GPUs, SwarmUI can use all of them. You will have to configure this manually in the Server Backends settings page later.
             <hr>
             You have: @WebUtil.CheckGPUIsSufficient()
         </div>
@@ -253,7 +253,7 @@
         <br>&bullet; Backend: <span class="final_confirm_info" id="backend_val_info"></span>
         <br>&bullet; Model: <span class="final_confirm_info" id="model_val_info"></span>
         <br>Are you sure this is all correct?
-        <div class="install_hint">This is your last chance to go back and change before installing. If you want to change your choices later, there's a settings menu available within StableSwarmUI, and models can be downloaded any time you wish and put in the models folder.</div>
+        <div class="install_hint">This is your last chance to go back and change before installing. If you want to change your choices later, there's a settings menu available within SwarmUI, and models can be downloaded any time you wish and put in the models folder.</div>
         <br><button id="installer_button_confirm" class="btn btn-primary basic-button" autocomplete="off">Yes, I'm sure (Install Now)</button>
         <div class="install_output" id="install_output"></div>
         <div class="install_output" id="install_progress_spot"></div>

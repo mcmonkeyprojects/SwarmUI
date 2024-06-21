@@ -40,7 +40,7 @@ class SwarmClipSeg:
             }
         }
 
-    CATEGORY = "StableSwarmUI/masks"
+    CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 

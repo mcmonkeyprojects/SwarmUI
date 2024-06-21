@@ -60,11 +60,11 @@ public static class Utilities
         }
     }
 
-    /// <summary>StableSwarmUI's current version.</summary>
+    /// <summary>SwarmUI's current version.</summary>
     public static readonly string Version = Assembly.GetEntryAssembly()?.GetName().Version.ToString();
 
     /// <summary>URL to where the documentation files start.</summary>
-    public const string RepoDocsRoot = "https://github.com/Stability-AI/StableSwarmUI/blob/master/docs/";
+    public const string RepoDocsRoot = "https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/";
 
     /// <summary>Current git commit (if known -- empty if unknown).</summary>
     public static string GitCommit = "";
@@ -734,7 +734,7 @@ public static class Utilities
                 {
                     void Warn()
                     {
-                        Logs.Warning($"You do not seem to have DotNET {vers} installed - this will be required in a future version of StableSwarmUI.");
+                        Logs.Warning($"You do not seem to have DotNET {vers} installed - this will be required in a future version of SwarmUI.");
                         Logs.Warning($"Please install DotNET SDK {vers}.0 from https://dotnet.microsoft.com/en-us/download/dotnet/{vers}.0");
                     }
                     DotNetVersMissing = vers;

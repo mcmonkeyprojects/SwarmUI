@@ -1,7 +1,7 @@
-# Automatic1111 Stable-Diffusion-WebUI Backend Extension for StableSwarmUI
+# Automatic1111 Stable-Diffusion-WebUI Backend Extension for SwarmUI
 
 
-This extension enables the use of [AUTOMATIC1111/Stable-Diffusion-WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) ("Auto WebUI") as a backend provider for StableSwarmUI.
+This extension enables the use of [AUTOMATIC1111/Stable-Diffusion-WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui) ("Auto WebUI") as a backend provider for SwarmUI.
 
 ### API vs Self-Start
 
@@ -15,6 +15,6 @@ This extension enables the use of [AUTOMATIC1111/Stable-Diffusion-WebUI](https:/
 
 (TODO)
 
-### Basic Usage Within StableSwarmUI
+### Basic Usage Within SwarmUI
 
 (TODO)

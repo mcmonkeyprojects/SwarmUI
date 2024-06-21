@@ -1,6 +1,6 @@
 # Dynamic Thresholding
 
-StableSwarmUI extension that implements support for [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding), built in by default to Swarm.
+SwarmUI extension that implements support for [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding), built in by default to Swarm.
 
 Dynamic Thresholding is a technique that allows for generating at very large CFG Scale values without the image burning.
 

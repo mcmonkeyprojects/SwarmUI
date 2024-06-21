@@ -1,4 +1,4 @@
-# Internally called by StableSwarmUI
+# Internally called by SwarmUI
 # python -s launchtools/pickle-to-safetensors.py <path> <fp16(true/false)>
 
 import os, sys, glob, traceback

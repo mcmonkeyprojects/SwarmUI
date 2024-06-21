@@ -374,7 +374,7 @@ public class Program
                 Extension extension = Activator.CreateInstance(extType) as Extension;
                 extension.ExtensionName = extType.Name;
                 Extensions.Add(extension);
-                string[] possible = extType.Namespace.StartsWith("StableSwarmUI.") ? builtins : extras;
+                string[] possible = extType.Namespace.StartsWith("SwarmUI.") ? builtins : extras;
                 foreach (string path in possible)
                 {
                     if (File.Exists($"src/{path}/{extType.Name}.cs"))

@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.Processing;
 using SwarmUI.Accounts;
 using SwarmUI.Utils;
 using ISImage = SixLabors.ImageSharp.Image;
-using Image = StableSwarmUI.Utils.Image;
+using Image = SwarmUI.Utils.Image;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 

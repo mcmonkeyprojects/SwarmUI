@@ -1,6 +1,6 @@
 # Grid Generator Extension
 
-Infinite-dimensional multi-axis image grid generator tool for StableSwarmUI.
+Infinite-dimensional multi-axis image grid generator tool for SwarmUI.
 
 ### Concept
 
@@ -38,6 +38,6 @@ Operates as a "Tool" within the "Tools" UI, built into Swarm by default as an of
 
 ### History
 
-The first version of this tool was [Infinity Grid Generator for Automatic1111's Stable-Diffusion-WebUI](https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script). It has a very special place in my heart as it was used by Stability employees, which was a key factor that led to me (Alex "mcmonkey" Goodwin) getting hired by Stability, and being given the opportunity to build bigger-and-better tools like StableSwarmUI!
+The first version of this tool was [Infinity Grid Generator for Automatic1111's Stable-Diffusion-WebUI](https://github.com/mcmonkeyprojects/sd-infinity-grid-generator-script). It has a very special place in my heart as it was used by Stability employees, which was a key factor that led to me (Alex "mcmonkey" Goodwin) getting hired by Stability, and being given the opportunity to build bigger-and-better tools like SwarmUI!
 
 That version had custom config files to enable added metadata (titles, descriptions, etc) for grid axis values - this will eventually be reimplemented to the Swarm version.

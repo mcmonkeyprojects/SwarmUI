@@ -11,7 +11,7 @@ class SwarmEmbedLoaderListProvider:
             }
         }
 
-    CATEGORY = "StableSwarmUI/internal"
+    CATEGORY = "SwarmUI/internal"
     RETURN_TYPES = ("EMBEDDING",)
     FUNCTION = "load_embed"
 
