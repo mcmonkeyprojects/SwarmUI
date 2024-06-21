@@ -82,7 +82,7 @@ public static class BasicAPIFeatures
         };
     }
 
-    public static async Task<JObject> InstallConfirmWS(Session session, WebSocket socket, string theme, string installed_for, string backend, string stability_api_key, string models, bool install_amd, string language)
+    public static async Task<JObject> InstallConfirmWS(Session session, WebSocket socket, string theme, string installed_for, string backend, string models, bool install_amd, string language)
     {
         if (Program.ServerSettings.IsInstalled)
         {
