@@ -62,9 +62,6 @@ function automaticWelcomeMessage(override = null) {
     if (dotnetNotice) {
         messages.push(dotnetNotice.innerHTML.trim());
     }
-    for (let i = 0; i < 10; i++) {
-        messages.push(messages[1]);
-    }
     if (override == null) {
         if (dotnetNotice) {
             override = messages.length - 1;
