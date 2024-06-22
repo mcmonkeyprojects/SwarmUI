@@ -507,6 +507,7 @@ public static class ModelsAPI
             {
                 File.Delete(tempPath);
             }
+            Directory.CreateDirectory(Path.GetDirectoryName(outPath));
             await Utilities.DownloadFile(url, tempPath, async (progress, total) =>
             {
                 await ws.SendJson(new JObject()
