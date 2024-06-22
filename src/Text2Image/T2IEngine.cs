@@ -70,7 +70,7 @@ namespace SwarmUI.Text2Image
                     user_input.RefusalReasons.Add($"Specific backend type requested in advanced parameters did not match");
                     return false;
                 }
-                if (requireId && backend.ID != reqId)
+                if (requireId && backend.ID != reqId && (backend.Parent?.ID ?? int.MaxValue) != reqId)
                 {
                     Logs.Verbose($"Filter out backend {backend.ID} as the request requires backend ID {reqId}, but the backend ID is {backend.ID}");
                     user_input.RefusalReasons.Add($"Specific backend ID# requested in advanced parameters did not match");
