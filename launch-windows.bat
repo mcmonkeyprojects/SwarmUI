@@ -7,6 +7,8 @@ cd /D "%~dp0"
 rem Microsoft borked the dotnet installer/path handler, so force x64 to be read first
 set PATH=C:\Program Files\dotnet;%PATH%
 
+set DOTNET_CLI_TELEMETRY_OPTOUT=1
+
 rem Server settings option
 if exist .\src\bin\always_pull (
     echo "Pulling latest changes..."

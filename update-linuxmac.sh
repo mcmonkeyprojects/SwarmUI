@@ -7,6 +7,8 @@ cd $SCRIPT_DIR
 # Add dotnet non-admin-install to path
 export PATH="$SCRIPT_DIR/.dotnet:~/.dotnet:$PATH"
 
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
 # The actual update
 git pull
 

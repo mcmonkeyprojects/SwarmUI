@@ -4,6 +4,8 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd $SCRIPT_DIR
 
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
 # Building first is more reliable than running directly from src
 dotnet build src/SwarmUI.csproj --configuration Release -o ./src/bin/live_release
 # Default env configuration, gets overwritten by the C# code's settings handler
