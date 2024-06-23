@@ -976,6 +976,14 @@ public class WorkflowGeneratorSteps
                 {
                     PromptRegion.Part part = parts[i];
                     string segmentNode;
+
+                    bool sharper = false;
+                    if (part.DataText.StartsWith("sharp-"))
+                    {
+                        sharper = true;
+                        part.DataText = part.DataText.After("sharp-");
+                    }
+
                     if (part.DataText.StartsWith("yolo-"))
                     {
                         string fullname = part.DataText.After('-');
@@ -1032,7 +1040,7 @@ public class WorkflowGeneratorSteps
                         });
                         g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                     }
-                    (string boundsNode, string croppedMask, string masked) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
+                    (string boundsNode, string croppedMask, string masked) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1), fromSegmentation: true, skipLatentNoise: sharper);
                     g.EnableDifferential();
                     (model, clip) = g.LoadLorasForConfinement(part.ContextID, model, clip);
                     JArray prompt = g.CreateConditioning(part.Prompt, clip, t2iModel, true);
@@ -1044,7 +1052,7 @@ public class WorkflowGeneratorSteps
                     double cfg = g.UserInput.Get(T2IParamTypes.CFGScale);
                     string sampler = g.CreateKSampler(model, prompt, negPrompt, [masked, 0], cfg, steps, startStep, 10000, seed, false, true);
                     string decoded = g.CreateVAEDecode(vae, [sampler, 0]);
-                    g.FinalImageOut = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalImageOut, [decoded, 0]);
+                    g.FinalImageOut = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalImageOut, [decoded, 0], useFeatherMask: sharper);
                 }
             }
         }, 5);

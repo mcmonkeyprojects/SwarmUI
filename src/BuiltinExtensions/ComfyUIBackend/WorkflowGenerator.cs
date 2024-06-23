@@ -291,7 +291,7 @@ public class WorkflowGenerator
     /// <param name="vae">The relevant VAE.</param>
     /// <param name="threshold">Optional minimum value threshold.</param>
     /// <returns>(boundsNode, croppedMask, maskedLatent).</returns>
-    public (string, string, string) CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, double threshold = 0.01, double thresholdMax = 1)
+    public (string, string, string) CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, double threshold = 0.01, double thresholdMax = 1, bool fromSegmentation = false, bool skipLatentNoise = false)
     {
         if (threshold > 0)
         {
@@ -327,17 +327,17 @@ public class WorkflowGenerator
         string scaledImage = CreateNode("SwarmImageScaleForMP", new JObject()
         {
             ["image"] = new JArray() { croppedImage, 0 },
-            ["width"] = UserInput.Get(T2IParamTypes.Width, 1024),
-            ["height"] = UserInput.GetImageHeight(),
-            ["can_shrink"] = false
+            ["width"] = UserInput.GetModelForInpainting(fromSegmentation)?.StandardHeight,
+            ["height"] = UserInput.GetModelForInpainting(fromSegmentation)?.StandardWidth,
+            ["can_shrink"] = true
         });
         string vaeEncoded = CreateVAEEncode(vae, [scaledImage, 0], null, true);
-        string masked = CreateNode("SetLatentNoiseMask", new JObject()
+        string latentNoiseMasked = CreateNode("SetLatentNoiseMask", new JObject()
         {
             ["samples"] = new JArray() { vaeEncoded, 0 },
             ["mask"] = new JArray() { croppedMask, 0 }
         });
-        return (boundsNode, croppedMask, masked);
+        return (boundsNode, croppedMask, skipLatentNoise ? vaeEncoded : latentNoiseMasked);
     }
 
     /// <summary>Returns a masked image composite with mask thresholding.</summary>
@@ -361,7 +361,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>Recomposites a masked image edit, after <see cref="CreateImageMaskCrop(JArray, JArray, int)"/> was used.</summary>
-    public JArray RecompositeCropped(string boundsNode, JArray croppedMask, JArray firstImage, JArray newImage)
+    public JArray RecompositeCropped(string boundsNode, JArray croppedMask, JArray firstImage, JArray newImage, bool useFeatherMask = false)
     {
         string scaledBack = CreateNode("ImageScale", new JObject()
         {
@@ -371,16 +371,32 @@ public class WorkflowGenerator
             ["upscale_method"] = "bilinear",
             ["crop"] = "disabled"
         });
-        string thresholded = CreateNode("ThresholdMask", new JObject()
+        string mask;
+        if (useFeatherMask)
         {
-            ["mask"] = croppedMask,
-            ["value"] = 0.001
-        });
+            int featherSize = 16;
+            mask = CreateNode("FeatherMask", new JObject()
+            {
+                ["mask"] = croppedMask,
+                ["left"] = featherSize,
+                ["right"] = featherSize,
+                ["top"] = featherSize,
+                ["bottom"] = featherSize
+            });
+        }
+        else
+        {
+            mask = CreateNode("ThresholdMask", new JObject()
+            {
+                ["mask"] = croppedMask,
+                ["value"] = 0.001
+            });
+        }
         string composited = CreateNode("ImageCompositeMasked", new JObject()
         {
             ["destination"] = firstImage,
             ["source"] = new JArray() { scaledBack, 0 },
-            ["mask"] = new JArray() { thresholded, 0 },
+            ["mask"] = new JArray() { mask, 0 },
             ["x"] = new JArray() { boundsNode, 0 },
             ["y"] = new JArray() { boundsNode, 1 },
             ["resize_source"] = false
