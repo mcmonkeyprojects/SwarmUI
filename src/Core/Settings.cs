@@ -328,6 +328,9 @@ public class Settings : AutoConfiguration
         [ConfigComment($"Optional source file for auto-completion texts (inside Data/Autocompletions).\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/Autocompletions.md#word-lists\">docs/Features/Autocompletions</a> for info.")]
         [SettingsOptions(Impl = typeof(AutocompletionsImpl))]
         public string AutoCompletionsSource = "";
+
+        [ConfigComment("If true, the auto-completion will escape parentheses with backslashes to prevent parsing errors.")]
+        public bool AutoCompleteEscapeParens = true;
     }
 
     /// <summary>UI-related settings.</summary>

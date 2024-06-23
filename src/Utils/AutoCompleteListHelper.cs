@@ -48,15 +48,20 @@ public class AutoCompleteListHelper
     }
 
     /// <summary>Gets a specific data list.</summary>
-    public static string[] GetData(string name)
+    public static string[] GetData(string name, bool escapeParens)
     {
         if (!FileNames.Contains(name))
         {
             return null;
         }
-        return AutoCompletionLists.GetOrCreate(name, () =>
+        string[] result = AutoCompletionLists.GetOrCreate(name, () =>
         {
             return File.ReadAllText($"{FolderPath}/{name}").Replace('\r', '\n').SplitFast('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s) && !s.StartsWithFast('#')).ToArray();
         });
+        if (escapeParens)
+        {
+            result = [.. result.Select(s => s.Replace("(", "\\(").Replace(")", "\\)"))];
+        }
+        return result;
     }
 }
