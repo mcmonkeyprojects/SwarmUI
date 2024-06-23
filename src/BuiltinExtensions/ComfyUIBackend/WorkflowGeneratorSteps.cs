@@ -1032,7 +1032,7 @@ public class WorkflowGeneratorSteps
                         });
                         g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                     }
-                    (string boundsNode, string croppedMask, string masked) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
+                    (string boundsNode, string croppedMask, string masked) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1), fromSegmentation: true);
                     g.EnableDifferential();
                     (model, clip) = g.LoadLorasForConfinement(part.ContextID, model, clip);
                     JArray prompt = g.CreateConditioning(part.Prompt, clip, t2iModel, true);
