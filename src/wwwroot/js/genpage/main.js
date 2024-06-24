@@ -599,6 +599,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             let [width, height] = naturalDim();
             let input_overrides = {
                 'initimage': url,
+                'images': 1,
                 'width': width * 2,
                 'height': height * 2
             };
