@@ -24,11 +24,11 @@ rm dotnet-install.sh
 # https://learn.microsoft.com/en-us/dotnet/core/install/linux-scripted-manual#scripted-install
 wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
 chmod +x dotnet-install.sh
+cd ..
 
 # Note: manual installers that want to avoid home dir, add to both of the below lines: --install-dir $SCRIPT_DIR/.dotnet
-./dotnet-install.sh --channel 8.0 --runtime aspnetcore
-./dotnet-install.sh --channel 8.0
-cd ..
+./launchtools/dotnet-install.sh --channel 8.0 --runtime aspnetcore
+./launchtools/dotnet-install.sh --channel 8.0
 
 # Launch
 ./launch-linux.sh $@
