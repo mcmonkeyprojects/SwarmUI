@@ -273,6 +273,8 @@ class SwarmKSampler:
         if sampler_name in ["euler_cfg_pp_regular", "euler_cfg_pp_alt"]:
             replace_sampler_names = samplers.KSampler.SAMPLERS
             samplers.KSampler.SAMPLERS = [sampler_name] + samplers.SAMPLER_NAMES
+            if sampler_name == "euler_cfg_pp_regular":
+                cfg /= 4.0
         try:
             samples = comfy.sample.sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
                                     denoise=1.0, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step,
