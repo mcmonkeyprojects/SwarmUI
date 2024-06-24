@@ -44,8 +44,6 @@ public class T2IParamInput
 
     public class PromptTagContext
     {
-        public Random Random;
-
         public T2IParamInput Input;
 
         public string Param;
@@ -158,7 +156,7 @@ public class T2IParamInput
             List<string> vals = [.. rawVals];
             for (int i = 0; i < count; i++)
             {
-                int index = context.Random.Next(vals.Count);
+                int index = context.Input.GetWildcardRandom().Next(vals.Count);
                 string choice = vals[index];
                 if (TryInterpretNumberRange(choice, out string number))
                 {
@@ -243,7 +241,7 @@ public class T2IParamInput
             List<string> vals = [.. wildcard.Options];
             for (int i = 0; i < count; i++)
             {
-                int index = context.Random.Next(vals.Count);
+                int index = context.Input.GetWildcardRandom().Next(vals.Count);
                 string choice = vals[index];
                 result += context.Parse(choice).Trim() + partSeparator;
                 if (vals.Count == 1)
@@ -598,6 +596,34 @@ public class T2IParamInput
         proc(T2IParamTypes.NegativePrompt);
     }
 
+    /// <summary>Random instance for <see cref="T2IParamTypes.WildcardSeed"/>.</summary>
+    public Random WildcardRandom = null;
+
+    /// <summary>Gets the random instance for <see cref="T2IParamTypes.WildcardSeed"/>, initializing it if needed.</summary>
+    public Random GetWildcardRandom()
+    {
+        if (WildcardRandom is not null)
+        {
+            return WildcardRandom;
+        }
+        long backupSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + 17;
+        if (!TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
+        {
+            wildcardSeed = backupSeed;
+        }
+        if (wildcardSeed > int.MaxValue)
+        {
+            wildcardSeed %= int.MaxValue;
+        }
+        if (wildcardSeed == -1)
+        {
+            wildcardSeed = Random.Shared.Next(int.MaxValue);
+        }
+        Set(T2IParamTypes.WildcardSeed, wildcardSeed);
+        WildcardRandom = new((int)wildcardSeed);
+        return WildcardRandom;
+    }
+
     /// <summary>Special utility to process prompt inputs before the request is executed (to parse wildcards, embeddings, etc).</summary>
     public string ProcessPromptLike(T2IRegisteredParam<string> param)
     {
@@ -607,18 +633,7 @@ public class T2IParamInput
             return "";
         }
         string fixedVal = val.Replace('\0', '\a').Replace("\a", "");
-        long backupSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + param.Type.Name.Length;
-        long wildcardSeed = Get(T2IParamTypes.WildcardSeed, backupSeed);
-        if (wildcardSeed > int.MaxValue)
-        {
-            wildcardSeed %= int.MaxValue;
-        }
-        if (wildcardSeed == -1)
-        {
-            wildcardSeed = Random.Shared.Next(int.MaxValue);
-        }
-        Random rand = new((int)wildcardSeed);
-        PromptTagContext context = new() { Input = this, Random = rand, Param = param.Type.ID };
+        PromptTagContext context = new() { Input = this, Param = param.Type.ID };
         fixedVal = ProcessPromptLike(fixedVal, context);
         if (fixedVal != val)
         {

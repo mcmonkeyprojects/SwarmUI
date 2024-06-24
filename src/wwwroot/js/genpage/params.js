@@ -775,7 +775,9 @@ function reuseLastParamVal(paramId) {
     }
     let params = JSON.parse(currentMetadataVal).sui_image_params;
     if (pid in params) {
-        getRequiredElementById(paramId).value = params[pid];
+        let elem = getRequiredElementById(paramId);
+        elem.value = params[pid];
+        triggerChangeFor(elem);
     }
 }
 
