@@ -8,6 +8,7 @@ cd $SCRIPT_DIR
 export PATH="$SCRIPT_DIR/.dotnet:~/.dotnet:$PATH"
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 
 # Server settings option
 if [ -f ./src/bin/always_pull ]; then
