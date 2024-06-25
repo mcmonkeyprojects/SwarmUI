@@ -2,7 +2,7 @@
 
 # Ensure correct local path.
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-cd $SCRIPT_DIR
+cd "$SCRIPT_DIR"
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
