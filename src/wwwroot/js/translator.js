@@ -113,6 +113,7 @@ function applyTranslations(root = null) {
             if (!elem.dataset.pretranslated) {
                 elem.dataset.pretranslated = elem.textContent;
             }
+            elem.dataset.textContentWasTranslated = true;
             elem.textContent = translated;
         }
     }
@@ -147,5 +148,5 @@ function translateableHtml(key) {
     if (key.replaceAll('<br>', '').includes('<')) {
         return key;
     }
-    return `<span class="translate" data-pretranslated="${key}">${translate(key)}</span>`;
+    return `<span class="translate" data-pretranslated="${key.replaceAll('<br>', '')}">${translate(key)}</span>`;
 }
