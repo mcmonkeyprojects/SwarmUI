@@ -966,11 +966,11 @@ class ImageEditor {
         this.toolHotkeys = {};
         this.addTool(new ImageEditorToolOptions(this));
         this.addTool(new ImageEditorToolGeneral(this));
-        this.activateTool('general');
         this.addTool(new ImageEditorToolMove(this));
         this.addTool(new ImageEditorToolSelect(this));
         this.addTool(new ImageEditorToolBrush(this, 'brush', 'paintbrush', 'Paintbrush', 'Draw on the image.\nHotKey: B', false, 'b'));
         this.addTool(new ImageEditorToolBrush(this, 'eraser', 'eraser', 'Eraser', 'Erase parts of the image.\nHotKey: E', true, 'e'));
+        this.activateTool('brush');
         this.maxHistory = 10;
     }
 
@@ -1057,6 +1057,14 @@ class ImageEditor {
         this.maskHelperCanvas = document.createElement('canvas');
         this.maskHelperCtx = this.maskHelperCanvas.getContext('2d');
         this.resize();
+        this.autoZoom();
+    }
+
+    autoZoom() {
+        this.zoomLevel = Math.min(this.canvas.width / this.realWidth, this.canvas.height / this.realHeight) * 0.9;
+        let [x, y] = this.imageCoordToCanvasCoord(this.realWidth / 2, this.realHeight / 2);
+        this.offsetX = this.canvas.width / 2 - x;
+        this.offsetY = this.canvas.height / 2 - y;
     }
 
     handleCanvasImageDrop(e) {
@@ -1230,6 +1238,7 @@ class ImageEditor {
         this.doFit();
         if (!this.canvas) {
             this.createCanvas();
+            this.redraw();
         }
         else {
             this.resize();
@@ -1374,7 +1383,10 @@ class ImageEditor {
         this.addLayer(maskLayer);
         this.realWidth = img.naturalWidth;
         this.realHeight = img.naturalHeight;
+        this.offsetX = 0
+        this.offsetY = 0;
         if (this.active) {
+            this.autoZoom();
             this.redraw();
         }
     }
