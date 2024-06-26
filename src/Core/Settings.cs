@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
 using SwarmUI.Backends;
 using SwarmUI.Utils;
+using System.Reflection;
 
 namespace SwarmUI.Core;
 
@@ -384,4 +385,62 @@ public class ManualSettingsOptionsAttribute : SettingsOptionsAttribute
     public override string[] Options => Vals;
 
     public override string[] Names => Vals;
+}
+
+/// <summary>Attribute that marks that the value should be treated as a secret, and not transmitted to remote clients.</summary>
+[AttributeUsage(AttributeTargets.Field)]
+public class ValueIsSecretAttribute : Attribute
+{
+}
+
+public static class AutoConfigExtensions
+{
+    public static IEnumerable<AutoConfiguration.Internal.SingleFieldData> GetSecretFields(AutoConfiguration config) =>
+        config.InternalData.SharedData.Fields.Values.Where(f => f.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null);
+    public static IEnumerable<AutoConfiguration.Internal.SingleFieldData> GetSubConfigFields(AutoConfiguration config) =>
+        config.InternalData.SharedData.Fields.Values.Where(f => f.Field.FieldType.IsSubclassOf(typeof(AutoConfiguration)));
+
+    /// <summary>Saves all data from an auto-config section, but explicitly excludes any values marked as secret.</summary>
+    /// <param name="altValue">The value to replace secret values with, or null to exclude entirely.</param>
+    /// <param name="unlessVal">If this value is not null, any value that matches this will be allowed to stay.</param>
+    public static FDSSection SaveAllWithoutSecretValues(this AutoConfiguration config, object altValue = null, object unlessVal = null)
+    {
+        FDSSection section = config.Save(true);
+        foreach (AutoConfiguration.Internal.SingleFieldData field in GetSecretFields(config))
+        {
+            if (unlessVal is not null && unlessVal.Equals(section.GetObject(field.Name)))
+            {
+                continue;
+            }
+            section.Remove(field.Name);
+            if (altValue is not null)
+            {
+                section.Set(field.Name, altValue);
+            }
+        }
+        foreach (AutoConfiguration.Internal.SingleFieldData field in GetSubConfigFields(config))
+        {
+            section.Set(field.Name, (field.GetValue(config) as AutoConfiguration).SaveAllWithoutSecretValues(altValue));
+        }
+        return section;
+    }
+
+    /// <summary>Returns a copy of the <see cref="FDSSection"/>, with any secret values left at a default-recognizable-value excluded, for loading convenience.</summary>
+    public static FDSSection ExcludeSecretValuesThatMatch(this AutoConfiguration config, FDSSection section, object secretDefaultValue)
+    {
+        FDSSection dup = new(section.SaveToString());
+        foreach (AutoConfiguration.Internal.SingleFieldData field in GetSecretFields(config))
+        {
+            object curVal = dup.GetObject(field.Name);
+            if (curVal is not null && secretDefaultValue.Equals(curVal))
+            {
+                dup.Remove(field.Name);
+            }
+        }
+        foreach (AutoConfiguration.Internal.SingleFieldData field in GetSubConfigFields(config))
+        {
+            dup.Set(field.Name, (field.GetValue(config) as AutoConfiguration).ExcludeSecretValuesThatMatch(dup.GetSection(field.Name), secretDefaultValue));
+        }
+        return dup;
+    }
 }

@@ -84,7 +84,10 @@ function addBackendToHtml(backend, disable, spot = null) {
     for (let setting of type.settings) {
         let input = document.createElement('div');
         let pop = `<div class="sui-popover" id="popover_setting_${backend.id}_${setting.name}"><b>${escapeHtml(setting.name)}</b> (${setting.type}):<br>&emsp;${escapeHtml(setting.description)}</div>`;
-        if (setting.type == 'text') {
+        if (setting.is_secret) {
+            input.innerHTML = makeSecretInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name], setting.placeholder) + pop;
+        }
+        else if (setting.type == 'text') {
             input.innerHTML = makeTextInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name], 'normal', setting.placeholder) + pop;
         }
         else if (setting.type == 'integer') {

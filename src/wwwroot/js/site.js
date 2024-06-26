@@ -546,6 +546,21 @@ function makeNumberInput(featureid, id, paramid, name, description, value, min, 
         </div>`;
 }
 
+function makeSecretInput(featureid, id, paramid, name, description, value, placeholder, toggles = false, genPopover = false, popover_button = true) {
+    name = escapeHtml(name);
+    featureid = featureid ? ` data-feature-require="${featureid}"` : '';
+    let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
+    featureid += featureid2;
+    return `
+    ${genPopover ? makeGenericPopover(id, name, 'Boolean', description, '') : ''}
+    <div class="auto-input auto-text-box auto-input-flex-wide"${featureid}>
+        <label>
+            <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
+        </label>
+        <input type="password" class="auto-text auto-text-block" translate translate-no-text" id="${id}" data-param_id="${paramid}" placeholder="${escapeHtmlNoBr(placeholder)}" data-name="${name}" autocomplete="false" value="${escapeHtmlNoBr(value)}" />
+    </div>`;
+}
+
 function makeTextInput(featureid, id, paramid, name, description, value, format, placeholder, toggles = false, genPopover = false, popover_button = true) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';

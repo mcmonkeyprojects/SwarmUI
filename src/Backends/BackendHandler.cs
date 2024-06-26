@@ -192,7 +192,8 @@ public class BackendHandler
                 ["name"] = f.Name,
                 ["type"] = NetTypeLabels[f.Field.FieldType],
                 ["description"] = f.Field.GetCustomAttribute<AutoConfiguration.ConfigComment>()?.Comments?.ToString() ?? "",
-                ["placeholder"] = f.Field.GetCustomAttribute<SuggestionPlaceholder>()?.Text ?? ""
+                ["placeholder"] = f.Field.GetCustomAttribute<SuggestionPlaceholder>()?.Text ?? "",
+                ["is_secret"] = f.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null
             };
         }).ToList();
         JObject netDesc = new()
@@ -345,6 +346,7 @@ public class BackendHandler
             return null;
         }
         await ShutdownBackendCleanly(data);
+        newSettings = data.Backend.SettingsRaw.ExcludeSecretValuesThatMatch(newSettings, "\t<secret>");
         data.Backend.SettingsRaw.Load(newSettings);
         if (title is not null)
         {

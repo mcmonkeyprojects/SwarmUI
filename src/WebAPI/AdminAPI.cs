@@ -4,11 +4,9 @@ using FreneticUtilities.FreneticToolkit;
 using Hardware.Info;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
-using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 
@@ -36,6 +34,7 @@ public static class AdminAPI
         JObject output = [];
         foreach ((string key, AutoConfiguration.Internal.SingleFieldData data) in config.InternalData.SharedData.Fields)
         {
+            bool isSecret = data.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null;
             string typeName = data.IsSection ? "group" : T2IParamTypes.SharpTypeToDataType(data.Field.FieldType, false).ToString();
             if (typeName is null || typeName == T2IParamDataType.UNSET.ToString())
             {
@@ -57,7 +56,7 @@ public static class AdminAPI
             {
                 ["type"] = typeName.ToLowerFast(),
                 ["name"] = data.Name,
-                ["value"] = JToken.FromObject(val is List<string> list ? list.JoinString(" || ") : val),
+                ["value"] = isSecret ? "\t<secret>" : JToken.FromObject(val is List<string> list ? list.JoinString(" || ") : val),
                 ["description"] = data.Field.GetCustomAttribute<AutoConfiguration.ConfigComment>()?.Comments ?? "",
                 ["values"] = vals == null ? null : new JArray(vals),
                 ["value_names"] = val_names == null ? null : new JArray(val_names)
@@ -109,10 +108,15 @@ public static class AdminAPI
                 Logs.Error($"User '{session.User.UserID}' tried to set unknown server setting '{key}' to '{val}'.");
                 continue;
             }
+            bool isSecret = field.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null;
             object obj = DataToType(val, field.Field.FieldType);
             if (obj is null)
             {
                 Logs.Error($"User '{session.User.UserID}' tried to set server setting '{key}' of type '{field.Field.FieldType.Name}' to '{val}', but type-conversion failed.");
+                continue;
+            }
+            if (isSecret && obj is string str && str == "\t<secret>")
+            {
                 continue;
             }
             Program.ServerSettings.TrySetFieldValue(key, obj);
