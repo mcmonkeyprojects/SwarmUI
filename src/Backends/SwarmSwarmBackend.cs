@@ -148,6 +148,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         {
             JObject backendData = await HttpClient.PostJson($"{Address}/API/ListBackends", new() { ["session_id"] = Session, ["nonreal"] = true, ["full_data"] = true }, RequestAdapter());
             AutoThrowException(backendData);
+            Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got backend data list");
             if (IsReal && fullLoad)
             {
                 List<Task> tasks = [];
@@ -157,16 +158,24 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     string runType = type;
                     tasks.Add(Task.Run(async () =>
                     {
-                        JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 10, ["subtype"] = runType }, RequestAdapter());
-                        Dictionary<string, JObject> remoteModelsParsed = [];
-                        foreach (JToken x in modelsData["files"].ToList())
+                        try
                         {
-                            JObject data = x.DeepClone() as JObject;
-                            data["local"] = false;
-                            remoteModelsParsed[data["name"].ToString()] = data;
+                            JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 999, ["subtype"] = runType }, RequestAdapter());
+                            Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got {runType} model list");
+                            Dictionary<string, JObject> remoteModelsParsed = [];
+                            foreach (JToken x in modelsData["files"].ToList())
+                            {
+                                JObject data = x.DeepClone() as JObject;
+                                data["local"] = false;
+                                remoteModelsParsed[data["name"].ToString()] = data;
+                            }
+                            RemoteModels[runType] = remoteModelsParsed;
+                            Models[runType] = [.. remoteModelsParsed.Keys];
                         }
-                        RemoteModels[runType] = remoteModelsParsed;
-                        Models[runType] = [.. remoteModelsParsed.Keys];
+                        catch (Exception ex)
+                        {
+                            Logs.Error($"Failed to get {runType} models from remote Swarm at {Address}: {ex}");
+                        }
                     }));
                 }
                 await Task.WhenAll(tasks);

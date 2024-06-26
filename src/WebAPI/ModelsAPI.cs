@@ -151,7 +151,7 @@ public static class ModelsAPI
         {
             return new JObject() { ["error"] = "Invalid sub-type." };
         }
-        depth = Math.Clamp(depth, 1, 10);
+        depth = Math.Clamp(depth, 1, 20);
         path = path.Replace('\\', '/');
         if (path != "")
         {
