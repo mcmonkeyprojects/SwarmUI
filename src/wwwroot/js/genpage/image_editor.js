@@ -661,6 +661,14 @@ class ImageEditorLayer {
             this.editor.sortLayers();
         }, true);
         this.menuPopover.appendChild(buttonConvert);
+        let buttonInvert = createDiv(null, 'sui_popover_model_button');
+        buttonInvert.innerText = `Invert ${(this.isMask ? `Mask` : `Colors`)}`;
+        buttonInvert.addEventListener('click', (e) => {
+            e.preventDefault();
+            hidePopover(popId);
+            this.invert();
+        }, true);
+        this.menuPopover.appendChild(buttonInvert);
         let sliderWrapper = createDiv(null, 'auto-slider-range-wrapper');
         let opacitySlider = document.createElement('input');
         opacitySlider.type = 'range';
@@ -715,6 +723,20 @@ class ImageEditorLayer {
         this.ctx = newCtx;
         this.width = width;
         this.height = height;
+    }
+
+    invert() {
+        let newCanvas = document.createElement('canvas');
+        newCanvas.width = this.canvas.width;
+        newCanvas.height = this.canvas.height;
+        let newCtx = newCanvas.getContext('2d');
+        newCtx.save();
+        newCtx.filter = 'invert(1)';
+        newCtx.drawImage(this.canvas, 0, 0, newCanvas.width, newCanvas.height);
+        newCtx.restore();
+        this.canvas = newCanvas;
+        this.ctx = newCtx;
+        this.editor.redraw();
     }
 
     canvasCoordToLayerCoord(x, y) {
