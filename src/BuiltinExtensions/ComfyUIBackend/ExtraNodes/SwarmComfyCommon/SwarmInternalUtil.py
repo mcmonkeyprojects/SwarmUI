@@ -26,19 +26,6 @@ NODE_CLASS_MAPPINGS = {
     "SwarmEmbedLoaderListProvider": SwarmEmbedLoaderListProvider,
 }
 
-# Inject CFG++ Samplers
-ORIG_SAMPLER_OBJECT = samplers.sampler_object
-def sampler_object(name):
-    if name == "euler_cfg_pp_regular":
-        from comfy_extras import nodes_advanced_samplers
-        return samplers.KSAMPLER(nodes_advanced_samplers.sample_euler_cfgpp)
-    elif name == "euler_cfg_pp_alt":
-        from comfy_extras import nodes_advanced_samplers
-        return samplers.KSAMPLER(nodes_advanced_samplers.sample_euler_cfgpp_alt)
-    return ORIG_SAMPLER_OBJECT(name)
-
-samplers.sampler_object = sampler_object
-
 
 # This is a dirty hack to shut up the errors from Dropdown combo mismatch, pending Comfy upstream fix
 ORIG_EXECUTION_VALIDATE = execution.validate_inputs
