@@ -1,5 +1,5 @@
 name: User Support
-description: "Something is broken inside of SwarmUI. (Do not use this if you're just having issues and need help)"
+description: "Use this if you need help with something, or you're experiencing an issue."
 labels: [ "User Support" ]
 body:
     - type: markdown
