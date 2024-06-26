@@ -19,27 +19,27 @@ body:
       validations:
             required: true
     - type: textarea
-        attributes:
+      attributes:
                 label: Actual Behavior
                 description: "What actually happened. Please include a screenshot of the issue if possible."
-        validations:
+      validations:
                 required: true
     - type: textarea
-        attributes:
+      attributes:
                 label: Steps to Reproduce
                 description: "How to reproduce the issue. Any specific parameters to use, any required extensions, etc."
-        validations:
+      validations:
                 required: true
     - type: textarea
-        attributes:
+      attributes:
                 label: Debug Logs
                 description: "Please go to `Server` -> `Logs` -> and set `View Type` to `Debug`, then copypaste all the text into here. If Swarm isn't starting, copy the logs from the terminal window if you can."
                 render: text
-        validations:
+      validations:
                 required: true
     - type: textarea
-        attributes:
+      attributes:
                 label: Other
                 description: "Any other additional information you think might be helpful."
-        validations:
+      validations:
                 required: false

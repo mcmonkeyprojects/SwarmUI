@@ -19,8 +19,8 @@ body:
       validations:
             required: true
     - type: textarea
-        attributes:
+      attributes:
                 label: Other
                 description: "Any other additional information you think might be helpful."
-        validations:
+      validations:
                 required: false
