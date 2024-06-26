@@ -704,6 +704,12 @@ function gotImagePreview(image, metadata, batchId) {
     return batch_div;
 }
 
+let originalPageTitle = document.title;
+
+let generatingPreviewsText = translatable('Generating live previews...');
+let waitingOnModelLoadText = translatable('waiting on model load');
+let generatingText = translatable('generating');
+
 function updateCurrentStatusDirect(data) {
     if (data) {
         num_current_gens = data.waiting_gens;
@@ -733,7 +739,9 @@ function updateCurrentStatusDirect(data) {
         let estTime = avgGenTime * total;
         timeEstimate = ` (est. ${durationStringify(estTime)})`;
     }
-    elem.innerHTML = total == 0 ? (isGeneratingPreviews ? 'Generating live previews...' : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, 'waiting on model load')} ${timeEstimate}...`;
+    elem.innerHTML = total == 0 ? (isGeneratingPreviews ? translatableText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
+    let max = Math.max(num_current_gens, num_models_loading, num_live_gens, num_backends_waiting);
+    document.title = total == 0 ? originalPageTitle : `(${max} ${generatingText.get()}) ${originalPageTitle}`;
 }
 
 let doesHaveGenCountUpdateQueued = false;
