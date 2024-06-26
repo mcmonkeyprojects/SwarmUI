@@ -40,8 +40,9 @@ function comfyFixMenuLocation() {
         return;
     }
     let swarmComfyMenu = getRequiredElementById('comfy_workflow_buttons_actual');
-    let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top').querySelector('.comfyui-menu');
-    if (bodyTop) {
+    let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top');
+    let bodyTopMenu = bodyTop ? bodyTop.querySelector('.comfyui-menu') : null;
+    if (bodyTopMenu) {
         swarmComfyMenu.style.top = '3rem';
     }
     else {
