@@ -639,6 +639,53 @@ class ImageEditorLayer {
         this.hasAnyContent = false;
     }
 
+    createButtons() {
+        let popId = `image_editor_layer_preview_${this.id}`;
+        this.menuPopover.innerHTML = '';
+        let buttonDelete = createDiv(null, 'sui_popover_model_button');
+        buttonDelete.innerText = 'Delete Layer';
+        buttonDelete.addEventListener('click', (e) => {
+            e.preventDefault();
+            hidePopover(popId);
+            this.editor.removeLayer(this);
+        }, true);
+        this.menuPopover.appendChild(buttonDelete);
+        let buttonConvert = createDiv(null, 'sui_popover_model_button');
+        buttonConvert.innerText = `Convert To ${(this.isMask ? `Image` : `Mask`)} Layer`;
+        buttonConvert.addEventListener('click', (e) => {
+            e.preventDefault();
+            hidePopover(popId);
+            this.isMask = !this.isMask;
+            this.infoSubDiv.innerText = (this.isMask ? `Mask` : `Image`);
+            this.createButtons();
+            this.editor.sortLayers();
+        }, true);
+        this.menuPopover.appendChild(buttonConvert);
+        let sliderWrapper = createDiv(null, 'auto-slider-range-wrapper');
+        let opacitySlider = document.createElement('input');
+        opacitySlider.type = 'range';
+        opacitySlider.className = 'auto-slider-range';
+        opacitySlider.min = '0';
+        opacitySlider.max = '100';
+        opacitySlider.step = '1';
+        opacitySlider.value = this.opacity * 100;
+        opacitySlider.oninput = e => updateRangeStyle(e);
+        opacitySlider.onchange = e => updateRangeStyle(e);
+        opacitySlider.addEventListener('input', () => {
+            this.opacity = parseInt(opacitySlider.value) / 100;
+            this.canvas.style.opacity = this.opacity;
+            this.editor.redraw();
+        });
+        let opacityLabel = document.createElement('label');
+        opacityLabel.innerHTML = 'Opacity&nbsp;';
+        let opacityDiv = createDiv(null, 'sui-popover-inline-block');
+        opacityDiv.appendChild(opacityLabel);
+        sliderWrapper.appendChild(opacitySlider);
+        opacityDiv.appendChild(sliderWrapper);
+        this.menuPopover.appendChild(opacityDiv);
+        updateRangeStyle(opacitySlider);
+    }
+
     getOffset() {
         let offseter = this;
         let [x, y] = [0, 0];
@@ -1241,6 +1288,7 @@ class ImageEditor {
         let infoSubDiv = createDiv(null, 'image_editor_layer_info_sub');
         infoSubDiv.innerText = (layer.isMask ? `Mask` : `Image`);
         infoDiv.appendChild(infoSubDiv);
+        layer.infoSubDiv = infoSubDiv;
         layer.div.appendChild(infoDiv);
         layer.div.addEventListener('click', (e) => {
             if (e.defaultPrevented) {
@@ -1260,51 +1308,11 @@ class ImageEditor {
             this.draggingLayer = null;
         });
         layer.div.layer = layer;
-        let popId = `image_editor_layer_preview_${this.layers.length - 1}`;
+        let popId = `image_editor_layer_preview_${layer.id}`;
         let menuPopover = createDiv(`popover_${popId}`, 'sui-popover');
         menuPopover.style.minWidth = '15rem';
         layer.menuPopover = menuPopover;
-        let buttonDelete = createDiv(null, 'sui_popover_model_button');
-        buttonDelete.innerText = 'Delete Layer';
-        buttonDelete.addEventListener('click', (e) => {
-            e.preventDefault();
-            hidePopover(popId);
-            this.removeLayer(layer);
-        }, true);
-        menuPopover.appendChild(buttonDelete);
-        let buttonConvert = createDiv(null, 'sui_popover_model_button');
-        buttonConvert.innerText = `Convert To ${(layer.isMask ? `Image` : `Mask`)} Layer`;
-        buttonConvert.addEventListener('click', (e) => {
-            e.preventDefault();
-            hidePopover(popId);
-            layer.isMask = !layer.isMask;
-            buttonConvert.innerText = `Convert To ${(layer.isMask ? `Image` : `Mask`)} Layer`;
-            infoSubDiv.innerText = (layer.isMask ? `Mask` : `Image`);
-            this.sortLayers();
-        }, true);
-        menuPopover.appendChild(buttonConvert);
-        let sliderWrapper = createDiv(null, 'auto-slider-range-wrapper');
-        let opacitySlider = document.createElement('input');
-        opacitySlider.type = 'range';
-        opacitySlider.className = 'auto-slider-range';
-        opacitySlider.min = '0';
-        opacitySlider.max = '100';
-        opacitySlider.step = '1';
-        opacitySlider.value = layer.opacity * 100;
-        opacitySlider.oninput = e => updateRangeStyle(e);
-        opacitySlider.onchange = e => updateRangeStyle(e);
-        opacitySlider.addEventListener('input', () => {
-            layer.opacity = parseInt(opacitySlider.value) / 100;
-            layer.canvas.style.opacity = layer.opacity;
-            this.redraw();
-        });
-        let opacityLabel = document.createElement('label');
-        opacityLabel.innerHTML = 'Opacity&nbsp;';
-        let opacityDiv = createDiv(null, 'sui-popover-inline-block');
-        opacityDiv.appendChild(opacityLabel);
-        sliderWrapper.appendChild(opacitySlider);
-        opacityDiv.appendChild(sliderWrapper);
-        menuPopover.appendChild(opacityDiv);
+        layer.createButtons();
         layer.canvas.style.opacity = layer.opacity;
         layer.div.addEventListener('contextmenu', (e) => {
             e.preventDefault();
@@ -1314,7 +1322,6 @@ class ImageEditor {
         });
         this.canvasList.appendChild(menuPopover);
         this.canvasList.insertBefore(layer.div, this.canvasList.firstChild);
-        updateRangeStyle(opacitySlider);
         this.setActiveLayer(layer);
         this.sortLayers();
     }
