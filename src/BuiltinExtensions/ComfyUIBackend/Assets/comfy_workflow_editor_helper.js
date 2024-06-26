@@ -204,8 +204,8 @@ function comfyAggressiveMouseUp() {
     }
     function sendUp(elem) {
         if (elem) {
-            elem.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
-            elem.dispatchEvent(new PointerEvent('pointerup', { isPrimary: true, bubbles: true, cancelable: true }));
+            elem.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, target: elem }));
+            elem.dispatchEvent(new PointerEvent('pointerup', { isPrimary: true, bubbles: true, cancelable: true, target: elem }));
             if (elem.onmouseup) {
                 elem.onmouseup();
             }

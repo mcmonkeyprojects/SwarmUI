@@ -69,7 +69,7 @@ public enum ParamViewType
 /// <param name="ParseList">An optional special method to clean up a list of text inputs.</param>
 /// <param name="ValidateValues">If set to false, prevents the normal validation of the 'Values' list.</param>
 /// <param name="VisibleNormally">Whether the parameter should be visible in the main UI.</param>
-/// <param name="IsAdvanced">If 'false', this is an advanced setting that should be hidden by a dropdown.</param>
+/// <param name="IsAdvanced">If set true, this is an advanced setting that should be hidden by a dropdown.</param>
 /// <param name="FeatureFlag">If set, this parameter is only available when backends or models provide the given feature flag.</param>
 /// <param name="Permission">If set, users must have the given permission flag to use this parameter.</param>
 /// <param name="Toggleable">If true, the setting's presence can be toggled on/off.</param>
