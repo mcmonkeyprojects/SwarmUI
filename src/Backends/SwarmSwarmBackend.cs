@@ -87,6 +87,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         Session = sessData["session_id"].ToString();
         string id = sessData["server_id"]?.ToString();
         BackendCount = sessData["count_running"].Value<int>();
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Connected to remote Swarm instance {Address} with server ID '{id}', and backend count '{BackendCount}'.");
         if (id == Utilities.LoopPreventionID.ToString())
         {
             Logs.Error($"Swarm is connecting to itself as a backend. This is a bad idea. Check the address being used: {Address}");
@@ -262,6 +263,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task Init()
     {
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Init, IsReal={IsReal}, Address={Settings.Address}");
         if (IsReal)
         {
             CanLoadModels = false;
