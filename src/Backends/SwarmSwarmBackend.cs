@@ -8,6 +8,7 @@ using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.WebSockets;
 
 namespace SwarmUI.Backends;
@@ -28,6 +29,10 @@ public class SwarmSwarmBackend : AbstractT2IBackend
 
         [ConfigComment("Whether the backend is allowed to use WebSocket connections.\nIf true, the backend will work normally and provide previews and updates and all.\nIf false, the backend will freeze while generating until the generation completes.\nFalse may be needed for some limited network environments.")]
         public bool AllowWebsocket = true;
+
+        [ConfigComment("If the remote instance has an 'Authorization:' header required, specify it here.\nFor example, 'Bearer abc123'.\nIf you don't know what this is, you don't need it.")]
+        [ValueIsSecret]
+        public string AuthorizationHeader = "";
     }
 
     /// <summary>Internal HTTP handler.</summary>
@@ -66,9 +71,19 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Gets the current target address.</summary>
     public string Address => Settings.Address.TrimEnd('/'); // Remove trailing slash to avoid issues.
 
+    /// <summary>Gets a request adapter appropriate to this Swarm backend, including eg auth headers.</summary>
+    public Action<HttpRequestMessage> RequestAdapter()
+    {
+        if (string.IsNullOrWhiteSpace(Settings.AuthorizationHeader))
+        {
+            return null;
+        }
+        return req => req.Headers.Authorization = AuthenticationHeaderValue.Parse(Settings.AuthorizationHeader);
+    }
+
     public async Task ValidateAndBuild()
     {
-        JObject sessData = await HttpClient.PostJson($"{Address}/API/GetNewSession", []);
+        JObject sessData = await HttpClient.PostJson($"{Address}/API/GetNewSession", [], RequestAdapter());
         Session = sessData["session_id"].ToString();
         string id = sessData["server_id"]?.ToString();
         BackendCount = sessData["count_running"].Value<int>();
@@ -113,7 +128,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         _ = RunWithSession(async () =>
         {
             Logs.Verbose($"Trigger refresh on remote swarm {Address}");
-            await HttpClient.PostJson($"{Address}/TriggerRefresh", new() { ["session_id"] = Session });
+            await HttpClient.PostJson($"{Address}/TriggerRefresh", new() { ["session_id"] = Session }, RequestAdapter());
             List<Task> tasks =
             [
                 ReviseRemoteDataList(true)
@@ -130,7 +145,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     {
         await RunWithSession(async () =>
         {
-            JObject backendData = await HttpClient.PostJson($"{Address}/API/ListBackends", new() { ["session_id"] = Session, ["nonreal"] = true, ["full_data"] = true });
+            JObject backendData = await HttpClient.PostJson($"{Address}/API/ListBackends", new() { ["session_id"] = Session, ["nonreal"] = true, ["full_data"] = true }, RequestAdapter());
             AutoThrowException(backendData);
             if (IsReal && fullLoad)
             {
@@ -141,7 +156,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     string runType = type;
                     tasks.Add(Task.Run(async () =>
                     {
-                        JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 10, ["subtype"] = runType });
+                        JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 10, ["subtype"] = runType }, RequestAdapter());
                         Dictionary<string, JObject> remoteModelsParsed = [];
                         foreach (JToken x in modelsData["files"].ToList())
                         {
@@ -272,7 +287,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 {
                     return;
                 }
-                if (Settings.AllowIdle)
+                if (Settings.AllowIdle && !NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
                 {
                     Status = BackendStatus.IDLE;
                 }
@@ -324,7 +339,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 }
                 catch (Exception ex)
                 {
-                    if (!Settings.AllowIdle)
+                    if (!Settings.AllowIdle || NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
                     {
                         Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex}");
                         Status = BackendStatus.ERRORED;
@@ -376,7 +391,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 ["model"] = model.Name,
                 ["backendId"] = LinkedRemoteBackendID
             };
-            JObject response = await HttpClient.PostJson($"{Address}/API/SelectModel", req);
+            JObject response = await HttpClient.PostJson($"{Address}/API/SelectModel", req, RequestAdapter());
             AutoThrowException(response);
             success = response.TryGetValue("success", out JToken successTok) && successTok.Value<bool>();
         });
@@ -411,7 +426,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         Image[] images = null;
         await RunWithSession(async () =>
         {
-            JObject generated = await HttpClient.PostJson($"{Address}/API/GenerateText2Image", BuildRequest(user_input));
+            JObject generated = await HttpClient.PostJson($"{Address}/API/GenerateText2Image", BuildRequest(user_input), RequestAdapter());
             AutoThrowException(generated);
             images = generated["images"].Select(img => Image.FromDataString(img.ToString())).ToArray();
         });
@@ -440,11 +455,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 if (user_input.InterruptToken.IsCancellationRequested)
                 {
                     // TODO: This will require separate remote sessions per-user for multiuser support
-                    HttpClient.PostJson($"{Address}/API/InterruptAll", new JObject()
-                    {
-                        ["session_id"] = Session,
-                        ["other_sessions"] = false
-                    }).Wait();
+                    await HttpClient.PostJson($"{Address}/API/InterruptAll", new() { ["session_id"] = Session, ["other_sessions"] = false }, RequestAdapter());
                 }
                 JObject response = await websocket.ReceiveJson(1024 * 1024 * 100, true);
                 if (response is not null)
@@ -497,7 +508,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         bool result = false;
         await RunWithSession(async () =>
         {
-            JObject response = await HttpClient.PostJson($"{Address}/API/FreeBackendMemory", new() { ["session_id"] = Session, ["system_ram"] = systemRam, ["backend"] = $"{LinkedRemoteBackendID}" });
+            JObject response = await HttpClient.PostJson($"{Address}/API/FreeBackendMemory", new() { ["session_id"] = Session, ["system_ram"] = systemRam, ["backend"] = $"{LinkedRemoteBackendID}" }, RequestAdapter());
             AutoThrowException(response);
             result = response["result"].Value<bool>();
         });

@@ -249,6 +249,15 @@ public static class Utilities
     }
 
     /// <summary>Sends a JSON object post and receives a JSON object back.</summary>
+    public static async Task<JObject> PostJson(this HttpClient client, string url, JObject data, Action<HttpRequestMessage> adaptFunc)
+    {
+        HttpRequestMessage request = new(HttpMethod.Post, url) { Content = JSONContent(data) };
+        adaptFunc?.Invoke(request);
+        HttpResponseMessage response = await client.SendAsync(request, Program.GlobalProgramCancel);
+        return (await response.Content.ReadAsStringAsync()).ParseToJson();
+    }
+
+    /// <summary>Sends a JSON object post and receives a JSON object back.</summary>
     public static async Task<JObject> PostJson(this HttpClient client, string url, JObject data)
     {
         return (await (await client.PostAsync(url, JSONContent(data), Program.GlobalProgramCancel)).Content.ReadAsStringAsync()).ParseToJson();

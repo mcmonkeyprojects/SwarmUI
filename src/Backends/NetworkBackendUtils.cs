@@ -110,6 +110,10 @@ public static class NetworkBackendUtils
             }
         }
 
+        public static HashSet<string> SeenErrors = [];
+
+        public static bool ExceptionIsNonIdleable(Exception ex) => ex is FormatException;
+
         public void IdleMonitorLoop()
         {
             CancellationToken cancel = IdleMonitorCancel.Token;
@@ -140,8 +144,19 @@ public static class NetworkBackendUtils
                     }
                     SetStatus(BackendStatus.RUNNING);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    if (ExceptionIsNonIdleable(ex))
+                    {
+                        Logs.Error($"Backend {Backend.BackendData.ID} failed to validate: {ex}");
+                        SetStatus(BackendStatus.ERRORED);
+                        return;
+                    }
+                    string error = $"{ex.GetType().Name}: {ex.Message}";
+                    if (SeenErrors.Add(error))
+                    {
+                        Logs.Debug($"Backend {Backend.BackendData.ID} idling because: {error}");
+                    }
                     SetStatus(BackendStatus.IDLE);
                 }
             }
