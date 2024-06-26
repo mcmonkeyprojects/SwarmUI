@@ -131,6 +131,8 @@ public class User
                     List<string> bad = Data.Presets.Where(p => SessionHandlerSource.T2IPresets.FindById(p) is null).ToList();
                     Logs.Error($"User {UserID} has presets that don't exist (database error?): {string.Join(", ", bad)}");
                     presets.RemoveAll(p => p is null);
+                    Data.Presets.RemoveAll(bad.Contains);
+                    Save();
                 }
                 return presets;
             }
