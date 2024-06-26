@@ -4,14 +4,14 @@ labels: [ "Feature" ]
 body:
     - type: markdown
       attributes:
-      value: |
-            Before submitting a **Feature Request**, please ensure the following:
+        value: |
+                Before submitting a **Feature Request**, please ensure the following:
 
-            1. You are running the latest version of SwarmUI. You can go to `Server` -> then press `Update and Restart` to update.
-            2. You have looked to make sure there is not already a feature that does what you need, and there is not already a Feature Request listed for the same idea.
-            3. This is something that makes sense to add to SwarmUI, as opposed to eg being a ComfyUI core feature.
+                1. You are running the latest version of SwarmUI. You can go to `Server` -> then press `Update and Restart` to update.
+                2. You have looked to make sure there is not already a feature that does what you need, and there is not already a Feature Request listed for the same idea.
+                3. This is something that makes sense to add to SwarmUI, as opposed to eg being a ComfyUI core feature.
 
-            If unsure, maybe ask on the [SwarmUI Discord](https://discord.gg/q2y38cqjNw) first.
+                If unsure, maybe ask on the [SwarmUI Discord](https://discord.gg/q2y38cqjNw) first.
     - type: textarea
       attributes:
             label: Feature Idea

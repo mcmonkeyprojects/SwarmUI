@@ -4,7 +4,7 @@ labels: [ "User Support" ]
 body:
     - type: markdown
       attributes:
-      value: |
+        value: |
             Before submitting a **User Report** issue, please ensure the following:
 
             **1:** You are running the latest version of SwarmUI. You can go to `Server` -> then press `Update and Restart` to update.
