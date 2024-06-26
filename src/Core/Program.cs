@@ -14,6 +14,7 @@ using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Runtime.Loader;
 
 namespace SwarmUI.Core;
@@ -88,6 +89,7 @@ public class Program
     {
         SpecialTools.Internationalize(); // Fix for MS's broken localization
         BsonMapper.Global.EmptyStringToNull = false; // Fix for LiteDB's broken handling of empty strings
+        ServicePointManager.DefaultConnectionLimit = 1000; // MS default limit is really low here
         Logs.Init($"=== SwarmUI v{Utilities.Version} Starting at {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss} ===");
         Utilities.LoadTimer timer = new();
         AssemblyLoadContext.Default.Unloading += (_) => Shutdown();

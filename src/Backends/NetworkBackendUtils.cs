@@ -19,8 +19,7 @@ public static class NetworkBackendUtils
     /// <summary>Create and preconfigure a basic <see cref="HttpClient"/> instance to make web requests with.</summary>
     public static HttpClient MakeHttpClient()
     {
-        ServicePointManager.DefaultConnectionLimit = 1000;
-        HttpClient client = new(new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromMinutes(10) });
+        HttpClient client = new(new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromMinutes(10), MaxConnectionsPerServer = 1000 });
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"SwarmUI/{Utilities.Version}");
         client.Timeout = TimeSpan.FromMinutes(10);
         return client;
