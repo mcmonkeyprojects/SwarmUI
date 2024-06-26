@@ -21,7 +21,7 @@ body:
       attributes:
                 label: Logs
                 description: "If your question relates to an issue you're experiencing, please go to `Server` -> `Logs` -> potentially set `View Type` to `Debug` as well, then copypaste all the text into here."
-                render: text
+                render: powershell
       validations:
                 required: false
     - type: textarea
