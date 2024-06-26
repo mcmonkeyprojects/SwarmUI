@@ -1272,6 +1272,17 @@ class ImageEditor {
             this.removeLayer(layer);
         }, true);
         menuPopover.appendChild(buttonDelete);
+        let buttonConvert = createDiv(null, 'sui_popover_model_button');
+        buttonConvert.innerText = `Convert To ${(layer.isMask ? `Image` : `Mask`)} Layer`;
+        buttonConvert.addEventListener('click', (e) => {
+            e.preventDefault();
+            hidePopover(popId);
+            layer.isMask = !layer.isMask;
+            buttonConvert.innerText = `Convert To ${(layer.isMask ? `Image` : `Mask`)} Layer`;
+            infoSubDiv.innerText = (layer.isMask ? `Mask` : `Image`);
+            this.sortLayers();
+        }, true);
+        menuPopover.appendChild(buttonConvert);
         let sliderWrapper = createDiv(null, 'auto-slider-range-wrapper');
         let opacitySlider = document.createElement('input');
         opacitySlider.type = 'range';
