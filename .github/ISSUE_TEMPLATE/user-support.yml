@@ -1,0 +1,32 @@
+name: User Support
+description: "Something is broken inside of SwarmUI. (Do not use this if you're just having issues and need help)"
+labels: [ "User Support" ]
+body:
+    - type: markdown
+      attributes:
+      value: |
+            Before submitting a **User Report** issue, please ensure the following:
+
+            **1:** You are running the latest version of SwarmUI. You can go to `Server` -> then press `Update and Restart` to update.
+            **2:** You have made an effort to find public answers to your question before asking here. In other words, you googled it first, and scrolled through recent help topics. It's also wise to do a CTRL+F search on the [SwarmUI Discord](https://discord.gg/q2y38cqjNw).
+
+            In general we recommend most support questions go through the [SwarmUI Discord](https://discord.gg/q2y38cqjNw).
+    - type: textarea
+      attributes:
+            label: Your question
+            description: "Post your question here. Please be as detailed as possible."
+      validations:
+            required: true
+    - type: textarea
+        attributes:
+                label: Logs
+                description: "If your question relates to an issue you're experiencing, please go to `Server` -> `Logs` -> potentially set `View Type` to `Debug` as well, then copypaste all the text into here."
+                render: text
+        validations:
+                required: false
+    - type: textarea
+        attributes:
+                label: Other
+                description: "Any other additional information you think might be helpful."
+        validations:
+                required: false
