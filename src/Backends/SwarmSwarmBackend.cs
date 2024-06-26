@@ -148,7 +148,10 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         {
             JObject backendData = await HttpClient.PostJson($"{Address}/API/ListBackends", new() { ["session_id"] = Session, ["nonreal"] = true, ["full_data"] = true }, RequestAdapter());
             AutoThrowException(backendData);
-            Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got backend data list");
+            if (fullLoad)
+            {
+                Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got backend data list");
+            }
             if (IsReal && fullLoad)
             {
                 List<Task> tasks = [];
@@ -161,9 +164,13 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                         try
                         {
                             JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 999, ["subtype"] = runType }, RequestAdapter());
-                            Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got {runType} model list");
+                            JToken[] remoteModels = [.. modelsData["files"]];
+                            if (fullLoad)
+                            {
+                                Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got {runType} model list, {remoteModels.Length} models");
+                            }
                             Dictionary<string, JObject> remoteModelsParsed = [];
-                            foreach (JToken x in modelsData["files"].ToList())
+                            foreach (JToken x in remoteModels)
                             {
                                 JObject data = x.DeepClone() as JObject;
                                 data["local"] = false;

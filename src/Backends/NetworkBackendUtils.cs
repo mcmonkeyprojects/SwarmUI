@@ -5,6 +5,7 @@ using SwarmUI.Core;
 using SwarmUI.Utils;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Runtime.InteropServices;
@@ -18,6 +19,7 @@ public static class NetworkBackendUtils
     /// <summary>Create and preconfigure a basic <see cref="HttpClient"/> instance to make web requests with.</summary>
     public static HttpClient MakeHttpClient()
     {
+        ServicePointManager.DefaultConnectionLimit = 1000;
         HttpClient client = new(new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromMinutes(10) });
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"SwarmUI/{Utilities.Version}");
         client.Timeout = TimeSpan.FromMinutes(10);
