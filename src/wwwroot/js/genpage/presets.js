@@ -31,25 +31,31 @@ function clearPresetView() {
     enableImage.checked = false;
     enableImage.disabled = true;
     for (let type of getPresetTypes()) {
-        let elem = getRequiredElementById('input_' + type.id);
-        let presetElem = getRequiredElementById('preset_input_' + type.id);
-        if (type.type == "boolean") {
-            presetElem.checked = elem.checked;
+        try {
+            let elem = getRequiredElementById('input_' + type.id);
+            let presetElem = getRequiredElementById('preset_input_' + type.id);
+            if (type.type == "boolean") {
+                presetElem.checked = elem.checked;
+            }
+            else if (type.type == "text") {
+                presetElem.value = "{value} " + elem.value;
+            }
+            else if (type.type == "list" && presetElem.tagName == "SELECT") {
+                let selected = [...elem.selectedOptions].map(o => o.value);
+                $(presetElem).val(selected);
+                $(presetElem).trigger('change');
+            }
+            else {
+                presetElem.value = elem.value;
+            }
+            triggerChangeFor(presetElem);
+            getRequiredElementById(presetElem.id + '_toggle').checked = false;
+            doToggleEnable(presetElem.id);
         }
-        else if (type.type == "text") {
-            presetElem.value = "{value} " + elem.value;
+        catch (e) {
+            console.log(`Something went wrong while clearing preset param ${type.id}: ${e}`);
+            console.log(e);
         }
-        else if (type.type == "list" && presetElem.tagName == "SELECT") {
-            let selected = [...elem.selectedOptions].map(o => o.value);
-            $(presetElem).val(selected);
-            $(presetElem).trigger('change');
-        }
-        else {
-            presetElem.value = elem.value;
-        }
-        triggerChangeFor(presetElem);
-        getRequiredElementById(presetElem.id + '_toggle').checked = false;
-        doToggleEnable(presetElem.id);
     }
 }
 
