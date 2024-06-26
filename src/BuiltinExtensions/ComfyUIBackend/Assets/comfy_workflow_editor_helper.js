@@ -35,21 +35,29 @@ function comfyFrame() {
 }
 
 function comfyFixMenuLocation() {
-    let frame = comfyFrame();
+    let frame = document.getElementById('comfy_workflow_frame');
     if (!frame) {
         return;
     }
-    let menu = frame.contentWindow.document.querySelector('.comfy-menu');
-    if (!menu) {
-        return;
+    let swarmComfyMenu = getRequiredElementById('comfy_workflow_buttons_actual');
+    let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top').querySelector('.comfyui-menu');
+    if (bodyTop) {
+        swarmComfyMenu.style.top = '3rem';
     }
-    let rect = menu.getBoundingClientRect();
-    if (rect.x > 300 || rect.y > 120) {
-        return;
+    else {
+        swarmComfyMenu.style.top = '1rem';
+        let menu = frame.contentWindow.document.querySelector('.comfy-menu');
+        if (menu) {
+            let rect = menu.getBoundingClientRect();
+            if (rect.x < 300 && rect.y < 120) {
+                console.log(`Comfy menu was behind the Swarm menu at ${rect.x} x ${rect.y}, fixing with a downward offset...`);
+                menu.style.top = '150px';
+            }
+        }
     }
-    console.log(`Comfy menu was behind the Swarm menu at ${rect.x} x ${rect.y}, fixing with a downward offset...`);
-    menu.style.top = '150px';
 }
+
+setTimeout(comfyFixMenuLocation, 10 * 1000);
 
 let comfyEnableInterval = null;
 
@@ -1158,7 +1166,7 @@ function comfySelectWorkflowForBrowser(workflow) {
 }
 
 let comfyWorkflowBrowser = new GenPageBrowserClass('comfy_workflow_browser_container', comfyListWorkflowsForBrowser, 'comfyworkflowbrowser', 'Small Thumbnails', comfyDescribeWorkflowForBrowser, comfySelectWorkflowForBrowser);
-comfyWorkflowBrowser.folderTreeVerticalSpacing = '8rem';
+comfyWorkflowBrowser.folderTreeVerticalSpacing = '9rem';
 comfyWorkflowBrowser.splitterMinWidth = 16 * 20;
 
 /**
