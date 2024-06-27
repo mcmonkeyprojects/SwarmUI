@@ -131,10 +131,10 @@ def split_latent_tensor(latent_tensor, tile_size=1024, scale_factor=8):
     # Calculate the overlap
     overlap_x = 0 if num_tiles_x == 1 else (num_tiles_x * latent_tile_size - width) / (num_tiles_x - 1)
     overlap_y = 0 if num_tiles_y == 1 else (num_tiles_y * latent_tile_size - height) / (num_tiles_y - 1)
-    if overlap_x < 32:
+    if overlap_x < 32 and num_tiles_x > 1:
         num_tiles_x += 1
         overlap_x = (num_tiles_x * latent_tile_size - width) / (num_tiles_x - 1)
-    if overlap_y < 32:
+    if overlap_y < 32 and num_tiles_y > 1:
         num_tiles_y += 1
         overlap_y = (num_tiles_y * latent_tile_size - height) / (num_tiles_y - 1)
 
