@@ -179,6 +179,7 @@ public class WebServer
     public void GatherExtensionPageAdditions()
     {
         StringBuilder scripts = new(), stylesheets = new(), tabHeader = new(), tabFooter = new();
+        ExtensionSharedFiles.Clear();
         Program.RunOnAllExtensions(e =>
         {
             foreach (string script in e.ScriptFiles)
@@ -212,10 +213,31 @@ public class WebServer
     }
 
     /// <summary>Called by <see cref="Program"/>, generally should not be touched externally.</summary>
-    public void Launch()
+    public void Launch(bool canRetry = true)
     {
         Logs.Init($"Starting webserver on {HostURL}");
-        WebApp.Start();
+        try
+        {
+            WebApp.Start();
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Error starting webserver: {ex}");
+            if (canRetry && ex is InvalidOperationException && ex.Message.StartsWith("A path base can only be configured"))
+            {
+                Logs.Error("\n\n");
+                Logs.Error("Your 'Host' value in settings is wrong. Will retry with 'localhost'.");
+                Logs.Error("If this launches as intended, you need to update your 'Host' setting to be a proper value.");
+                Logs.Error("\n\n");
+                SetHost("localhost", Port);
+                Prep();
+                Launch(false);
+            }
+            else
+            {
+                throw;
+            }
+        }
     }
 
     /// <summary>Test the validity of a user-given file path. Returns (path, consoleError, userError).</summary>
