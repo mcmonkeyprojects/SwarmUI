@@ -22,3 +22,4 @@
 - TODO: Custom expansion
     - TODO: Building your own extensions
     - TODO: Building your own backends
+- [Troubleshooting](/docs/Troubleshooting.md) for information about how to solve common problems.
