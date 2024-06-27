@@ -1301,7 +1301,7 @@ class PromptTabCompleteClass {
             else if (val.startsWith(`<raw>`)) {
                 name = val.substring(`<raw>`.length);
                 desc = '';
-                let split = name.split(',');
+                let split = name.split('\n');
                 name = split[0];
                 if (split.length > 1) {
                     className = `tag-text tag-type-${split[1]}`;

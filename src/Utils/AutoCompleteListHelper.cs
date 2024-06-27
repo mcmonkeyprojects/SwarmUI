@@ -48,7 +48,7 @@ public class AutoCompleteListHelper
     }
 
     /// <summary>Gets a specific data list.</summary>
-    public static string[] GetData(string name, bool escapeParens)
+    public static string[] GetData(string name, bool escapeParens, string suffix)
     {
         if (!FileNames.Contains(name))
         {
@@ -56,11 +56,19 @@ public class AutoCompleteListHelper
         }
         string[] result = AutoCompletionLists.GetOrCreate(name, () =>
         {
-            return File.ReadAllText($"{FolderPath}/{name}").Replace('\r', '\n').SplitFast('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s) && !s.StartsWithFast('#')).ToArray();
+            return [.. File.ReadAllText($"{FolderPath}/{name}").Replace('\r', '\n').SplitFast('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s) && !s.StartsWithFast('#'))];
         });
-        if (escapeParens)
+        result = [.. result];
+        for (int i = 0; i < result.Length; i++)
         {
-            result = [.. result.Select(s => s.Replace("(", "\\(").Replace(")", "\\)"))];
+            string[] parts = result[i].SplitFast(',');
+            string word = $"{parts[0]}{suffix}";
+            if (escapeParens)
+            {
+                word = word.Replace("(", "\\(").Replace(")", "\\)");
+            }
+            parts[0] = word;
+            result[i] = parts.JoinString("\n");
         }
         return result;
     }

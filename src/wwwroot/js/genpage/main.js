@@ -1555,7 +1555,7 @@ function loadUserData(callback) {
             let allSet = [];
             autoCompletionsList['all'] = allSet;
             for (let val of data.autocompletions) {
-                let split = val.split(',');
+                let split = val.split('\n');
                 let datalist = autoCompletionsList[val[0]];
                 let entry = { low: split[0].toLowerCase(), raw: val };
                 if (!datalist) {

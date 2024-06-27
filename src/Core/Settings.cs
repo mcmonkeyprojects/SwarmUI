@@ -332,6 +332,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, the auto-completion will escape parentheses with backslashes to prevent parsing errors.")]
         public bool AutoCompleteEscapeParens = true;
+
+        [ConfigComment("Optional suffix to append to autocompletes, eg ', ' to append commas.")]
+        public string AutoCompleteSuffix = "";
     }
 
     /// <summary>UI-related settings.</summary>
