@@ -349,7 +349,7 @@ public static class NetworkBackendUtils
                 Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
                 Utilities.RunCheckedTask(launch);
             } : null;
-            ReportLogsFromProcess(runningProcess, $"{nameSimple} on port {port}", identifier, out Action signalShutdownExpected, getStatus, s => { status = s; reviseStatus(s); }, onFail: onFail);
+            ReportLogsFromProcess(runningProcess, $"{nameSimple}", identifier, out Action signalShutdownExpected, getStatus, s => { status = s; reviseStatus(s); }, onFail: onFail);
             addShutdownEvent?.Invoke(signalShutdownExpected);
             int checks = 0;
             while (status == BackendStatus.LOADING)
@@ -422,18 +422,18 @@ public static class NetworkBackendUtils
                     if (line.StartsWith("Traceback (") || line.StartsWith("RuntimeError: "))
                     {
                         keepShowing = true;
-                        Logs.Warning($"{nameSimple} stdout: {line}");
+                        Logs.Warning($"[{nameSimple}/STDOUT] {line}");
                     }
                     else if (keepShowing)
                     {
-                        Logs.Warning($"{nameSimple} stdout: {line}");
+                        Logs.Warning($"[{nameSimple}/STDOUT] {line}");
                         keepShowing = shouldContinueErrorLine(line);
                     }
                     else
                     {
-                        Logs.Debug($"{nameSimple} stdout: {line}");
+                        Logs.Debug($"[{nameSimple}/STDOUT] {line}");
                     }
-                    logTracker.Track($"stdout: {line}");
+                    logTracker.Track($"[STDOUT] {line}");
                 }
                 status = getStatus();
                 Logs.Debug($"Status of {nameSimple} after process end is {status}");
@@ -468,19 +468,19 @@ public static class NetworkBackendUtils
                 if (lineLow.StartsWith("traceback (") || lineLow.Contains("error: "))
                 {
                     keepShowing = true;
-                    Logs.Warning($"{nameSimple} stderr: {line}");
+                    Logs.Warning($"[{nameSimple}/STDERR] {line}");
                 }
                 else if (keepShowing)
                 {
-                    Logs.Warning($"{nameSimple} stderr: {line}");
+                    Logs.Warning($"[{nameSimple}/STDERR] {line}");
                     keepShowing = shouldContinueErrorLine(line);
                 }
                 else
                 {
-                    Logs.Debug($"{nameSimple} stderr: {line}");
+                    Logs.Debug($"[{nameSimple}/STDERR] {line}");
                 }
-                errorLog.AppendLine($"{nameSimple} error: {line}");
-                logTracker.Track($"stderr: {line}");
+                errorLog.AppendLine($"[{nameSimple}/STDERR] {line}");
+                logTracker.Track($"[STDERR] {line}");
                 if (errorLog.Length > 1024 * 50)
                 {
                     errorLog = new StringBuilder(errorLog.ToString()[(1024 * 10)..]);
