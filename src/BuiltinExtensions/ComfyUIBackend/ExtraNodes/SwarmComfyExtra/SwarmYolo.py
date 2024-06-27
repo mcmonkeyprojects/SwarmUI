@@ -45,6 +45,13 @@ class SwarmYoloDetection:
         elif index > len(masks):
             return (torch.zeros_like(masks[0]), )
         else:
+            sortedindices = []
+            for mask in masks:
+                sum_x = (torch.sum(mask, dim=0) != 0).to(dtype=torch.int)
+                val = torch.argmax(sum_x).item()
+                sortedindices.append(val)
+            sortedindices = np.argsort(sortedindices)
+            masks = masks[sortedindices]
             return (masks[index - 1].unsqueeze(0), )
 
 NODE_CLASS_MAPPINGS = {
