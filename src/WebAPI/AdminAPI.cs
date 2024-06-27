@@ -127,6 +127,7 @@ public static class AdminAPI
             Program.BuildModelLists();
             Program.RefreshAllModelSets();
             Program.ModelPathsChangedEvent?.Invoke();
+            await Program.Backends.ReloadAllBackends();
         }
         Program.ReapplySettings();
         return new JObject() { ["success"] = true };
