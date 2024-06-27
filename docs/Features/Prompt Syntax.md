@@ -64,7 +64,7 @@
     - See [the feature announcement](https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-7236821) for details.
     - Note the first time you run with CLIPSeg, Swarm will automatically download [an fp16 safetensors version of the clipseg-rd64-refined model](https://huggingface.co/mcmonkey/clipseg-rd64-refined-fp16)
     - You can insert a `<lora:...>` inside the prompt area of the segment to have a lora model apply onto that segment
-    - You can also replace the `texthere` with `yolo-modelnamehere` to use YOLOv8 segmentation models
+    - You can also replace the `texthere` with `yolo-modelnamehere` to use YOLOv8 segmentation models (this is what "ADetailer" uses)
         - store your models in `(Swarm)/Models/yolov8`
         - Examples of valid YOLOv8 Segmentation models here: https://github.com/hben35096/assets/releases/
         - You can also do `yolo-modelnamehere-1` to grab exactly match #1, and `-2` for match #2, and etc.

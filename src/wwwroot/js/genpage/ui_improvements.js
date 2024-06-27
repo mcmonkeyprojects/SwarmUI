@@ -161,12 +161,18 @@ class AdvancedPopover {
         }
         else if (e.key == 'ArrowUp') {
             let selectedIndex = possible.findIndex(e => e.classList.contains('sui_popover_model_button_selected'));
+            if (selectedIndex == -1) {
+                selectedIndex = 0;
+            }
             possible[selectedIndex].classList.remove('sui_popover_model_button_selected');
             possible[(selectedIndex + possible.length - 1) % possible.length].classList.add('sui_popover_model_button_selected');
             this.scrollFix();
         }
         else if (e.key == 'ArrowDown') {
             let selectedIndex = possible.findIndex(e => e.classList.contains('sui_popover_model_button_selected'));
+            if (selectedIndex == -1) {
+                selectedIndex = 0;
+            }
             possible[selectedIndex].classList.remove('sui_popover_model_button_selected');
             possible[(selectedIndex + 1) % possible.length].classList.add('sui_popover_model_button_selected');
             this.scrollFix();
@@ -206,7 +212,7 @@ class AdvancedPopover {
         else if (this.flipYHeight != null && this.targetY > window.innerHeight / 2) {
             y = Math.max(0, this.targetY - this.flipYHeight - expected);
             this.popover.classList.add('sui_popover_reverse');
-            maxHeight = this.targetY - this.flipYHeight - 32;
+            maxHeight = Math.min(this.targetY - this.flipYHeight - 32, rawExpected);
         }
         else {
             y = this.targetY;
