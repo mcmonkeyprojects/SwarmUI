@@ -718,6 +718,8 @@ function comfyBuildParams(callback) {
                 node.inputs[fieldName] = numeric ? "%%_COMFYFIXME_${" + actualId + ":" + val + "}_ENDFIXME_%%" : "${" + actualId + ":" + val.replaceAll('${', '(').replaceAll('}', ')') + "}";
                 return result;
             }
+            claimOnce('SwarmLoraLoader', 'loras', 'lora_names', false);
+            claimOnce('SwarmLoraLoader', 'loraweights', 'lora_weights', false);
             if (doAutoClaim) {
                 if (claimOnce('EmptyLatentImage', 'width', 'width', true) && claimOnce('EmptyLatentImage', 'height', 'height', true) && claimOnce('EmptyLatentImage', 'batchsize', 'batch_size', true)) {
                     defaultParamsRetain.push('aspectratio');
@@ -736,8 +738,6 @@ function comfyBuildParams(callback) {
                 claimOnce('KSamplerAdvanced', 'cfg_scale', 'cfg', true);
                 claimOnce('SwarmLoadImageB64', 'init_image', 'image_base64', false);
                 claimOnce('LoadImage', 'initimage', 'image', false);
-                claimOnce('SwarmLoraLoader', 'loras', 'lora_names', false);
-                claimOnce('SwarmLoraLoader', 'loraweights', 'lora_weights', false);
                 if (node.class_type == 'CLIPTextEncode' && groupLabel.startsWith("Positive Prompt") && !defaultParamsRetain.includes('prompt') && typeof node.inputs.text == 'string') {
                     defaultParamsRetain.push('prompt');
                     defaultParamValue['prompt'] = node.inputs.text;
