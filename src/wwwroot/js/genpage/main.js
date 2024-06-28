@@ -559,7 +559,26 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             imagePathClean = imagePathClean.substring(firstSlash + 1);
         }
     }
-    quickAppendButton(buttons, 'Use As Init', () => {
+    let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
+    if (buttonsChoice == '')
+    {
+        buttonsChoice = 'Use As Init,Edit Image,Star,Reuse Parameters';
+    }
+    buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
+    let subButtons = [];
+    function includeButton(name, action, extraClass = '', title = '') {
+        let checkName = name.toLowerCase().replaceAll(' ', '');
+        if (checkName == 'starred') {
+            checkName = 'star';
+        }
+        if (buttonsChoice.includes(checkName)) {
+            quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
+        }
+        else {
+            subButtons.push({ key: name, action: action });
+        }
+    }
+    includeButton('Use As Init', () => {
         let initImageParam = document.getElementById('input_initimage');
         if (initImageParam) {
             let tmpImg = new Image();
@@ -585,7 +604,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             tmpImg.src = img.src;
         }
     }, '', 'Sets this image as the Init Image parameter input');
-    quickAppendButton(buttons, 'Edit Image', () => {
+    includeButton('Edit Image', () => {
         let initImageGroupToggle = getRequiredElementById('input_group_content_initimage_toggle');
         if (initImageGroupToggle) {
             initImageGroupToggle.checked = true;
@@ -594,7 +613,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         imageEditor.setBaseImage(img);
         imageEditor.activate();
     }, '', 'Opens an Image Editor for this image');
-    quickAppendButton(buttons, 'Upscale 2x', () => {
+    includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();
             let input_overrides = {
@@ -607,29 +626,31 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }));
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
     let metaParsed = JSON.parse(metadata) ?? { is_starred: false };
-    quickAppendButton(buttons, metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
+    includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
         toggleStar(imagePathClean, src);
     }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
-    quickAppendButton(buttons, 'Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
-    quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
-        let subButtons = [];
-        for (let added of buttonsForImage(imagePathClean, src)) {
-            if (added.href) {
-                subButtons.push({ key: added.label, href: added.href, is_download: added.is_download });
-            }
-            else {
-                subButtons.push({ key: added.label, action: added.onclick });
-            }
+    includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
+    includeButton('View In History', () => {
+        let folder = imagePathClean;
+        let lastSlash = folder.lastIndexOf('/');
+        if (lastSlash != -1) {
+            folder = folder.substring(0, lastSlash);
         }
-        subButtons.push({ key: 'View In History', action: () => {
-            let folder = imagePathClean;
-            let lastSlash = folder.lastIndexOf('/');
-            if (lastSlash != -1) {
-                folder = folder.substring(0, lastSlash);
-            }
-            getRequiredElementById('imagehistorytabclickable').click();
-            imageHistoryBrowser.navigate(folder);
-        } });
+        getRequiredElementById('imagehistorytabclickable').click();
+        imageHistoryBrowser.navigate(folder);
+    }, '', 'Jumps the Image History browser to where this image is at.');
+    for (let added of buttonsForImage(imagePathClean, src)) {
+        if (added.label == 'Star') {
+            continue;
+        }
+        if (added.href) {
+            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download });
+        }
+        else {
+            includeButton(added.label, added.onclick, '', '');
+        }
+    }
+    quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
         let rect = button.getBoundingClientRect();
         new AdvancedPopover('image_more_popover', subButtons, false, rect.x, rect.y + button.offsetHeight + 6, document.body, null);
 

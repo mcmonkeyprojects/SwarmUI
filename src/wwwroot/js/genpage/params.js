@@ -46,7 +46,10 @@ function getHtmlForParam(param, prefix) {
             case 'list':
                 if (param.values) {
                     return {html: makeMultiselectInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.values, param.default, "Select...", param.toggleable, !param.no_popover) + pop,
-                        runnable: () => $(`#${prefix}${param.id}`).select2({ theme: "bootstrap-5", width: 'style', placeholder: $(this).data('placeholder'), closeOnSelect: false }) };
+                        runnable: () => {
+                            $(`#${prefix}${param.id}`).select2({ theme: "bootstrap-5", width: 'style', placeholder: $(this).data('placeholder'), closeOnSelect: false });
+                        }
+                    };
                 }
                 return {html: makeTextInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, param.view_type, param.description, param.toggleable, false, !param.no_popover) + pop};
             case 'model':
@@ -787,6 +790,13 @@ function debugShowHiddenParams() {
         let hiddenArea = getRequiredElementById(id);
         hiddenArea.style.display = 'block';
         hiddenArea.style.visibility = 'visible';
+    }
+    for (let param of gen_param_types) {
+        let elem = document.getElementById(`input_${param.id}`);
+        if (elem) {
+            let box = findParentOfClass(elem, 'auto-input');
+            box.style.display = '';
+        }
     }
 }
 

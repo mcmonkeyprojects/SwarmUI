@@ -49,7 +49,7 @@ public static class AdminAPI
             string[] val_names = null;
             if (vals is not null)
             {
-                typeName = "dropdown";
+                typeName = typeName == "LIST" ? "LIST" : "DROPDOWN";
                 val_names = data.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Names ?? null;
             }
             output[key] = new JObject()
