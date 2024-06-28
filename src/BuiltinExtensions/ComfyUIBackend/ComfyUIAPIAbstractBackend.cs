@@ -541,7 +541,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     {
         string workflow = null;
         // note: gently break any standard embed with a space, *require* swarm format embeds, as comfy's raw syntax has unwanted behaviors
-        user_input.ProcessPromptEmbeds(x => $"embedding:{x.Replace("/", ModelFolderFormat)}", p => p.Replace("embedding:", "embedding :", StringComparison.OrdinalIgnoreCase));
+        user_input.ProcessPromptEmbeds(x => $" embedding:{x.Replace("/", ModelFolderFormat)} ", p => p.Replace("embedding:", "embedding :", StringComparison.OrdinalIgnoreCase));
         if (user_input.TryGet(ComfyUIBackendExtension.CustomWorkflowParam, out string customWorkflowName))
         {
             if (customWorkflowName.StartsWith("PARSED%"))
