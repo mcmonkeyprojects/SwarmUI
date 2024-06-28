@@ -21,77 +21,37 @@ public class T2IModelClassSorter
     {
         bool IsAlt(JObject h) => h.ContainsKey("cond_stage_model.roberta.embeddings.word_embeddings.weight");
         bool isV1(JObject h) => h.ContainsKey("cond_stage_model.transformer.text_model.embeddings.position_ids");
+        bool isV1Lora(JObject h) => h.ContainsKey("lora_unet_up_blocks_3_attentions_2_transformer_blocks_0_ff_net_2.lora_up.weight");
+        bool isV1CNet(JObject h) => h.ContainsKey("input_blocks.1.0.emb_layers.1.bias") || h.ContainsKey("control_model.input_blocks.1.0.emb_layers.1.bias");
         bool isV2(JObject h) => h.ContainsKey("cond_stage_model.model.ln_final.bias");
         bool isV2Depth(JObject h) => h.ContainsKey("depth_model.model.pretrained.act_postprocess3.0.project.0.bias");
         bool isV2Unclip(JObject h) => h.ContainsKey("embedder.model.visual.transformer.resblocks.0.attn.in_proj_weight");
         bool isXL09Base(JObject h) => h.ContainsKey("conditioner.embedders.0.transformer.text_model.embeddings.position_embedding.weight");
         bool isXL09Refiner(JObject h) => h.ContainsKey("conditioner.embedders.0.model.ln_final.bias");
+        bool isXLLora(JObject h) => h.ContainsKey("lora_unet_output_blocks_5_1_transformer_blocks_1_ff_net_2.lora_up.weight");
+        bool isXLControlnet(JObject h) => h.ContainsKey("controlnet_down_blocks.0.bias");
+        bool isSVD(JObject h) => h.ContainsKey("model.diffusion_model.input_blocks.1.0.time_stack.emb_layers.1.bias");
         bool isv2512name(string name) => name.Contains("512-") || name.Contains("-inpaint") || name.Contains("base-"); // keywords that identify the 512 vs the 768. Unfortunately no good proper detection here, other than execution-based hacks (see Auto WebUI ref)
         bool isControlLora(JObject h) => h.ContainsKey("lora_controlnet");
         bool isTurbo21(JObject h) => h.ContainsKey("denoiser.sigmas");
-        Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
-        {
-            return IsAlt(h);
-        }});
+        bool isSD3(JObject h) => h.ContainsKey("model.diffusion_model.joint_blocks.0.context_block.attn.proj.bias");
+        bool isSD3Cnet(JObject h) => h.ContainsKey("controlnet_blocks.0.bias") && h.ContainsKey("transformer_blocks.0.ff.net.0.proj.bias");
+        // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
-            return isV1(h) && !IsAlt(h) && !isV2(h);
+            return isV1(h) && !IsAlt(h) && !isV2(h) && !isXL09Base(h) && !isSD3(h);
         }});
         Register(new() { ID = "stable-diffusion-v1-inpainting", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 (Inpainting)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO: How to detect accurately?
         }});
-        Register(new() { ID = "stable-diffusion-v2-512", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2-512", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
-        {
-            return isV2(h) && !isV2Unclip(h) && isv2512name(m.Name);
-        }});
-        Register(new() { ID = "stable-diffusion-v2-768-v", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2-768v", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
-        {
-            return isV2(h) && !isV2Unclip(h) && !isv2512name(m.Name);
-        }});
-        Register(new() { ID = "stable-diffusion-v2-inpainting", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (Inpainting)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
-        {
-            return false; // TODO: How to detect accurately?
-        }});
-        Register(new() { ID = "stable-diffusion-v2-depth", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (Depth)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
-        {
-            return isV2Depth(h);
-        }});
-        Register(new() { ID = "stable-diffusion-v2-unclip", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (Unclip)", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
-        {
-            return isV2Unclip(h);
-        }});
-        Register(new() { ID = "stable-diffusion-xl-v0_9-base", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 0.9-Base", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isXL09Base(h);
-        }});
-        Register(new() { ID = "stable-diffusion-xl-v0_9-refiner", CompatClass = "stable-diffusion-xl-v1-refiner", Name = "Stable Diffusion XL 0.9-Refiner", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return isXL09Refiner(h) && !isTurbo21(h);
-        }});
-        Register(new() { ID = "stable-diffusion-v2-turbo", CompatClass = "stable-diffusion-v2-turbo", Name = "Stable Diffusion v2 Turbo", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
-        {
-            return isTurbo21(h);
-        }});
         Register(new() { ID = "stable-diffusion-v1/lora", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 LoRA", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
-            return h.ContainsKey("lora_unet_up_blocks_3_attentions_2_transformer_blocks_0_ff_net_2.lora_up.weight");
+            return isV1Lora(h) && !isXLLora(h);
         }});
         Register(new() { ID = "stable-diffusion-v1/controlnet", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 ControlNet", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
-            return (h.ContainsKey("input_blocks.1.0.emb_layers.1.bias") || h.ContainsKey("control_model.input_blocks.1.0.emb_layers.1.bias")) && !isControlLora(h);
-        }});
-        Register(new() { ID = "stable-diffusion-xl-v1-base/lora", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return h.ContainsKey("lora_unet_output_blocks_5_1_transformer_blocks_1_ff_net_2.lora_up.weight");
-        }});
-        Register(new() { ID = "stable-diffusion-xl-v1-base/controlnet", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return h.ContainsKey("controlnet_down_blocks.0.bias");
-        }});
-        Register(new() { ID = "stable-video-diffusion-img2vid-v0_9", CompatClass = "stable-video-diffusion-img2vid-v1", Name = "Stable Video Diffusion Img2Vid 0.9", StandardWidth = 1024, StandardHeight = 576, IsThisModelOfClass = (m, h) =>
-        {
-            return h.ContainsKey("model.diffusion_model.input_blocks.1.0.time_stack.emb_layers.1.bias");
+            return isV1CNet(h) && !isControlLora(h) && !isSD3Cnet(h);
         }});
         JToken GetEmbeddingKey(JObject h)
         {
@@ -115,6 +75,27 @@ public class T2IModelClassSorter
             }
             return shape.ToArray()[^1].Value<long>() == 768;
         }});
+        // ====================== Stable Diffusion v2 ======================
+        Register(new() { ID = "stable-diffusion-v2-512", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2-512", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
+        {
+            return isV2(h) && !isV2Unclip(h) && isv2512name(m.Name);
+        }});
+        Register(new() { ID = "stable-diffusion-v2-768-v", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2-768v", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        {
+            return isV2(h) && !isV2Unclip(h) && !isv2512name(m.Name);
+        }});
+        Register(new() { ID = "stable-diffusion-v2-inpainting", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (Inpainting)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // TODO: How to detect accurately?
+        }});
+        Register(new() { ID = "stable-diffusion-v2-depth", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (Depth)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
+        {
+            return isV2Depth(h);
+        }});
+        Register(new() { ID = "stable-diffusion-v2-unclip", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (Unclip)", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
+        {
+            return isV2Unclip(h);
+        }});
         Register(new() { ID = "stable-diffusion-v2-768-v/textual-inversion", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 Embedding", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) =>
         {
             JToken emb_data = GetEmbeddingKey(h);
@@ -129,10 +110,55 @@ public class T2IModelClassSorter
             return shape.ToArray()[^1].Value<long>() == 1024;
         }
         });
+        Register(new() { ID = "stable-diffusion-v2-turbo", CompatClass = "stable-diffusion-v2-turbo", Name = "Stable Diffusion v2 Turbo", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
+        {
+            return isTurbo21(h);
+        }});
+        // ====================== Stable Diffusion XL ======================
+        Register(new() { ID = "stable-diffusion-xl-v0_9-base", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 0.9-Base", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isXL09Base(h);
+        }});
+        Register(new() { ID = "stable-diffusion-xl-v0_9-refiner", CompatClass = "stable-diffusion-xl-v1-refiner", Name = "Stable Diffusion XL 0.9-Refiner", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isXL09Refiner(h) && !isTurbo21(h);
+        }});
+        Register(new() { ID = "stable-diffusion-xl-v1-base/lora", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isXLLora(h);
+        }});
+        Register(new() { ID = "stable-diffusion-xl-v1-base/controlnet", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isXLControlnet(h) && !isSD3Cnet(h);
+        }});
         Register(new() { ID = "stable-diffusion-xl-v1-base/textual-inversion", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base Embedding", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return h.TryGetValue("clip_g", out JToken clip_g) && (clip_g as JObject).TryGetValue("shape", out JToken shape_g) && shape_g[1].Value<long>() == 1280
                 && h.TryGetValue("clip_l", out JToken clip_l) && (clip_l as JObject).TryGetValue("shape", out JToken shape_l) && shape_l[1].Value<long>() == 768;
+        }});
+        // ====================== Stable Video Diffusion ======================
+        Register(new() { ID = "stable-video-diffusion-img2vid-v0_9", CompatClass = "stable-video-diffusion-img2vid-v1", Name = "Stable Video Diffusion Img2Vid 0.9", StandardWidth = 1024, StandardHeight = 576, IsThisModelOfClass = (m, h) =>
+        {
+            return isSVD(h);
+        }});
+        // ====================== Stable Diffusion v3 ======================
+        Register(new() { ID = "stable-diffusion-v3-medium", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isSD3(h);
+        }});
+        Register(new() { ID = "stable-diffusion-v3-medium/lora", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // TODO: ?
+        }});
+        Register(new() { ID = "stable-diffusion-v3-medium/controlnet", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isSD3Cnet(h);
+        }
+        });
+        // ====================== Random Other Models ======================
+        Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
+        {
+            return IsAlt(h);
         }});
         // Everything below this point does not autodetect, it must match through ModelSpec
         Register(new() { ID = "stable-diffusion-v1/vae", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 VAE", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
@@ -152,8 +178,6 @@ public class T2IModelClassSorter
         Register(new() { ID = "stable-cascade-v1-stage-a", CompatClass = "stable-cascade-v1", Name = "Stable Cascade v1 (Stage A)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-cascade-v1-stage-b", CompatClass = "stable-cascade-v1", Name = "Stable Cascade v1 (Stage B)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-cascade-v1-stage-c", CompatClass = "stable-cascade-v1", Name = "Stable Cascade v1 (Stage C)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "stable-diffusion-v3-medium", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "stable-diffusion-v3-medium/lora", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         // TensorRT variants
         Register(new() { ID = "stable-diffusion-v1/tensorrt", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 (TensorRT Engine)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-diffusion-v2-768-v/tensorrt", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 (TensorRT Engine)", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) => { return false; } });
