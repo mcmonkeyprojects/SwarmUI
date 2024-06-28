@@ -630,6 +630,14 @@ public class WorkflowGeneratorSteps
                     {
                         preprocessor = "none";
                         string wantedPreproc = controlModel.Metadata?.Preprocessor;
+                        if (string.IsNullOrWhiteSpace(wantedPreproc))
+                        {
+                            string cnName = $"{controlModel.Name}{controlModel.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLowerFast();
+                            if (cnName.Contains("canny")) { wantedPreproc = "canny"; }
+                            if (cnName.Contains("depth") || controlModel.Name.Contains("midas")) { wantedPreproc = "depth"; }
+                            if (cnName.Contains("sketch")) { wantedPreproc = "sketch"; }
+                            if (cnName.Contains("scribble")) { wantedPreproc = "scribble"; }
+                        }
                         if (!string.IsNullOrWhiteSpace(wantedPreproc))
                         {
                             string[] procs = [.. ComfyUIBackendExtension.ControlNetPreprocessors.Keys];
@@ -720,16 +728,34 @@ public class WorkflowGeneratorSteps
                     {
                         ["control_net_name"] = controlModel.ToString(g.ModelFolderFormat)
                     });
-                    string applyNode = g.CreateNode("ControlNetApplyAdvanced", new JObject()
+                    string applyNode;
+                    if (g.CurrentCompatClass() == "stable-diffusion-v3-medium")
                     {
-                        ["positive"] = g.FinalPrompt,
-                        ["negative"] = g.FinalNegativePrompt,
-                        ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
-                        ["image"] = new JArray() { $"{imageNode}", 0 },
-                        ["strength"] = controlStrength,
-                        ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
-                        ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
-                    });
+                        applyNode = g.CreateNode("ControlNetApplySD3", new JObject()
+                        {
+                            ["positive"] = g.FinalPrompt,
+                            ["negative"] = g.FinalNegativePrompt,
+                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["vae"] = g.FinalVae,
+                            ["image"] = new JArray() { $"{imageNode}", 0 },
+                            ["strength"] = controlStrength,
+                            ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
+                            ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
+                        });
+                    }
+                    else
+                    {
+                        applyNode = g.CreateNode("ControlNetApplyAdvanced", new JObject()
+                        {
+                            ["positive"] = g.FinalPrompt,
+                            ["negative"] = g.FinalNegativePrompt,
+                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["image"] = new JArray() { $"{imageNode}", 0 },
+                            ["strength"] = controlStrength,
+                            ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
+                            ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
+                        });
+                    }
                     g.FinalPrompt = [applyNode, 0];
                     g.FinalNegativePrompt = [applyNode, 1];
                 }
