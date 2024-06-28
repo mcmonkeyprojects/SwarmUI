@@ -630,15 +630,20 @@ public class WorkflowGeneratorSteps
                     {
                         preprocessor = "none";
                         string wantedPreproc = controlModel.Metadata?.Preprocessor;
+                        string cnName = $"{controlModel.Name}{controlModel.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLowerFast();
                         if (string.IsNullOrWhiteSpace(wantedPreproc))
                         {
-                            string cnName = $"{controlModel.Name}{controlModel.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLowerFast();
                             if (cnName.Contains("canny")) { wantedPreproc = "canny"; }
-                            if (cnName.Contains("depth") || controlModel.Name.Contains("midas")) { wantedPreproc = "depth"; }
-                            if (cnName.Contains("sketch")) { wantedPreproc = "sketch"; }
-                            if (cnName.Contains("scribble")) { wantedPreproc = "scribble"; }
+                            else if (cnName.Contains("depth") || controlModel.Name.Contains("midas")) { wantedPreproc = "depth"; }
+                            else if (cnName.Contains("sketch")) { wantedPreproc = "sketch"; }
+                            else if (cnName.Contains("scribble")) { wantedPreproc = "scribble"; }
+                            else if (cnName.Contains("pose")) { wantedPreproc = "pose"; }
                         }
-                        if (!string.IsNullOrWhiteSpace(wantedPreproc))
+                        if (string.IsNullOrWhiteSpace(wantedPreproc))
+                        {
+                            Logs.Verbose($"No wanted preprocessor, and '{cnName}' doesn't imply any other option, skipping...");
+                        }
+                        else
                         {
                             string[] procs = [.. ComfyUIBackendExtension.ControlNetPreprocessors.Keys];
                             bool getBestFor(string phrase)
@@ -671,6 +676,17 @@ public class WorkflowGeneratorSteps
                                 {
                                     preprocessor = "none";
                                 }
+                            }
+                            else if (wantedPreproc == "pose")
+                            {
+                                if (!getBestFor("openpose") && !getBestFor("pose"))
+                                {
+                                    preprocessor = "none";
+                                }
+                            }
+                            else
+                            {
+                                Logs.Verbose($"Wanted preprocessor {wantedPreproc} unrecognized, skipping...");
                             }
                         }
                     }
@@ -723,7 +739,6 @@ public class WorkflowGeneratorSteps
                     {
                         throw new InvalidDataException("Cannot preview a ControlNet preprocessor without any preprocessor enabled.");
                     }
-                    // TODO: Preprocessor
                     string controlModelNode = g.CreateNode("ControlNetLoader", new JObject()
                     {
                         ["control_net_name"] = controlModel.ToString(g.ModelFolderFormat)
