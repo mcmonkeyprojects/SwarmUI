@@ -133,6 +133,12 @@ public static class ComfyUIWebAPI
         try
         {
             input = T2IAPI.RequestToParams(session, rawInput);
+            input.PreparsePromptLikes();
+            ComfyUIAPIAbstractBackend backend = ComfyUIBackendExtension.ComfyBackendsDirect().FirstOrDefault().Backend as ComfyUIAPIAbstractBackend;
+            string format = backend.SupportedFeatures.Contains("folderbackslash") ? "\\" : "/";
+            Logs.Verbose($"ComfyGetWorkflow for input: {input}");
+            string flow = ComfyUIAPIAbstractBackend.CreateWorkflow(input, w => w, format, features: backend.SupportedFeatures.ToHashSet());
+            return new JObject() { ["workflow"] = flow };
         }
         catch (InvalidOperationException ex)
         {
@@ -142,12 +148,6 @@ public static class ComfyUIWebAPI
         {
             return new JObject() { ["error"] = ex.Message };
         }
-        input.PreparsePromptLikes();
-        ComfyUIAPIAbstractBackend backend = ComfyUIBackendExtension.ComfyBackendsDirect().FirstOrDefault().Backend as ComfyUIAPIAbstractBackend;
-        string format = backend.SupportedFeatures.Contains("folderbackslash") ? "\\" : "/";
-        Logs.Verbose($"ComfyGetWorkflow for input: {input}");
-        string flow = ComfyUIAPIAbstractBackend.CreateWorkflow(input, w => w, format, features: backend.SupportedFeatures.ToHashSet());
-        return new JObject() { ["workflow"] = flow };
     }
 
     /// <summary>API route to ensure that a ComfyUI refresh hit will actually do a native refresh.</summary>
