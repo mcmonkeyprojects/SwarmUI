@@ -3,6 +3,7 @@ bin/
 obj/
 .vs/
 .vscode/
+.idea/
 *.user
 *.suo
 Properties/
@@ -16,6 +17,10 @@ tmp/
 Extensions/
 dlbackend/
 *.debug
+
+# Symbolic link overrides
+/Models
+/Output
 
 # Python
 __pycache__/
