@@ -1,4 +1,4 @@
-# C#
+# C# and related tools
 bin/
 obj/
 .vs/
@@ -10,17 +10,13 @@ Properties/
 .dotnet/
 
 # This project
-Output/
-Data/
-Models/
-tmp/
-Extensions/
-dlbackend/
-*.debug
-
-# Symbolic link overrides
-/Models
 /Output
+/Data
+/Models
+tmp/
+/src/Extensions
+/dlbackend
+*.debug
 
 # Python
 __pycache__/
