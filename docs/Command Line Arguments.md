@@ -27,3 +27,9 @@ Argument | Default | Description
 `--proxy-region` | (None) | If specified, sets the proxy (ngrok/cloudflared) region. If unspecified, defaults to closest.
 `--ngrok-basic-auth` | (None) | If specified, sets an ngrok basic-auth requirement to access.
 `--launch_mode` | `none` | Can be used to override the 'LaunchMode' server setting.
+
+# Environment Variables (EnvVars)
+
+Swarm itself does not use any environment variables for anything.
+
+If you need to set environment variables for the Comfy backend - just set them before launching Swarm. Any envvars set for Swarm will be automatically transferred down to the backend process when it's launched.
