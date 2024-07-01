@@ -322,15 +322,27 @@ public class ComfyUIBackendExtension : Extension
             {
                 UpscalerModels = UpscalerModels.Concat(modelLoader["input"]["required"]["model_name"][0].Select(u => $"model-{u}")).Distinct().ToList();
             }
+            if (rawObjectInfo.TryGetValue("SwarmKSampler", out JToken swarmksampler))
+            {
+                string[] prior = [.. Samplers];
+                string[] newSamplers = [.. swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")];
+                string[] dropped = [.. prior.Except(newSamplers)];
+                if (dropped.Any())
+                {
+                    Logs.Debug($"Samplers are listed, but not included in SwarmKSampler internal list: {dropped.JoinString(", ")}");
+                }
+                string[] added = [.. newSamplers.Except(prior)];
+                if (added.Any())
+                {
+                    Logs.Debug($"New samplers available from SwarmKSampler but not in prior list: {added.JoinString(", ")}");
+                }
+                Samplers = Samplers.Concat(newSamplers).Distinct().ToList();
+                Schedulers = Schedulers.Concat(swarmksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}")).Distinct().ToList();
+            }
             if (rawObjectInfo.TryGetValue("KSampler", out JToken ksampler))
             {
                 Samplers = Samplers.Concat(ksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")).Distinct().ToList();
                 Schedulers = Schedulers.Concat(ksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}")).Distinct().ToList();
-            }
-            if (rawObjectInfo.TryGetValue("SwarmKSampler", out JToken swarmksampler))
-            {
-                Samplers = Samplers.Concat(swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")).Distinct().ToList();
-                Schedulers = Schedulers.Concat(swarmksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}")).Distinct().ToList();
             }
             if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoader", out JToken ipadapterCubiqUnified))
             {
@@ -390,7 +402,7 @@ public class ComfyUIBackendExtension : Extension
     public static T2IRegisteredParam<string>[] ControlNetPreprocessorParams = new T2IRegisteredParam<string>[3];
 
     public static List<string> UpscalerModels = ["pixel-lanczos", "pixel-bicubic", "pixel-area", "pixel-bilinear", "pixel-nearest-exact", "latent-bislerp", "latent-bicubic", "latent-area", "latent-bilinear", "latent-nearest-exact"],
-        Samplers = ["euler", "euler_ancestral", "heun", "dpm_2", "dpm_2_ancestral", "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_sde", "dpmpp_sde_gpu", "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", "ddim", "ddpm", "heunpp2", "lcm", "uni_pc", "uni_pc_bh2", "euler_pp", "euler_ancestral_pp", "ipndm", "ipndm_v", "euler_cfg_pp_regular"],
+        Samplers = ["euler", "euler_ancestral", "heun", "heunpp2", "dpm_2", "dpm_2_ancestral", "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_sde", "dpmpp_sde_gpu", "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", "ddim", "ddpm", "lcm", "uni_pc", "uni_pc_bh2", "euler_cfg_pp", "euler_ancestral_cfg_pp", "ipndm", "ipndm_v", "deis"],
         Schedulers = ["normal", "karras", "exponential", "simple", "ddim_uniform", "sgm_uniform", "turbo", "align_your_steps"];
 
     public static List<string> IPAdapterModels = ["None"];

@@ -203,7 +203,7 @@ class SwarmKSampler:
                 "noise_seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step": 0.5, "round": 0.001}),
-                "sampler_name": (comfy.samplers.KSampler.SAMPLERS + ["euler_cfg_pp_regular"], ),
+                "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
                 "scheduler": (["turbo", "align_your_steps"] + comfy.samplers.KSampler.SCHEDULERS, ),
                 "positive": ("CONDITIONING", ),
                 "negative": ("CONDITIONING", ),
@@ -269,19 +269,9 @@ class SwarmKSampler:
         
         callback = make_swarm_sampler_callback(steps, device, model, previews)
 
-        replace_sampler_names = None
-        if sampler_name in ["euler_cfg_pp_regular"]:
-            replace_sampler_names = samplers.KSampler.SAMPLERS
-            samplers.KSampler.SAMPLERS = [sampler_name] + samplers.SAMPLER_NAMES
-            if sampler_name == "euler_cfg_pp_regular":
-                cfg /= 4.0
-        try:
-            samples = comfy.sample.sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
-                                    denoise=1.0, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step,
-                                    force_full_denoise=return_with_leftover_noise == "disable", noise_mask=noise_mask, sigmas=sigmas, callback=callback, seed=noise_seed)
-        finally:
-            if replace_sampler_names is not None:
-                samplers.KSampler.SAMPLERS = replace_sampler_names
+        samples = comfy.sample.sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_samples,
+                                denoise=1.0, disable_noise=disable_noise, start_step=start_at_step, last_step=end_at_step,
+                                force_full_denoise=return_with_leftover_noise == "disable", noise_mask=noise_mask, sigmas=sigmas, callback=callback, seed=noise_seed)
         out = latent_image.copy()
         out["samples"] = samples
         return (out, )
