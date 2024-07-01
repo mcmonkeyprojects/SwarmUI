@@ -346,6 +346,12 @@ function selectPreset(preset) {
     presetBrowser.rerender();
 }
 
+function clearPresets() {
+    currentPresets = [];
+    updatePresetList();
+    presetBrowser.rerender();
+}
+
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
     `<button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
     <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>

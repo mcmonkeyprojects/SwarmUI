@@ -607,7 +607,7 @@ function resetParamsToDefault(exclude = []) {
     }
     for (let param of gen_param_types) {
         let id = `input_${param.id}`;
-        if (param.visible && !exclude.includes(param.id) && document.getElementById(id) != null) {
+        if (param.id != 'model' && !exclude.includes(param.id) && document.getElementById(id) != null) {
             setDirectParamValue(param, param.default);
             if (param.id == 'prompt' || param.id == 'negativeprompt') {
                 triggerChangeFor(getRequiredElementById(id));
@@ -630,6 +630,8 @@ function resetParamsToDefault(exclude = []) {
     if (aspect) { // Fix resolution trick incase the reset broke it
         triggerChangeFor(aspect);
     }
+    currentModelChanged();
+    clearPresets();
     let defaultPreset = getPresetByTitle('default');
     if (defaultPreset) {
         applyOnePreset(defaultPreset);
