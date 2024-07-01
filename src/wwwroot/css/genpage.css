@@ -594,7 +594,6 @@ body {
     padding-left: 0.2rem;
     padding-right: 0.2rem;
     border-left: 1px solid var(--light-border);
-    white-space: nowrap;
 }
 .num_jobs_span {
     vertical-align: middle;

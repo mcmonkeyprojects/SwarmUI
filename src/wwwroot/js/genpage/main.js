@@ -1277,6 +1277,7 @@ function pageSizer() {
     let topSplit2 = getRequiredElementById('t2i-top-2nd-split-bar');
     let midSplit = getRequiredElementById('t2i-mid-split-bar');
     let topBar = getRequiredElementById('t2i_top_bar');
+    let bottomInfoBar = getRequiredElementById('bottom_info_bar');
     let bottomBarContent = getRequiredElementById('t2i_bottom_bar_content');
     let inputSidebar = getRequiredElementById('input_sidebar');
     let mainInputsAreaWrapper = getRequiredElementById('main_inputs_area_wrapper');
@@ -1355,7 +1356,8 @@ function pageSizer() {
             editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             currentImageBatch.style.height = `calc(100vh - ${fixed})`;
             topBar.style.height = `calc(100vh - ${fixed})`;
-            bottomBarContent.style.height = `calc(${fixed} - 2rem)`;
+            let bottomBarHeight = bottomInfoBar.offsetHeight;
+            bottomBarContent.style.height = `calc(${fixed} - ${bottomBarHeight}px)`;
         }
         else {
             topSplit.style.height = '';
