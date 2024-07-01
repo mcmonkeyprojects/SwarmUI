@@ -705,18 +705,25 @@ public static class Utilities
     /// <summary>Tries to read the local IP address, if possible. Returns null if not found. Value may be wrong or misleading.</summary>
     public static string GetLocalIPAddress()
     {
-        IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
-        List<string> result = [];
-        foreach (var ip in host.AddressList)
+        try
         {
-            if (ip.AddressFamily == AddressFamily.InterNetwork && !$"{ip}".EndsWith(".1"))
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            List<string> result = [];
+            foreach (var ip in host.AddressList)
             {
-                result.Add($"http://{ip}:{Program.ServerSettings.Network.Port}");
+                if (ip.AddressFamily == AddressFamily.InterNetwork && !$"{ip}".EndsWith(".1"))
+                {
+                    result.Add($"http://{ip}:{Program.ServerSettings.Network.Port}");
+                }
+            }
+            if (result.Any())
+            {
+                return result.JoinString(", ");
             }
         }
-        if (result.Any())
+        catch (Exception ex)
         {
-            return result.JoinString(", ");
+            Logs.Debug($"Failed to get local IP address: {ex}");
         }
         return null;
     }
