@@ -339,9 +339,11 @@ public class T2IModelHandler
                 reader.Dispose();
             }
             // Journalling replace to prevent data loss in event of a crash.
+            DateTime createTime = File.GetCreationTimeUtc(model.RawFilePath);
             File.Move(model.RawFilePath, model.RawFilePath + ".tmp2");
             File.Move(model.RawFilePath + ".tmp", model.RawFilePath);
             File.Delete(model.RawFilePath + ".tmp2");
+            File.SetCreationTimeUtc(model.RawFilePath, createTime);
             Logs.Debug($"Completed metadata update for {model.RawFilePath}");
         }
     }
