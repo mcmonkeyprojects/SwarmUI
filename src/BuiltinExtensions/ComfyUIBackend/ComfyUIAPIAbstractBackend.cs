@@ -572,7 +572,15 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 string tagBasic = tagName.BeforeAndAfter('+', out string tagExtra);
                 string fillDynamic()
                 {
-                    T2IParamType type = T2IParamTypes.GetType(tagBasic, user_input) ?? throw new InvalidDataException($"Unknown param type request '{tagBasic}'");
+                    T2IParamType type = T2IParamTypes.GetType(tagBasic, user_input);
+                    if (type is null)
+                    {
+                        if (string.IsNullOrWhiteSpace(defVal))
+                        {
+                            throw new InvalidDataException($"Unknown param type request '{tagBasic}' from '{tag}'");
+                        }
+                        return defVal;
+                    }
                     if (!user_input.TryGetRaw(type, out object val) || val is null)
                     {
                         val = defVal;
