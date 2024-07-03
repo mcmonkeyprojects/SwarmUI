@@ -535,10 +535,15 @@ class GenPageBrowserClass {
                 depthInput.parentElement.style.display = 'none';
             }
             let filterInput = inputArr[1];
-            filterInput.addEventListener('input', () => {
+            var searchtimer; // timer used to debounce user input into the filter: this reduces redundant back end calls by ensuring the user has paused typing before activating.
+            filterInput.addEventListener('input', () => {            
                 this.filter = filterInput.value.toLowerCase();
                 localStorage.setItem(`browser_${this.id}_filter`, this.filter);
-                this.update();
+                clearTimeout(searchtimer);
+                var input = this;
+                searchtimer = setTimeout(() => {
+                    input.update();
+                }, 1000);
             });
             if (!this.showFilter) {
                 filterInput.parentElement.style.display = 'none';
