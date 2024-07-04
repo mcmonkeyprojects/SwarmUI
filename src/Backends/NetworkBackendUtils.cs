@@ -344,10 +344,14 @@ public static class NetworkBackendUtils
             takeOutput(port, runningProcess);
             runningProcess.Start();
             Logs.Init($"Self-Start {nameSimple} on port {port} is loading...");
+            bool everLoaded = false;
             Action onFail = autoRestart ? () =>
             {
-                Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
-                Utilities.RunCheckedTask(launch);
+                if (everLoaded)
+                {
+                    Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
+                    Utilities.RunCheckedTask(launch);
+                }
             } : null;
             ReportLogsFromProcess(runningProcess, $"{nameSimple}", identifier, out Action signalShutdownExpected, getStatus, s => { status = s; reviseStatus(s); }, onFail: onFail);
             addShutdownEvent?.Invoke(signalShutdownExpected);
@@ -377,6 +381,7 @@ public static class NetworkBackendUtils
                     return;
                 }
             }
+            everLoaded = status != BackendStatus.ERRORED;
             Logs.Debug($"{nameSimple} self-start port {port} loop ending (should now be alive)");
         }
         await launch();
