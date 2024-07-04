@@ -404,7 +404,15 @@ public class T2IModelHandler
         string modelCacheId = perFolder ? fileName : model.RawFilePath;
         lock (MetadataLock)
         {
-            metadata = cache.FindById(modelCacheId);
+            try
+            {
+                metadata = cache.FindById(modelCacheId);
+            }
+            catch (Exception ex)
+            {
+                Logs.Debug($"Failed to load metadata for {model.Name} from cache:\n{ex}");
+                metadata = null;
+            }
         }
         if (metadata is not null && metadata.TextEncoders is null && metadata.ModelClassType == "stable-diffusion-v3-medium")
         {
