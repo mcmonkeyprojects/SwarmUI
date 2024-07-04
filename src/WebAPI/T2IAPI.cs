@@ -553,16 +553,17 @@ public static class T2IAPI
             Logs.Warning($"User {session.User.UserID} tried to delete image path '{origPath}' which maps to '{path}', but cannot as the image does not exist.");
             return new JObject() { ["error"] = "That file does not exist, cannot delete." };
         }
-        File.Delete(path);
+        Action<string> deleteFile = Program.ServerSettings.Paths.RecycleDeletedImages ? Utilities.SendFileToRecycle : File.Delete;
+        deleteFile(path);
         string txtFile = path.BeforeLast('.') + ".txt";
         if (File.Exists(txtFile))
         {
-            File.Delete(txtFile);
+            deleteFile(txtFile);
         }
         string metaFile = path.BeforeLast('.') + ".metadata.js";
         if (File.Exists(metaFile))
         {
-            File.Delete(metaFile);
+            deleteFile(metaFile);
         }
         ImageMetadataTracker.RemoveMetadataFor(path);
         return new JObject() { ["success"] = true };

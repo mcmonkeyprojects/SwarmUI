@@ -171,6 +171,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, image metadata is tracked on a per-folder basis.\nIf false, image metadata is tracked in the central data folder.\nThis is better if you don't want stray files in your output folders, or if you have several Swarm instances running simultaneously over the same output folders.")]
         public bool ImageMetadataPerFolder = true;
+
+        [ConfigComment("If true, when a user deletes an image, send it to the OS Recycle Bin instead of permanently deleting it.\nIf false, image files are permanently deleted.\nDefaults to false.")]
+        public bool RecycleDeletedImages = false;
     }
 
     /// <summary>Settings to control restrictions on users.</summary>

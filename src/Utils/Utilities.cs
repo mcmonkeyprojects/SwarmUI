@@ -18,6 +18,7 @@ using System.Net;
 using System.Diagnostics;
 using SwarmUI.Text2Image;
 using System.Net.Sockets;
+using Microsoft.VisualBasic.FileIO;
 
 namespace SwarmUI.Utils;
 
@@ -850,5 +851,19 @@ public static class Utilities
         Process p = Process.Start(start);
         await p.WaitForExitAsync(Program.GlobalProgramCancel);
         return await p.StandardOutput.ReadToEndAsync();
+    }
+
+    /// <summary>Deletes a file 'cleanly' by sending it to the recycle bin.</summary>
+    public static void SendFileToRecycle(string file)
+    {
+        try
+        {
+            FileSystem.DeleteFile(file, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
+        }
+        catch (Exception ex)
+        {
+            Logs.Debug($"Failed to send file to recycle bin: {ex}");
+            File.Delete(file);
+        }
     }
 }

@@ -591,7 +591,7 @@ public class T2IModelHandler
         {
             return;
         }
-        Logs.Verbose($"[Model Scan] Add all from folder {folder}");
+        Logs.Verbose($"[Model Scan] Add all {ModelType} from folder {folder}");
         string prefix = folder == "" ? "" : $"{folder}/";
         string actualFolder = $"{pathBase}/{folder}";
         if (!Directory.Exists(actualFolder))
@@ -612,7 +612,7 @@ public class T2IModelHandler
             }
             catch (Exception ex)
             {
-                Logs.Warning($"Error while scanning model subfolder '{path}': {ex}");
+                Logs.Warning($"Error while scanning model {ModelType} subfolder '{path}': {ex}");
             }
         });
         Parallel.ForEach(Directory.EnumerateFiles(actualFolder), file =>
