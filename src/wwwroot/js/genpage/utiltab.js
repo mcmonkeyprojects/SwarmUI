@@ -244,6 +244,9 @@ class ModelDownloaderUtil {
             let subparts = parts[1].split('?', 2);
             parts = ['models', subparts[0], `?${subparts[1]}`];
         }
+        else if (parts.length == 2 && parts[0] == 'models' && !isNaN(parseInt(parts[1]))) {
+            parts = ['models', parts[1], ''];
+        }
         if (parts.length < 3) {
             return [null, null];
         }
@@ -307,6 +310,9 @@ class ModelDownloaderUtil {
             if (parts.length == 2 && parts[0] == 'models' && parts[1].includes('?')) {
                 let subparts = parts[1].split('?', 2);
                 parts = ['models', subparts[0], `?${subparts[1]}`];
+            }
+            else if (parts.length == 2 && parts[0] == 'models' && !isNaN(parseInt(parts[1]))) {
+                parts = ['models', parts[1], ''];
             }
             let loadMetadata = (id, versId) => {
                 this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img) => {
