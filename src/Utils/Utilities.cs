@@ -513,7 +513,7 @@ public static class Utilities
     public static HttpClient UtilWebClient = NetworkBackendUtils.MakeHttpClient();
 
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
-    public static async Task DownloadFile(string url, string filepath, Action<long, long> progressUpdate, string altUrl = null)
+    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, string altUrl = null)
     {
         altUrl ??= url;
         using FileStream writer = File.OpenWrite(filepath);
@@ -528,7 +528,7 @@ public static class Utilities
             throw new InvalidOperationException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
         }
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
-        progressUpdate?.Invoke(0, length);
+        progressUpdate?.Invoke(0, length, 0);
         while (true)
         {
             int read = await dlStream.ReadAsync(buffer, Program.GlobalProgramCancel);
@@ -539,7 +539,7 @@ public static class Utilities
                 {
                     throw new InvalidOperationException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
                 }
-                progressUpdate?.Invoke(progress, length);
+                progressUpdate?.Invoke(progress, length, 0);
                 return;
             }
             progress += read;
@@ -548,7 +548,7 @@ public static class Utilities
             {
                 long bytesPerSecond = progress * 1000 / (timeNow - startTime);
                 Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
-                progressUpdate?.Invoke(progress, length);
+                progressUpdate?.Invoke(progress, length, bytesPerSecond);
                 lastUpdate = timeNow;
             }
             await writer.WriteAsync(buffer.AsMemory(0, read), Program.GlobalProgramCancel);

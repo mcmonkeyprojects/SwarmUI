@@ -424,7 +424,7 @@ class ModelDownloaderUtil {
             if (data.overall_percent) {
                 overall.style.width = `${data.overall_percent * 100}%`;
                 current.style.width = `${data.current_percent * 100}%`;
-                this.textArea.innerText = `Downloading, please wait... ${roundToStr(data.current_percent * 100, 1)}%`;
+                this.textArea.innerText = `Downloading, please wait... ${roundToStr(data.current_percent * 100, 1)}% (${fileSizeStringify(data.per_second)} per second)`;
             }
             else if (data.success) {
                 this.textArea.innerText = "Done!";

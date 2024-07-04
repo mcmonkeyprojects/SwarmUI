@@ -143,10 +143,10 @@ public static class BasicAPIFeatures
         {
             totalSteps += models.Split(',').Length;
         }
-        void updateProgress(long progress, long total)
+        void updateProgress(long progress, long total, long perSec)
         {
             // TODO: better way to send these out without waiting
-            socket.SendJson(new JObject() { ["progress"] = progress, ["total"] = total, ["steps"] = stepsThusFar, ["total_steps"] = totalSteps }, API.WebsocketTimeout).Wait();
+            socket.SendJson(new JObject() { ["progress"] = progress, ["total"] = total, ["steps"] = stepsThusFar, ["total_steps"] = totalSteps, ["per_second"] = perSec }, API.WebsocketTimeout).Wait();
         }
         switch (backend)
         {
@@ -176,7 +176,7 @@ public static class BasicAPIFeatures
                             await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_or_cpu_nightly_pytorch.7z", "dlbackend/comfyui_dl.7z", updateProgress);
                         }
                         stepsThusFar++;
-                        updateProgress(0, 0);
+                        updateProgress(0, 0, 0);
                         await output("Downloaded! Extracting... (look in terminal window for details)");
                         Directory.CreateDirectory("dlbackend/tmpcomfy/");
                         await Process.Start("launchtools/7z/win/7za.exe", $"x dlbackend/comfyui_dl.7z -o\"dlbackend/tmpcomfy/\" -y").WaitForExitAsync(Program.GlobalProgramCancel);
@@ -213,7 +213,7 @@ public static class BasicAPIFeatures
                         }
                         await output("Installing prereqs...");
                         await Utilities.DownloadFile("https://aka.ms/vs/16/release/vc_redist.x64.exe", "dlbackend/vc_redist.x64.exe", updateProgress);
-                        updateProgress(0, 0);
+                        updateProgress(0, 0, 0);
                         await Process.Start(new ProcessStartInfo(Path.GetFullPath("dlbackend/vc_redist.x64.exe"), "/quiet /install /passive /norestart") { UseShellExecute = true }).WaitForExitAsync(Program.GlobalProgramCancel);
                         path = "dlbackend/comfy/ComfyUI/main.py";
                         if (install_amd)
@@ -232,7 +232,7 @@ public static class BasicAPIFeatures
                     else
                     {
                         stepsThusFar++;
-                        updateProgress(0, 0);
+                        updateProgress(0, 0, 0);
                         string gpuType = install_amd ? "amd" : "nv";
                         Process installer = Process.Start(new ProcessStartInfo("/bin/bash", $"launchtools/comfy-install-linux.sh {gpuType}") { RedirectStandardOutput = true, UseShellExecute = false, RedirectStandardError = true });
                         NetworkBackendUtils.ReportLogsFromProcess(installer, "ComfyUI Install (Linux Script)", "comfyinstall");
@@ -265,7 +265,7 @@ public static class BasicAPIFeatures
                 return null;
         }
         stepsThusFar++;
-        updateProgress(0, 0);
+        updateProgress(0, 0, 0);
         if (models != "none")
         {
             foreach (string model in models.Split(','))
@@ -303,13 +303,13 @@ public static class BasicAPIFeatures
                     Logs.Debug($"Download exception: {ex}");
                 }
                 stepsThusFar++;
-                updateProgress(0, 0);
+                updateProgress(0, 0, 0);
                 await output("Model download complete.");
             }
             Program.MainSDModels.Refresh();
         }
         stepsThusFar++;
-        updateProgress(0, 0);
+        updateProgress(0, 0, 0);
         Program.ServerSettings.IsInstalled = true;
         if (Program.ServerSettings.LaunchMode == "webinstall")
         {
@@ -318,7 +318,7 @@ public static class BasicAPIFeatures
         Program.SaveSettingsFile();
         await Program.Backends.ReloadAllBackends();
         stepsThusFar++;
-        updateProgress(0, 0);
+        updateProgress(0, 0, 0);
         await output("Installed!");
         await socket.SendJson(new JObject() { ["success"] = true }, API.WebsocketTimeout);
         return null;

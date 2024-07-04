@@ -508,12 +508,13 @@ public static class ModelsAPI
                 File.Delete(tempPath);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(outPath));
-            await Utilities.DownloadFile(url, tempPath, async (progress, total) =>
+            await Utilities.DownloadFile(url, tempPath, async (progress, total, perSec) =>
             {
                 await ws.SendJson(new JObject()
                 {
                     ["current_percent"] = progress / (double)total,
-                    ["overall_percent"] = 0.2
+                    ["overall_percent"] = 0.2,
+                    ["per_second"] = perSec
                 }, API.WebsocketTimeout);
             }, originalUrl);
             File.Move(tempPath, outPath);

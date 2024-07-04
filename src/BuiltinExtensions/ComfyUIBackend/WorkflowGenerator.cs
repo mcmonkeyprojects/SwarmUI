@@ -191,7 +191,7 @@ public class WorkflowGenerator
             double nextPerc = 0.05;
             try
             {
-                Utilities.DownloadFile(url, filePath, (bytes, total) =>
+                Utilities.DownloadFile(url, filePath, (bytes, total, perSec) =>
                 {
                     double perc = bytes / (double)total;
                     if (perc >= nextPerc)
