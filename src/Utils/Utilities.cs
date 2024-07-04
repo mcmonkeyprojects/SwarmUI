@@ -520,6 +520,7 @@ public static class Utilities
         using HttpResponseMessage response = await UtilWebClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;
         byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
+        ConcurrentQueue<byte[]> chunks = new();
         long progress = 0;
         long startTime = Environment.TickCount64;
         long lastUpdate = startTime;
@@ -529,30 +530,53 @@ public static class Utilities
         }
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
         progressUpdate?.Invoke(0, length, 0);
-        while (true)
+        Task loadData = Task.Run(async () =>
         {
-            int read = await dlStream.ReadAsync(buffer, Program.GlobalProgramCancel);
-            if (read <= 0)
+            while (true)
             {
-                Logs.Verbose($"Download {altUrl} completed with {progress} bytes.");
-                if (length != 0 && progress != length)
+                int read = await dlStream.ReadAsync(buffer, Program.GlobalProgramCancel);
+                if (read <= 0)
                 {
-                    throw new InvalidOperationException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
+                    chunks.Enqueue(null);
+                    return;
                 }
-                progressUpdate?.Invoke(progress, length, 0);
-                return;
+                chunks.Enqueue(buffer[..read]);
             }
-            progress += read;
-            long timeNow = Environment.TickCount64;
-            if (timeNow - lastUpdate > 1000)
+        });
+        Task saveChunks = Task.Run(async () =>
+        {
+            while (true)
             {
-                long bytesPerSecond = progress * 1000 / (timeNow - startTime);
-                Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
-                progressUpdate?.Invoke(progress, length, bytesPerSecond);
-                lastUpdate = timeNow;
+                if (chunks.TryDequeue(out byte[] chunk))
+                {
+                    if (chunk is null)
+                    {
+                        Logs.Verbose($"Download {altUrl} completed with {progress} bytes.");
+                        progressUpdate?.Invoke(progress, length, 0);
+                        if (length != 0 && progress != length)
+                        {
+                            throw new InvalidOperationException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
+                        }
+                        break;
+                    }
+                    progress += chunk.Length;
+                    long timeNow = Environment.TickCount64;
+                    if (timeNow - lastUpdate > 1000)
+                    {
+                        long bytesPerSecond = progress * 1000 / (timeNow - startTime);
+                        Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
+                        progressUpdate?.Invoke(progress, length, bytesPerSecond);
+                        lastUpdate = timeNow;
+                    }
+                    await writer.WriteAsync(chunk, Program.GlobalProgramCancel);
+                }
+                else
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(0.1), Program.GlobalProgramCancel);
+                }
             }
-            await writer.WriteAsync(buffer.AsMemory(0, read), Program.GlobalProgramCancel);
-        }
+        });
+        await Task.WhenAll([loadData, saveChunks]);
     }
 
     /// <summary>Converts a byte array to a hexadecimal string.</summary>
