@@ -107,6 +107,7 @@ public class WebServer
         builder.Services.AddResponseCompression();
         builder.Logging.SetMinimumLevel(LogLevel);
         WebApp = builder.Build();
+        WebApp.UseResponseCompression();
         timer.Check("[Web] WebApp build");
         if (WebApp.Environment.IsDevelopment())
         {
