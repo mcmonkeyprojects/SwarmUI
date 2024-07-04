@@ -104,6 +104,7 @@ public class WebServer
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { WebRootPath = "src/wwwroot" });
         timer.Check("[Web] WebApp builder prep");
         builder.Services.AddRazorPages();
+        builder.Services.AddResponseCompression();
         builder.Logging.SetMinimumLevel(LogLevel);
         WebApp = builder.Build();
         timer.Check("[Web] WebApp build");
