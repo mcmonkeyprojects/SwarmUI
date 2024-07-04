@@ -521,7 +521,8 @@ public static class Utilities
         long length = response.Content.Headers.ContentLength ?? 0;
         byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
         long progress = 0;
-        long lastUpdate = Environment.TickCount64;
+        long startTime = Environment.TickCount64;
+        long lastUpdate = startTime;
         if (response.StatusCode != HttpStatusCode.OK)
         {
             throw new InvalidOperationException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
@@ -542,11 +543,13 @@ public static class Utilities
                 return;
             }
             progress += read;
-            if (Environment.TickCount64 - lastUpdate > 1000)
+            long timeNow = Environment.TickCount64;
+            if (timeNow - lastUpdate > 1000)
             {
-                Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}%");
+                long bytesPerSecond = progress * 1000 / (timeNow - startTime);
+                Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
                 progressUpdate?.Invoke(progress, length);
-                lastUpdate = Environment.TickCount64;
+                lastUpdate = timeNow;
             }
             await writer.WriteAsync(buffer.AsMemory(0, read), Program.GlobalProgramCancel);
         }
