@@ -736,7 +736,15 @@ public class T2IParamTypes
                             vals[i] = GetBestModelInList(CleanModelName(search), possible);
                             if (vals[i] is null)
                             {
-                                throw new InvalidDataException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{string.Join("`, `", type.GetValues(session))}`");
+                                List<string> available = type.GetValues(session);
+                                if (available.Count < 10)
+                                {
+                                    throw new InvalidDataException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{available.JoinString("`, `")}`");
+                                }
+                                else
+                                {
+                                    throw new InvalidDataException($"Invalid value for param {type.Name} - '{origVal}' - option does not exist. Has it been deleted?");
+                                }
                             }
                         }
                     }
