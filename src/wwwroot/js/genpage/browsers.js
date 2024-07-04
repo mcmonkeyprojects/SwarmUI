@@ -64,6 +64,8 @@ class GenPageBrowserClass {
         this.maxPreBuild = 512;
         this.chunksRendered = 0;
         this.rerenderPlanned = false;
+        this.updatePendingSince = null;
+        this.wantsReupdate = false;
     }
 
     /**
@@ -78,6 +80,14 @@ class GenPageBrowserClass {
             this.rerenderPlanned = false;
             this.rerender();
         }, timeout);
+    }
+
+    updateWithoutDup() {
+        if (this.updatePendingSince && new Date().getTime() - this.updatePendingSince < 5000) {
+            this.wantsReupdate = true;
+            return;
+        }
+        this.update();
     }
 
     /**
@@ -139,6 +149,7 @@ class GenPageBrowserClass {
      * Updates/refreshes the browser view.
      */
     update(isRefresh = false, callback = null) {
+        this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
             this.tree = new BrowserTreePart('', {}, false, null, null, '');
             this.contentDiv.scrollTop = 0;
@@ -146,8 +157,13 @@ class GenPageBrowserClass {
         let folder = this.folder;
         this.listFoldersAndFiles(folder, isRefresh, (folders, files) => {
             this.build(folder, folders, files);
+            this.updatePendingSince = null;
             if (callback) {
                 setTimeout(() => callback(), 100);
+            }
+            if (this.wantsReupdate) {
+                this.wantsReupdate = false;
+                this.update();
             }
         }, this.depth);
     }
@@ -538,7 +554,7 @@ class GenPageBrowserClass {
             filterInput.addEventListener('input', () => {
                 this.filter = filterInput.value.toLowerCase();
                 localStorage.setItem(`browser_${this.id}_filter`, this.filter);
-                this.update();
+                this.updateWithoutDup();
             });
             if (!this.showFilter) {
                 filterInput.parentElement.style.display = 'none';
