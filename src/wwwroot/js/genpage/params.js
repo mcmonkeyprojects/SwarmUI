@@ -584,7 +584,7 @@ function setDirectParamValue(param, value, paramElem = null) {
     else if (param.type == "list" && paramElem.tagName == "SELECT") {
         let vals = typeof value == 'string' ? value.split(',').map(v => v.trim()) : value;
         for (let val of vals) {
-            if (!$(paramElem).find(`option[value="${val}"]`).length) {
+            if (val && !$(paramElem).find(`option[value="${val}"]`).length) {
                 $(paramElem).append(new Option(val, val, false, false));
             }
         }
