@@ -519,11 +519,7 @@ public static class Utilities
         using FileStream writer = File.OpenWrite(filepath);
         using HttpResponseMessage response = await UtilWebClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;
-        byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
         ConcurrentQueue<byte[]> chunks = new();
-        long progress = 0;
-        long startTime = Environment.TickCount64;
-        long lastUpdate = startTime;
         if (response.StatusCode != HttpStatusCode.OK)
         {
             throw new InvalidOperationException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
@@ -532,19 +528,36 @@ public static class Utilities
         progressUpdate?.Invoke(0, length, 0);
         Task loadData = Task.Run(async () =>
         {
+            byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
+            int nextOffset = 0;
             while (true)
             {
-                int read = await dlStream.ReadAsync(buffer, Program.GlobalProgramCancel);
+                int read = await dlStream.ReadAsync(buffer.AsMemory(nextOffset), Program.GlobalProgramCancel);
                 if (read <= 0)
                 {
+                    if (nextOffset > 0)
+                    {
+                        chunks.Enqueue(buffer[..nextOffset]);
+                    }
                     chunks.Enqueue(null);
                     return;
                 }
-                chunks.Enqueue(buffer[..read]);
+                if (nextOffset + read < 1024 * 1024 * 5)
+                {
+                    nextOffset += read;
+                }
+                else
+                {
+                    chunks.Enqueue(buffer[..(nextOffset + read)]);
+                    nextOffset = 0;
+                }
             }
         });
         Task saveChunks = Task.Run(async () =>
         {
+            long progress = 0;
+            long startTime = Environment.TickCount64;
+            long lastUpdate = startTime;
             while (true)
             {
                 if (chunks.TryDequeue(out byte[] chunk))
