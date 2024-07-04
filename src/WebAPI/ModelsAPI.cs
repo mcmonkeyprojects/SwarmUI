@@ -508,15 +508,45 @@ public static class ModelsAPI
                 File.Delete(tempPath);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(outPath));
-            await Utilities.DownloadFile(url, tempPath, async (progress, total, perSec) =>
+            using CancellationTokenSource canceller = new();
+            Task downloading = Utilities.DownloadFile(url, tempPath, (progress, total, perSec) =>
             {
-                await ws.SendJson(new JObject()
+                ws.SendJson(new JObject()
                 {
                     ["current_percent"] = progress / (double)total,
                     ["overall_percent"] = 0.2,
                     ["per_second"] = perSec
-                }, API.WebsocketTimeout);
-            }, originalUrl);
+                }, API.WebsocketTimeout).Wait();
+            }, canceller, originalUrl);
+            Task listenForSignal = Utilities.RunCheckedTask(async () =>
+            {
+                while (true)
+                {
+                    while (ws.State == WebSocketState.Connecting)
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(0.1), Program.GlobalProgramCancel);
+                    }
+                    if (ws.State != WebSocketState.Open || ws.CloseStatus.HasValue || downloading.IsCompleted)
+                    {
+                        break;
+                    }
+                    JObject data = await ws.ReceiveJson(1024 * 1024, true);
+                    if (data is null)
+                    {
+                        continue;
+                    }
+                    Logs.Verbose($"Model download websocket inbound: {data}");
+                    if (data.TryGetValue("signal", out JToken signal))
+                    {
+                        string cmd = $"{signal}".ToLowerFast();
+                        if (cmd == "cancel")
+                        {
+                            canceller.Cancel();
+                        }
+                    }
+                }
+            });
+            await downloading;
             File.Move(tempPath, outPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
@@ -530,6 +560,11 @@ public static class ModelsAPI
             {
                 Logs.Warning($"Failed to download the model due to: {ex.Message}");
                 await ws.SendJson(new JObject() { ["error"] = ex.Message }, API.WebsocketTimeout);
+                return null;
+            }
+            else if (ex is TaskCanceledException)
+            {
+                await ws.SendJson(new JObject() { ["error"] = "Download was cancelled." }, API.WebsocketTimeout);
                 return null;
             }
             Logs.Warning($"Failed to download the model due to internal exception: {ex}");

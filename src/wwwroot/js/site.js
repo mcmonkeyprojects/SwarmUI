@@ -84,7 +84,7 @@ function genericServerError() {
 let failedWSAddr = translatable(`Failed to get WebSocket address. You may be connecting to the server in an unexpected way. Please use "http" or "https" URLs.`);
 let failedDepth = translatable(`Failed to get session ID after 3 tries. Your account may have been invalidated. Try refreshing the page, or contact the site owner.`);
 
-function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null) {
+function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null, onOpenHandle = null) {
     function fail(e) {
         if (errorHandle) {
             errorHandle(e);
@@ -103,6 +103,9 @@ function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null) {
     socket.onopen = () => {
         in_data['session_id'] = session_id;
         socket.send(JSON.stringify(in_data));
+        if (onOpenHandle) {
+            onOpenHandle(socket);
+        }
     };
     socket.onmessage = (event) => {
         let data = JSON.parse(event.data);

@@ -182,6 +182,7 @@ class ModelDownloaderUtil {
         this.progressBar = getRequiredElementById('model_downloader_special_progressbar');
         this.button = getRequiredElementById('model_downloader_button');
         this.metadataZone = getRequiredElementById('model_downloader_metadatazone');
+        this.cancelButton = getRequiredElementById('model_downloader_cancel_button');
         this.hfPrefix = 'https://huggingface.co/';
         this.civitPrefix = 'https://civitai.com/';
     }
@@ -431,11 +432,24 @@ class ModelDownloaderUtil {
                 refreshParameterValues(true);
                 overall.style.width = `0%`;
                 current.style.width = `0%`;
+                this.cancelButton.disabled = true;
+                delete this.cancelButton.onclick;
             }
         }, 0, e => {
-            this.textArea.innerHTML = `Error: ${escapeHtml(e)}\n<br>Are you sure the URL is correct? Note some models may require you to authenticate using an <a href="#" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userinfotabbutton').click();">API Key</a>.`;
+            let hintInfo = `Are you sure the URL is correct? Note some models may require you to authenticate using an <a href="#" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userinfotabbutton').click();">API Key</a>.`;
+            if (e == "Download was cancelled.") {
+                hintInfo = "";
+            }
+            this.textArea.innerHTML = `Error: ${escapeHtml(e)}\n<br>${hintInfo}`;
             overall.style.width = `0%`;
             current.style.width = `0%`;
+            this.cancelButton.disabled = true;
+            delete this.cancelButton.onclick;
+        }, socket => {
+            this.cancelButton.onclick = () => {
+                socket.send(`{ "signal": "cancel" }`);
+            };
+            this.cancelButton.disabled = false;
         });
     }
 }

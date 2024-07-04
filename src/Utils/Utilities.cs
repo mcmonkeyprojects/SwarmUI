@@ -513,26 +513,28 @@ public static class Utilities
     public static HttpClient UtilWebClient = NetworkBackendUtils.MakeHttpClient();
 
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
-    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, string altUrl = null)
+    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null)
     {
         altUrl ??= url;
+        cancel ??= new();
+        using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
         using FileStream writer = File.OpenWrite(filepath);
         using HttpResponseMessage response = await UtilWebClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;
         ConcurrentQueue<byte[]> chunks = new();
+        ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
         if (response.StatusCode != HttpStatusCode.OK)
         {
             throw new InvalidOperationException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
         }
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
-        progressUpdate?.Invoke(0, length, 0);
         Task loadData = Task.Run(async () =>
         {
             byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
             int nextOffset = 0;
             while (true)
             {
-                int read = await dlStream.ReadAsync(buffer.AsMemory(nextOffset), Program.GlobalProgramCancel);
+                int read = await dlStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token);
                 if (read <= 0)
                 {
                     if (nextOffset > 0)
@@ -540,7 +542,7 @@ public static class Utilities
                         chunks.Enqueue(buffer[..nextOffset]);
                     }
                     chunks.Enqueue(null);
-                    return;
+                    break;
                 }
                 if (nextOffset + read < 1024 * 1024 * 5)
                 {
@@ -550,6 +552,11 @@ public static class Utilities
                 {
                     chunks.Enqueue(buffer[..(nextOffset + read)]);
                     nextOffset = 0;
+                }
+                if (cancel is not null && cancel.IsCancellationRequested)
+                {
+                    chunks.Enqueue(null);
+                    break;
                 }
             }
         });
@@ -565,31 +572,58 @@ public static class Utilities
                     if (chunk is null)
                     {
                         Logs.Verbose($"Download {altUrl} completed with {progress} bytes.");
-                        progressUpdate?.Invoke(progress, length, 0);
+                        progUpdates.Enqueue((progress, length, 0, true));
                         if (length != 0 && progress != length)
                         {
+                            if (cancel is not null && cancel.IsCancellationRequested)
+                            {
+                                throw new TaskCanceledException($"Download {altUrl} was cancelled.");
+                            }
                             throw new InvalidOperationException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
                         }
                         break;
                     }
                     progress += chunk.Length;
                     long timeNow = Environment.TickCount64;
-                    if (timeNow - lastUpdate > 1000)
+                    if (timeNow - lastUpdate > 1000 && chunks.Count < 3)
                     {
                         long bytesPerSecond = progress * 1000 / (timeNow - startTime);
                         Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
-                        progressUpdate?.Invoke(progress, length, bytesPerSecond);
+                        progUpdates.Enqueue((progress, length, bytesPerSecond, false));
                         lastUpdate = timeNow;
                     }
-                    await writer.WriteAsync(chunk, Program.GlobalProgramCancel);
+                    await writer.WriteAsync(chunk, combinedCancel.Token);
                 }
                 else
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(0.1), Program.GlobalProgramCancel);
+                    await Task.Delay(TimeSpan.FromSeconds(0.1), combinedCancel.Token);
                 }
             }
         });
-        await Task.WhenAll([loadData, saveChunks]);
+        Task sendUpdates = Task.Run(async () =>
+        {
+            if (progressUpdate is null)
+            {
+                return;
+            }
+            progressUpdate(0, length, 0);
+            while (true)
+            {
+                if (progUpdates.TryDequeue(out (long, long, long, bool) update))
+                {
+                    progressUpdate(update.Item1, update.Item2, update.Item3);
+                    if (update.Item4)
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(0.1), combinedCancel.Token);
+                }
+            }
+        });
+        await Task.WhenAll(loadData, saveChunks, sendUpdates);
     }
 
     /// <summary>Converts a byte array to a hexadecimal string.</summary>
