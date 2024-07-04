@@ -619,10 +619,11 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             let input_overrides = {
                 'initimage': url,
                 'images': 1,
+                'aspectratio': 'Custom',
                 'width': width * 2,
                 'height': height * 2
             };
-            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.6 });
+            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
     let metaParsed = JSON.parse(metadata) ?? { is_starred: false };
