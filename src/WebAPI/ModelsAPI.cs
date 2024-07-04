@@ -470,16 +470,19 @@ public static class ModelsAPI
     {
         if (!url.StartsWith("http://") && !url.StartsWith("https://"))
         {
-            return new JObject() { ["error"] = "Invalid URL." };
+            await ws.SendJson(new JObject() { ["error"] = "Invalid URL." }, API.WebsocketTimeout);
+            return null;
         }
         name = Utilities.StrictFilenameClean(name);
         if (TryGetRefusalForModel(session, name, out JObject refusal))
         {
-            return refusal;
+            await ws.SendJson(refusal, API.WebsocketTimeout);
+            return null;
         }
         if (!Program.T2IModelSets.TryGetValue(type, out T2IModelHandler handler))
         {
-            return new JObject() { ["error"] = "Invalid type." };
+            await ws.SendJson(new JObject() { ["error"] = "Invalid type." }, API.WebsocketTimeout);
+            return null;
         }
         string originalUrl = url;
         url = url.Before('#');
@@ -500,7 +503,8 @@ public static class ModelsAPI
             string outPath = $"{handler.FolderPaths[0]}/{name}.safetensors";
             if (File.Exists(outPath))
             {
-                return new JObject() { ["error"] = "Model at that save path already exists." };
+                await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
+                return null;
             }
             string tempPath = $"{handler.FolderPaths[0]}/{name}.download.tmp";
             if (File.Exists(tempPath))
@@ -564,6 +568,7 @@ public static class ModelsAPI
             }
             else if (ex is TaskCanceledException)
             {
+                Logs.Info("Download was cancelled.");
                 await ws.SendJson(new JObject() { ["error"] = "Download was cancelled." }, API.WebsocketTimeout);
                 return null;
             }

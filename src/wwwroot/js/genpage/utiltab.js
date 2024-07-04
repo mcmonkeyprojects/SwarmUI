@@ -178,11 +178,9 @@ class ModelDownloaderUtil {
         this.urlStatusArea = getRequiredElementById('model_downloader_status');
         this.type = getRequiredElementById('model_downloader_type');
         this.name = getRequiredElementById('model_downloader_name');
-        this.textArea = getRequiredElementById('model_downloader_text_area');
-        this.progressBar = getRequiredElementById('model_downloader_special_progressbar');
         this.button = getRequiredElementById('model_downloader_button');
         this.metadataZone = getRequiredElementById('model_downloader_metadatazone');
-        this.cancelButton = getRequiredElementById('model_downloader_cancel_button');
+        this.activeZone = getRequiredElementById('model_downloader_right_sidebar');
         this.hfPrefix = 'https://huggingface.co/';
         this.civitPrefix = 'https://civitai.com/';
     }
@@ -340,6 +338,12 @@ class ModelDownloaderUtil {
                         + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '')
                         + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join(", "))}` : '');
                     this.metadataZone.dataset.raw = `${JSON.stringify(metadata, null, 2)}`;
+                    if (img) {
+                        this.metadataZone.dataset.image = img;
+                    }
+                    else {
+                        delete this.metadataZone.dataset.image;
+                    }
                 });
             }
             if (parts.length < 3) {
@@ -411,43 +415,96 @@ class ModelDownloaderUtil {
     }
 
     run() {
-        let data = {
-            'url': this.url.value,
-            'type': this.type.value,
-            'name': this.name.value,
-            'metadata': this.metadataZone.dataset.raw || '',
-        }
-        this.textArea.innerText = "Downloading, please wait...";
         this.button.disabled = true;
-        let overall = this.progressBar.querySelector('.image-preview-progress-overall');
-        let current = this.progressBar.querySelector('.image-preview-progress-current');
+        let download = new ActiveModelDownload(this, this.name.value, this.url.value, this.metadataZone.dataset.image, this.type.value, this.metadataZone.dataset.raw || '');
+        download.download();
+    }
+}
+
+class ActiveModelDownload {
+    constructor(downloader, name, url, image, type, metadata) {
+        this.downloader = downloader;
+        this.name = name;
+        this.url = url;
+        this.image = image;
+        this.type = type;
+        this.metadata = metadata;
+        let cardHtml = `
+            <div class="card">
+                <div class="card-header">[${type}] ${escapeHtml(name)}</div>
+                ${image ? `<img src="${image}" class="card-img-top" alt="Model thumbnail">` : ''}
+                <div class="lora_extractor_special"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"></div></div>
+                <div class="status-text">Preparing...</div>
+                <button class="basic-button" title="Cancel this download" disabled>Cancel</button>
+            </div>
+        `;
+        this.mainDiv = createDiv(null, 'active-model-download-card', cardHtml);
+        this.card = this.mainDiv.querySelector('.card');
+        downloader.activeZone.insertBefore(this.mainDiv, downloader.activeZone.firstChild);
+        this.overall = this.card.querySelector('.image-preview-progress-overall');
+        this.current = this.card.querySelector('.image-preview-progress-current');
+        this.statusText = this.card.querySelector('.status-text');
+        this.cancelButton = this.card.querySelector('button');
+    }
+
+    isDone() {
+        this.overall.style.width = `0%`;
+        this.current.style.width = `0%`;
+        this.cancelButton.disabled = true;
+        delete this.cancelButton.onclick;
+        setTimeout(() => {
+            this.cancelButton.innerText = "Remove";
+            this.cancelButton.onclick = () => {
+                this.mainDiv.remove();
+            };
+            this.cancelButton.disabled = false;
+        }, 2000);
+    }
+
+    setBorderColor(color) {
+        this.card.style.borderColor = color;
+    }
+
+    download() {
+        let data = {
+            'url': this.url,
+            'type': this.type,
+            'name': this.name,
+            'metadata': this.metadata,
+        }
+        this.statusText.innerText = "Downloading, please wait...";
+        this.setBorderColor('#0000aa');
         makeWSRequest('DoModelDownloadWS', data, data => {
             if (data.overall_percent) {
-                overall.style.width = `${data.overall_percent * 100}%`;
-                current.style.width = `${data.current_percent * 100}%`;
-                this.textArea.innerText = `Downloading, please wait... ${roundToStr(data.current_percent * 100, 1)}% (${fileSizeStringify(data.per_second)} per second)`;
+                this.overall.style.width = `${data.overall_percent * 100}%`;
+                this.current.style.width = `${data.current_percent * 100}%`;
+                this.statusText.innerText = `Downloading, please wait... ${roundToStr(data.current_percent * 100, 1)}% (${fileSizeStringify(data.per_second)} per second)`;
             }
             else if (data.success) {
-                this.textArea.innerText = "Done!";
+                this.statusText.innerText = "Done!";
+                this.setBorderColor('#00aa00');
                 refreshParameterValues(true);
-                overall.style.width = `0%`;
-                current.style.width = `0%`;
-                this.cancelButton.disabled = true;
-                delete this.cancelButton.onclick;
+                this.isDone();
             }
         }, 0, e => {
             let hintInfo = `Are you sure the URL is correct? Note some models may require you to authenticate using an <a href="#" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userinfotabbutton').click();">API Key</a>.`;
             if (e == "Download was cancelled.") {
                 hintInfo = "";
+                this.setBorderColor('#aaaa00');
             }
-            this.textArea.innerHTML = `Error: ${escapeHtml(e)}\n<br>${hintInfo}`;
-            overall.style.width = `0%`;
-            current.style.width = `0%`;
-            this.cancelButton.disabled = true;
-            delete this.cancelButton.onclick;
+            else if (e == "Model at that save path already exists." || e == "Invalid type.") {
+                this.setBorderColor('#aa0000');
+                hintInfo = "";
+            }
+            else {
+                this.setBorderColor('#aa0000');
+            }
+            this.statusText.innerHTML = `Error: ${escapeHtml(e)}\n<br>${hintInfo}`;
+            this.isDone();
         }, socket => {
             this.cancelButton.onclick = () => {
                 socket.send(`{ "signal": "cancel" }`);
+                this.setBorderColor('#aaaa00');
             };
             this.cancelButton.disabled = false;
         });

@@ -1094,6 +1094,7 @@ body {
 }
 .lora_extractor_special {
     width: 100%;
+    height: 10px;
     position: relative;
 }
 .lora_extractor_special .image-preview-progress-overall {
@@ -1268,4 +1269,30 @@ body {
     border: 1px solid var(--light-border);
     border-radius: 0.5rem;
     overflow: auto;
+}
+.model-downloader-section-wrapper {
+    display: block;
+    width: fit-content;
+    margin: auto;
+}
+.model-downloader-main-section {
+    display: inline-block;
+    width: fit-content;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    max-width: calc(100vw - 22rem);
+}
+.model-downloader-right-sidebar {
+    display: inline-block;
+    width: 20rem;
+    vertical-align: top;
+}
+.active-model-download-card img {
+    width: 10rem;
+    margin-left: 5rem;
+    max-height: 10rem;
+    object-fit: contain;
+}
+.active-model-download-card .status-text {
+    font-size: 80%;
 }
