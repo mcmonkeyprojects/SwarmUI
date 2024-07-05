@@ -541,6 +541,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.opacitySelector = this.configDiv.querySelector('.id-opac2');
         this.radiusNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.opacityNumber.addEventListener('change', () => { this.onConfigChange(); });
+        this.lastTouch = null;
     }
 
     onConfigChange() {
@@ -556,17 +557,32 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.drawCircleBrush(this.editor.mouseX, this.editor.mouseY, this.radius * this.editor.zoomLevel);
     }
 
-    brush() {
+    brush(force = 1) {
         let [lastX, lastY] = this.editor.activeLayer.canvasCoordToLayerCoord(this.editor.lastMouseX, this.editor.lastMouseY);
         let [x, y] = this.editor.activeLayer.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
-        this.bufferLayer.drawFilledCircle(lastX, lastY, this.radius, this.color);
-        this.bufferLayer.drawFilledCircleStrokeBetween(lastX, lastY, x, y, this.radius, this.color);
-        this.bufferLayer.drawFilledCircle(x, y, this.radius, this.color);
+        this.bufferLayer.drawFilledCircle(lastX, lastY, this.radius * force, this.color);
+        this.bufferLayer.drawFilledCircleStrokeBetween(lastX, lastY, x, y, this.radius * force, this.color);
+        this.bufferLayer.drawFilledCircle(x, y, this.radius * force, this.color);
         this.editor.markChanged();
+    }
+
+    getForceFrom(e) {
+        if (e.touches && e.touches.length > 0) {
+            let touch = e.touches.item(0);
+            this.lastTouch = new Date().getTime();
+            return touch.force;
+        }
+        return 1;
     }
 
     onMouseDown(e) {
         if (this.brushing) {
+            return;
+        }
+        if (e.touches) {
+            this.lastTouch = new Date().getTime();
+        }
+        if (!e.touches && this.lastTouch && new Date().getTime() - this.lastTouch < 1000) {
             return;
         }
         this.brushing = true;
@@ -577,12 +593,18 @@ class ImageEditorToolBrush extends ImageEditorTool {
             this.bufferLayer.globalCompositeOperation = 'destination-out';
         }
         target.childLayers.push(this.bufferLayer);
-        this.brush();
+        this.brush(this.getForceFrom(e));
     }
 
     onMouseMove(e) {
         if (this.brushing) {
-            this.brush();
+            if (e.touches) {
+                this.lastTouch = new Date().getTime();
+            }
+            if (!e.touches && this.lastTouch && new Date().getTime() - this.lastTouch < 1000) {
+                return;
+            }
+            this.brush(this.getForceFrom(e));
         }
     }
 
