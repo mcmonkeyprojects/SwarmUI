@@ -87,6 +87,7 @@ public class ComfyUIBackendExtension : Extension
             return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || f.EndsWith(".safetensors") || f.EndsWith(".engine")).Select(f => f.Replace('\\', '/').AfterLast('/'))];
         }
         UpscalerModels = [.. UpscalerModels.Concat(listModelsFor("upscale_models").Select(u => $"model-{u}")).Distinct()];
+        SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
     }
 
     /// <inheritdoc/>
@@ -312,6 +313,23 @@ public class ComfyUIBackendExtension : Extension
         await backend.AwaitJobLive(workflow, "0", takeRawOutput, new(null), Program.GlobalProgramCancel);
     }
 
+    public static void OnSwarmBackendAdded(SwarmSwarmBackend backend)
+    {
+        // TODO: Multi-layered forwarding? (Swarm connects to Swarm connects to Comfy)
+        if (!backend.LinkedRemoteBackendType.StartsWith("comfyui_"))
+        {
+            return;
+        }
+        Utilities.RunCheckedTask(async () =>
+        {
+            HttpRequestMessage getReq = new(HttpMethod.Get, $"{backend.Address}/ComfyBackendDirect/object_info");
+            backend.RequestAdapter()?.Invoke(getReq);
+            getReq.Headers.Add("X-Swarm-Backend-ID", $"{backend.LinkedRemoteBackendID}");
+            HttpResponseMessage resp = await SwarmSwarmBackend.HttpClient.SendAsync(getReq, Program.GlobalProgramCancel);
+            JObject rawObjectInfo = (await resp.Content.ReadAsStringAsync()).ParseToJson();
+            AssignValuesFromRaw(rawObjectInfo);
+        });
+    }
     public static LockObject ValueAssignmentLocker = new();
 
     public static void AssignValuesFromRaw(JObject rawObjectInfo)

@@ -11,6 +11,7 @@ using System.Net.WebSockets;
 using System.Net;
 using SwarmUI.WebAPI;
 using SwarmUI.Accounts;
+using Microsoft.Extensions.Primitives;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -138,6 +139,10 @@ public class ComfyUIRedirectHelper
             return;
         }
         List<ComfyUIBackendExtension.ComfyBackendData> allBackends = ComfyUIBackendExtension.ComfyBackendsDirect().ToList();
+        if (context.Request.Headers.TryGetValue("X-Swarm-Backend-ID", out StringValues backendId) && int.TryParse(backendId, out int backendIdInt))
+        {
+            allBackends = allBackends.Where(b => b.Backend.BackendData.ID == backendIdInt).ToList();
+        }
         (HttpClient webClient, string address, AbstractT2IBackend backend) = allBackends.FirstOrDefault();
         if (webClient is null)
         {

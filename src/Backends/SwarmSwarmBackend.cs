@@ -38,6 +38,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Internal HTTP handler.</summary>
     public static HttpClient HttpClient = NetworkBackendUtils.MakeHttpClient();
 
+    /// <summary>Event fired when a new swarm sub-backend is added.</summary>
+    public static Action<SwarmSwarmBackend> OnSwarmBackendAdded;
+
     public SwarmSwarmBackendSettings Settings => SettingsRaw as SwarmSwarmBackendSettings;
 
     public NetworkBackendUtils.IdleMonitor Idler = new();
@@ -62,6 +65,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
 
     /// <summary>The remote backend ID this specific instance is linked to (if any).</summary>
     public int LinkedRemoteBackendID;
+
+    /// <summary>The backend-type of the remote backend.</summary>
+    public string LinkedRemoteBackendType;
 
     /// <summary>A list of any non-real backends this instance controls.</summary>
     public ConcurrentDictionary<int, BackendHandler.T2IBackendData> ControlledNonrealBackends = new();
@@ -220,7 +226,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                         SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
                         newSwarm.LinkedRemoteBackendID = id;
                         newSwarm.Models = Models;
+                        newSwarm.LinkedRemoteBackendType = type;
                         newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
+                        OnSwarmBackendAdded?.Invoke(newSwarm);
                         ControlledNonrealBackends.TryAdd(id, newData);
                     }
                     if (ControlledNonrealBackends.TryGetValue(id, out BackendHandler.T2IBackendData data))

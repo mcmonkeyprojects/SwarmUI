@@ -1166,8 +1166,11 @@ class PromptTabCompleteClass {
         this.registerPrefix('segment', 'Automatically segment an area by CLIP matcher and inpaint it (optionally with a unique prompt)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             if (prefixLow.startsWith('yolo-')) {
-                let yolomodels = rawGenParamTypesFromServer.filter(p => p.id == 'yolomodelinternal')[0].values;
-                return yolomodels.map(m => `yolo-${m}`).filter(m => m.toLowerCase().includes(prefixLow));
+                let modelList = rawGenParamTypesFromServer.filter(p => p.id == 'yolomodelinternal');
+                if (modelList && modelList.length > 0) {
+                    let yolomodels = modelList[0].values;
+                    return yolomodels.map(m => `yolo-${m}`).filter(m => m.toLowerCase().includes(prefixLow));
+                }
             }
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.'];
         });
