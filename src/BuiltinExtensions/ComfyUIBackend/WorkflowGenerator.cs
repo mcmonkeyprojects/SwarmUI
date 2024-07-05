@@ -967,6 +967,14 @@ public class WorkflowGenerator
     {
         PromptRegion regionalizer = new(prompt);
         JArray globalCond = CreateConditioningLine(regionalizer.GlobalPrompt, clip, model, isPositive, firstId);
+        if (!isPositive && string.IsNullOrWhiteSpace(prompt) && UserInput.Get(T2IParamTypes.ZeroNegative, false))
+        {
+            string zeroed = CreateNode("ConditioningZeroOut", new JObject()
+            {
+                ["conditioning"] = globalCond
+            });
+            return [zeroed, 0];
+        }
         PromptRegion.Part[] parts = regionalizer.Parts.Where(p => p.Type == PromptRegion.PartType.Object || p.Type == PromptRegion.PartType.Region).ToArray();
         if (parts.IsEmpty())
         {
