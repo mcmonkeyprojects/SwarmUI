@@ -570,6 +570,9 @@ class ImageEditorToolBrush extends ImageEditorTool {
         if (e.touches && e.touches.length > 0) {
             let touch = e.touches.item(0);
             this.lastTouch = new Date().getTime();
+            if (touch.force <= 0) {
+                return 1;
+            }
             return touch.force;
         }
         return 1;
