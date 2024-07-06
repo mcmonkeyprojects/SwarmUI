@@ -23,7 +23,10 @@ class SwarmYoloDetection:
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
         # TODO: Cache the model in RAM in some way?
-        model = YOLO(folder_paths.get_full_path("yolov8", model_name))
+        model_path = folder_paths.get_full_path("yolov8", model_name)
+        if model_path is None:
+            raise ValueError(f"Model {model_name} not found, or yolov8 folder path not defined")
+        model = YOLO(model_path)
         results = model(img)
         masks = results[0].masks
         if masks is None:
