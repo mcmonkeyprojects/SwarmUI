@@ -392,7 +392,8 @@ public class T2IParamInput
         PromptTagPostProcessors["segment"] = (data, context) =>
         {
             context.SectionID++;
-            return $"<{context.RawCurrentTag}//cid={context.SectionID}>";
+            string raw = context.RawCurrentTag.Before("//cid=");
+            return $"<{raw}//cid={context.SectionID}>";
         };
         PromptTagPostProcessors["object"] = PromptTagPostProcessors["segment"];
         PromptTagPostProcessors["region"] = PromptTagPostProcessors["segment"];
