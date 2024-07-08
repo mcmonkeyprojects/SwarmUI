@@ -98,8 +98,8 @@ public static class AdminAPI
     public static async Task<JObject> ChangeServerSettings(Session session,
         [API.APIParameter("Dynamic input of `\"settingname\": valuehere`.")] JObject rawData)
     {
-        Logs.Warning($"User {session.User.UserID} changed server settings.");
         JObject settings = (JObject)rawData["settings"];
+        List<string> changed = [];
         foreach ((string key, JToken val) in settings)
         {
             AutoConfiguration.Internal.SingleFieldData field = Program.ServerSettings.TryGetFieldInternalData(key, out _);
@@ -120,7 +120,9 @@ public static class AdminAPI
                 continue;
             }
             Program.ServerSettings.TrySetFieldValue(key, obj);
+            changed.Add(key);
         }
+        Logs.Warning($"User {session.User.UserID} changed server settings: {changed.JoinString(", ")}");
         Program.SaveSettingsFile();
         if (settings.Properties().Any(p => p.Name.StartsWith("paths.")))
         {
