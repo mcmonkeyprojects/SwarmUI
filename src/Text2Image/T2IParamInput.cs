@@ -356,38 +356,43 @@ public class T2IParamInput
             }
             context.Loras ??= [.. Program.T2IModelSets["LoRA"].ListModelNamesFor(context.Input.SourceSession)];
             string matched = T2IParamTypes.GetBestModelInList(lora, context.Loras);
-            if (matched is not null)
+            if (matched is null)
             {
-                List<string> loraList = context.Input.Get(T2IParamTypes.Loras);
-                List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights);
-                List<string> confinements = context.Input.Get(T2IParamTypes.LoraSectionConfinement);
-                if (loraList is null)
-                {
-                    loraList = [];
-                    weights = [];
-                }
-                loraList.Add(matched);
-                weights.Add(strength.ToString());
-                context.Input.Set(T2IParamTypes.Loras, loraList);
-                context.Input.Set(T2IParamTypes.LoraWeights, weights);
-                if (context.SectionID > 0)
-                {
-                    if (confinements is null)
-                    {
-                        confinements = [];
-                        for (int i = 0; i < loraList.Count - 1; i++)
-                        {
-                            confinements.Add("0");
-                        }
-                    }
-                    Logs.Verbose($"LoRA {lora} confined to section {context.SectionID}.");
-                    confinements.Add($"{context.SectionID}");
-                    context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
-                }
-                return "";
+                Logs.Warning($"Lora '{lora}' does not exist and will be ignored.");
+                return null;
             }
-            Logs.Warning($"Lora '{lora}' does not exist and will be ignored.");
-            return null;
+            List<string> loraList = context.Input.Get(T2IParamTypes.Loras);
+            List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights);
+            List<string> confinements = context.Input.Get(T2IParamTypes.LoraSectionConfinement);
+            if (loraList is null)
+            {
+                loraList = [];
+                weights = [];
+            }
+            if (confinements is not null && confinements.Count > loraList.Count)
+            {
+                context.Input.Remove(T2IParamTypes.LoraSectionConfinement);
+                confinements = null;
+            }
+            loraList.Add(matched);
+            weights.Add(strength.ToString());
+            context.Input.Set(T2IParamTypes.Loras, loraList);
+            context.Input.Set(T2IParamTypes.LoraWeights, weights);
+            if (context.SectionID > 0)
+            {
+                if (confinements is null)
+                {
+                    confinements = [];
+                    for (int i = 0; i < loraList.Count - 1; i++)
+                    {
+                        confinements.Add("0");
+                    }
+                }
+                Logs.Verbose($"LoRA {lora} confined to section {context.SectionID}.");
+                confinements.Add($"{context.SectionID}");
+                context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
+            }
+            return "";
         };
         PromptTagPostProcessors["segment"] = (data, context) =>
         {
