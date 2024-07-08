@@ -623,10 +623,15 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
     }, '', 'Sets this image as the Init Image parameter input');
     includeButton('Edit Image', () => {
-        let initImageGroupToggle = getRequiredElementById('input_group_content_initimage_toggle');
+        let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
         if (initImageGroupToggle) {
             initImageGroupToggle.checked = true;
             triggerChangeFor(initImageGroupToggle);
+        }
+        let initImageParam = document.getElementById('input_initimage');
+        if (!initImageParam) {
+            showError('Cannot use "Edit Image": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.');
+            return;
         }
         imageEditor.setBaseImage(img);
         imageEditor.activate();
