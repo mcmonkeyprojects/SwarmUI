@@ -454,13 +454,6 @@ public class T2IParamInput
         return Get(T2IParamTypes.Height, 512);
     }
 
-    /// <summary>Get the right model for inpainting depending on the current operation</summary>
-    /// <remarks>Segmentation use refiner Model when enabled but inpainting does not</remarks>
-    public T2IModel GetModelForInpainting(bool fromSegmentation)
-    {
-        return fromSegmentation ? Get(T2IParamTypes.RefinerModel, Get(T2IParamTypes.Model)) : Get(T2IParamTypes.Model);
-    }
-
     /// <summary>Returns a perfect duplicate of this parameter input, with new reference addresses.</summary>
     public T2IParamInput Clone()
     {
