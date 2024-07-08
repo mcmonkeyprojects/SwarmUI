@@ -184,6 +184,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, unrecognized XL-format models will be treated as SDXL 1.0.\nIf false, unrecognized XL-format models will be treated as SDXL 0.9.\nThe SDXL 1.0 specification requires ModelSpec architecture IDs, and any similar model lacking this ID is a 0.9 model,\nhowever, many custom XL model author have excluded this metadata.\nThis means those models are technically SDXL 0.9 models, however it can be convenient to pretend they are 1.0 models instead.\nNote that enabling this will mislabel the official SDXL 0.9 model.")]
         public bool XLDefaultAsXL1 = false;
+
+        [ConfigComment("If true, editing model metadata should write a '.swarm.json' file next to the model.\nIf false, apply metadata to the model itself.\nApplying directly to the model is generally better, however the JSON file might be preferable if you have a very slow data drive, as it avoids rewriting the model content.")]
+        public bool EditMetadataWriteJSON = false;
     }
 
     /// <summary>Settings to control restrictions on users.</summary>

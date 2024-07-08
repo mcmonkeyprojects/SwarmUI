@@ -264,17 +264,14 @@ public class T2IModelHandler
             {
                 return;
             }
-            foreach (string altMetadata in AltModelMetadataJsonFileSuffixes)
+            string swarmjspath = $"{model.RawFilePath.BeforeLast('.')}.swarm.json";
+            if (File.Exists(swarmjspath))
             {
-                string path = $"{model.RawFilePath.BeforeLast('.')}{altMetadata}";
-                if (File.Exists(path))
-                {
-                    File.Delete(path);
-                }
+                File.Delete(swarmjspath);
             }
-            if (!model.RawFilePath.EndsWith(".safetensors"))
+            if (!model.RawFilePath.EndsWith(".safetensors") || Program.ServerSettings.Metadata.EditMetadataWriteJSON)
             {
-                File.WriteAllText($"{model.RawFilePath.BeforeLast('.')}.json", model.ToNetObject().ToString());
+                File.WriteAllText(swarmjspath, model.ToNetObject("modelspec.").ToString());
                 return;
             }
             Logs.Debug($"Will reapply metadata for model {model.RawFilePath}");
@@ -285,7 +282,7 @@ public class T2IModelHandler
             if (len < 0 || len > 100 * 1024 * 1024)
             {
                 Logs.Warning($"Model {model.Name} has invalid metadata length {len}.");
-                File.WriteAllText($"{model.RawFilePath.BeforeLast('.')}.json", model.ToNetObject().ToString());
+                File.WriteAllText(swarmjspath, model.ToNetObject("modelspec.").ToString());
                 return;
             }
             byte[] header = new byte[len];
@@ -350,7 +347,7 @@ public class T2IModelHandler
 
     public static readonly string[] AutoImageFormatSuffixes = [".jpg", ".png", ".preview.png", ".preview.jpg", ".jpeg", ".preview.jpeg", ".thumb.jpg", ".thumb.png"];
 
-    public static readonly string[] AltModelMetadataJsonFileSuffixes = [".json", ".cm-info.json", ".civitai.info"];
+    public static readonly string[] AltModelMetadataJsonFileSuffixes = [".swarm.json", ".json", ".cm-info.json", ".civitai.info"];
 
     public static readonly string[] AltMetadataDescriptionKeys = ["VersionName", "VersionDescription", "ModelDescription", "description"];
 
@@ -511,7 +508,7 @@ public class T2IModelHandler
             }
             string altTriggerPhrase = triggerPhrases.JoinString(", ");
             T2IModelClass clazz = T2IModelClassSorter.IdentifyClassFor(model, headerData);
-            string img = metaHeader?.Value<string>("modelspec.thumbnail") ?? metaHeader?.Value<string>("thumbnail") ?? metaHeader?.Value<string>("preview_image");
+            string img = metaHeader?.Value<string>("modelspec.preview_image") ?? metaHeader?.Value<string>("modelspec.thumbnail") ?? metaHeader?.Value<string>("thumbnail") ?? metaHeader?.Value<string>("preview_image");
             if (img is not null && !img.StartsWith("data:image/"))
             {
                 Logs.Warning($"Ignoring image in metadata of {model.Name} '{img}'");
@@ -530,6 +527,19 @@ public class T2IModelHandler
                 height = (metaHeader?.ContainsKey("standard_height") ?? false) ? metaHeader.Value<int>("standard_height") : (clazz?.StandardHeight ?? 0);
             }
             img ??= autoImg;
+            string[] tags = null;
+            JToken tagsTok = metaHeader.Property("modelspec.tags")?.Value;
+            if (tagsTok is not null)
+            {
+                if (tagsTok.Type == JTokenType.Array)
+                {
+                    tags = tagsTok.ToObject<string[]>();
+                }
+                else
+                {
+                    tags = tagsTok.Value<string>().Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                }
+            }
             metadata = new()
             {
                 ModelFileVersion = modified,
@@ -549,7 +559,7 @@ public class T2IModelHandler
                 License = metaHeader?.Value<string>("modelspec.license") ?? metaHeader?.Value<string>("license"),
                 Date = metaHeader?.Value<string>("modelspec.date") ?? metaHeader?.Value<string>("date"),
                 Preprocessor = metaHeader?.Value<string>("modelspec.preprocessor") ?? metaHeader?.Value<string>("preprocessor"),
-                Tags = metaHeader?.Value<string>("modelspec.tags")?.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries),
+                Tags = tags,
                 IsNegativeEmbedding = (metaHeader?.Value<string>("modelspec.is_negative_embedding") ?? metaHeader?.Value<string>("is_negative_embedding")) == "true",
                 PredictionType = metaHeader?.Value<string>("modelspec.prediction_type") ?? metaHeader?.Value<string>("prediction_type"),
                 Hash = metaHeader?.Value<string>("modelspec.hash_sha256") ?? metaHeader?.Value<string>("hash_sha256"),

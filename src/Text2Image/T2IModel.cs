@@ -37,36 +37,36 @@ public class T2IModel
     public T2IModelHandler.ModelMetadataStore Metadata;
 
     /// <summary>Gets a networkable copy of this model's data.</summary>
-    public JObject ToNetObject()
+    public JObject ToNetObject(string prefix = "")
     {
         return new JObject()
         {
-            ["name"] = Name,
-            ["title"] = Metadata?.Title,
-            ["author"] = Metadata?.Author,
-            ["description"] = Description,
-            ["preview_image"] = PreviewImage,
-            ["loaded"] = AnyBackendsHaveLoaded,
-            ["architecture"] = ModelClass?.ID,
-            ["class"] = ModelClass?.Name,
-            ["compat_class"] = ModelClass?.CompatClass,
-            ["resolution"] = $"{StandardWidth}x{StandardHeight}",
-            ["standard_width"] = StandardWidth,
-            ["standard_height"] = StandardHeight,
-            ["license"] = Metadata?.License,
-            ["date"] = Metadata?.Date,
-            ["prediction_type"] = Metadata?.PredictionType,
-            ["usage_hint"] = Metadata?.UsageHint,
-            ["trigger_phrase"] = Metadata?.TriggerPhrase,
-            ["merged_from"] = Metadata?.MergedFrom,
-            ["tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
-            ["is_supported_model_format"] = RawFilePath.EndsWith(".safetensors") || RawFilePath.EndsWith(".engine"),
-            ["is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
-            ["local"] = true,
-            ["time_created"] = Metadata?.TimeCreated ?? 0,
-            ["time_modified"] = Metadata?.TimeModified ?? 0,
-            ["hash"] = Metadata?.Hash ?? "",
-            ["hash_sha256"] = Metadata?.Hash ?? ""
+            [$"{prefix}name"] = Name,
+            [$"{prefix}title"] = Metadata?.Title,
+            [$"{prefix}author"] = Metadata?.Author,
+            [$"{prefix}description"] = Description,
+            [$"{prefix}preview_image"] = PreviewImage,
+            [$"{prefix}loaded"] = AnyBackendsHaveLoaded,
+            [$"{prefix}architecture"] = ModelClass?.ID,
+            [$"{prefix}class"] = ModelClass?.Name,
+            [$"{prefix}compat_class"] = ModelClass?.CompatClass,
+            [$"{prefix}resolution"] = $"{StandardWidth}x{StandardHeight}",
+            [$"{prefix}standard_width"] = StandardWidth,
+            [$"{prefix}standard_height"] = StandardHeight,
+            [$"{prefix}license"] = Metadata?.License,
+            [$"{prefix}date"] = Metadata?.Date,
+            [$"{prefix}prediction_type"] = Metadata?.PredictionType,
+            [$"{prefix}usage_hint"] = Metadata?.UsageHint,
+            [$"{prefix}trigger_phrase"] = Metadata?.TriggerPhrase,
+            [$"{prefix}merged_from"] = Metadata?.MergedFrom,
+            [$"{prefix}tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
+            [$"{prefix}is_supported_model_format"] = RawFilePath.EndsWith(".safetensors") || RawFilePath.EndsWith(".engine"),
+            [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
+            [$"{prefix}local"] = true,
+            [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
+            [$"{prefix}time_modified"] = Metadata?.TimeModified ?? 0,
+            [$"{prefix}hash"] = Metadata?.Hash ?? "",
+            [$"{prefix}hash_sha256"] = Metadata?.Hash ?? ""
         };
     }
 
