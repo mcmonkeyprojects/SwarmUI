@@ -378,20 +378,17 @@ public class T2IParamInput
             weights.Add(strength.ToString());
             context.Input.Set(T2IParamTypes.Loras, loraList);
             context.Input.Set(T2IParamTypes.LoraWeights, weights);
-            if (context.SectionID > 0)
+            if (confinements is null)
             {
-                if (confinements is null)
+                confinements = [];
+                for (int i = 0; i < loraList.Count - 1; i++)
                 {
-                    confinements = [];
-                    for (int i = 0; i < loraList.Count - 1; i++)
-                    {
-                        confinements.Add("0");
-                    }
+                    confinements.Add("-1");
                 }
-                Logs.Verbose($"LoRA {lora} confined to section {context.SectionID}.");
-                confinements.Add($"{context.SectionID}");
-                context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
             }
+            Logs.Verbose($"LoRA {lora} confined to section {context.SectionID}.");
+            confinements.Add($"{context.SectionID}");
+            context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
             return "";
         };
         PromptTagPostProcessors["segment"] = (data, context) =>

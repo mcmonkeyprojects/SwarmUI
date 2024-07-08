@@ -82,6 +82,24 @@ function copy_current_image_params() {
     if ('original_negativeprompt' in metadata) {
         metadata.negativeprompt = metadata.original_negativeprompt;
     }
+    if ('lorasectionconfinement' in metadata && 'loras' in metadata && 'loraweights' in metadata) {
+        let confinements = metadata.lorasectionconfinement;
+        let loras = metadata.loras;
+        let weights = metadata.loraweights;
+        if (confinements.length == loras.length && loras.length == weights.length) {
+            let newLoras = [];
+            let newWeights = [];
+            for (let i = 0; i < confinements.length; i++) {
+                if (confinements[i] == -1) {
+                    newLoras.push(loras[i]);
+                    newWeights.push(weights[i]);
+                }
+            }
+            metadata.loras = newLoras;
+            metadata.loraweights = newWeights;
+            delete metadata.lorasectionconfinement;
+        }
+    }
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
     resetParamsToDefault(exclude);
     for (let param of gen_param_types) {

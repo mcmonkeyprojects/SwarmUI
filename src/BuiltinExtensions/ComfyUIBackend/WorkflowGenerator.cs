@@ -238,7 +238,7 @@ public class WorkflowGenerator
             if (confinements is not null && confinements.Count > i)
             {
                 int confinementId = int.Parse(confinements[i]);
-                if (confinementId != confinement)
+                if (confinementId >= 0 && confinementId != confinement)
                 {
                     continue;
                 }
