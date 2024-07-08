@@ -11,6 +11,9 @@ public class Settings : AutoConfiguration
     [ConfigComment("Settings related to file paths.")]
     public PathsData Paths = new();
 
+    [ConfigComment("Settings related to image/model metadata.")]
+    public MetadataSection Metadata = new();
+
     [ConfigComment("Settings related to networking and the webserver.")]
     public NetworkData Network = new();
 
@@ -166,14 +169,18 @@ public class Settings : AutoConfiguration
         [ConfigComment("When true, output paths always have the username as a folder.\nWhen false, this will be skipped.\nKeep this on in multi-user environments.")]
         public bool AppendUserNameToOutputPath = true;
 
+        [ConfigComment("If true, when a user deletes an image, send it to the OS Recycle Bin instead of permanently deleting it.\nIf false, image files are permanently deleted.\nDefaults to false.")]
+        public bool RecycleDeletedImages = false;
+    }
+
+    /// <summary>Settings related to image/model metadata.</summary>
+    public class MetadataSection : AutoConfiguration
+    {
         [ConfigComment("If true, model metadata is tracked on a per-folder basis. This is better for example if you copy model folders to different machines, or have symlinks to different instances, or etc.\nIf false, model metadata is tracked in the central data folder. This is better if you don't want stray files in your model folders, or if you have several Swarm instances running simultaneously.")]
         public bool ModelMetadataPerFolder = true;
 
         [ConfigComment("If true, image metadata is tracked on a per-folder basis.\nIf false, image metadata is tracked in the central data folder.\nThis is better if you don't want stray files in your output folders, or if you have several Swarm instances running simultaneously over the same output folders.")]
         public bool ImageMetadataPerFolder = true;
-
-        [ConfigComment("If true, when a user deletes an image, send it to the OS Recycle Bin instead of permanently deleting it.\nIf false, image files are permanently deleted.\nDefaults to false.")]
-        public bool RecycleDeletedImages = false;
     }
 
     /// <summary>Settings to control restrictions on users.</summary>

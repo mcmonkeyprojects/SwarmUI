@@ -57,7 +57,7 @@ public static class ImageMetadataTracker
     /// <summary>Returns the database corresponding to the given folder path.</summary>
     public static ImageDatabase GetDatabaseForFolder(string folder)
     {
-        if (!Program.ServerSettings.Paths.ImageMetadataPerFolder)
+        if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             folder = Program.ServerSettings.Paths.DataPath;
         }
@@ -108,7 +108,7 @@ public static class ImageMetadataTracker
             return null;
         }
         string folder = file.BeforeAndAfterLast('/', out string filename);
-        if (!Program.ServerSettings.Paths.ImageMetadataPerFolder)
+        if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
         }
@@ -186,7 +186,7 @@ public static class ImageMetadataTracker
     {
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
-        if (!Program.ServerSettings.Paths.ImageMetadataPerFolder)
+        if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
         }

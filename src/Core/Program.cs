@@ -451,6 +451,17 @@ public class Program
         {
             section.Set("Logs.LogLevel", legacyLogLevel);
         }
+        // TODO: Legacy format patch from Beta 0.9!
+        bool? modelPerFolder = section.GetBool("Paths.ModelMetadataPerFolder", null);
+        if (modelPerFolder.HasValue)
+        {
+            section.Set("Metadata.ModelMetadataPerFolder", modelPerFolder.Value);
+        }
+        bool? imagePerFolder = section.GetBool("Paths.ImageMetadataPerFolder", null);
+        if (imagePerFolder.HasValue)
+        {
+            section.Set("Metadata.ImageMetadataPerFolder", imagePerFolder.Value);
+        }
         ServerSettings.Load(section);
     }
 

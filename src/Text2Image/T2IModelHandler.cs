@@ -234,7 +234,7 @@ public class T2IModelHandler
     /// <summary>Updates the metadata cache database to the metadata assigned to this model object.</summary>
     public void ResetMetadataFrom(T2IModel model)
     {
-        bool perFolder = Program.ServerSettings.Paths.ModelMetadataPerFolder;
+        bool perFolder = Program.ServerSettings.Metadata.ModelMetadataPerFolder;
         long modified = ((DateTimeOffset)File.GetLastWriteTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds();
         string folder = model.RawFilePath.Replace('\\', '/').BeforeAndAfterLast('/', out string fileName);
         ILiteCollection<ModelMetadataStore> cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
@@ -394,7 +394,7 @@ public class T2IModelHandler
         }
         string folder = model.RawFilePath.Replace('\\', '/').BeforeAndAfterLast('/', out string fileName);
         long modified = new DateTimeOffset(File.GetLastWriteTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds();
-        bool perFolder = Program.ServerSettings.Paths.ModelMetadataPerFolder;
+        bool perFolder = Program.ServerSettings.Metadata.ModelMetadataPerFolder;
         ILiteCollection<ModelMetadataStore> cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
         if (cache is null)
         {
