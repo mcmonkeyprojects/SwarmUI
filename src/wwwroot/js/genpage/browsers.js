@@ -421,6 +421,13 @@ class GenPageBrowserClass {
             div.title = stripHtmlToText(desc.description);
             img.classList.add('lazyload');
             img.dataset.src = desc.image;
+            if (desc.dragimage) {
+                img.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.clearData();
+                    e.dataTransfer.setDragImage(img, 0, 0);
+                    e.dataTransfer.setData('text/uri-list', desc.dragimage);
+                });
+            }
             if (before) {
                 container.insertBefore(div, before);
             }
