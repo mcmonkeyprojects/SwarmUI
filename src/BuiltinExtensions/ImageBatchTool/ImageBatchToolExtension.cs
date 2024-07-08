@@ -172,30 +172,29 @@ public class ImageBatchToolExtension : Extension
                     param.Set(controlnetParams.Image, image);
                 }
             }
-            tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes,
-                (image, metadata) =>
+            tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, (image, metadata) =>
+            {
+                (string preExt, string ext) = fname.BeforeAndAfterLast('.');
+                string properExt = image.Img.Extension;
+                if (properExt == "png" && ext != "png")
                 {
-                    (string preExt, string ext) = fname.BeforeAndAfterLast('.');
-                    string properExt = image.Img.Extension;
-                    if (properExt == "png" && ext != "png")
-                    {
-                        ext = "png";
-                    }
-                    else if (properExt == "jpg" && ext != "jpg" && ext != "jpeg")
-                    {
-                        ext = "jpg";
-                    }
-                    else if (properExt == "webp" && ext != "webp")
-                    {
-                        ext = "webp";
-                    }
-                    else if (!string.IsNullOrWhiteSpace(properExt))
-                    {
-                        ext = properExt;
-                    }
-                    File.WriteAllBytes($"{output_folder}/{preExt}.{ext}", image.Img.ImageData);
-                    output(new JObject() { ["image"] = session.GetImageB64(image.Img), ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
-                }));
+                    ext = "png";
+                }
+                else if (properExt == "jpg" && ext != "jpg" && ext != "jpeg")
+                {
+                    ext = "jpg";
+                }
+                else if (properExt == "webp" && ext != "webp")
+                {
+                    ext = "webp";
+                }
+                else if (!string.IsNullOrWhiteSpace(properExt))
+                {
+                    ext = properExt;
+                }
+                File.WriteAllBytes($"{output_folder}/{preExt}.{ext}", image.Img.ImageData);
+                output(new JObject() { ["image"] = session.GetImageB64(image.Img), ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
+            }));
         }
         while (tasks.Any())
         {
