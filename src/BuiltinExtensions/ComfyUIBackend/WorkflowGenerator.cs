@@ -345,16 +345,20 @@ public class WorkflowGenerator
     /// <summary>Returns a masked image composite with mask thresholding.</summary>
     public JArray CompositeMask(JArray baseImage, JArray newImage, JArray mask)
     {
-        string thresholded = CreateNode("ThresholdMask", new JObject()
+        if (!UserInput.Get(T2IParamTypes.MaskCompositeUnthresholded, false))
         {
-            ["mask"] = mask,
-            ["value"] = 0.001
-        });
+            string thresholded = CreateNode("ThresholdMask", new JObject()
+            {
+                ["mask"] = mask,
+                ["value"] = 0.001
+            });
+            mask = [thresholded, 0];
+        }
         string composited = CreateNode("ImageCompositeMasked", new JObject()
         {
             ["destination"] = baseImage,
             ["source"] = newImage,
-            ["mask"] = new JArray() { thresholded, 0 },
+            ["mask"] = mask,
             ["x"] = 0,
             ["y"] = 0,
             ["resize_source"] = false
@@ -373,16 +377,20 @@ public class WorkflowGenerator
             ["upscale_method"] = "bilinear",
             ["crop"] = "disabled"
         });
-        string thresholded = CreateNode("ThresholdMask", new JObject()
+        if (!UserInput.Get(T2IParamTypes.MaskCompositeUnthresholded, false))
         {
-            ["mask"] = croppedMask,
-            ["value"] = 0.001
-        });
+            string thresholded = CreateNode("ThresholdMask", new JObject()
+            {
+                ["mask"] = croppedMask,
+                ["value"] = 0.001
+            });
+            croppedMask = [thresholded, 0];
+        }
         string composited = CreateNode("ImageCompositeMasked", new JObject()
         {
             ["destination"] = firstImage,
             ["source"] = new JArray() { scaledBack, 0 },
-            ["mask"] = new JArray() { thresholded, 0 },
+            ["mask"] = croppedMask,
             ["x"] = new JArray() { boundsNode, 0 },
             ["y"] = new JArray() { boundsNode, 1 },
             ["resize_source"] = false
