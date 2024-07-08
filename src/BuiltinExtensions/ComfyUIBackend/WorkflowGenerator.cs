@@ -289,7 +289,9 @@ public class WorkflowGenerator
     /// <param name="image">The image node input.</param>
     /// <param name="growBy">Number of pixels to grow the boundary by.</param>
     /// <param name="vae">The relevant VAE.</param>
+    /// <param name="model">The model in use, for determining resolution.</param>
     /// <param name="threshold">Optional minimum value threshold.</param>
+    /// <param name="thresholdMax">Optional maximum value of the threshold.</param>
     /// <returns>(boundsNode, croppedMask, maskedLatent).</returns>
     public (string, string, string) CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1)
     {
@@ -328,7 +330,7 @@ public class WorkflowGenerator
         {
             ["image"] = new JArray() { croppedImage, 0 },
             ["width"] = model?.StandardWidth <= 0 ? UserInput.Get(T2IParamTypes.Width, 1024) : model.StandardWidth,
-            ["height"] = model?.StandardWidth <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
+            ["height"] = model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
             ["can_shrink"] = true
         });
         string vaeEncoded = CreateVAEEncode(vae, [scaledImage, 0], null, true);
