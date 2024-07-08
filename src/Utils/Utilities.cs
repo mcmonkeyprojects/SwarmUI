@@ -64,8 +64,11 @@ public static class Utilities
     /// <summary>SwarmUI's current version.</summary>
     public static readonly string Version = Assembly.GetEntryAssembly()?.GetName().Version.ToString();
 
+    /// <summary>URL to the github repo.</summary>
+    public const string RepoRoot = "https://github.com/mcmonkeyprojects/SwarmUI";
+
     /// <summary>URL to where the documentation files start.</summary>
-    public const string RepoDocsRoot = "https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/";
+    public const string RepoDocsRoot = $"{RepoRoot}/blob/master/docs/";
 
     /// <summary>Current git commit (if known -- empty if unknown).</summary>
     public static string GitCommit = "";

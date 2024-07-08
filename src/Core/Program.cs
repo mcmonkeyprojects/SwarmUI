@@ -133,20 +133,21 @@ public class Program
         {
             waitFor.Add(Utilities.RunCheckedTask(async () =>
             {
-                JObject vers = (await Utilities.UtilWebClient.GetStringAsync("https://mcmonkeyprojects.github.io/swarm/update.json", GlobalProgramCancel)).ParseToJson();
-                string versId = $"{vers["version"]}";
-                string message = $"{vers["message"]}";
-                Version remote = Version.Parse(versId);
+                await Utilities.RunGitProcess("fetch");
+                string refs = await Utilities.RunGitProcess("tag --sort=-creatordate");
+                string[] tags = [.. refs.Split('\n').Where(t => !string.IsNullOrWhiteSpace(t) && t.Contains('-') && Version.TryParse(t.Before('-'), out _)).Select(t => t.Trim()).OrderByDescending(t => Version.Parse(t.Before('-')))];
                 Version local = Version.Parse(Utilities.Version);
-                Logs.Debug($"Local version is {local}, remote version is {remote}, relative is {local.CompareTo(remote)}");
-                if (remote > local)
+                string[] newer = [.. tags.Where(t => Version.Parse(t.Before('-')) > local)];
+                if (newer.Any())
                 {
-                    Logs.Warning($"A new version of SwarmUI is available: {versId}! You are running version {Utilities.Version}. Has message: {message}");
-                    VersionUpdateMessage = $"Update available: {versId} (you are running {Utilities.Version}):\n{message}";
+                    string url = $"{Utilities.RepoRoot}/releases/tag/{newer[0]}";
+                    Logs.Warning($"A new version of SwarmUI is available: {newer[0]}! You are running version {Utilities.Version}, this is {newer.Length} release(s) behind. See release notes at {url}");
+                    VersionUpdateMessage = $"Update available: {newer[0]} (you are running {Utilities.Version}, this is {newer.Length} release(s) behind):\nSee release notes at <a target=\"_blank\" href=\"{url}\">{url}</a>"
+                        + "\nThere is a button available to automatically apply the update on the <a href=\"#Settings-Server\" onclick=\"getRequiredElementById('servertabbutton').click();getRequiredElementById('serverinfotabbutton').click();\">Server Info Tab</a>.";
                 }
                 else
                 {
-                    Logs.Init($"Swarm is up to date! Version {Utilities.Version} is the latest.");
+                    Logs.Init($"Swarm is up to date! You have version {Utilities.Version}, and {tags[0]} is the latest.");
                 }
             }));
         }
