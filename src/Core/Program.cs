@@ -181,6 +181,7 @@ public class Program
                 }
             }
         }));
+        T2IModelClassSorter.Init();
         RunOnAllExtensions(e => e.OnPreInit());
         timer.Check("Extension PreInit");
         Logs.Init("Prepping options...");

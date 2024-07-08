@@ -181,6 +181,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, image metadata is tracked on a per-folder basis.\nIf false, image metadata is tracked in the central data folder.\nThis is better if you don't want stray files in your output folders, or if you have several Swarm instances running simultaneously over the same output folders.")]
         public bool ImageMetadataPerFolder = true;
+
+        [ConfigComment("If true, unrecognized XL-format models will be treated as SDXL 1.0.\nIf false, unrecognized XL-format models will be treated as SDXL 0.9.\nThe SDXL 1.0 specification requires ModelSpec architecture IDs, and any similar model lacking this ID is a 0.9 model,\nhowever, many custom XL model author have excluded this metadata.\nThis means those models are technically SDXL 0.9 models, however it can be convenient to pretend they are 1.0 models instead.\nNote that enabling this will mislabel the official SDXL 0.9 model.")]
+        public bool XLDefaultAsXL1 = false;
     }
 
     /// <summary>Settings to control restrictions on users.</summary>

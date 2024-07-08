@@ -1,5 +1,6 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Core;
 using SwarmUI.Utils;
 using System.IO;
 
@@ -17,7 +18,8 @@ public class T2IModelClassSorter
         ModelClasses.Add(clazz.ID, clazz);
     }
 
-    static T2IModelClassSorter()
+    /// <summary>Initialize the class sorter.</summary>
+    public static void Init()
     {
         bool IsAlt(JObject h) => h.ContainsKey("cond_stage_model.roberta.embeddings.word_embeddings.weight");
         bool isV1(JObject h) => h.ContainsKey("cond_stage_model.transformer.text_model.embeddings.position_ids");
@@ -115,9 +117,13 @@ public class T2IModelClassSorter
             return isTurbo21(h);
         }});
         // ====================== Stable Diffusion XL ======================
+        Register(new() { ID = "stable-diffusion-xl-v1-base", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return Program.ServerSettings.Metadata.XLDefaultAsXL1 && isXL09Base(h);
+        }});
         Register(new() { ID = "stable-diffusion-xl-v0_9-base", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 0.9-Base", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isXL09Base(h);
+            return !Program.ServerSettings.Metadata.XLDefaultAsXL1 && isXL09Base(h);
         }});
         Register(new() { ID = "stable-diffusion-xl-v0_9-refiner", CompatClass = "stable-diffusion-xl-v1-refiner", Name = "Stable Diffusion XL 0.9-Refiner", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -164,7 +170,6 @@ public class T2IModelClassSorter
         Register(new() { ID = "stable-diffusion-v1/vae", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 VAE", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-diffusion-v1/inpaint", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 (Inpainting)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-diffusion-v2-768-v/lora", CompatClass = "stable-diffusion-v2", Name = "Stable Diffusion v2 LoRA", StandardWidth = 768, StandardHeight = 768, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "stable-diffusion-xl-v1-base", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; }});
         Register(new() { ID = "stable-diffusion-xl-turbo-v1", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL Turbo", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-diffusion-xl-v1-refiner", CompatClass = "stable-diffusion-xl-v1-refiner", Name = "Stable Diffusion XL 1.0-Refiner", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-diffusion-xl-v1-base/vae", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
