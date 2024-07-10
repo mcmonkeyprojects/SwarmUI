@@ -177,14 +177,14 @@ class GenPageBrowserClass {
             upButton.disabled = true;
             return pathGen;
         }
-        let rootPathSuffix = 'Root/';
+        let rootPathPrefix = 'Root/';
         let partial = '';
-        for (let part of (rootPathSuffix + path).split('/')) {
+        for (let part of (rootPathPrefix + path).split('/')) {
             partial += part + '/';
             let span = document.createElement('span');
             span.className = 'path-list-part';
             span.innerText = part;
-            let route = partial.substring(rootPathSuffix.length);
+            let route = partial.substring(rootPathPrefix.length);
             let helper = new BrowserCallHelper(route, this.navCaller);
             span.onclick = helper.call.bind(helper);
             pathGen.appendChild(span);
