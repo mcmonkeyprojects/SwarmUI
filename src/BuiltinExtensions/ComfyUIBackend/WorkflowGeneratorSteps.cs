@@ -552,14 +552,12 @@ public class WorkflowGeneratorSteps
                                 ["preset"] = ipAdapter
                             });
                         }
-
                         double ipAdapterStart = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterStart, 0.0);
                         double ipAdapterEnd = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterEnd, 1.0);
                         if (ipAdapterStart >= ipAdapterEnd) 
                         {
                             throw new InvalidDataException($"IP-Adapter Start must be less than IP-Adapter End.");
                         }
-
                         string ipAdapterNode = g.CreateNode("IPAdapter", new JObject()
                         {
 

@@ -487,12 +487,12 @@ public class WorkflowGenerator
         {
             throw new InvalidDataException($"Model {model.Name} appears to be TensorRT lacks metadata to identify its architecture, cannot load");
         }
-        else if (model.ModelClass?.ID == "pixart-ms-sigma-xl-2")
+        else if (model.ModelClass?.CompatClass == "pixart-ms-sigma-xl-2")
         {
             string pixartNode = CreateNode("PixArtCheckpointLoader", new JObject()
             {
                 ["ckpt_name"] = model.ToString(ModelFolderFormat),
-                ["model"] = "PixArtMS_Sigma_XL_2"
+                ["model"] = model.ModelClass.ID == "pixart-ms-sigma-xl-2-2k" ? "PixArtMS_Sigma_XL_2_2K" : "PixArtMS_Sigma_XL_2"
             }, id);
             LoadingModel = [pixartNode, 0];
             requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
