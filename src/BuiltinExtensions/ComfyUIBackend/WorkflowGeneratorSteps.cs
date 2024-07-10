@@ -552,14 +552,23 @@ public class WorkflowGeneratorSteps
                                 ["preset"] = ipAdapter
                             });
                         }
+
+                        double ipAdapterStartAt = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterStartAt, 0.0);
+                        double ipAdapterEndAt = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterEndAt, 1.0);
+                        if (ipAdapterStartAt >= ipAdapterEndAt) 
+                        {
+                            throw new InvalidDataException($"IP-Adapter Start must be less than IP-Adapter End.");
+                        }
+
                         string ipAdapterNode = g.CreateNode("IPAdapter", new JObject()
                         {
+
                             ["model"] = new JArray() { ipAdapterLoader, 0 },
                             ["ipadapter"] = new JArray() { ipAdapterLoader, 1 },
                             ["image"] = new JArray() { lastImage, 0 },
                             ["weight"] = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterWeight, 1),
-                            ["start_at"] = 0.0,
-                            ["end_at"] = 1.0,
+                            ["start_at"] = ipAdapterStartAt,
+                            ["end_at"] = ipAdapterEndAt,
                             ["weight_type"] = "standard" // TODO: ...???
                         });
                         g.FinalModel = [ipAdapterNode, 0];
