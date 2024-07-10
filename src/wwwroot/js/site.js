@@ -720,7 +720,7 @@ function updateFileDragging(e, out) {
     const el = e.target.nextElementSibling;
     const mode = files.length ? "add" : "remove";
     el.classList[mode]("auto-file-input-file-drag");
-    if (files.length) {
+    if (e.preventDefault) {
         e.preventDefault();
     }
 }
