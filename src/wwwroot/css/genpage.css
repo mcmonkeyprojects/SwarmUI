@@ -838,7 +838,7 @@ body {
     transition: background-color 0.2s ease-out;
 }
 
-.alt-prompt-image-container-image {
+.alt-prompt-image {
     max-height: 128px;
     margin-right: 1px;
 }

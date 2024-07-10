@@ -1794,18 +1794,16 @@ function revisionAddImage(file) {
         let imageContainer = createDiv(null, 'alt-prompt-image-container');
         let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
         imageRemoveButton.addEventListener('click', (e) => {
-            e.currentTarget.parentElement.remove();
+            imageContainer.remove();
             autoRevealRevision();
             altPromptSizeHandleFunc();
-        }, {
-            once: true
         });
         imageRemoveButton.title = 'Remove this image';
         imageContainer.appendChild(imageRemoveButton);
         let imageObject = new Image();
         imageObject.src = data;
         imageObject.height = 128;
-        imageObject.className = 'alt-prompt-image-container-image';
+        imageObject.className = 'alt-prompt-image';
         imageObject.dataset.filedata = data;
         imageContainer.appendChild(imageObject);
         clearButton.style.display = '';
