@@ -831,10 +831,50 @@ body {
 .alt-prompt-added-image-area {
     max-width: calc(100% - 7rem);
 }
+.alt-prompt-image-container {
+    display: inline-block;
+    position: relative;
+    background-color: color-mix(in srgb, transparent 80%, var(--background));
+    transition: background-color 0.2s ease-out;
+}
+
 .alt-prompt-image {
     max-height: 128px;
     margin-right: 1px;
 }
+
+.alt-prompt-image-container-remove-button {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    z-index: 100;
+    opacity: 0.7;
+    background-color: color-mix(in srgb, transparent 80%, var(--background));
+    border: none;
+    border-radius: 0.5rem;
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
+    padding-bottom: 0.2rem;
+    line-height: 0.8rem;
+    font-weight: bold;
+    color: var(--text);
+    transition: background-color 0.2s ease-out;
+    cursor: pointer;
+}
+
+.alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
+    opacity: 1.0;
+    background-color: color-mix(in srgb, transparent 50%, var(--background));
+    border: 1px solid red;
+}
+
+.alt-prompt-image-container-remove-button:hover {
+    opacity: 1.0;
+    background-color: color-mix(in srgb, red 70%, black) !important;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
 .image-clear-button {
     vertical-align: middle;
     display: inline-block;

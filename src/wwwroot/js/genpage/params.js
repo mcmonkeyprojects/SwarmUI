@@ -479,7 +479,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             let container = findParentOfClass(elem, 'auto-input');
             let addedImageArea = container.querySelector('.added-image-area');
             addedImageArea.style.display = '';
-            let imgs = [...addedImageArea.children].filter(c => c.tagName == "IMG");
+            let imgs = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
             if (imgs.length > 0) {
                 input["promptimages"] = imgs.map(img => img.dataset.filedata).join('|');
             }
@@ -489,7 +489,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         input['automaticvae'] = true;
     }
     let revisionImageArea = getRequiredElementById('alt_prompt_image_area');
-    let revisionImages = [...revisionImageArea.children].filter(c => c.tagName == "IMG");
+    let revisionImages = [...revisionImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
     if (revisionImages.length > 0) {
         input["promptimages"] = revisionImages.map(img => img.dataset.filedata).join('|');
     }
