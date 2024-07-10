@@ -533,6 +533,15 @@ public class WorkflowGeneratorSteps
                                 requireLora("ip-adapter-faceid-plusv2_sd15_lora.safetensors", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plusv2_sd15_lora.safetensors");
                             }
                         }
+                        else if (presetLow.StartsWith("faceid portrait unnorm"))
+                        {
+                            if (isXl)
+                            {
+                                requireIPAdapterModel("ip-adapter-faceid-portrait_sdxl_unnorm.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl_unnorm.bin");
+                            }
+                            else
+                            { throw new InvalidOperationException("IP-Adapter FaceID Portrait UnNorm model is only supported for SDXL"); }
+                        }
                         string ipAdapterLoader;
                         if (presetLow.StartsWith("faceid"))
                         {
