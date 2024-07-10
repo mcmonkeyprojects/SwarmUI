@@ -307,6 +307,10 @@ public class Settings : AutoConfiguration
             [ConfigComment("What VAE to use with SDv1 models by default. Use 'None' to use the one in the model.")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultSDv1VAE = "None";
+
+            [ConfigComment("What VAE to use with SVD (Video) models by default. Use 'None' to use the one in the model. This should normally be an SDv1 VAE.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None"])]
+            public string DefaultSVDVAE = "None";
         }
 
         [ConfigComment("Options to override default VAEs with.")]

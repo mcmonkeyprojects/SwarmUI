@@ -320,20 +320,20 @@ public class WorkflowGeneratorSteps
         }, -8);
         #endregion
         #region ReVision/UnCLIP/IPAdapter
+        void requireVisionModel(WorkflowGenerator g, string name, string url)
+        {
+            if (WorkflowGenerator.VisionModelsValid.Contains(name))
+            {
+                return;
+            }
+            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder, name);
+            g.DownloadModel(name, filePath, url);
+            WorkflowGenerator.VisionModelsValid.Add(name);
+        }
         AddStep(g =>
         {
             if (g.UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Any())
             {
-                void requireVisionModel(string name, string url)
-                {
-                    if (WorkflowGenerator.VisionModelsValid.Contains(name))
-                    {
-                        return;
-                    }
-                    string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder, name);
-                    g.DownloadModel(name, filePath, url);
-                    WorkflowGenerator.VisionModelsValid.Add(name);
-                }
                 string visModelName = "clip_vision_g.safetensors";
                 if (g.UserInput.TryGet(T2IParamTypes.ReVisionModel, out T2IModel visionModel))
                 {
@@ -341,7 +341,7 @@ public class WorkflowGeneratorSteps
                 }
                 else
                 {
-                    requireVisionModel(visModelName, "https://huggingface.co/stabilityai/control-lora/resolve/main/revision/clip_vision_g.safetensors");
+                    requireVisionModel(g, visModelName, "https://huggingface.co/stabilityai/control-lora/resolve/main/revision/clip_vision_g.safetensors");
                 }
                 string visionLoader = g.CreateNode("CLIPVisionLoader", new JObject()
                 {
@@ -419,15 +419,15 @@ public class WorkflowGeneratorSteps
                     string ipAdapterVisionLoader = visionLoader;
                     if (g.Features.Contains("cubiqipadapterunified"))
                     {
-                        requireVisionModel("CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors", "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors");
-                        requireVisionModel("CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors", "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors");
+                        requireVisionModel(g, "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors", "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors");
+                        requireVisionModel(g, "CLIP-ViT-bigG-14-laion2B-39B-b160k.safetensors", "https://huggingface.co/h94/IP-Adapter/resolve/main/sdxl_models/image_encoder/model.safetensors");
                     }
                     else
                     {
                         if ((ipAdapter.Contains("sd15") && !ipAdapter.Contains("vit-G")) || ipAdapter.Contains("vit-h"))
                         {
                             string targetName = "clip_vision_h.safetensors";
-                            requireVisionModel(targetName, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors");
+                            requireVisionModel(g, targetName, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors");
                             ipAdapterVisionLoader = g.CreateNode("CLIPVisionLoader", new JObject()
                             {
                                 ["clip_name"] = targetName
@@ -535,12 +535,8 @@ public class WorkflowGeneratorSteps
                         }
                         else if (presetLow.StartsWith("faceid portrait unnorm"))
                         {
-                            if (isXl)
-                            {
-                                requireIPAdapterModel("ip-adapter-faceid-portrait_sdxl_unnorm.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl_unnorm.bin");
-                            }
-                            else
-                            { throw new InvalidOperationException("IP-Adapter FaceID Portrait UnNorm model is only supported for SDXL"); }
+                            if (isXl) { requireIPAdapterModel("ip-adapter-faceid-portrait_sdxl_unnorm.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl_unnorm.bin"); }
+                            else { throw new InvalidOperationException("IP-Adapter FaceID Portrait UnNorm model is only supported for SDXL"); }
                         }
                         string ipAdapterLoader;
                         if (presetLow.StartsWith("faceid"))
@@ -1112,13 +1108,47 @@ public class WorkflowGeneratorSteps
         {
             if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out T2IModel vidModel))
             {
-                string loader = g.CreateNode("ImageOnlyCheckpointLoader", new JObject()
+                JArray model, clipVision, vae;
+                if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
                 {
-                    ["ckpt_name"] = vidModel.ToString()
-                });
-                JArray model = [loader, 0];
-                JArray clipVision = [loader, 1];
-                JArray vae = [loader, 2];
+                    string trtloader = g.CreateNode("TensorRTLoader", new JObject()
+                    {
+                        ["unet_name"] = vidModel.ToString(g.ModelFolderFormat),
+                        ["model_type"] = "svd"
+                    });
+                    model = [trtloader, 0];
+                    string fname = "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors";
+                    requireVisionModel(g, fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors");
+                    string cliploader = g.CreateNode("CLIPVisionLoader", new JObject()
+                    {
+                        ["clip_name"] = fname
+                    });
+                    clipVision = [cliploader, 0];
+                    string svdVae = g.UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSVDVAE;
+                    if (string.IsNullOrWhiteSpace(svdVae))
+                    {
+                        svdVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
+                    }
+                    if (string.IsNullOrWhiteSpace(svdVae))
+                    {
+                        throw new InvalidDataException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
+                    }
+                    string vaeLoader = g.CreateNode("VAELoader", new JObject()
+                    {
+                        ["vae_name"] = svdVae
+                    });
+                    vae = [vaeLoader, 0];
+                }
+                else
+                {
+                    string loader = g.CreateNode("ImageOnlyCheckpointLoader", new JObject()
+                    {
+                        ["ckpt_name"] = vidModel.ToString()
+                    });
+                    model = [loader, 0];
+                    clipVision = [loader, 1];
+                    vae = [loader, 2];
+                }
                 double minCfg = g.UserInput.Get(T2IParamTypes.VideoMinCFG, 1);
                 if (minCfg >= 0)
                 {

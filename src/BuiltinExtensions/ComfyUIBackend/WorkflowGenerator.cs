@@ -509,7 +509,7 @@ public class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(xlVae))
             {
-                throw new InvalidDataException("No default SDXL VAE found, please download and SDXL VAE and set it as default in User Settings");
+                throw new InvalidDataException("No default SDXL VAE found, please download an SDXL VAE and set it as default in User Settings");
             }
             string vaeLoader = CreateNode("VAELoader", new JObject()
             {
