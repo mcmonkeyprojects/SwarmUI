@@ -82,6 +82,8 @@ function copy_current_image_params() {
     if ('original_negativeprompt' in metadata) {
         metadata.negativeprompt = metadata.original_negativeprompt;
     }
+    // Special hacks to repair edge cases in LoRA reuse
+    // There should probably just be a direct "for lora in list, set lora X with weight Y" instead of this
     if ('lorasectionconfinement' in metadata && 'loras' in metadata && 'loraweights' in metadata) {
         let confinements = metadata.lorasectionconfinement;
         let loras = metadata.loras;
@@ -99,6 +101,26 @@ function copy_current_image_params() {
             metadata.loraweights = newWeights;
             delete metadata.lorasectionconfinement;
         }
+    }
+    if ('loras' in metadata && 'loraweights' in metadata && document.getElementById('input_loras') && metadata.loras.length == metadata.loraweights.length) {
+        let loraElem = getRequiredElementById('input_loras');
+        for (let val of metadata.loras) {
+            if (val && !$(loraElem).find(`option[value="${val}"]`).length) {
+                $(loraElem).append(new Option(val, val, false, false));
+            }
+        }
+        let valSet = [...loraElem.options].map(option => option.value);
+        let newLoras = [];
+        let newWeights = [];
+        for (let val of valSet) {
+            let index = metadata.loras.indexOf(val);
+            if (index != -1) {
+                newLoras.push(metadata.loras[index]);
+                newWeights.push(metadata.loraweights[index]);
+            }
+        }
+        metadata.loras = newLoras;
+        metadata.loraweights = newWeights;
     }
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
     resetParamsToDefault(exclude);
