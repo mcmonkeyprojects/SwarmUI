@@ -168,7 +168,7 @@ function formatMetadata(metadata) {
         if (obj) {
             for (let key of Object.keys(obj)) {
                 let val = obj[key];
-                if (val) {
+                if (val !== null && val !== '') { // According to javascript, 0 == '', so have to === to block that. Argh.
                     for (let cleaner of metadataKeyFormatCleaners) {
                         key = cleaner(key);
                     }
