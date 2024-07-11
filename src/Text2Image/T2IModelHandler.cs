@@ -234,25 +234,33 @@ public class T2IModelHandler
     /// <summary>Updates the metadata cache database to the metadata assigned to this model object.</summary>
     public void ResetMetadataFrom(T2IModel model)
     {
-        bool perFolder = Program.ServerSettings.Metadata.ModelMetadataPerFolder;
-        long modified = ((DateTimeOffset)File.GetLastWriteTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds();
-        string folder = model.RawFilePath.Replace('\\', '/').BeforeAndAfterLast('/', out string fileName);
-        ILiteCollection<ModelMetadataStore> cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
-        if (cache is null)
+        try
         {
-            return;
+            bool perFolder = Program.ServerSettings.Metadata.ModelMetadataPerFolder;
+            long modified = ((DateTimeOffset)File.GetLastWriteTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds();
+            string folder = model.RawFilePath.Replace('\\', '/').BeforeAndAfterLast('/', out string fileName);
+            ILiteCollection<ModelMetadataStore> cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
+            if (cache is null)
+            {
+                return;
+            }
+            ModelMetadataStore metadata = model.Metadata ?? new();
+            metadata.ModelFileVersion = modified;
+            metadata.ModelName = perFolder ? fileName : model.RawFilePath;
+            metadata.Title = model.Title;
+            metadata.Description = model.Description;
+            metadata.ModelClassType = model.ModelClass?.ID;
+            metadata.StandardWidth = model.StandardWidth;
+            metadata.StandardHeight = model.StandardHeight;
+            lock (MetadataLock)
+            {
+                cache.Upsert(metadata);
+            }
         }
-        ModelMetadataStore metadata = model.Metadata ?? new();
-        metadata.ModelFileVersion = modified;
-        metadata.ModelName = perFolder ? fileName : model.RawFilePath;
-        metadata.Title = model.Title;
-        metadata.Description = model.Description;
-        metadata.ModelClassType = model.ModelClass?.ID;
-        metadata.StandardWidth = model.StandardWidth;
-        metadata.StandardHeight = model.StandardHeight;
-        lock (MetadataLock)
+        catch (Exception ex)
         {
-            cache.Upsert(metadata);
+            Logs.Error($"Failed to reset metadata for model {model.RawFilePath}: {ex}");
+            throw;
         }
     }
 
