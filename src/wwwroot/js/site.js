@@ -448,7 +448,7 @@ function autoNumberWidth(elem) {
 }
 
 function makeGenericPopover(id, name, type, description, example) {
-    return `<div class="sui-popover" id="popover_${id}"><b>${escapeHtmlNoBr(name)}</b> (${type}):<br>&emsp;${escapeHtmlNoBr(description)}${example}</div>`;
+    return `<div class="sui-popover" id="popover_${id}"><b>${escapeHtml(name)}</b> (${type}):<br>&emsp;${safeHtmlOnly(description)}${example}</div>`;
 }
 
 function doPopoverHover(id) {
