@@ -874,7 +874,13 @@ function sortAndFixComfyParameters(params, retained, applyValues = false, paramV
 }
 
 function setComfyWorkflowInput(params, retained, paramVal, applyValues) {
-    localStorage.setItem('last_comfy_workflow_input', JSON.stringify({params, retained, paramVal}));
+    let stringified = JSON.stringify({params, retained, paramVal});
+    try {
+        localStorage.setItem('last_comfy_workflow_input', stringified);
+    }
+    catch (e) {
+        console.log(`Failed to save comfy workflow input to local storage ${e}`);
+    }
     gen_param_types = sortAndFixComfyParameters(params, retained, applyValues, paramVal, true);
     genInputs(true);
     let buttonHolder = getRequiredElementById('comfy_workflow_disable_button');

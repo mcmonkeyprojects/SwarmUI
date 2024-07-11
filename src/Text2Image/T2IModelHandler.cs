@@ -259,7 +259,7 @@ public class T2IModelHandler
         }
         catch (Exception ex)
         {
-            Logs.Error($"Failed to reset metadata for model {model.RawFilePath}: {ex}");
+            Logs.Error($"Failed to reset metadata for model '{model.RawFilePath}': {ex}");
             throw;
         }
     }
