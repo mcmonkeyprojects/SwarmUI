@@ -262,12 +262,15 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Install {pipName})", "");
                 await p.WaitForExitAsync(Program.GlobalProgramCancel);
             }
-            await install("kornia", "kornia"); // ComfyUI added this dependency, didn't used to have it
+            // ComfyUI added these dependencies, didn't used to have it
+            await install("kornia", "kornia");
+            await install("sentencepiece", "sentencepiece");
+            await install("spandrel", "spandrel");
+            // Other added dependencies
             await install("rembg", "rembg");
             await install("matplotlib", "matplotlib");
             await install("opencv_python_headless", "opencv-python-headless");
             await install("imageio_ffmpeg", "imageio-ffmpeg");
-            await install("spandrel", "spandrel");
             await install("dill", "dill");
             await install("ultralytics", "ultralytics");
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
