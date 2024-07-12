@@ -61,7 +61,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>Lock for when ensuring the backend has valid models.</summary>
-    public static LockObject ModelDownloaderLock = new();
+    public static MultiLockSet<string> ModelDownloaderLocks = new(32);
 
     /// <summary>The raw user input data.</summary>
     public T2IParamInput UserInput;
@@ -180,7 +180,7 @@ public class WorkflowGenerator
         {
             return;
         }
-        lock (ModelDownloaderLock)
+        lock (ModelDownloaderLocks.GetLock(name))
         {
             if (File.Exists(filePath)) // Double-check in case another thread downloaded it
             {
