@@ -590,6 +590,14 @@ public class WorkflowGenerator
                 }
             }
         }
+        else if (CurrentCompatClass() == "auraflow-v1")
+        {
+            string sd3Node = CreateNode("ModelSamplingAuraFlow", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.73)
+            });
+        }
         else if (!string.IsNullOrWhiteSpace(predType))
         {
             string discreteNode = CreateNode("ModelSamplingDiscrete", new JObject()
