@@ -361,14 +361,9 @@ public class T2IParamInput
                 Logs.Warning($"Lora '{lora}' does not exist and will be ignored.");
                 return null;
             }
-            List<string> loraList = context.Input.Get(T2IParamTypes.Loras);
-            List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights);
+            List<string> loraList = context.Input.Get(T2IParamTypes.Loras) ?? [];
+            List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights) ?? [];
             List<string> confinements = context.Input.Get(T2IParamTypes.LoraSectionConfinement);
-            if (loraList is null)
-            {
-                loraList = [];
-                weights = [];
-            }
             if (confinements is not null && confinements.Count > loraList.Count)
             {
                 context.Input.Remove(T2IParamTypes.LoraSectionConfinement);
