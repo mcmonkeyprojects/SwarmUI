@@ -527,7 +527,7 @@ public class ComfyUIBackendExtension : Extension
         }
         foreach (SwarmSwarmBackend swarmBackend in Program.Backends.RunningBackendsOfType<SwarmSwarmBackend>().Where(b => b.RemoteBackendTypes.Any(b => b.StartsWith("comfyui_"))))
         {
-            yield return new(SwarmSwarmBackend.HttpClient, $"{swarmBackend.Settings.Address}/ComfyBackendDirect", swarmBackend);
+            yield return new(SwarmSwarmBackend.HttpClient, $"{swarmBackend.Address}/ComfyBackendDirect", swarmBackend);
         }
     }
 }
