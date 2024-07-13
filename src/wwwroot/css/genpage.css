@@ -853,13 +853,15 @@ body {
     border: none;
     border-radius: 0.5rem;
     padding-left: 0.2rem;
-    padding-right: 0.2rem;
-    padding-bottom: 0.2rem;
+    padding-right: 0.25rem;
+    padding-bottom: 0.25rem;
     line-height: 0.8rem;
     font-weight: bold;
     color: var(--text);
     transition: background-color 0.2s ease-out;
     cursor: pointer;
+    border: 1px solid transparent;
+    text-align: center;
 }
 
 .alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
