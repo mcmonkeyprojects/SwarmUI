@@ -126,8 +126,9 @@ function copy_current_image_params() {
     resetParamsToDefault(exclude);
     for (let param of gen_param_types) {
         let elem = document.getElementById(`input_${param.id}`);
-        if (elem && metadata[param.id] && !exclude.includes(param.id)) {
-            setDirectParamValue(param, metadata[param.id]);
+        let val = metadata[param.id];
+        if (elem && val !== undefined && val !== null && val !== '' && !exclude.includes(param.id)) {
+            setDirectParamValue(param, val);
             if (param.toggleable && param.visible) {
                 let toggle = getRequiredElementById(`input_${param.id}_toggle`);
                 toggle.checked = true;
