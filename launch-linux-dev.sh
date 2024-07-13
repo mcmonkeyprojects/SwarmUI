@@ -14,10 +14,10 @@ export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 rm -rf ./src/bin/live_release_backup
 mv ./src/bin/live_release ./src/bin/live_release_backup
 rm ./src/bin/must_rebuild
-rm src/bin/last_build
+rm ./src/bin/last_build
 
 # Build the program
-dotnet build src/SwarmUI.csproj --configuration Release -o ./src/bin/live_release
+dotnet build src/SwarmUI.csproj --configuration Debug -o ./src/bin/live_release
 
 # Default env configuration, gets overwritten by the C# code's settings handler
 export ASPNETCORE_ENVIRONMENT="Production"
