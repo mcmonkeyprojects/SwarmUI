@@ -86,3 +86,9 @@ These steps are not friendly to beginners (if PixArt gains popularity, likely mo
 - Make sure in **User Settings**, you have a `DefaultSDXLVae` selected. If not, you can download this one https://huggingface.co/madebyollin/sdxl-vae-fp16-fix and save it in `(Swarm)/Models/VAE`
 - Swarm will autodownload T5XXL-EncoderOnly for you on first run (same as SD3-Medium T5-Only mode)
 - You can now use the model as easily as any other model. Some feature compatibility features might arise.
+
+# AuraFlow v0.1
+
+[Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) is supported in Swarm, but you must manually select architecture to use it. (The AuraFlow team intend to add modelspec metadata in the near future).
+
+Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlow` as the architecture.
