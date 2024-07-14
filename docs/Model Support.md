@@ -91,4 +91,4 @@ These steps are not friendly to beginners (if PixArt gains popularity, likely mo
 
 [Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) is supported in Swarm, but you must manually select architecture to use it. (The AuraFlow team intend to add modelspec metadata in the near future).
 
-Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlow` as the architecture.
+Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlow` as the architecture, and set resolution to `1024x1024`.
