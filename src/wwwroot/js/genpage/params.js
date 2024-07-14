@@ -1138,6 +1138,7 @@ class PromptTabCompleteClass {
             let prefixLow = prefix.toLowerCase();
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
         });
+        this.registerAltPrefix('wc', 'wildcard');
         this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
@@ -1149,10 +1150,12 @@ class PromptTabCompleteClass {
             let prefixLow = prefix.toLowerCase();
             return allPresets.map(p => p.title).filter(p => p.toLowerCase().includes(prefixLow));
         });
+        this.registerAltPrefix('p', 'preset');
         this.registerPrefix('embed', 'Use a pretrained CLIP TI Embedding', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return coreModelMap['Embedding'].map(cleanModelName).filter(e => e.toLowerCase().includes(prefixLow));
         });
+        this.registerAltPrefix('embedding', 'embed');
         this.registerPrefix('lora', 'Forcibly apply a pretrained LoRA model (useful eg inside wildcards or other automatic inclusions - normally use the LoRAs UI tab)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return coreModelMap['LoRA'].map(cleanModelName).filter(m => m.toLowerCase().includes(prefixLow));
@@ -1191,7 +1194,12 @@ class PromptTabCompleteClass {
     }
 
     registerPrefix(name, description, completer, selfStanding = false) {
-        this.prefixes[name] = { name, description, completer, selfStanding };
+        this.prefixes[name] = { name, description, completer, selfStanding, isAlt: false };
+    }
+
+    registerAltPrefix(name, copyFrom) {
+        let data = this.prefixes[copyFrom];
+        this.prefixes[name] = { name, description: data.description, completer: data.completer, selfStanding: data.selfStanding, isAlt: true };
     }
 
     getPromptBeforeCursor(box) {
@@ -1260,7 +1268,7 @@ class PromptTabCompleteClass {
         let colon = content.indexOf(':');
         if (colon == -1) {
             content = content.toLowerCase();
-            return Object.keys(this.prefixes).filter(p => p.toLowerCase().startsWith(content)).map(p => [p, this.prefixes[p].description]);
+            return Object.keys(this.prefixes).filter(p => p.toLowerCase().startsWith(content) && !this.prefixes[p].isAlt).map(p => [p, this.prefixes[p].description]);
         }
         let prefix = content.substring(0, colon);
         let suffix = content.substring(colon + 1);

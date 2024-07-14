@@ -202,7 +202,9 @@ public class T2IParamInput
             }
             return $"[{rawVals.JoinString("|")}]";
         };
+        PromptTagProcessors["alt"] = PromptTagProcessors["alternate"];
         PromptTagLengthEstimators["alternate"] = PromptTagLengthEstimators["random"];
+        PromptTagLengthEstimators["alt"] = PromptTagLengthEstimators["alternate"];
         PromptTagProcessors["fromto"] = (data, context) =>
         {
             double? stepIndex = InterpretNumber(context.PreData);
@@ -255,6 +257,7 @@ public class T2IParamInput
             }
             return result.Trim();
         };
+        PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
         PromptTagLengthEstimators["wildcard"] = (data) =>
         {
             string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
@@ -276,6 +279,7 @@ public class T2IParamInput
             }
             return longestStr;
         };
+        PromptTagLengthEstimators["wc"] = PromptTagLengthEstimators["wildcard"];
         PromptTagProcessors["repeat"] = (data, context) =>
         {
             (string count, string value) = data.BeforeAndAfter(',');
@@ -324,10 +328,12 @@ public class T2IParamInput
             }
             return "";
         };
+        PromptTagProcessors["p"] = PromptTagProcessors["preset"];
         PromptTagLengthEstimators["preset"] = (data) =>
         {
             return "";
         };
+        PromptTagLengthEstimators["p"] = PromptTagLengthEstimators["preset"];
         PromptTagProcessors["embed"] = (data, context) =>
         {
             data = context.Parse(data);

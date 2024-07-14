@@ -9,7 +9,8 @@
 ### Alternating
 
 - You can use `<alternate:cat, dog>` to alternate every step between `cat` and `dog`, creating a merge/mixture of the two concepts.
-    - Similar to `random` you can instead use `|` or `||` to separate entries. You can have as many unique words as you want, eg `<alternate:cat, dog, horse, wolf, taco>` has 5 words so it will cycle through them every 5 steps.
+    - Similar to `random` you can instead use `|` or `||` to separate entries, eg `<alternate:cat || dog>`. You can have as many unique words as you want, eg `<alternate:cat, dog, horse, wolf, taco>` has 5 words so it will cycle through them every 5 steps.
+    - You can shorthand this as `<alt:cat,dog>`
 
 ### From-To
 
@@ -34,6 +35,7 @@
     - Edit these in the UI at the bottom in the "Wildcards" tab.
     - You can also import wildcard files from other UIs (ie text file collections) by just adding them into `Data/Wildcards` folder.
     - This supports the same syntax as `random` to get multiple, for example `<wildcard[1-3]:animals>` might return `cat dog` or `elephant leopard dog`.
+    - You can shorthand this as `<wc:my/wildcard/name>`
 
 ### Repeat
 
@@ -55,6 +57,7 @@
 
 - You can use `<preset:presetname>` to inject a preset.
     - GUI is generally preferred for LoRAs, this is available to allow dynamically messing with presets (eg `<preset:<random:a, b>>`)
+    - You can shorthand this as `<p:presetname>`
 
 ### Automatic Segmentation and Refining
 
