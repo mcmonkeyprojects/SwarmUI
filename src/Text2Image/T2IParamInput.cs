@@ -639,7 +639,7 @@ public class T2IParamInput
         string fixedVal = val.Replace('\0', '\a').Replace("\a", "");
         PromptTagContext context = new() { Input = this, Param = param.Type.ID };
         fixedVal = ProcessPromptLike(fixedVal, context);
-        if (fixedVal != val)
+        if (fixedVal != val && !ExtraMeta.ContainsKey($"original_{param.Type.ID}"))
         {
             ExtraMeta[$"original_{param.Type.ID}"] = val;
         }
