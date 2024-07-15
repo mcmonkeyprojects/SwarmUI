@@ -114,7 +114,8 @@ public class WorkflowGeneratorSteps
             {
                 if (applyTo == "Both" || applyTo == g.LoadingModelType)
                 {
-                    string freeU = g.CreateNode("FreeU", new JObject()
+                    string version = g.UserInput.Get(T2IParamTypes.FreeUVersion, "1");
+                    string freeU = g.CreateNode(version == "2" ? "FreeU_V2" : "FreeU", new JObject()
                     {
                         ["model"] = g.LoadingModel,
                         ["b1"] = g.UserInput.Get(T2IParamTypes.FreeUBlock1),
