@@ -375,6 +375,9 @@ function genInputs(delay_final = false) {
                 doToggleEnable(`input_${param.id}`);
                 if (!param.do_not_save) {
                     toggler.addEventListener('change', () => {
+                        if (!toggler.checked) {
+                            deleteCookie(`lastparam_input_${param.id}`);
+                        }
                         setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, 0.25);
                     });
                 }
