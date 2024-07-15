@@ -1099,13 +1099,14 @@ function describeImage(image) {
 }
 
 function selectImageInHistory(image, div) {
+    lastHistoryImage = image.data.src;
+    lastHistoryImageDiv = div;
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.dataset.src == image.data.src) {
+        curImg.dataset.batch_id = 'history';
         curImg.click();
         return;
     }
-    lastHistoryImage = image.data.src;
-    lastHistoryImageDiv = div;
     if (image.data.name.endsWith('.html')) {
         window.open(image.data.src, '_blank');
     }
