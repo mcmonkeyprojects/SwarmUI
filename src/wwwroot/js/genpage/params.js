@@ -768,7 +768,7 @@ function cleanParamName(name) {
     return name.toLowerCase().replaceAll(/[^a-z]/g, '');
 }
 
-/** Sets the value of a parameter to the value used in the currently selected image, if any. */
+/** Sets the value of a parameter to the value used in the currently selected image, if any. (eg for seeds, not the 'reuse parameters' button.) */
 function reuseLastParamVal(paramId) {
     if (!currentMetadataVal) {
         return;

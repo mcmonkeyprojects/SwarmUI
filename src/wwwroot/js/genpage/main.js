@@ -70,6 +70,7 @@ function clickImageInBatch(div) {
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true');
 }
 
+/** "Reuse Parameters" button impl. */
 function copy_current_image_params() {
     if (!currentMetadataVal) {
         alert('No parameters to copy!');
@@ -125,9 +126,12 @@ function copy_current_image_params() {
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
     resetParamsToDefault(exclude);
     for (let param of gen_param_types) {
+        if (param.nonreusable || exclude.includes(param.id)) {
+            continue;
+        }
         let elem = document.getElementById(`input_${param.id}`);
         let val = metadata[param.id];
-        if (elem && val !== undefined && val !== null && val !== '' && !exclude.includes(param.id)) {
+        if (elem && val !== undefined && val !== null && val !== '') {
             setDirectParamValue(param, val);
             if (param.toggleable && param.visible) {
                 let toggle = getRequiredElementById(`input_${param.id}_toggle`);
