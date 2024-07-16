@@ -79,7 +79,7 @@ public class WorkflowGenerator
         FinalPrompt = ["6", 0],
         FinalNegativePrompt = ["7", 0],
         FinalSamples = ["10", 0],
-        FinalImageOut = ["8", 0],
+        FinalImageOut = null,
         LoadingModel = null, LoadingClip = null, LoadingVAE = null;
 
     /// <summary>If true, the init image was altered in latent space and is no longer valid.</summary>

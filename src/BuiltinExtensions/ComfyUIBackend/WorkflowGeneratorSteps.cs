@@ -958,8 +958,11 @@ public class WorkflowGeneratorSteps
         #region VAEDecode
         AddStep(g =>
         {
-            g.CreateVAEDecode(g.FinalVae, g.FinalSamples, "8");
-            g.FinalImageOut = doMaskShrinkApply(g, ["8", 0]);
+            if (g.FinalImageOut is null)
+            {
+                g.CreateVAEDecode(g.FinalVae, g.FinalSamples, "8");
+                g.FinalImageOut = doMaskShrinkApply(g, ["8", 0]);
+            }
         }, 1);
         #endregion
         #region Segmentation Processing
