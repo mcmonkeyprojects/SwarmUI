@@ -8,6 +8,8 @@ obj/
 *.suo
 Properties/
 .dotnet/
+.aspnet/
+.local/
 
 # This project
 /Output
