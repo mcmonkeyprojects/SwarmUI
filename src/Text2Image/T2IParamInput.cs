@@ -39,6 +39,23 @@ public class T2IParamInput
                 input.Set(T2IParamTypes.Height, height);
                 input.Remove(T2IParamTypes.AltResolutionHeightMult);
             }
+        },
+        input =>
+        {
+            if (input.TryGet(T2IParamTypes.Loras, out List<string> loras))
+            {
+                List<string> weights = input.Get(T2IParamTypes.LoraWeights, []);
+                if (weights.Count != loras.Count)
+                {
+                    Logs.Warning($"Input has {loras.Count} loras, but {weights.Count} weights - the two lists must match to work properly. Applying an automatic fix.");
+                    weights = [.. weights.Take(loras.Count)];
+                    while (weights.Count < loras.Count)
+                    {
+                        weights.Add("1");
+                    }
+                    input.Set(T2IParamTypes.LoraWeights, weights);
+                }
+            }
         }
     ];
 
