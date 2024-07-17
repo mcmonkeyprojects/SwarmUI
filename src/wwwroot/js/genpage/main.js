@@ -244,6 +244,9 @@ class ImageFullViewHelper {
         if (this.modal.style.display != 'block') {
             return;
         }
+        if (e.button == 2) { // right-click
+            return;
+        }
         this.lastMouseX = e.clientX;
         this.lastMouseY = e.clientY;
         this.isDragging = true;
