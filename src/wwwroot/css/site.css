@@ -581,7 +581,8 @@ textarea, input, select {
     right: 0.5rem;
     font-size: 80%;
     color: var(--text);
-    opacity: 0.3;
+    opacity: 0.6;
+    background-color: var(--background-soft);
 }
 .toast-error-box .toast-body {
     white-space: pre-wrap;
