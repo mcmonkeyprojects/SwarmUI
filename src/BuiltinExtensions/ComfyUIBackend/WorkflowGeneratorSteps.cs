@@ -214,7 +214,28 @@ public class WorkflowGeneratorSteps
                 }
                 g.CreateLoadImageNode(img, "${initimage}", true, "15");
                 g.FinalInputImage = ["15", 0];
-                g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: g.FinalMask);
+                if (g.FinalMask is not null)
+                {
+                    if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
+                    {
+                        g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel);
+                        g.FinalLatentImage = [g.MaskShrunkInfo.Item3, 0];
+                    }
+                    else
+                    {
+                        g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: g.FinalMask);
+                        string appliedNode = g.CreateNode("SetLatentNoiseMask", new JObject()
+                        {
+                            ["samples"] = g.FinalLatentImage,
+                            ["mask"] = g.FinalMask
+                        });
+                        g.FinalLatentImage = [appliedNode, 0];
+                    }
+                }
+                else
+                {
+                    g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: g.FinalMask);
+                }
                 if (g.UserInput.TryGet(T2IParamTypes.UnsamplerPrompt, out string unprompt))
                 {
                     int steps = g.UserInput.Get(T2IParamTypes.Steps);
@@ -251,7 +272,6 @@ public class WorkflowGeneratorSteps
                 }
                 if (g.UserInput.TryGet(T2IParamTypes.InitImageResetToNorm, out double resetFactor))
                 {
-                    g.InitialImageIsAlteredAsLatent = true;
                     string emptyImg = g.CreateEmptyImage(g.UserInput.Get(T2IParamTypes.Width), g.UserInput.GetImageHeight(), g.UserInput.Get(T2IParamTypes.BatchSize, 1));
                     if (g.Features.Contains("comfy_latent_blend_masked") && g.FinalMask is not null)
                     {
@@ -282,29 +302,6 @@ public class WorkflowGeneratorSteps
                             ["samples2"] = new JArray() { originalMultiplied, 0 }
                         });
                         g.FinalLatentImage = [added, 0];
-                    }
-                }
-                if (g.FinalMask is not null)
-                {
-                    if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
-                    {
-                        if (g.InitialImageIsAlteredAsLatent)
-                        {
-                            string decoded = g.CreateVAEDecode(g.FinalVae, g.FinalLatentImage);
-                            g.FinalInputImage = [decoded, 0];
-                            g.InitialImageIsAlteredAsLatent = false;
-                        }
-                        g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel);
-                        g.FinalLatentImage = [g.MaskShrunkInfo.Item3, 0];
-                    }
-                    else
-                    {
-                        string appliedNode = g.CreateNode("SetLatentNoiseMask", new JObject()
-                        {
-                            ["samples"] = g.FinalLatentImage,
-                            ["mask"] = g.FinalMask
-                        });
-                        g.FinalLatentImage = [appliedNode, 0];
                     }
                 }
             }

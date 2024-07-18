@@ -82,9 +82,6 @@ public class WorkflowGenerator
         FinalImageOut = null,
         LoadingModel = null, LoadingClip = null, LoadingVAE = null;
 
-    /// <summary>If true, the init image was altered in latent space and is no longer valid.</summary>
-    public bool InitialImageIsAlteredAsLatent = false;
-
     /// <summary>If true, something has required the workflow stop now.</summary>
     public bool SkipFurtherSteps = false;
 
