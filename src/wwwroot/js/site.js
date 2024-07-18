@@ -512,7 +512,6 @@ function makeSliderInput(featureid, id, paramid, name, description, value, min, 
     let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
     featureid += featureid2;
     return `
-    <div class="slider-auto-container">
     <div class="auto-input auto-slider-box"${featureid}>
         <label>
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
@@ -522,7 +521,7 @@ function makeSliderInput(featureid, id, paramid, name, description, value, min, 
         <div class="auto-slider-range-wrapper" style="${getRangeStyle(rangeVal, view_min, view_max)}">
             <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${rangeVal}" min="${view_min}" max="${view_max}" step="${step}" data-ispot="${isPot}" autocomplete="false" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
         </div>
-    </div></div>`;
+    </div>`;
 }
 
 function makeNumberInput(featureid, id, paramid, name, description, value, min, max, step = 1, format = 'big', toggles = false, popover_button = true) {

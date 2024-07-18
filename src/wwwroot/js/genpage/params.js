@@ -251,9 +251,9 @@ function genInputs(delay_final = false) {
         let inputWidth = document.getElementById('input_width');
         let inputHeight = document.getElementById('input_height');
         if (inputAspectRatio && inputWidth && inputHeight) {
-            let inputWidthParent = findParentOfClass(inputWidth, 'slider-auto-container');
+            let inputWidthParent = findParentOfClass(inputWidth, 'auto-slider-box');
             let inputWidthSlider = getRequiredElementById('input_width_rangeslider');
-            let inputHeightParent = findParentOfClass(inputHeight, 'slider-auto-container');
+            let inputHeightParent = findParentOfClass(inputHeight, 'auto-slider-box');
             let inputHeightSlider = getRequiredElementById('input_height_rangeslider');
             let resGroupLabel = findParentOfClass(inputWidth, 'input-group').querySelector('.header-label');
             let resTrick = () => {
@@ -261,11 +261,15 @@ function genInputs(delay_final = false) {
                 if (inputAspectRatio.value == "Custom") {
                     inputWidthParent.style.display = 'block';
                     inputHeightParent.style.display = 'block';
+                    delete inputWidthParent.dataset.visible_controlled;
+                    delete inputHeightParent.dataset.visible_controlled;
                     aspect = describeAspectRatio(inputWidth.value, inputHeight.value);
                 }
                 else {
                     inputWidthParent.style.display = 'none';
                     inputHeightParent.style.display = 'none';
+                    inputWidthParent.dataset.visible_controlled = 'true';
+                    inputHeightParent.dataset.visible_controlled = 'true';
                     aspect = inputAspectRatio.value;
                 }
                 resGroupLabel.innerText = `${translate('Resolution')}: ${aspect} (${inputWidth.value}x${inputHeight.value})`;
@@ -439,9 +443,7 @@ function genInputs(delay_final = false) {
 }
 
 function toggle_advanced() {
-    let advancedArea = getRequiredElementById('main_inputs_area_advanced');
     let toggler = getRequiredElementById('advanced_options_checkbox');
-    advancedArea.style.display = toggler.checked ? 'block' : 'none';
     localStorage.setItem('display_advanced', toggler.checked);
     for (let param of gen_param_types) {
         if (param.toggleable) {
@@ -683,7 +685,8 @@ function hideUnsupportableParams() {
     }
     let groups = {};
     let advancedCount = 0;
-    let toggler = getRequiredElementById('advanced_options_checkbox');
+    let advancedToggler = getRequiredElementById('advanced_options_checkbox');
+    let showAdvanced = advancedToggler.checked;
     for (let param of gen_param_types) {
         let elem = document.getElementById(`input_${param.id}`);
         if (elem) {
@@ -696,17 +699,16 @@ function hideUnsupportableParams() {
             }
             param.feature_missing = !supported;
             let show = supported && param.visible;
-            if (hideUnaltered) {
-                let paramToggler = document.getElementById(`input_${param.id}_toggle`);
-                let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != param.default;
-                if (param.group && param.group.toggles && !getRequiredElementById(`input_group_content_${param.group.id}_toggle`).checked) {
-                    isAltered = false;
-                }
-                if (!isAltered) {
-                    show = false;
-                }
+            let paramToggler = document.getElementById(`input_${param.id}_toggle`);
+            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != param.default;
+            if (param.group && param.group.toggles && !getRequiredElementById(`input_group_content_${param.group.id}_toggle`).checked) {
+                isAltered = false;
             }
-            if (param.advanced && !toggler.checked) {
+            if (hideUnaltered && !isAltered) {
+                show = false;
+            }
+            let isAdvanced = param.advanced || (param.group && param.group.advanced);
+            if (isAdvanced && !showAdvanced && !isAltered) {
                 show = false;
             }
             if (!filterShow) {
