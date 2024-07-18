@@ -1090,10 +1090,7 @@ public class WorkflowGenerator
                 {
                     ["mask"] = mask
                 });
-                CreateNode("SwarmSaveImageWS", new JObject()
-                {
-                    ["images"] = new JArray() { imgNode, 0 }
-                });
+                CreateImageSaveNode([imgNode, 0]);
             }
         }
         foreach (RegionHelper region in regions)

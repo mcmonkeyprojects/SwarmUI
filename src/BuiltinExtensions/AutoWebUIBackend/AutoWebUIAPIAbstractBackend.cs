@@ -18,9 +18,6 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
 {
     public abstract string Address { get; }
 
-    /// <summary>Internal HTTP handler.</summary>
-    public static HttpClient HttpClient = NetworkBackendUtils.MakeHttpClient();
-
     public async Task InitInternal(bool ignoreWebError)
     {
         if (string.IsNullOrWhiteSpace(Address))
@@ -120,12 +117,12 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
 
     public async Task<JType> SendGet<JType>(string url) where JType : class
     {
-        return await NetworkBackendUtils.Parse<JType>(await HttpClient.GetAsync($"{Address}/sdapi/v1/{url}"));
+        return await NetworkBackendUtils.Parse<JType>(await Utilities.UtilWebClient.GetAsync($"{Address}/sdapi/v1/{url}"));
     }
 
     public async Task<JType> SendPost<JType>(string url, JObject payload) where JType : class
     {
-        return await NetworkBackendUtils.Parse<JType>(await HttpClient.PostAsync($"{Address}/sdapi/v1/{url}", Utilities.JSONContent(payload)));
+        return await NetworkBackendUtils.Parse<JType>(await Utilities.UtilWebClient.PostAsync($"{Address}/sdapi/v1/{url}", Utilities.JSONContent(payload)));
     }
 
     public async Task<string> QueryLoadedModel()
