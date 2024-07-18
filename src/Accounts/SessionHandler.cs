@@ -14,6 +14,9 @@ public class SessionHandler
     /// <summary>How long the random session ID tokens should be.</summary>
     public int SessionIDLength = 40; // TODO: Configurable
 
+    /// <summary>How long to store sessions for before considering inactive and deleting.</summary>
+    public TimeSpan MaxSessionAge = TimeSpan.FromDays(31); // TODO: Configurable
+
     /// <summary>Map of currently tracked sessions by ID.</summary>
     public ConcurrentDictionary<string, Session> Sessions = new();
 
@@ -29,6 +32,9 @@ public class SessionHandler
     /// <summary>Internal database (users).</summary>
     public ILiteCollection<User.DatabaseEntry> UserDatabase;
 
+    /// <summary>Internal database (sessions).</summary>
+    public ILiteCollection<Session.DatabaseEntry> SessionDatabase;
+
     /// <summary>Internal database (presets).</summary>
     public ILiteCollection<T2IPreset> T2IPresets;
 
@@ -40,7 +46,7 @@ public class SessionHandler
 
     public User GenericSharedUser;
 
-    /// <summary>Helper for the database to store generic datablob.s</summary>
+    /// <summary>Helper for the database to store generic datablobs.</summary>
     public class GenericDataStore
     {
         [BsonId]
@@ -53,9 +59,30 @@ public class SessionHandler
     {
         Database = new LiteDatabase($"{Program.DataDir}/Users.ldb");
         UserDatabase = Database.GetCollection<User.DatabaseEntry>("users");
+        SessionDatabase = Database.GetCollection<Session.DatabaseEntry>("sessions");
         T2IPresets = Database.GetCollection<T2IPreset>("t2i_presets");
         GenericData = Database.GetCollection<GenericDataStore>("generic_data");
         GenericSharedUser = GetUser("__shared");
+        Utilities.RunCheckedTask(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), Program.GlobalProgramCancel);
+            CleanOldSessions();
+        });
+    }
+
+    public void CleanOldSessions()
+    {
+        long cutOffTimeUTC = DateTimeOffset.UtcNow.Subtract(MaxSessionAge).ToUnixTimeSeconds();
+        lock (DBLock)
+        {
+            foreach (Session.DatabaseEntry sess in SessionDatabase.FindAll())
+            {
+                if (sess.LastActiveUnixTime < cutOffTimeUTC)
+                {
+                    SessionDatabase.Delete(sess.ID);
+                }
+            }
+        }
     }
 
     public Session CreateAdminSession(string source, string userId = null)
@@ -79,6 +106,10 @@ public class SessionHandler
             if (Sessions.TryAdd(sess.ID, sess))
             {
                 sess.User.CurrentSessions[sess.ID] = sess;
+                lock (DBLock)
+                {
+                    SessionDatabase.Upsert(sess.MakeDBEntry());
+                }
                 return sess;
             }
         }
@@ -95,9 +126,12 @@ public class SessionHandler
         }
         return Users.GetOrCreate(userId, () =>
         {
-            User.DatabaseEntry userData = UserDatabase.FindById(userId);
-            userData ??= new() { ID = userId, RawSettings = "\n" };
-            return new(this, userData);
+            lock (DBLock)
+            {
+                User.DatabaseEntry userData = UserDatabase.FindById(userId);
+                userData ??= new() { ID = userId, RawSettings = "\n" };
+                return new(this, userData);
+            }
         });
     }
 
@@ -105,7 +139,35 @@ public class SessionHandler
     /// <returns><see cref="true"/> if found, otherwise <see cref="false"/>.</returns>
     public bool TryGetSession(string id, out Session session)
     {
-        return Sessions.TryGetValue(id, out session);
+        if (Sessions.TryGetValue(id, out session))
+        {
+            return true;
+        }
+        lock (DBLock)
+        {
+            if (Sessions.TryGetValue(id, out session)) // double-check inside lock
+            {
+                return true;
+            }
+            Session.DatabaseEntry existing = SessionDatabase.FindById(id);
+            if (existing is not null)
+            {
+                session = new()
+                {
+                    ID = existing.ID,
+                    OriginAddress = existing.OriginAddress,
+                    User = GetUser(existing.UserID)
+                };
+                if (Sessions.TryAdd(session.ID, session))
+                {
+                    session.User.CurrentSessions[session.ID] = session;
+                    SessionDatabase.Upsert(session.MakeDBEntry());
+                    return true;
+                }
+            }
+        }
+        session = null;
+        return false;
     }
 
     private volatile bool HasShutdown;

@@ -1,5 +1,5 @@
 
-let session_id = null;
+let session_id = getCookie('session_id') || null;
 let user_id = null;
 let outputAppendUser = null;
 
@@ -197,6 +197,7 @@ function getSession(callback) {
         haveBadSession = false;
         console.log("Session started.");
         session_id = data.session_id;
+        setCookie('session_id', session_id, 31);
         user_id = data.user_id;
         outputAppendUser = data.output_append_user;
         if (lastServerVersion == null) {

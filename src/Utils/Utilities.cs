@@ -464,16 +464,15 @@ public static class Utilities
 
     public static Task RunCheckedTask(Func<Task> action)
     {
-        return Task.Run(() =>
+        return Task.Run(async () =>
         {
             try
             {
-                return action();
+                await action();
             }
             catch (Exception ex)
             {
                 Logs.Error($"Internal error in async task: {ex}");
-                return Task.CompletedTask;
             }
         });
     }

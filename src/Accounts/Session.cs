@@ -1,5 +1,6 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
+using LiteDB;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
@@ -11,11 +12,40 @@ namespace SwarmUI.Accounts;
 /// <summary>Container for information related to an active session.</summary>
 public class Session : IEquatable<Session>
 {
+    /// <summary>Database entry for <see cref="Session"/> persistence data.</summary>
+    public class DatabaseEntry
+    {
+        /// <summary>The randomly generated session ID.</summary>
+        [BsonId]
+        public string ID { get; set; }
+
+        /// <summary>The relevant user's ID.</summary>
+        public string UserID { get; set; }
+
+        /// <summary>Timestamp (Unix seconds) of when this session was last actively used.</summary>
+        public long LastActiveUnixTime { get; set; }
+
+        /// <summary>Originating remote IP address of the session.</summary>
+        public string OriginAddress { get; set; }
+    }
+
     /// <summary>Randomly generated ID.</summary>
     public string ID;
 
     /// <summary>The relevant <see cref="User"/>.</summary>
     public User User;
+
+    /// <summary>The current database entry for this <see cref="Session"/>.</summary>
+    public DatabaseEntry MakeDBEntry()
+    {
+        return new DatabaseEntry()
+        {
+            ID = ID,
+            UserID = User.UserID,
+            LastActiveUnixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - (long)TimeSinceLastUsed.TotalSeconds,
+            OriginAddress = OriginAddress
+        };
+    }
 
     /// <summary>Token to interrupt this session.</summary>
     public CancellationTokenSource SessInterrupt = new();

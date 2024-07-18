@@ -87,7 +87,7 @@ public class API
                     context.Response.Redirect("/Error/BasicAPI");
                     return;
                 }
-                if (!Program.Sessions.Sessions.TryGetValue(session_id.ToString(), out session))
+                if (!Program.Sessions.TryGetSession(session_id.ToString(), out session))
                 {
                     Error("Request input has unknown session id (if you're not writing API code you can ignore this message)");
                     await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("Invalid session ID. You may need to refresh the page.", "invalid_session_id"));
