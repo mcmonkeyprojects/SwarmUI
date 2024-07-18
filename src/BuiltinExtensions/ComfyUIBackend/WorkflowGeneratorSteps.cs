@@ -994,7 +994,7 @@ public class WorkflowGeneratorSteps
                     string segmentNode;
                     if (part.DataText.StartsWith("yolo-"))
                     {
-                        string fullname = part.DataText.After('-');
+                        string fullname = part.DataText.After("yolo-");
                         (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
                         if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
                         {
@@ -1017,7 +1017,14 @@ public class WorkflowGeneratorSteps
                         {
                             ["images"] = g.FinalImageOut,
                             ["match_text"] = part.DataText,
-                            ["threshold"] = part.Strength
+                            ["threshold"] = Math.Abs(part.Strength)
+                        });
+                    }
+                    if (part.Strength < 0)
+                    {
+                        segmentNode = g.CreateNode("InvertMask", new JObject()
+                        {
+                            ["mask"] = new JArray() { segmentNode, 0 }
                         });
                     }
                     int blurAmt = g.UserInput.Get(T2IParamTypes.SegmentMaskBlur, 10);
@@ -1075,8 +1082,15 @@ public class WorkflowGeneratorSteps
                 {
                     ["images"] = g.FinalImageOut,
                     ["match_text"] = part.DataText,
-                    ["threshold"] = part.Strength
+                    ["threshold"] = Math.Abs(part.Strength)
                 });
+                if (part.Strength < 0)
+                {
+                    segmentNode = g.CreateNode("InvertMask", new JObject()
+                    {
+                        ["mask"] = new JArray() { segmentNode, 0 }
+                    });
+                }
                 string blurNode = g.CreateNode("SwarmMaskBlur", new JObject()
                 {
                     ["mask"] = new JArray() { segmentNode, 0 },

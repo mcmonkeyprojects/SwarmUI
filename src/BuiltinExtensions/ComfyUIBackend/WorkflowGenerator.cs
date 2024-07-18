@@ -1040,8 +1040,15 @@ public class WorkflowGenerator
                 ["y"] = part.Y,
                 ["width"] = part.Width,
                 ["height"] = part.Height,
-                ["strength"] = part.Strength
+                ["strength"] = Math.Abs(part.Strength)
             });
+            if (part.Strength < 0)
+            {
+                regionNode = CreateNode("InvertMask", new JObject()
+                {
+                    ["mask"] = new JArray() { regionNode, 0 }
+                });
+            }
             RegionHelper region = new(partCond, [regionNode, 0]);
             regions.Add(region);
             if (lastMergedMask is null)

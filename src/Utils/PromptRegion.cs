@@ -117,7 +117,7 @@ public class PromptRegion
                 p.DataText = regionData;
                 if (coords.Length > 1 && float.TryParse(coords[^1], out float x))
                 {
-                    p.Strength = Math.Clamp(x, 0, 1);
+                    p.Strength = Math.Clamp(x, -1, 1);
                     p.DataText = coords.SkipLast(1).JoinString(",");
                 }
                 else
@@ -149,7 +149,7 @@ public class PromptRegion
                 double strength2 = coords.Length > 5 && double.TryParse(coords[5], out double s2) ? s2 : 1.0;
                 x = Math.Clamp(x, 0, 1);
                 y = Math.Clamp(y, 0, 1);
-                p.Strength = Math.Clamp(strength, 0, 1);
+                p.Strength = Math.Clamp(strength, -1, 1);
                 p.Strength2 = Math.Clamp(strength2, 0, 1);
                 p.X = x;
                 p.Y = y;
