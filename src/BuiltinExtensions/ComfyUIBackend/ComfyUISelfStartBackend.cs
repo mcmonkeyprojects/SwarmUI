@@ -119,8 +119,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 if (Directory.Exists($"{node}/.git"))
                 {
-                    string response = await Utilities.RunGitProcess($"pull", node);
-                    Logs.Debug($"Comfy node pull response for {node.Replace('\\', '/').AfterLast('/')}: {response.Trim()}");
+                    string toUse = node;
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        string response = await Utilities.RunGitProcess($"pull", toUse);
+                        Logs.Debug($"Comfy node pull response for {toUse.Replace('\\', '/').AfterLast('/')}: {response.Trim()}");
+                    }));
                 }
             }
             await Task.WhenAll(tasks);
