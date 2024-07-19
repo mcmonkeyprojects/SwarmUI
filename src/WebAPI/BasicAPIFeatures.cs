@@ -218,16 +218,25 @@ public static class BasicAPIFeatures
                         path = "dlbackend/comfy/ComfyUI/main.py";
                         if (install_amd)
                         {
-                            string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
-                            await output("Fixing Comfy install...");
-                            // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
-                            File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
-                            string response = await Utilities.RunGitProcess($"pull", $"{comfyFolderPath}/ComfyUI");
-                            Logs.Debug($"ComfyUI Install git pull response: {response}");
-                            await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install -U -r ComfyUI/requirements.txt") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
-                            await output("Installing AMD compatible Torch-DirectML...");
-                            await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install torch-directml") { UseShellExecute = false, WorkingDirectory = comfyFolderPath }, "ComfyUI Install (directml)", "comfyinstall");
-                            extraArgs += "--directml ";
+                            Logs.LogLevel level = Logs.MinimumLevel;
+                            Logs.MinimumLevel = Logs.LogLevel.Verbose;
+                            try
+                            {
+                                string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
+                                await output("Fixing Comfy install...");
+                                // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
+                                File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
+                                string response = await Utilities.RunGitProcess($"pull", $"{comfyFolderPath}/ComfyUI");
+                                Logs.Debug($"ComfyUI Install git pull response: {response}");
+                                await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install -U -r ComfyUI/requirements.txt") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
+                                await output("Installing AMD compatible Torch-DirectML...");
+                                await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install torch-directml") { UseShellExecute = false, WorkingDirectory = comfyFolderPath }, "ComfyUI Install (directml)", "comfyinstall");
+                                extraArgs += "--directml ";
+                            }
+                            finally
+                            {
+                                Logs.MinimumLevel = level;
+                            }
                         }
                     }
                     else
@@ -235,16 +244,25 @@ public static class BasicAPIFeatures
                         stepsThusFar++;
                         updateProgress(0, 0, 0);
                         string gpuType = install_amd ? "amd" : "nv";
-                        Process installer = Process.Start(new ProcessStartInfo("/bin/bash", $"launchtools/comfy-install-linux.sh {gpuType}") { RedirectStandardOutput = true, UseShellExecute = false, RedirectStandardError = true });
-                        NetworkBackendUtils.ReportLogsFromProcess(installer, "ComfyUI Install (Linux Script)", "comfyinstall");
-                        await installer.WaitForExitAsync(Program.GlobalProgramCancel);
-                        if (installer.ExitCode != 0)
+                        Logs.LogLevel level = Logs.MinimumLevel;
+                        Logs.MinimumLevel = Logs.LogLevel.Verbose;
+                        try
                         {
-                            await output("ComfyUI install failed!");
-                            await socket.SendJson(new JObject() { ["error"] = "ComfyUI install failed! Check debug logs for details." }, API.WebsocketTimeout);
-                            return null;
+                            Process installer = Process.Start(new ProcessStartInfo("/bin/bash", $"launchtools/comfy-install-linux.sh {gpuType}") { RedirectStandardOutput = true, UseShellExecute = false, RedirectStandardError = true });
+                            NetworkBackendUtils.ReportLogsFromProcess(installer, "ComfyUI Install (Linux Script)", "comfyinstall");
+                            await installer.WaitForExitAsync(Program.GlobalProgramCancel);
+                            if (installer.ExitCode != 0)
+                            {
+                                await output("ComfyUI install failed!");
+                                await socket.SendJson(new JObject() { ["error"] = "ComfyUI install failed! Check debug logs for details." }, API.WebsocketTimeout);
+                                return null;
+                            }
+                            path = "dlbackend/ComfyUI/main.py";
                         }
-                        path = "dlbackend/ComfyUI/main.py";
+                        finally
+                        {
+                            Logs.MinimumLevel = level;
+                        }
                     }
                     NvidiaUtil.NvidiaInfo[] nv = NvidiaUtil.QueryNvidia();
                     int gpu = 0;
