@@ -31,8 +31,20 @@ class GenerateHandler {
         return gotImagePreview(image, metadata, batchId);
     }
 
-    gotProgress(current, overall, batchId) {
-        // nothing to do here
+    gotProgress(current, overall, genCount, batchId) {
+        this.updateProgressInTitle(overall, genCount)
+    }
+
+    updateProgressInTitle(overall, genCount) {
+        if (genCount == -1) {
+            // Skip update to avoid genCount 'flicker' in extremely slow event trigger between gens
+            return;
+        }
+
+        let generatingText = translatable('generating');
+        let currentlyText = translatable('Current')
+
+        document.title = `(${genCount} ${generatingText.get()}) ${currentlyText.get()}: ${Math.ceil(overall * 100)}%`;
     }
 
     hadError(msg) {
@@ -128,7 +140,7 @@ class GenerateHandler {
                         if (progress_bars) {
                             progress_bars.remove();
                         }
-                        this.gotProgress(-1, -1, `${batch_id}_${data.batch_index}`);
+                        this.gotProgress(-1, -1, -1, `${batch_id}_${data.batch_index}`);
                     }
                     if (data.batch_index in images) {
                         images[data.batch_index].image = data.image;
@@ -172,7 +184,7 @@ class GenerateHandler {
                             }
                         }
                     }
-                    this.gotProgress(data.gen_progress.current_percent, data.gen_progress.overall_percent, thisBatchId);
+                    this.gotProgress(data.gen_progress.current_percent, data.gen_progress.overall_percent, num_current_gens, thisBatchId);
                 }
                 if (data.discard_indices) {
                     let needsNew = false;
