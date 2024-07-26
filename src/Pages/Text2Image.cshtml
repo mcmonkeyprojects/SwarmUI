@@ -6,6 +6,7 @@
 }
 @section Header {
     <link rel="stylesheet" href="/css/genpage.css?vary=@Utilities.VaryID" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 }
 
 @if (!Program.ServerSettings.IsInstalled)
@@ -19,24 +20,33 @@
     window.alwaysRefreshOnLoad = @alwaysRefreshOnLoad;
 </script>
 
-<ul class="nav nav-tabs" role="tablist" id="toptablist">
-    <li class="nav-item" role="presentation">
-        <a class="nav-link translate" data-bs-toggle="tab" href="#Simple" id="simpletabbutton" aria-selected="false" tabindex="-1" role="tab">Simple</a>
-    </li>
-    <li class="nav-item" role="presentation">
-        <a class="nav-link active translate" data-bs-toggle="tab" href="#Text2Image" id="text2imagetabbutton" aria-selected="true" role="tab">Generate</a>
-    </li>
-    @WebServer.T2ITabHeader
-    <li class="nav-item" role="presentation">
-        <a class="nav-link translate" data-bs-toggle="tab" href="#utilities_tab" id="utilitiestabbutton" aria-selected="false" tabindex="-1" role="tab">Utilities</a>
-    </li>
-    <li class="nav-item" role="presentation">
-        <a class="nav-link translate" data-bs-toggle="tab" href="#user_tab" id="usersettingstabbutton" aria-selected="false" tabindex="-1" role="tab">User</a>
-    </li>
-    <li class="nav-item" role="presentation">
-        <a class="nav-link translate" data-bs-toggle="tab" href="#server_tab" id="servertabbutton" aria-selected="false" tabindex="-1" role="tab">Server</a>
-    </li>
-</ul>
+<nav class="navbar navbar-expand-md py-1 py-md-2">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse navbarToggler">
+      <ul class="navbar-nav nav-tabs p-2" role="tablist" id="toptablist">
+          <li class="nav-item" role="presentation">
+              <a class="nav-link translate" data-bs-toggle="tab" href="#Simple" id="simpletabbutton" aria-selected="false" tabindex="-1" role="tab">Simple</a>
+          </li>
+          <li class="nav-item" role="presentation">
+              <a class="nav-link active translate" data-bs-toggle="tab" href="#Text2Image" id="text2imagetabbutton" aria-selected="true" role="tab">Generate</a>
+          </li>
+          @WebServer.T2ITabHeader
+          <li class="nav-item" role="presentation">
+              <a class="nav-link translate" data-bs-toggle="tab" href="#utilities_tab" id="utilitiestabbutton" aria-selected="false" tabindex="-1" role="tab">Utilities</a>
+          </li>
+          <li class="nav-item" role="presentation">
+              <a class="nav-link translate" data-bs-toggle="tab" href="#user_tab" id="usersettingstabbutton" aria-selected="false" tabindex="-1" role="tab">User</a>
+          </li>
+          <li class="nav-item" role="presentation">
+              <a class="nav-link translate" data-bs-toggle="tab" href="#server_tab" id="servertabbutton" aria-selected="false" tabindex="-1" role="tab">Server</a>
+          </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 <div class="tab-content tab-hundred">
     <div class="tab-pane tab-pane-vw" id="Simple" role="tabpanel">
         <div class="simpletabbrowserwrapper browser_container" id="simpletabbrowserwrapper">
@@ -77,21 +87,6 @@
     <div class="tab-pane show active" style="line-height:0" id="Text2Image" role="tabpanel">
         <div class="t2i-top-bar-container" style="line-height:1.5">
             <div class="t2i-top-bar" id="t2i_top_bar">
-                <div class="input-sidebar" id="input_sidebar">
-                    <span class="interrupt_line"></span>
-                    <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
-                        <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
-                        <div id="main_inputs_area"></div>
-                        <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
-                        <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
-                        <div style="height: 10rem;"></div> <!-- Spacer -->
-                    </div>
-                    <div class="advanced_input_checkbox">
-                        <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
-                        <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
-                    </div>
-                </div>
-                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21DA;</div></div>
                 <div class="main-image-area" id="main_image_area">
                     <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? Program.ServerSettings.UI.OverrideWelcomeMessage))</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div>
                     <div class="current_image_batch" id="current_image_batch_wrapper">
@@ -119,6 +114,7 @@
                             </div>
                         </div>
                         <div id="current_image_batch" class="current_image_batch_core"></div>
+                        <span class="bottom-info-bar-component num-jobs-mobile"><span class="num_jobs_span" id="num_jobs_span_mobile" style="min-height: 1rem"></span></span>
                     </div>
                     <div class="alt_prompt_region" id="alt_prompt_region">
                         <div id="alt_prompt_extra_area" class="alt_prompt_extra_area">
@@ -136,9 +132,14 @@
                                 <br>
                                 <textarea id="alt_negativeprompt_textbox" class="alt_prompt_textbox translate" rows="1" placeholder="Optionally, type a negative prompt here..."></textarea>
                             </div>
-                            <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate" id="alt_generate_button" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">Generate</button>
-                            <button class="alt-prompt-buttons alt-prompt-center-button basic-button" id="alt_center_button" oncontextmenu="doPopover('generate_center'); return false;" onclick="doPopover('generate_center')">&#x2B9F;</button>
-                            <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt" id="alt_interrupt_button" oncontextmenu="doPopover('interrupt'); return false;" onclick="mainGenHandler.doInterrupt()">&times;</button>
+                            <div class="alt_prompt_buttons">
+                                <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate d-none d-md-inline-block" id="alt_generate_button" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">Generate</button>
+                                <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate d-md-none position-fixed bottom-0 end-0 m-3 rounded-circle" id="alt_generate_button_mobile" style="width: 56px; height: 56px; z-index: 1030;" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <button class="alt-prompt-buttons alt-prompt-center-button basic-button d-none d-md-inline-block" id="alt_center_button" oncontextmenu="doPopover('generate_center'); return false;" onclick="doPopover('generate_center')">&#x2B9F;</button>
+                                <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt d-none d-md-inline-block" id="alt_interrupt_button" oncontextmenu="doPopover('interrupt'); return false;" onclick="mainGenHandler.doInterrupt()">&times;</button>
+                            </div>
                         </div>
                     </div>
                     <div class="sui-popover sui_popover_model" id="popover_generate_center">
@@ -159,6 +160,21 @@
                     <div class="sui-popover sui_popover_model" id="popover_interrupt">
                         <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
                         <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
+                    </div>
+                </div>
+                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21D2;</div></div>
+                <div class="input-sidebar" id="input_sidebar">
+                    <span class="interrupt_line"></span>
+                    <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
+                        <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
+                        <div id="main_inputs_area"></div>
+                        <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
+                        <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
+                        <div style="height: 10rem;"></div> <!-- Spacer -->
+                    </div>
+                    <div class="advanced_input_checkbox">
+                        <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
+                        <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
                     </div>
                 </div>
                 <div class="model-block-menu-button t2i-area-quicktools translate" onclick="doPopover('quicktools')">Quick Tools</div>
@@ -193,7 +209,8 @@
                 <span class="bottom-info-bar-component"><b class="translate">Model</b>: <select class="auto-dropdown current_model_view" onchange="autoSelectWidth(this)" id="current_model"></select></span>
                 <span class="bottom-info-bar-component" style="display:none;" id="current_presets_wrapper"><span><b class="translate">Current presets</b><span id="preset_info_slot"></span>: </span> <span id="current_preset_list_view"></span></span>
                 <span class="bottom-info-bar-component" style="display:none;" id="current_loras_wrapper"><span class="translate"><b>Current LoRAs</b><span id="lora_info_slot"></span>: </span> <span id="current_lora_list_view"></span></span>
-                <span class="bottom-info-bar-component"><span class="num_jobs_span" id="num_jobs_span" style="min-height: 1rem"></span></span>
+                <span class="bottom-info-bar-component num-jobs-desktop"><span class="num_jobs_span" id="num_jobs_span" style="min-height: 1rem"></span></span>
+                <select id="mobile_tab_selector" onchange="switchMobileTab(event)"></select>
             </div>
             <ul class="nav nav-tabs" role="tablist" id="bottombartabcollection">
                 <li class="nav-item" role="presentation">
@@ -852,6 +869,7 @@
     <script src="/js/genpage/image_editor.js?vary=@Utilities.VaryID"></script>
     <script src="/js/genpage/generatehandler.js?vary=@Utilities.VaryID"></script>
     <script src="/js/genpage/simpletab.js?vary=@Utilities.VaryID"></script>
+    <script src="/js/genpage/mobile.js?vary=@Utilities.VaryID"></script>
     <script src="/js/genpage/main.js?vary=@Utilities.VaryID"></script>
     <script src="/js/genpage/settings_editor.js?vary=@Utilities.VaryID"></script>
     <script src="/js/genpage/logs.js?vary=@Utilities.VaryID"></script>
