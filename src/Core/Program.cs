@@ -648,7 +648,7 @@ public class Program
     public static void PrintCommandLineHelp()
     {
         Console.WriteLine("""
-Usage: SwarmUI.dll [options]
+Usage: SwarmUI.dll [option]...
   or   SwarmUI.dll --help
 
   Options:
@@ -707,14 +707,13 @@ Usage: SwarmUI.dll [options]
                                      - Warning: Logs related to unexpected events or issues.
                                      - Error: Logs related to a request execution failure.
                                      - Critical: Logging related to crashes and unrecoverable faults.
-                                     - None:
+                                     - None: Disable web server logging entirely.
                                     See 'https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=net-8.0' for more information.
                                     [Default: Warning]
       --environment <type>         Sets which ASP.NET Web Environment to use. Possible values:
                                      - Development: Gives detailed debug logs and errors.
                                      - Production: Optimized for normal usage.
                                     [Default: Production]
-
 
     Help
       --help                       Prints this help document.
