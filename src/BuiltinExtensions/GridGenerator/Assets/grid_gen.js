@@ -341,6 +341,7 @@ class GridGenClass {
 
     doGenerate() {
         resetBatchIfNeeded();
+        let batch_id = mainGenHandler.batchesEver++;
         let startTime = Date.now();
         let generatedCount = 0;
         let getOpt = (o) => getRequiredElementById('grid-gen-opt-' + o).checked;
@@ -381,7 +382,7 @@ class GridGenClass {
                 let timeDiff = timeNow - timeLastGenHit;
                 timeLastGenHit = timeNow;
                 mainGenHandler.appendGenTimeFrom(timeDiff / 1000);
-                gotImageResult(data.image, data.metadata);
+                gotImageResult(data.image, data.metadata, `${batch_id}_${data.batch_index}`);
                 generatedCount++;
                 let timeProgress = Math.round((Date.now() - startTime) / 1000);
                 let rate = Math.round(generatedCount / timeProgress * 100) / 100;

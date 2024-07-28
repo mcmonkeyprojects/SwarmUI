@@ -533,7 +533,7 @@ public class GridGeneratorExtension : Extension
                 });
                 Logs.Info("Generated, saving...");
                 Image outImg = new(gridImg);
-                int batchId = xAxis.Count * yAxis.Count * y2Axis.Count;
+                int batchId = (xAxis.Count * yAxis.Count * y2Axis.Count) + 1;
                 Logs.Verbose("Apply metadata...");
                 (outImg, string metadata) = session.ApplyMetadata(outImg, grid.InitialParams, batchId);
                 Logs.Verbose("Metadata applied, save to file...");
