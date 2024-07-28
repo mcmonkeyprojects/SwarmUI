@@ -105,6 +105,11 @@ public class Program
         {
             Logs.Init("Parsing command line...");
             ParseCommandLineArgs(args);
+            if (GetCommandLineFlagAsBool("help", false))
+            {
+                PrintCommandLineHelp();
+                return;
+            }
             Logs.Init("Loading settings file...");
             DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, CommandLineFlags.GetValueOrDefault("data_dir", "Data"));
             SettingsFilePath = CommandLineFlags.GetValueOrDefault("settings_file", "Data/Settings.fds");
@@ -125,6 +130,7 @@ public class Program
         catch (InvalidDataException ex)
         {
             Logs.Error($"Command line arguments given are invalid: {ex.Message}");
+            PrintCommandLineHelp();
             return;
         }
         Logs.StartLogSaving();
@@ -639,5 +645,89 @@ public class Program
             var mode => throw new InvalidDataException($"Command line flag '{key}' value of '{mode}' is not valid")
         };
     }
+    public static void PrintCommandLineHelp()
+    {
+        Console.WriteLine("""
+Usage: SwarmUI.dll [options]
+  or   SwarmUI.dll --help
+
+  Options:
+    Local / User Settings:
+      --launch_mode <mode>         Sets the launch behavior of SwarmUI. Can be used to override the 'LaunchMode' server setting. Possible values:
+                                     - None: Starts SwarmUI normally, without trying to locally launch a web-browser or GUI. Useful in server settings.
+                                     - Web: Start SwarmUI normally, and automatically launch a web-browser when it has finished loading. Useful in desktop settings.
+                                     - WebInstall: Initial setup for a SwarmUI install. Will attempt to launch a web-browser
+                                     - Electron: NOT IMPLEMENTED. In the future, this will launch SwarmUI via electron, providing a GUI without using your web-browser.
+                                    [Default: WebInstall (if installation has not been run),
+                                          or: Web        (if installation has been run)]
+      --user_id <username>         Sets the local user's default UserID (for running in single-user mode, not useful in shared mode).
+                                    [Default: local]
+
+    Data / Setting Configuration:
+      --data_dir <path>            Sets the default data directory, relative to the project root. This directory stores user configuration, metadata, and more.
+                                    [Default: Data]
+      --settings_file <path>       Sets the path for the application settings file, relative to the project root. Note: This path is not based on the value of 'data_dir', despite the default values looking similar.
+                                    [Default: Data/Settings.fds]
+      --backends_file <path>       Sets the path for the backends configuration file, relative to the project root. Note: This path is not based on the value of 'data_dir', despite the default values looking similar.
+                                    [Default: Data/Backends.fds]
+      --lock_settings[=TRUE]       When enabled, blocks in-UI editing of server settings by admins. Settings cannot be modified in this mode without editing the settings file and restarting the server. When specified without a value.
+                                    [Default: false (if not specified)
+                                          or: true  (if specified without a value)]
+
+    Networking:
+      --host <ip/hostname>         Sets the hostname/ip for the server to listen on, overriding the 'Network.Host' server setting. Note: Setting this to a value other than 'localhost' may allow those on your network to access SwarmUI.
+                                    [Default: localhost]
+      --port <port>                Sets the port for the server to listen on, overriding the 'Network.Port' server setting. 
+                                    [Default: 7801]
+
+    Proxy/Gateway:
+      --ngrok-path <path>          If set, will be used as the path to an `ngrok` executable, will automatically load and configure ngrok when launching, to share your UI instance on a publicly accessible URL.
+                                    [No Default]
+      --ngrok-basic-auth[=TRUE]    If set, sets an ngrok basic-auth requirement to access.
+                                    [Default: false (if not set)
+                                              true  (if set without a value)]
+      --cloudflared-path <path>    If set, will be used as the path to an 'cloudflared' executable, will automatically load and configure TryCloudflare when launching, to share your UI instance on a publicly accessible URL.
+                                    [No Default]
+      --proxy-region <region>      If set, overrides sets the proxy (ngrok/cloudflared) region.
+                                    [Default: closest region]
+
+    Logging:
+      --loglevel <level>           Sets the minimum log level for SwarmUI. Possible values:
+                                     - Debug: Very verbose logging for temporarily debugging specific issues.
+                                     - Info: Logging of general SwarmUI usage.
+                                     - Init: Logging about SwarmUI and its extensions starting.
+                                     - Warning: Lighter-logging, capturing non-critical SwarmUI issues.
+                                     - Error: Captures only critical SwarmUI errors.
+                                     - None: Disable SwarmUI logging entirely.
+                                    [Default: Info]
+      --asp_loglevel <level>       Sets the minimum log level for ASP.NET. Possible values:
+                                     - Trace: The most amount of logging possible and can contain sensitive request information. This should only be used in local debugging scenarios.
+                                     - Debug: Very verbose logging, useful to temporarily get more information for debugging server issues.
+                                     - Info: Verbose logging, showing information about each and every request.
+                                     - Warning: Logs related to unexpected events or issues.
+                                     - Error: Logs related to a request execution failure.
+                                     - Critical: Logging related to crashes and unrecoverable faults.
+                                     - None:
+                                    See 'https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loglevel?view=net-8.0' for more information.
+                                    [Default: Warning]
+      --environment <type>         Sets which ASP.NET Web Environment to use. Possible values:
+                                     - Development: Gives detailed debug logs and errors.
+                                     - Production: Optimized for normal usage.
+                                    [Default: Production]
+
+
+    Help
+      --help                       Prints this help document.
+
+Find more information about SwarmUI in the project's official github.
+  - Project page: https://github.com/mcmonkeyprojects/SwarmUI
+  - Feature Announcements Thread: https://github.com/mcmonkeyprojects/SwarmUI/discussions/1
+  - Documentation: https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs
+  - License Information: https://github.com/mcmonkeyprojects/SwarmUI/blob/master/LICENSE.txt
+
+Join the Discord (https://discord.gg/q2y38cqjNw) to discuss the project, get support, see announcements, etc.
+""");
+    }
+
     #endregion
 }
