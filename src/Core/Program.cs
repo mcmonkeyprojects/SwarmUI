@@ -336,7 +336,7 @@ public class Program
         Logs.Info("Shutting down...");
         GlobalCancelSource.Cancel();
         Logs.Verbose("Shutdown webserver...");
-        WebServer.WebApp.StopAsync().Wait();
+        WebServer.WebApp?.StopAsync().Wait();
         Logs.Verbose("Shutdown backends...");
         Backends?.Shutdown();
         Logs.Verbose("Shutdown sessions...");
@@ -577,10 +577,28 @@ public class Program
                 throw new InvalidDataException($"Error: Unknown command line argument '{arg}'");
             }
             string key = arg[2..].ToLower();
-            string value = "true";
-            if (i + 1 < args.Length && !args[i + 1].StartsWith("--"))
+            string value;
+            // Check for key=value
+            int equalsCharIndex = key.IndexOf('=');
+            if (equalsCharIndex != -1)
             {
-                value = args[++i];
+                if (equalsCharIndex == 0)
+                {
+                    // Empty key (=value)
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
+                }
+                else if (equalsCharIndex == (key.Length - 1))
+                {
+                    // Empty value (key=)
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
+                }
+                value = key[(equalsCharIndex + 1)..];
+                key = key[..equalsCharIndex];
+            }
+            else
+            {
+                // Next argument is the value, or this is a bool "On" flag
+                value = (i + 1 < args.Length && !args[i + 1].StartsWith("--")) ? args[++i] : "true";
             }
             if (CommandLineFlags.ContainsKey(key))
             {
