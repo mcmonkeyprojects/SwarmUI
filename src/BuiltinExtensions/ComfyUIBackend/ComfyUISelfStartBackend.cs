@@ -54,23 +54,27 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static bool IsComfyModelFileEmitted = false;
 
     /// <summary>Downloads or updates the named relevant ComfyUI custom node repo.</summary>
-    public static async Task<bool> EnsureNodeRepo(string url)
+    public async Task<bool> EnsureNodeRepo(string url)
     {
+        AddLoadStatus($"Will ensure node repo '{url}'...");
         string nodePath = Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes");
         string folderName = url.AfterLast('/');
         if (!Directory.Exists($"{nodePath}/{folderName}"))
         {
+            AddLoadStatus($"Node folder '{folderName}' does not exist, will clone it...");
             string response = await Utilities.RunGitProcess($"clone {url}", nodePath);
-            Logs.Debug($"Comfy node clone response for {folderName}: {response.Trim()}");
+            AddLoadStatus($"Node clone response for {folderName}: {response.Trim()}");
             string reqFile = $"{nodePath}/{folderName}/requirements.txt";
             ComfyUISelfStartBackend[] backends = [.. Program.Backends.RunningBackendsOfType<ComfyUISelfStartBackend>()];
             if (File.Exists(reqFile) && backends.Any())
             {
+                AddLoadStatus("Will shutdown any/all comfy backends to allow an install...");
                 Task[] tasks = [.. backends.Select(b => Program.Backends.ShutdownBackendCleanly(b.BackendData))];
                 await Task.WhenAll(tasks);
+                AddLoadStatus("Pre-shutdown done.");
                 try
                 {
-                    Logs.Debug($"Will install requirements file {reqFile}");
+                    AddLoadStatus($"Will install requirements file {reqFile}...");
                     string path = Path.GetFullPath(reqFile);
                     if (path.Contains(' '))
                     {
@@ -79,13 +83,17 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install -r {path}");
                     NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Requirements Install - {folderName})", "");
                     await p.WaitForExitAsync(Program.GlobalProgramCancel);
+                    AddLoadStatus($"Requirement install {reqFile} done.");
                 }
                 catch (Exception ex)
                 {
                     Logs.Error($"Failed to install comfy backend node requirements: {ex}");
+                    AddLoadStatus($"Error during requirements installation.");
                 }
+                AddLoadStatus($"Will re-start any backends shut down by the install...");
                 foreach (ComfyUISelfStartBackend backend in backends)
                 {
+                    AddLoadStatus($"Will re-start backend {backend.BackendData.ID}...");
                     Program.Backends.DoInitBackend(backend.BackendData);
                 }
                 return true;
@@ -93,16 +101,18 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         else
         {
+            AddLoadStatus($"Node folder '{folderName}' exists, will git pull it...");
             string response = await Utilities.RunGitProcess($"pull", $"{nodePath}/{folderName}");
-            Logs.Debug($"Comfy node pull response for {folderName}: {response.Trim()}");
+            AddLoadStatus($"Node pull response for {folderName}: {response.Trim()}");
         }
         return false;
     }
 
-    public static async Task EnsureNodeRepos()
+    public async Task EnsureNodeRepos()
     {
         try
         {
+            AddLoadStatus("Will ensure all node repos...");
             string nodePath = Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes");
             if (!Directory.Exists(nodePath))
             {
@@ -120,22 +130,26 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 if (Directory.Exists($"{node}/.git"))
                 {
                     string toUse = node;
+                    string pathSimple = toUse.Replace('\\', '/').AfterLast('/');
                     tasks.Add(Task.Run(async () =>
                     {
+                        AddLoadStatus($"Ensure node repos - Will git pull for {pathSimple}...");
                         string response = await Utilities.RunGitProcess($"pull", toUse);
-                        Logs.Debug($"Comfy node pull response for {toUse.Replace('\\', '/').AfterLast('/')}: {response.Trim()}");
+                        AddLoadStatus($"Node pull response for {pathSimple}: {response.Trim()}");
                     }));
                 }
             }
             await Task.WhenAll(tasks);
+            AddLoadStatus("Done ensuring all node repos.");
         }
         catch (Exception ex)
         {
             Logs.Error($"Failed to auto-update comfy backend node repos: {ex}");
+            AddLoadStatus($"Error while ensuring comfy backend node repos: {ex.GetType().Name}: {ex.Message}");
         }
     }
 
-    public static void EnsureComfyFile()
+    public void EnsureComfyFile()
     {
         lock (ComfyModelFileHelperLock)
         {
@@ -143,6 +157,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 return;
             }
+            AddLoadStatus($"Will emit comfy model paths file...");
             string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.ModelRoot);
             string yaml = $"""
             swarmui:
@@ -193,6 +208,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             Directory.CreateDirectory($"{root}/upscale_models");
             File.WriteAllText($"{Program.DataDir}/comfy-auto-model.yaml", yaml);
             IsComfyModelFileEmitted = true;
+            AddLoadStatus($"Done emitting comfy model paths file.");
         }
     }
 
@@ -213,6 +229,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     public override async Task Init()
     {
+        AddLoadStatus("Starting init...");
         EnsureComfyFile();
         string addedArgs = "";
         ComfyUISelfStartSettings settings = SettingsRaw as ComfyUISelfStartSettings;
@@ -228,32 +245,41 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 addedArgs += " --preview-method latent2rgb";
             }
+            AddLoadStatus($"Will add args: {addedArgs}");
         }
         settings.StartScript = settings.StartScript.Trim(' ', '"', '\'', '\n', '\r', '\t');
         if (!settings.StartScript.EndsWith("main.py") && !string.IsNullOrWhiteSpace(settings.StartScript))
         {
+            AddLoadStatus($"Start script '{settings.StartScript}' looks wrong");
             Logs.Warning($"ComfyUI start script is '{settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
         }
+        AddLoadStatus("Will track node repo load task...");
         List<Task> tasks = [Task.Run(EnsureNodeRepos)];
         if (settings.AutoUpdate && !string.IsNullOrWhiteSpace(settings.StartScript))
         {
+            AddLoadStatus("Will track comfy git pull auto-update task...");
             tasks.Add(Task.Run(async () =>
             {
                 try
                 {
+                    AddLoadStatus("Running git pull in comfy folder...");
                     string response = await Utilities.RunGitProcess($"pull", Path.GetFullPath(settings.StartScript).Replace('\\', '/').BeforeLast('/'));
-                    Logs.Debug($"Comfy git pull response: {response.Trim()}");
+                    AddLoadStatus($"Comfy git pull response: {response.Trim()}");
                 }
                 catch (Exception ex)
                 {
+                    AddLoadStatus($"Auto-update comfy backend failed.");
                     Logs.Error($"Failed to auto-update comfy backend: {ex}");
                 }
             }));
         }
+        AddLoadStatus($"Waiting on git tasks to complete...");
         await Task.WhenAll(tasks);
+        AddLoadStatus($"All tasks done.");
         string lib = NetworkBackendUtils.GetProbableLibFolderFor(settings.StartScript);
         if (lib is not null)
         {
+            AddLoadStatus($"Will validate required libs...");
             HashSet<string> libs = Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/').Before('-')).ToHashSet();
             async Task install(string libFolder, string pipName)
             {
@@ -261,10 +287,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     return;
                 }
-                Logs.Debug($"Installing '{pipName}' for ComfyUI...");
+                AddLoadStatus($"Installing '{pipName}' for ComfyUI...");
                 Process p = DoPythonCall($"-s -m pip install {pipName}");
                 NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Install {pipName})", "");
                 await p.WaitForExitAsync(Program.GlobalProgramCancel);
+                AddLoadStatus($"Done installing '{pipName}' for ComfyUI.");
             }
             // ComfyUI added these dependencies, didn't used to have it
             await install("kornia", "kornia");
@@ -291,7 +318,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     await install("insightface", "insightface");
                 }
             }
+            AddLoadStatus("Done validating required libs.");
         }
+        AddLoadStatus("Starting self-start ComfyUI process...");
         await NetworkBackendUtils.DoSelfStart(settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", settings.GPU_ID, settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, settings.AutoRestart);
     }
 

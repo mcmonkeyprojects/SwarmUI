@@ -50,6 +50,36 @@ public abstract class AbstractT2IBackend
         return Status == BackendStatus.RUNNING;
     }
 
+    /// <summary>Holder for a status message during backend loading.</summary>
+    public class LoadStatus
+    {
+        /// <summary>A message about the current status.</summary>
+        public string Message;
+
+        /// <summary>The <see cref="Environment.TickCount64"/> time the message was tracked.</summary>
+        public long Time;
+
+        /// <summary>Index used by <see cref="BackendHandler"/> for tracking load status changes.</summary>
+        public int TrackerIndex = 0;
+    }
+
+    /// <summary>Any/all current load-status messages.</summary>
+    public List<LoadStatus> LoadStatusReport = [];
+
+    /// <summary>Add a load status message.</summary>
+    public void AddLoadStatus(string message)
+    {
+        Logs.Debug($"[Load {BackendData.BackType.Name} #{BackendData.ID}] {message}");
+        if (LoadStatusReport is null)
+        {
+            return;
+        }
+        lock (LoadStatusReport)
+        {
+            LoadStatusReport.Add(new LoadStatus() { Message = message, Time = Environment.TickCount64 });
+        }
+    }
+
     /// <summary>Currently loaded model, or null if none.</summary>
     public volatile string CurrentModelName;
 

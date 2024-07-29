@@ -165,14 +165,15 @@ public static class ComfyUIWebAPI
         await MultiInstallLock.WaitAsync(Program.GlobalProgramCancel);
         try
         {
-            if (Program.Backends.RunningBackendsOfType<ComfyUISelfStartBackend>().IsEmpty())
+            ComfyUISelfStartBackend backend = Program.Backends.RunningBackendsOfType<ComfyUISelfStartBackend>().FirstOrDefault();
+            if (backend is null)
             {
                 Logs.Warning($"User {session.User.UserID} tried to install feature '{feature}' but have no comfy self-start backends.");
                 return new JObject() { ["error"] = $"Cannot install Comfy features as this Swarm instance has no running ComfyUI Self-Start backends currently." };
             }
-            static async Task<JObject> doRepo(string path)
+            async Task<JObject> doRepo(string path)
             {
-                bool didRestart = await ComfyUISelfStartBackend.EnsureNodeRepo(path);
+                bool didRestart = await backend.EnsureNodeRepo(path);
                 if (!didRestart)
                 {
                     _ = Utilities.RunCheckedTask(ComfyUIBackendExtension.RestartAllComfyBackends);

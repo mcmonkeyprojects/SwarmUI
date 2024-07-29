@@ -293,21 +293,22 @@ public static class NetworkBackendUtils
     /// <summary>Starts a self-start backend based on the user-configuration and backend-specifics provided.</summary>
     public static Task DoSelfStart(string startScript, AbstractT2IBackend backend, string nameSimple, string identifier, int gpuId, string extraArgs, Func<bool, Task> initInternal, Action<int, Process> takeOutput, bool autoRestart = false)
     {
-        return DoSelfStart(startScript, nameSimple, identifier, gpuId, extraArgs, status => backend.Status = status, async (b) => { await initInternal(b); return backend.Status == BackendStatus.RUNNING; }, takeOutput, () => backend.Status, a => backend.OnShutdown += a, autoRestart);
+        return DoSelfStart(startScript, nameSimple, identifier, gpuId, extraArgs, status => backend.Status = status, async (b) => { await initInternal(b); return backend.Status == BackendStatus.RUNNING; }, takeOutput, () => backend.Status, a => backend.OnShutdown += a, autoRestart, backend.AddLoadStatus);
     }
 
     /// <summary>Starts a self-start backend based on the user-configuration and backend-specifics provided.</summary>
-    public static async Task DoSelfStart(string startScript, string nameSimple, string identifier, int gpuId, string extraArgs, Action<BackendStatus> reviseStatus, Func<bool, Task<bool>> initInternal, Action<int, Process> takeOutput, Func<BackendStatus> getStatus, Action<Action> addShutdownEvent, bool autoRestart = false)
+    public static async Task DoSelfStart(string startScript, string nameSimple, string identifier, int gpuId, string extraArgs, Action<BackendStatus> reviseStatus, Func<bool, Task<bool>> initInternal, Action<int, Process> takeOutput, Func<BackendStatus> getStatus, Action<Action> addShutdownEvent, bool autoRestart = false, Action<string> addLoadStatus = null)
     {
+        addLoadStatus ??= Logs.Debug;
         async Task launch()
         {
             if (string.IsNullOrWhiteSpace(startScript))
             {
-                Logs.Debug($"Cancelling start of {nameSimple} as it has an empty start script.");
+                addLoadStatus($"Cancelling start of {nameSimple} as it has an empty start script.");
                 reviseStatus(BackendStatus.DISABLED);
                 return;
             }
-            Logs.Debug($"Requested generic launch of {startScript} on GPU {gpuId} from {nameSimple}");
+            addLoadStatus($"Requested generic launch of {startScript} on GPU {gpuId} from {nameSimple}");
             string path = startScript.Replace('\\', '/');
             string ext = path.AfterLast('.');
             if (!IsValidStartPath(nameSimple, path, ext))
@@ -330,11 +331,11 @@ public static class NetworkBackendUtils
             if (path.EndsWith(".py"))
             {
                 ConfigurePythonExeFor(startScript, nameSimple, start, out preArgs);
-                Logs.Debug($"({nameSimple} launch) Will use python: {start.FileName}");
+                addLoadStatus($"({nameSimple} launch) Will use python: {start.FileName}");
             }
             else
             {
-                Logs.Debug($"({nameSimple} launch) Will shellexec");
+                addLoadStatus($"({nameSimple} launch) Will shellexec");
                 start.FileName = Path.GetFullPath(path);
             }
             start.Arguments = $"{preArgs} {postArgs}".Trim();
@@ -342,6 +343,7 @@ public static class NetworkBackendUtils
             reviseStatus(status);
             Process runningProcess = new() { StartInfo = start };
             takeOutput(port, runningProcess);
+            addLoadStatus("Will start process...");
             runningProcess.Start();
             Logs.Init($"Self-Start {nameSimple} on port {port} is loading...");
             bool everLoaded = false;
@@ -362,13 +364,14 @@ public static class NetworkBackendUtils
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 if (checks % 10 == 0)
                 {
-                    Logs.Debug($"{nameSimple} port {port} waiting for server...");
+                    addLoadStatus($"{nameSimple} port {port} waiting for server...");
                 }
                 try
                 {
                     bool alive = await initInternal(true);
                     if (alive)
                     {
+                        addLoadStatus("Done! Started!");
                         Logs.Init($"Self-Start {nameSimple} on port {port} started.");
                     }
                     status = getStatus();
@@ -382,7 +385,7 @@ public static class NetworkBackendUtils
                 }
             }
             everLoaded = status != BackendStatus.ERRORED;
-            Logs.Debug($"{nameSimple} self-start port {port} loop ending (should now be alive)");
+            addLoadStatus($"{nameSimple} self-start port {port} loop ending (should now be alive)");
         }
         await launch();
     }

@@ -448,7 +448,9 @@ public class BackendHandler
     /// <summary>Cause a backend to run its initializer, either immediately or in the next available slot.</summary>
     public void DoInitBackend(T2IBackendData data)
     {
+        data.Backend.LoadStatusReport ??= [];
         data.Backend.Status = BackendStatus.WAITING;
+        data.Backend.AddLoadStatus("Waiting to load...");
         if (data.BackType.CanLoadFast)
         {
             Task.Run(() => LoadBackendDirect(data));
@@ -465,10 +467,12 @@ public class BackendHandler
         if (!data.Backend.IsEnabled)
         {
             data.Backend.Status = BackendStatus.DISABLED;
+            data.Backend.LoadStatusReport = null;
             return false;
         }
         try
         {
+            data.Backend.AddLoadStatus("Will now load...");
             if (data.Backend.IsReal)
             {
                 Logs.Init($"Initializing backend #{data.ID} - {data.Backend.HandlerTypeData.Name}...");
@@ -485,6 +489,7 @@ public class BackendHandler
         {
             if (data.InitAttempts <= Program.ServerSettings.Backends.MaxBackendInitAttempts)
             {
+                data.Backend.AddLoadStatus("Load failed, will retry...");
                 data.Backend.Status = BackendStatus.WAITING;
                 Logs.Error($"Error #{data.InitAttempts} while initializing backend #{data.ID} - {data.Backend.HandlerTypeData.Name} - will retry");
                 await Task.Delay(TimeSpan.FromSeconds(1)); // Intentionally pause a second to give a chance for external issue to self-resolve.
@@ -493,6 +498,7 @@ public class BackendHandler
             else
             {
                 data.Backend.Status = BackendStatus.ERRORED;
+                data.Backend.LoadStatusReport = null;
                 if (ex is AggregateException aex)
                 {
                     ex = aex.InnerException;
@@ -528,6 +534,47 @@ public class BackendHandler
                 catch (Exception ex)
                 {
                     Logs.Error($"Error while reassigning loaded models list: {ex}");
+                }
+            }
+            T2IBackendData[] loading = [.. T2IBackends.Values.Where(b => b.Backend.LoadStatusReport is not null && b.Backend.LoadStatusReport.Count > 1)];
+            if (loading.Any())
+            {
+                long now = Environment.TickCount64;
+                foreach (T2IBackendData backend in loading)
+                {
+                    AbstractT2IBackend.LoadStatus firstStatus = backend.Backend.LoadStatusReport[0];
+                    AbstractT2IBackend.LoadStatus lastStatus = backend.Backend.LoadStatusReport[^1];
+                    TimeSpan loadingFor = TimeSpan.FromMilliseconds(now - firstStatus.Time);
+                    if (loadingFor > TimeSpan.FromMinutes(1 + firstStatus.TrackerIndex * 2))
+                    {
+                        firstStatus.TrackerIndex++;
+                        if (backend.Backend.Status != BackendStatus.LOADING && backend.Backend.Status != BackendStatus.WAITING)
+                        {
+                            backend.Backend.LoadStatusReport = null;
+                            continue;
+                        }
+                        TimeSpan lastWaiting = TimeSpan.FromMilliseconds(now - lastStatus.Time);
+                        if (lastWaiting > TimeSpan.FromMinutes(1))
+                        {
+                            Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} has been stuck on load-status='{lastStatus.Message}' for {lastWaiting.TotalMinutes:0.0} minutes...");
+                            if (lastWaiting > TimeSpan.FromMinutes(10))
+                            {
+                                Logs.Error($"Something has most likely wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details. You may need to restart the backend, or Swarm itself.");
+                            }
+                            else if (lastWaiting > TimeSpan.FromMinutes(5))
+                            {
+                                Logs.Warning($"Something may have gone wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details.");
+                            }
+                        }
+                        else if (loadingFor > TimeSpan.FromMinutes(15))
+                        {
+                            Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading after {loadingFor.TotalMinutes:0.00} minutes. It may be fine, or it may have gotten stuck. Check logs for details.");
+                        }
+                        else
+                        {
+                            Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading, and is probably fine...");
+                        }
+                    }
                 }
             }
             NewBackendInitSignal.WaitAsync(TimeSpan.FromSeconds(2)).Wait();

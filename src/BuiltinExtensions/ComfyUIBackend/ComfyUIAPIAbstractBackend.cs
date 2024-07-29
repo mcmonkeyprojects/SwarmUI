@@ -43,6 +43,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Logs.Verbose($"Comfy backend {BackendData.ID} failed to load value set: {errorToken}");
             throw new Exception($"Remote error: {errorToken}");
         }
+        AddLoadStatus("Got valid value set, will parse...");
         Logs.Verbose($"Comfy backend {BackendData.ID} loaded value set, parsing...");
         RawObjectInfo = result;
         ConcurrentDictionary<string, List<string>> newModels = [];
@@ -87,6 +88,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Logs.Error($"Comfy backend {BackendData.ID} failed to load raw node backend info: {ex}");
         }
         Logs.Verbose($"Comfy backend {BackendData.ID} loaded value set and parsed.");
+        AddLoadStatus("Done parsing value set.");
     }
 
     public abstract bool CanIdle { get; }
@@ -106,8 +108,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         Status = BackendStatus.LOADING;
         try
         {
+            AddLoadStatus("Will attempt to load value set...");
             await LoadValueSet();
             Status = BackendStatus.RUNNING;
+            LoadStatusReport = null;
         }
         catch (Exception e)
         {
