@@ -72,6 +72,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("The path for where to store log file, parsed at time of program start, relative to the Data directory.\nMust restart Swarm to apply.\nCan use [year], [month], [month_name], [day], [day_name], [hour], [minute], [second], [pid].")]
         public string LogsPath = "Logs/[year]-[month]/[day]-[hour]-[minute].log";
+
+        [ConfigComment("How long (in minutes) the console may be idle for before the next message should have a full date/time stamp shown in it.\nThis is for Swarm instances that are left open for long times, to make gaps in usage clearer.\nThis will not show at all in Swarm is used consistently smaller than this duration.\nSet to 9999999 to disable this behavior.\nDefaults to 10 minutes.")]
+        public double RepeatTimestampAfterMinutes = 10;
     }
 
     /// <summary>Settings related to server performance.</summary>

@@ -562,6 +562,7 @@ public class Program
     public static void ReapplySettings()
     {
         Logs.MinimumLevel = Enum.Parse<Logs.LogLevel>(GetCommandLineFlag("loglevel", ServerSettings.Logs.LogLevel), true);
+        Logs.RepeatTimestampAfter = TimeSpan.FromMinutes(ServerSettings.Logs.RepeatTimestampAfterMinutes);
     }
     #endregion
 

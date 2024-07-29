@@ -22,6 +22,12 @@ public static class Logs
     /// <summary>Is Set when the log save thread is completed.</summary>
     public static ManualResetEvent LogSaveCompletion = new(false);
 
+    /// <summary><see cref="Environment.TickCount64"/> time of the last log output.</summary>
+    public static long LastLogTime = 0;
+
+    /// <summary>Time between log messages after which the current full timestamp should be rendered.</summary>
+    public static TimeSpan RepeatTimestampAfter = TimeSpan.FromMinutes(10);
+
     /// <summary>Called during program init, initializes the log saving to file (if enabled).</summary>
     public static void StartLogSaving()
     {
@@ -209,8 +215,15 @@ public static class Logs
             {
                 return;
             }
-            string time = $"{DateTimeOffset.Now:HH:mm:ss.fff}";
             Console.BackgroundColor = ConsoleColor.Black;
+            DateTimeOffset timestamp = DateTimeOffset.Now;
+            if (Environment.TickCount64 - LastLogTime > RepeatTimestampAfter.TotalMilliseconds && LastLogTime != 0)
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"== SwarmUI logs {timestamp:yyyy-MM-dd HH:mm} ==");
+            }
+            LastLogTime = Environment.TickCount64;
+            string time = $"{timestamp:HH:mm:ss.fff}";
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.Write($"{time} [");
             Console.BackgroundColor = prefixBackground;
