@@ -199,7 +199,7 @@ function comfyGetPrompt(callback) {
  * Comfy has multiple different ways of listening to mouseups so aggressively trigger all of them. And manually force the LiteGraph handler to be safe.
  */
 function comfyAggressiveMouseUp() {
-    if (!hasComfyLoaded) {
+    if (!hasComfyLoaded || !comfyFrame().contentWindow || !comfyFrame().contentWindow.app) {
         return;
     }
     function sendUp(elem) {
