@@ -118,6 +118,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Logs.Verbose($"Comfy backend {BackendData.ID} failed to load value set, but ignoring error: {e.GetType().Name}: {e.Message}");
         }
         Idler.Stop();
+        Program.GlobalProgramCancel.ThrowIfCancellationRequested();
         if (CanIdle)
         {
             Idler.Backend = this;
