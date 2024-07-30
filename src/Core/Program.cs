@@ -105,6 +105,11 @@ public class Program
         {
             Logs.Init("Parsing command line...");
             ParseCommandLineArgs(args);
+            if (GetCommandLineFlagAsBool("help", false))
+            {
+                PrintCommandLineHelp();
+                return;
+            }
             Logs.Init("Loading settings file...");
             DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, CommandLineFlags.GetValueOrDefault("data_dir", "Data"));
             SettingsFilePath = CommandLineFlags.GetValueOrDefault("settings_file", "Data/Settings.fds");
@@ -125,6 +130,7 @@ public class Program
         catch (InvalidDataException ex)
         {
             Logs.Error($"Command line arguments given are invalid: {ex.Message}");
+            PrintCommandLineHelp();
             return;
         }
         Logs.StartLogSaving();
@@ -336,7 +342,7 @@ public class Program
         Logs.Info("Shutting down...");
         GlobalCancelSource.Cancel();
         Logs.Verbose("Shutdown webserver...");
-        WebServer.WebApp.StopAsync().Wait();
+        WebServer.WebApp?.StopAsync().Wait();
         Logs.Verbose("Shutdown backends...");
         Backends?.Shutdown();
         Logs.Verbose("Shutdown sessions...");
@@ -578,10 +584,28 @@ public class Program
                 throw new InvalidDataException($"Error: Unknown command line argument '{arg}'");
             }
             string key = arg[2..].ToLower();
-            string value = "true";
-            if (i + 1 < args.Length && !args[i + 1].StartsWith("--"))
+            string value;
+            // Check for key=value
+            int equalsCharIndex = key.IndexOf('=');
+            if (equalsCharIndex != -1)
             {
-                value = args[++i];
+                if (equalsCharIndex == 0)
+                {
+                    // Empty key (=value)
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
+                }
+                else if (equalsCharIndex == (key.Length - 1))
+                {
+                    // Empty value (key=)
+                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
+                }
+                value = key[(equalsCharIndex + 1)..];
+                key = key[..equalsCharIndex];
+            }
+            else
+            {
+                // Next argument is the value, or this is a bool "On" flag
+                value = (i + 1 < args.Length && !args[i + 1].StartsWith("--")) ? args[++i] : "true";
             }
             if (CommandLineFlags.ContainsKey(key))
             {
@@ -622,5 +646,28 @@ public class Program
             var mode => throw new InvalidDataException($"Command line flag '{key}' value of '{mode}' is not valid")
         };
     }
+    public static void PrintCommandLineHelp()
+    {
+        Console.WriteLine($"""
+SwarmUI v{Utilities.Version}
+
+Options:
+  [--data_dir <path>] [--settings_file <path>] [--backends_file <path>] [--environment <env>]
+  [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
+  [--user_id <username>] [--lock_settings] [--ngrok-path <path>] [--cloudflared-path <path>]
+  [--proxy-region <region>] [--ngrok-basic-auth] [--launch_mode <mode>] [--help]
+
+Additional documentation is available online: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Command%20Line%20Arguments.md>
+
+Find more information about SwarmUI in the project's official github.
+  - Project Github: <https://github.com/mcmonkeyprojects/SwarmUI>
+  - Feature Announcements: <https://github.com/mcmonkeyprojects/SwarmUI/discussions/1>
+  - Complete Documentation: https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs>
+  - Software License: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/LICENSE.txt>
+
+Join the Discord <https://discord.gg/q2y38cqjNw> to discuss the project, get support, see announcements, etc.
+""");
+    }
+
     #endregion
 }
