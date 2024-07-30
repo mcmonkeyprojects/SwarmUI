@@ -180,6 +180,18 @@ class GenPageBrowserClass {
         let rootPathPrefix = 'Root/';
         let partial = '';
         for (let part of (rootPathPrefix + path).split('/')) {
+            if (part.includes('grid-')) {
+                let gridLink = document.createElement('a');
+                gridLink.href = `/View/local/${path}/index.html`;
+                gridLink.target = '_blank';
+                gridLink.className = 'grid-view-link';
+                gridLink.textContent = 'View Grid';
+                // I wanted the view grid link to come before the path area so using prepend here.
+                // happy to change this if needed.
+                pathGen.prepend(document.createTextNode(' • '));
+                pathGen.prepend(gridLink);
+                pathGen.prepend(document.createTextNode('  '));
+            }
             partial += part + '/';
             let span = document.createElement('span');
             span.className = 'path-list-part';
@@ -540,7 +552,7 @@ class GenPageBrowserClass {
             if (!this.showDisplayFormat) {
                 formatSelector.style.display = 'none';
             }
-            let buttons = createSpan(`${this.id}-button-container`, 'browser-header-buttons', 
+            let buttons = createSpan(`${this.id}-button-container`, 'browser-header-buttons',
                 `<button id="${this.id}_refresh_button" title="Refresh" class="refresh-button translate translate-no-text">&#x21BB;</button>\n`
                 + `<button id="${this.id}_up_button" class="refresh-button translate translate-no-text" disabled autocomplete="off" title="Go back up 1 folder">&#x21d1;</button>\n`
                 + `<span class="translate">Depth: <input id="${this.id}_depth_input" class="depth-number-input translate translate-no-text" type="number" min="1" max="10" value="${this.depth}" title="Depth of subfolders to show" autocomplete="false"></span>\n`
