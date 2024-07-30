@@ -3,6 +3,7 @@ class ImageBatcherClass {
 
     doGenerate() {
         resetBatchIfNeeded();
+        let batch_id = mainGenHandler.batchesEver++;
         let inData = {
             'baseParams': getGenInput(),
             'input_folder': getRequiredElementById('ext_image_batcher_inputfolder').value,
@@ -14,7 +15,7 @@ class ImageBatcherClass {
         };
         makeWSRequestT2I('ImageBatchRun', inData, data => {
             if (data.image) {
-                gotImageResult(data.image, data.metadata);
+                gotImageResult(data.image, data.metadata, `${batch_id}_${data.batch_index}`);
             }
         });
     }
