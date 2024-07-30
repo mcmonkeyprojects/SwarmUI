@@ -299,9 +299,11 @@ public class T2IModelHandler
             JObject json = JObject.Parse(headerStr);
             long pos = reader.Position;
             JObject metaHeader = (json["__metadata__"] as JObject) ?? [];
-            if (!(metaHeader?.ContainsKey("modelspec.hash_sha256") ?? false))
+            if (model.Metadata.Hash is null)
             {
-                metaHeader["modelspec.hash_sha256"] = "0x" + Utilities.BytesToHex(SHA256.HashData(reader));
+                // Metadata fix for when we generated hashes into the file metadata headers, but did not save them into the metadata cache
+                model.Metadata.Hash = (metaHeader?.ContainsKey("modelspec.hash_sha256") ?? false) ? metaHeader.Value<string>("modelspec.hash_sha256") : "0x" + Utilities.BytesToHex(SHA256.HashData(reader));
+                ResetMetadataFrom(model);
             }
             void specSet(string key, string val)
             {
@@ -329,6 +331,7 @@ public class T2IModelHandler
             specSet("preprocessor", model.Metadata.Preprocessor);
             specSet("resolution", $"{model.Metadata.StandardWidth}x{model.Metadata.StandardHeight}");
             specSet("prediction_type", model.Metadata.PredictionType);
+            specSet("hash_sha256", model.Metadata.Hash);
             if (model.Metadata.IsNegativeEmbedding)
             {
                 specSet("is_negative_embedding", "true");
