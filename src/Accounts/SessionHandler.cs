@@ -124,15 +124,19 @@ public class SessionHandler
         {
             userId = "_";
         }
-        return Users.GetOrCreate(userId, () =>
+        if (Users.TryGetValue(userId, out User user))
         {
-            lock (DBLock)
+            return user;
+        }
+        lock (DBLock)
+        {
+            return Users.GetOrAdd(userId, _ => // Intentional GetOrAdd due to special locking requirements (DBLock)
             {
                 User.DatabaseEntry userData = UserDatabase.FindById(userId);
                 userData ??= new() { ID = userId, RawSettings = "\n" };
                 return new(this, userData);
-            }
-        });
+            });
+        }
     }
 
     /// <summary>Tries to get the session for an id.</summary>
