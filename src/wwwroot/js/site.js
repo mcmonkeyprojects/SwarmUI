@@ -665,12 +665,40 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
     return html;
 }
 
-// This is a giant hackpile to force dragging images onto inputs to treat them like files and thus actually work
-window.addEventListener('drop', e => {
-    if (e.dataTransfer && e.dataTransfer.files.length) {
+let chromeIsDumbFileName = null, chromeIsDumbFileUris = null;
+
+/**
+ * This is a deeply cursed bonus hack to fix like two separate bonus problems specific to Chromium just being bad.
+ * It can't modify dataTransfer inside the drag start event (why??? they mention security in re drag*over* which makes sense, but why start?!),
+ * and also it mixes up the file extension at random for unclear reasons. Also the lastModified time is just the current time instead of a reliable time.
+ * Overall 0/10, chromium is trash, never use it.
+ */
+function chromeIsDumbFileHack(file, uris) {
+    if (!file) {
         return;
     }
-    let uris = e.dataTransfer.getData('text/uri-list');
+    chromeIsDumbFileName = strBeforeLast(file.name, '.');
+    chromeIsDumbFileUris = uris;
+}
+
+// This is a giant hackpile to force dragging images onto inputs to treat them like files and thus actually work
+// ft. bonus chrome nonsense hackfix, see above
+window.addEventListener('drop', e => {
+    let uris;
+    if (e.dataTransfer && e.dataTransfer.files.length) {
+        let fname = strBeforeLast(e.dataTransfer.files[0].name, '.');
+        if (fname == chromeIsDumbFileName) {
+            uris = chromeIsDumbFileUris;
+        }
+        else {
+            chromeIsDumbFileName = null;
+            return;
+        }
+    }
+    else {
+        uris = e.dataTransfer.getData('text/uri-list');
+    }
+    chromeIsDumbFileName = null;
     if (!uris) {
         return;
     }
@@ -701,7 +729,7 @@ window.addEventListener('drop', e => {
     xhr.open('GET', file);
     xhr.send();
     return false;
-});
+}, { capture: true, passive: false });
 
 function updateFileDragging(e, out) {
     let files = [];
