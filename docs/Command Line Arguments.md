@@ -1,10 +1,10 @@
 # Command Line Arguments
 
-Most settings are configurable entirely via UI (or the `Settings.fds` file), however some settings intended for automated or dev usage are provided by command line instead. Additionally, some settings in the UI can be overridden by command line.
+Most settings are configurable entirely via UI (or the `Settings.fds` file) and generally most users never need to touch the CLI - however a few key settings intended for automated or dev usage are provided by command line instead (notably the path to the settings file itself for example). Additionally, some settings in the UI can be overridden by command line (eg host/port).
 
 # Usage
 
-An example for a personal launch configuration on a home Windows PC would be `.\launch-windows.ps1 --host * --port 7850 --environment development --launch_mode web`
+An example for a personal developmental launch configuration on a home Windows PC would be `.\launch-windows-dev.ps1 --host * --port 7850 --environment development --launch_mode web`
 
 Note that if your inputs are invalid, the program will refuse to start, with an error message indicating what value is wrong.
 
@@ -27,6 +27,7 @@ Argument | Default | Description
 `--proxy-region` | (None) | If specified, sets the proxy (ngrok/cloudflared) region. If unspecified, defaults to closest.
 `--ngrok-basic-auth` | (None) | If specified, sets an ngrok basic-auth requirement to access.
 `--launch_mode` | `none` | Can be used to override the 'LaunchMode' server setting.
+`--help` | `false` | Displays an in-CLI shortlist of CLI args and some usage hints.
 
 # Environment Variables (EnvVars)
 

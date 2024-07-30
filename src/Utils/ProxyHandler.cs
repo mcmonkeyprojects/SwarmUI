@@ -45,12 +45,12 @@ public class PublicProxyHandler
         {
             start.ArgumentList.Add("http");
             start.ArgumentList.Add(WebServer.HostURL);
-            if (Region != null)
+            if (Region is not null)
             {
                 start.ArgumentList.Add("--region");
                 start.ArgumentList.Add(Region);
             }
-            if (BasicAuth != null)
+            if (BasicAuth is not null)
             {
                 start.ArgumentList.Add("--basic-auth");
                 start.ArgumentList.Add(BasicAuth);
@@ -63,7 +63,7 @@ public class PublicProxyHandler
             start.ArgumentList.Add("tunnel");
             start.ArgumentList.Add("--url");
             start.ArgumentList.Add(WebServer.HostURL);
-            if (Region != null)
+            if (Region is not null)
             {
                 start.ArgumentList.Add($"--region={Region}");
             }
@@ -76,7 +76,7 @@ public class PublicProxyHandler
             new Thread(() =>
             {
                 string line;
-                while ((line = sr.ReadLine()) != null)
+                while ((line = sr.ReadLine()) is not null)
                 {
                     Logs.Debug($"{Name} says: {line}");
                     if (Name == "Ngrok")

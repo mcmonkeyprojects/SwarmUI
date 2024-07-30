@@ -850,3 +850,9 @@ function toHexString(byteArray) {
     }
     return String.fromCharCode.apply(null, chars);
 }
+
+/** Gets the section of a string before the last index of a given character. If the character is not present, returns the full string. */
+function strBeforeLast(str, char) {
+    let index = str.lastIndexOf(char);
+    return index < 0 ? str : str.substring(0, index);
+}

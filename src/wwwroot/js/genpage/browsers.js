@@ -421,6 +421,7 @@ class GenPageBrowserClass {
             img.dataset.src = desc.image;
             if (desc.dragimage) {
                 img.addEventListener('dragstart', (e) => {
+                    chromeIsDumbFileHack(e.dataTransfer.files[0], desc.dragimage);
                     e.dataTransfer.clearData();
                     e.dataTransfer.setDragImage(img, 0, 0);
                     e.dataTransfer.setData('text/uri-list', desc.dragimage);

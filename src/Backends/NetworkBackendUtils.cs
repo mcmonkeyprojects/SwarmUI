@@ -427,7 +427,7 @@ public static class NetworkBackendUtils
                 bool keepShowing = false;
                 while ((line = process.StandardOutput.ReadLine()) != null)
                 {
-                    if (line.StartsWith("Traceback (") || line.StartsWith("RuntimeError: "))
+                    if (line.StartsWith("Traceback (") || line.StartsWith("RuntimeError: ") || line.StartsWith("Error: "))
                     {
                         keepShowing = true;
                         Logs.Warning($"[{nameSimple}/STDOUT] {line}");
