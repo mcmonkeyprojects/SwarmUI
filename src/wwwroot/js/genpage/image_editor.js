@@ -1619,7 +1619,7 @@ class ImageEditor {
 
     getMaximumImageData(format = 'image/png') {
         let canvas = document.createElement('canvas');
-        let width = this.realWidth, height = this.realHeight;
+        let maxX = this.realWidth, maxY = this.realHeight;
         let minX = 0, minY = 0;
         for (let layer of this.layers) {
             if (!layer.isMask) {
@@ -1627,16 +1627,16 @@ class ImageEditor {
                 let [w, h] = [layer.width, layer.height];
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
-                width = Math.max(width, x + w);
-                height = Math.max(height, y + h);
+                maxX = Math.max(maxX, x + w);
+                maxY = Math.max(maxY, y + h);
             }
         }
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = maxX - minX;
+        canvas.height = maxY - minY;
         let ctx = canvas.getContext('2d');
         for (let layer of this.layers) {
             if (!layer.isMask) {
-                layer.drawToBack(ctx, minX, minY, 1);
+                layer.drawToBack(ctx, -minX, -minY, 1);
             }
         }
         return canvas.toDataURL(format);
