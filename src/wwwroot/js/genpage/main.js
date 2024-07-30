@@ -1573,6 +1573,15 @@ function pageSizer() {
             return false;
         }
     });
+    altNegText.addEventListener('keydown', (e) => {
+        if (e.key == 'Enter' && !e.shiftKey) {
+            altNegText.dispatchEvent(new Event('change'));
+            getRequiredElementById('alt_generate_button').click();
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+    });
     altText.addEventListener('input', (e) => {
         let inputPrompt = document.getElementById('input_prompt');
         if (inputPrompt) {
