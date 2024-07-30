@@ -38,7 +38,7 @@ let statusBarElem = getRequiredElementById('top_status_bar');
 
 /** Called when the user clicks the clear batch button. */
 function clearBatch() {
-    let currentImageBatchDiv = getRequiredElementById('current_image_batch')
+    let currentImageBatchDiv = getRequiredElementById('current_image_batch');
     currentImageBatchDiv.innerHTML = '';
     currentImageBatchDiv.dataset.numImages = 0;
 }
@@ -725,7 +725,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
     }
-    container.dataset.numImages === undefined ? container.dataset.numImages = 1 : container.dataset.numImages++
+    container.dataset.numImages = (container.dataset.numImages ?? 0) + 1;
     let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
     div.dataset.batch_id = batchId;
     div.dataset.preview_text = textPreview;
