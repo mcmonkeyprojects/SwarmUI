@@ -1315,7 +1315,7 @@ let pageBarTop2 = -1;
 let pageBarMid = -1;
 let imageEditorSizeBarVal = -1;
 let midForceToBottom = localStorage.getItem('barspot_midForceToBottom') == 'true';
-let leftShut = localStorage.getItem('barspot_leftShut') == 'true';
+let rightShut = localStorage.getItem('barspot_rightShut') == 'true';
 
 let setPageBarsFunc;
 let altPromptSizeHandleFunc;
@@ -1331,7 +1331,7 @@ function resetPageSizer() {
     pageBarMid = -1;
     imageEditorSizeBarVal = -1;
     midForceToBottom = false;
-    leftShut = false;
+    rightShut = false;
     setPageBarsFunc();
     for (let runnable of layoutResets) {
         runnable();
@@ -1382,12 +1382,11 @@ function pageSizer() {
         setCookie('barspot_pageBarTop2', pageBarTop2, 365);
         setCookie('barspot_pageBarMidPx', pageBarMid, 365);
         setCookie('barspot_imageEditorSizeBar', imageEditorSizeBarVal, 365);
-        let barTopLeft = leftShut ? `20px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
-        let barTopRight = pageBarTop2 == -1 ? (isSmallWindow ? `4rem` : `21rem`) : `${pageBarTop2}px`;
+        let barTopRight = rightShut ? `20px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
+        let barTopLeft = pageBarTop2 == -1 ? (isSmallWindow ? `4rem` : `21rem`) : `${pageBarTop2}px`;
         let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
-        // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
         let fontRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-        let curImgWidthNum = eval(curImgWidth.replace(/vw/g, `* ${window.innerWidth * 0.01}`).replace(/rem/g, `* ${fontRem}`).replace(/px/g, ''));
+        let curImgWidthNum = (window.innerWidth * 0.01 * parseFloat(curImgWidth.replace(/vw/g, ''))) - (fontRem * parseFloat(curImgWidth.replace(/rem/g, ''))) - parseFloat(curImgWidth.replace(/px/g, ''));
         if (curImgWidthNum < 400) {
             barTopRight = `${barTopRight} + ${400 - curImgWidthNum}px`;
             curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
@@ -1395,9 +1394,9 @@ function pageSizer() {
         inputSidebar.style.width = `${barTopLeft}`;
         mainInputsAreaWrapper.classList[pageBarTop < 350 ? "add" : "remove"]("main_inputs_small");
         mainInputsAreaWrapper.style.width = `${barTopLeft}`;
-        inputSidebar.style.display = leftShut ? 'none' : '';
+        inputSidebar.style.display = rightShut ? 'none' : '';
         altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
-        if(!isLikelyMobile()){
+        if(!isSmallWindow){
             mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
         }
         mainImageArea.scrollTop = 0;
@@ -1416,7 +1415,7 @@ function pageSizer() {
         else {
             currentImageBatchCore.classList.remove('current_image_batch_core_small');
         }
-        topSplitButton.innerHTML = leftShut ? '&#x21DA;' : '&#x21DB;';
+        topSplitButton.innerHTML = rightShut ? '&#x21DA;' : '&#x21DB;';
         midSplitButton.innerHTML = midForceToBottom ? '&#x290A;' : '&#x290B;';
         let altHeight = altRegion.style.display == 'none' ? '0px' : `(${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px + 2rem)`;
         if (pageBarMid != -1 || midForceToBottom) {
@@ -1497,9 +1496,9 @@ function pageSizer() {
         midForceToBottom = val;
         localStorage.setItem('barspot_midForceToBottom', midForceToBottom);
     }
-    function setLeftShut(val) {
-        leftShut = val;
-        localStorage.setItem('barspot_leftShut', leftShut);
+    function setRightShut(val) {
+        rightShut = val;
+        localStorage.setItem('barspot_rightShut', rightShut);
     }
     midSplit.addEventListener('mousedown', (e) => {
         if (e.target == midSplitButton) {
@@ -1525,33 +1524,35 @@ function pageSizer() {
         e.preventDefault();
     }, true);
     topSplitButton.addEventListener('click', (e) => {
-        topDrag = false;
-        setLeftShut(!leftShut);
-        pageBarTop = Math.max(pageBarTop, 400);
+        topDrag2 = false;
+        setRightShut(!rightShut);
+        pageBarTop2 = Math.max(pageBarTop2, 400);
         setPageBars();
         e.preventDefault();
         triggerChangeFor(altText);
         triggerChangeFor(altNegText);
     }, true);
+    console.log(topDrag)
     let moveEvt = (e, x, y) => {
         let offX = x;
         offX = Math.max(Math.min(offX, window.innerWidth - 100), 10);
         if (topDrag) {
-            pageBarTop = Math.min(window.innerWidth - offX - 5, 51 * 16);
-            setLeftShut(pageBarTop > window.innerWidth - 300);
+            pageBarTop = window.innerWidth - offX - 15;
+            console.log(pageBarTop)
+            if (pageBarTop < 100) {
+                pageBarTop = 22;
+            }
             setPageBars();
         }
         if (topDrag2) {
-            pageBarTop2 = window.innerWidth - offX + 15;
-            if (pageBarTop2 < 100) {
-                pageBarTop2 = 22;
-            }
+            pageBarTop2 = Math.min(window.innerWidth - offX - 5, 51 * 16);
+            setRightShut(pageBarTop2 > window.innerWidth - 300);
             setPageBars();
         }
         if (imageEditorSizeBarDrag) {
             let maxAreaWidth = imageEditor.inputDiv.offsetWidth + currentImage.offsetWidth + 10;
-            let imageAreaLeft = imageEditor.inputDiv.getBoundingClientRect().left;
-            let val = Math.min(Math.max(offX - imageAreaLeft + 3, 200), maxAreaWidth - 200);
+            let imageAreaRight = imageEditor.inputDiv.getBoundingClientRect().right;
+            let val = Math.min(Math.max(offX - imageAreaRight + 3, 200), maxAreaWidth - 200);
             imageEditorSizeBarVal = Math.min(90, Math.max(10, val / maxAreaWidth * 100));
             setPageBars();
         }

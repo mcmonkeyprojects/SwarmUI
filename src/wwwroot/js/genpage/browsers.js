@@ -326,9 +326,6 @@ class GenPageBrowserClass {
             if (this.filter && !desc.searchable.toLowerCase().includes(this.filter)) {
                 continue;
             }
-            if (desc.name === "Examples/Basic SDXL") {
-                continue;
-            }
             if (i > maxBuildNow) {
                 let remainingFiles = files.slice(i);
                 while (remainingFiles.length > 0) {

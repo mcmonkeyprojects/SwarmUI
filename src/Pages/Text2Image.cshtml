@@ -88,7 +88,7 @@
         <div class="t2i-top-bar-container" style="line-height:1.5">
             <div class="t2i-top-bar" id="t2i_top_bar">
                 <div class="main-image-area" id="main_image_area">
-                    <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? Program.ServerSettings.UI.OverrideWelcomeMessage))</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div>
+                    <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? Program.ServerSettings.UI.OverrideWelcomeMessage))</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"></div>
                     <div class="current_image_batch" id="current_image_batch_wrapper">
                         <div style="position: relative; width: 0; height: 0;">
                             <div class="batch-gear-button" onclick="doPopover('batchgear')">&#9881;</div>
@@ -162,7 +162,7 @@
                         <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
                     </div>
                 </div>
-                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21D2;</div></div>
+                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21D2;</div></div>
                 <div class="input-sidebar" id="input_sidebar">
                     <span class="interrupt_line"></span>
                     <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">

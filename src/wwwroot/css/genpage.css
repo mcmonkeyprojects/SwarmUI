@@ -159,7 +159,6 @@ body {
 }
 .main-image-area {
     display: inline-block;
-    padding: 0.5rem;
     overflow: hidden;
     width: calc(100vw - 28rem);
     height: 50vh;
@@ -188,6 +187,7 @@ body {
     flex-direction: column;
     gap: 10px;
     align-items: center;
+    min-width: 22rem;
 }
 .current-image-data {
     white-space: wrap;
@@ -799,6 +799,7 @@ body {
     border-top: 1px solid var(--light-border);
     width: fit-content;
     padding-top: 0.5rem;
+    min-width: 22rem;
 }
 .alt_prompt_main_line {
     display: flex;
