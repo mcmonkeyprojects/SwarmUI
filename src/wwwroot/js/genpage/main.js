@@ -38,7 +38,9 @@ let statusBarElem = getRequiredElementById('top_status_bar');
 
 /** Called when the user clicks the clear batch button. */
 function clearBatch() {
-    getRequiredElementById('current_image_batch').innerHTML = '';
+    let currentImageBatchDiv = getRequiredElementById('current_image_batch');
+    currentImageBatchDiv.innerHTML = '';
+    currentImageBatchDiv.dataset.numImages = 0;
 }
 
 /** Reference to the auto-clear-batch toggle checkbox. */
@@ -723,15 +725,16 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
     }
-    let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (batchId % 2)}`);
+    container.dataset.numImages = (container.dataset.numImages ?? 0) + 1;
+    let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
     div.dataset.batch_id = batchId;
     div.dataset.preview_text = textPreview;
     div.dataset.src = imageSrc;
     div.dataset.metadata = metadata;
     let img = document.createElement('img');
     img.addEventListener('load', () => {
-        let ratio = img.naturalWidth / img.naturalHeight;
         if (batchId != "folder") {
+            let ratio = img.naturalWidth / img.naturalHeight;
             div.style.width = `calc(${roundToStr(ratio * 10, 2)}rem + 2px)`;
         }
     });
@@ -1632,7 +1635,7 @@ function pageSizer() {
 /** Clears out and resets the image-batch view, only if the user wants that. */
 function resetBatchIfNeeded() {
     if (autoClearBatchElem.checked) {
-        getRequiredElementById('current_image_batch').innerHTML = '';
+        clearBatch();
     }
 }
 
