@@ -791,6 +791,15 @@ function decodeUtf16(data) {
     return output.join('');
 }
 
+/** Takes a UTF-16 Little Endian Uint8Array and returns a string. */
+function decodeUtf16LE(data) {
+    let output = [];
+    for (let i = 0; i < data.length; i += 2) {
+        output.push(String.fromCharCode((data[i] << 8) + data[i + 1]));
+    }
+    return output.join('');
+}
+
 /** Returns whether two arrays are equal. */
 function arraysEqual(arr1, arr2) {
     if (arr1.length != arr2.length) {
@@ -824,4 +833,20 @@ function formatDateTime(date) {
 /** Escapes a string for use in a regex. */
 function regexEscape(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Gets a hex string from a byte array. */
+function toHexString(byteArray) {
+    // Efficient method from https://stackoverflow.com/a/55426656
+    let chars = new Uint8Array(byteArray.length * 2);
+    const alpha = 'a'.charCodeAt(0) - 10;
+    const digit = '0'.charCodeAt(0);
+    let p = 0;
+    for (let i = 0; i < byteArray.length; i++) {
+        let nibble = byteArray[i] >>> 4;
+        chars[p++] = nibble > 9 ? nibble + alpha : nibble + digit;
+        nibble = byteArray[i] & 0xF;
+        chars[p++] = nibble > 9 ? nibble + alpha : nibble + digit;
+    }
+    return String.fromCharCode.apply(null, chars);
 }

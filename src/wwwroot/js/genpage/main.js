@@ -1999,7 +1999,17 @@ function imageInputHandler() {
                             let prefix = metadata.slice(0, 8);
                             let data = metadata.slice(8);
                             let encodeType = new TextDecoder().decode(prefix);
-                            metadata = encodeType.startsWith('UNICODE') ? decodeUtf16(data) : new TextDecoder().decode(data);
+                            if (encodeType.startsWith('UNICODE')) {
+                                if (data[0] == 0 && data[1] != 0) { // This is slightly dirty detection, but it works at least for English text.
+                                    metadata = decodeUtf16LE(data);
+                                }
+                                else {
+                                    metadata = decodeUtf16(data);
+                                }
+                            }
+                            else {
+                                metadata = new TextDecoder().decode(data);
+                            }
                         }
                         if (metadata) {
                             metadata = metadata.trim();
