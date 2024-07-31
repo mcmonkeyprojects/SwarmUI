@@ -579,7 +579,7 @@ public class WorkflowGeneratorSteps
                             ["weight"] = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterWeight, 1),
                             ["start_at"] = ipAdapterStart,
                             ["end_at"] = ipAdapterEnd,
-                            ["weight_type"] = "standard" // TODO: ...???
+                            ["weight_type"] = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterWeightType, "standard")
                         });
                         g.FinalModel = [ipAdapterNode, 0];
                     }
@@ -597,7 +597,7 @@ public class WorkflowGeneratorSteps
                             ["clip_vision"] = new JArray() { $"{ipAdapterVisionLoader}", 0 },
                             ["weight"] = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterWeight, 1),
                             ["noise"] = 0,
-                            ["weight_type"] = "original" // TODO: ...???
+                            ["weight_type"] = "original"
                         });
                         g.FinalModel = [ipAdapterNode, 0];
                     }

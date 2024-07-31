@@ -374,6 +374,10 @@ public class ComfyUIBackendExtension : Extension
             {
                 IPAdapterModels = IPAdapterModels.Concat(ipadapterCubiq["input"]["required"]["ipadapter_file"][0].Select(m => $"{m}")).Distinct().ToList();
             }
+            if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter2) && (ipadapter2["input"]["required"] as JObject).TryGetValue("weight_type", out JToken ipAdapterWeightType))
+            {
+                IPAdapterWeightTypes = IPAdapterWeightTypes.Concat(ipAdapterWeightType[0].Select(m => $"{m}")).Distinct().ToList();
+            }
             if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoaderFaceID", out JToken ipadapterCubiqUnifiedFace))
             {
                 IPAdapterModels = IPAdapterModels.Concat(ipadapterCubiqUnifiedFace["input"]["required"]["preset"][0].Select(m => $"{m}")).Distinct().ToList();
@@ -413,7 +417,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal;
+    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit;
 
@@ -427,7 +431,7 @@ public class ComfyUIBackendExtension : Extension
         Samplers = ["euler", "euler_ancestral", "heun", "heunpp2", "dpm_2", "dpm_2_ancestral", "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_sde", "dpmpp_sde_gpu", "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", "ddim", "ddpm", "lcm", "uni_pc", "uni_pc_bh2", "euler_cfg_pp", "euler_ancestral_cfg_pp", "ipndm", "ipndm_v", "deis"],
         Schedulers = ["normal", "karras", "exponential", "simple", "ddim_uniform", "sgm_uniform", "turbo", "align_your_steps"];
 
-    public static List<string> IPAdapterModels = ["None"];
+    public static List<string> IPAdapterModels = ["None"], IPAdapterWeightTypes = ["standard", "prompt is more important", "style transfer"];
 
     public static List<string> GligenModels = ["None"];
 
@@ -453,6 +457,9 @@ public class ComfyUIBackendExtension : Extension
             ));
         IPAdapterEnd = T2IParamTypes.Register<double>(new("IP-Adapter End", "When to stop applying IP-Adapter, as a fraction of steps (if enabled).\nFor example, 0.5 stops applying halfway (50%) through. Must be greater than IP-Adapter Start.",
             "1", IgnoreIf: "1",  Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"]
+            ));
+        IPAdapterWeightType = T2IParamTypes.Register<string>(new("IP-Adapter Weight Type", "How to shift the weighting of the IP-Adapter.\nThis can produce subtle but useful different effects.",
+            "standard", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 19, IsAdvanced: true, GetValues: _ => IPAdapterWeightTypes
             ));
         ComfyGroup = new("ComfyUI", Toggles: false, Open: false);
         ComfyAdvancedGroup = new("ComfyUI Advanced", Toggles: false, IsAdvanced: true, Open: false);
