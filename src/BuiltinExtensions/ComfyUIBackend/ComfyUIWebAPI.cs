@@ -36,9 +36,9 @@ public static class ComfyUIWebAPI
         {
             image = Image.FromDataString(image).ToMetadataFormat();
         }
-        else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(path))
+        else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(cleaned))
         {
-            ComfyUIBackendExtension.ComfyCustomWorkflow oldFlow = ComfyUIBackendExtension.GetWorkflowByName(path);
+            ComfyUIBackendExtension.ComfyCustomWorkflow oldFlow = ComfyUIBackendExtension.GetWorkflowByName(cleaned);
             image = oldFlow.Image;
         }
         if (string.IsNullOrWhiteSpace(image))
