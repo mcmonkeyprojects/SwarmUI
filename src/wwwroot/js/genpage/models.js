@@ -336,7 +336,10 @@ class ModelBrowserWrapper {
         }
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         genericRequest('ListModels', {'path': path, 'depth': depth, 'subtype': this.subType, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
-            let files = data.files.sort((a,b) => sortModelLocal(a, b, data.files)).map(f => { return { 'name': `${prefix}${f.name}`, 'data': f }; });
+            let files = data.files.sort((a,b) => sortModelLocal(a, b, data.files)).map(f => { return { 'name': f.name, 'data': f }; });
+            for (let file of files) {
+                file.data.display = cleanModelName(file.data.name.substring(prefix.length));
+            }
             if (this.subType == 'VAE') {
                 let autoFile = {
                     'name': `Automatic`,
@@ -415,6 +418,7 @@ class ModelBrowserWrapper {
             ];
         }
         let name = cleanModelName(model.data.name);
+        let display = model.data.display || name;
         if (this.subType == 'Wildcards') {
             buttons = [
                 { label: 'Edit Wildcard', onclick: () => editWildcard(model.data) },
@@ -436,7 +440,7 @@ class ModelBrowserWrapper {
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
             let searchable = `${model.data.name}, ${description}`;
-            return { name, description, buttons, className, searchable, 'image': model.data.image };
+            return { name, description, buttons, className, searchable, 'image': model.data.image, display };
         }
         let isCorrect = this.subType == 'Stable-Diffusion' || isModelArchCorrect(model.data);
         let interject = '';
@@ -452,7 +456,7 @@ class ModelBrowserWrapper {
             if (!model.data.local) {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
             }
-            description = `<span class="model_filename">${escapeHtml(name)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}`;
+            description = `<span class="model_filename">${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}`;
             if (model.data.local) {
                 buttons.push({ label: 'Edit Metadata', onclick: () => editModel(model.data, this) });
             }
@@ -498,7 +502,7 @@ class ModelBrowserWrapper {
             className += ' model-remote';
         }
         let searchable = `${model.data.name}, ${description}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
-        return { name, description, buttons, 'image': model.data.preview_image, className, searchable };
+        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display };
     }
 
     selectModel(model) {

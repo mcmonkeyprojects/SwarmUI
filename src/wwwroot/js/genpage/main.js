@@ -1088,7 +1088,7 @@ function buttonsForImage(fullsrc, src) {
                 });
             }
         }
-    ];;
+    ];
 }
 
 function describeImage(image) {
@@ -1107,7 +1107,7 @@ function describeImage(image) {
     let dragImage = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}`;
     let imageSrc = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}?preview=true`;
     let searchable = description;
-    return { name, description, buttons, 'image': imageSrc, 'dragimage': dragImage, className: parsedMeta.is_starred ? 'image-block-starred' : '', searchable };
+    return { name, description, buttons, 'image': imageSrc, 'dragimage': dragImage, className: parsedMeta.is_starred ? 'image-block-starred' : '', searchable, display: name };
 }
 
 function selectImageInHistory(image, div) {

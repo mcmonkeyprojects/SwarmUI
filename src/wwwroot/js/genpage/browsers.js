@@ -396,13 +396,13 @@ class GenPageBrowserClass {
                     div.style.width = `${(ratio * factor) + 1}rem`;
                 });
                 let textBlock = createDiv(null, 'image-preview-text');
-                textBlock.innerText = desc.name;
+                textBlock.innerText = desc.display || desc.name;
                 div.appendChild(textBlock);
             }
             else if (this.format == 'List') {
                 div.className += ' browser-list-entry';
                 let textBlock = createSpan(null, 'browser-list-entry-text');
-                textBlock.innerText = desc.name;
+                textBlock.innerText = desc.display || desc.name;
                 textBlock.addEventListener('click', () => {
                     this.select(file);
                 });
