@@ -203,7 +203,7 @@ public class WorkflowGenerator
             {
                 Logs.Error($"Failed to download {name} from {url}: {ex.Message}");
                 File.Delete(filePath);
-                throw new InvalidOperationException("Required model download failed.");
+                throw new SwarmReadableErrorException("Required model download failed.");
             }
             Logs.Info($"Downloading complete, continuing.");
         }
@@ -229,7 +229,7 @@ public class WorkflowGenerator
             {
                 if (!loraHandler.Models.TryGetValue(loras[i], out lora))
                 {
-                    throw new InvalidDataException($"LoRA Model '{loras[i]}' not found in the model set.");
+                    throw new SwarmUserErrorException($"LoRA Model '{loras[i]}' not found in the model set.");
                 }
             }
             if (confinements is not null && confinements.Count > i)
@@ -469,7 +469,7 @@ public class WorkflowGenerator
             T2IModel[] sameArch = [.. Program.MainSDModels.Models.Values.Where(m => m.ModelClass?.ID == baseArch)];
             if (sameArch.Length == 0)
             {
-                throw new InvalidDataException($"No models found with architecture {baseArch}, cannot load CLIP/VAE for this Arch");
+                throw new SwarmUserErrorException($"No models found with architecture {baseArch}, cannot load CLIP/VAE for this Arch");
             }
             T2IModel matchedName = sameArch.FirstOrDefault(m => m.Name.Before('.') == model.Name.Before('.'));
             matchedName ??= sameArch.First();
@@ -482,7 +482,7 @@ public class WorkflowGenerator
         }
         else if (model.Name.EndsWith(".engine"))
         {
-            throw new InvalidDataException($"Model {model.Name} appears to be TensorRT lacks metadata to identify its architecture, cannot load");
+            throw new SwarmUserErrorException($"Model {model.Name} appears to be TensorRT lacks metadata to identify its architecture, cannot load");
         }
         else if (model.ModelClass?.CompatClass == "pixart-ms-sigma-xl-2")
         {
@@ -506,7 +506,7 @@ public class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(xlVae))
             {
-                throw new InvalidDataException("No default SDXL VAE found, please download an SDXL VAE and set it as default in User Settings");
+                throw new SwarmUserErrorException("No default SDXL VAE found, please download an SDXL VAE and set it as default in User Settings");
             }
             string vaeLoader = CreateNode("VAELoader", new JObject()
             {

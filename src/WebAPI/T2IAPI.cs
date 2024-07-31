@@ -185,12 +185,7 @@ public static class T2IAPI
         {
             user_input = RequestToParams(session, rawInput);
         }
-        catch (InvalidOperationException ex)
-        {
-            setError(ex.Message);
-            return;
-        }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
             setError(ex.Message);
             return;
@@ -357,11 +352,7 @@ public static class T2IAPI
         {
             user_input = RequestToParams(session, rawInput);
         }
-        catch (InvalidOperationException ex)
-        {
-            return new() { ["error"] = ex.Message };
-        }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
             return new() { ["error"] = ex.Message };
         }

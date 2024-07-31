@@ -85,7 +85,7 @@ public class ImageBatchToolExtension : Extension
         {
             baseParams = T2IAPI.RequestToParams(session, rawInput["baseParams"] as JObject);
         }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
             output(new JObject() { ["error"] = ex.Message });
             return;
@@ -154,7 +154,7 @@ public class ImageBatchToolExtension : Extension
                     }
                     break;
                 default:
-                    throw new InvalidDataException("Invalid resolution mode");
+                    throw new SwarmUserErrorException("Invalid resolution mode");
             }
             if (init_image)
             {

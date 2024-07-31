@@ -15,7 +15,7 @@ namespace SwarmUI.Text2Image
     {
         /// <summary>Extension event, fired before images will be generated, just after the request is received.
         /// No backend is claimed yet.
-        /// Use <see cref="InvalidOperationException"/> for a user-readable refusal message.</summary>
+        /// Use <see cref="SwarmReadableErrorException"/> for a user-readable refusal message.</summary>
         public static Action<PreGenerationEventParams> PreGenerateEvent;
 
         public record class PreGenerationEventParams(T2IParamInput UserInput);
@@ -24,7 +24,7 @@ namespace SwarmUI.Text2Image
         /// Backend is already released, but the gen request is not marked completed.
         /// Ran before metadata is applied.
         /// Use "RefuseImage" to mark an image as refused. Note that generation previews may have already been shown to a user, if that feature is enabled on the server.
-        /// Use <see cref="InvalidDataException"/> for a user-readable hard-refusal message.</summary>
+        /// Use <see cref="SwarmReadableErrorException"/> for a user-readable hard-refusal message.</summary>
         public static Action<PostGenerationEventParams> PostGenerateEvent;
 
         /// <summary>Paramters for <see cref="PostGenerateEvent"/>.</summary>
@@ -225,14 +225,9 @@ namespace SwarmUI.Text2Image
                 backend = await Program.Backends.GetNextT2IBackend(TimeSpan.FromMinutes(backendTimeoutMin), user_input.Get(T2IParamTypes.Model), user_input,
                     filter: BackendMatcherFor(user_input), session: user_input.SourceSession, notifyWillLoad: sendStatus, cancel: claim.InterruptToken);
             }
-            catch (InvalidDataException ex)
+            catch (SwarmReadableErrorException ex)
             {
-                setError($"Invalid data: {ex.Message}");
-                return;
-            }
-            catch (InvalidOperationException ex)
-            {
-                setError($"Invalid operation: {ex.Message}");
+                setError($"{ex.Message}");
                 return;
             }
             catch (TimeoutException)
@@ -315,24 +310,14 @@ namespace SwarmUI.Text2Image
                     claim.Extend(gens: 1);
                     await CreateImageTask(user_input, batchId, claim, output, setError, isWS, backendTimeoutMin, saveImages, false);
                 }
-                else if (ex is InvalidOperationException ioe)
+                else if (ex is SwarmReadableErrorException)
                 {
-                    setError($"Invalid operation: {ioe.Message}");
+                    setError($"{ex.Message}");
                     return;
                 }
-                else if (ex is InvalidDataException ide)
+                else if (ex.InnerException is SwarmReadableErrorException ex2)
                 {
-                    setError($"Invalid data: {ide.Message}");
-                    return;
-                }
-                else if (ex.InnerException is InvalidOperationException ioe2)
-                {
-                    setError($"Invalid operation: {ioe2.Message}");
-                    return;
-                }
-                else if (ex.InnerException is InvalidDataException ide2)
-                {
-                    setError($"Invalid data: {ide2.Message}");
+                    setError($"{ex2.Message}");
                     return;
                 }
                 else if (ex is TaskCanceledException)

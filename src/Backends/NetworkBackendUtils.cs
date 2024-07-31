@@ -40,14 +40,14 @@ public static class NetworkBackendUtils
     }
 
     /// <summary>Parses an <see cref="HttpResponseMessage"/> into a JSON object result.</summary>
-    /// <exception cref="InvalidOperationException">Thrown when the server returns invalid data (error code or other non-JSON).</exception>
+    /// <exception cref="SwarmReadableErrorException">Thrown when the server returns invalid data (error code or other non-JSON).</exception>
     /// <exception cref="NotImplementedException">Thrown when an invalid JSON type is requested.</exception>
     public static async Task<JType> Parse<JType>(HttpResponseMessage message) where JType : class
     {
         string content = await message.Content.ReadAsStringAsync();
         if (content.StartsWith("500 Internal Server Error"))
         {
-            throw new InvalidOperationException($"Server turned 500 Internal Server Error, something went wrong: {content}");
+            throw new SwarmReadableErrorException($"Server turned 500 Internal Server Error, something went wrong: {content}");
         }
         try
         {
@@ -61,7 +61,7 @@ public static class NetworkBackendUtils
         }
         catch (JsonReaderException ex)
         {
-            throw new InvalidOperationException($"Failed to read JSON '{content}' with message: {ex.Message}");
+            throw new SwarmReadableErrorException($"Failed to read JSON '{content}' with message: {ex.Message}");
         }
         throw new NotImplementedException();
     }

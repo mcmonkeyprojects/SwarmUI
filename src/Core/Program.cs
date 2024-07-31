@@ -127,7 +127,7 @@ public class Program
             Logs.Init("Applying command line settings...");
             ApplyCommandLineSettings();
         }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
             Logs.Error($"Command line arguments given are invalid: {ex.Message}");
             PrintCommandLineHelp();
@@ -511,7 +511,7 @@ public class Program
         {
             "dev" or "development" => "Development",
             "prod" or "production" => "Production",
-            var mode => throw new InvalidDataException($"aspweb_mode value of '{mode}' is not valid")
+            var mode => throw new SwarmUserErrorException($"aspweb_mode value of '{mode}' is not valid")
         };
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", environment);
         string host = GetCommandLineFlag("host", ServerSettings.Network.Host);
@@ -581,7 +581,7 @@ public class Program
             string arg = args[i];
             if (!arg.StartsWith("--"))
             {
-                throw new InvalidDataException($"Error: Unknown command line argument '{arg}'");
+                throw new SwarmUserErrorException($"Error: Unknown command line argument '{arg}'");
             }
             string key = arg[2..].ToLower();
             string value;
@@ -590,7 +590,7 @@ public class Program
             {
                 if (equalsCharIndex == 0 || equalsCharIndex == (key.Length - 1))
                 {
-                    throw new InvalidDataException($"Error: Invalid commandline argument '{arg}'");
+                    throw new SwarmUserErrorException($"Error: Invalid commandline argument '{arg}'");
                 }
                 value = key[(equalsCharIndex + 1)..];
                 key = key[..equalsCharIndex];
@@ -608,7 +608,7 @@ public class Program
             }
             if (CommandLineFlags.ContainsKey(key))
             {
-                throw new InvalidDataException($"Error: Duplicate command line flag '{key}'");
+                throw new SwarmUserErrorException($"Error: Duplicate command line flag '{key}'");
             }
             CommandLineFlags[key] = value;
         }
@@ -642,7 +642,7 @@ public class Program
         {
             "true" or "yes" or "1" => true,
             "false" or "no" or "0" => false,
-            var mode => throw new InvalidDataException($"Command line flag '{key}' value of '{mode}' is not valid")
+            var mode => throw new SwarmUserErrorException($"Command line flag '{key}' value of '{mode}' is not valid")
         };
     }
 

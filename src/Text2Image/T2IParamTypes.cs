@@ -551,7 +551,7 @@ public class T2IParamTypes
                 int height = int.Parse(heightText.Trim());
                 if (width < 64 || height < 64 || width > 16384 || height > 16384)
                 {
-                    throw new InvalidDataException($"Invalid resolution: {width}x{height} (must be between 64x64 and 16384x16384)");
+                    throw new SwarmUserErrorException($"Invalid resolution: {width}x{height} (must be between 64x64 and 16384x16384)");
                 }
                 return s;
             }
@@ -680,39 +680,39 @@ public class T2IParamTypes
     /// <summary>Quick hex validator.</summary>
     public static AsciiMatcher ValidBase64Matcher = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "+/=");
 
-    /// <summary>Converts a parameter value in a valid input for that parameter, or throws <see cref="InvalidDataException"/> if it can't.</summary>
+    /// <summary>Converts a parameter value in a valid input for that parameter, or throws <see cref="SwarmReadableErrorException"/> if it can't.</summary>
     public static string ValidateParam(T2IParamType type, string val, Session session)
     {
         string origVal = val;
         if (type is null)
         {
-            throw new InvalidDataException("Unknown parameter type");
+            throw new SwarmUserErrorException("Unknown parameter type");
         }
         switch (type.Type)
         {
             case T2IParamDataType.INTEGER:
                 if (!long.TryParse(val, out long valInt))
                 {
-                    throw new InvalidDataException($"Invalid integer value for param {type.Name} - '{origVal}' - must be a valid integer (eg '0', '3', '-5', etc)");
+                    throw new SwarmUserErrorException($"Invalid integer value for param {type.Name} - '{origVal}' - must be a valid integer (eg '0', '3', '-5', etc)");
                 }
                 if (type.Min != 0 || type.Max != 0)
                 {
                     if (valInt < type.Min || valInt > type.Max)
                     {
-                        throw new InvalidDataException($"Invalid integer value for param {type.Name} - '{origVal}' - must be between {type.Min} and {type.Max}");
+                        throw new SwarmUserErrorException($"Invalid integer value for param {type.Name} - '{origVal}' - must be between {type.Min} and {type.Max}");
                     }
                 }
                 return valInt.ToString();
             case T2IParamDataType.DECIMAL:
                 if (!double.TryParse(val, out double valDouble))
                 {
-                    throw new InvalidDataException($"Invalid decimal value for param {type.Name} - '{origVal}' - must be a valid decimal (eg '0.0', '3.5', '-5.2', etc)");
+                    throw new SwarmUserErrorException($"Invalid decimal value for param {type.Name} - '{origVal}' - must be a valid decimal (eg '0.0', '3.5', '-5.2', etc)");
                 }
                 if (type.Min != 0 || type.Max != 0)
                 {
                     if (valDouble < type.Min || valDouble > type.Max)
                     {
-                        throw new InvalidDataException($"Invalid decimal value for param {type.Name} - '{origVal}' - must be between {type.Min} and {type.Max}");
+                        throw new SwarmUserErrorException($"Invalid decimal value for param {type.Name} - '{origVal}' - must be between {type.Min} and {type.Max}");
                     }
                 }
                 return valDouble.ToString();
@@ -720,7 +720,7 @@ public class T2IParamTypes
                 val = val.ToLowerFast();
                 if (val != "true" && val != "false")
                 {
-                    throw new InvalidDataException($"Invalid boolean value for param {type.Name} - '{origVal}' - must be exactly 'true' or 'false'");
+                    throw new SwarmUserErrorException($"Invalid boolean value for param {type.Name} - '{origVal}' - must be exactly 'true' or 'false'");
                 }
                 return val;
             case T2IParamDataType.TEXT:
@@ -730,7 +730,7 @@ public class T2IParamTypes
                     val = GetBestInList(val, type.GetValues(session));
                     if (val is null)
                     {
-                        throw new InvalidDataException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{string.Join("`, `", type.GetValues(session))}`");
+                        throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{string.Join("`, `", type.GetValues(session))}`");
                     }
                 }
                 return val;
@@ -751,11 +751,11 @@ public class T2IParamTypes
                                 List<string> available = type.GetValues(session);
                                 if (available.Count < 10)
                                 {
-                                    throw new InvalidDataException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{available.JoinString("`, `")}`");
+                                    throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{available.JoinString("`, `")}`");
                                 }
                                 else
                                 {
-                                    throw new InvalidDataException($"Invalid value for param {type.Name} - '{origVal}' - option does not exist. Has it been deleted?");
+                                    throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - option does not exist. Has it been deleted?");
                                 }
                             }
                         }
@@ -775,7 +775,7 @@ public class T2IParamTypes
                 if (!ValidBase64Matcher.IsOnlyMatches(val) || val.Length < 10)
                 {
                     string shortText = val.Length > 10 ? val[..10] + "..." : val;
-                    throw new InvalidDataException($"Invalid image value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                    throw new SwarmUserErrorException($"Invalid image value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
                 }
                 return val;
             case T2IParamDataType.IMAGE_LIST:
@@ -794,7 +794,7 @@ public class T2IParamTypes
                     if (!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10)
                     {
                         string shortText = partVal.Length > 10 ? partVal[..10] + "..." : partVal;
-                        throw new InvalidDataException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                        throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
                     }
                     parts.Add(partVal);
                 }
@@ -802,16 +802,16 @@ public class T2IParamTypes
             case T2IParamDataType.MODEL:
                 if (!Program.T2IModelSets.TryGetValue(type.Subtype ?? "Stable-Diffusion", out T2IModelHandler handler))
                 {
-                    throw new InvalidDataException($"Invalid model sub-type for param {type.Name}: '{type.Subtype}' - are you sure that type name is correct? (Developer error)");
+                    throw new SwarmUserErrorException($"Invalid model sub-type for param {type.Name}: '{type.Subtype}' - are you sure that type name is correct? (Developer error)");
                 }
                 val = GetBestModelInList(val, [.. handler.ListModelNamesFor(session)]);
                 if (val is null)
                 {
-                    throw new InvalidDataException($"Invalid model value for param {type.Name} - '{origVal}' - are you sure that model name is correct?");
+                    throw new SwarmUserErrorException($"Invalid model value for param {type.Name} - '{origVal}' - are you sure that model name is correct?");
                 }
                 return val;
         }
-        throw new InvalidDataException($"Unknown parameter type's data type? {type.Type}");
+        throw new SwarmUserErrorException($"Unknown parameter type's data type? {type.Type}");
     }
 
     /// <summary>Takes user input of a parameter and applies it to the parameter tracking data object.</summary>
@@ -819,7 +819,7 @@ public class T2IParamTypes
     {
         if (!TryGetType(paramTypeName, out T2IParamType type, data))
         {
-            throw new InvalidDataException("Unrecognized parameter type name.");
+            throw new SwarmUserErrorException($"Unrecognized parameter type name '{paramTypeName}'.");
         }
         if (value == type.IgnoreIf)
         {
@@ -829,7 +829,7 @@ public class T2IParamTypes
         {
             if (!data.SourceSession.User.HasGenericPermission(type.Permission))
             {
-                throw new InvalidDataException($"You do not have permission to use parameter {type.Name}.");
+                throw new SwarmUserErrorException($"You do not have permission to use parameter {type.Name}.");
             }
         }
         try
@@ -837,9 +837,9 @@ public class T2IParamTypes
             value = ValidateParam(type, value, data.SourceSession);
             data.Set(type, value);
         }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
-            throw new InvalidDataException($"Invalid value for parameter {type.Name}: {ex.Message}");
+            throw new SwarmReadableErrorException($"Invalid value for parameter {type.Name}: {ex.Message}");
         }
         catch (Exception ex)
         {

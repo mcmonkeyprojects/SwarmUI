@@ -309,7 +309,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static async Task RunArbitraryWorkflowOnFirstBackend(string workflow, Action<object> takeRawOutput, bool allowRemote = true)
     {
-        ComfyUIAPIAbstractBackend backend = RunningComfyBackends.FirstOrDefault(b => allowRemote || b is ComfyUISelfStartBackend) ?? throw new InvalidOperationException("No available ComfyUI Backend to run this operation");
+        ComfyUIAPIAbstractBackend backend = RunningComfyBackends.FirstOrDefault(b => allowRemote || b is ComfyUISelfStartBackend) ?? throw new SwarmUserErrorException("No available ComfyUI Backend to run this operation");
         await backend.AwaitJobLive(workflow, "0", takeRawOutput, new(null), Program.GlobalProgramCancel);
     }
 

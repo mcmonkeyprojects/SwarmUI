@@ -72,7 +72,7 @@ public class ScorersExtension : Extension
     {
         if (!Directory.Exists($"{FilePath}/venv"))
         {
-            throw new InvalidOperationException("Scoring parameter is enabled, but Scorers extension is not installed.\nThe scorers extension is experimental, you'll probably want to just uncheck the parameter.");
+            throw new SwarmUserErrorException("Scoring parameter is enabled, but Scorers extension is not installed.\nThe scorers extension is experimental, you'll probably want to just uncheck the parameter.");
         }
         while (Status == BackendStatus.LOADING)
         {
@@ -136,7 +136,7 @@ public class ScorersExtension : Extension
         {
             if (!ScoringEngines.Contains(scorer))
             {
-                throw new InvalidDataException($"Scorer {scorer} does not exist.");
+                throw new SwarmUserErrorException($"Scorer {scorer} does not exist.");
             }
             float score = DoScore(p.Image, p.UserInput.Get(T2IParamTypes.Prompt), scorer).Result;
             scores[scorer] = score;

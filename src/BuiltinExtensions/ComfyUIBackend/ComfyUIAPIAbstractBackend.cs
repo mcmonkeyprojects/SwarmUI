@@ -236,7 +236,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             if (promptResult.ContainsKey("error"))
             {
                 Logs.Debug($"Error came from prompt: {JObject.Parse(workflow).ToDenseDebugString(noSpacing: true)}");
-                throw new InvalidDataException($"ComfyUI errored: {promptResult}");
+                throw new SwarmReadableErrorException($"ComfyUI errored: {promptResult}");
             }
             string promptId = $"{promptResult["prompt_id"]}";
             long firstStep = 0;
@@ -453,7 +453,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             {
                 if (msg[0].ToString() == "execution_error" && (msg[1] as JObject).TryGetValue("exception_message", out JToken actualMessage))
                 {
-                    throw new InvalidOperationException($"ComfyUI execution error: {actualMessage}");
+                    throw new SwarmReadableErrorException($"ComfyUI execution error: {actualMessage}");
                 }
             }
         }
@@ -558,7 +558,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 JObject flowObj = ComfyUIWebAPI.ReadCustomWorkflow(customWorkflowName);
                 if (flowObj.ContainsKey("error"))
                 {
-                    throw new InvalidDataException("Unrecognized ComfyUI Custom Workflow name.");
+                    throw new SwarmUserErrorException("Unrecognized ComfyUI Custom Workflow name.");
                 }
                 workflow = flowObj["prompt"].ToString();
             }
@@ -582,7 +582,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     {
                         if (string.IsNullOrWhiteSpace(defVal))
                         {
-                            throw new InvalidDataException($"Unknown param type request '{tagBasic}' from '{tag}'");
+                            throw new SwarmUserErrorException($"Unknown param type request '{tagBasic}' from '{tag}'");
                         }
                         return defVal;
                     }
@@ -618,13 +618,13 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     string[] matches = [.. user_input.Get(T2IParamTypes.Loras).Select(lora => T2IParamTypes.GetBestModelInList(lora, loraNames))];
                     if (matches.Any(m => string.IsNullOrWhiteSpace(m)))
                     {
-                        throw new InvalidDataException("One or more LoRA models not found.");
+                        throw new SwarmUserErrorException("One or more LoRA models not found.");
                     }
                     return matches.JoinString(",");
                 }
                 string filled = tagBasic switch
                 {
-                    "stability_api_key" => user_input.SourceSession.User.GetGenericData("stability_api", "key") ?? throw new InvalidDataException("Stability API key not set - please go to the User tab to set it."),
+                    "stability_api_key" => user_input.SourceSession.User.GetGenericData("stability_api", "key") ?? throw new SwarmUserErrorException("Stability API key not set - please go to the User tab to set it."),
                     "prompt" => user_input.Get(T2IParamTypes.Prompt),
                     "negative_prompt" => user_input.Get(T2IParamTypes.NegativePrompt),
                     "seed" => $"{fixSeed(user_input.Get(T2IParamTypes.Seed)) + (int.TryParse(tagExtra, out int add) ? add : 0)}",

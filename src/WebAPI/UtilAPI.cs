@@ -39,7 +39,7 @@ public static class UtilAPI
                 string fullPath = $"src/srcdata/Tokensets/{tokenset}.txt.gz";
                 if (!File.Exists(fullPath))
                 {
-                    throw new InvalidOperationException($"Tokenset '{tokenset}' does not exist.");
+                    throw new SwarmUserErrorException($"Tokenset '{tokenset}' does not exist.");
                 }
                 CliplikeTokenizer tokenizer = new();
                 tokenizer.Load(fullPath);
@@ -47,7 +47,7 @@ public static class UtilAPI
             });
             return (null, tokenizer);
         }
-        catch (InvalidOperationException ex)
+        catch (SwarmReadableErrorException ex)
         {
             return (new JObject() { ["error"] = ex.Message },  null);
         }

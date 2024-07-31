@@ -558,20 +558,20 @@ public static class ModelsAPI
             }
             await ws.SendJson(new JObject() { ["success"] = true }, API.WebsocketTimeout);
         }
+        catch (SwarmReadableErrorException userErr)
+        {
+            Logs.Warning($"Failed to download the model due to: {userErr.Message}");
+            await ws.SendJson(new JObject() { ["error"] = userErr.Message }, API.WebsocketTimeout);
+            return null;
+        }
+        catch (TaskCanceledException)
+        {
+            Logs.Info("Download was cancelled.");
+            await ws.SendJson(new JObject() { ["error"] = "Download was cancelled." }, API.WebsocketTimeout);
+            return null;
+        }
         catch (Exception ex)
         {
-            if (ex is InvalidOperationException || ex is InvalidDataException)
-            {
-                Logs.Warning($"Failed to download the model due to: {ex.Message}");
-                await ws.SendJson(new JObject() { ["error"] = ex.Message }, API.WebsocketTimeout);
-                return null;
-            }
-            else if (ex is TaskCanceledException)
-            {
-                Logs.Info("Download was cancelled.");
-                await ws.SendJson(new JObject() { ["error"] = "Download was cancelled." }, API.WebsocketTimeout);
-                return null;
-            }
             Logs.Warning($"Failed to download the model due to internal exception: {ex}");
             await ws.SendJson(new JObject() { ["error"] = "Failed to download the model due to internal exception." }, API.WebsocketTimeout);
         }

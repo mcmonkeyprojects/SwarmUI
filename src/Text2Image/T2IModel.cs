@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using SwarmUI.Utils;
 using System.IO;
 
 namespace SwarmUI.Text2Image;
@@ -79,7 +80,7 @@ public class T2IModel
         long len = BitConverter.ToInt64(lenBuf, 0);
         if (len < 0 || len > 100 * 1024 * 1024)
         {
-            throw new InvalidOperationException($"Improper safetensors file {modelPath}. Wrong file type, or unreasonable header length: {len}");
+            throw new SwarmReadableErrorException($"Improper safetensors file {modelPath}. Wrong file type, or unreasonable header length: {len}");
         }
         byte[] dataBuf = new byte[len];
         file.ReadExactly(dataBuf, 0, (int)len);

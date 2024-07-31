@@ -368,7 +368,7 @@ public class WorkflowGeneratorSteps
                     if (!g.UserInput.TryGet(T2IParamTypes.Model, out T2IModel model) || model.ModelClass is null || 
                         (model.ModelClass.CompatClass != "stable-diffusion-xl-v1"/* && model.ModelClass.CompatClass != "stable-diffusion-v3-medium"*/))
                     {
-                        throw new InvalidDataException($"Model type must be SDXL for ReVision (currently is {model?.ModelClass?.Name ?? "Unknown"}). Set ReVision Strength to 0 if you just want IP-Adapter.");
+                        throw new SwarmUserErrorException($"Model type must be SDXL for ReVision (currently is {model?.ModelClass?.Name ?? "Unknown"}). Set ReVision Strength to 0 if you just want IP-Adapter.");
                     }
                     for (int i = 0; i < images.Count; i++)
                     {
@@ -468,7 +468,7 @@ public class WorkflowGeneratorSteps
                         }
                         if (presetLow.StartsWith("light"))
                         {
-                            if (isXl) { throw new InvalidOperationException("IP-Adapter light model is not supported for SDXL"); }
+                            if (isXl) { throw new SwarmUserErrorException("IP-Adapter light model is not supported for SDXL"); }
                             else { requireIPAdapterModel("sd15_light_v11.bin", "https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter_sd15_light_v11.bin"); }
                         }
                         else if (presetLow.StartsWith("standard"))
@@ -493,7 +493,7 @@ public class WorkflowGeneratorSteps
                         }
                         else if (presetLow.StartsWith("full"))
                         {
-                            if (isXl) { throw new InvalidOperationException("IP-Adapter full face model is not supported for SDXL"); }
+                            if (isXl) { throw new SwarmUserErrorException("IP-Adapter full face model is not supported for SDXL"); }
                             else { requireIPAdapterModel("full_face_sd15.safetensors", "https://huggingface.co/h94/IP-Adapter/resolve/main/models/ip-adapter-full-face_sd15.safetensors"); }
                         }
                         else if (presetLow == "faceid")
@@ -511,7 +511,7 @@ public class WorkflowGeneratorSteps
                         }
                         else if (presetLow.StartsWith("faceid plus -"))
                         {
-                            if (isXl) { throw new InvalidOperationException("IP-Adapter FaceID plus model is not supported for SDXL"); }
+                            if (isXl) { throw new SwarmUserErrorException("IP-Adapter FaceID plus model is not supported for SDXL"); }
                             else
                             {
                                 requireIPAdapterModel("ip-adapter-faceid-plus_sd15.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-plus_sd15.bin");
@@ -534,7 +534,7 @@ public class WorkflowGeneratorSteps
                         else if (presetLow.StartsWith("faceid portrait unnorm"))
                         {
                             if (isXl) { requireIPAdapterModel("ip-adapter-faceid-portrait_sdxl_unnorm.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl_unnorm.bin"); }
-                            else { throw new InvalidOperationException("IP-Adapter FaceID Portrait UnNorm model is only supported for SDXL"); }
+                            else { throw new SwarmUserErrorException("IP-Adapter FaceID Portrait UnNorm model is only supported for SDXL"); }
                         }
                         string ipAdapterLoader;
                         if (presetLow.StartsWith("faceid"))
@@ -559,7 +559,7 @@ public class WorkflowGeneratorSteps
                         double ipAdapterEnd = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterEnd, 1.0);
                         if (ipAdapterStart >= ipAdapterEnd) 
                         {
-                            throw new InvalidDataException($"IP-Adapter Start must be less than IP-Adapter End.");
+                            throw new SwarmUserErrorException($"IP-Adapter Start must be less than IP-Adapter End.");
                         }
                         string ipAdapterNode = g.CreateNode("IPAdapter", new JObject()
                         {
@@ -631,7 +631,7 @@ public class WorkflowGeneratorSteps
                         if (firstImage is null)
                         {
                             Logs.Verbose($"Following error relates to parameters: {g.UserInput.ToJSON().ToDenseDebugString()}");
-                            throw new InvalidDataException("Must specify either a ControlNet Image, or Init image. Or turn off ControlNet if not wanted.");
+                            throw new SwarmUserErrorException("Must specify either a ControlNet Image, or Init image. Or turn off ControlNet if not wanted.");
                         }
                         img = firstImage;
                     }
@@ -670,7 +670,7 @@ public class WorkflowGeneratorSteps
                             {
                                 if (!getBestFor("midas-depthmap") && !getBestFor("depthmap") && !getBestFor("depth") && !getBestFor("midas") && !getBestFor("zoe") && !getBestFor("leres"))
                                 {
-                                    throw new InvalidDataException("No preprocessor found for depth - please install a Comfy extension that adds eg MiDaS depthmap preprocessors, or select 'none' if using a manual depthmap");
+                                    throw new SwarmUserErrorException("No preprocessor found for depth - please install a Comfy extension that adds eg MiDaS depthmap preprocessors, or select 'none' if using a manual depthmap");
                                 }
                             }
                             else if (wantedPreproc == "canny")
@@ -702,7 +702,7 @@ public class WorkflowGeneratorSteps
                     }
                     if (preprocessor.ToLowerFast() != "none")
                     {
-                        JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new InvalidDataException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
+                        JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new SwarmUserErrorException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
                         string preProcNode = g.CreateNode(preprocessor, (_, n) =>
                         {
                             n["inputs"] = new JObject()
@@ -715,7 +715,7 @@ public class WorkflowGeneratorSteps
                                 {
                                     if (g.FinalMask is null)
                                     {
-                                        throw new InvalidOperationException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
+                                        throw new SwarmUserErrorException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
                                     }
                                     n["inputs"]["mask"] = g.FinalMask;
                                 }
@@ -747,7 +747,7 @@ public class WorkflowGeneratorSteps
                     }
                     else if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                     {
-                        throw new InvalidDataException("Cannot preview a ControlNet preprocessor without any preprocessor enabled.");
+                        throw new SwarmUserErrorException("Cannot preview a ControlNet preprocessor without any preprocessor enabled.");
                     }
                     string controlModelNode = g.CreateNode("ControlNetLoader", new JObject()
                     {
@@ -1154,7 +1154,7 @@ public class WorkflowGeneratorSteps
                     }
                     if (string.IsNullOrWhiteSpace(svdVae))
                     {
-                        throw new InvalidDataException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
+                        throw new SwarmUserErrorException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
                     }
                     string vaeLoader = g.CreateNode("VAELoader", new JObject()
                     {

@@ -528,7 +528,7 @@ public static class Utilities
         ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
         if (response.StatusCode != HttpStatusCode.OK)
         {
-            throw new InvalidOperationException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
+            throw new SwarmReadableErrorException($"Failed to download {altUrl}: got response code {(int)response.StatusCode} {response.StatusCode}");
         }
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
         Task loadData = Task.Run(async () =>
@@ -582,7 +582,7 @@ public static class Utilities
                             {
                                 throw new TaskCanceledException($"Download {altUrl} was cancelled.");
                             }
-                            throw new InvalidOperationException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
+                            throw new SwarmReadableErrorException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
                         }
                         break;
                     }

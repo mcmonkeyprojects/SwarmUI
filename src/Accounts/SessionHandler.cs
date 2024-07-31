@@ -89,7 +89,7 @@ public class SessionHandler
     {
         if (HasShutdown)
         {
-            throw new InvalidOperationException("Session handler is shutting down.");
+            throw new SwarmReadableErrorException("Session handler is shutting down.");
         }
         userId ??= LocalUserID;
         User user = GetUser(userId);
@@ -113,7 +113,7 @@ public class SessionHandler
                 return sess;
             }
         }
-        throw new InvalidOperationException("Something is critically wrong in the session handler, cannot generate unique IDs!");
+        throw new SwarmReadableErrorException("Something is critically wrong in the session handler, cannot generate unique IDs!");
     }
 
     /// <summary>Gets or creates the user for the given ID.</summary>

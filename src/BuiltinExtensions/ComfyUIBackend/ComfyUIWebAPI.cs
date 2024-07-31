@@ -140,11 +140,7 @@ public static class ComfyUIWebAPI
             string flow = ComfyUIAPIAbstractBackend.CreateWorkflow(input, w => w, format, features: backend.SupportedFeatures.ToHashSet());
             return new JObject() { ["workflow"] = flow };
         }
-        catch (InvalidOperationException ex)
-        {
-            return new JObject() { ["error"] = ex.Message };
-        }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
             return new JObject() { ["error"] = ex.Message };
         }

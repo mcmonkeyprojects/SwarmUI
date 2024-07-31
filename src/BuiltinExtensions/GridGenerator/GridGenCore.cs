@@ -222,9 +222,9 @@ public partial class GridGenCore
                     keys.Add(key);
                     Values.Add(new AxisValue(grid, this, key, $"{id}={valStr}") { Skip = skip });
                 }
-                catch (InvalidDataException ex)
+                catch (SwarmReadableErrorException ex)
                 {
-                    throw new InvalidDataException($"value '{val}' errored: {ex.Message}");
+                    throw new SwarmReadableErrorException($"value '{val}' errored: {ex.Message}");
                 }
                 catch (Exception ex)
                 {
@@ -755,9 +755,9 @@ public partial class GridGenCore
                     newAxis.BuildFromListStr(id, grid, axis["vals"].ToString());
                     grid.Axes.Add(newAxis);
                 }
-                catch (InvalidDataException ex)
+                catch (SwarmReadableErrorException ex)
                 {
-                    throw new InvalidDataException($"Invalid axis '{id}': {ex.Message}");
+                    throw new SwarmReadableErrorException($"Invalid axis '{id}': {ex.Message}");
                 }
                 catch (Exception ex)
                 {

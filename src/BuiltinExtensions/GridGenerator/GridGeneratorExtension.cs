@@ -131,7 +131,7 @@ public class GridGeneratorExtension : Extension
             }
             if (Volatile.Read(ref data.ErrorOut) is not null && !data.ContinueOnError)
             {
-                throw new InvalidOperationException("Errored");
+                throw new SwarmReadableErrorException("Grid run errored");
             }
             void setError(string message)
             {
@@ -342,11 +342,11 @@ public class GridGeneratorExtension : Extension
         {
             ex = ex.InnerException;
         }
-        if (ex is AggregateException && ex.InnerException is InvalidDataException)
+        if (ex is AggregateException && ex.InnerException is SwarmReadableErrorException)
         {
             ex = ex.InnerException;
         }
-        if (ex is InvalidDataException)
+        if (ex is SwarmReadableErrorException)
         {
             return new JObject() { ["error"] = $"Failed due to: {ex.Message}" };
         }
@@ -362,7 +362,7 @@ public class GridGeneratorExtension : Extension
         name = Utilities.StrictFilenameClean(name);
         if (name.Trim() == "")
         {
-            throw new InvalidDataException("Output folder name cannot be empty.");
+            throw new SwarmUserErrorException("Output folder name cannot be empty.");
         }
         return $"Grids/{name.Trim()}";
     }
@@ -396,7 +396,7 @@ public class GridGeneratorExtension : Extension
             baseParams = T2IAPI.RequestToParams(session, raw["baseParams"] as JObject);
             outputFolderName = CleanFolderName(outputFolderName);
         }
-        catch (InvalidDataException ex)
+        catch (SwarmReadableErrorException ex)
         {
             await socket.SendJson(new JObject() { ["error"] = ex.Message }, API.WebsocketTimeout);
             return null;
@@ -541,7 +541,7 @@ public class GridGeneratorExtension : Extension
                 if (url == "ERROR")
                 {
                     data.ErrorOut = new JObject() { ["error"] = $"Server failed to save an image." };
-                    throw new InvalidOperationException();
+                    throw new SwarmReadableErrorException("Server failed to save an image.");
                 }
                 Logs.Verbose("Saved to file, send over websocket...");
                 await socket.SendJson(new JObject() { ["image"] = url, ["batch_index"] = $"{batchId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata }, API.WebsocketTimeout);

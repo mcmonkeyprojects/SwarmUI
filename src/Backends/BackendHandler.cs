@@ -833,7 +833,7 @@ public class BackendHandler
                 {
                     Logs.Verbose($"[BackendHandler] count notEnabled = {currentBackends.Count(b => !b.Backend.IsEnabled)}, shutDownReserve = {currentBackends.Count(b => b.Backend.ShutDownReserve)}, directReserved = {currentBackends.Count(b => b.Backend.Reservations > 0)}, statusNotRunning = {currentBackends.Count(b => b.Backend.Status != BackendStatus.RUNNING)}");
                     Logs.Warning("[BackendHandler] No backends are available! Cannot generate anything.");
-                    Failure = new InvalidOperationException("No backends available!");
+                    Failure = new SwarmUserErrorException("No backends available!");
                 }
                 return;
             }
@@ -846,7 +846,7 @@ public class BackendHandler
                     reason = $" Backends refused for the following reason(s):\n{UserInput.RefusalReasons.Select(r => $"- {r}").JoinString("\n")}";
                 }
                 Logs.Warning($"[BackendHandler] No backends match the request! Cannot generate anything.{reason}");
-                Failure = new InvalidOperationException($"No backends match the settings of the request given!{reason}");
+                Failure = new SwarmUserErrorException($"No backends match the settings of the request given!{reason}");
                 return;
             }
             List<T2IBackendData> available = [.. possible.Where(b => !b.CheckIsInUse).OrderBy(b => b.Usages)];
@@ -914,12 +914,12 @@ public class BackendHandler
     /// <param name="notifyWillLoad">Optional callback for when this request will trigger a model load.</param>
     /// <param name="cancel">Optional request cancellation.</param>
     /// <exception cref="TimeoutException">Thrown if <paramref name="maxWait"/> is reached.</exception>
-    /// <exception cref="InvalidOperationException">Thrown if no backends are available.</exception>
+    /// <exception cref="SwarmReadableErrorException">Thrown if no backends are available.</exception>
     public async Task<T2IBackendAccess> GetNextT2IBackend(TimeSpan maxWait, T2IModel model = null, T2IParamInput input = null, Func<T2IBackendData, bool> filter = null, Session session = null, Action notifyWillLoad = null, CancellationToken cancel = default)
     {
         if (HasShutdown)
         {
-            throw new InvalidOperationException("Backend handler is shutting down.");
+            throw new SwarmReadableErrorException("Backend handler is shutting down.");
         }
         T2IBackendRequest request = new()
         {
@@ -1126,7 +1126,7 @@ public class BackendHandler
                     {
                         Logs.Warning("[BackendHandler] All backends failed to load the model! Cannot generate anything.");
                         releasePressure();
-                        throw new InvalidOperationException("All available backends failed to load the model.");
+                        throw new SwarmReadableErrorException("All available backends failed to load the model.");
                     }
                     valid = valid.Where(b => b.Backend.CurrentModelName != highestPressure.Model.Name).ToList();
                     if (valid.IsEmpty())
