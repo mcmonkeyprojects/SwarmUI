@@ -295,8 +295,16 @@ body {
 .image-batch-folder img {
     height: 3.5rem;
 }
-.image-preview-text {
+.image-preview-text-small {
     font-size: 70%;
+}
+.image-preview-text-medium {
+    font-size: 80%;
+}
+.image-preview-text-large {
+    font-size: 90%;
+}
+.image-preview-text {
     font-family: 'Courier New', Courier, monospace;
 }
 .current_model_view {
@@ -329,12 +337,13 @@ body {
     object-fit: contain;
 }
 .model-descblock {
-    width: 21rem;
+    width: 20.5rem;
     height: 10rem;
     overflow: hidden;
     display: inline-block;
     white-space: normal;
-    word-break: break-all;
+    word-break: normal;
+    overflow-wrap: break-word;
     font-size: 80%;
 }
 .model-descblock:focus {

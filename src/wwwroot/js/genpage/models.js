@@ -418,7 +418,7 @@ class ModelBrowserWrapper {
             ];
         }
         let name = cleanModelName(model.data.name);
-        let display = model.data.display || name;
+        let display = (model.data.display || name).replaceAll('/', ' / ');
         if (this.subType == 'Wildcards') {
             buttons = [
                 { label: 'Edit Wildcard', onclick: () => editWildcard(model.data) },
