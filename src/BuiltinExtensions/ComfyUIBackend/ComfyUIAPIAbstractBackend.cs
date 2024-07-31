@@ -615,7 +615,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 string getLoras()
                 {
                     string[] loraNames = [.. Program.T2IModelSets["LoRA"].ListModelNamesFor(user_input.SourceSession)];
-                    string[] matches = [.. user_input.Get(T2IParamTypes.Loras).Select(lora => T2IParamTypes.GetBestModelInList(lora, loraNames))];
+                    string[] matches = [.. user_input.Get(T2IParamTypes.Loras, []).Select(lora => T2IParamTypes.GetBestModelInList(lora, loraNames))];
                     if (matches.Any(m => string.IsNullOrWhiteSpace(m)))
                     {
                         throw new SwarmUserErrorException("One or more LoRA models not found.");
