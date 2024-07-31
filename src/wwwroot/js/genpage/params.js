@@ -561,7 +561,8 @@ function refreshParameterValues(strong = true, callback = null) {
                         let value = values[i];
                         let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
                         let selected = value == val ? ' selected="true"' : '';
-                        html += `<option value="${escapeHtmlNoBr(value)}"${selected}>${escapeHtml(alt_name)}</option>`;
+                        let cleanName = htmlWithParen(alt_name);
+                        html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
                     }
                     elem.innerHTML = html;
                     presetElem.innerHTML = html;

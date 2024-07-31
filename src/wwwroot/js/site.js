@@ -599,6 +599,21 @@ function makeCheckboxInput(featureid, id, paramid, name, description, value, tog
     </div>`;
 }
 
+function htmlWithParen(text) {
+    let start = text.indexOf("(");
+    if (start == -1) {
+        return escapeHtml(text);
+    }
+    let end = text.indexOf(")", start);
+    if (end == -1) {
+        return escapeHtml(text);
+    }
+    let prefix = text.substring(0, start);
+    let mid = text.substring(start, end + 1);
+    let suffix = text.substring(end + 1);
+    return `${htmlWithParen(prefix)}<span class='parens'>${escapeHtml(mid)}</span>${htmlWithParen(suffix)}`;
+}
+
 function makeDropdownInput(featureid, id, paramid, name, description, values, defaultVal, toggles = false, popover_button = true, alt_names = null) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
@@ -614,7 +629,8 @@ function makeDropdownInput(featureid, id, paramid, name, description, values, de
         let value = values[i];
         let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
         let selected = value == defaultVal ? ' selected="true"' : '';
-        html += `<option value="${escapeHtmlNoBr(value)}"${selected}>${escapeHtml(alt_name)}</option>`;
+        let cleanName = htmlWithParen(alt_name);
+        html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
     }
     html += `
         </select>

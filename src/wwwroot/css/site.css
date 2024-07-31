@@ -696,6 +696,9 @@ textarea, input, select {
 .tag-type-7 { color: color-mix(in srgb, var(--text) var(--tag-color-percent), #3a753a) !important; }
 .tag-type-8 { color: color-mix(in srgb, var(--text) var(--tag-color-percent), #41419b) !important; }
 .tag-type-9 { color: color-mix(in srgb, var(--text) var(--tag-color-percent), #a03fa0) !important; }
+.parens {
+    color: var(--text-soft);
+}
 
 
 
