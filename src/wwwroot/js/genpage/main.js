@@ -1031,6 +1031,12 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
     genericRequest('ListImages', {'path': path, 'depth': depth, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
         let folders = data.folders.sort((a, b) => b.toLowerCase().localeCompare(a.toLowerCase()));
+        function isPreSortFile(f) {
+            return f.src == 'index.html'; // Grid index files
+        }
+        let preFiles = data.files.filter(f => isPreSortFile(f));
+        let postFiles = data.files.filter(f => !isPreSortFile(f));
+        data.files = preFiles.concat(postFiles);
         let mapped = data.files.map(f => {
             let fullSrc = `${prefix}${f.src}`;
             return { 'name': fullSrc, 'data': { 'src': `${getImageOutPrefix()}/${fullSrc}`, 'fullsrc': fullSrc, 'name': f.src, 'metadata': f.metadata } };
