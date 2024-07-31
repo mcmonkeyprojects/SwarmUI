@@ -711,7 +711,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     index = workflow.IndexOf("${" + key);
                 }
             }
-            foreach ((string key, object val) in user_input.ValuesInput)
+            foreach ((string key, object val) in new Dictionary<string, object>(user_input.ValuesInput))
             {
                 bool resize = !T2IParamTypes.TryGetType(key, out T2IParamType type, user_input) || type.ImageShouldResize;
                 if (val is Image img && !type.ImageAlwaysB64)
