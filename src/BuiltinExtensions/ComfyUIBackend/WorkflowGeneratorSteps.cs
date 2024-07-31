@@ -753,6 +753,14 @@ public class WorkflowGeneratorSteps
                     {
                         ["control_net_name"] = controlModel.ToString(g.ModelFolderFormat)
                     });
+                    if (g.UserInput.TryGet(ComfyUIBackendExtension.ControlNetUnionTypeParams[i], out string unionType))
+                    {
+                        controlModelNode = g.CreateNode("SetUnionControlNetType", new JObject()
+                        {
+                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["type"] = unionType
+                        });
+                    }
                     string applyNode;
                     if (g.CurrentCompatClass() == "stable-diffusion-v3-medium")
                     {
