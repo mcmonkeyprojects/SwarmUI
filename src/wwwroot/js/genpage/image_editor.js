@@ -684,6 +684,7 @@ class ImageEditorLayer {
             this.infoSubDiv.innerText = (this.isMask ? `Mask` : `Image`);
             this.createButtons();
             this.editor.sortLayers();
+            this.editor.redraw();
         }, true);
         this.menuPopover.appendChild(buttonConvert);
         let buttonInvert = createDiv(null, 'sui_popover_model_button');
@@ -1587,9 +1588,11 @@ class ImageEditor {
                 layer.drawToBack(this.maskHelperCtx, this.offsetX, this.offsetY, this.zoomLevel);
             }
         }
+        this.ctx.save();
         this.ctx.globalAlpha = this.activeLayer.isMask ? 0.8 : 0.3;
+        this.ctx.globalCompositeOperation = 'luminosity';
         this.ctx.drawImage(this.maskHelperCanvas, 0, 0);
-        this.ctx.globalAlpha = 1;
+        this.ctx.restore();
         // UI:
         let [boundaryX, boundaryY] = this.imageCoordToCanvasCoord(this.finalOffsetX, this.finalOffsetY);
         this.drawSelectionBox(boundaryX, boundaryY, this.realWidth * this.zoomLevel, this.realHeight * this.zoomLevel, this.boundaryColor, 16 * this.zoomLevel, 0);
@@ -1678,6 +1681,15 @@ class ImageEditor {
                 }
             }
         }
-        return canvas.toDataURL(format);
+        // Force to black/white
+        let canvas2 = document.createElement('canvas');
+        canvas2.width = this.realWidth;
+        canvas2.height = this.realHeight;
+        let ctx2 = canvas2.getContext('2d');
+        ctx2.fillStyle = '#000000';
+        ctx2.fillRect(0, 0, canvas2.width, canvas2.height);
+        ctx2.globalCompositeOperation = 'luminosity';
+        ctx2.drawImage(canvas, 0, 0);
+        return canvas2.toDataURL(format);
     }
 }
