@@ -66,7 +66,7 @@ class AdvancedPopover {
         this.expectedHeight = 0;
         this.optionArea.style.width = '';
         for (let button of this.buttons) {
-            if (button.key.toLowerCase().includes(searchText)) {
+            if ((button.searchable || button.key).toLowerCase().includes(searchText)) {
                 let optionDiv = document.createElement(button.href ? 'a' : 'div');
                 optionDiv.classList.add('sui_popover_model_button');
                 if (button.key_html) {
@@ -371,7 +371,7 @@ class UIImprovementHandler {
         }
         let popId = `uiimprover_${elem.id}`;
         let rect = elem.getBoundingClientRect();
-        let buttons = [...elem.options].map(o => { return { key_html: o.dataset.cleanname, key: o.innerText, action: () => { elem.value = o.value; triggerChangeFor(elem); } }; })
+        let buttons = [...elem.options].map(o => { return { key_html: o.dataset.cleanname, key: o.innerText, searchable: `${o.dataset.cleanname} ${o.innerText} ${o.value}`, action: () => { elem.value = o.value; triggerChangeFor(elem); } }; })
         this.lastPopover = new AdvancedPopover(popId, buttons, true, rect.x, rect.y, elem.parentElement, elem.selectedIndex < 0 ? null : elem.selectedOptions[0].innerText, 0);
         e.preventDefault();
         e.stopPropagation();
