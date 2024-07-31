@@ -1084,6 +1084,10 @@ function buttonsForImage(fullsrc, src) {
                         if (div) {
                             div.remove();
                         }
+                        div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
+                        if (div) {
+                            div.remove();
+                        }
                     }
                     let currentImage = document.getElementById('current_image_img');
                     if (currentImage && currentImage.dataset.src == src) {
