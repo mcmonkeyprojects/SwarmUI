@@ -86,7 +86,7 @@ public class ComfyUIBackendExtension : Extension
             Directory.CreateDirectory(path);
             return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || f.EndsWith(".safetensors") || f.EndsWith(".engine")).Select(f => f.Replace('\\', '/').AfterLast('/'))];
         }
-        UpscalerModels = [.. UpscalerModels.Concat(listModelsFor("upscale_models").Select(u => $"model-{u}")).Distinct()];
+        T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, listModelsFor("upscale_models").Select(u => $"model-{u}///Model: {u}"));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
     }
 
@@ -338,61 +338,54 @@ public class ComfyUIBackendExtension : Extension
         {
             if (rawObjectInfo.TryGetValue("UpscaleModelLoader", out JToken modelLoader))
             {
-                UpscalerModels = UpscalerModels.Concat(modelLoader["input"]["required"]["model_name"][0].Select(u => $"model-{u}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, modelLoader["input"]["required"]["model_name"][0].Select(u => $"model-{u}///Model: {u}"));
             }
             if (rawObjectInfo.TryGetValue("SwarmKSampler", out JToken swarmksampler))
             {
-                string[] prior = [.. Samplers];
-                string[] newSamplers = [.. swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")];
-                string[] dropped = [.. prior.Except(newSamplers)];
+                string[] dropped = [.. Samplers.Select(s => s.Before("///")).Except([.. swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")])];
                 if (dropped.Any())
                 {
-                    Logs.Debug($"Samplers are listed, but not included in SwarmKSampler internal list: {dropped.JoinString(", ")}");
+                    Logs.Warning($"Samplers are listed, but not included in SwarmKSampler internal list: {dropped.JoinString(", ")}");
                 }
-                string[] added = [.. newSamplers.Except(prior)];
-                if (added.Any())
-                {
-                    Logs.Debug($"New samplers available from SwarmKSampler but not in prior list: {added.JoinString(", ")}");
-                }
-                Samplers = Samplers.Concat(newSamplers).Distinct().ToList();
-                Schedulers = Schedulers.Concat(swarmksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}///{u} (New)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, swarmksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}///{u} (New)"));
             }
             if (rawObjectInfo.TryGetValue("KSampler", out JToken ksampler))
             {
-                Samplers = Samplers.Concat(ksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")).Distinct().ToList();
-                Schedulers = Schedulers.Concat(ksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, ksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}///{u} (New in KS)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, ksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}///{u} (New in KS)"));
             }
             if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoader", out JToken ipadapterCubiqUnified))
             {
-                IPAdapterModels = IPAdapterModels.Concat(ipadapterCubiqUnified["input"]["required"]["preset"][0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnified["input"]["required"]["preset"][0].Select(m => $"{m}"));
             }
             else if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter) && (ipadapter["input"]["required"] as JObject).TryGetValue("model_name", out JToken ipAdapterModelName))
             {
-                IPAdapterModels = IPAdapterModels.Concat(ipAdapterModelName[0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipAdapterModelName[0].Select(m => $"{m}"));
             }
             else if (rawObjectInfo.TryGetValue("IPAdapterModelLoader", out JToken ipadapterCubiq))
             {
-                IPAdapterModels = IPAdapterModels.Concat(ipadapterCubiq["input"]["required"]["ipadapter_file"][0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiq["input"]["required"]["ipadapter_file"][0].Select(m => $"{m}"));
             }
             if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter2) && (ipadapter2["input"]["required"] as JObject).TryGetValue("weight_type", out JToken ipAdapterWeightType))
             {
-                IPAdapterWeightTypes = IPAdapterWeightTypes.Concat(ipAdapterWeightType[0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterWeightTypes, ipAdapterWeightType[0].Select(m => $"{m}///{m} (New)"));
             }
             if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoaderFaceID", out JToken ipadapterCubiqUnifiedFace))
             {
-                IPAdapterModels = IPAdapterModels.Concat(ipadapterCubiqUnifiedFace["input"]["required"]["preset"][0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnifiedFace["input"]["required"]["preset"][0].Select(m => $"{m}"));
             }
             if (rawObjectInfo.TryGetValue("GLIGENLoader", out JToken gligenLoader))
             {
-                GligenModels = GligenModels.Concat(gligenLoader["input"]["required"]["gligen_name"][0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, gligenLoader["input"]["required"]["gligen_name"][0].Select(m => $"{m}"));
             }
             if (rawObjectInfo.TryGetValue("SwarmYoloDetection", out JToken yoloDetection))
             {
-                YoloModels = YoloModels.Concat(yoloDetection["input"]["required"]["model_name"][0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, yoloDetection["input"]["required"]["model_name"][0].Select(m => $"{m}"));
             }
             if (rawObjectInfo.TryGetValue("SetUnionControlNetType", out JToken unionCtrlNet))
             {
-                ControlnetUnionTypes = ControlnetUnionTypes.Concat(unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}")).Distinct().ToList();
+                T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}///{m} (New)"));
             }
             foreach ((string key, JToken data) in rawObjectInfo)
             {
@@ -427,9 +420,9 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<string>[] ControlNetPreprocessorParams = new T2IRegisteredParam<string>[3], ControlNetUnionTypeParams = new T2IRegisteredParam<string>[3];
 
-    public static List<string> UpscalerModels = ["pixel-lanczos", "pixel-bicubic", "pixel-area", "pixel-bilinear", "pixel-nearest-exact", "latent-bislerp", "latent-bicubic", "latent-area", "latent-bilinear", "latent-nearest-exact"],
-        Samplers = ["euler", "euler_ancestral", "heun", "heunpp2", "dpm_2", "dpm_2_ancestral", "lms", "dpm_fast", "dpm_adaptive", "dpmpp_2s_ancestral", "dpmpp_sde", "dpmpp_sde_gpu", "dpmpp_2m", "dpmpp_2m_sde", "dpmpp_2m_sde_gpu", "dpmpp_3m_sde", "dpmpp_3m_sde_gpu", "ddim", "ddpm", "lcm", "uni_pc", "uni_pc_bh2", "euler_cfg_pp", "euler_ancestral_cfg_pp", "ipndm", "ipndm_v", "deis"],
-        Schedulers = ["normal", "karras", "exponential", "simple", "ddim_uniform", "sgm_uniform", "turbo", "align_your_steps"];
+    public static List<string> UpscalerModels = ["pixel-lanczos///Pixel: Lanczos (cheap + high quality)", "pixel-bicubic///Pixel: Bicubic (Basic)", "pixel-area///Pixel: Area", "pixel-bilinear///Pixel: Bilinear", "pixel-nearest-exact///Pixel: Nearest-Exact (Pixel art)", "latent-bislerp///Latent: Bislerp", "latent-bicubic///Latent: Bicubic", "latent-area///Latent: Area", "latent-bilinear///Latent: Bilinear", "latent-nearest-exact///Latent: Nearest-Exact"],
+        Samplers = ["euler///Euler", "euler_ancestral///Euler Ancestral", "heun///Heun", "heunpp2///Heun++ 2", "dpm_2///DPM-2", "dpm_2_ancestral///DPM-2 Ancestral", "lms///LMS", "dpm_fast///DPM Fast", "dpm_adaptive///DPM Adaptive", "dpmpp_2s_ancestral///DPM++ 2S Ancestral", "dpmpp_sde///DPM++ SDE", "dpmpp_sde_gpu///DPM++ SDE (GPU)", "dpmpp_2m///DPM++ 2M", "dpmpp_2m_sde///DPM++ 2M SDE", "dpmpp_2m_sde_gpu///DPM++ 2M SDE (GPU)", "dpmpp_3m_sde///DPM++ 3M SDE", "dpmpp_3m_sde_gpu///DPM++ 3M SDE (GPU)", "ddim///DDIM", "ddpm///DDPM", "lcm///LCM (for LCM models)", "uni_pc///UniPC (Unified Predictor-Corrector)", "uni_pc_bh2///UniPC BH2", "euler_cfg_pp///Euler CFG++", "euler_ancestral_cfg_pp///Euler Ancestral CFG++", "ipndm///iPNDM (Improved PNDM)", "ipndm_v///iPNDM-V (Variable-Step)", "deis///DEIS (Diffusion Exponential Integrator Sampler)"],
+        Schedulers = ["normal///Normal", "karras///Karras", "exponential///Expoential", "simple///Simple", "ddim_uniform///DDIM Uniform", "sgm_uniform///SGM Uniform", "turbo///Turbo (for turbo models)", "align_your_steps///Align Your Steps (NVIDIA)", "beta///Beta"];
 
     public static List<string> IPAdapterModels = ["None"], IPAdapterWeightTypes = ["standard", "prompt is more important", "style transfer"];
 
@@ -469,11 +462,11 @@ public class ComfyUIBackendExtension : Extension
             Clean: (_, val) => CustomWorkflows.ContainsKey(val) ? $"PARSED%{val}%{ComfyUIWebAPI.ReadCustomWorkflow(val)["prompt"]}" : val,
             MetadataFormat: v => v.StartsWith("PARSED%") ? v.After("%").Before("%") : v
             ));
-        SamplerParam = T2IParamTypes.Register<string>(new("Sampler", "Sampler type (for ComfyUI)\nGenerally, 'Euler' is fine, but for SD1 and SDXL 'dpmpp_2m' is popular when paired with the 'karras' scheduler.",
+        SamplerParam = T2IParamTypes.Register<string>(new("Sampler", "Sampler type (for ComfyUI backends).\nGenerally, 'Euler' is fine, but for SD1 and SDXL 'DPM++ 2M' is popular when paired with the 'Karras' scheduler.",
             "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -5,
             GetValues: (_) => Samplers
             ));
-        SchedulerParam = T2IParamTypes.Register<string>(new("Scheduler", "Scheduler type (for ComfyUI)\nGoes with the Sampler parameter above.",
+        SchedulerParam = T2IParamTypes.Register<string>(new("Scheduler", "Scheduler type (for ComfyUI backends).\nGoes with the Sampler parameter above.",
             "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -4,
             GetValues: (_) => Schedulers
             ));

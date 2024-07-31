@@ -101,6 +101,14 @@ public record class T2IParamType(string Name, string Description, string Default
 {
     public JObject ToNet(Session session)
     {
+        JToken values = null;
+        JToken valueNames = null;
+        if (GetValues is not null)
+        {
+            List<string> rawVals = GetValues(session);
+            values = JArray.FromObject(rawVals.Select(v => v.Before("///")).ToList());
+            valueNames = JArray.FromObject(rawVals.Select(v => v.After("///")).ToList());
+        }
         return new JObject()
         {
             ["name"] = Name,
@@ -114,7 +122,8 @@ public record class T2IParamType(string Name, string Description, string Default
             ["view_min"] = ViewMin,
             ["view_max"] = ViewMax,
             ["step"] = Step,
-            ["values"] = GetValues == null ? null : JToken.FromObject(GetValues(session)),
+            ["values"] = values,
+            ["value_names"] = valueNames,
             ["examples"] = Examples == null ? null : JToken.FromObject(Examples),
             ["visible"] = VisibleNormally,
             ["advanced"] = IsAdvanced,
@@ -531,7 +540,7 @@ public class T2IParamTypes
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -14
             ));
         BackendType = Register<string>(new("[Internal] Backend Type", "Which SwarmUI backend type should be used for this request.",
-            "Any", IgnoreIf: "Any", GetValues: (_) => ["Any", .. Program.Backends.BackendTypes.Keys],
+            "Any", IgnoreIf: "Any", GetValues: (_) => ["Any", .. Program.Backends.BackendTypes.Values.Select(b => $"{b.ID}///{b.Name}")],
             IsAdvanced: true, Permission: "param_backend_type", Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -10
             ));
         ExactBackendID = Register<int>(new("Exact Backend ID", "Manually force a specific exact backend (by ID #) to be used for this generation.",
@@ -727,10 +736,11 @@ public class T2IParamTypes
             case T2IParamDataType.DROPDOWN:
                 if (type.GetValues is not null && type.ValidateValues)
                 {
-                    val = GetBestInList(val, type.GetValues(session));
+                    string[] rawVals = [.. type.GetValues(session).Select(v => v.Before("///"))];
+                    val = GetBestInList(val, rawVals);
                     if (val is null)
                     {
-                        throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{string.Join("`, `", type.GetValues(session))}`");
+                        throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{string.Join("`, `", rawVals)}`");
                     }
                 }
                 return val;
@@ -738,7 +748,7 @@ public class T2IParamTypes
                 string[] vals = val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 if (type.GetValues is not null && type.ValidateValues)
                 {
-                    List<string> possible = type.GetValues(session);
+                    string[] possible = [.. type.GetValues(session).Select(v => v.Before("///"))];
                     for (int i = 0; i < vals.Length; i++)
                     {
                         string search = vals[i];
@@ -748,10 +758,9 @@ public class T2IParamTypes
                             vals[i] = GetBestModelInList(CleanModelName(search), possible);
                             if (vals[i] is null)
                             {
-                                List<string> available = type.GetValues(session);
-                                if (available.Count < 10)
+                                if (possible.Length < 10)
                                 {
-                                    throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{available.JoinString("`, `")}`");
+                                    throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{possible.JoinString("`, `")}`");
                                 }
                                 else
                                 {
@@ -892,5 +901,20 @@ public class T2IParamTypes
         else if (aspectRatio == "9:21") { width = 320; height = 768; }
         else { width = -1; height = -1; }
         return (width, height);
+    }
+
+    /// <summary>Adds new entries to a list of dropdown values, in a clean way that avoids breaking from display names, and applying an async-safe concat.</summary>
+    public static void ConcatDropdownValsClean(ref List<string> mainList, IEnumerable<string> addIn)
+    {
+        HashSet<string> existing = mainList.Select(v => v.Before("///")).ToHashSet();
+        List<string> result = new(mainList);
+        foreach (string str in addIn)
+        {
+            if (!existing.Contains(str.Before("///")))
+            {
+                result.Add(str);
+            }
+        }
+        mainList = result;
     }
 }

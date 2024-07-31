@@ -555,9 +555,13 @@ function refreshParameterValues(strong = true, callback = null) {
                 if ((param.type == "dropdown" || param.type == "model") && param.values) {
                     let val = elem.value;
                     let html = '';
-                    for (let value of param.values) {
+                    let values = param.values;
+                    let alt_names = param['value_names'];
+                    for (let i = 0; i < values.length; i++) {
+                        let value = values[i];
+                        let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
                         let selected = value == val ? ' selected="true"' : '';
-                        html += `<option value="${escapeHtmlNoBr(value)}"${selected}>${escapeHtml(value)}</option>`;
+                        html += `<option value="${escapeHtmlNoBr(value)}"${selected}>${escapeHtml(alt_name)}</option>`;
                     }
                     elem.innerHTML = html;
                     presetElem.innerHTML = html;
