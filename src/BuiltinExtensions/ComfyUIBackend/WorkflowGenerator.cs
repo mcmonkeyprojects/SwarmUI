@@ -914,7 +914,8 @@ public class WorkflowGenerator
         int width = UserInput.Get(T2IParamTypes.Width, 1024);
         int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
-        if (Features.Contains("variation_seed") && prompt.Contains('[') && prompt.Contains(']'))
+        bool needsAdvancedEncode = (prompt.Contains('[') && prompt.Contains(']')) || prompt.Contains("<break>");
+        if (Features.Contains("variation_seed") && needsAdvancedEncode)
         {
             node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
             {
@@ -956,6 +957,11 @@ public class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, with support for '&lt;break&gt;' syntax.</summary>
     public JArray CreateConditioningLine(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null)
     {
+        if (Features.Contains("variation_seed"))
+        {
+            return CreateConditioningDirect(prompt, clip, model, isPositive, id);
+        }
+        // Backup to at least process "<break>" for if Swarm nodes are missing
         string[] breaks = prompt.Split("<break>", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (breaks.Length <= 1)
         {

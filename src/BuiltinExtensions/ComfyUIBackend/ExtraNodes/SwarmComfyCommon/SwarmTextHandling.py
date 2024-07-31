@@ -30,8 +30,14 @@ class SwarmClipTextEncodeAdvanced:
             if text in encoding_cache:
                 cond, pooled = encoding_cache[text]
             else:
-                tokens = clip.tokenize(text)
+                cond_chunks = text.split("<break>")
+                tokens = clip.tokenize(cond_chunks[0])
                 cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+                if len(cond_chunks) > 1:
+                    for chunk in cond_chunks[1:]:
+                        tokens = clip.tokenize(chunk)
+                        cond_chunk, pooled_chunk = clip.encode_from_tokens(tokens, return_pooled=True)
+                        cond = torch.cat([cond, cond_chunk], dim=1)
                 encoding_cache[text] = (cond, pooled)
             return [cond, {"pooled_output": pooled, "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}]
 
@@ -75,8 +81,6 @@ class SwarmClipTextEncodeAdvanced:
                 any = True
             chunks.append({'text': control, 'data': data, 'type': ctrltype})
             remaining = remaining[end + 1:]
-
-        print(chunks)
 
         if not any:
             return ([text_to_cond(prompt, 0, 1)], )
