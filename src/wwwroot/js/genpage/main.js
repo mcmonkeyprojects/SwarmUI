@@ -69,6 +69,10 @@ function toggleAutoLoadImages() {
 
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
+    if (currentImgSrc == div.dataset.src) {
+        imageFullView.showImage(div.dataset.src, div.dataset.metadata);
+        return;
+    }
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true');
 }
 

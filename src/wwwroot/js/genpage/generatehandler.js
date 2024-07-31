@@ -167,6 +167,7 @@ class GenerateHandler {
                                         metadata.remove();
                                     }
                                 }
+                                imgHolder.div.dataset.src = data.gen_progress.preview;
                                 imgHolder.div.querySelector('img').src = data.gen_progress.preview;
                                 imgHolder.image = data.gen_progress.preview;
                             }
