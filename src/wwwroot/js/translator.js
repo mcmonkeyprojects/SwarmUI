@@ -74,14 +74,14 @@ function applyTranslations(root = null) {
     if (root == null) {
         root = document;
     }
-    for (let elem of root.querySelectorAll(".translate")) {
+    function doTranslateNow(elem) {
         if (elem.title) {
             if (validateTranslationSafety(elem.dataset.pretranslated_title || elem.title, `element title ${elem.id}`)) {
-                continue;
+                return;
             }
             let translated = translate(elem.dataset.pretranslated_title || elem.title);
             if (translated == elem.title) {
-                continue;
+                return;
             }
             if (!elem.dataset.pretranslated_title) {
                 elem.dataset.pretranslated_title = elem.title;
@@ -90,25 +90,49 @@ function applyTranslations(root = null) {
         }
         if (elem.placeholder) {
             if (validateTranslationSafety(elem.dataset.pretranslated_placeholder || elem.placeholder, `element placeholder ${elem.id}`)) {
-                continue;
+                return;
             }
             let translated = translate(elem.dataset.pretranslated_placeholder || elem.placeholder);
             if (translated == elem.placeholder) {
-                continue;
+                return;
             }
             if (!elem.dataset.pretranslated_placeholder) {
                 elem.dataset.pretranslated_placeholder = elem.placeholder;
             }
             elem.placeholder = translated;
-            continue; // placeholdered elements are text inputs, ie don't replace content
+            return; // placeholdered elements are text inputs, ie don't replace content
         }
         if (elem.textContent && !elem.classList.contains("translate-no-text")) {
-            if (validateTranslationSafety(elem.dataset.pretranslated || elem.textContent, `element textContent ${elem.id}`)) {
-                continue;
+            if (validateTranslationSafety(elem.dataset.pretranslated || elem.innerHTML, `element textContent ${elem.id}`)) {
+                return;
+            }
+            let rawText = elem.innerHTML;
+            let firstBracket = rawText.indexOf('<');
+            let edited = false;
+            if (firstBracket != -1) {
+                edited = true;
+                if (firstBracket > 0 && rawText.substring(0, firstBracket).trim() != "") {
+                    rawText = `<span class="translate">${rawText.substring(0, firstBracket)}</span>${rawText.substring(firstBracket)}`;
+                }
+            }
+            let lastEndBracket = rawText.lastIndexOf('>');
+            if (lastEndBracket != -1) {
+                edited = true;
+                if (lastEndBracket < rawText.length - 1 && rawText.substring(lastEndBracket + 1).trim() != "") {
+                    rawText = `${rawText.substring(0, lastEndBracket + 1)}<span class="translate">${rawText.substring(lastEndBracket + 1)}</span>`;
+                }
+            }
+            if (edited) {
+                elem.innerHTML = rawText;
+                elem.classList.add("translate-no-text");
+                for (let subElem of elem.querySelectorAll(".translate")) {
+                    doTranslateNow(subElem);
+                }
+                return;
             }
             let translated = translate(elem.dataset.pretranslated || elem.textContent);
             if (translated == elem.textContent) {
-                continue;
+                return;
             }
             if (!elem.dataset.pretranslated) {
                 elem.dataset.pretranslated = elem.textContent;
@@ -116,6 +140,9 @@ function applyTranslations(root = null) {
             elem.dataset.textContentWasTranslated = true;
             elem.textContent = translated;
         }
+    }
+    for (let elem of root.querySelectorAll(".translate")) {
+        doTranslateNow(elem);
     }
 }
 
