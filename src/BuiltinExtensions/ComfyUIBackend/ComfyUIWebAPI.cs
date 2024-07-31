@@ -27,8 +27,9 @@ public static class ComfyUIWebAPI
     }
 
     /// <summary>API route to save a comfy workflow object to persistent file.</summary>
-    public static async Task<JObject> ComfySaveWorkflow(string name, string workflow, string prompt, string custom_params, string param_values, string image, string description = "", bool enable_in_simple = false)
+    public static async Task<JObject> ComfySaveWorkflow(string name, string workflow, string prompt, string custom_params, string param_values, string image, string description = "", bool enable_in_simple = false, string replace = null)
     {
+        string origPath = Utilities.StrictFilenameClean(string.IsNullOrWhiteSpace(replace) ? name : replace);
         string cleaned = Utilities.StrictFilenameClean(name);
         string path = $"{ComfyUIBackendExtension.Folder}/CustomWorkflows/{cleaned}.json";
         Directory.CreateDirectory(Directory.GetParent(path).FullName);
@@ -36,14 +37,18 @@ public static class ComfyUIWebAPI
         {
             image = Image.FromDataString(image).ToMetadataFormat();
         }
-        else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(cleaned))
+        else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(origPath))
         {
-            ComfyUIBackendExtension.ComfyCustomWorkflow oldFlow = ComfyUIBackendExtension.GetWorkflowByName(cleaned);
+            ComfyUIBackendExtension.ComfyCustomWorkflow oldFlow = ComfyUIBackendExtension.GetWorkflowByName(origPath);
             image = oldFlow.Image;
         }
         if (string.IsNullOrWhiteSpace(image))
         {
             image = "/imgs/model_placeholder.jpg";
+        }
+        if (!string.IsNullOrWhiteSpace(replace))
+        {
+            await ComfyDeleteWorkflow(replace);
         }
         ComfyUIBackendExtension.CustomWorkflows[cleaned] = new ComfyUIBackendExtension.ComfyCustomWorkflow(cleaned, workflow, prompt, custom_params, param_values, image, description, enable_in_simple);
         JObject data = new()

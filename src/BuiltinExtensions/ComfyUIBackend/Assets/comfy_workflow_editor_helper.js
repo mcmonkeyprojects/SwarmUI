@@ -932,6 +932,7 @@ function comfyNoticeMessage(message) {
  */
 function comfySaveWorkflowNow() {
     comfyReconfigureQuickload();
+    getRequiredElementById('comfy_save_modal_replace').value = '';
     let curImg = document.getElementById('current_image_img');
     let enableImage = getRequiredElementById('comfy_save_use_image');
     let saveImageSection = getRequiredElementById('comfy_save_image');
@@ -1021,7 +1022,8 @@ function comfySaveModalSaveNow() {
             'prompt': prompt_text,
             'custom_params': params,
             'param_values': paramVal,
-            'image': image
+            'image': image,
+            'replace': getRequiredElementById('comfy_save_modal_replace').value
         };
         genericRequest('ComfySaveWorkflow', inputs, (data) => {
             comfyNoticeMessage("Saved!");
@@ -1035,6 +1037,7 @@ function comfySaveModalSaveNow() {
 
 /** Cancel button in the Save modal. */
 function comfyHideSaveModal() {
+    getRequiredElementById('comfy_save_modal_replace').value = '';
     $('#comfy_workflow_save_modal').modal('hide');
 }
 
@@ -1152,6 +1155,7 @@ function comfyDescribeWorkflowForBrowser(workflow) {
                 getRequiredElementById('comfy_save_description').value = workflow.data.description;
                 getRequiredElementById('comfy_save_enable_simple').checked = workflow.data.enable_in_simple;
                 comfySaveWorkflowNow();
+                getRequiredElementById('comfy_save_modal_replace').value = workflow.name;
             }
         },
         {
