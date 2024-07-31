@@ -431,6 +431,9 @@ function load_image_file(e) {
 }
 
 function autoSelectWidth(elem) {
+    if (elem.classList.contains('nogrow')) {
+        return;
+    }
     let span = document.createElement('span');
     span.innerText = elem.value;
     document.body.appendChild(span);
@@ -440,6 +443,9 @@ function autoSelectWidth(elem) {
 }
 
 function autoNumberWidth(elem) {
+    if (elem.classList.contains('nogrow')) {
+        return;
+    }
     let span = document.createElement('span');
     span.innerText = elem.value;
     document.body.appendChild(span);
