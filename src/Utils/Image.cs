@@ -306,7 +306,7 @@ public class Image
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 75 });
                 break;
             default:
-                throw new InvalidDataException($"User setting for image format is '{format}', which is invalid");
+                throw new SwarmReadableErrorException($"User setting for image format is '{format}', which is invalid");
         }
         return new(ms.ToArray(), Type, ext);
     }

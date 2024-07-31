@@ -139,6 +139,15 @@ public class WorkflowGeneratorSteps
                 });
                 g.LoadingModel = [guided, 0];
             }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.PerturbedAttentionGuidanceScale, out double pagScale))
+            {
+                string guided = g.CreateNode("PerturbedAttentionGuidance", new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["scale"] = pagScale
+                });
+                g.LoadingModel = [guided, 0];
+            }
         }, -7);
         AddModelGenStep(g =>
         {
