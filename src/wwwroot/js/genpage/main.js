@@ -1654,7 +1654,17 @@ function loadUserData(callback) {
             for (let val of data.autocompletions) {
                 let split = val.split('\n');
                 let datalist = autoCompletionsList[val[0]];
-                let entry = { low: split[0].toLowerCase(), raw: val };
+                let entry = { name: split[0], low: split[0].toLowerCase(), clean: split[1], raw: val };
+                if (split.length > 3) {
+                    entry.tag = split[2];
+                }
+                if (split.length > 4) {
+                    count = parseInt(split[3]) || 0;
+                    if (count) {
+                        entry.count = count;
+                        entry.count_display = largeCountStringify(count);
+                    }
+                }
                 if (!datalist) {
                     datalist = [];
                     autoCompletionsList[val[0]] = datalist;

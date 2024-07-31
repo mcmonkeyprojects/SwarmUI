@@ -669,6 +669,20 @@ function forceSetDropdownValue(elem, val) {
     }
 }
 
+/** Returns a string representing the given count in a human-readable format. For example "1.2M" */
+function largeCountStringify(size) {
+    if (size > 1000 * 1000 * 1000) {
+        return `${(size / (1000 * 1000 * 1000)).toFixed(1)}B`;
+    }
+    if (size > 1000 * 1000) {
+        return `${(size / (1000 * 1000)).toFixed(1)}M`;
+    }
+    if (size > 1000) {
+        return `${(size / 1000).toFixed(1)}K`;
+    }
+    return `${size}`;
+}
+
 /** Returns a string representing the given file size in a human-readable format. For example "1.23 GiB" */
 function fileSizeStringify(size) {
     if (size > 1024 * 1024 * 1024) {

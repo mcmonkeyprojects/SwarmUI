@@ -67,8 +67,7 @@ public class AutoCompleteListHelper
             {
                 word = word.Replace("(", "\\(").Replace(")", "\\)");
             }
-            parts[0] = word;
-            result[i] = parts.JoinString("\n");
+            result[i] = $"{word}\n{parts.JoinString("\n")}";
         }
         return result;
     }
