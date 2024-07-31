@@ -443,7 +443,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
 
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
-    let isCurImgFocused = document.activeElement && 
+    let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');
@@ -641,7 +641,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 ctx.drawImage(tmpImg, 0, 0);
                 canvas.toBlob(blob => {
                     let file = new File([blob], imagePathClean, { type: img.src.substring(img.src.lastIndexOf('.') + 1) });
-                    let container = new DataTransfer(); 
+                    let container = new DataTransfer();
                     container.items.add(file);
                     initImageParam.files = container.files;
                     triggerChangeFor(initImageParam);
@@ -804,7 +804,10 @@ function updateCurrentStatusDirect(data) {
     if (oldInterruptButton) {
         oldInterruptButton.classList.toggle('interrupt-button-none', total == 0);
     }
-    let elem = getRequiredElementById('num_jobs_span');
+    let elems = [
+        getRequiredElementById('num_jobs_span'),
+        document.getElementById('num_jobs_span_mobile')
+    ].filter(Boolean);
     function autoBlock(num, text) {
         if (num == 0) {
             return '';
@@ -817,7 +820,10 @@ function updateCurrentStatusDirect(data) {
         let estTime = avgGenTime * total;
         timeEstimate = ` (est. ${durationStringify(estTime)})`;
     }
-    elem.innerHTML = total == 0 ? (isGeneratingPreviews ? translatableText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
+    let content = total == 0 ? (isGeneratingPreviews ? translatableText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
+    elems.forEach(elem => {
+        if (elem) elem.innerHTML = content;
+    });
     let max = Math.max(num_current_gens, num_models_loading, num_live_gens, num_backends_waiting);
     document.title = total == 0 ? originalPageTitle : `(${max} ${generatingText.get()}) ${originalPageTitle}`;
 }
@@ -1263,6 +1269,7 @@ let toolContainer = getRequiredElementById('tool_container');
 
 function genToolsList() {
     let altGenerateButton = getRequiredElementById('alt_generate_button');
+    let altGenerateButtonMobile = document.getElementById('alt_generate_button_mobile');
     let oldGenerateButton = document.getElementById('generate_button');
     let altGenerateButtonRawText = altGenerateButton.innerText;
     let altGenerateButtonRawOnClick = altGenerateButton.onclick;
@@ -1290,6 +1297,9 @@ function genToolsList() {
             if (oldGenerateButton) {
                 oldGenerateButton.innerText = override.text;
             }
+            if (altGenerateButtonMobile && isVisible(altGenerateButtonMobile)) {
+                altGenerateButtonMobile.onclick = override.run;
+            }
         }
     });
 }
@@ -1314,7 +1324,7 @@ let pageBarTop2 = -1;
 let pageBarMid = -1;
 let imageEditorSizeBarVal = -1;
 let midForceToBottom = localStorage.getItem('barspot_midForceToBottom') == 'true';
-let leftShut = localStorage.getItem('barspot_leftShut') == 'true';
+let rightShut = localStorage.getItem('barspot_rightShut') == 'true';
 
 let setPageBarsFunc;
 let altPromptSizeHandleFunc;
@@ -1330,7 +1340,7 @@ function resetPageSizer() {
     pageBarMid = -1;
     imageEditorSizeBarVal = -1;
     midForceToBottom = false;
-    leftShut = false;
+    rightShut = false;
     setPageBarsFunc();
     for (let runnable of layoutResets) {
         runnable();
@@ -1362,6 +1372,13 @@ function pageSizer() {
     let midDrag = false;
     let imageEditorSizeBarDrag = false;
     let isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+    if(isLikelyMobile()) {
+        topSplit.style.display = "none";
+        topSplit2.style.display = "none";
+        topSplitButton.style.display = "none";
+        midSplit.style.display = "none";
+        midSplitButton.style.display = "none";
+    }
     function setPageBars() {
         if (altRegion.style.display != 'none') {
             altText.style.height = 'auto';
@@ -1374,12 +1391,11 @@ function pageSizer() {
         setCookie('barspot_pageBarTop2', pageBarTop2, 365);
         setCookie('barspot_pageBarMidPx', pageBarMid, 365);
         setCookie('barspot_imageEditorSizeBar', imageEditorSizeBarVal, 365);
-        let barTopLeft = leftShut ? `0px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
-        let barTopRight = pageBarTop2 == -1 ? (isSmallWindow ? `4rem` : `21rem`) : `${pageBarTop2}px`;
+        let barTopRight = rightShut ? `20px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
+        let barTopLeft = pageBarTop2 == -1 ? (isSmallWindow ? `4rem` : `21rem`) : `${pageBarTop2}px`;
         let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
-        // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
         let fontRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-        let curImgWidthNum = eval(curImgWidth.replace(/vw/g, `* ${window.innerWidth * 0.01}`).replace(/rem/g, `* ${fontRem}`).replace(/px/g, ''));
+        let curImgWidthNum = (window.innerWidth * 0.01 * parseFloat(curImgWidth.replace(/vw/g, ''))) - (fontRem * parseFloat(curImgWidth.replace(/rem/g, ''))) - parseFloat(curImgWidth.replace(/px/g, ''));
         if (curImgWidthNum < 400) {
             barTopRight = `${barTopRight} + ${400 - curImgWidthNum}px`;
             curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
@@ -1387,9 +1403,11 @@ function pageSizer() {
         inputSidebar.style.width = `${barTopLeft}`;
         mainInputsAreaWrapper.classList[pageBarTop < 350 ? "add" : "remove"]("main_inputs_small");
         mainInputsAreaWrapper.style.width = `${barTopLeft}`;
-        inputSidebar.style.display = leftShut ? 'none' : '';
+        inputSidebar.style.display = rightShut ? 'none' : '';
         altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
-        mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
+        if(!isSmallWindow){
+            mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
+        }
         mainImageArea.scrollTop = 0;
         if (imageEditor.active) {
             let imageEditorSizePercent = imageEditorSizeBarVal < 0 ? 0.5 : (imageEditorSizeBarVal / 100.0);
@@ -1406,7 +1424,7 @@ function pageSizer() {
         else {
             currentImageBatchCore.classList.remove('current_image_batch_core_small');
         }
-        topSplitButton.innerHTML = leftShut ? '&#x21DB;' : '&#x21DA;';
+        topSplitButton.innerHTML = rightShut ? '&#x21DA;' : '&#x21DB;';
         midSplitButton.innerHTML = midForceToBottom ? '&#x290A;' : '&#x290B;';
         let altHeight = altRegion.style.display == 'none' ? '0px' : `(${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px + 2rem)`;
         if (pageBarMid != -1 || midForceToBottom) {
@@ -1487,9 +1505,9 @@ function pageSizer() {
         midForceToBottom = val;
         localStorage.setItem('barspot_midForceToBottom', midForceToBottom);
     }
-    function setLeftShut(val) {
-        leftShut = val;
-        localStorage.setItem('barspot_leftShut', leftShut);
+    function setRightShut(val) {
+        rightShut = val;
+        localStorage.setItem('barspot_rightShut', rightShut);
     }
     midSplit.addEventListener('mousedown', (e) => {
         if (e.target == midSplitButton) {
@@ -1515,33 +1533,35 @@ function pageSizer() {
         e.preventDefault();
     }, true);
     topSplitButton.addEventListener('click', (e) => {
-        topDrag = false;
-        setLeftShut(!leftShut);
-        pageBarTop = Math.max(pageBarTop, 400);
+        topDrag2 = false;
+        setRightShut(!rightShut);
+        pageBarTop2 = Math.max(pageBarTop2, 400);
         setPageBars();
         e.preventDefault();
         triggerChangeFor(altText);
         triggerChangeFor(altNegText);
     }, true);
+    console.log(topDrag)
     let moveEvt = (e, x, y) => {
         let offX = x;
-        offX = Math.min(Math.max(offX, 100), window.innerWidth - 10);
+        offX = Math.max(Math.min(offX, window.innerWidth - 100), 10);
         if (topDrag) {
-            pageBarTop = Math.min(offX - 5, 51 * 16);
-            setLeftShut(pageBarTop < 300);
+            pageBarTop = window.innerWidth - offX - 15;
+            console.log(pageBarTop)
+            if (pageBarTop < 100) {
+                pageBarTop = 22;
+            }
             setPageBars();
         }
         if (topDrag2) {
-            pageBarTop2 = window.innerWidth - offX + 15;
-            if (pageBarTop2 < 100) {
-                pageBarTop2 = 22;
-            }
+            pageBarTop2 = Math.min(window.innerWidth - offX - 5, 51 * 16);
+            setRightShut(pageBarTop2 > window.innerWidth - 300);
             setPageBars();
         }
         if (imageEditorSizeBarDrag) {
             let maxAreaWidth = imageEditor.inputDiv.offsetWidth + currentImage.offsetWidth + 10;
-            let imageAreaLeft = imageEditor.inputDiv.getBoundingClientRect().left;
-            let val = Math.min(Math.max(offX - imageAreaLeft + 3, 200), maxAreaWidth - 200);
+            let imageAreaRight = imageEditor.inputDiv.getBoundingClientRect().right;
+            let val = Math.min(Math.max(offX - imageAreaRight + 3, 200), maxAreaWidth - 200);
             imageEditorSizeBarVal = Math.min(90, Math.max(10, val / maxAreaWidth * 100));
             setPageBars();
         }
@@ -1574,7 +1594,7 @@ function pageSizer() {
         });
     }
     altText.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter' && !e.shiftKey) {
+        if (e.key == 'Enter' && (e.metaKey || e.ctrlKey)) {
             altText.dispatchEvent(new Event('change'));
             getRequiredElementById('alt_generate_button').click();
             e.preventDefault();

@@ -24,3 +24,6 @@ tmp/
 __pycache__/
 venv/
 *.pth
+
+# Mac stuff
+.DS_store

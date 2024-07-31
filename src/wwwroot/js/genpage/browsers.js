@@ -385,7 +385,7 @@ class GenPageBrowserClass {
                 div.appendChild(textBlock);
             }
             else if (this.format.includes('Thumbnails')) {
-                div.className += ' image-block image-block-legacy';
+                div.className += ' image-block'; // image-block-legacy
                 let factor = 8;
                 if (this.format.startsWith('Big')) { factor = 15; div.classList.add('image-block-big'); }
                 else if (this.format.startsWith('Giant')) { factor = 25; div.classList.add('image-block-giant'); }
@@ -445,7 +445,7 @@ class GenPageBrowserClass {
     makeVisible(elem) {
         for (let subElem of elem.querySelectorAll('.lazyload')) {
             let top = subElem.getBoundingClientRect().top;
-            if (top >= window.innerHeight + 512 || top == 0) { // Note top=0 means not visible
+            if (!isLikelyMobile() && (top >= window.innerHeight + 512 || top == 0)) { // Note top=0 means not visible
                 continue;
             }
             subElem.classList.remove('lazyload');
@@ -512,11 +512,15 @@ class GenPageBrowserClass {
             this.hasGenerated = true;
             this.container.innerHTML = '';
             this.folderTreeDiv = createDiv(`${this.id}-foldertree`, 'browser-folder-tree-container');
+            this.folderTreeDiv.classList.add('navbarToggler');
+            this.folderTreeDiv.classList.add('collapse');
             let folderTreeSplitter = createDiv(`${this.id}-splitter`, 'browser-folder-tree-splitter splitter-bar');
             this.headerBar = createDiv(`${this.id}-header`, 'browser-header-bar');
             this.fullContentDiv = createDiv(`${this.id}-fullcontent`, 'browser-fullcontent-container');
             this.container.appendChild(this.folderTreeDiv);
-            this.container.appendChild(folderTreeSplitter);
+            if(!isLikelyMobile()){
+                this.container.appendChild(folderTreeSplitter);
+            }
             this.container.appendChild(this.fullContentDiv);
             let formatSelector = document.createElement('select');
             formatSelector.id = `${this.id}-format-selector`;
@@ -540,7 +544,7 @@ class GenPageBrowserClass {
             if (!this.showDisplayFormat) {
                 formatSelector.style.display = 'none';
             }
-            let buttons = createSpan(`${this.id}-button-container`, 'browser-header-buttons', 
+            let buttons = createSpan(`${this.id}-button-container`, 'browser-header-buttons',
                 `<button id="${this.id}_refresh_button" title="Refresh" class="refresh-button translate translate-no-text">&#x21BB;</button>\n`
                 + `<button id="${this.id}_up_button" class="refresh-button translate translate-no-text" disabled autocomplete="off" title="Go back up 1 folder">&#x21d1;</button>\n`
                 + `<span class="translate">Depth: <input id="${this.id}_depth_input" class="depth-number-input translate translate-no-text" type="number" min="1" max="10" value="${this.depth}" title="Depth of subfolders to show" autocomplete="false"></span>\n`
