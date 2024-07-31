@@ -5,6 +5,7 @@
 class ImageEditorTool {
     constructor(editor, id, icon, name, description, hotkey = null) {
         this.editor = editor;
+        this.isTempTool = false;
         this.id = id;
         this.icon = icon;
         this.iconImg = new Image();
@@ -93,6 +94,33 @@ class ImageEditorTool {
 
     onGlobalMouseUp(e) {
         return false;
+    }
+}
+
+/**
+ * A special temporary tool, a wrapper of the base tool class that prevents default behaviors.
+ */
+class ImageEditorTempTool extends ImageEditorTool {
+    constructor(editor, id, icon, name, description, hotkey = null) {
+        super(editor, id, icon, name, description, hotkey);
+        this.isTempTool = true;
+    }
+
+    makeDivs() {
+    }
+
+    setActive() {
+        if (this.active) {
+            return;
+        }
+        this.active = true;
+    }
+
+    setInactive() {
+        if (!this.active) {
+            return;
+        }
+        this.active = false;
     }
 }
 
@@ -502,6 +530,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
             <input type="color" class="id-col2" value="#ffffff">
+            <button class="basic-button id-col3">Pick</button>
         </div>`;
         let radiusHtml = `<div class="image-editor-tool-block id-rad-block">
                 <label>Radius:&nbsp;</label>
@@ -524,6 +553,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
             this.configDiv.innerHTML = colorHTML + radiusHtml + opacityHtml;
             this.colorText = this.configDiv.querySelector('.id-col1');
             this.colorSelector = this.configDiv.querySelector('.id-col2');
+            this.colorPickButton = this.configDiv.querySelector('.id-col3');
             this.colorText.addEventListener('input', () => {
                 this.colorSelector.value = this.colorText.value;
                 this.onConfigChange();
@@ -531,6 +561,17 @@ class ImageEditorToolBrush extends ImageEditorTool {
             this.colorSelector.addEventListener('change', () => {
                 this.colorText.value = this.colorSelector.value;
                 this.onConfigChange();
+            });
+            this.colorPickButton.addEventListener('click', () => {
+                if (this.colorPickButton.classList.contains('interrupt-button')) {
+                    this.colorPickButton.classList.remove('interrupt-button');
+                    this.editor.activateTool(this.id);
+                }
+                else {
+                    this.colorPickButton.classList.add('interrupt-button');
+                    this.editor.pickerTool.toolFor = this;
+                    this.editor.activateTool('picker');
+                }
             });
         }
         enableSliderForBox(this.configDiv.querySelector('.id-rad-block'));
@@ -542,6 +583,13 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.radiusNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.opacityNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.lastTouch = null;
+    }
+
+    setColor(col) {
+        this.color = col;
+        this.colorText.value = col;
+        this.colorSelector.value = col;
+        this.colorPickButton.classList.remove('interrupt-button');
     }
 
     onConfigChange() {
@@ -633,6 +681,54 @@ class ImageEditorToolBrush extends ImageEditorTool {
             this.editor.activeLayer.hasAnyContent = true;
             this.bufferLayer = null;
             this.brushing = false;
+            return true;
+        }
+        return false;
+    }
+}
+
+/**
+ * The Color Picker tool, a special hidden sub-tool.
+ */
+class ImageEditorToolPicker extends ImageEditorTempTool {
+    constructor(editor, id, icon, name, description, hotkey = null) {
+        super(editor, id, icon, name, description, hotkey);
+        this.cursor = 'none';
+        this.color = '#ffffff';
+        this.picking = false;
+        this.toolFor = null;
+    }
+
+    draw() {
+        this.drawCircleBrush(this.editor.mouseX, this.editor.mouseY, 2);
+    }
+
+    pickNow() {
+        let imageData = this.editor.ctx.getImageData(this.editor.mouseX, this.editor.mouseY, 1, 1).data;
+        this.color = `#${imageData[0].toString(16).padStart(2, '0')}${imageData[1].toString(16).padStart(2, '0')}${imageData[2].toString(16).padStart(2, '0')}`;
+        this.toolFor.setColor(this.color);
+        this.editor.redraw();
+    }
+
+    onMouseDown(e) {
+        if (this.picking || !this.toolFor) {
+            return;
+        }
+        this.picking = true;
+        this.pickNow();
+    }
+
+    onMouseMove(e) {
+        if (this.picking) {
+            this.pickNow();
+        }
+    }
+
+    onGlobalMouseUp(e) {
+        if (this.picking) {
+            this.picking = false;
+            this.toolFor.setColor(this.color);
+            this.editor.activateTool(this.toolFor.id);
             return true;
         }
         return false;
@@ -996,6 +1092,8 @@ class ImageEditor {
         this.addTool(new ImageEditorToolSelect(this));
         this.addTool(new ImageEditorToolBrush(this, 'brush', 'paintbrush', 'Paintbrush', 'Draw on the image.\nHotKey: B', false, 'b'));
         this.addTool(new ImageEditorToolBrush(this, 'eraser', 'eraser', 'Eraser', 'Erase parts of the image.\nHotKey: E', true, 'e'));
+        this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'colorpicker', 'Color Picker', 'Pick a color from the image.');
+        this.addTool(this.pickerTool);
         this.activateTool('brush');
         this.maxHistory = 10;
     }
@@ -1045,11 +1143,15 @@ class ImageEditor {
     }
 
     activateTool(id) {
-        if (this.activeTool) {
+        let newTool = this.tools[id];
+        if (!newTool) {
+            throw new Error(`Tool ${id} not found`);
+        }
+        if (this.activeTool && !newTool.isTempTool) {
             this.activeTool.setInactive();
         }
-        this.tools[id].setActive();
-        this.activeTool = this.tools[id];
+        newTool.setActive();
+        this.activeTool = newTool;
     }
 
     createCanvas() {
