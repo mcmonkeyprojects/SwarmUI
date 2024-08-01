@@ -824,7 +824,11 @@ public class T2IParamInput
         {
             T2IModelHandler handler = Program.T2IModelSets[param.Subtype ?? "Stable-Diffusion"];
             string best = T2IParamTypes.GetBestModelInList(name.Replace('\\', '/'), [.. handler.ListModelNamesFor(SourceSession)]);
-            return handler.Models.TryGetValue(best ?? name, out T2IModel actualModel) ? actualModel : null;
+            if (best is null)
+            {
+                return null;
+            }
+            return handler.Models.GetValueOrDefault(best);
         }
         if (param.IgnoreIf is not null && param.IgnoreIf == val)
         {

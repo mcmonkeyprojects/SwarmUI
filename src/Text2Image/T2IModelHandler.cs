@@ -162,7 +162,7 @@ public class T2IModelHandler
         {
             return [];
         }
-        string allowedStr = session.User.Restrictions.AllowedModels;
+        string allowedStr = session is null ? ".*" : session.User.Restrictions.AllowedModels;
         if (allowedStr == ".*")
         {
             return [.. Models.Values];
