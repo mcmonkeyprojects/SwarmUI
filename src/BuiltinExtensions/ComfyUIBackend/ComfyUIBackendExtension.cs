@@ -84,7 +84,7 @@ public class ComfyUIBackendExtension : Extension
         {
             string path = $"{Program.ServerSettings.Paths.ModelRoot}/{subpath}";
             Directory.CreateDirectory(path);
-            return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || f.EndsWith(".safetensors") || f.EndsWith(".engine")).Select(f => f.Replace('\\', '/').AfterLast('/'))];
+            return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || f.EndsWith(".safetensors") || f.EndsWith(".sft") || f.EndsWith(".engine")).Select(f => f.Replace('\\', '/').AfterLast('/'))];
         }
         T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, listModelsFor("upscale_models").Select(u => $"model-{u}///Model: {u}"));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;

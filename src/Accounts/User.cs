@@ -237,7 +237,7 @@ public class User
         string simplifyModel(string model)
         {
             model = model.Replace('\\', '/').Trim();
-            if (model.EndsWith(".safetensors") || model.EndsWith(".ckpt"))
+            if (model.EndsWith(".safetensors") || model.EndsWith(".sft") || model.EndsWith(".ckpt"))
             {
                 model = model.BeforeLast('.');
             }

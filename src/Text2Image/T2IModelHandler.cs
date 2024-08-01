@@ -281,7 +281,7 @@ public class T2IModelHandler
             {
                 File.Delete(swarmjspath);
             }
-            if (!model.RawFilePath.EndsWith(".safetensors") || Program.ServerSettings.Metadata.EditMetadataWriteJSON)
+            if ((!model.RawFilePath.EndsWith(".safetensors") && !model.RawFilePath.EndsWith(".sft")) || Program.ServerSettings.Metadata.EditMetadataWriteJSON)
             {
                 File.WriteAllText(swarmjspath, model.ToNetObject("modelspec.").ToString());
                 return;
@@ -441,7 +441,7 @@ public class T2IModelHandler
             JObject headerData = [];
             JObject metaHeader = [];
             string textEncs = null;
-            if (model.Name.EndsWith(".safetensors"))
+            if (model.Name.EndsWith(".safetensors") || model.Name.EndsWith(".sft"))
             {
                 string headerText = T2IModel.GetSafetensorsHeaderFrom(model.RawFilePath);
                 if (headerText is not null)
@@ -644,7 +644,7 @@ public class T2IModelHandler
         {
             string fn = file.Replace('\\', '/').AfterLast('/');
             string fullFilename = $"{prefix}{fn}";
-            if (fn.EndsWith(".safetensors") || fn.EndsWith(".engine"))
+            if (fn.EndsWith(".safetensors") || fn.EndsWith(".sft") || fn.EndsWith(".engine"))
             {
                 T2IModel model = new()
                 {

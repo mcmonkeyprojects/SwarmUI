@@ -61,7 +61,7 @@ public class T2IModel
             [$"{prefix}trigger_phrase"] = Metadata?.TriggerPhrase,
             [$"{prefix}merged_from"] = Metadata?.MergedFrom,
             [$"{prefix}tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
-            [$"{prefix}is_supported_model_format"] = RawFilePath.EndsWith(".safetensors") || RawFilePath.EndsWith(".engine"),
+            [$"{prefix}is_supported_model_format"] = RawFilePath.EndsWith(".safetensors") || RawFilePath.EndsWith(".sft") || RawFilePath.EndsWith(".engine"),
             [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
             [$"{prefix}local"] = true,
             [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
