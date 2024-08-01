@@ -158,7 +158,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     {
                         try
                         {
-                            JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 999, ["subtype"] = runType }, RequestAdapter());
+                            JObject modelsData = await HttpClient.PostJson($"{Address}/API/ListModels", new() { ["session_id"] = Session, ["path"] = "", ["depth"] = 999, ["subtype"] = runType, ["allowRemote"] = Settings.AllowForwarding }, RequestAdapter());
                             JToken[] remoteModels = [.. modelsData["files"]];
                             if (fullLoad)
                             {

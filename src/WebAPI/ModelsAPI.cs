@@ -141,6 +141,7 @@ public static class ModelsAPI
         [API.APIParameter("Maximum depth (number of recursive folders) to search.")] int depth,
         [API.APIParameter("Model sub-type - `LoRA`, `Wildcards`, etc.")] string subtype = "Stable-Diffusion",
         [API.APIParameter("What to sort the list by - `Name`, `DateCreated`, or `DateModified.")] string sortBy = "Name",
+        [API.APIParameter("If true, allow remote models. If false, only local models.")] bool allowRemote = true,
         [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
     {
         if (!Enum.TryParse(sortBy, true, out ModelHistorySortMode sortMode))
@@ -206,11 +207,14 @@ public static class ModelsAPI
                 }
             }
         }
-        foreach ((string name, JObject possible) in InternalExtraModels(subtype))
+        if (allowRemote)
         {
-            if (tryMatch(name))
+            foreach ((string name, JObject possible) in InternalExtraModels(subtype))
             {
-                files.Add(new(name, name.AfterLast('/'), long.MaxValue, long.MaxValue, possible));
+                if (tryMatch(name))
+                {
+                    files.Add(new(name, name.AfterLast('/'), long.MaxValue, long.MaxValue, possible));
+                }
             }
         }
         if (sortMode == ModelHistorySortMode.Name)
