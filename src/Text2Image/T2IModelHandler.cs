@@ -244,17 +244,21 @@ public class T2IModelHandler
             {
                 return;
             }
-            ModelMetadataStore metadata = model.Metadata ?? new();
-            metadata.ModelFileVersion = modified;
-            metadata.ModelName = perFolder ? fileName : model.RawFilePath;
-            metadata.Title = model.Title;
-            metadata.Description = model.Description;
-            metadata.ModelClassType = model.ModelClass?.ID;
-            metadata.StandardWidth = model.StandardWidth;
-            metadata.StandardHeight = model.StandardHeight;
-            lock (MetadataLock)
+            lock (ModificationLock)
             {
-                cache.Upsert(metadata);
+                model.Metadata ??= new();
+                ModelMetadataStore metadata = model.Metadata;
+                metadata.ModelFileVersion = modified;
+                metadata.ModelName = perFolder ? fileName : model.RawFilePath;
+                metadata.Title = model.Title;
+                metadata.Description = model.Description;
+                metadata.ModelClassType = model.ModelClass?.ID;
+                metadata.StandardWidth = model.StandardWidth;
+                metadata.StandardHeight = model.StandardHeight;
+                lock (MetadataLock)
+                {
+                    cache.Upsert(metadata);
+                }
             }
         }
         catch (Exception ex)
