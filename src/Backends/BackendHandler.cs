@@ -947,7 +947,18 @@ public class BackendHandler
             }
             else if (request.Failure is not null)
             {
-                Logs.Error($"[BackendHandler] Backend request #{request.ID} failed: {request.Failure}");
+                while (request.Failure is AggregateException ae && ae.InnerException is not null)
+                {
+                    request.Failure = ae.InnerException;
+                }
+                if (request.Failure is SwarmReadableErrorException)
+                {
+                    Logs.Error($"[BackendHandler] Backend request #{request.ID} failed: {request.Failure.Message}");
+                }
+                else
+                {
+                    Logs.Error($"[BackendHandler] Backend request #{request.ID} failed: {request.Failure}");
+                }
                 throw request.Failure;
             }
             if (request.Cancel.IsCancellationRequested || Program.GlobalProgramCancel.IsCancellationRequested)
@@ -1020,8 +1031,19 @@ public class BackendHandler
                     }
                     catch (Exception ex)
                     {
+                        while (ex is AggregateException ae && ae.InnerException is not null)
+                        {
+                            ex = ae.InnerException;
+                        }
                         request.Failure = ex;
-                        Logs.Error($"[BackendHandler] Backend request #{request.ID} failed: {ex}");
+                        if (ex is SwarmReadableErrorException)
+                        {
+                            Logs.Error($"[BackendHandler] Backend request #{request.ID} failed: {ex.Message}");
+                        }
+                        else
+                        {
+                            Logs.Error($"[BackendHandler] Backend request #{request.ID} failed: {ex}");
+                        }
                     }
                     if (request.Result is not null || request.Failure is not null)
                     {
@@ -1175,7 +1197,18 @@ public class BackendHandler
                         }
                         catch (Exception ex)
                         {
-                            Logs.Error($"[BackendHandler] backend #{availableBackend.ID} failed to load model with error: {ex}");
+                            while (ex is AggregateException ae && ae.InnerException is not null)
+                            {
+                                ex = ae.InnerException;
+                            }
+                            if (ex is SwarmReadableErrorException)
+                            {
+                                Logs.Error($"[BackendHandler] backend #{availableBackend.ID} failed to load model with error: {ex.Message}");
+                            }
+                            else
+                            {
+                                Logs.Error($"[BackendHandler] backend #{availableBackend.ID} failed to load model with error: {ex}");
+                            }
                         }
                         finally
                         {
