@@ -71,6 +71,21 @@ public class T2IModel
         };
     }
 
+    public static T2IModel FromNetObject(JObject data)
+    {
+        return new T2IModel()
+        {
+            Name = $"{data["name"]}",
+            Title = $"{data["title"]}",
+            Description = $"{data["description"]}",
+            PreviewImage = $"{data["preview_image"]}",
+            AnyBackendsHaveLoaded = (bool)data["loaded"],
+            ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault($"{data["architecture"]}") ?? null,
+            StandardWidth = (int)data["standard_width"],
+            StandardHeight = (int)data["standard_height"]
+        };
+    }
+
     /// <summary>Get the safetensors header from a model.</summary>
     public static string GetSafetensorsHeaderFrom(string modelPath)
     {

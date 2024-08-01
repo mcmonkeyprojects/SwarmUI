@@ -180,6 +180,19 @@ public class T2IModelHandler
         return result;
     }
 
+    public T2IModel GetModel(string name)
+    {
+        if (Models.TryGetValue(name, out T2IModel model))
+        {
+            return model;
+        }
+        if (ModelsAPI.InternalExtraModels(ModelType).TryGetValue(name, out JObject extraModelData))
+        {
+            return T2IModel.FromNetObject(extraModelData);
+        }
+        return null;
+    }
+
     /// <summary>Refresh the model list.</summary>
     public void Refresh()
     {
