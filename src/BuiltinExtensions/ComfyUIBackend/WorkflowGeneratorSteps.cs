@@ -808,6 +808,12 @@ public class WorkflowGeneratorSteps
         AddStep(g =>
         {
             int steps = g.UserInput.Get(T2IParamTypes.Steps);
+            bool noSkip = false;
+            if (steps < 0)
+            {
+                noSkip = true;
+                steps = 0;
+            }
             int startStep = 0;
             int endStep = 10000;
             if (g.UserInput.TryGet(T2IParamTypes.InitImage, out Image _) && g.UserInput.TryGet(T2IParamTypes.InitImageCreativity, out double creativity))
@@ -823,7 +829,7 @@ public class WorkflowGeneratorSteps
                 endStep = (int)(steps * (1 - endEarly));
             }
             double cfg = g.UserInput.Get(T2IParamTypes.CFGScale);
-            if (steps == 0 || endStep <= startStep)
+            if (!noSkip && (steps == 0 || endStep <= startStep))
             {
                 g.FinalSamples = g.FinalLatentImage;
             }

@@ -525,8 +525,8 @@ public class WorkflowGenerator
         {
             string modelNode = CreateNode("UNETLoader", new JObject()
             {
-                ["ckpt_name"] = model.ToString(ModelFolderFormat),
-                ["weight_dtype"] = "default"
+                ["unet_name"] = model.ToString(ModelFolderFormat),
+                ["weight_dtype"] = UserInput.Get(ComfyUIBackendExtension.PreferredDType, IsFlux() ? "fp8_e4m3fn" : "default")
             }, id);
             LoadingModel = [modelNode, 0];
             LoadingClip = null;
@@ -694,6 +694,10 @@ public class WorkflowGenerator
             (_, cascadeModel, _, FinalVae) = CreateStandardModelLoader(bModel, LoadingModelType, null, true);
             willCascadeFix = true;
             defsampler ??= "euler_ancestral";
+            defscheduler ??= "simple";
+        }
+        if (IsFlux())
+        {
             defscheduler ??= "simple";
         }
         if (FinalLoadedModel?.ModelClass ?.ID == "stable-diffusion-xl-v1-edit")

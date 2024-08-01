@@ -62,6 +62,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             }
         }
         trackModels("Stable-Diffusion", "CheckpointLoaderSimple", "ckpt_name");
+        trackModels("Stable-Diffusion", "UNETLoader", "unet_name");
         trackModels("Stable-Diffusion", "TensorRTLoader", "unet_name");
         trackModels("LoRA", "LoraLoader", "lora_name");
         trackModels("VAE", "VAELoader", "vae_name");
@@ -768,7 +769,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     {
         T2IParamInput input = new(null);
         input.Set(T2IParamTypes.Model, model);
-        input.Set(T2IParamTypes.Steps, 0);
+        input.Set(T2IParamTypes.Steps, 1);
         input.Set(T2IParamTypes.Width, 256);
         input.Set(T2IParamTypes.Height, 256);
         input.Set(T2IParamTypes.Prompt, "(load the model please)");
