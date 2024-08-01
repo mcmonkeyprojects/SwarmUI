@@ -888,7 +888,7 @@ public class BackendHandler
             }
             if (available.Any())
             {
-                Handler.LoadHighestPressureNow(possible, available, () => ReleasePressure(true), Cancel);
+                Handler.LoadHighestPressureNow(possible, available, () => ReleasePressure(true), Pressure, Cancel);
             }
             if (Pressure is not null && Pressure.IsLoading && NotifyWillLoad is not null)
             {
@@ -1102,12 +1102,19 @@ public class BackendHandler
     }
 
     /// <summary>Internal helper route for <see cref="GetNextT2IBackend"/> to trigger a backend model load.</summary>
-    public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, CancellationToken cancel)
+    public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, ModelRequestPressure pressure, CancellationToken cancel)
     {
         List<T2IBackendData> availableLoaders = available.Where(b => b.Backend.CanLoadModels).ToList();
         if (availableLoaders.IsEmpty())
         {
-            Logs.Verbose($"[BackendHandler] No current backends are able to load models.");
+            if (pressure?.IsLoading ?? false)
+            {
+                Logs.Verbose($"[BackendHandler] A backend is currently loading the model.");
+            }
+            else
+            {
+                Logs.Verbose($"[BackendHandler] No current backends are able to load models.");
+            }
             return;
         }
         Logs.Verbose($"[BackendHandler] Will load highest pressure model...");
