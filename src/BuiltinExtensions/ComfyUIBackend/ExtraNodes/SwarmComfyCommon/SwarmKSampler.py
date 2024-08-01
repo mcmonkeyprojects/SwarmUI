@@ -230,6 +230,7 @@ class SwarmKSampler:
     def sample(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews):
         device = comfy.model_management.get_torch_device()
         latent_samples = latent_image["samples"]
+        latent_samples = comfy.sample.fix_empty_latent_channels(model, latent_samples)
         disable_noise = add_noise == "disable"
 
         if disable_noise:
