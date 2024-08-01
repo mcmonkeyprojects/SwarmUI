@@ -828,7 +828,7 @@ public class T2IParamInput
             {
                 return null;
             }
-            return handler.Models.GetValueOrDefault(best);
+            return handler.GetModel(best);
         }
         if (param.IgnoreIf is not null && param.IgnoreIf == val)
         {
