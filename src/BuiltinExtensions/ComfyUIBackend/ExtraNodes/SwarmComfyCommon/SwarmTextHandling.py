@@ -14,6 +14,9 @@ class SwarmClipTextEncodeAdvanced:
                 "height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
                 "target_width": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
                 "target_height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
+            },
+            "optional": {
+                "guidance": ("FLOAT", {"default": -1, "min": -1, "max": 100.0, "step": 0.1}),
             }
         }
 
@@ -21,7 +24,7 @@ class SwarmClipTextEncodeAdvanced:
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "encode"
 
-    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int):
+    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1):
 
         encoding_cache = {}
 
@@ -39,7 +42,10 @@ class SwarmClipTextEncodeAdvanced:
                         cond_chunk, pooled_chunk = clip.encode_from_tokens(tokens, return_pooled=True)
                         cond = torch.cat([cond, cond_chunk], dim=1)
                 encoding_cache[text] = (cond, pooled)
-            return [cond, {"pooled_output": pooled, "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}]
+            result = {"pooled_output": pooled, "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}
+            if guidance >= 0:
+                result["guidance"] = guidance
+            return [cond, result]
 
         prompt = prompt.replace("\\[", "\0\1").replace("\\]", "\0\2")
 

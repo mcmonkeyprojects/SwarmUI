@@ -107,3 +107,4 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - By default swarm will use fp8_e4m3fn for Flux, if you have a very very big GPU and want to use fp16/bf16, under Advanced Sampling edit Preferred DType
     - It supports any resolution up to 2 mp (1536x1536-ish), and any aspect ratio thereof. By default will use 1MiP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results
     - You _can_ do a refiner upscale 2x and it will work but take a long time and not have excellent quality. Refiner tiling may be better.
+    - There is also a Flux Guidance Scale parameter, which is like CFG, but, differenty.

@@ -1208,6 +1208,12 @@ function reviseBackendFeatureSet() {
     else {
         removeMe.push('sd3');
     }
+    if (curModelCompatClass == 'flux-1') {
+        addMe.push('flux');
+    }
+    else {
+        removeMe.push('flux');
+    }
     let anyChanged = false;
     for (let add of addMe) {
         if (!currentBackendFeatureSet.includes(add)) {

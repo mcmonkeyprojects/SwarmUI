@@ -964,7 +964,7 @@ public class WorkflowGenerator
         int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
         bool needsAdvancedEncode = (prompt.Contains('[') && prompt.Contains(']')) || prompt.Contains("<break>");
-        if (Features.Contains("variation_seed") && needsAdvancedEncode)
+        if (Features.Contains("variation_seed") && needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && IsFlux()))
         {
             node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
             {
@@ -974,7 +974,8 @@ public class WorkflowGenerator
                 ["width"] = enhance ? (int)Utilities.RoundToPrecision(width * mult, 64) : width,
                 ["height"] = enhance ? (int)Utilities.RoundToPrecision(height * mult, 64) : height,
                 ["target_width"] = width,
-                ["target_height"] = height
+                ["target_height"] = height,
+                ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, -1)
             }, id);
         }
         else if (model is not null && model.ModelClass is not null && model.ModelClass.ID == "stable-diffusion-xl-v1-base")
