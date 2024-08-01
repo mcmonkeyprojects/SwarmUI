@@ -304,7 +304,7 @@ public class Program
         {
             Logs.Error($"Failed to create directories for models. You may need to check your ModelRoot or SDModelFolder settings. {ex.Message}");
         }
-        T2IModelSets["Stable-Diffusion"] = new() { ModelType = "Stable-Diffusion", FolderPaths = [Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDModelFolder), Utilities.CombinePathWithAbsolute(modelRoot, "tensorrt")] };
+        T2IModelSets["Stable-Diffusion"] = new() { ModelType = "Stable-Diffusion", FolderPaths = [Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDModelFolder), Utilities.CombinePathWithAbsolute(modelRoot, "tensorrt"), Utilities.CombinePathWithAbsolute(modelRoot, "unet")] };
         T2IModelSets["VAE"] = new() { ModelType = "VAE", FolderPaths = [Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDVAEFolder)] };
         T2IModelSets["LoRA"] = new() { ModelType = "LoRA", FolderPaths = [Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDLoraFolder)] };
         T2IModelSets["Embedding"] = new() { ModelType = "Embedding", FolderPaths = [Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDEmbeddingFolder)] };

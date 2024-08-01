@@ -142,6 +142,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "stable-diffusion-v3-medium";
     }
 
+    /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
+    public bool IsFlux()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "flux-1";
+    }
+
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
     public string GetStableDynamicID(int index, int offset)
     {
@@ -500,7 +507,7 @@ public class WorkflowGenerator
             });
             LoadingClip = [singleClipLoader, 0];
             string xlVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE;
-            if (string.IsNullOrWhiteSpace(xlVae))
+            if (string.IsNullOrWhiteSpace(xlVae) || xlVae == "None")
             {
                 xlVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
             }
@@ -514,6 +521,17 @@ public class WorkflowGenerator
             });
             LoadingVAE = [vaeLoader, 0];
         }
+        else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet")) // Hacky but it works for now
+        {
+            string modelNode = CreateNode("UNETLoader", new JObject()
+            {
+                ["ckpt_name"] = model.ToString(ModelFolderFormat),
+                ["weight_dtype"] = "default"
+            }, id);
+            LoadingModel = [modelNode, 0];
+            LoadingClip = null;
+            LoadingVAE = null;
+        }
         else
         {
             string modelNode = CreateNode("CheckpointLoaderSimple", new JObject()
@@ -525,7 +543,7 @@ public class WorkflowGenerator
             LoadingVAE = [modelNode, 2];
         }
         string predType = model.Metadata?.PredictionType;
-        if (CurrentCompatClass() == "stable-diffusion-v3-medium")
+        if (IsSD3())
         {
             string sd3Node = CreateNode("ModelSamplingSD3", new JObject()
             {
@@ -586,6 +604,32 @@ public class WorkflowGenerator
                     LoadingClip = [tripleClipLoader, 0];
                 }
             }
+        }
+        else if (IsFlux())
+        {
+            requireClipModel("clip_l_sdxl_base.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors");
+            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
+            string dualClipLoader = CreateNode("DualCLIPLoader", new JObject()
+            {
+                ["clip_name1"] = "t5xxl_enconly.safetensors",
+                ["clip_name2"] = "clip_l_sdxl_base.safetensors",
+                ["type"] = "flux"
+            });
+            LoadingClip = [dualClipLoader, 0];
+            string fluxVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
+            if (string.IsNullOrWhiteSpace(fluxVae) || fluxVae == "None")
+            {
+                fluxVae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "flux-1")?.Name;
+            }
+            if (string.IsNullOrWhiteSpace(fluxVae))
+            {
+                throw new SwarmUserErrorException("No default Flux VAE found, please download an Flux VAE and set it as default in User Settings");
+            }
+            string vaeLoader = CreateNode("VAELoader", new JObject()
+            {
+                ["vae_name"] = fluxVae
+            });
+            LoadingVAE = [vaeLoader, 0];
         }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
