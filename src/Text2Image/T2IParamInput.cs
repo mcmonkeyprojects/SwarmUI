@@ -56,6 +56,31 @@ public class T2IParamInput
                     input.Set(T2IParamTypes.LoraWeights, weights);
                 }
             }
+        },
+        input =>
+        {
+            // Special patch: if model is in a preset in the prompt, we want to apply that as early as possible to ensure the model router knows how to route correctly.
+            if (input.TryGet(T2IParamTypes.Prompt, out string prompt) && prompt.Contains("<preset:"))
+            {
+                StringConversionHelper.QuickSimpleTagFiller(prompt, "<", ">", tag =>
+                {
+                    (string prefix, string data) = tag.BeforeAndAfter(':');
+                    if (prefix == "preset")
+                    {
+                        T2IPreset preset = input.SourceSession.User.GetPreset(data);
+                        if (preset is null)
+                        {
+                            Logs.Debug($"(Pre-input-parse) Preset '{data}' does not exist and will be ignored.");
+                            return null;
+                        }
+                        if (preset.ParamMap.TryGetValue("model", out string model))
+                        {
+                            T2IParamTypes.ApplyParameter("model", model, input);
+                        }
+                    }
+                    return "";
+                });
+            }
         }
     ];
 
