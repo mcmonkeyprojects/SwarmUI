@@ -523,10 +523,11 @@ public class WorkflowGenerator
         }
         else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet")) // Hacky but it works for now
         {
+            string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
             string modelNode = CreateNode("UNETLoader", new JObject()
             {
                 ["unet_name"] = model.ToString(ModelFolderFormat),
-                ["weight_dtype"] = UserInput.Get(ComfyUIBackendExtension.PreferredDType, IsFlux() ? "fp8_e4m3fn" : "default")
+                ["weight_dtype"] = dtype == "automatic" ? (IsFlux() ? "fp8_e4m3fn" : "default") : dtype
             }, id);
             LoadingModel = [modelNode, 0];
             LoadingClip = null;
