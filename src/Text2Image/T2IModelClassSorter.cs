@@ -161,6 +161,17 @@ public class T2IModelClassSorter
             return isSD3Cnet(h);
         }
         });
+        // ====================== BFL Flux.1 ======================
+        Register(new() { ID = "Flux.1-AE", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
+        Register(new() { ID = "Flux.1-schnell", CompatClass = "flux-1", Name = "Flux.1 Schnell", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("guidance_in.in_layer.bias");
+        }
+        });
+        Register(new() { ID = "Flux.1-dev", CompatClass = "flux-1", Name = "Flux.1 Dev", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("guidance_in.in_layer.bias");
+        }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -192,10 +203,6 @@ public class T2IModelClassSorter
         Register(new() { ID = "stable-diffusion-xl-turbo-v1/tensorrt", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL Turbo (TensorRT Engine)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-diffusion-xl-v1-refiner/tensorrt", CompatClass = "stable-diffusion-xl-v1-refiner", Name = "Stable Diffusion XL 1.0-Refiner (TensorRT Engine)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "stable-video-diffusion-img2vid-v1/tensorrt", CompatClass = "stable-video-diffusion-img2vid-v1", Name = "Stable Video Diffusion Img2Vid v1 (TensorRT Engine)", StandardWidth = 1024, StandardHeight = 576, IsThisModelOfClass = (m, h) => { return false; } });
-        // Flux
-        Register(new() { ID = "Flux.1-AE", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "Flux.1-schnell", CompatClass = "flux-1", Name = "Flux.1 Schnell", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "Flux.1-dev", CompatClass = "flux-1", Name = "Flux.1 Dev", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         // Other model classes
         Register(new() { ID = "pixart-ms-sigma-xl-2", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "pixart-ms-sigma-xl-2-2k", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2 (2K)", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) => { return false; } });
