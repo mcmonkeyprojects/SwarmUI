@@ -102,9 +102,9 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Put the `ae.sft` file in `(Swarm)/Models/VAE`
     - For both models, use CFG=1 (negative prompt won't work). Sampling leave default (will use Euler + Simple)
     - For Schnell use Steps=4, for Dev use Steps=20 or higher
-    - This requires a very high end GPU (eg 4090) for now. It is a 12B model.
+    - This is best on a very high end GPU (eg 4090) for now. It is a 12B model. Smaller GPUs can run it, but will be slow.
     - On a 4090, schnell takes about 4/5 seconds to generate a 4-step image, very close to SDXL 20 steps in time, but much higher quality.
     - By default swarm will use fp8_e4m3fn for Flux, if you have a very very big GPU and want to use fp16/bf16, under Advanced Sampling edit Preferred DType
     - It supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MiP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results
     - You _can_ do a refiner upscale 2x and it will work but take a long time and not have excellent quality. Refiner tiling may be better.
-    - There is also a Flux Guidance Scale parameter, which is like CFG, but, differenty.
+    - There is also a `Flux Guidance Scale` parameter under `Sampling`, which is like CFG, but, differenty.
