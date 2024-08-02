@@ -1,13 +1,19 @@
 class APIKeyHelper {
     constructor(keyType, prefix) {
         this.keyType = keyType;
-        this.keyInput = getRequiredElementById(`${prefix}_api_key`);
-        this.keySubmit = getRequiredElementById(`${prefix}_key_submit`);
-        this.keyRemove = getRequiredElementById(`${prefix}_key_remove`);
-        this.keyStatus = getRequiredElementById(`${prefix}_key_status`);
+        this.prefix = prefix;
+        this.getElems();
+    }
+
+    getElems() { // Some form of cursed HTML reset seems to happen? So re-grab elements
+        this.keyInput = getRequiredElementById(`${this.prefix}_api_key`);
+        this.keySubmit = getRequiredElementById(`${this.prefix}_key_submit`);
+        this.keyRemove = getRequiredElementById(`${this.prefix}_key_remove`);
+        this.keyStatus = getRequiredElementById(`${this.prefix}_key_status`);
     }
 
     onKeyInput() {
+        this.getElems();
         let key = this.keyInput.value;
         this.keySubmit.disabled = !key;
     }
