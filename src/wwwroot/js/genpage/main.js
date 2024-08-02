@@ -1208,11 +1208,11 @@ function reviseBackendFeatureSet() {
     else {
         removeMe.push('sd3');
     }
-    if (curModelCompatClass == 'flux-1') {
-        addMe.push('flux');
+    if (curModelArch == 'Flux.1-dev') {
+        addMe.push('flux-dev');
     }
     else {
-        removeMe.push('flux');
+        removeMe.push('flux-dev');
     }
     let anyChanged = false;
     for (let add of addMe) {

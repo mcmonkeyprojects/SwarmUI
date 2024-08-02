@@ -372,8 +372,8 @@ public class T2IParamTypes
         SD3TextEncs = Register<string>(new("SD3 TextEncs", "Which text encoders to use for Stable Diffusion 3 (SD3) models.\nCan use CLIP pairs, or T5, or both.\nBoth is the standard way to run SD3, but CLIP only uses fewer system resources.",
             "CLIP Only", GetValues: _ => ["CLIP Only", "T5 Only", "CLIP + T5"], Toggleable: true, Group: GroupSampling, FeatureFlag: "sd3", OrderPriority: 5, ChangeWeight: 9
             ));
-        FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux models.\nThis is like CFG but different.",
-            "3.5", Min: 0, Max: 100, Step: 0.1, Toggleable: true, IsAdvanced: true, Group: GroupSampling, FeatureFlag: "flux"
+        FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux-Dev models.\nDoes not apply to Flux-Schnell.\nThis is like CFG but different.",
+            "3.5", Min: 0, Max: 100, Step: 0.1, Toggleable: true, IsAdvanced: true, Group: GroupSampling, FeatureFlag: "flux-dev"
             ));
         ZeroNegative = Register<bool>(new("Zero Negative", "Zeroes the negative prompt if it's empty.\nDoes nothing if the negative prompt is not empty.\nThis may yield better quality on SD3.",
             "false", IgnoreIf: "false", Group: GroupSampling
