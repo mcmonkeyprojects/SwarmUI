@@ -58,7 +58,7 @@ function pickle2safetensor_load(mapping = null) {
     }
     for (let type of ['Stable-Diffusion', 'LoRA', 'VAE', 'Embedding', 'ControlNet']) {
         let modelSet = mapping[type];
-        let count = modelSet.filter(x => !x.startsWith("backup") && !x.endsWith('.safetensors') && !x.endsWith('.engine')).length;
+        let count = modelSet.filter(x => !x.startsWith("backup") && !x.endsWith('.safetensors') && !x.endsWith('.sft') && !x.endsWith('.engine')).length;
         let counter = getRequiredElementById(`pickle2safetensor_${type.toLowerCase()}_count`);
         counter.innerText = count;
         let button = getRequiredElementById(`pickle2safetensor_${type.toLowerCase()}_button`);
@@ -134,6 +134,9 @@ class LoraExtractorUtil {
         }
         if (outName.endsWith('.safetensors')) {
             outName = outName.substring(0, outName.length - '.safetensors'.length);
+        }
+        if (outName.endsWith('.sft')) {
+            outName = outName.substring(0, outName.length - '.sft'.length);
         }
         if (outName.endsWith('.ckpt')) {
             outName = outName.substring(0, outName.length - '.ckpt'.length);
@@ -279,7 +282,7 @@ class ModelDownloaderUtil {
                 parts[4] = parts[4].substring(0, parts[4].length - '?download=true'.length);
                 this.url.value = `${this.hfPrefix}${parts.join('/')}`;
             }
-            if (!parts[4].endsWith('.safetensors')) {
+            if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft')) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a safetensors file. Only safetensors can be auto-downloaded.";
                 this.button.disabled = false;
                 return;
@@ -289,14 +292,14 @@ class ModelDownloaderUtil {
                 this.url.value = `${this.hfPrefix}${parts.join('/')}`;
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, and has been autocorrected to a download link.";
                 this.button.disabled = false;
-                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '');
+                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '');
                 this.nameInput();
                 return;
             }
             if (parts[2] == 'resolve') {
                 this.urlStatusArea.innerText = "URL appears to be a valid HuggingFace download link.";
                 this.button.disabled = false;
-                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '');
+                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '');
                 this.nameInput();
                 return;
             }
