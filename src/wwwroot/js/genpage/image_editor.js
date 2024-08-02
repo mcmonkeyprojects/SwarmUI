@@ -1092,7 +1092,7 @@ class ImageEditor {
         this.addTool(new ImageEditorToolSelect(this));
         this.addTool(new ImageEditorToolBrush(this, 'brush', 'paintbrush', 'Paintbrush', 'Draw on the image.\nHotKey: B', false, 'b'));
         this.addTool(new ImageEditorToolBrush(this, 'eraser', 'eraser', 'Eraser', 'Erase parts of the image.\nHotKey: E', true, 'e'));
-        this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'colorpicker', 'Color Picker', 'Pick a color from the image.');
+        this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'paintbrush', 'Color Picker', 'Pick a color from the image.');
         this.addTool(this.pickerTool);
         this.activateTool('brush');
         this.maxHistory = 10;
