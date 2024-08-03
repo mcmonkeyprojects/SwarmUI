@@ -233,6 +233,13 @@ document.addEventListener('mouseup', function (e) {
  */
 function comfyBuildParams(callback) {
     comfyGetPromptAndWorkflow((workflow, prompt) => {
+        function getFreeIdStartingAt(start) {
+            let id = start;
+            while (id in prompt) {
+                id++;
+            }
+            return id;
+        }
         let params = {};
         let inputPrefix = 'comfyrawworkflowinput';
         let idsUsed = [];
@@ -330,6 +337,7 @@ function comfyBuildParams(callback) {
             }
         }
         let hasSaves = false;
+        let saveNodeId = null;
         let previewNodes = [];
         for (let nodeId of Object.keys(prompt)) {
             let node = prompt[nodeId];
@@ -342,12 +350,15 @@ function comfyBuildParams(callback) {
                     node.class_type = 'SwarmSaveImageWS';
                     delete node.inputs['filename_prefix'];
                 }
+                saveNodeId = nodeId;
                 hasSaves = true;
             }
             else if (node.class_type == 'SwarmSaveImageWS') {
+                saveNodeId = nodeId;
                 hasSaves = true;
             }
             else if (comfyAltSaveNodes.includes(node.class_type)) {
+                saveNodeId = nodeId;
                 hasSaves = true;
             }
             if (node.inputs) {
@@ -369,8 +380,14 @@ function comfyBuildParams(callback) {
         }
         if (!hasSaves && previewNodes.length > 0) {
             prompt[previewNodes[0]].class_type = 'SwarmSaveImageWS';
+            saveNodeId = previewNodes[0];
             hasSaves = true;
             previewNodes = previewNodes.slice(1);
+        }
+        if (hasSaves && int(saveNodeId) < 200) {
+            let newSaveId = getFreeIdStartingAt(200);
+            prompt[newSaveId] = prompt[saveNodeId];
+            delete prompt[saveNodeId];
         }
         for (let preview of previewNodes) {
             delete prompt[preview];
