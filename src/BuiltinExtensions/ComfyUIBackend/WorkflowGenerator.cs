@@ -624,7 +624,7 @@ public class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(fluxVae))
             {
-                throw new SwarmUserErrorException("No default Flux VAE found, please download an Flux VAE and set it as default in User Settings");
+                throw new SwarmUserErrorException("No default Flux VAE found, please download a Flux VAE and set it as default in User Settings");
             }
             string vaeLoader = CreateNode("VAELoader", new JObject()
             {

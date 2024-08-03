@@ -45,7 +45,7 @@ Note it may take several minutes to start up the first time. Check the container
 
 # Installing on Windows
 
-Note: if you're on Windows 10, you may need to manually install [git](https://git-scm.com/download/win) and [DotNET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) first. (Windows 11 this is automated).
+Note: if you're on Windows 10, you may need to manually install [git](https://git-scm.com/download/win) and [DotNET 8 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) first. (Windows 11 this is automated).
 
 - Download [The Install-Windows.bat file](https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-windows.bat), store it somewhere you want to install at (not `Program Files`), and run it.
     - It should open a command prompt and install itself.

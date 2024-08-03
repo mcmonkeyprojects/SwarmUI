@@ -64,8 +64,12 @@ function automaticWelcomeMessage(override = null) {
     if (dotnetNotice) {
         messages.push(dotnetNotice.innerHTML.trim());
     }
+    let gitFailedNotice = document.getElementById('git_failed_message');
+    if (gitFailedNotice) {
+        messages.push(gitFailedNotice.innerHTML.trim());
+    }
     if (override == null) {
-        if (dotnetNotice) {
+        if (dotnetNotice || gitFailedNotice) {
             override = messages.length - 1;
         }
         else {
