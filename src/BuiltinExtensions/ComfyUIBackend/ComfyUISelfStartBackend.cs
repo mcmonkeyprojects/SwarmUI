@@ -23,8 +23,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ConfigComment("If unchecked, the system will automatically add some relevant arguments to the comfy launch. If checked, automatic args (other than port) won't be added.")]
         public bool DisableInternalArgs = false;
 
-        [ConfigComment("If checked, will automatically keep the comfy backend up to date when launching.")]
-        public bool AutoUpdate = true;
+        [ConfigComment("Whether the Comfy backend should automatically update itself during launch.\nYou can update every launch, never update automatically, or force-update (bypasses some common git issues).")]
+        [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
+        public string AutoUpdate = "true";
 
         [ConfigComment("If checked, tells Comfy to generate image previews. If unchecked, previews will not be generated, and images won't show up until they're done.")]
         public bool EnablePreviews = true;
@@ -255,15 +256,21 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         AddLoadStatus("Will track node repo load task...");
         List<Task> tasks = [Task.Run(EnsureNodeRepos)];
-        if (settings.AutoUpdate && !string.IsNullOrWhiteSpace(settings.StartScript))
+        if ((settings.AutoUpdate == "true" || settings.AutoUpdate == "aggressive") && !string.IsNullOrWhiteSpace(settings.StartScript))
         {
             AddLoadStatus("Will track comfy git pull auto-update task...");
             tasks.Add(Task.Run(async () =>
             {
                 try
                 {
+                    string path = Path.GetFullPath(settings.StartScript).Replace('\\', '/').BeforeLast('/');
                     AddLoadStatus("Running git pull in comfy folder...");
-                    string response = await Utilities.RunGitProcess($"pull", Path.GetFullPath(settings.StartScript).Replace('\\', '/').BeforeLast('/'));
+                    if (settings.AutoUpdate == "aggressive")
+                    {
+                        string stashed = await Utilities.RunGitProcess($"stash", path);
+                        AddLoadStatus($"Comfy git stash response: {stashed.Trim()}");
+                    }
+                    string response = await Utilities.RunGitProcess($"pull", path);
                     AddLoadStatus($"Comfy git pull response: {response.Trim()}");
                 }
                 catch (Exception ex)
