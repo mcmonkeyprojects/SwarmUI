@@ -634,11 +634,12 @@ public class WorkflowGenerator
         }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
-            string sd3Node = CreateNode("ModelSamplingAuraFlow", new JObject()
+            string auraNode = CreateNode("ModelSamplingAuraFlow", new JObject()
             {
                 ["model"] = LoadingModel,
                 ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.73)
             });
+            LoadingModel = [auraNode, 0];
         }
         else if (!string.IsNullOrWhiteSpace(predType))
         {
@@ -649,6 +650,15 @@ public class WorkflowGenerator
                 ["zsnr"] = predType.Contains("zsnr")
             });
             LoadingModel = [discreteNode, 0];
+        }
+        if (IsFlux() && UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
+        {
+            string fluxNode = CreateNode("ModelSamplingFlux", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = shiftVal
+            });
+            LoadingModel = [fluxNode, 0];
         }
         foreach (WorkflowGenStep step in ModelGenSteps)
         {
