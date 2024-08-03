@@ -187,13 +187,23 @@ public class BackendHandler
         AutoConfiguration.Internal.AutoConfigData settingsInternal = (Activator.CreateInstance(settingsType) as AutoConfiguration).InternalData.SharedData;
         List<JObject> fields = settingsInternal.Fields.Values.Select(f =>
         {
+            string typeName = f.IsSection ? "group" : T2IParamTypes.SharpTypeToDataType(f.Field.FieldType, false).ToString();
+            string[] vals = f.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Options ?? null;
+            string[] val_names = null;
+            if (vals is not null)
+            {
+                typeName = typeName == "LIST" ? "LIST" : "DROPDOWN";
+                val_names = f.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Names ?? null;
+            }
             return new JObject()
             {
                 ["name"] = f.Name,
-                ["type"] = NetTypeLabels[f.Field.FieldType],
+                ["type"] = typeName.ToLowerFast(),
                 ["description"] = f.Field.GetCustomAttribute<AutoConfiguration.ConfigComment>()?.Comments?.ToString() ?? "",
                 ["placeholder"] = f.Field.GetCustomAttribute<SuggestionPlaceholder>()?.Text ?? "",
-                ["is_secret"] = f.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null
+                ["is_secret"] = f.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null,
+                ["values"] = vals is null ? null : JArray.FromObject(vals),
+                ["value_names"] = val_names is null ? null : JArray.FromObject(val_names)
             };
         }).ToList();
         JObject netDesc = new()

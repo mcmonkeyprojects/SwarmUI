@@ -435,7 +435,7 @@ function autoSelectWidth(elem) {
         return;
     }
     let span = document.createElement('span');
-    span.innerText = elem.value;
+    span.innerText = elem.selectedOptions[0] ? elem.selectedOptions[0].innerText : elem.value;
     document.body.appendChild(span);
     let width = Math.max(50, span.offsetWidth + 30);
     elem.style.width = `${width}px`;
@@ -630,7 +630,7 @@ function makeDropdownInput(featureid, id, paramid, name, description, values, de
         <label>
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
         </label>
-        <select class="auto-dropdown" id="${id}" data-param_id="${paramid}" autocomplete="false" onchange="autoSelectWidth(this)">`;
+        <select class="auto-dropdown" id="${id}" data-name="${name}" data-param_id="${paramid}" autocomplete="false" onchange="autoSelectWidth(this)">`;
     for (let i = 0; i < values.length; i++) {
         let value = values[i];
         let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;

@@ -36,7 +36,9 @@ public class BackendAPI
                         "name": "namehere",
                         "type": "typehere",
                         "description": "descriptionhere",
-                        "placeholder": "placeholderhere"
+                        "placeholder": "placeholderhere",
+                        "values": ["a", "b"], // For dropdowns only
+                        "value_names": ["Alpha", "Beta"] // For dropdowns only, optional even then
                     }
                 ],
                 "is_standard": false

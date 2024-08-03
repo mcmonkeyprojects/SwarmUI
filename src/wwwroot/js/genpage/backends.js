@@ -90,10 +90,13 @@ function addBackendToHtml(backend, disable, spot = null) {
         else if (setting.type == 'text') {
             input.innerHTML = makeTextInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name], 'normal', setting.placeholder) + pop;
         }
+        else if (setting.type == 'dropdown') {
+            input.innerHTML = makeDropdownInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, setting.values, backend.settings[setting.name], false, true, setting.value_names) + pop;
+        }
         else if (setting.type == 'integer') {
             input.innerHTML = makeNumberInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name], 0, 1000, 1) + pop;
         }
-        else if (setting.type == 'bool') {
+        else if (setting.type == 'boolean') {
             input.innerHTML = makeCheckboxInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name]) + pop;
         }
         else {

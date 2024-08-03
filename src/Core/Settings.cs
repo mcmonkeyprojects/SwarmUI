@@ -417,9 +417,11 @@ public class ManualSettingsOptionsAttribute : SettingsOptionsAttribute
 {
     public string[] Vals;
 
+    public string[] ManualNames;
+
     public override string[] Options => Vals;
 
-    public override string[] Names => Vals;
+    public override string[] Names => ManualNames ?? Vals;
 }
 
 /// <summary>Attribute that marks that the value should be treated as a secret, and not transmitted to remote clients.</summary>
