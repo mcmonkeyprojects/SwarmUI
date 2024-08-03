@@ -254,7 +254,7 @@ class UIImprovementHandler {
         document.addEventListener('mousedown', (e) => {
             if (e.target.tagName == 'SELECT') {
                 lastShift = e.shiftKey;
-                if (!lastShift && e.target.options.length > 5) {
+                if (!lastShift && this.shouldAlterSelect(e.target)) {
                     e.preventDefault();
                     e.stopPropagation();
                     return false;
@@ -262,12 +262,12 @@ class UIImprovementHandler {
             }
         }, true);
         document.addEventListener('click', (e) => {
-            if (e.target.tagName == 'SELECT' && !lastShift && e.target.options.length > 5) { // e.shiftKey doesn't work in click for some reason
+            if (e.target.tagName == 'SELECT' && !lastShift && this.shouldAlterSelect(e.target)) { // e.shiftKey doesn't work in click for some reason
                 return this.onSelectClicked(e.target, e);
             }
         }, true);
         document.addEventListener('mouseup', (e) => {
-            if (e.target.tagName == 'SELECT' && !e.shiftKey && e.target.options.length > 5) {
+            if (e.target.tagName == 'SELECT' && !e.shiftKey && this.shouldAlterSelect(e.target)) {
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
@@ -359,6 +359,16 @@ class UIImprovementHandler {
                 lastY = 0;
             }
         }, true);
+    }
+
+    shouldAlterSelect(elem) {
+        if (elem.options.length > 5) {
+            return true;
+        }
+        if ([... elem.options].filter(o => o.innerText.includes('(')).length > 0) {
+            return true;
+        }
+        return false;
     }
 
     onSelectClicked(elem, e) {
