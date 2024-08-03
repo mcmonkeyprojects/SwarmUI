@@ -853,6 +853,7 @@ public static class Utilities
         ProcessStartInfo start = new("git", args)
         {
             RedirectStandardOutput = true,
+            RedirectStandardError = true,
             UseShellExecute = false,
             WorkingDirectory = dir
         };
@@ -862,7 +863,13 @@ public static class Utilities
         {
             Process p = Process.Start(start);
             await p.WaitForExitAsync(Program.GlobalProgramCancel);
-            return await p.StandardOutput.ReadToEndAsync();
+            string stdout = await p.StandardOutput.ReadToEndAsync();
+            string stderr = await p.StandardError.ReadToEndAsync();
+            if (!string.IsNullOrWhiteSpace(stderr))
+            {
+                return $"{stdout}\n{stderr}";
+            }
+            return stdout;
         }
         finally
         {

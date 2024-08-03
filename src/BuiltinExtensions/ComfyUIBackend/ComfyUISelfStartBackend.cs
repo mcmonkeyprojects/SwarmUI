@@ -256,7 +256,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         AddLoadStatus("Will track node repo load task...");
         List<Task> tasks = [Task.Run(EnsureNodeRepos)];
-        if ((settings.AutoUpdate == "true" || settings.AutoUpdate == "aggressive") && !string.IsNullOrWhiteSpace(settings.StartScript))
+        string autoUpd = settings.AutoUpdate.ToLowerFast();
+        if ((autoUpd == "true" || autoUpd == "aggressive") && !string.IsNullOrWhiteSpace(settings.StartScript))
         {
             AddLoadStatus("Will track comfy git pull auto-update task...");
             tasks.Add(Task.Run(async () =>
@@ -265,13 +266,17 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     string path = Path.GetFullPath(settings.StartScript).Replace('\\', '/').BeforeLast('/');
                     AddLoadStatus("Running git pull in comfy folder...");
-                    if (settings.AutoUpdate == "aggressive")
+                    if (autoUpd == "aggressive")
                     {
                         string stashed = await Utilities.RunGitProcess($"stash", path);
                         AddLoadStatus($"Comfy git stash response: {stashed.Trim()}");
                     }
                     string response = await Utilities.RunGitProcess($"pull", path);
                     AddLoadStatus($"Comfy git pull response: {response.Trim()}");
+                    if (response.Contains("error: Your local changes to the following files"))
+                    {
+                        Logs.Error($"Failed to auto-update comfy backend due to local changes - change 'AutoUpdate' to 'Aggressive' in backend settings to automatically correct this.");
+                    }
                 }
                 catch (Exception ex)
                 {
