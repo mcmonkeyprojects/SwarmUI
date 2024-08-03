@@ -606,7 +606,7 @@ public class WorkflowGenerator
                 }
             }
         }
-        else if (IsFlux())
+        else if (IsFlux() && (LoadingClip is null || LoadingVAE is null))
         {
             requireClipModel("clip_l_sdxl_base.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors");
             requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
