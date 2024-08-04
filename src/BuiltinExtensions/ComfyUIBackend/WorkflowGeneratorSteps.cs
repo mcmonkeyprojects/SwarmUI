@@ -281,7 +281,7 @@ public class WorkflowGeneratorSteps
                 }
                 if (g.UserInput.TryGet(T2IParamTypes.InitImageResetToNorm, out double resetFactor))
                 {
-                    string emptyImg = g.CreateEmptyImage(g.UserInput.Get(T2IParamTypes.Width), g.UserInput.GetImageHeight(), g.UserInput.Get(T2IParamTypes.BatchSize, 1));
+                    string emptyImg = g.CreateEmptyImage(g.UserInput.GetImageWidth(), g.UserInput.GetImageHeight(), g.UserInput.Get(T2IParamTypes.BatchSize, 1));
                     if (g.Features.Contains("comfy_latent_blend_masked") && g.FinalMask is not null)
                     {
                         string blended = g.CreateNode("SwarmLatentBlendMasked", new JObject()
@@ -316,7 +316,7 @@ public class WorkflowGeneratorSteps
             }
             else
             {
-                g.CreateEmptyImage(g.UserInput.Get(T2IParamTypes.Width), g.UserInput.GetImageHeight(), g.UserInput.Get(T2IParamTypes.BatchSize, 1), "5");
+                g.CreateEmptyImage(g.UserInput.GetImageWidth(), g.UserInput.GetImageHeight(), g.UserInput.Get(T2IParamTypes.BatchSize, 1), "5");
             }
         }, -9);
         #endregion
@@ -924,7 +924,7 @@ public class WorkflowGeneratorSteps
                             g.CreateNode("ImageScale", new JObject()
                             {
                                 ["image"] = new JArray() { "28", 0 },
-                                ["width"] = (int)Math.Round(g.UserInput.Get(T2IParamTypes.Width) * refineUpscale),
+                                ["width"] = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale),
                                 ["height"] = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale),
                                 ["upscale_method"] = "bilinear",
                                 ["crop"] = "disabled"
@@ -1202,7 +1202,7 @@ public class WorkflowGeneratorSteps
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 int width = vidModel.StandardWidth <= 0 ? 1024 : vidModel.StandardWidth;
                 int height = vidModel.StandardHeight <= 0 ? 576 : vidModel.StandardHeight;
-                int imageWidth = g.UserInput.Get(T2IParamTypes.Width, width);
+                int imageWidth = g.UserInput.GetImageWidth();
                 int imageHeight = g.UserInput.GetImageHeight();
                 if (resFormat == "Image Aspect, Model Res")
                 {

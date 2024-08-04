@@ -630,7 +630,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     "negative_prompt" => user_input.Get(T2IParamTypes.NegativePrompt),
                     "seed" => $"{fixSeed(user_input.Get(T2IParamTypes.Seed)) + (int.TryParse(tagExtra, out int add) ? add : 0)}",
                     "steps" => $"{user_input.Get(T2IParamTypes.Steps)}",
-                    "width" => $"{user_input.Get(T2IParamTypes.Width)}",
+                    "width" => $"{user_input.GetImageWidth()}",
                     "height" => $"{user_input.GetImageHeight()}",
                     "cfg_scale" => $"{user_input.Get(T2IParamTypes.CFGScale)}",
                     "subseed" => $"{user_input.Get(T2IParamTypes.VariationSeed)}",
@@ -677,7 +677,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             void TryApply(string key, Image img, bool resize)
             {
-                Image fixedImage = resize ? img.Resize(user_input.Get(T2IParamTypes.Width), user_input.GetImageHeight()) : img;
+                Image fixedImage = resize ? img.Resize(user_input.GetImageWidth(), user_input.GetImageHeight()) : img;
                 if (key.Contains("swarmloadimageb") || key.Contains("swarminputimage"))
                 {
                     user_input.ValuesInput[key] = fixedImage;

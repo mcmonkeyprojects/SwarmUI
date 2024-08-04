@@ -484,15 +484,24 @@ public class T2IParamInput
         ExtraMeta["date"] = DateTime.Now.ToString("yyyy-MM-dd");
     }
 
-    /// <summary>Gets the desired image width, automatically using alt-res parameter if needed.</summary>
+    /// <summary>Gets the desired image width.</summary>
+    public int GetImageWidth()
+    {
+        if (TryGet(T2IParamTypes.RawResolution, out string res))
+        {
+            return int.Parse(res.Before('x'));
+        }
+        return Get(T2IParamTypes.Width, 512);
+    }
+
+    /// <summary>Gets the desired image height, automatically using alt-res parameter if needed.</summary>
     public int GetImageHeight()
     {
         if (TryGet(T2IParamTypes.RawResolution, out string res))
         {
             return int.Parse(res.After('x'));
         }
-        if (TryGet(T2IParamTypes.AltResolutionHeightMult, out double val)
-            && TryGet(T2IParamTypes.Width, out int width))
+        if (TryGet(T2IParamTypes.AltResolutionHeightMult, out double val) && TryGet(T2IParamTypes.Width, out int width))
         {
             return (int)(val * width);
         }

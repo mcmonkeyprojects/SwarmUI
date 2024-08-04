@@ -274,7 +274,7 @@ public class WorkflowGenerator
         {
             result = CreateNode("SwarmLoadImageB64", new JObject()
             {
-                ["image_base64"] = (resize ? img.Resize(UserInput.Get(T2IParamTypes.Width), UserInput.GetImageHeight()) : img).AsBase64
+                ["image_base64"] = (resize ? img.Resize(UserInput.GetImageWidth(), UserInput.GetImageHeight()) : img).AsBase64
             }, nodeId);
         }
         else
@@ -333,7 +333,7 @@ public class WorkflowGenerator
         string scaledImage = CreateNode("SwarmImageScaleForMP", new JObject()
         {
             ["image"] = new JArray() { croppedImage, 0 },
-            ["width"] = model?.StandardWidth <= 0 ? UserInput.Get(T2IParamTypes.Width, 1024) : model.StandardWidth,
+            ["width"] = model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth,
             ["height"] = model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
             ["can_shrink"] = true
         });
@@ -970,7 +970,7 @@ public class WorkflowGenerator
     {
         string node;
         double mult = isPositive ? 1.5 : 0.8;
-        int width = UserInput.Get(T2IParamTypes.Width, 1024);
+        int width = UserInput.GetImageWidth();
         int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
         bool needsAdvancedEncode = (prompt.Contains('[') && prompt.Contains(']')) || prompt.Contains("<break>");
@@ -1071,7 +1071,7 @@ public class WorkflowGenerator
                     ["gligen_name"] = gligenModel
                 });
             });
-            int width = UserInput.Get(T2IParamTypes.Width, 1024);
+            int width = UserInput.GetImageWidth();
             int height = UserInput.GetImageHeight();
             JArray lastCond = globalCond;
             foreach (PromptRegion.Part part in parts)

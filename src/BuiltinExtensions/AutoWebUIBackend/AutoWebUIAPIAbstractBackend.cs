@@ -91,7 +91,7 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
             ["negative_prompt"] = user_input.Get(T2IParamTypes.NegativePrompt),
             ["seed"] = user_input.Get(T2IParamTypes.Seed),
             ["steps"] = user_input.Get(T2IParamTypes.Steps),
-            ["width"] = user_input.Get(T2IParamTypes.Width),
+            ["width"] = user_input.GetImageWidth(),
             ["height"] = user_input.GetImageHeight(),
             ["batch_size"] = user_input.Get(T2IParamTypes.BatchSize, 1),
             ["cfg_scale"] = user_input.Get(T2IParamTypes.CFGScale),
