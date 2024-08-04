@@ -30,3 +30,5 @@ So, all those parameters aren't enough, you want MORE control? Don't worry, we g
 - You can now generate images as normal, but it will automatically use your workflow. This applies to all generation features, including the Grid Generator tool - which has its axes list automatically updated to the workflow parameter list!
 - If you update the workflow in the comfy tab, you have to click `Use This Workflow` again to load your changes.
 - If you want to go back to normal and remove the comfy workflow, make sure your parameters list is scrolled up, as there's a `Disable Custom Comfy Workflow` button you can click there.
+
+More thorough information about custom Comfy Workflows will be in [Features/Custom Comfy Workflows](/docs/Features/Comfy-Workflows.md).

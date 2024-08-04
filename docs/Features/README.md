@@ -8,3 +8,4 @@ See [The Docs Readme](/docs/README.md) for general listing of documentation and 
 - [IP Adapter and ReVision](/docs/Features/IPAdapter-ReVision.md) for details about image-prompting with IP-Adapter and ReVision.
 - [ControlNet](/docs/Features/ControlNet.md) for info about using ControlNets.
 - [Video](/docs/Features/Video.md) for info about generating videos.
+- [Custom Comfy Workflows](/docs/Features/Comfy-Workflows.md) for info about getting the most out of custom Comfy workflows in SwarmUI.
