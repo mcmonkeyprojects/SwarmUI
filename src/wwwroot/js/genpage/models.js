@@ -465,8 +465,7 @@ class ModelBrowserWrapper {
             }
         }
         else {
-            let ext = model.data.name.substring(model.data.name.lastIndexOf('.') + 1);
-            description = `${escapeHtml(name)}.${ext}<br>(Metadata only available for 'safetensors' models.)<br><b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.<br>`;
+            description = `${escapeHtml(name)}<br>(Metadata only available for 'safetensors' models.)<br><b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.<br>`;
         }
         let selector = 'current_model';
         switch (this.subType) {
