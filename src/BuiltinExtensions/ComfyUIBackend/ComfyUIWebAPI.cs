@@ -215,7 +215,9 @@ public static class ComfyUIWebAPI
         ["stable-diffusion-xl-v1-refiner"] = "sdxl_refiner",
         ["stable-video-diffusion-img2vid-v1"] = "svd",
         ["stable-diffusion-v3-medium"] = "sd3",
-        ["auraflow-v1"] = "auraflow"
+        ["auraflow-v1"] = "auraflow",
+        ["Flux.1-schnell"] = "flux",
+        ["Flux.1-dev"] = "flux"
     };
 
     /// <summary>API route to create a TensorRT model.</summary>
@@ -235,7 +237,7 @@ public static class ComfyUIWebAPI
         }
         if (!ArchitecturesTRTCompat.ContainsKey(modelData.ModelClass?.ID))
         {
-            await ws.SendJson(new JObject() { ["error"] = "This model does not have an Architecture ID listed as compatible with TensorRT (v1, v2-768-v, XL-v1-base, XL-v1-refiner, stable-video-diffusion)." }, API.WebsocketTimeout);
+            await ws.SendJson(new JObject() { ["error"] = "This model does not have an Architecture ID listed as compatible with TensorRT (v1, v2-768-v, XL-v1-base, XL-v1-refiner, stable-video-diffusion, SD3, AuraFlow, Flux.1)." }, API.WebsocketTimeout);
             return null;
         }
         if (optBatch < 1 || maxBatch < 1 || optBatch > 64 || maxBatch > 64)
