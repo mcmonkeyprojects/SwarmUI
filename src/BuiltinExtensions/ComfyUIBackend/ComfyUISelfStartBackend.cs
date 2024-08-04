@@ -306,11 +306,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             await install("spandrel", "spandrel");
             // Other added dependencies
             await install("rembg", "rembg");
-            await install("matplotlib", "matplotlib");
+            await install("matplotlib", "matplotlib==3.9"); // Old version due to "mesonpy" curse
             await install("opencv_python_headless", "opencv-python-headless");
             await install("imageio_ffmpeg", "imageio-ffmpeg");
             await install("dill", "dill");
-            await install("ultralytics", "ultralytics");
+            await install("ultralytics", "ultralytics==8.1.47"); // Old version due to "mesonpy" curse
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
             {
                 // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
