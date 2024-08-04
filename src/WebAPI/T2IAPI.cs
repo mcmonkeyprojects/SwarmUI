@@ -310,7 +310,7 @@ public static class T2IAPI
             }
             if (imgs.Length <= GridShapeTable.Length)
             {
-                (rows, columns) = GridShapeTable[imgs.Length - 1];
+                (columns, rows) = GridShapeTable[imgs.Length - 1];
             }
             int widthPerImage = imgs.Max(i => i.Width);
             int heightPerImage = imgs.Max(i => i.Height);
