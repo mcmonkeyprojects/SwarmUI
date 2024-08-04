@@ -289,13 +289,15 @@ public static class BasicAPIFeatures
         {
             foreach (string model in models.Split(','))
             {
-                string file = model.Trim() switch
+                (string file, string subfolder) = model.Trim() switch
                 {
-                    "sd15" => "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors",
-                    "sd21" => "https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-ema-pruned.safetensors",
-                    "sdxl1" => "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors",
-                    "sdxl1refiner" => "https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors",
-                    _ => null
+                    "sd15" => ("https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors", "OfficialStableDiffusion"),
+                    "sd21" => ("https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-ema-pruned.safetensors", "OfficialStableDiffusion"),
+                    "sdxl1" => ("https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "OfficialStableDiffusion"),
+                    "sdxl1refiner" => ("https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "OfficialStableDiffusion"),
+                    "fluxschnell" => ("https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors", "Flux"),
+                    "fluxdev" => ("https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "Flux"),
+                    _ => (null, null)
                 };
                 if (file is null)
                 {
@@ -304,7 +306,8 @@ public static class BasicAPIFeatures
                     return null;
                 }
                 await output($"Downloading model from '{file}'... please wait...");
-                string folder = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDModelFolder) + "/OfficialStableDiffusion";
+                string path = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDModelFolder);
+                string folder = $"{path}/{subfolder}";
                 Directory.CreateDirectory(folder);
                 string filename = file.AfterLast('/');
                 try
