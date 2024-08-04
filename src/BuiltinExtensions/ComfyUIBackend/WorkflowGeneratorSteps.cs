@@ -967,7 +967,7 @@ public class WorkflowGeneratorSteps
                     model = [hyperTileNode, 0];
                 }
                 int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps));
-                double cfg = g.UserInput.Get(T2IParamTypes.CFGScale);
+                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
                 g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
                     g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false));
                 g.FinalSamples = ["23", 0];
@@ -1084,7 +1084,7 @@ public class WorkflowGeneratorSteps
                     int steps = g.UserInput.Get(T2IParamTypes.Steps);
                     int startStep = (int)Math.Round(steps * (1 - part.Strength2));
                     long seed = g.UserInput.Get(T2IParamTypes.Seed) + 2 + i;
-                    double cfg = g.UserInput.Get(T2IParamTypes.CFGScale);
+                    double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
                     string sampler = g.CreateKSampler(model, prompt, negPrompt, [masked, 0], cfg, steps, startStep, 10000, seed, false, true);
                     string decoded = g.CreateVAEDecode(vae, [sampler, 0]);
                     g.FinalImageOut = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalImageOut, [decoded, 0]);
