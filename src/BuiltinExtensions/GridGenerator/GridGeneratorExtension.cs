@@ -445,11 +445,16 @@ public class GridGeneratorExtension : Extension
                 List<(string, string)> y2Axis = grid.Axes.Count > 2 ? grid.Axes[2].Values.Where(v => !v.Skip).Select(proc).ToList() : [(null, null)];
                 int maxWidth = data.GeneratedOutputs.Max(x => x.Value.ToIS.Width);
                 int maxHeight = data.GeneratedOutputs.Max(x => x.Value.ToIS.Height);
-                Font font = GetFont(1);
+                float extraSizeMult = 1;
+                if (maxWidth > 800 || maxHeight > 800)
+                {
+                    extraSizeMult = 2;
+                }
+                Font font = GetFont(extraSizeMult);
                 TextOptions options = new(font);
                 FontRectangle rect = TextMeasurer.MeasureSize("ABCdefg Word Prefix", options);
                 int textWidth = (int)Math.Ceiling(rect.Width);
-                int rawTextHeight = (int)Math.Ceiling(rect.Height);
+                int rawTextHeight = (int)Math.Ceiling(rect.Height * 1.1);
                 int textHeight = rawTextHeight * 2;
                 int totalWidth = maxWidth * xAxis.Count + textWidth;
                 int totalHeight = maxHeight * (yAxis.Count * y2Axis.Count) + textHeight * y2Axis.Count;
@@ -466,15 +471,15 @@ public class GridGeneratorExtension : Extension
                         Logs.Verbose($"Measured text '{text}' as {measured.Width}x{measured.Height} in {width}x{height} with {lines} lines");
                         if (measured.Width < width * lines * 0.5)
                         {
-                            rto.Font = GetFont(2);
+                            rto.Font = GetFont(2 * extraSizeMult);
                         }
                         else if (measured.Width > width * lines * 2)
                         {
-                            rto.Font = GetFont(0.5f);
+                            rto.Font = GetFont(0.5f * extraSizeMult);
                         }
                         else if (measured.Width > width * lines)
                         {
-                            rto.Font = GetFont(0.75f);
+                            rto.Font = GetFont(0.75f * extraSizeMult);
                         }
                         m.DrawText(rto, text, brush);
                     }
