@@ -384,7 +384,7 @@ function comfyBuildParams(callback) {
             hasSaves = true;
             previewNodes = previewNodes.slice(1);
         }
-        if (hasSaves && int(saveNodeId) < 200) {
+        if (hasSaves && parseInt(saveNodeId) < 200) {
             let newSaveId = getFreeIdStartingAt(200);
             prompt[newSaveId] = prompt[saveNodeId];
             delete prompt[saveNodeId];
