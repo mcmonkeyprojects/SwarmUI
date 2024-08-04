@@ -588,6 +588,9 @@ body {
     display: inline-block;
     color: var(--text-soft);
 }
+.param_view_block_model {
+    background-color: color-mix(in srgb, transparent 98%, var(--tag-color));
+}
 .param_view {
     border-radius: 0.3rem;
     color: var(--text);

@@ -184,13 +184,17 @@ function formatMetadata(metadata) {
                         key = cleaner(key);
                     }
                     let hash = Math.abs(hashCode(key.toLowerCase().replaceAll(' ', '').replaceAll('_', ''))) % 10;
+                    let added = '';
+                    if (key.includes('model') || key.includes('lora') || key.includes('embedding')) {
+                        added += ' param_view_block_model';
+                    }
                     if (typeof val == 'object') {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}"><span class="param_view_name">${escapeHtml(key)}</span>: `;
+                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: `;
                         appendObject(val);
                         result += `</span>, `;
                     }
                     else {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}"><span class="param_view_name">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}">${escapeHtml(`${val}`)}</span></span>, `;
+                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}">${escapeHtml(`${val}`)}</span></span>, `;
                     }
                 }
             }
