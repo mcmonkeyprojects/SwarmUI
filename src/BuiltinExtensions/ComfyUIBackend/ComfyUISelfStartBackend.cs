@@ -266,12 +266,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     string path = Path.GetFullPath(settings.StartScript).Replace('\\', '/').BeforeLast('/');
                     AddLoadStatus("Running git pull in comfy folder...");
-                    if (autoUpd == "aggressive")
-                    {
-                        string stashed = await Utilities.RunGitProcess($"stash", path);
-                        AddLoadStatus($"Comfy git stash response: {stashed.Trim()}");
-                    }
-                    string response = await Utilities.RunGitProcess($"pull", path);
+                    string response = await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", path);
                     AddLoadStatus($"Comfy git pull response: {response.Trim()}");
                     if (response.Contains("error: Your local changes to the following files"))
                     {
