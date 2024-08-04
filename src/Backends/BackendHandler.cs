@@ -529,65 +529,72 @@ public class BackendHandler
     {
         while (!HasShutdown)
         {
-            bool any = false;
-            while (BackendsToInit.TryDequeue(out T2IBackendData data) && !HasShutdown)
+            try
             {
-                bool loaded = LoadBackendDirect(data).Result;
-                any = any || loaded;
-            }
-            if (any)
-            {
-                try
+                bool any = false;
+                while (BackendsToInit.TryDequeue(out T2IBackendData data) && !HasShutdown)
                 {
-                    ReassignLoadedModelsList();
+                    bool loaded = LoadBackendDirect(data).Result;
+                    any = any || loaded;
                 }
-                catch (Exception ex)
+                if (any)
                 {
-                    Logs.Error($"Error while reassigning loaded models list: {ex}");
-                }
-            }
-            T2IBackendData[] loading = [.. T2IBackends.Values.Where(b => b.Backend.LoadStatusReport is not null && b.Backend.LoadStatusReport.Count > 1)];
-            if (loading.Any())
-            {
-                long now = Environment.TickCount64;
-                foreach (T2IBackendData backend in loading)
-                {
-                    AbstractT2IBackend.LoadStatus firstStatus = backend.Backend.LoadStatusReport[0];
-                    AbstractT2IBackend.LoadStatus lastStatus = backend.Backend.LoadStatusReport[^1];
-                    TimeSpan loadingFor = TimeSpan.FromMilliseconds(now - firstStatus.Time);
-                    if (loadingFor > TimeSpan.FromMinutes(1 + firstStatus.TrackerIndex * 2))
+                    try
                     {
-                        firstStatus.TrackerIndex++;
-                        if (backend.Backend.Status != BackendStatus.LOADING && backend.Backend.Status != BackendStatus.WAITING)
+                        ReassignLoadedModelsList();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logs.Error($"Error while reassigning loaded models list: {ex}");
+                    }
+                }
+                T2IBackendData[] loading = [.. T2IBackends.Values.Where(b => b.Backend.LoadStatusReport is not null && b.Backend.LoadStatusReport.Count > 1)];
+                if (loading.Any())
+                {
+                    long now = Environment.TickCount64;
+                    foreach (T2IBackendData backend in loading)
+                    {
+                        AbstractT2IBackend.LoadStatus firstStatus = backend.Backend.LoadStatusReport[0];
+                        AbstractT2IBackend.LoadStatus lastStatus = backend.Backend.LoadStatusReport[^1];
+                        TimeSpan loadingFor = TimeSpan.FromMilliseconds(now - firstStatus.Time);
+                        if (loadingFor > TimeSpan.FromMinutes(1 + firstStatus.TrackerIndex * 2))
                         {
-                            backend.Backend.LoadStatusReport = null;
-                            continue;
-                        }
-                        TimeSpan lastWaiting = TimeSpan.FromMilliseconds(now - lastStatus.Time);
-                        if (lastWaiting > TimeSpan.FromMinutes(1))
-                        {
-                            Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} has been stuck on load-status='{lastStatus.Message}' for {lastWaiting.TotalMinutes:0.0} minutes...");
-                            if (lastWaiting > TimeSpan.FromMinutes(10))
+                            firstStatus.TrackerIndex++;
+                            if (backend.Backend.Status != BackendStatus.LOADING && backend.Backend.Status != BackendStatus.WAITING)
                             {
-                                Logs.Error($"Something has most likely wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details. You may need to restart the backend, or Swarm itself.");
+                                backend.Backend.LoadStatusReport = null;
+                                continue;
                             }
-                            else if (lastWaiting > TimeSpan.FromMinutes(5))
+                            TimeSpan lastWaiting = TimeSpan.FromMilliseconds(now - lastStatus.Time);
+                            if (lastWaiting > TimeSpan.FromMinutes(1))
                             {
-                                Logs.Warning($"Something may have gone wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details.");
+                                Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} has been stuck on load-status='{lastStatus.Message}' for {lastWaiting.TotalMinutes:0.0} minutes...");
+                                if (lastWaiting > TimeSpan.FromMinutes(10))
+                                {
+                                    Logs.Error($"Something has most likely wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details. You may need to restart the backend, or Swarm itself.");
+                                }
+                                else if (lastWaiting > TimeSpan.FromMinutes(5))
+                                {
+                                    Logs.Warning($"Something may have gone wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details.");
+                                }
                             }
-                        }
-                        else if (loadingFor > TimeSpan.FromMinutes(15))
-                        {
-                            Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading after {loadingFor.TotalMinutes:0.00} minutes. It may be fine, or it may have gotten stuck. Check logs for details.");
-                        }
-                        else
-                        {
-                            Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading, and is probably fine...");
+                            else if (loadingFor > TimeSpan.FromMinutes(15))
+                            {
+                                Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading after {loadingFor.TotalMinutes:0.00} minutes. It may be fine, or it may have gotten stuck. Check logs for details.");
+                            }
+                            else
+                            {
+                                Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading, and is probably fine...");
+                            }
                         }
                     }
                 }
             }
-            NewBackendInitSignal.WaitAsync(TimeSpan.FromSeconds(2)).Wait();
+            catch (Exception ex)
+            {
+                Logs.Error($"Error in backend init monitor: {ex}");
+            }
+            NewBackendInitSignal.WaitAsync(TimeSpan.FromSeconds(2), Program.GlobalProgramCancel).Wait();
         }
     }
 
