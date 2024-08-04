@@ -656,7 +656,10 @@ public class WorkflowGenerator
             string fluxNode = CreateNode("ModelSamplingFlux", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["shift"] = shiftVal
+                ["width"] = UserInput.GetImageWidth(),
+                ["height"] = UserInput.GetImageHeight(),
+                ["max_shift"] = shiftVal,
+                ["base_shift"] = 0.5 // TODO: Does this need an input?
             });
             LoadingModel = [fluxNode, 0];
         }
