@@ -103,12 +103,16 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
         - Put the `ae.sft` file in `(Swarm)/Models/VAE`
     - Or the simplified fp8 file:
         - Dev <https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors>
+        - Schnell <https://huggingface.co/Comfy-Org/flux1-schnell/blob/main/flux1-schnell-fp8.safetensors>
         - goes in your regular `(Swarm)/Models/Stable-Diffusion` dir
     - For both models, use CFG=1 (negative prompt won't work). Sampling leave default (will use Euler + Simple)
+        - For the Dev model, there is also a `Flux Guidance Scale` parameter under `Sampling`, which is a distilled embedding value that the model was trained to use.
+        - Dev can use some slightly-higher CFG values (allowing for negative prompt), possibly higher if you reduce the Flux Guidance value and/or use Dynamic Thresholding.
     - For Schnell use Steps=4 (or lower, it can even do 1 step), for Dev use Steps=20 or higher
-    - This is best on a very high end GPU (eg 4090) for now. It is a 12B model. Smaller GPUs can run it, but will be slow.
+    - This is best on a very high end GPU (eg 4090) for now. It is a 12B model.
+        - Smaller GPUs can run it, but will be slow. This requires a lot of system RAM (32GiB+). It's been shown to work as low down as an RTX 2070 or 2060 (very slowly).
     - On a 4090, schnell takes about 4/5 seconds to generate a 4-step image, very close to SDXL 20 steps in time, but much higher quality.
-    - By default swarm will use fp8_e4m3fn for Flux, if you have a very very big GPU and want to use fp16/bf16, under Advanced Sampling edit Preferred DType
-    - It supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results
-    - You _can_ do a refiner upscale 2x and it will work but take a long time and not have excellent quality. Refiner tiling may be better.
-    - There is also a `Flux Guidance Scale` parameter under `Sampling`, which is like CFG, but, differenty.
+    - By default swarm will use fp8_e4m3fn for Flux, if you have a very very big GPU and want to use fp16/bf16, under `Advanced Sampling` set `Preferred DType` to `Default (16 bit)`
+    - It natively supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results.
+        - You can mess with the resolution quite a lot and still get decent results. It's very flexible even past what it was trained on.
+    - You _can_ do a refiner upscale 2x and it will work but take a long time and might not have excellent quality. Refiner tiling may be better.
