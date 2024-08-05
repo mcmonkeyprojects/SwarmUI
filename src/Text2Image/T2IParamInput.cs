@@ -715,6 +715,7 @@ public class T2IParamInput
                 {
                     (prefix, preData) = prefix.BeforeLast(']').BeforeAndAfter('[');
                 }
+                prefix = prefix.ToLowerFast();
                 context.RawCurrentTag = tag;
                 context.PreData = preData;
                 Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}'");
@@ -739,6 +740,10 @@ public class T2IParamInput
                         }
                         return result;
                     }
+                }
+                else if (tag.ToLowerFast() == "break")
+                {
+                    return "<break>";
                 }
                 return $"<{tag}>";
             }, false, 0);
