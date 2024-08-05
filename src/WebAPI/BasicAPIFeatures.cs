@@ -166,7 +166,7 @@ public static class BasicAPIFeatures
                             }
                             else
                             {
-                                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_cu121_or_cpu.7z", "dlbackend/comfyui_dl.7z", updateProgress);
+                                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", updateProgress);
                             }
                         }
                         catch (HttpRequestException ex)
