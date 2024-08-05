@@ -386,7 +386,7 @@ public class T2IParamTypes
         InitImage = Register<Image>(new("Init Image", "Init-image, to edit an image using diffusion.\nThis process is sometimes called 'img2img' or 'Image To Image'.",
             null, OrderPriority: -5, Group: GroupInitImage, ChangeWeight: 2
             ));
-        UseInitImageDimensions = Register<bool>(new("Use Dimensions of Init Image", "Use the dimensions of the Init Image instead of the specified resolution.\nDimensions may be rounded to a multiple of 8.", "false", IgnoreIf: "false", Group: GroupInitImage, OrderPriority: -4.9));
+        UseInitImageDimensions = Register<bool>(new("Use Dimensions of Init Image", "Use the dimensions of the Init Image instead of the specified resolution.\nDimensions may be rounded to a multiple of 8.", "false", IgnoreIf: "false", Group: GroupInitImage, OrderPriority: -4.9, HideFromMetadata: true));
         InitImageCreativity = Register<double>(new("Init Image Creativity", "Higher values make the generation more creative, lower values follow the init image closer.\nSometimes referred to as 'Denoising Strength' for 'img2img'.",
             "0.6", Min: 0, Max: 1, Step: 0.05, OrderPriority: -4.5, ViewType: ParamViewType.SLIDER, Group: GroupInitImage, Examples: ["0", "0.4", "0.6", "1"]
             ));
