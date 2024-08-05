@@ -30,6 +30,17 @@ public class T2IParamInput
         },
         input =>
         {
+            if (input.TryGet(T2IParamTypes.UseInitImageDimensions, out bool useInitImageDimensions) && useInitImageDimensions && input.TryGet(T2IParamTypes.InitImage, out Image image) && image != null)
+            {
+                //fixme: "image.ToIS" reloads the image every time, it's not cached or anything
+                var toIs = image.ToIS;
+                input.Set(T2IParamTypes.Width, toIs.Width);
+                input.Set(T2IParamTypes.Height, toIs.Height);
+                input.Remove(T2IParamTypes.AltResolutionHeightMult);
+            }
+        },
+        input =>
+        {
             if (input.TryGet(T2IParamTypes.RawResolution, out string res))
             {
                 (string widthText, string heightText) = res.BeforeAndAfter('x');
@@ -491,6 +502,12 @@ public class T2IParamInput
         {
             return int.Parse(res.Before('x'));
         }
+        if (TryGet(T2IParamTypes.UseInitImageDimensions, out bool useInitImageDimensions) && useInitImageDimensions &&
+            TryGet(T2IParamTypes.InitImage, out Image image) && image != null)
+        {
+            //fixme: "image.ToIS" reloads the image every time, it's not cached or anything
+            return image.ToIS.Width;
+        }
         return Get(T2IParamTypes.Width, 512);
     }
 
@@ -500,6 +517,12 @@ public class T2IParamInput
         if (TryGet(T2IParamTypes.RawResolution, out string res))
         {
             return int.Parse(res.After('x'));
+        }
+        if (TryGet(T2IParamTypes.UseInitImageDimensions, out bool useInitImageDimensions) && useInitImageDimensions &&
+            TryGet(T2IParamTypes.InitImage, out Image image) && image != null)
+        {
+            //fixme: "image.ToIS" reloads the image every time, it's not cached or anything
+            return image.ToIS.Height;
         }
         if (TryGet(T2IParamTypes.AltResolutionHeightMult, out double val) && TryGet(T2IParamTypes.Width, out int width))
         {
