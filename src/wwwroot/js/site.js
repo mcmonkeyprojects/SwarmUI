@@ -674,6 +674,7 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
     <div class="auto-input auto-file-box"${featureid}>
         <label>
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
+            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="let element = document.getElementById('${id}'); let files = event.clipboardData.files; if (files.length >= 1) { element.files=files; load_image_file(element); }">
         </label>
         <label for="${id}" class="auto-file-label">
             <input class="auto-file" type="file" accept="image/png, image/jpeg" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="false">
