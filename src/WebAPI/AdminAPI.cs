@@ -98,6 +98,7 @@ public static class AdminAPI
     public static async Task<JObject> ChangeServerSettings(Session session,
         [API.APIParameter("Dynamic input of `\"settingname\": valuehere`.")] JObject rawData)
     {
+        FDSSection origPaths = Program.ServerSettings.Paths.Save(true);
         JObject settings = (JObject)rawData["settings"];
         List<string> changed = [];
         foreach ((string key, JToken val) in settings)
@@ -126,6 +127,26 @@ public static class AdminAPI
         Program.SaveSettingsFile();
         if (settings.Properties().Any(p => p.Name.StartsWith("paths.")))
         {
+            string[] paths =
+            [
+                Program.ServerSettings.Paths.SDModelFolder, Program.ServerSettings.Paths.SDVAEFolder,
+                Program.ServerSettings.Paths.SDLoraFolder, Program.ServerSettings.Paths.SDControlNetsFolder,
+                Program.ServerSettings.Paths.SDClipVisionFolder
+            ];
+            try
+            {
+                foreach (string path in paths)
+                {
+                    Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, path));
+                }
+            }
+            catch (Exception e)
+            {
+                Logs.Error($"Failed to create one or more directories: {e.Message}");
+                Program.ServerSettings.Paths.Load(origPaths);
+                Program.SaveSettingsFile();
+                return new JObject() { ["error"] = "Model paths settings are invalid, rejected change." };
+            }
             Program.BuildModelLists();
             Program.RefreshAllModelSets();
             Program.ModelPathsChangedEvent?.Invoke();
