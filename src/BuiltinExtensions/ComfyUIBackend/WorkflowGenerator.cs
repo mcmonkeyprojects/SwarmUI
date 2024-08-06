@@ -903,7 +903,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3())
+        else if (IsSD3() || IsFlux())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {
