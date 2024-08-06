@@ -275,6 +275,12 @@ public static class NetworkBackendUtils
             {
                 start.FileName = "python";
             }
+            if (File.Exists($"{dir}/zluda/zluda.exe"))
+            {
+                string pythonexe = start.FileName;
+                start.FileName = Path.GetFullPath($"{dir}/zluda/zluda.exe");
+                preArgs = $"-- {pythonexe} {preArgs}".Trim();
+            }
         }
         else
         {
