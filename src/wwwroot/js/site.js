@@ -289,8 +289,8 @@ function textPromptAddKeydownHandler(elem) {
             before += mid.substring(0, 1);
             mid = mid.substring(1);
         }
-        // Sorry for the regex. Matches ends with ":1.5)" or just ")". Or Just ":1.5". Also empty, so that needs a check after.
-        let matched = mid.trim().match(/(?:\:[0-9.-]*)?\)?$/);
+        // Sorry for the regex. Matches ends with ":1.5)" or just ")". Or Just ":1.5". Also forbids backslash prefix. Also empty, so that needs a check after.
+        let matched = mid.trim().match(/(?<![\\])(?:\:[0-9.-]*)?\)?$/);
         if (matched && matched[0]) {
             after = mid.substring(mid.length - matched[0].length) + after;
             mid = mid.substring(0, mid.length - matched[0].length);
@@ -298,6 +298,9 @@ function textPromptAddKeydownHandler(elem) {
         if (before.trimEnd().endsWith("(") && after.trimStart().startsWith(":")) {
             let postColon = after.trimStart().substring(1);
             let paren = postColon.indexOf(')');
+            while (paren > 0 && postColon.substring(paren - 1).startsWith('\\)')) {
+                paren = postColon.indexOf(')', paren + 1);
+            }
             if (paren != -1) {
                 before = before.trimEnd();
                 before = before.substring(0, before.length - 1);
