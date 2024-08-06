@@ -373,7 +373,7 @@ public class T2IParamTypes
             "CLIP Only", GetValues: _ => ["CLIP Only", "T5 Only", "CLIP + T5"], Toggleable: true, Group: GroupSampling, FeatureFlag: "sd3", OrderPriority: 5, ChangeWeight: 9
             ));
         FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux-Dev models.\nDoes not apply to Flux-Schnell.\nThis is a distilled embedded value the model was trained on, which may behave similar to CFG but not exactly.\n3.5 is default, but closer to 2.0 may allow for more stylistic flexibility.",
-            "3.5", Min: 0, Max: 100, Step: 0.1, Toggleable: true, IsAdvanced: true, Group: GroupSampling, FeatureFlag: "flux-dev"
+            "3.5", Min: 0, Max: 100, ViewMax: 10, Step: 0.1, Toggleable: true, IsAdvanced: true, Group: GroupSampling, ViewType: ParamViewType.SLIDER, FeatureFlag: "flux-dev"
             ));
         ZeroNegative = Register<bool>(new("Zero Negative", "Zeroes the negative prompt if it's empty.\nDoes nothing if the negative prompt is not empty.\nThis may yield better quality on SD3.",
             "false", IgnoreIf: "false", Group: GroupSampling
