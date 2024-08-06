@@ -265,7 +265,7 @@ function textPromptDoCount(elem, countElem = null, prefix = '') {
 
 function textPromptInputHandle(elem) {
     elem.style.height = '0px';
-    elem.style.height = `max(3.4rem, ${elem.scrollHeight + 5}px)`;
+    elem.style.height = `max(3.4rem, min(15rem, ${elem.scrollHeight + 5}px))`;
     textPromptDoCount(elem);
 }
 
