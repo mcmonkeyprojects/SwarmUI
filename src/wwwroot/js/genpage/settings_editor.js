@@ -50,7 +50,7 @@ function buildSettingsMenu(container, data, prefix, tracker) {
     let confirmer = getRequiredElementById(`${prefix}confirmer`);
     for (let key of keys) {
         let elem = getRequiredElementById(prefix + key);
-        elem.addEventListener('change', () => {
+        elem.addEventListener('input', () => {
             let value = null;
             if (elem.type == 'checkbox') {
                 value = elem.checked;
