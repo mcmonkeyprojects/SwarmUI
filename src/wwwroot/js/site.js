@@ -665,6 +665,17 @@ function makeMultiselectInput(featureid, id, paramid, name, description, values,
     return html;
 }
 
+function onImageInputPaste(e) {
+    let element = findParentOfClass(e.target, 'auto-input').querySelector('input[type="file"]');
+    let files = e.clipboardData.files;
+    if (files.length > 0) {
+        if (files[0].type.startsWith('image/')) {
+            element.files = files;
+            load_image_file(element);
+        }
+    }
+}
+
 function makeImageInput(featureid, id, paramid, name, description, toggles = false, popover_button = true) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
@@ -674,7 +685,7 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
     <div class="auto-input auto-file-box"${featureid}>
         <label>
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
-            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="let element = document.getElementById('${id}'); let files = event.clipboardData.files; if (files.length >= 1) { element.files=files; load_image_file(element); }">
+            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onImageInputPaste(arguments[0])">
         </label>
         <label for="${id}" class="auto-file-label">
             <input class="auto-file" type="file" accept="image/png, image/jpeg" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="false">
