@@ -648,7 +648,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 let ctx = canvas.getContext('2d');
                 ctx.drawImage(tmpImg, 0, 0);
                 canvas.toBlob(blob => {
-                    let file = new File([blob], imagePathClean, { type: img.src.substring(img.src.lastIndexOf('.') + 1) });
+                    let type = img.src.substring(img.src.lastIndexOf('.') + 1);
+                    let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
                     let container = new DataTransfer(); 
                     container.items.add(file);
                     initImageParam.files = container.files;
