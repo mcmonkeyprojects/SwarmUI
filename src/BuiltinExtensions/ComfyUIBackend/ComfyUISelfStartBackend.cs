@@ -113,6 +113,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     {
         try
         {
+            await Task.Delay(TimeSpan.FromSeconds(0.05));
             AddLoadStatus("Will ensure all node repos...");
             string nodePath = Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes");
             if (!Directory.Exists(nodePath))
@@ -128,6 +129,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             tasks.Clear();
             foreach (string node in Directory.EnumerateDirectories(nodePath))
             {
+                await Task.Delay(TimeSpan.FromSeconds(0.05));
                 if (Directory.Exists($"{node}/.git"))
                 {
                     string toUse = node;
