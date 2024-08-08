@@ -1,5 +1,19 @@
 #!/bin/bash
 
+# Check if GPU type is provided
+if [ $# -eq 0 ]; then
+    echo "Error: GPU type not specified. Please use 'amd' or 'nv' as an argument."
+    exit 1
+fi
+
+GPU_TYPE=$1
+
+# Validate GPU type
+if [ "$GPU_TYPE" != "amd" ] && [ "$GPU_TYPE" != "nv" ]; then
+    echo "Error: Invalid GPU type. Please use 'amd' or 'nv'."
+    exit 1
+fi
+
 mkdir dlbackend
 
 cd dlbackend
@@ -29,11 +43,17 @@ case $venv in
 esac
 
 if [ -z "${SWARM_NO_VENV}" ]; then
-
     python3 -s -m venv venv
-
     . venv/bin/activate
 fi
 
-python3 -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+# Install PyTorch based on GPU type
+if [ "$GPU_TYPE" == "nv" ]; then
+    python3 -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+elif [ "$GPU_TYPE" == "amd" ]; then
+    python3 -s -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+fi
+
 python3 -s -m pip install -r requirements.txt
+
+echo "Installation completed for $GPU_TYPE GPU."
