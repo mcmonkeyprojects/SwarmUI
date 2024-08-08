@@ -11,6 +11,9 @@ namespace SwarmUI.Text2Image;
 /// <summary>Represents user-input for a Text2Image request.</summary>
 public class T2IParamInput
 {
+    /// <summary>Parameter IDs that must be loaded early on, eg extracted from presets in prompts early. Primarily things that affect backend selection.</summary>
+    public static readonly string[] ParamsMustLoadEarly = ["model", "images", "internalbackendtype", "exactbackendid"];
+
     /// <summary>Special handlers for any special logic to apply post-loading a param input.</summary>
     public static List<Action<T2IParamInput>> SpecialParameterHandlers =
     [
@@ -73,9 +76,12 @@ public class T2IParamInput
                             Logs.Debug($"(Pre-input-parse) Preset '{data}' does not exist and will be ignored.");
                             return null;
                         }
-                        if (preset.ParamMap.TryGetValue("model", out string model))
+                        foreach (string pname in ParamsMustLoadEarly)
                         {
-                            T2IParamTypes.ApplyParameter("model", model, input);
+                            if (preset.ParamMap.TryGetValue(pname, out string pval))
+                            {
+                                T2IParamTypes.ApplyParameter(pname, pval, input);
+                            }
                         }
                     }
                     return "";
