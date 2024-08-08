@@ -27,7 +27,10 @@ public class PythonLaunchHelper
             start.Environment.Remove("LIB");
             Logs.Debug($"{prefix}Removing environment variable LIB due to being a python-lib val which was {libVal}");
         }
-        start.Environment["PYTHONUNBUFFERED"] = "true";
+        start.Environment["PYTHONUNBUFFERED"] = "true"; // Don't buffer stdout
+        start.Environment["YOLO_OFFLINE"] = "true"; // Tell ultralytics not to attempt telemetry
+        start.Environment["DISABLE_TELEMETRY"] = "true"; // Tell HF no telemetry
+        start.Environment["DO_NOT_TRACK"] = "true"; // Generic telemetry disable
     }
 
     /// <summary>Helper to fix up python paths in environment PATH var.</summary>
