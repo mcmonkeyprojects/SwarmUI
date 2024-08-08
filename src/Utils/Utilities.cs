@@ -858,7 +858,7 @@ public static class Utilities
             WorkingDirectory = dir
         };
         SemaphoreSlim semaphore = GitOverlapLocks.GetLock(dir);
-        semaphore.Wait();
+        await semaphore.WaitAsync();
         try
         {
             Process p = Process.Start(start);
