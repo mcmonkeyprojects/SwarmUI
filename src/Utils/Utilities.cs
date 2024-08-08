@@ -862,14 +862,40 @@ public static class Utilities
         try
         {
             Process p = Process.Start(start);
-            await p.WaitForExitAsync(Program.GlobalProgramCancel);
-            string stdout = await p.StandardOutput.ReadToEndAsync();
-            string stderr = await p.StandardError.ReadToEndAsync();
-            if (!string.IsNullOrWhiteSpace(stderr))
+            async Task<string> result()
             {
-                return $"{stdout}\n{stderr}";
+                string stdout = await p.StandardOutput.ReadToEndAsync();
+                string stderr = await p.StandardError.ReadToEndAsync();
+                if (!string.IsNullOrWhiteSpace(stderr))
+                {
+                    return $"{stdout}\n{stderr}";
+                }
+                return stdout;
             }
-            return stdout;
+            Task exitTask = p.WaitForExitAsync(Program.GlobalProgramCancel);
+            Task finished = await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromMinutes(1)));
+            if (finished == exitTask)
+            {
+                return await result();
+            }
+            p.Refresh();
+            if (p.HasExited)
+            {
+                return await result();
+            }
+            Logs.Warning($"Git process '{args}' in '{dir}' has been running for over a minute, something may have gone wrong, allowing 1 more minute to finish...");
+            finished = await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromMinutes(1)));
+            if (finished == exitTask)
+            {
+                return await result();
+            }
+            p.Refresh();
+            if (p.HasExited)
+            {
+                return await result();
+            }
+            Logs.Error($"Git process '{args}' in '{dir}' has been running for over 2 minutes - something has gone wrong. Will background.");
+            return "Failed - process never finished in time";
         }
         finally
         {
