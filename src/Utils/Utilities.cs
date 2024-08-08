@@ -895,6 +895,7 @@ public static class Utilities
                 return await result();
             }
             Logs.Error($"Git process '{args}' in '{dir}' has been running for over 2 minutes - something has gone wrong. Will background.");
+            NetworkBackendUtils.ReportLogsFromProcess(p, "failed git process", "failed-git");
             return "Failed - process never finished in time";
         }
         finally
