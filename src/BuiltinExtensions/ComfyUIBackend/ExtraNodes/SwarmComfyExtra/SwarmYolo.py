@@ -1,7 +1,6 @@
 import torch, folder_paths, comfy
 from PIL import Image
 import numpy as np
-from ultralytics import YOLO
 
 class SwarmYoloDetection:
     @classmethod
@@ -26,6 +25,7 @@ class SwarmYoloDetection:
         model_path = folder_paths.get_full_path("yolov8", model_name)
         if model_path is None:
             raise ValueError(f"Model {model_name} not found, or yolov8 folder path not defined")
+        from ultralytics import YOLO
         model = YOLO(model_path)
         results = model(img)
         masks = results[0].masks
