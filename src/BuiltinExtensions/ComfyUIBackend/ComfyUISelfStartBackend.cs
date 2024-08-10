@@ -81,8 +81,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     {
                         path = $"\"{path}\"";
                     }
-                    string cacheOption = skipPipCache ? "--no-cache-dir" : string.Empty;
-                    Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install {cacheOption} -r {path}");
+                    string cacheOption = skipPipCache ? " --no-cache-dir" : "";
+                    Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install{cacheOption} -r {path}");
                     NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Requirements Install - {folderName})", "");
                     await p.WaitForExitAsync(Program.GlobalProgramCancel);
                     AddLoadStatus($"Requirement install {reqFile} done.");
