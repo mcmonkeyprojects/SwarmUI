@@ -82,6 +82,11 @@ public class ComfyUIBackendExtension : Extension
             FeaturesSupported.UnionWith(["frameinterps"]);
             FeaturesDiscardIfNotFound.UnionWith(["frameinterps"]);
         }
+        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-segment-anything-2"))
+        {
+            FeaturesSupported.UnionWith(["sam2"]);
+            FeaturesDiscardIfNotFound.UnionWith(["sam2"]);
+        }
         static string[] listModelsFor(string subpath)
         {
             string path = $"{Program.ServerSettings.Paths.ModelRoot}/{subpath}";
@@ -388,6 +393,41 @@ public class ComfyUIBackendExtension : Extension
             if (rawObjectInfo.TryGetValue("SetUnionControlNetType", out JToken unionCtrlNet))
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}///{m} (New)"));
+            }
+            if (rawObjectInfo.TryGetValue("Sam2AutoSegmentation", out JToken nodeData))
+            {
+                foreach (string size in new string[] { "base_plus", "large", "small" })
+                {
+                    ControlNetPreprocessors[$"Segment Anything 2 Global Autosegment ({size})"] = new JObject()
+                    {
+                        ["swarm_custom"] = true,
+                        ["output"] = "SWARM:NODE_1,1",
+                        ["nodes"] = new JArray()
+                        {
+                            new JObject()
+                            {
+                                ["class_type"] = "DownloadAndLoadSAM2Model",
+                                ["inputs"] = new JObject()
+                                {
+                                    ["model"] = $"sam2_hiera_{size}.safetensors",
+                                    ["segmentor"] = "automaskgenerator",
+                                    ["device"] = "cuda", // TODO: This should really be decided by the python, not by swarm's workflow generator - the python knows what the GPU supports, swarm does not
+                                    ["precision"] = "bf16"
+                                }
+                            },
+                            new JObject()
+                            {
+                                ["class_type"] = "Sam2AutoSegmentation",
+                                ["node_data"] = nodeData,
+                                ["inputs"] = new JObject()
+                                {
+                                    ["sam2_model"] = "SWARM:NODE_0",
+                                    ["image"] = "SWARM:INPUT_0"
+                                }
+                            }
+                        }
+                    };
+                }
             }
             foreach ((string key, JToken data) in rawObjectInfo)
             {

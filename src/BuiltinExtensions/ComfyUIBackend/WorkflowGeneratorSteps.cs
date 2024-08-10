@@ -631,8 +631,7 @@ public class WorkflowGeneratorSteps
             for (int i = 0; i < 3; i++)
             {
                 T2IParamTypes.ControlNetParamHolder controlnetParams = T2IParamTypes.Controlnets[i];
-                if (g.UserInput.TryGet(controlnetParams.Model, out T2IModel controlModel)
-                    && g.UserInput.TryGet(controlnetParams.Strength, out double controlStrength))
+                if (g.UserInput.TryGet(controlnetParams.Strength, out double controlStrength))
                 {
                     string imageInput = "${" + controlnetParams.Image.Type.ID + "}";
                     if (!g.UserInput.TryGet(controlnetParams.Image, out Image img))
@@ -645,15 +644,17 @@ public class WorkflowGeneratorSteps
                         img = firstImage;
                     }
                     string imageNode = g.CreateLoadImageNode(img, imageInput, true);
+                    JArray imageNodeActual = [imageNode, 0];
+                    T2IModel controlModel = g.UserInput.Get(controlnetParams.Model, null);
                     if (!g.UserInput.TryGet(ComfyUIBackendExtension.ControlNetPreprocessorParams[i], out string preprocessor))
                     {
                         preprocessor = "none";
-                        string wantedPreproc = controlModel.Metadata?.Preprocessor;
-                        string cnName = $"{controlModel.Name}{controlModel.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLowerFast();
+                        string wantedPreproc = controlModel?.Metadata?.Preprocessor;
+                        string cnName = $"{controlModel?.Name}{controlModel?.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLowerFast();
                         if (string.IsNullOrWhiteSpace(wantedPreproc))
                         {
                             if (cnName.Contains("canny")) { wantedPreproc = "canny"; }
-                            else if (cnName.Contains("depth") || controlModel.Name.Contains("midas")) { wantedPreproc = "depth"; }
+                            else if (cnName.Contains("depth") || cnName.Contains("midas")) { wantedPreproc = "depth"; }
                             else if (cnName.Contains("sketch")) { wantedPreproc = "sketch"; }
                             else if (cnName.Contains("scribble")) { wantedPreproc = "scribble"; }
                             else if (cnName.Contains("pose")) { wantedPreproc = "pose"; }
@@ -712,51 +713,64 @@ public class WorkflowGeneratorSteps
                     if (preprocessor.ToLowerFast() != "none")
                     {
                         JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new SwarmUserErrorException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
-                        string preProcNode = g.CreateNode(preprocessor, (_, n) =>
+                        JArray preprocActual;
+                        if (objectData is JObject objObj && objObj.TryGetValue("swarm_custom", out JToken swarmCustomTok) && swarmCustomTok.Value<bool>())
                         {
-                            n["inputs"] = new JObject()
+                            preprocActual = g.CreateNodesFromSpecialSyntax(objObj, [[imageNode, 0]]);
+                        }
+                        else
+                        {
+                            string preProcNode = g.CreateNode(preprocessor, (_, n) =>
                             {
-                                ["image"] = new JArray() { $"{imageNode}", 0 }
-                            };
-                            foreach ((string key, JToken data) in (JObject)objectData["input"]["required"])
-                            {
-                                if (key == "mask")
+                                n["inputs"] = new JObject()
                                 {
-                                    if (g.FinalMask is null)
+                                    ["image"] = new JArray() { $"{imageNode}", 0 }
+                                };
+                                foreach ((string key, JToken data) in (JObject)objectData["input"]["required"])
+                                {
+                                    if (key == "mask")
                                     {
-                                        throw new SwarmUserErrorException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
+                                        if (g.FinalMask is null)
+                                        {
+                                            throw new SwarmUserErrorException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
+                                        }
+                                        n["inputs"]["mask"] = g.FinalMask;
                                     }
-                                    n["inputs"]["mask"] = g.FinalMask;
-                                }
-                                else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
-                                {
-                                    n["inputs"][key] = defaultValue;
-                                }
-                            }
-                            if (((JObject)objectData["input"]).TryGetValue("optional", out JToken optional))
-                            {
-                                foreach ((string key, JToken data) in (JObject)optional)
-                                {
-                                    if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
+                                    else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
                                     {
                                         n["inputs"][key] = defaultValue;
                                     }
                                 }
-                            }
-                        });
-                        g.NodeHelpers["controlnet_preprocessor"] = $"{preProcNode}";
+                                if (((JObject)objectData["input"]).TryGetValue("optional", out JToken optional))
+                                {
+                                    foreach ((string key, JToken data) in (JObject)optional)
+                                    {
+                                        if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
+                                        {
+                                            n["inputs"][key] = defaultValue;
+                                        }
+                                    }
+                                }
+                            });
+                            g.NodeHelpers["controlnet_preprocessor"] = $"{preProcNode}";
+                            preprocActual = [preProcNode, 0];
+                        }
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
-                            g.FinalImageOut = [preProcNode, 0];
+                            g.FinalImageOut = preprocActual;
                             g.CreateImageSaveNode(g.FinalImageOut, "9");
                             g.SkipFurtherSteps = true;
                             return;
                         }
-                        imageNode = preProcNode;
+                        imageNodeActual = preprocActual;
                     }
                     else if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                     {
                         throw new SwarmUserErrorException("Cannot preview a ControlNet preprocessor without any preprocessor enabled.");
+                    }
+                    if (controlModel is null)
+                    {
+                        throw new SwarmUserErrorException("Cannot use ControlNet without a model selected.");
                     }
                     string controlModelNode = g.CreateNode("ControlNetLoader", new JObject()
                     {
@@ -779,7 +793,7 @@ public class WorkflowGeneratorSteps
                             ["negative"] = g.FinalNegativePrompt,
                             ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
                             ["vae"] = g.FinalVae,
-                            ["image"] = new JArray() { $"{imageNode}", 0 },
+                            ["image"] = imageNodeActual,
                             ["strength"] = controlStrength,
                             ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
                             ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
@@ -792,7 +806,7 @@ public class WorkflowGeneratorSteps
                             ["positive"] = g.FinalPrompt,
                             ["negative"] = g.FinalNegativePrompt,
                             ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
-                            ["image"] = new JArray() { $"{imageNode}", 0 },
+                            ["image"] = imageNodeActual,
                             ["strength"] = controlStrength,
                             ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
                             ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
