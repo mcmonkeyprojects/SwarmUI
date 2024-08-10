@@ -223,27 +223,29 @@ public class WorkflowGeneratorSteps
                 }
                 g.CreateLoadImageNode(img, "${initimage}", true, "15");
                 g.FinalInputImage = ["15", 0];
-                if (g.FinalMask is not null)
+                JArray currentMask = g.FinalMask;
+                if (currentMask is not null)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
                     {
                         g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel);
+                        currentMask = [g.MaskShrunkInfo.Item2, 0];
                         g.FinalLatentImage = [g.MaskShrunkInfo.Item3, 0];
                     }
                     else
                     {
-                        g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: g.FinalMask);
+                        g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: currentMask);
                         string appliedNode = g.CreateNode("SetLatentNoiseMask", new JObject()
                         {
                             ["samples"] = g.FinalLatentImage,
-                            ["mask"] = g.FinalMask
+                            ["mask"] = currentMask
                         });
                         g.FinalLatentImage = [appliedNode, 0];
                     }
                 }
                 else
                 {
-                    g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: g.FinalMask);
+                    g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: currentMask);
                 }
                 if (g.UserInput.TryGet(T2IParamTypes.UnsamplerPrompt, out string unprompt))
                 {
@@ -282,13 +284,13 @@ public class WorkflowGeneratorSteps
                 if (g.UserInput.TryGet(T2IParamTypes.InitImageResetToNorm, out double resetFactor))
                 {
                     string emptyImg = g.CreateEmptyImage(g.UserInput.GetImageWidth(), g.UserInput.GetImageHeight(), g.UserInput.Get(T2IParamTypes.BatchSize, 1));
-                    if (g.Features.Contains("comfy_latent_blend_masked") && g.FinalMask is not null)
+                    if (g.Features.Contains("comfy_latent_blend_masked") && currentMask is not null)
                     {
                         string blended = g.CreateNode("SwarmLatentBlendMasked", new JObject()
                         {
                             ["samples0"] = g.FinalLatentImage,
                             ["samples1"] = new JArray() { emptyImg, 0 },
-                            ["mask"] = g.FinalMask,
+                            ["mask"] = currentMask,
                             ["blend_factor"] = resetFactor
                         });
                         g.FinalLatentImage = [blended, 0];
