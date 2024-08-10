@@ -831,6 +831,12 @@ public class WorkflowGeneratorSteps
             double cfg = g.UserInput.Get(T2IParamTypes.CFGScale);
             if (!noSkip && (steps == 0 || endStep <= startStep))
             {
+                g.CreateNode("SwarmJustLoadTheModelPlease", new JObject()
+                {
+                    ["model"] = g.FinalModel,
+                    ["clip"] = g.FinalClip,
+                    ["vae"] = g.FinalVae
+                });
                 g.FinalSamples = g.FinalLatentImage;
             }
             else
@@ -1138,7 +1144,14 @@ public class WorkflowGeneratorSteps
                 });
                 g.FinalImageOut = [removed, 0];
             }
-            g.CreateImageSaveNode(g.FinalImageOut, "9");
+            if (g.UserInput.SourceSession is null && g.UserInput.Get(T2IParamTypes.DoNotSave, false) && g.UserInput.Get(T2IParamTypes.Steps) == 0 && !g.UserInput.TryGet(T2IParamTypes.RefinerModel, out _))
+            {
+                // We don't actually want an image we're just aggressively loading a model or something
+            }
+            else
+            {
+                g.CreateImageSaveNode(g.FinalImageOut, "9");
+            }
         }, 10);
         #endregion
         #region Video

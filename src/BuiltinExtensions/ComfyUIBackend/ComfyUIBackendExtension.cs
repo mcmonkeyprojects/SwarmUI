@@ -35,6 +35,7 @@ public class ComfyUIBackendExtension : Extension
     {
         ["SwarmLoadImageB64"] = "comfy_loadimage_b64",
         ["SwarmSaveImageWS"] = "comfy_saveimage_ws",
+        ["SwarmJustLoadTheModelPlease"] = "comfy_just_load_model",
         ["SwarmLatentBlendMasked"] = "comfy_latent_blend_masked",
         ["SwarmKSampler"] = "variation_seed",
         ["FreeU"] = "freeu",
