@@ -35,6 +35,7 @@ public class ComfyUIBackendExtension : Extension
     {
         ["SwarmLoadImageB64"] = "comfy_loadimage_b64",
         ["SwarmSaveImageWS"] = "comfy_saveimage_ws",
+        ["SwarmJustLoadTheModelPlease"] = "comfy_just_load_model",
         ["SwarmLatentBlendMasked"] = "comfy_latent_blend_masked",
         ["SwarmKSampler"] = "variation_seed",
         ["FreeU"] = "freeu",
@@ -45,6 +46,7 @@ public class ComfyUIBackendExtension : Extension
         ["IPAdapterUnifiedLoader"] = "cubiqipadapterunified",
         ["MiDaS-DepthMapPreprocessor"] = "controlnetpreprocessors",
         ["RIFE VFI"] = "frameinterps",
+        ["Sam2Segmentation"] = "sam2",
         ["SwarmYoloDetection"] = "yolov8",
         ["PixArtCheckpointLoader"] = "extramodelspixart",
         ["TensorRTLoader"] = "tensorrt"
@@ -79,6 +81,11 @@ public class ComfyUIBackendExtension : Extension
         {
             FeaturesSupported.UnionWith(["frameinterps"]);
             FeaturesDiscardIfNotFound.UnionWith(["frameinterps"]);
+        }
+        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-segment-anything-2"))
+        {
+            FeaturesSupported.UnionWith(["sam2"]);
+            FeaturesDiscardIfNotFound.UnionWith(["sam2"]);
         }
         static string[] listModelsFor(string subpath)
         {
@@ -386,6 +393,41 @@ public class ComfyUIBackendExtension : Extension
             if (rawObjectInfo.TryGetValue("SetUnionControlNetType", out JToken unionCtrlNet))
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}///{m} (New)"));
+            }
+            if (rawObjectInfo.TryGetValue("Sam2AutoSegmentation", out JToken nodeData))
+            {
+                foreach (string size in new string[] { "base_plus", "large", "small" })
+                {
+                    ControlNetPreprocessors[$"Segment Anything 2 Global Autosegment {size}"] = new JObject()
+                    {
+                        ["swarm_custom"] = true,
+                        ["output"] = "SWARM:NODE_1,1",
+                        ["nodes"] = new JArray()
+                        {
+                            new JObject()
+                            {
+                                ["class_type"] = "DownloadAndLoadSAM2Model",
+                                ["inputs"] = new JObject()
+                                {
+                                    ["model"] = $"sam2_hiera_{size}.safetensors",
+                                    ["segmentor"] = "automaskgenerator",
+                                    ["device"] = "cuda", // TODO: This should really be decided by the python, not by swarm's workflow generator - the python knows what the GPU supports, swarm does not
+                                    ["precision"] = "bf16"
+                                }
+                            },
+                            new JObject()
+                            {
+                                ["class_type"] = "Sam2AutoSegmentation",
+                                ["node_data"] = nodeData,
+                                ["inputs"] = new JObject()
+                                {
+                                    ["sam2_model"] = "SWARM:NODE_0",
+                                    ["image"] = "SWARM:INPUT_0"
+                                }
+                            }
+                        }
+                    };
+                }
             }
             foreach ((string key, JToken data) in rawObjectInfo)
             {

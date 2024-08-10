@@ -22,8 +22,35 @@ class SwarmEmbedLoaderListProvider:
         return (sd,)
 
 
+class SwarmJustLoadTheModelPlease:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "clip": ("CLIP",),
+                "vae": ("VAE",),
+            }
+        }
+
+    CATEGORY = "SwarmUI/internal"
+    RETURN_TYPES = ()
+    FUNCTION = "just_load"
+    OUTPUT_NODE = True
+
+    def just_load(self, model, clip, vae):
+        if model is None:
+            raise ValueError("The model failed to load")
+        if clip is None:
+            raise ValueError("The text encoders (CLIP) failed to load")
+        if vae is None:
+            raise ValueError("The VAE failed to load")
+        return {}
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmEmbedLoaderListProvider": SwarmEmbedLoaderListProvider,
+    "SwarmJustLoadTheModelPlease": SwarmJustLoadTheModelPlease
 }
 
 

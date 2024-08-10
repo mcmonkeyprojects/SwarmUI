@@ -968,6 +968,100 @@ public class WorkflowGenerator
         FinalModel = [diffNode, 0];
     }
 
+    /// <summary>Create nodes from a special prebuilt node structure data definition.</summary>
+    public JArray CreateNodesFromSpecialSyntax(JObject data, JArray[] inputs)
+    {
+        if (!data.TryGetValue("nodes", out JToken nodesToken) || nodesToken is not JArray nodesArr)
+        {
+            throw new InvalidDataException("Special node generator requires a 'nodes' array.");
+        }
+        if (!data.TryGetValue("output", out JToken outputTok) || outputTok.Type != JTokenType.String)
+        {
+            throw new InvalidDataException("Special node generator requires an 'output' string.");
+        }
+        List<string> nodeIds = [];
+        JArray dataToNodePath(string data)
+        {
+            if (!data.StartsWith("SWARM:"))
+            {
+                return null;
+            }
+            data = data.After(':');
+            if (data.StartsWith("NODE_"))
+            {
+                string node = data.After('_');
+                int subId = 0;
+                if (node.Contains(','))
+                {
+                    (node, string subval) = node.BeforeAndAfter(',');
+                    subId = int.Parse(subval);
+                }
+                int nodeId = int.Parse(node);
+                if (nodeId < 0 || nodeId >= nodeIds.Count)
+                {
+                    throw new InvalidDataException($"Invalid node index in special node generator: requested id {nodeId} but have {nodeIds.Count} nodes.");
+                }
+                return [nodeIds[nodeId], subId];
+            }
+            else if (data.StartsWith("INPUT_"))
+            {
+                string input = data.After('_');
+                int inputId = int.Parse(input);
+                if (inputId < 0 || inputId >= inputs.Length)
+                {
+                    throw new InvalidDataException($"Invalid input index in special node generator: requested id {inputId} but have {inputs.Length} inputs.");
+                }
+                return inputs[inputId];
+            }
+            else
+            {
+                throw new InvalidDataException($"Invalid special node generator syntax: {data}");
+            }
+        }
+        foreach (JToken node in nodesArr)
+        {
+            if (node is not JObject nodeObj || !nodeObj.TryGetValue("class_type", out JToken classTok) || !nodeObj.TryGetValue("inputs", out JToken inputsTok) || inputsTok is not JObject inputsArr)
+            {
+                throw new InvalidDataException("Special node generator requires each node to be an object with an 'class_type' field and 'inputs' obj.");
+            }
+            JObject actualInputs = [];
+            foreach (KeyValuePair<string, JToken> input in inputsArr)
+            {
+                if (input.Value.Type == JTokenType.String && $"{input.Value}".StartsWith("SWARM:"))
+                {
+                    actualInputs[input.Key] = dataToNodePath($"{input.Value}");
+                }
+                else
+                {
+                    actualInputs[input.Key] = input.Value;
+                }
+            }
+            if (nodeObj.TryGetValue("node_data", out JToken nodeData))
+            {
+                foreach ((string key, JToken paramData) in (JObject)nodeData["input"]["required"])
+                {
+                    if (!actualInputs.ContainsKey(key) && paramData.Count() == 2 && paramData[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
+                    {
+                        actualInputs[key] = defaultValue;
+                    }
+                }
+                if (((JObject)nodeData["input"]).TryGetValue("optional", out JToken optional))
+                {
+                    foreach ((string key, JToken paramData) in (JObject)optional)
+                    {
+                        if (!actualInputs.ContainsKey(key) && paramData.Count() == 2 && paramData[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
+                        {
+                            actualInputs[key] = defaultValue;
+                        }
+                    }
+                }
+            }
+            string createdId = CreateNode($"{classTok}", actualInputs);
+            nodeIds.Add(createdId);
+        }
+        return dataToNodePath($"{outputTok}");
+    }
+
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input.</summary>
     public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null)
     {

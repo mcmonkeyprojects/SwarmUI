@@ -769,7 +769,15 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     {
         T2IParamInput input = new(null);
         input.Set(T2IParamTypes.Model, model);
-        input.Set(T2IParamTypes.Steps, 1);
+        if (ComfyUIBackendExtension.FeaturesSupported.Contains("comfy_just_load_model"))
+        {
+            input.Set(T2IParamTypes.Steps, 0);
+            input.Set(T2IParamTypes.DoNotSave, true);
+        }
+        else
+        {
+            input.Set(T2IParamTypes.Steps, 1);
+        }
         input.Set(T2IParamTypes.Width, 256);
         input.Set(T2IParamTypes.Height, 256);
         input.Set(T2IParamTypes.Prompt, "(load the model please)");
