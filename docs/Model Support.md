@@ -80,6 +80,7 @@ These steps are not friendly to beginners (if PixArt gains popularity, likely mo
 
 - You must install https://github.com/city96/ComfyUI_ExtraModels to your Comfy backend.
 - After downloading the model, run Swarm's **Utilities** -> **Pickle To Safetensors** -> `Convert Models`. You need a safetensors models for Swarm to accurately identify model type.
+    - Or download a preconverted copy, like this one: https://huggingface.co/HDiffusion/Pixart-Sigma-Safetensors
 - After you have a safetensors model, find it in the Models tab and click the menu button on the model and select "`Edit Metadata`"
     - From the `Architecture` dropdown, select `PixArtMS Sigma XL 2` for 1024 or lower models, or `XL 2 (2K)` for the 2k
     - In the `Standard Resolution` box, enter `1024x1024` for 1024 or `512x512` for the 512, or `2048x2048` for the 2k
