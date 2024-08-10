@@ -538,7 +538,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
                 <div class="auto-slider-range-wrapper" style="${getRangeStyle(10, 1, 1024)}">
                     <input type="range" style="flex-grow: 2" data-ispot="true" class="auto-slider-range id-rad2" min="1" max="1024" step="1" value="10" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
                 </div>
-            </div>`
+            </div>`;
         let opacityHtml = `<div class="image-editor-tool-block id-opac-block">
                 <label>Opacity:&nbsp;</label>
                 <input type="number" style="width: 40px;" class="auto-number id-opac1" min="1" max="100" step="1" value="100">
@@ -684,6 +684,138 @@ class ImageEditorToolBrush extends ImageEditorTool {
             return true;
         }
         return false;
+    }
+}
+
+
+/**
+ * The Paint Bucket tool.
+ */
+class ImageEditorToolBucket extends ImageEditorTool {
+    constructor(editor) {
+        super(editor, 'paintbucket', 'paintbucket', 'Paint Bucket', 'Fill an area with a color.\nHotKey: P', false, 'p');
+        this.cursor = 'crosshair';
+        this.color = '#ffffff';
+        this.threshold = 10;
+        this.opacity = 1;
+        let colorHTML = `
+        <div class="image-editor-tool-block">
+            <label>Color:&nbsp;</label>
+            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
+            <input type="color" class="id-col2" value="#ffffff">
+            <button class="basic-button id-col3">Pick</button>
+        </div>`;
+        let thresholdHtml = `<div class="image-editor-tool-block id-thresh-block">
+                <label>Threshold:&nbsp;</label>
+                <input type="number" style="width: 40px;" class="auto-number id-thresh1" min="1" max="256" step="1" value="10">
+                <div class="auto-slider-range-wrapper" style="${getRangeStyle(10, 1, 256)}">
+                    <input type="range" style="flex-grow: 2" data-ispot="true" class="auto-slider-range id-thresh2" min="1" max="256" step="1" value="10" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+                </div>
+            </div>`;
+        this.configDiv.innerHTML = colorHTML + thresholdHtml;
+        this.colorText = this.configDiv.querySelector('.id-col1');
+        this.colorSelector = this.configDiv.querySelector('.id-col2');
+        this.colorPickButton = this.configDiv.querySelector('.id-col3');
+        this.colorText.addEventListener('input', () => {
+            this.colorSelector.value = this.colorText.value;
+            this.onConfigChange();
+        });
+        this.colorSelector.addEventListener('change', () => {
+            this.colorText.value = this.colorSelector.value;
+            this.onConfigChange();
+        });
+        this.colorPickButton.addEventListener('click', () => {
+            if (this.colorPickButton.classList.contains('interrupt-button')) {
+                this.colorPickButton.classList.remove('interrupt-button');
+                this.editor.activateTool(this.id);
+            }
+            else {
+                this.colorPickButton.classList.add('interrupt-button');
+                this.editor.pickerTool.toolFor = this;
+                this.editor.activateTool('picker');
+            }
+        });
+        enableSliderForBox(this.configDiv.querySelector('.id-thresh-block'));
+        this.thresholdNumber = this.configDiv.querySelector('.id-thresh1');
+        this.thresholdSelector = this.configDiv.querySelector('.id-thresh2');
+        this.thresholdNumber.addEventListener('change', () => { this.onConfigChange(); });
+        this.lastTouch = null;
+    }
+
+    setColor(col) {
+        this.color = col;
+        this.colorText.value = col;
+        this.colorSelector.value = col;
+        this.colorPickButton.classList.remove('interrupt-button');
+    }
+
+    onConfigChange() {
+        this.color = this.colorText.value;
+        this.threshold = parseInt(this.thresholdNumber.value);
+        this.editor.redraw();
+    }
+
+    doBucket(x, y) {
+        let layer = this.editor.activeLayer;
+        let [targetX, targetY] = layer.canvasCoordToLayerCoord(x, y);
+        targetX = Math.round(targetX);
+        targetY = Math.round(targetY);
+        if (targetX < 0 || targetY < 0 || targetX >= layer.width || targetY >= layer.height) {
+            return;
+        }
+        this.editor.activeLayer.saveBeforeEdit();
+        let canvas = layer.canvas;
+        let ctx = layer.ctx;
+        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let [width, height] = [imageData.width, imageData.height];
+        let maskData = new Uint8Array(width * height);
+        let rawData = imageData.data;
+        let threshold = this.threshold;
+        let newColor = [parseInt(this.color.substring(1, 3), 16), parseInt(this.color.substring(3, 5), 16), parseInt(this.color.substring(5, 7), 16)];
+        function getPixelIndex(x, y) {
+            return (y * width + x) * 4;
+        }
+        function getColorAt(x, y) {
+            let index = getPixelIndex(x, y);
+            return [rawData[index], rawData[index + 1], rawData[index + 2], rawData[index + 3]];
+        }
+        let startColor = getColorAt(targetX, targetY);
+        function isInRange(targetColor) {
+            return Math.abs(targetColor[0] - startColor[0]) + Math.abs(targetColor[1] - startColor[1]) + Math.abs(targetColor[2] - startColor[2]) + Math.abs(targetColor[3] - startColor[3]) <= threshold;
+        }
+        let hits = 0;
+        function setPixel(x, y) {
+            maskData[y * width + x] = 1;
+            let index = getPixelIndex(x, y);
+            rawData[index] = newColor[0];
+            rawData[index + 1] = newColor[1];
+            rawData[index + 2] = newColor[2];
+            rawData[index + 3] = 255;
+            hits++;
+        }
+        function canInclude(x, y) {
+            return x >= 0 && y >= 0 && x < width && y < height && maskData[y * width + x] == 0 && isInRange(getColorAt(x, y));
+        }
+        let stack = [[targetX, targetY]];
+        while (stack.length > 0) {
+            let [x, y] = stack.pop();
+            if (!canInclude(x, y)) {
+                continue;
+            }
+            if (isInRange(getColorAt(x, y))) {
+                setPixel(x, y);
+                if (canInclude(x - 1, y)) { stack.push([x - 1, y]); }
+                if (canInclude(x + 1, y)) { stack.push([x + 1, y]); }
+                if (canInclude(x, y - 1)) { stack.push([x, y - 1]); }
+                if (canInclude(x, y + 1)) { stack.push([x, y + 1]); }
+            }
+        }
+        ctx.putImageData(imageData, 0, 0);
+        this.editor.markChanged();
+    }
+
+    onMouseDown(e) {
+        this.doBucket(this.editor.mouseX, this.editor.mouseY);
     }
 }
 
@@ -1092,10 +1224,11 @@ class ImageEditor {
         this.addTool(new ImageEditorToolSelect(this));
         this.addTool(new ImageEditorToolBrush(this, 'brush', 'paintbrush', 'Paintbrush', 'Draw on the image.\nHotKey: B', false, 'b'));
         this.addTool(new ImageEditorToolBrush(this, 'eraser', 'eraser', 'Eraser', 'Erase parts of the image.\nHotKey: E', true, 'e'));
+        this.addTool(new ImageEditorToolBucket(this));
         this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'paintbrush', 'Color Picker', 'Pick a color from the image.');
         this.addTool(this.pickerTool);
         this.activateTool('brush');
-        this.maxHistory = 10;
+        this.maxHistory = 15;
     }
 
     clearVars() {
@@ -1122,7 +1255,7 @@ class ImageEditor {
 
     addHistoryEntry(entry) {
         if (this.editHistory.length >= this.maxHistory) {
-            this.editHistory.splice(1);
+            this.editHistory.splice(0, 1);
         }
         this.editHistory.push(entry);
     }
