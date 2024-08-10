@@ -766,6 +766,23 @@ class ImageEditorToolBucket extends ImageEditorTool {
         this.editor.activeLayer.saveBeforeEdit();
         let canvas = layer.canvas;
         let ctx = layer.ctx;
+        let refImage = document.createElement('canvas');
+        refImage.width = canvas.width;
+        refImage.height = canvas.height;
+        let refCtx = refImage.getContext('2d');
+        for (let i = 0; i < this.editor.layers.length; i++) {
+            let belowLayer = this.editor.layers[i];
+            if (belowLayer.isMask) {
+                continue;
+            }
+            let offset = layer.getOffset();
+            belowLayer.drawToBack(refCtx, -offset[0], -offset[1], 1);
+            if (belowLayer == layer) {
+                break;
+            }
+        }
+        let refData = refCtx.getImageData(0, 0, refImage.width, refImage.height);
+        let refRawData = refData.data;
         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         let [width, height] = [imageData.width, imageData.height];
         let maskData = new Uint8Array(width * height);
@@ -777,7 +794,7 @@ class ImageEditorToolBucket extends ImageEditorTool {
         }
         function getColorAt(x, y) {
             let index = getPixelIndex(x, y);
-            return [rawData[index], rawData[index + 1], rawData[index + 2], rawData[index + 3]];
+            return [refRawData[index], refRawData[index + 1], refRawData[index + 2], refRawData[index + 3]];
         }
         let startColor = getColorAt(targetX, targetY);
         function isInRange(targetColor) {
