@@ -763,7 +763,8 @@ class ImageEditorToolBucket extends ImageEditorTool {
         if (targetX < 0 || targetY < 0 || targetX >= layer.width || targetY >= layer.height) {
             return;
         }
-        this.editor.activeLayer.saveBeforeEdit();
+        layer.saveBeforeEdit();
+        layer.hasAnyContent = true;
         let canvas = layer.canvas;
         let ctx = layer.ctx;
         let refImage = document.createElement('canvas');
