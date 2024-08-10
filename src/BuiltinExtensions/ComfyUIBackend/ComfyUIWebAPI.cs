@@ -172,9 +172,9 @@ public static class ComfyUIWebAPI
                 Logs.Warning($"User {session.User.UserID} tried to install feature '{feature}' but have no comfy self-start backends.");
                 return new JObject() { ["error"] = $"Cannot install Comfy features as this Swarm instance has no running ComfyUI Self-Start backends currently." };
             }
-            async Task<JObject> doRepo(string path)
+            async Task<JObject> doRepo(string path, bool skipPipCache = false)
             {
-                bool didRestart = await backend.EnsureNodeRepo(path);
+                bool didRestart = await backend.EnsureNodeRepo(path, skipPipCache);
                 if (!didRestart)
                 {
                     _ = Utilities.RunCheckedTask(ComfyUIBackendExtension.RestartAllComfyBackends);
@@ -185,7 +185,7 @@ public static class ComfyUIWebAPI
             if (feature == "ipadapter") { return await doRepo("https://github.com/cubiq/ComfyUI_IPAdapter_plus"); }
             else if (feature == "controlnet_preprocessors") { return await doRepo("https://github.com/Fannovel16/comfyui_controlnet_aux"); }
             else if (feature == "frame_interpolation") { return await doRepo("https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"); }
-            else if (feature == "comfyui_tensorrt") { return await doRepo("https://github.com/comfyanonymous/ComfyUI_TensorRT"); }
+            else if (feature == "comfyui_tensorrt") { return await doRepo("https://github.com/comfyanonymous/ComfyUI_TensorRT", skipPipCache: true); }
             else if (feature == "sam2") { return await doRepo("https://github.com/kijai/ComfyUI-segment-anything-2"); }
             else
             {

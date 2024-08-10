@@ -55,7 +55,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static bool IsComfyModelFileEmitted = false;
 
     /// <summary>Downloads or updates the named relevant ComfyUI custom node repo.</summary>
-    public async Task<bool> EnsureNodeRepo(string url)
+    public async Task<bool> EnsureNodeRepo(string url, bool skipPipCache = false)
     {
         AddLoadStatus($"Will ensure node repo '{url}'...");
         string nodePath = Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes");
@@ -81,7 +81,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     {
                         path = $"\"{path}\"";
                     }
-                    Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install -r {path}");
+                    string cacheOption = skipPipCache ? " --no-cache-dir" : "";
+                    Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install{cacheOption} -r {path}");
                     NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Requirements Install - {folderName})", "");
                     await p.WaitForExitAsync(Program.GlobalProgramCancel);
                     AddLoadStatus($"Requirement install {reqFile} done.");
