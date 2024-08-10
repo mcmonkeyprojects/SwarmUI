@@ -152,6 +152,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
     }
 
+    /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards.</summary>
+    public static List<string> FoldersToForwardInComfyPath = ["clip", "unet", "gligen", "ipadapter", "yolov8", "tensorrt", "clipseg"];
+
     public void EnsureComfyFile()
     {
         lock (ComfyModelFileHelperLock)
@@ -189,24 +192,20 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 clip_vision: |
                     {Program.ServerSettings.Paths.SDClipVisionFolder}
                     clip_vision
-                clip: |
-                    clip
-                unet: |
-                    unet
-                gligen: |
-                    gligen
-                ipadapter: |
-                    ipadapter
-                yolov8: |
-                    yolov8
-                tensorrt: |
-                    tensorrt
-                clipseg: |
-                    clipseg
                 custom_nodes: |
                     {Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")}
                     {Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")}
+
             """;
+            foreach (string folder in FoldersToForwardInComfyPath)
+            {
+                yaml +=
+                $"""
+                    {folder}: |
+                        {folder}
+
+                """;
+            }
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(root, Program.ServerSettings.Paths.SDClipVisionFolder));
             Directory.CreateDirectory($"{root}/upscale_models");
             File.WriteAllText($"{Program.DataDir}/comfy-auto-model.yaml", yaml);
