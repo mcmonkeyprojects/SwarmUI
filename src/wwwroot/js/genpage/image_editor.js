@@ -693,7 +693,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
  */
 class ImageEditorToolBucket extends ImageEditorTool {
     constructor(editor) {
-        super(editor, 'paintbucket', 'paintbucket', 'Paint Bucket', 'Fill an area with a color.\nHotKey: P', false, 'p');
+        super(editor, 'paintbucket', 'paintbucket', 'Paint Bucket', 'Fill an area with a color.\nHotKey: P', 'p');
         this.cursor = 'crosshair';
         this.color = '#ffffff';
         this.threshold = 10;
