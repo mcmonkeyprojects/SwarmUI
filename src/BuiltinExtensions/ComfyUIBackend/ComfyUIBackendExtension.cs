@@ -398,7 +398,7 @@ public class ComfyUIBackendExtension : Extension
             {
                 foreach (string size in new string[] { "base_plus", "large", "small" })
                 {
-                    ControlNetPreprocessors[$"Segment Anything 2 Global Autosegment ({size})"] = new JObject()
+                    ControlNetPreprocessors[$"Segment Anything 2 Global Autosegment {size}"] = new JObject()
                     {
                         ["swarm_custom"] = true,
                         ["output"] = "SWARM:NODE_1,1",

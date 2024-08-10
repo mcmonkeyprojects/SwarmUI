@@ -1780,7 +1780,7 @@ function setTitles() {
 }
 setTitles();
 
-function doFeatureInstaller(path, author, name, button_div_id, alt_confirm = null, callback = null) {
+function doFeatureInstaller(path, author, name, button_div_id, alt_confirm = null, callback = null, deleteButton = true) {
     if (!confirm(alt_confirm || `This will install ${path} which is a third-party extension maintained by community developer '${author}'.\nWe cannot make any guarantees about it.\nDo you wish to install?`)) {
         return;
     }
@@ -1791,7 +1791,9 @@ function doFeatureInstaller(path, author, name, button_div_id, alt_confirm = nul
         buttonDiv.appendChild(createDiv('', null, "Installed! Please wait while backends restart. If it doesn't work, you may need to restart Swarm."));
         reviseStatusBar();
         setTimeout(() => {
-            buttonDiv.remove();
+            if (deleteButton) {
+                buttonDiv.remove();
+            }
             hasAppliedFirstRun = false;
             reviseStatusBar();
             if (callback) {
@@ -1825,7 +1827,9 @@ function installTensorRT() {
 }
 
 function installSAM2() {
-    doFeatureInstaller('https://github.com/kijai/ComfyUI-segment-anything-2', 'kijai', 'ComfyUI-segment-anything-2', 'install_sam2_button');
+    doFeatureInstaller('https://github.com/kijai/ComfyUI-segment-anything-2', 'kijai', 'sam2', 'install_sam2_button', null, () => {
+        $('#sam2_installer').modal('hide');
+    }, false);
 }
 
 function hideRevisionInputs() {
@@ -2209,6 +2213,33 @@ function genpageLoad() {
         { key: 'Store Full Canvas To History', action: () => {
             let img = window.imageEditor.getMaximumImageData();
             storeImageToHistoryWithCurrentParams(img);
+        }},
+        { key: 'Auto Segment Image (SAM2)', action: () => {
+            if (!currentBackendFeatureSet.includes('sam2')) {
+                $('#sam2_installer').modal('show');
+            }
+            else {
+                let img = window.imageEditor.getFinalImageData();
+                let genData = getGenInput();
+                genData['controlnetimageinput'] = img;
+                genData['controlnetstrength'] = 1;
+                genData['controlnetpreprocessor'] = 'Segment Anything 2 Global Autosegment base_plus';
+                genData['images'] = 1;
+                genData['prompt'] = '';
+                delete genData['batchsize'];
+                genData['donotsave'] = true;
+                genData['controlnetpreviewonly'] = true;
+                makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
+                    if (!data.image) {
+                        return;
+                    }
+                    let newImg = new Image();
+                    newImg.onload = () => {
+                        imageEditor.addImageLayer(newImg);
+                    };
+                    newImg.src = data.image;
+                });
+            }
         }}
     ];
     pageSizer();

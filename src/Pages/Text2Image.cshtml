@@ -184,6 +184,18 @@
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#gen_previews_missing_preset_modal').modal('hide')">Cancel</button>
                     </div>
                 @WebUtil.ModalFooter()
+                @WebUtil.ModalHeader("sam2_installer", "Install SAM2")
+                    <div class="modal-body">
+                        Full image auto-segmentation is made available via Segment-Anything-2 created by Meta AI (Apache 2 License), and ComfyUI nodepack for it created by kijai (Apache 2 License).
+                        <br>
+                        <br>When used, it will generate an autosegmentation of the current image and provide the result as a layer in the image editor.
+                        <br>You can then use the paintbucket tool to fill mask with sections you want, then delete or hide the segment layer.
+                    </div>
+                    <div class="modal-footer" id="install_sam2_button">
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="installSAM2()">Install</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#sam2_installer').modal('hide')">Cancel</button>
+                    </div>
+                @WebUtil.ModalFooter()
             </div>
         </div>
         <div class="t2i-mid-split-bar splitter-bar" id="t2i-mid-split-bar"><div class="t2i-split-quickbutton t2i-mid-split-quickbutton" id="t2i-mid-split-quickbutton">&#x290B;</div></div>
