@@ -46,6 +46,7 @@ public class ComfyUIBackendExtension : Extension
         ["IPAdapterUnifiedLoader"] = "cubiqipadapterunified",
         ["MiDaS-DepthMapPreprocessor"] = "controlnetpreprocessors",
         ["RIFE VFI"] = "frameinterps",
+        ["Sam2Segmentation"] = "sam2",
         ["SwarmYoloDetection"] = "yolov8",
         ["PixArtCheckpointLoader"] = "extramodelspixart",
         ["TensorRTLoader"] = "tensorrt"

@@ -186,6 +186,7 @@ public static class ComfyUIWebAPI
             else if (feature == "controlnet_preprocessors") { return await doRepo("https://github.com/Fannovel16/comfyui_controlnet_aux"); }
             else if (feature == "frame_interpolation") { return await doRepo("https://github.com/Fannovel16/ComfyUI-Frame-Interpolation"); }
             else if (feature == "comfyui_tensorrt") { return await doRepo("https://github.com/comfyanonymous/ComfyUI_TensorRT"); }
+            else if (feature == "sam2") { return await doRepo("https://github.com/kijai/ComfyUI-segment-anything-2"); }
             else
             {
                 Logs.Warning($"User {session.User.UserID} tried to install unknown feature '{feature}'.");

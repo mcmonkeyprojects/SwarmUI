@@ -1824,6 +1824,10 @@ function installTensorRT() {
     });
 }
 
+function installSAM2() {
+    doFeatureInstaller('https://github.com/kijai/ComfyUI-segment-anything-2', 'kijai', 'ComfyUI-segment-anything-2', 'install_sam2_button');
+}
+
 function hideRevisionInputs() {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     promptImageArea.innerHTML = '';
