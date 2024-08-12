@@ -34,15 +34,19 @@ Swarm is a wrapper around Comfy - it contains Comfy, in full, node graph and all
 
 ### I am an Auto WebUI or other local SD UI user
 
-(TODO)
+(TODO) basically Swarm is a very good UI that covers about everything other UIs do, and has a lot of power features that they don't, and a very very strong core (Comfy) that outpaces most others in performance.
 
 ### I am an online SD UI user
 
-(TODO)
+(TODO) basically running locally is really cool and gives you privacy and control and doesn't cost money and etc, and Swarm is the best option for local.
+
+### I am running a large professional AI service
+
+(TODO) basically Swarm has a great API and very reliable systems, plus ability to dynamically adjust to multiple backends or clusters, which is perfect for large scale usage.
 
 ### I am new to AI Image Gen
 
-(TODO)
+(TODO) basically Swarm is super duper beginner friendly, you can install and get going with zero confusion or install troubles, also Swarm is designed to make it easy to learn more advanced features at your own pace, by way of good in-UI docs and the ability to convert from the basic interface to the advanced comfy graph
 
 ### I'm Lost, Where Am I? What's AI?
 
