@@ -117,3 +117,12 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - It natively supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results.
         - You can mess with the resolution quite a lot and still get decent results. It's very flexible even past what it was trained on.
     - You _can_ do a refiner upscale 2x and it will work but take a long time and might not have excellent quality. Refiner tiling may be better.
+
+# Bits-and-Bytes NF4 Format Models
+
+- BnB NF4 format models, such as this copy of Flux Dev <https://huggingface.co/lllyasviel/flux1-dev-bnb-nf4/tree/main?show_file_info=flux1-dev-bnb-nf4.safetensors>, are supported in SwarmUI automatically.
+    - The detection internally works by looking for `bitsandbytes__nf4` in the model's keys
+    - The first time you try to load an NF4 model, it will give you a popup asking to install support
+        - This will autoinstall https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4 which is developed by comfyanonymous and lllyasviel, and is under the AGPL license.
+    - You can accept this popup, and it will install and reload the backend
+    - Then try to generate again, and it should just work

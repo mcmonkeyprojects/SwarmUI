@@ -1832,6 +1832,12 @@ function installSAM2() {
     }, false);
 }
 
+function installBNBNF4() {
+    doFeatureInstaller('https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4', 'comfyanonymous', 'bnb_nf4', 'install_bnbnf4_button', `This will install BnB NF4 support developed by Comfy and lllyasviel (AGPL License).\nDo you wish to install?`, () => {
+        $('#bnb_nf4_installer').modal('hide');
+    }, false);
+}
+
 function hideRevisionInputs() {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     promptImageArea.innerHTML = '';

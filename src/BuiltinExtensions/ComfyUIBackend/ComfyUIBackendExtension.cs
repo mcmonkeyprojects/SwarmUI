@@ -49,6 +49,7 @@ public class ComfyUIBackendExtension : Extension
         ["Sam2Segmentation"] = "sam2",
         ["SwarmYoloDetection"] = "yolov8",
         ["PixArtCheckpointLoader"] = "extramodelspixart",
+        ["CheckpointLoaderNF4"] = "bnb_nf4",
         ["TensorRTLoader"] = "tensorrt"
     };
 
@@ -86,6 +87,11 @@ public class ComfyUIBackendExtension : Extension
         {
             FeaturesSupported.UnionWith(["sam2"]);
             FeaturesDiscardIfNotFound.UnionWith(["sam2"]);
+        }
+        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI_bitsandbytes_NF4"))
+        {
+            FeaturesSupported.UnionWith(["bnb_nf4"]);
+            FeaturesDiscardIfNotFound.UnionWith(["bnb_nf4"]);
         }
         static string[] listModelsFor(string subpath)
         {

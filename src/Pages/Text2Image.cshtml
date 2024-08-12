@@ -196,6 +196,18 @@
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#sam2_installer').modal('hide')">Cancel</button>
                     </div>
                 @WebUtil.ModalFooter()
+                @WebUtil.ModalHeader("bnb_nf4_installer", "Install BnB NF4 Support")
+                    <div class="modal-body">
+                        The model you're trying to use appears to be a Bits-and-Bytes NF4 format model.
+                        <br>
+                        <br>This requires an extension released by comfyanonymous and lllyasviel (AGPL license) to run. Would you like to install it?
+                    </div>
+                    <div class="modal-footer" id="install_bnbnf4_button">
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="installBNBNF4()">Install</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#bnb_nf4_installer').modal('hide');localStorage.setItem('hide_bnb_nf4_check', 'true')">No and don't show again</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#bnb_nf4_installer').modal('hide')">Cancel</button>
+                    </div>
+                @WebUtil.ModalFooter()
             </div>
         </div>
         <div class="t2i-mid-split-bar splitter-bar" id="t2i-mid-split-bar"><div class="t2i-split-quickbutton t2i-mid-split-quickbutton" id="t2i-mid-split-quickbutton">&#x290B;</div></div>

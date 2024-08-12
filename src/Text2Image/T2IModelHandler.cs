@@ -540,6 +540,14 @@ public class T2IModelHandler
             string altTriggerPhrase = triggerPhrases.JoinString(", ");
             T2IModelClass clazz = T2IModelClassSorter.IdentifyClassFor(model, headerData);
             string specialFormat = null;
+            foreach (string key in headerData.Properties().Select(p => p.Name))
+            {
+                if (key.Contains("bitsandbytes__nf4"))
+                {
+                    specialFormat = "bnb_nf4";
+                    break;
+                }
+            }
             if (specialFormat is not null)
             {
                 Logs.Debug($"Model {model.Name} has special format '{specialFormat}'");
