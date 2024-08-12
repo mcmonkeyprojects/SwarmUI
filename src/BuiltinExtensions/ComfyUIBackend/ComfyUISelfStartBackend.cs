@@ -235,8 +235,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        NetworkBackendUtils.ConfigurePythonExeFor((SettingsRaw as ComfyUISelfStartSettings).StartScript, "ComfyUI", start, out _);
-        start.Arguments = call.Trim();
+        NetworkBackendUtils.ConfigurePythonExeFor((SettingsRaw as ComfyUISelfStartSettings).StartScript, "ComfyUI", start, out _, out string forcePrior);
+        start.Arguments = $"{forcePrior} {call.Trim()}".Trim();
         return Process.Start(start);
     }
 

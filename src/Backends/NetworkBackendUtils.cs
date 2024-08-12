@@ -246,7 +246,7 @@ public static class NetworkBackendUtils
     }
 
     /// <summary>Configures python execution for a given python start script.</summary>
-    public static void ConfigurePythonExeFor(string script, string nameSimple, ProcessStartInfo start, out string preArgs)
+    public static void ConfigurePythonExeFor(string script, string nameSimple, ProcessStartInfo start, out string preArgs, out string forcePrior)
     {
         void AddPath(string path)
         {
@@ -257,6 +257,7 @@ public static class NetworkBackendUtils
         string dir = Path.GetDirectoryName(path);
         start.WorkingDirectory = dir;
         preArgs = "-s " + path.AfterLast("/");
+        forcePrior = "";
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             if (File.Exists($"{dir}/venv/Scripts/python.exe"))
@@ -280,6 +281,7 @@ public static class NetworkBackendUtils
                 string pythonexe = start.FileName;
                 start.FileName = Path.GetFullPath($"{dir}/zluda/zluda.exe");
                 preArgs = $"-- {pythonexe} {preArgs}".Trim();
+                forcePrior = $"-- {pythonexe}";
             }
         }
         else
@@ -340,7 +342,7 @@ public static class NetworkBackendUtils
             string postArgs = extraArgs.Replace("{PORT}", $"{port}").Trim();
             if (path.EndsWith(".py"))
             {
-                ConfigurePythonExeFor(startScript, nameSimple, start, out preArgs);
+                ConfigurePythonExeFor(startScript, nameSimple, start, out preArgs, out _);
                 addLoadStatus($"({nameSimple} launch) Will use python: {start.FileName}");
             }
             else
