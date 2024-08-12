@@ -220,7 +220,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(root, Program.ServerSettings.Paths.SDClipVisionFolder));
             Directory.CreateDirectory($"{root}/upscale_models");
-            File.WriteAllText($"{Program.DataDir}/comfy-auto-model.yaml", yaml);
+            File.WriteAllBytes($"{Program.DataDir}/comfy-auto-model.yaml", yaml.EncodeUTF8());
             IsComfyModelFileEmitted = true;
             AddLoadStatus($"Done emitting comfy model paths file.");
         }
