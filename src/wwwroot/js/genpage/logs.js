@@ -98,11 +98,11 @@ class ServerLogsHelper {
         let filter = this.filterInput.value.toLowerCase();
         let selected = this.typeSelectors.value;
         let visibleTypes = this.getVisibleTypes();
+        let toRenderMessages = [];
         if (selected != this.lastVisibleType || filter != this.lastFilter) {
             this.lastVisibleType = selected;
             this.lastFilter = filter;
             this.actualLogContainer.innerHTML = '';
-            let toRenderMessages = [];
             for (let typeName of visibleTypes) {
                 let storedData = this.logMessagesByType[typeName];
                 if (!storedData) {
@@ -115,11 +115,6 @@ class ServerLogsHelper {
                     }
                 }
             }
-            toRenderMessages.sort((a, b) => a[0].sequence_id - b[0].sequence_id);
-            for (let [message, type] of toRenderMessages) {
-                this.actualLogContainer.innerHTML += this.htmlMessage(message, type, this.lastBounce);
-                this.lastBounce = (this.lastBounce + 1) % 2;
-            }
         }
         genericRequest('ListRecentLogMessages', { lastSeqId: this.lastSeq, types: visibleTypes, last_sequence_ids: lastSeqs }, (data) => {
             if (this.typeSelectors.value != selected) {
@@ -129,7 +124,6 @@ class ServerLogsHelper {
             this.regenTypeListElem();
             this.lastSeq = data.last_sequence_id;
             let wasScrolledDown = this.actualLogContainer.scrollTop + this.actualLogContainer.clientHeight >= this.actualLogContainer.scrollHeight;
-            let toRenderMessages = [];
             for (let typeNum in this.logTypes) {
                 let type = this.logTypes[typeNum];
                 let messages = data.data[type.name];
