@@ -281,6 +281,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     AddLoadStatus("Running git pull in comfy folder...");
                     string response = await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", path);
                     AddLoadStatus($"Comfy git pull response: {response.Trim()}");
+                    if (autoUpd == "aggressive")
+                    {
+                        // Backup because multiple users have wound up off master branch sometimes, aggressive should push back to master so it's repaired by next startup
+                        string checkoutResponse = await Utilities.RunGitProcess("checkout master --force", path);
+                        AddLoadStatus($"Comfy git checkout master response: {checkoutResponse.Trim()}");
+                    }
                     if (response.Contains("error: Your local changes to the following files"))
                     {
                         Logs.Error($"Failed to auto-update comfy backend due to local changes - change 'AutoUpdate' to 'Aggressive' in backend settings to automatically correct this.");
