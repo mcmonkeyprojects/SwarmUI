@@ -67,7 +67,8 @@ public class T2IModel
             [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
             [$"{prefix}time_modified"] = Metadata?.TimeModified ?? 0,
             [$"{prefix}hash"] = Metadata?.Hash ?? "",
-            [$"{prefix}hash_sha256"] = Metadata?.Hash ?? ""
+            [$"{prefix}hash_sha256"] = Metadata?.Hash ?? "",
+            [$"{prefix}special_format"] = Metadata?.SpecialFormat ?? ""
         };
     }
 

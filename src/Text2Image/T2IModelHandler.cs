@@ -89,6 +89,9 @@ public class T2IModelHandler
 
         /// <summary>Special cache of what text encoders the model appears to contain. Primarily for SD3 which has optional text encoders.</summary>
         public string TextEncoders { get; set; }
+
+        /// <summary>Special format indicators, such as "bnb_nf4".</summary>
+        public string SpecialFormat { get; set; }
     }
 
     public T2IModelHandler()
@@ -536,6 +539,11 @@ public class T2IModelHandler
             }
             string altTriggerPhrase = triggerPhrases.JoinString(", ");
             T2IModelClass clazz = T2IModelClassSorter.IdentifyClassFor(model, headerData);
+            string specialFormat = null;
+            if (specialFormat is not null)
+            {
+                Logs.Debug($"Model {model.Name} has special format '{specialFormat}'");
+            }
             string img = metaHeader?.Value<string>("modelspec.preview_image") ?? metaHeader?.Value<string>("modelspec.thumbnail") ?? metaHeader?.Value<string>("thumbnail") ?? metaHeader?.Value<string>("preview_image");
             if (img is not null && !img.StartsWith("data:image/"))
             {
@@ -591,7 +599,8 @@ public class T2IModelHandler
                 IsNegativeEmbedding = (metaHeader?.Value<string>("modelspec.is_negative_embedding") ?? metaHeader?.Value<string>("is_negative_embedding")) == "true",
                 PredictionType = metaHeader?.Value<string>("modelspec.prediction_type") ?? metaHeader?.Value<string>("prediction_type"),
                 Hash = metaHeader?.Value<string>("modelspec.hash_sha256") ?? metaHeader?.Value<string>("hash_sha256"),
-                TextEncoders = textEncs
+                TextEncoders = textEncs,
+                SpecialFormat = metaHeader?.Value<string>("modelspec.special_format") ?? metaHeader?.Value<string>("special_format") ?? specialFormat
             };
             lock (MetadataLock)
             {

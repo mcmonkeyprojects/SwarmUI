@@ -4,6 +4,7 @@ let cur_model = null;
 let curModelWidth = 0, curModelHeight = 0;
 let curModelArch = '';
 let curModelCompatClass = '';
+let curModelSpecialFormat = '';
 let curWildcardMenuWildcard = null;
 let curModelMenuModel = null;
 let curModelMenuBrowser = null;
@@ -731,21 +732,23 @@ function directSetModel(model) {
         let clean = cleanModelName(model.name);
         forceSetDropdownValue('input_model', clean);
         forceSetDropdownValue('current_model', clean);
-        setCookie('selected_model', `${clean},${model.standard_width},${model.standard_height},${model.architecture},${model.compat_class}`, 90);
+        setCookie('selected_model', `${clean},${model.standard_width},${model.standard_height},${model.architecture},${model.compat_class},${model.special_format}`, 90);
         curModelWidth = model.standard_width;
         curModelHeight = model.standard_height;
         curModelArch = model.architecture;
         curModelCompatClass = model.compat_class;
+        curModelSpecialFormat = model.special_format;
     }
     else if (model.includes(',')) {
-        let [name, width, height, arch, compatClass] = model.split(',');
+        let [name, width, height, arch, compatClass, specialFormat] = model.split(',');
         forceSetDropdownValue('input_model', name);
         forceSetDropdownValue('current_model', name);
-        setCookie('selected_model', `${name},${width},${height},${arch},${compatClass}`, 90);
+        setCookie('selected_model', `${name},${width},${height},${arch},${compatClass},${specialFormat}`, 90);
         curModelWidth = parseInt(width);
         curModelHeight = parseInt(height);
         curModelArch = arch;
         curModelCompatClass = compatClass;
+        curModelSpecialFormat = specialFormat;
     }
     reviseBackendFeatureSet();
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));
