@@ -728,28 +728,28 @@ public class WorkflowGeneratorSteps
                                 {
                                     ["image"] = new JArray() { $"{imageNode}", 0 }
                                 };
-                                foreach ((string key, JToken data) in (JObject)objectData["input"]["required"])
+                                foreach (string type in new[] { "required", "optional" })
                                 {
-                                    if (key == "mask")
+                                    if (((JObject)objectData["input"]).TryGetValue(type, out JToken set))
                                     {
-                                        if (g.FinalMask is null)
+                                        foreach ((string key, JToken data) in (JObject)set)
                                         {
-                                            throw new SwarmUserErrorException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
-                                        }
-                                        n["inputs"]["mask"] = g.FinalMask;
-                                    }
-                                    else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
-                                    {
-                                        n["inputs"][key] = defaultValue;
-                                    }
-                                }
-                                if (((JObject)objectData["input"]).TryGetValue("optional", out JToken optional))
-                                {
-                                    foreach ((string key, JToken data) in (JObject)optional)
-                                    {
-                                        if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
-                                        {
-                                            n["inputs"][key] = defaultValue;
+                                            if (key == "mask")
+                                            {
+                                                if (g.FinalMask is null)
+                                                {
+                                                    throw new SwarmUserErrorException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
+                                                }
+                                                n["inputs"]["mask"] = g.FinalMask;
+                                            }
+                                            else if (key == "resolution")
+                                            {
+                                                n["inputs"]["resolution"] = (int)Math.Round(Math.Sqrt(g.UserInput.GetImageWidth() * g.UserInput.GetImageHeight()) / 64) * 64;
+                                            }
+                                            else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
+                                            {
+                                                n["inputs"][key] = defaultValue;
+                                            }
                                         }
                                     }
                                 }
