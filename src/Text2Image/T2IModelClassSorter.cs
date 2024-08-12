@@ -175,22 +175,23 @@ public class T2IModelClassSorter
         Register(new() { ID = "stable-diffusion-v3-medium/controlnet", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isSD3Cnet(h);
-        }
-        });
+        }});
         // ====================== BFL Flux.1 ======================
         Register(new() { ID = "Flux.1-AE", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "Flux.1-schnell", CompatClass = "flux-1", Name = "Flux.1 Schnell", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("guidance_in.in_layer.bias");
-        }
-        });
+            return (h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("guidance_in.in_layer.bias")) // 'unet'
+                || (h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("model.diffusion_model.guidance_in.in_layer.bias")); // 'checkpoint'
+        }});
         Register(new() { ID = "Flux.1-dev", CompatClass = "flux-1", Name = "Flux.1 Dev", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("guidance_in.in_layer.bias");
+            return (h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("guidance_in.in_layer.bias")) // 'unet'
+                || h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("model.diffusion_model.guidance_in.in_layer.bias"); // 'checkpoint'
         }});
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = "flux-1", Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return h.ContainsKey("diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight");
+            return h.ContainsKey("diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight")
+                || h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight");
         }});
         Register(new() { ID = "Flux.1-dev/controlnet", CompatClass = "flux-1", Name = "Flux.1 ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
