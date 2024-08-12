@@ -390,6 +390,10 @@ class ModelBrowserWrapper {
         if (this.subType == 'Stable-Diffusion' && model.data.local) {
             let buttonLoad = () => {
                 directSetModel(model.data);
+                if (curModelSpecialFormat == 'bnb_nf4' && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
+                    $('#bnb_nf4_installer').modal('show');
+                    return;
+                }
                 makeWSRequestT2I('SelectModelWS', {'model': model.data.name}, data => {
                     this.browser.navigate(lastModelDir);
                 });
