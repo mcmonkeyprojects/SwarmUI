@@ -216,13 +216,17 @@ public static class BasicAPIFeatures
                         updateProgress(0, 0, 0);
                         await Process.Start(new ProcessStartInfo(Path.GetFullPath("dlbackend/vc_redist.x64.exe"), "/quiet /install /passive /norestart") { UseShellExecute = true }).WaitForExitAsync(Program.GlobalProgramCancel);
                         path = "dlbackend/comfy/ComfyUI/main.py";
+                        string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
+                        string fetchResp = await Utilities.RunGitProcess($"fetch", $"{comfyFolderPath}/ComfyUI");
+                        Logs.Debug($"ComfyUI Install git fetch response: {fetchResp}");
+                        string checkoutResp = await Utilities.RunGitProcess($"checkout master", $"{comfyFolderPath}/ComfyUI");
+                        Logs.Debug($"ComfyUI Install git checkout master response: {checkoutResp}");
                         if (install_amd)
                         {
                             Logs.LogLevel level = Logs.MinimumLevel;
                             Logs.MinimumLevel = Logs.LogLevel.Verbose;
                             try
                             {
-                                string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
                                 await output("Fixing Comfy install...");
                                 // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
                                 File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
