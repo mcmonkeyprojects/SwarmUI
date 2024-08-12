@@ -151,7 +151,7 @@ public static class T2IAPI
                 Logs.Warning($"T2I image request from user {session.User.UserID} had request parameter '{key}', but that parameter is unrecognized, skipping...");
             }
         }
-        if (rawInput.TryGetValue("presets", out JToken presets))
+        if (rawInput.TryGetValue("presets", out JToken presets) && presets.Any())
         {
             foreach (JToken presetName in presets.Values())
             {
@@ -163,6 +163,7 @@ public static class T2IAPI
                 }
                 presetObj.ApplyTo(user_input);
             }
+            user_input.ExtraMeta["presets_used"] = presets.Values().Select(v => v.ToString()).ToList();
         }
         user_input.ApplySpecialLogic();
         return user_input;
