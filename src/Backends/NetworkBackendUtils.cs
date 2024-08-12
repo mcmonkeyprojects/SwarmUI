@@ -308,6 +308,10 @@ public static class NetworkBackendUtils
         addLoadStatus ??= Logs.Debug;
         async Task launch()
         {
+            if (Program.GlobalProgramCancel.IsCancellationRequested)
+            {
+                return;
+            }
             if (string.IsNullOrWhiteSpace(startScript))
             {
                 addLoadStatus($"Cancelling start of {nameSimple} as it has an empty start script.");
@@ -355,10 +359,14 @@ public static class NetworkBackendUtils
             bool everLoaded = false;
             Action onFail = autoRestart ? () =>
             {
-                if (everLoaded)
+                if (everLoaded && !Program.GlobalProgramCancel.IsCancellationRequested)
                 {
                     Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
-                    Utilities.RunCheckedTask(launch);
+                    Utilities.RunCheckedTask(async () =>
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(2), Program.GlobalProgramCancel);
+                        await launch();
+                    });
                 }
             } : null;
             ReportLogsFromProcess(runningProcess, $"{nameSimple}", identifier, out Action signalShutdownExpected, getStatus, s => { status = s; reviseStatus(s); }, onFail: onFail);
