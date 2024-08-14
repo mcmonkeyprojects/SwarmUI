@@ -30,8 +30,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ConfigComment("If checked, tells Comfy to generate image previews. If unchecked, previews will not be generated, and images won't show up until they're done.")]
         public bool EnablePreviews = true;
 
-        [ConfigComment("Which GPU to use, if multiple are available.")]
-        public int GPU_ID = 0; // TODO: Determine GPU count and provide correct max
+        [ConfigComment("Which GPU to use, if multiple are available.\nShould be a single number, like '0'.\nYou can use syntax like '0,1' to provide multiple GPUs to one backend (only applicable if you have custom nodes that can take advantage of this.)")]
+        public string GPU_ID = "0";
 
         [ConfigComment("How many extra requests may queue up on this backend while one is processing.")]
         public int OverQueue = 1;

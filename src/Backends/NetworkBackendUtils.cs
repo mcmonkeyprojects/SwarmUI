@@ -299,13 +299,13 @@ public static class NetworkBackendUtils
     }
 
     /// <summary>Starts a self-start backend based on the user-configuration and backend-specifics provided.</summary>
-    public static Task DoSelfStart(string startScript, AbstractT2IBackend backend, string nameSimple, string identifier, int gpuId, string extraArgs, Func<bool, Task> initInternal, Action<int, Process> takeOutput, bool autoRestart = false)
+    public static Task DoSelfStart(string startScript, AbstractT2IBackend backend, string nameSimple, string identifier, string gpuId, string extraArgs, Func<bool, Task> initInternal, Action<int, Process> takeOutput, bool autoRestart = false)
     {
         return DoSelfStart(startScript, nameSimple, identifier, gpuId, extraArgs, status => backend.Status = status, async (b) => { await initInternal(b); return backend.Status == BackendStatus.RUNNING; }, takeOutput, () => backend.Status, a => backend.OnShutdown += a, autoRestart, backend.AddLoadStatus);
     }
 
     /// <summary>Starts a self-start backend based on the user-configuration and backend-specifics provided.</summary>
-    public static async Task DoSelfStart(string startScript, string nameSimple, string identifier, int gpuId, string extraArgs, Action<BackendStatus> reviseStatus, Func<bool, Task<bool>> initInternal, Action<int, Process> takeOutput, Func<BackendStatus> getStatus, Action<Action> addShutdownEvent, bool autoRestart = false, Action<string> addLoadStatus = null)
+    public static async Task DoSelfStart(string startScript, string nameSimple, string identifier, string gpuId, string extraArgs, Action<BackendStatus> reviseStatus, Func<bool, Task<bool>> initInternal, Action<int, Process> takeOutput, Func<BackendStatus> getStatus, Action<Action> addShutdownEvent, bool autoRestart = false, Action<string> addLoadStatus = null)
     {
         addLoadStatus ??= Logs.Debug;
         async Task launch()
