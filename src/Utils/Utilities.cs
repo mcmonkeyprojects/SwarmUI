@@ -865,10 +865,12 @@ public static class Utilities
         try
         {
             Process p = Process.Start(start);
+            Task<string> stdOutRead = p.StandardOutput.ReadToEndAsync();
+            Task<string> stdErrRead = p.StandardError.ReadToEndAsync();
             async Task<string> result()
             {
-                string stdout = await p.StandardOutput.ReadToEndAsync();
-                string stderr = await p.StandardError.ReadToEndAsync();
+                string stdout = await stdOutRead;
+                string stderr = await stdErrRead;
                 if (!string.IsNullOrWhiteSpace(stderr))
                 {
                     return $"{stdout}\n{stderr}";
