@@ -534,20 +534,20 @@ function toggleStar(path, rawSrc) {
     });
 }
 
-function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false) {
+function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true) {
     currentImgSrc = src;
     currentMetadataVal = metadata;
-    if (smoothAdd || !metadata) {
+    if ((smoothAdd || !metadata) && canReparse) {
         let image = new Image();
         image.src = src;
         image.onload = () => {
             if (!metadata) {
                 parseMetadata(image, (data, parsedMetadata) => {
-                    setCurrentImage(src, parsedMetadata, batchId, previewGrow);
+                    setCurrentImage(src, parsedMetadata, batchId, previewGrow, false, false);
                 });
             }
             else {
-                setCurrentImage(src, metadata, batchId, previewGrow);
+                setCurrentImage(src, metadata, batchId, previewGrow, false, false);
             }
         };
         return;
