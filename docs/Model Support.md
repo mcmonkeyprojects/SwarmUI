@@ -97,15 +97,16 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 # Black Forest Labs' Flux.1 Models
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
-    - You can download BFL's original files:
+    - **Recommended:** use the [NF4 Format Files](#bits-and-bytes-nf4-format-models)
+    - **Alternate:** the simplified fp8 file:
+        - Dev <https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors>
+        - Schnell <https://huggingface.co/Comfy-Org/flux1-schnell/blob/main/flux1-schnell-fp8.safetensors>
+        - goes in your regular `(Swarm)/Models/Stable-Diffusion` dir
+    - **or, not recommended:** You can download BFL's original files:
         - Download "Schnell" (Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-schnell>
         - Or "Dev" (non-Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-dev>
         - Put dev/schnell in `(Swarm)/Models/unet`
         - Put the `ae.sft` file in `(Swarm)/Models/VAE`
-    - Or the simplified fp8 file:
-        - Dev <https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors>
-        - Schnell <https://huggingface.co/Comfy-Org/flux1-schnell/blob/main/flux1-schnell-fp8.safetensors>
-        - goes in your regular `(Swarm)/Models/Stable-Diffusion` dir
     - For both models, use CFG=1 (negative prompt won't work). Sampling leave default (will use Euler + Simple)
         - For the Dev model, there is also a `Flux Guidance Scale` parameter under `Sampling`, which is a distilled embedding value that the model was trained to use.
         - Dev can use some slightly-higher CFG values (allowing for negative prompt), possibly higher if you reduce the Flux Guidance value and/or use Dynamic Thresholding.
