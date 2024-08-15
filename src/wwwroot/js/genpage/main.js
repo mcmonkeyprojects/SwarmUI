@@ -1960,25 +1960,31 @@ function openEmptyEditor() {
 
 function upvertAutoWebuiMetadataToSwarm(metadata) {
     let realData = {};
-    [realData['prompt'], remains] = metadata.split("\nNegative prompt: ");
-    let lines = remains.split('\n');
-    realData['negativeprompt'] = lines.slice(0, -1).join('\n');
-    let dataParts = lines[lines.length - 1].split(',').map(x => x.split(':').map(y => y.trim()));
-    for (let part of dataParts) {
-        if (part.length == 2) {
-            let clean = cleanParamName(part[0]);
-            if (rawGenParamTypesFromServer.find(x => x.id == clean)) {
-                realData[clean] = part[1];
-            }
-            else if (clean == "size") {
-                let sizeParts = part[1].split('x').map(x => parseInt(x));
-                if (sizeParts.length == 2) {
-                    realData['width'] = sizeParts[0];
-                    realData['height'] = sizeParts[1];
+    let lines = metadata.split('\n');
+    realData['prompt'] = lines[0];
+    lines = lines.slice(1);
+    if (lines.length > 0 && lines[0].startsWith("Negative prompt: ")) {
+        realData['negativeprompt'] = lines[0].substring("Negative prompt: ".length);
+        lines = lines.slice(1);
+    }
+    if (lines.length > 0) {
+        let dataParts = lines[0].split(',').map(x => x.split(':').map(y => y.trim()));
+        for (let part of dataParts) {
+            if (part.length == 2) {
+                let clean = cleanParamName(part[0]);
+                if (rawGenParamTypesFromServer.find(x => x.id == clean)) {
+                    realData[clean] = part[1];
                 }
-            }
-            else {
-                realData[part[0]] = part[1];
+                else if (clean == "size") {
+                    let sizeParts = part[1].split('x').map(x => parseInt(x));
+                    if (sizeParts.length == 2) {
+                        realData['width'] = sizeParts[0];
+                        realData['height'] = sizeParts[1];
+                    }
+                }
+                else {
+                    realData[part[0]] = part[1];
+                }
             }
         }
     }
