@@ -168,7 +168,8 @@ function formatMetadata(metadata) {
     }
     let data;
     try {
-        data = JSON.parse(metadata).sui_image_params;
+        let readable = interpretMetadata(metadata);
+        data = JSON.parse(readable).sui_image_params;
     }
     catch (e) {
         console.log(`Error parsing metadata '${metadata}': ${e}`);
@@ -536,11 +537,18 @@ function toggleStar(path, rawSrc) {
 function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false) {
     currentImgSrc = src;
     currentMetadataVal = metadata;
-    if (smoothAdd) {
+    if (smoothAdd || !metadata) {
         let image = new Image();
         image.src = src;
         image.onload = () => {
-            setCurrentImage(src, metadata, batchId, previewGrow);
+            if (!metadata) {
+                parseMetadata(image, (data, parsedMetadata) => {
+                    setCurrentImage(src, parsedMetadata, batchId, previewGrow);
+                });
+            }
+            else {
+                setCurrentImage(src, metadata, batchId, previewGrow);
+            }
         };
         return;
     }
@@ -690,7 +698,15 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
-    let metaParsed = JSON.parse(metadata) ?? { is_starred: false };
+    let metaParsed = { is_starred: false };
+    if (metadata) {
+        try {
+            metaParsed = JSON.parse(metadata);
+        }
+        catch (e) {
+            console.log(`Error parsing metadata for image: ${e}, metadata was ${metadata}`);
+        }
+    }
     includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
         toggleStar(imagePathClean, src);
     }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
@@ -1108,11 +1124,13 @@ function describeImage(image) {
     let buttons = buttonsForImage(image.data.fullsrc, image.data.src);
     let parsedMeta = { is_starred: false };
     if (image.data.metadata) {
+        let metadata = image.data.metadata;
         try {
-            parsedMeta = JSON.parse(image.data.metadata);
+            metadata = interpretMetadata(image.data.metadata);
+            parsedMeta = JSON.parse(metadata);
         }
         catch (e) {
-            console.log(`Failed to parse image metadata: ${e}`);
+            console.log(`Failed to parse image metadata: ${e}, metadata was ${metadata}`);
         }
     }
     let description = image.data.name + "\n" + formatMetadata(image.data.metadata);
@@ -2017,6 +2035,92 @@ function remapMetadataKeys(metadata, keymap) {
 
 const imageMetadataKeys = ['prompt', 'Prompt', 'parameters', 'Parameters', 'userComment', 'UserComment', 'model', 'Model'];
 
+function interpretMetadata(metadata) {
+    if (metadata instanceof Uint8Array) {
+        let prefix = metadata.slice(0, 8);
+        let data = metadata.slice(8);
+        let encodeType = new TextDecoder().decode(prefix);
+        if (encodeType.startsWith('UNICODE')) {
+            if (data[0] == 0 && data[1] != 0) { // This is slightly dirty detection, but it works at least for English text.
+                metadata = decodeUtf16LE(data);
+            }
+            else {
+                metadata = decodeUtf16(data);
+            }
+        }
+        else {
+            metadata = new TextDecoder().decode(data);
+        }
+    }
+    if (metadata) {
+        metadata = metadata.trim();
+        if (metadata.startsWith('{')) {
+            let json = JSON.parse(metadata);
+            if ('sui_image_params' in json) {
+                // It's swarm, we're good
+            }
+            else if ("Prompt" in json) {
+                // Fooocus
+                json = remapMetadataKeys(json, fooocusMetadataMap);
+                metadata = JSON.stringify({ 'sui_image_params': json });
+            }
+            else {
+                // Don't know - discard for now.
+                metadata = null;
+            }
+        }
+        else {
+            let lines = metadata.split('\n');
+            if (lines.length > 1) {
+                metadata = upvertAutoWebuiMetadataToSwarm(metadata);
+            }
+            else {
+                // ???
+                metadata = null;
+            }
+        }
+    }
+    return metadata;
+}
+
+function parseMetadata(data, callback) {
+    exifr.parse(data).then(parsed => {
+        if (parsed && imageMetadataKeys.some(key => key in parsed)) {
+            return parsed;
+        }
+        return exifr.parse(data, imageMetadataKeys);
+    }).then(parsed => {
+        let metadata = null;
+        if (parsed) {
+            if (parsed.parameters) {
+                metadata = parsed.parameters;
+            }
+            else if (parsed.Parameters) {
+                metadata = parsed.Parameters;
+            }
+            else if (parsed.prompt) {
+                metadata = parsed.prompt;
+            }
+            else if (parsed.UserComment) {
+                metadata = parsed.UserComment;
+            }
+            else if (parsed.userComment) {
+                metadata = parsed.userComment;
+            }
+            else if (parsed.model) {
+                metadata = parsed.model;
+            }
+            else if (parsed.Model) {
+                metadata = parsed.Model;
+            }
+        }
+        metadata = interpretMetadata(metadata);
+        callback(data, metadata);
+    }).catch(err => {
+        callback(e.target.result, null);
+    });
+}
+
 function imageInputHandler() {
     let imageArea = getRequiredElementById('current_image');
     imageArea.addEventListener('dragover', (e) => {
@@ -2030,90 +2134,9 @@ function imageInputHandler() {
             let file = e.dataTransfer.files[0];
             if (file.type.startsWith('image/')) {
                 let reader = new FileReader();
-                parsemetadata = (e) => {
-                    let data = e.target.result;
-                    exifr.parse(data).then(parsed => {
-                        if (parsed && imageMetadataKeys.some(key => key in parsed)) {
-                            return parsed;
-                        }
-                        return exifr.parse(data, imageMetadataKeys);
-                    }).then(parsed => {
-                        let metadata = null;
-                        if (parsed) {
-                            if (parsed.parameters) {
-                                metadata = parsed.parameters;
-                            }
-                            else if (parsed.Parameters) {
-                                metadata = parsed.Parameters;
-                            }
-                            else if (parsed.prompt) {
-                                metadata = parsed.prompt;
-                            }
-                            else if (parsed.UserComment) {
-                                metadata = parsed.UserComment;
-                            }
-                            else if (parsed.userComment) {
-                                metadata = parsed.userComment;
-                            }
-                            else if (parsed.model) {
-                                metadata = parsed.model;
-                            }
-                            else if (parsed.Model) {
-                                metadata = parsed.Model;
-                            }
-                        }
-                        if (metadata instanceof Uint8Array) {
-                            let prefix = metadata.slice(0, 8);
-                            let data = metadata.slice(8);
-                            let encodeType = new TextDecoder().decode(prefix);
-                            if (encodeType.startsWith('UNICODE')) {
-                                if (data[0] == 0 && data[1] != 0) { // This is slightly dirty detection, but it works at least for English text.
-                                    metadata = decodeUtf16LE(data);
-                                }
-                                else {
-                                    metadata = decodeUtf16(data);
-                                }
-                            }
-                            else {
-                                metadata = new TextDecoder().decode(data);
-                            }
-                        }
-                        if (metadata) {
-                            metadata = metadata.trim();
-                            if (metadata.startsWith('{')) {
-                                let json = JSON.parse(metadata);
-                                if ('sui_image_params' in json) {
-                                    // It's swarm, we're good
-                                }
-                                else if ("Prompt" in json) {
-                                    // Fooocus
-                                    json = remapMetadataKeys(json, fooocusMetadataMap);
-                                    metadata = JSON.stringify({ 'sui_image_params': json });
-                                }
-                                else {
-                                    // Don't know - discard for now.
-                                    metadata = null;
-                                }
-                            }
-                            else {
-                                let lines = metadata.split('\n');
-                                if (lines.length > 1) {
-                                    metadata = upvertAutoWebuiMetadataToSwarm(metadata);
-                                }
-                                else {
-                                    // ???
-                                    metadata = null;
-                                }
-                            }
-                        }
-                        setCurrentImage(data, metadata);
-                    }).catch(err => {
-                        setCurrentImage(e.target.result, null);
-                    });
-                };
                 reader.onload = (e) => {
                     try {
-                        parsemetadata(e);
+                        parseMetadata(e.target.result, (data, metadata) => { setCurrentImage(data, metadata); });
                     }
                     catch (e) {
                         setCurrentImage(e.target.result, null);
