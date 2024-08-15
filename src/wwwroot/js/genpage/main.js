@@ -2229,18 +2229,17 @@ function storeImageToHistoryWithCurrentParams(img) {
     });
 }
 
-$('#toptablist').on('shown.bs.tab', function (e) {
-    let versionDisp = getRequiredElementById('version_display');
-    if (e.target.id == 'maintab_comfyworkflow') {
-        versionDisp.style.display = 'none';
-    }
-    else {
-        versionDisp.style.display = '';
-    }
-});
-
 function genpageLoad() {
     console.log('Load page...');
+    $('#toptablist').on('shown.bs.tab', function (e) {
+        let versionDisp = getRequiredElementById('version_display');
+        if (e.target.id == 'maintab_comfyworkflow') {
+            versionDisp.style.display = 'none';
+        }
+        else {
+            versionDisp.style.display = '';
+        }
+    });
     window.imageEditor = new ImageEditor(getRequiredElementById('image_editor_input'), true, true, () => setPageBarsFunc(), () => needsNewPreview());
     let editorSizebar = getRequiredElementById('image_editor_sizebar');
     window.imageEditor.onActivate = () => {
