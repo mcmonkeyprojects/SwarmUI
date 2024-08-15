@@ -113,7 +113,8 @@ public class ComfyUIRedirectHelper
         ComfyUIBackendExtension.ComfyBackendData backend = ComfyUIBackendExtension.ComfyBackendsDirect().First();
         try
         {
-            JObject result = backend.Client.GetAsync($"{backend.Address}/object_info", Utilities.TimedCancel(TimeSpan.FromMinutes(1))).Result.Content.ReadAsStringAsync().Result.ParseToJson();
+            using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
+            JObject result = backend.Client.GetAsync($"{backend.Address}/object_info", cancel.Token).Result.Content.ReadAsStringAsync().Result.ParseToJson();
             if (result is not null)
             {
                 LastObjectInfo = result;

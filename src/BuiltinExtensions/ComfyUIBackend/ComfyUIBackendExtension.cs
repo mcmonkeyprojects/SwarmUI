@@ -289,7 +289,8 @@ public class ComfyUIBackendExtension : Extension
         }
         try
         {
-            Task.WaitAll([.. tasks], Utilities.TimedCancel(TimeSpan.FromMinutes(0.5)));
+            using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(0.5));
+            Task.WaitAll([.. tasks], cancel.Token);
         }
         catch (Exception ex)
         {
@@ -299,7 +300,8 @@ public class ComfyUIBackendExtension : Extension
             {
                 try
                 {
-                    Task.WaitAll([.. tasks], Utilities.TimedCancel(TimeSpan.FromMinutes(5)));
+                    using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(5));
+                    Task.WaitAll([.. tasks], cancel.Token);
                 }
                 catch (Exception ex2)
                 {

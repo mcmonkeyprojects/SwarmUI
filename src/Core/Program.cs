@@ -232,7 +232,8 @@ public class Program
         timer.Check("Web launch");
         try
         {
-            Task.WaitAll([.. waitFor], Utilities.TimedCancel(TimeSpan.FromSeconds(5)));
+            using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromSeconds(5));
+            Task.WaitAll([.. waitFor], cancel.Token);
         }
         catch (Exception ex)
         {

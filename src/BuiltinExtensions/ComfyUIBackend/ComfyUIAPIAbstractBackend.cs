@@ -37,7 +37,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     public async Task LoadValueSet(double maxMinutes = 1)
     {
         Logs.Verbose($"Comfy backend {BackendData.ID} loading value set...");
-        JObject result = await SendGet<JObject>("object_info", Utilities.TimedCancel(TimeSpan.FromMinutes(maxMinutes)));
+        using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(maxMinutes));
+        JObject result = await SendGet<JObject>("object_info", cancel.Token);
         if (result.TryGetValue("error", out JToken errorToken))
         {
             Logs.Verbose($"Comfy backend {BackendData.ID} failed to load value set: {errorToken}");
@@ -127,7 +128,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         if (CanIdle)
         {
             Idler.Backend = this;
-            Idler.ValidateCall = () => SendGet<JObject>("object_info", Utilities.TimedCancel(TimeSpan.FromMinutes(1))).Wait();
+            using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
+            Idler.ValidateCall = () => SendGet<JObject>("object_info", cancel.Token).Wait();
             Idler.Start();
         }
     }
@@ -142,7 +144,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             {
                 if (socket.Socket.State == WebSocketState.Open)
                 {
-                    await socket.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Done", Utilities.TimedCancel(TimeSpan.FromSeconds(5)));
+                    using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromSeconds(5));
+                    await socket.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "Done", cancel.Token);
                 }
                 socket.Socket.Dispose();
             }

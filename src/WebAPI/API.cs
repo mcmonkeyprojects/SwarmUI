@@ -124,7 +124,8 @@ public class API
             JObject output = await handler.Call(context, session, socket, input);
             if (socket is not null)
             {
-                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, Utilities.TimedCancel(TimeSpan.FromMinutes(1)));
+                using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
+                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
                 return;
             }
             if (output is null)
@@ -150,7 +151,8 @@ public class API
             }
             try
             {
-                await socket.CloseAsync(WebSocketCloseStatus.InternalServerError, null, Utilities.TimedCancel(TimeSpan.FromMinutes(1)));
+                using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
+                await socket.CloseAsync(WebSocketCloseStatus.InternalServerError, null, cancel.Token);
                 return;
             }
             catch (Exception ex2)
