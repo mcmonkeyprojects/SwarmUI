@@ -1978,15 +1978,23 @@ function openEmptyEditor() {
 
 function upvertAutoWebuiMetadataToSwarm(metadata) {
     let realData = {};
-    let lines = metadata.split('\n');
-    realData['prompt'] = lines[0];
-    lines = lines.slice(1);
-    if (lines.length > 0 && lines[0].startsWith("Negative prompt: ")) {
-        realData['negativeprompt'] = lines[0].substring("Negative prompt: ".length);
-        lines = lines.slice(1);
+    // Auto webui has no "proper formal" syntax like JSON or anything,
+    // just a mishmash of text, and there's no way to necessarily predict newlines/colons/etc,
+    // so just make best effort to import based on some easy examples
+    if (metadata.includes("\nNegative prompt: ")) {
+        let parts = metadata.split("\nNegative prompt: ");
+        realData['prompt'] = parts[0];
+        realData['negativeprompt'] = parts[1];
+        metadata = parts.slice(2).join("\n");
     }
+    else {
+        let lines = metadata.split('\n');
+        realData['prompt'] = lines.slice(0, lines[0].length - 1).join('\n');
+        metadata = lines[lines.length - 1];
+    }
+    let lines = metadata.split('\n');
     if (lines.length > 0) {
-        let dataParts = lines[0].split(',').map(x => x.split(':').map(y => y.trim()));
+        let dataParts = lines[lines.length - 1].split(',').map(x => x.split(':').map(y => y.trim()));
         for (let part of dataParts) {
             if (part.length == 2) {
                 let clean = cleanParamName(part[0]);
@@ -2117,7 +2125,7 @@ function parseMetadata(data, callback) {
         metadata = interpretMetadata(metadata);
         callback(data, metadata);
     }).catch(err => {
-        callback(e.target.result, null);
+        callback(data, null);
     });
 }
 
