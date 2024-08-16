@@ -136,6 +136,11 @@ public class WebServer
                 context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
                 Logs.Debug($"ComfyBackendDirect call was misrouted, rerouting to '{context.Request.Path}'");
             }
+            else if (path.StartsWith("/assets/"))
+            {
+                context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
+                Logs.Debug($"ComfyBackendDirect assets call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
+            }
             await next();
         });
         WebApp.UseRouting();
