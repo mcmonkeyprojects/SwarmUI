@@ -358,6 +358,7 @@ public class BackendHandler
         await ShutdownBackendCleanly(data);
         newSettings = data.Backend.SettingsRaw.ExcludeSecretValuesThatMatch(newSettings, "\t<secret>");
         data.Backend.SettingsRaw.Load(newSettings);
+        Logs.Verbose($"Settings applied, now: {data.Backend.SettingsRaw.Save(true)}");
         if (title is not null)
         {
             data.Backend.Title = title;

@@ -175,6 +175,7 @@ public class BackendAPI
             return new() { ["error"] = "Missing settings." };
         }
         FDSSection parsed = FDSSection.FromSimple(settings.ToBasicObject());
+        Logs.Verbose($"New settings to apply: {parsed}");
         BackendHandler.T2IBackendData result = await Program.Backends.EditById(backend_id, parsed, title);
         if (result is null)
         {
