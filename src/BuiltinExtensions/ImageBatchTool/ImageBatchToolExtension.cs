@@ -75,10 +75,12 @@ public class ImageBatchToolExtension : Extension
         }
         await sendStatus();
         string finalError = null;
+        long failureCount = 0;
         void setError(string message)
         {
             Volatile.Write(ref finalError, message);
-            Logs.Debug($"Failed while running image-batch-gen for {session.User.UserID}: {message}");
+            Interlocked.Increment(ref failureCount);
+            Logs.Warning($"Failed while running image-batch-gen for {session.User.UserID}: {message}");
         }
         T2IParamInput baseParams;
         try
@@ -201,13 +203,14 @@ public class ImageBatchToolExtension : Extension
             await Task.WhenAny(tasks);
             removeDoneTasks();
         }
+        claim.Dispose();
+        await sendStatus();
         finalError = Volatile.Read(ref finalError);
         if (finalError is not null)
         {
-            output(new JObject() { ["error"] = finalError });
+            Logs.Error($"Image edit batch had {failureCount} errors while running.");
+            output(new JObject() { ["error"] = $"{failureCount} images in the batch failed, including: {finalError}" });
             return;
         }
-        claim.Dispose();
-        await sendStatus();
     }
 }
