@@ -35,14 +35,15 @@ class SwarmClipSeg:
         return {
             "required": {
                 "images": ("IMAGE",),
-                "match_text": ("STRING", {"multiline": True}),
-                "threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step":0.01, "round": False}),
+                "match_text": ("STRING", {"multiline": True, "tooltip": "A short description (a few words) to describe something within the image to find and mask."}),
+                "threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step":0.01, "round": False, "tooltip": "Threshold to apply to the mask, higher values will make the mask more strict. Without sufficient thresholding, CLIPSeg may include random stray content around the edges."}),
             }
         }
 
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
+    DESCRIPTION = "Segment an image using CLIPSeg, creating a mask of what part of an image appears to match the given text."
 
     def seg(self, images, match_text, threshold):
         # TODO: Batch support?

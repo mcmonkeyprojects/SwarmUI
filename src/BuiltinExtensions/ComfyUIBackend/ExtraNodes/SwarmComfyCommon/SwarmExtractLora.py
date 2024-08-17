@@ -107,6 +107,7 @@ class SwarmExtractLora:
     RETURN_TYPES = ()
     FUNCTION = "extract_lora"
     OUTPUT_NODE = True
+    DESCRIPTION = "Internal node, do not use directly - extracts a LoRA from the difference between two models. This is used by SwarmUI Utilities tab."
 
     def extract_lora(self, base_model, base_model_clip, other_model, other_model_clip, rank, save_rawpath, save_filename, save_clip, metadata):
         base_data = base_model.model_state_dict()

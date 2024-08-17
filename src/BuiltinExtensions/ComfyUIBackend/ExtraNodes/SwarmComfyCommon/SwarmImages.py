@@ -8,15 +8,16 @@ class SwarmImageScaleForMP:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "width": ("INT", {"default": 0, "min": 0, "max": 8192}),
-                "height": ("INT", {"default": 0, "min": 0, "max": 8192}),
-                "can_shrink": ("BOOLEAN", {"default": True}),
+                "width": ("INT", {"default": 0, "min": 0, "max": 8192, "tooltip": "The target width of the image."}),
+                "height": ("INT", {"default": 0, "min": 0, "max": 8192, "tooltip": "The target height of the image."}),
+                "can_shrink": ("BOOLEAN", {"default": True, "tooltip": "If true, the image can be shrunk to fit the target size, otherwise it will only be scaled up or left the same."}),
             }
         }
 
     CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "scale"
+    DESCRIPTION = "Scales an image to a target width and height, while keeping the aspect ratio."
 
     def scale(self, image, width, height, can_shrink):
         mpTarget = width * height
@@ -39,16 +40,17 @@ class SwarmImageCrop:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "x": ("INT", {"default": 0, "min": 0, "max": 8192, "step": 8}),
-                "y": ("INT", {"default": 0, "min": 0, "max": 8192, "step": 8}),
-                "width": ("INT", {"default": 512, "min": 64, "max": 8192, "step": 8}),
-                "height": ("INT", {"default": 512, "min": 64, "max": 8192, "step": 8}),
+                "x": ("INT", {"default": 0, "min": 0, "max": 8192, "step": 8, "tooltip": "The x coordinate in pixels of the top left corner of the crop."}),
+                "y": ("INT", {"default": 0, "min": 0, "max": 8192, "step": 8, "tooltip": "The y coordinate in pixels of the top left corner of the crop."}),
+                "width": ("INT", {"default": 512, "min": 64, "max": 8192, "step": 8, "tooltip": "The width in pixels of the crop."}),
+                "height": ("INT", {"default": 512, "min": 64, "max": 8192, "step": 8, "tooltip": "The height in pixels of the crop."}),
             }
         }
 
     CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "crop"
+    DESCRIPTION = "Crops an image to a specific region."
 
     def crop(self, image, x, y, width, height):
         if width <= 0 or height <= 0:
@@ -70,6 +72,7 @@ class SwarmVideoBoomerang:
     CATEGORY = "SwarmUI/video"
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "boomerang"
+    DESCRIPTION = "Creates a boomerang effect by having the video play in reverse after the end, as a simple trick to make it appear to loop smoothly forever."
 
     def boomerang(self, images):
         # return images followed by  reverse images

@@ -8,14 +8,14 @@ class SwarmLatentBlendMasked:
                 "samples0": ("LATENT",),
                 "samples1": ("LATENT",),
                 "mask": ("MASK",),
-                "blend_factor": ("FLOAT", { "default": 0.5, "min": 0, "max": 1, "step": 0.01 }),
+                "blend_factor": ("FLOAT", { "default": 0.5, "min": 0, "max": 1, "step": 0.01, "tooltip": "The blend factor between the two samples. 0 means entirely use sample0, 1 means entirely sample1, 0.5 means 50/50 of each." }),
             }
         }
 
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "blend"
-
     CATEGORY = "SwarmUI/images"
+    DESCRIPTION = "Blends two latent images together within a masked region."
 
     def blend(self, samples0, samples1, blend_factor, mask):
         samples_out = samples0.copy()
