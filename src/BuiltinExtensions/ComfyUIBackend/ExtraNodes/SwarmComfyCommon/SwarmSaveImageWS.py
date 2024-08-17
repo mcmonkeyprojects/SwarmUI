@@ -20,6 +20,7 @@ class SwarmSaveImageWS:
     RETURN_TYPES = ()
     FUNCTION = "save_images"
     OUTPUT_NODE = True
+    DESCRIPTION = "Acts like a special version of 'SaveImage' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
     def save_images(self, images):
         pbar = comfy.utils.ProgressBar(SPECIAL_ID)
@@ -45,9 +46,9 @@ class SwarmSaveAnimatedWebpWS:
         return {
             "required": {
                 "images": ("IMAGE", ),
-                "fps": ("FLOAT", {"default": 6.0, "min": 0.01, "max": 1000.0, "step": 0.01}),
-                "lossless": ("BOOLEAN", {"default": True}),
-                "quality": ("INT", {"default": 80, "min": 0, "max": 100}),
+                "fps": ("FLOAT", {"default": 6.0, "min": 0.01, "max": 1000.0, "step": 0.01, "tooltip": "Frames per second, must match the actual generated speed or else you will get slow/fast motion."}),
+                "lossless": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be saved losslessly, otherwise it will be saved with the quality specified. Lossless is best quality, but takes more file space."}),
+                "quality": ("INT", {"default": 80, "min": 0, "max": 100, "tooltip": "Quality of the image as a percentage, only used if lossless is false. Smaller values save more space but look worse. 80 is a fine general value."}),
                 "method": (list(s.methods.keys()),),
             },
         }
@@ -56,6 +57,7 @@ class SwarmSaveAnimatedWebpWS:
     RETURN_TYPES = ()
     FUNCTION = "save_images"
     OUTPUT_NODE = True
+    DESCRIPTION = "Acts like a special version of 'SaveAnimatedWEBP' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
     def save_images(self, images, fps, lossless, quality, method):
         method = self.methods.get(method)

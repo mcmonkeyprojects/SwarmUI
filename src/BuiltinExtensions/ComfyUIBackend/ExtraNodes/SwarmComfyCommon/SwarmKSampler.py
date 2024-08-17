@@ -226,6 +226,7 @@ class SwarmKSampler:
     CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "run_sampling"
+    DESCRIPTION = "Works like a vanilla Comfy KSamplerAdvanced, but with extra inputs for advanced features such as sigma scale, tiling, previews, etc."
 
     def sample(self, model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews):
         device = comfy.model_management.get_torch_device()

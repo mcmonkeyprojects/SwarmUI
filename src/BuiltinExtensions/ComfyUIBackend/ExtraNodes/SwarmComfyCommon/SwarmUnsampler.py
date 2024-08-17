@@ -21,6 +21,7 @@ class SwarmUnsampler:
     CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "unsample"
+    DESCRIPTION = "Runs sampling in reverse. The function of this is to create noise that matches an image, such that you can the run forward sampling with an altered version of the unsampling prompt to get a closely altered image. May not work on all models, may not work perfectly. Input values should largely match your Sampler inputs."
 
     def unsample(self, model, steps, sampler_name, scheduler, positive, negative, latent_image, start_at_step, previews):
         device = comfy.model_management.get_torch_device()

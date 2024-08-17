@@ -39,6 +39,7 @@ class SwarmModelTiling:
     CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "adapt"
+    DESCRIPTION = "Adapts a model to use circular padding to enable tiled image results. Only works on UNet based models (eg SDv1, SDXL), not on DiT models (eg SD3, Flux). Use with SwarmTileableVAE."
 
     def adapt(self, model, tile_axis=None):
         m = copy.deepcopy(model)
@@ -66,6 +67,7 @@ class SwarmTileableVAE:
     CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("VAE",)
     FUNCTION = "adapt"
+    DESCRIPTION = "Adapts a VAE to use circular padding to enable tiled image results. Use with SwarmModelTiling."
 
     def adapt(self, vae, tile_axis=None):
         vae = copy.deepcopy(vae)

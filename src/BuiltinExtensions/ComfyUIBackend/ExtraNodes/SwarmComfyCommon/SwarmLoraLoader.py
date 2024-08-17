@@ -11,14 +11,15 @@ class SwarmLoraLoader:
             "required": {
                 "model": ("MODEL", ),
                 "clip": ("CLIP", ),
-                "lora_names": ("STRING", {"multiline": True}),
-                "lora_weights": ("STRING", {"multiline": True})
+                "lora_names": ("STRING", {"multiline": True, "tooltip": "Comma separated list of lora names to load."}),
+                "lora_weights": ("STRING", {"multiline": True, "tooltip": "Comma separated list of lora weights to apply to each lora. Must match the number of loras."}),
             }
         }
 
     CATEGORY = "SwarmUI/models"
     RETURN_TYPES = ("MODEL", "CLIP")
     FUNCTION = "load_loras"
+    DESCRIPTION = "Like a regular LoRA Loader, but designed to take a dynamic list of loras and weights, to allow easier integration with SwarmUI custom workflows."
 
     def load_loras(self, model, clip, lora_names, lora_weights):
         if lora_names.strip() == "":

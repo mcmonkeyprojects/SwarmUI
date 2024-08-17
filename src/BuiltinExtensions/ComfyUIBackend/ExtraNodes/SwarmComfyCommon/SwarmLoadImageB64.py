@@ -28,6 +28,7 @@ class SwarmLoadImageB64:
     CATEGORY = "SwarmUI/images"
     RETURN_TYPES = ("IMAGE", "MASK")
     FUNCTION = "load_image_b64"
+    DESCRIPTION = "Loads an image from a base64 string. Works like a regular LoadImage node, but with input format designed to be easier to use through automated calls, including SwarmUI with custom workflows."
 
     def load_image_b64(self, image_base64):
         return b64_to_img_and_mask(image_base64)

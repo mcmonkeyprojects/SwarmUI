@@ -8,21 +8,22 @@ class SwarmClipTextEncodeAdvanced:
         return {
             "required": {
                 "clip": ("CLIP", ),
-                "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
-                "prompt": ("STRING", {"multiline": True, "dynamicPrompts": True} ),
-                "width": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
-                "height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
-                "target_width": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
-                "target_height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION}),
+                "steps": ("INT", {"default": 20, "min": 1, "max": 10000, "tooltip": "How many sampling steps will be ran - this is needed for per-step features (from-to/alternate/...) to work properly."}),
+                "prompt": ("STRING", {"multiline": True, "dynamicPrompts": True, "tooltip": "Your actual prompt text."} ),
+                "width": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION, "tooltip": "Intended width of the image, used by some models (eg SDXL)."}),
+                "height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION, "tooltip": "Intended height of the image, used by some models (eg SDXL)."}),
+                "target_width": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION, "tooltip": "Actual width of the image, used by some models (eg SDXL)."}),
+                "target_height": ("INT", {"default": 1024.0, "min": 0, "max": MAX_RESOLUTION, "tooltip": "Actual height of the image, used by some models (eg SDXL)."}),
             },
             "optional": {
-                "guidance": ("FLOAT", {"default": -1, "min": -1, "max": 100.0, "step": 0.1}),
+                "guidance": ("FLOAT", {"default": -1, "min": -1, "max": 100.0, "step": 0.1, "tooltip": "Guidance value to embed, used by some models (eg Flux)."}),
             }
         }
 
     CATEGORY = "SwarmUI/clip"
     RETURN_TYPES = ("CONDITIONING",)
     FUNCTION = "encode"
+    DESCRIPTION = "Acts like the regular CLIPTextEncode, but supports more advanced special features like '<break>', '[from:to:when]', '[alter|nate]', ..."
 
     def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1):
 

@@ -17,6 +17,7 @@ class SwarmReferenceOnly:
     CATEGORY = "SwarmUI/sampling"
     RETURN_TYPES = ("MODEL", "LATENT")
     FUNCTION = "reference_only"
+    DESCRIPTION = "Applies 'reference only' image-prompting to the generation. Must forward the new model, and the new latent, to work properly."
 
     def reference_only(self, model, reference, latent):
         model_reference = model.clone()

@@ -21,6 +21,7 @@ class SwarmOffsetEmptyLatentImage:
     CATEGORY = "SwarmUI/latents"
     RETURN_TYPES = ("LATENT",)
     FUNCTION = "generate"
+    DESCRIPTION = "Generates a latent image with 4 channels, each channel filled with a different offset value. Designed to allow alternate empty value offsets for SDv1 and SDXL."
 
     def generate(self, width, height, off_a, off_b, off_c, off_d, batch_size=1):
         latent = torch.zeros([batch_size, 4, height // 8, width // 8], device=self.device)
