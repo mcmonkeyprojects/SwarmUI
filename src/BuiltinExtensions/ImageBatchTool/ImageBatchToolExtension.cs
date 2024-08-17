@@ -74,11 +74,11 @@ public class ImageBatchToolExtension : Extension
             output(BasicAPIFeatures.GetCurrentStatusRaw(session));
         }
         await sendStatus();
+        string finalError = null;
         void setError(string message)
         {
-            Logs.Debug($"Refused to run image-batch-gen for {session.User.UserID}: {message}");
-            output(new JObject() { ["error"] = message });
-            claim.LocalClaimInterrupt.Cancel();
+            Volatile.Write(ref finalError, message);
+            Logs.Debug($"Failed while running image-batch-gen for {session.User.UserID}: {message}");
         }
         T2IParamInput baseParams;
         try
@@ -200,6 +200,12 @@ public class ImageBatchToolExtension : Extension
         {
             await Task.WhenAny(tasks);
             removeDoneTasks();
+        }
+        finalError = Volatile.Read(ref finalError);
+        if (finalError is not null)
+        {
+            output(new JObject() { ["error"] = finalError });
+            return;
         }
         claim.Dispose();
         await sendStatus();

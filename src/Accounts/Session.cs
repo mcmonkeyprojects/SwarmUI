@@ -134,6 +134,7 @@ public class Session : IEquatable<Session>
         {
             Complete(WaitingGenerations, LoadingModels, WaitingBackends, LiveGens);
             Sess.Claims.TryRemove(ID, out _);
+            LocalClaimInterrupt.Dispose();
             GC.SuppressFinalize(this);
         }
 
