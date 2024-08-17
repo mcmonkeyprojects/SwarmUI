@@ -883,8 +883,8 @@ let genForeverInterval, genPreviewsInterval;
 
 let lastGenForeverParams = null;
 
-function doGenForeverOnce() {
-    if (num_current_gens > 0) {
+function doGenForeverOnce(minQueueSize) {
+    if (num_current_gens >= minQueueSize) {
         return;
     }
     let allParams = getGenInput();
@@ -903,9 +903,10 @@ function toggleGenerateForever() {
     if (isGeneratingForever) {
         button.innerText = 'Stop Generating';
         let delaySeconds = parseFloat(getUserSetting('generateforeverdelay', '0.1'));
+        let minQueueSize = Math.max(1, parseInt(getUserSetting('generateforeverqueuesize', '1')));
         let delayMs = Math.max(parseInt(delaySeconds * 1000), 1);
         genForeverInterval = setInterval(() => {
-            doGenForeverOnce();
+            doGenForeverOnce(minQueueSize);
         }, delayMs);
     }
     else {
