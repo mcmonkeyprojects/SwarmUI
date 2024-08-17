@@ -43,9 +43,18 @@ function comfyFixMenuLocation() {
     let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top');
     let bodyTopMenu = bodyTop ? bodyTop.querySelector('.comfyui-menu') : null;
     if (bodyTopMenu) {
-        swarmComfyMenu.style.top = '3rem';
+        let logo = bodyTopMenu.querySelector('.comfyui-logo');
+        if (logo && !logo.parentElement.querySelector('.swarm-injected-header-spacer')) {
+            let space = document.createElement('span');
+            space.className = 'swarm-injected-header-spacer';
+            space.style.width = swarmComfyMenu.offsetWidth + 'px';
+            logo.parentElement.insertBefore(space, logo.nextSibling);
+        }
+        swarmComfyMenu.style.top = '0rem';
+        swarmComfyMenu.style.left = `81px`;
     }
     else {
+        swarmComfyMenu.style.left = undefined;
         swarmComfyMenu.style.top = '1rem';
         let menu = frame.contentWindow.document.querySelector('.comfy-menu');
         if (menu) {
