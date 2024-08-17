@@ -1203,8 +1203,8 @@ function comfySelectWorkflowForBrowser(workflow) {
 }
 
 let comfyWorkflowBrowser = new GenPageBrowserClass('comfy_workflow_browser_container', comfyListWorkflowsForBrowser, 'comfyworkflowbrowser', 'Small Thumbnails', comfyDescribeWorkflowForBrowser, comfySelectWorkflowForBrowser);
-comfyWorkflowBrowser.folderTreeVerticalSpacing = '9rem';
-comfyWorkflowBrowser.splitterMinWidth = 16 * 20;
+comfyWorkflowBrowser.folderTreeVerticalSpacing = '6rem';
+comfyWorkflowBrowser.splitterMinWidth = 375;
 
 /**
  * Called when the user wants to browse their workflows (via button press).
