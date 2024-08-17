@@ -155,6 +155,29 @@ class SwarmMaskBounds:
         return (int(x_start), int(y_start), int(x_end - x_start), int(y_end - y_start))
 
 
+class SwarmMaskGrow:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "mask": ("MASK",),
+                "grow": ("INT", {"default": 0, "min": 0, "max": 1024})
+            }
+        }
+
+    CATEGORY = "SwarmUI/masks"
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "grow"
+
+    def grow(self, mask, grow):
+        while mask.ndim < 4:
+            mask = mask.unsqueeze(0)
+        # iterate rather than all at once - this avoids padding and runs much faster for large sizes
+        for _ in range((grow + 1) // 2):
+            mask = torch.nn.functional.max_pool2d(mask, kernel_size=3, stride=1, padding=1)
+        return (mask,)
+
+
 # Blur code is copied out of ComfyUI's default ImageBlur
 def gaussian_kernel(kernel_size: int, sigma: float, device=None):
     x, y = torch.meshgrid(torch.linspace(-1, 1, kernel_size, device=device), torch.linspace(-1, 1, kernel_size, device=device), indexing="ij")
@@ -227,6 +250,7 @@ NODE_CLASS_MAPPINGS = {
     "SwarmExcludeFromMask": SwarmExcludeFromMask,
     "SwarmOverMergeMasksForOverlapFix": SwarmOverMergeMasksForOverlapFix,
     "SwarmMaskBounds": SwarmMaskBounds,
+    "SwarmMaskGrow": SwarmMaskGrow,
     "SwarmMaskBlur": SwarmMaskBlur,
     "SwarmMaskThreshold": SwarmMaskThreshold,
 }
