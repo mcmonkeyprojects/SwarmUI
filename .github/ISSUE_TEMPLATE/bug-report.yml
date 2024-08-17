@@ -33,7 +33,7 @@ body:
     - type: textarea
       attributes:
                 label: Debug Logs
-                description: "Please go to `Server` -> `Logs` -> and set `View Type` to `Debug`, then copypaste all the text into here. If Swarm isn't starting, copy the logs from the terminal window if you can."
+                description: "Please go to `Server` -> `Logs` -> then click the `Pastebin` button and copy the link it generates for you to here. Alternately, set `View Type` to `Debug`, then copypaste all the text into here. If Swarm isn't starting, copy the logs from the terminal window if you can."
                 render: powershell
       validations:
                 required: true

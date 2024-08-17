@@ -20,7 +20,7 @@ body:
     - type: textarea
       attributes:
                 label: Logs
-                description: "If your question relates to an issue you're experiencing, please go to `Server` -> `Logs` -> potentially set `View Type` to `Debug` as well, then copypaste all the text into here."
+                description: "If your question relates to an issue you're experiencing, please go to `Server` -> `Logs` -> then click the `Pastebin` button and copy the link it generates for you to here. Alternately, set `View Type` to `Debug` as well, then copypaste all the text into here."
                 render: powershell
       validations:
                 required: false
