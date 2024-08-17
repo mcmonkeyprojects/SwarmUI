@@ -5,17 +5,18 @@ class SwarmSquareMaskFromPercent:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "x": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0}),
-                "y": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0}),
-                "width": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0}),
-                "height": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0}),
-                "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0})
+                "x": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05, "round": 0.0001, "tooltip": "The x position of the mask as a percentage of the image size."}),
+                "y": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05, "round": 0.0001, "tooltip": "The y position of the mask as a percentage of the image size."}),
+                "width": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05, "round": 0.0001, "tooltip": "The width of the mask as a percentage of the image size."}),
+                "height": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.05, "round": 0.0001, "tooltip": "The height of the mask as a percentage of the image size."}),
+                "strength": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "tooltip": "The strength of the mask, ie the value of all masked pixels, leaving the rest black ie 0."}),
             }
         }
 
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_from_perc"
+    DESCRIPTION = "Creates a simple square mask with the specified dimensions and position, with the specified strength (ie value of all masked pixels, leaving the rest black ie 0)."
 
     def mask_from_perc(self, x, y, width, height, strength):
         SCALE = 256
@@ -51,6 +52,7 @@ class SwarmOverMergeMasksForOverlapFix:
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_overmerge"
+    DESCRIPTION = "Merges two masks by simply adding them together, without any overlap handling. Intended for use with the Overlap nodes."
 
     def mask_overmerge(self, mask_a, mask_b):
         mask_a, mask_b = mask_size_match(mask_a, mask_b)
@@ -71,6 +73,7 @@ class SwarmCleanOverlapMasks:
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK","MASK",)
     FUNCTION = "mask_overlap"
+    DESCRIPTION = "Normalizes the overlap between two masks, such that where they overlap each mask will receive only partial strength that sums to no more than 1.0. This allows you to then add the masks together and the result will not exceed 1 at any point."
 
     def mask_overlap(self, mask_a, mask_b):
         mask_a, mask_b = mask_size_match(mask_a, mask_b)
@@ -94,6 +97,7 @@ class SwarmCleanOverlapMasksExceptSelf:
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_clean"
+    DESCRIPTION = "If masks have been overmerged, this takes a single mask and grabs just the CleanOverlap result for the one mask relative to the overmerge result."
 
     def mask_clean(self, mask_self, mask_merged):
         mask_self, mask_merged = mask_size_match(mask_self, mask_merged)
@@ -115,6 +119,7 @@ class SwarmExcludeFromMask:
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "mask_exclude"
+    DESCRIPTION = "Excludes the area of the exclude mask from the main mask, such that the main mask will be black in the area of the exclude mask. This is a simple subtract and clamp."
 
     def mask_exclude(self, main_mask, exclude_mask):
         main_mask, exclude_mask = mask_size_match(main_mask, exclude_mask)
@@ -129,7 +134,7 @@ class SwarmMaskBounds:
         return {
             "required": {
                 "mask": ("MASK",),
-                "grow": ("INT", {"default": 0, "min": 0, "max": 1024})
+                "grow": ("INT", {"default": 0, "min": 0, "max": 1024, "tooltip": "Number of pixels to grow the mask by."}),
             }
         }
 
@@ -137,6 +142,7 @@ class SwarmMaskBounds:
     RETURN_TYPES = ("INT", "INT", "INT", "INT")
     RETURN_NAMES = ("x", "y", "width", "height")
     FUNCTION = "get_bounds"
+    DESCRIPTION = "Returns the bounding box of the mask (as pixel coordinates x,y,width,height), optionally grown by the number of pixels specified in 'grow'."
 
     def get_bounds(self, mask, grow):
         if len(mask.shape) == 3:
@@ -161,13 +167,14 @@ class SwarmMaskGrow:
         return {
             "required": {
                 "mask": ("MASK",),
-                "grow": ("INT", {"default": 0, "min": 0, "max": 1024})
+                "grow": ("INT", {"default": 0, "min": 0, "max": 1024, "tooltip": "Number of pixels to grow the mask by."}),
             }
         }
 
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "grow"
+    DESCRIPTION = "Expands the contents of the max, such that masked (white) areas grow and cover the unmasked (black) areas by the number of pixels specified in 'grow'."
 
     def grow(self, mask, grow):
         while mask.ndim < 4:
@@ -195,15 +202,15 @@ class SwarmMaskBlur:
         return {
             "required": {
                 "mask": ("MASK",),
-                "blur_radius": ("INT", { "default": 1, "min": 1, "max": 64, "step": 1 }),
-                "sigma": ("FLOAT", { "default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1 }),
+                "blur_radius": ("INT", { "default": 1, "min": 1, "max": 64, "step": 1, "tooltip": "The radius of the blur kernel." }),
+                "sigma": ("FLOAT", { "default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1, "tooltip": "The standard deviation of the Gaussian blur kernel." }),
             },
         }
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "blur"
-
     CATEGORY = "SwarmUI/masks"
+    DESCRIPTION = "Blurs the contents of the mask."
 
     def blur(self, mask, blur_radius, sigma):
         if blur_radius == 0:
@@ -227,14 +234,15 @@ class SwarmMaskThreshold:
         return {
             "required": {
                 "mask": ("MASK",),
-                "min": ("FLOAT", { "default": 0.2, "min": 0, "max": 1, "step": 0.01 }),
-                "max": ("FLOAT", { "default": 0.8, "min": 0, "max": 1, "step": 0.01 }),
+                "min": ("FLOAT", { "default": 0.2, "min": 0, "max": 1, "step": 0.01, "tooltip": "The minimum value to threshold the mask to." }),
+                "max": ("FLOAT", { "default": 0.8, "min": 0, "max": 1, "step": 0.01, "tooltip": "The maximum value to threshold the mask to." }),
             },
         }
 
     RETURN_TYPES = ("MASK",)
     FUNCTION = "threshold"
     CATEGORY = "SwarmUI/masks"
+    DESCRIPTION = "Thresholds the mask to the specified range, clamping any lower or higher values and rescaling the range to 0-1."
 
     def threshold(self, mask, min, max):
         mask = mask.clamp(min, max)
