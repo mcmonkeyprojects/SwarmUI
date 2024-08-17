@@ -210,6 +210,14 @@ public class WorkflowGeneratorSteps
                         ["channel"] = "red"
                     });
                     g.EnableDifferential();
+                    if (g.UserInput.TryGet(T2IParamTypes.MaskGrow, out int growAmount))
+                    {
+                        maskImageNode = g.CreateNode("SwarmMaskGrow", new JObject()
+                        {
+                            ["mask"] = new JArray() { maskImageNode, 0 },
+                            ["grow"] = growAmount,
+                        });
+                    }
                     if (g.UserInput.TryGet(T2IParamTypes.MaskBlur, out int blurAmount))
                     {
                         maskImageNode = g.CreateNode("SwarmMaskBlur", new JObject()
