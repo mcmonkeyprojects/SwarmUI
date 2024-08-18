@@ -303,27 +303,27 @@ public class T2IModelHandler
                 return;
             }
             Logs.Debug($"Will reapply metadata for model {model.RawFilePath}");
-            using FileStream reader = File.OpenRead(model.RawFilePath);
-            byte[] headerLen = new byte[8];
-            reader.ReadExactly(headerLen, 0, 8);
-            long len = BitConverter.ToInt64(headerLen, 0);
-            if (len < 0 || len > 100 * 1024 * 1024)
+            FileStream tempReader;
+            string headerJsonString;
+            int fileBodyStartIndex;
+            try
             {
-                Logs.Warning($"Model {model.Name} has invalid metadata length {len}.");
+                tempReader = T2IModel.GetSafetensorsHeaderAndReaderFrom(model.RawFilePath, out headerJsonString, out fileBodyStartIndex);
+            }
+            catch (SwarmReadableErrorException ex)
+            {
+                // Failed to parse file, may be invalid
+                Logs.Warning($"Failed to read Model {model.Name}: {ex}.");
+
                 File.WriteAllText(swarmjspath, model.ToNetObject("modelspec.").ToString());
                 return;
             }
-            byte[] header = new byte[len];
-            reader.ReadExactly(header, 0, (int)len);
-            string headerStr = Encoding.UTF8.GetString(header);
-            JObject json = JObject.Parse(headerStr);
-            long pos = reader.Position;
+            using FileStream reader = tempReader;
+            JObject json = JObject.Parse(headerJsonString);
             JObject metaHeader = (json["__metadata__"] as JObject) ?? [];
-            if (model.Metadata.Hash is null)
+            if (model.Metadata.Hash is null || !Utilities.IsValidSHA256Hash(model.Metadata.Hash))
             {
-                // Metadata fix for when we generated hashes into the file metadata headers, but did not save them into the metadata cache
-                model.Metadata.Hash = (metaHeader?.ContainsKey("modelspec.hash_sha256") ?? false) ? metaHeader.Value<string>("modelspec.hash_sha256") : "0x" + Utilities.BytesToHex(SHA256.HashData(reader));
-                ResetMetadataFrom(model);
+                model.Metadata.Hash = T2IModel.GenerateHashFromFile(reader, fileBodyStartIndex);
             }
             void specSet(string key, string val)
             {
@@ -362,7 +362,7 @@ public class T2IModelHandler
                 byte[] headerBytes = Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None));
                 writer.Write(BitConverter.GetBytes(headerBytes.LongLength));
                 writer.Write(headerBytes);
-                reader.Seek(pos, SeekOrigin.Begin);
+                reader.Seek(fileBodyStartIndex, SeekOrigin.Begin);
                 reader.CopyTo(writer);
                 reader.Dispose();
             }

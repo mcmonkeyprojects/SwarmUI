@@ -27,6 +27,7 @@ public static class ModelsAPI
         API.RegisterAPICall(EditWildcard, true);
         API.RegisterAPICall(EditModelMetadata, true);
         API.RegisterAPICall(DoModelDownloadWS, true);
+        API.RegisterAPICall(GenerateModelHash);
     }
 
     public static Dictionary<string, JObject> InternalExtraModels(string subtype)
@@ -580,5 +581,84 @@ public static class ModelsAPI
             await ws.SendJson(new JObject() { ["error"] = "Failed to download the model due to internal exception." }, API.WebsocketTimeout);
         }
         return null;
+    }
+
+    [API.APIDescription("Returns the hash of a model, optionally  the hash from",
+        """
+        {
+            "success": true,
+            "model" {
+                "model": "My/Model/Filepath.safetensors",
+                "hash_sha256": "0xabc...",
+            },
+        }
+        """)]
+    public static async Task<JObject> GenerateModelHash(Session session,
+        [API.APIParameter("The full filepath of the model to load.")] string modelPath,
+        [API.APIParameter("The model's subtype, eg `Stable-Diffusion`, `LoRA`, etc.")] string modelSubtype = "Stable-Diffusion",
+        [API.APIParameter("If false, don't ever write the hash into the actual file itself. Set false if you will write additional metadata to this model.")] bool writeHashToDisk = true)
+    {
+        if (!Program.T2IModelSets.TryGetValue(modelSubtype, out T2IModelHandler modelHandler) && modelSubtype != "Wildcards")
+        {
+            return new JObject()
+            {
+                ["success"] = false,
+                ["error"] = "Invalid sub-type."
+            };
+        }
+        if (TryGetRefusalForModel(session, modelPath, out JObject refusal))
+        {
+            refusal["success"] = false;
+            return refusal;
+        }
+        if (!modelHandler.Models.TryGetValue(modelPath, out T2IModel model))
+        {
+            return new JObject()
+            {
+                ["success"] = false,
+                ["error"] = "Could not find model by provided path."
+            };
+        }
+        (string modelSHA256Hash, bool wasHashGenerated) = await model.GetOrGenerateHash();
+        if (modelSHA256Hash is null)
+        {
+            return new JObject()
+            {
+                ["success"] = false,
+                ["error"] = "Could not generate hash."
+            };
+        }
+        if (wasHashGenerated)
+        {
+            lock (modelHandler.ModificationLock)
+            {
+                if (model.Metadata is null)
+                {
+                    model.Metadata = new();
+                }
+                // Verify has is different now that we're in the lock
+                if (model.Metadata.Hash != modelSHA256Hash)
+                {
+                    model.Metadata.Hash = modelSHA256Hash;
+                    modelHandler.ResetMetadataFrom(model);
+                    // Optionally write the updated file-header to disk.
+                    if (writeHashToDisk)
+                    {
+                        _ = Utilities.RunCheckedTask(() => modelHandler.ApplyNewMetadataDirectly(model));
+                    }
+                }
+            }
+        }
+
+        // Try to return output in the same format of T2IModel.ToNetObject, but only the information we requested
+        // or information that would help debugging (like the model's file name.)
+        return new JObject()
+        {
+            ["success"] = true,
+            ["model"] = new JObject() {
+                ["name"] = model.Name,
+                ["hash_sha256"] = modelSHA256Hash,
+            }
+        };
     }
 }

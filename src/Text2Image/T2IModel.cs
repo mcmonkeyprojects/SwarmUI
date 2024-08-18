@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using FreneticUtilities.FreneticExtensions;
+using Newtonsoft.Json.Linq;
 using SwarmUI.Utils;
 using System.IO;
 
@@ -90,17 +91,42 @@ public class T2IModel
     /// <summary>Get the safetensors header from a model.</summary>
     public static string GetSafetensorsHeaderFrom(string modelPath)
     {
-        using FileStream file = File.OpenRead(modelPath);
-        byte[] lenBuf = new byte[8];
-        file.ReadExactly(lenBuf, 0, 8);
-        long len = BitConverter.ToInt64(lenBuf, 0);
-        if (len < 0 || len > 100 * 1024 * 1024)
+        using (FileStream _ = GetSafetensorsHeaderAndReaderFrom(modelPath, out string headerJson, out int _))
         {
-            throw new SwarmReadableErrorException($"Improper safetensors file {modelPath}. Wrong file type, or unreasonable header length: {len}");
+            return headerJson;
         }
-        byte[] dataBuf = new byte[len];
-        file.ReadExactly(dataBuf, 0, (int)len);
-        return Encoding.UTF8.GetString(dataBuf);
+    }
+
+    /// <summary>Get the safetensors header string, a filestream reader for the file, and the index where the body starts in the file.</summary>
+    public static FileStream GetSafetensorsHeaderAndReaderFrom(string modelPath, out string headerJson, out int fileBodyStartIndex)
+    {
+        headerJson = null;
+        fileBodyStartIndex = -1;
+
+        FileStream localFileStream = null;
+        try
+        {
+            localFileStream = File.OpenRead(modelPath);
+            byte[] lengthBuffer = new byte[8];
+            localFileStream.ReadExactly(lengthBuffer, 0, 8);
+            long headerLength = BitConverter.ToInt64(lengthBuffer, 0);
+            if (headerLength < 0 || headerLength > 100 * 1024 * 1024)
+            {
+                throw new SwarmReadableErrorException($"Invalid safetensors file {modelPath}. Wrong file type, or unreasonable header length: {headerLength}");
+            }
+            byte[] dataBuffer = new byte[headerLength];
+            localFileStream.ReadExactly(dataBuffer, 0, (int)headerLength);
+            headerJson = Encoding.UTF8.GetString(dataBuffer);
+            fileBodyStartIndex = (int)localFileStream.Position;
+            // Return filestream without disposing.
+            FileStream outFileStream = localFileStream;
+            localFileStream = null;
+            return outFileStream;
+        }
+        finally
+        {
+            localFileStream?.Dispose();
+        }
     }
 
     /// <summary>Returns the name of the model.</summary>
@@ -113,5 +139,60 @@ public class T2IModel
     public override string ToString()
     {
         return Name.Replace('/', Path.DirectorySeparatorChar);
+    }
+
+    /// <summary>Gets or generates this model's SHA256 hash. Returns the hash and whether the returned hash is a new value.</summary>
+    public async Task<(string, bool)> GetOrGenerateHash(bool forceGenerateHash = false)
+    {
+        string hash = Metadata?.Hash;
+        bool usingCachedValue = true;
+        bool normalizeHash = true;
+        if (forceGenerateHash || hash is null || !Utilities.IsValidSHA256Hash(hash, false))
+        {
+            usingCachedValue = false;
+            if (forceGenerateHash)
+            {
+                hash = GenerateHashFromFile(RawFilePath);
+                normalizeHash = false;
+            }
+            else
+            {
+                using FileStream reader = GetSafetensorsHeaderAndReaderFrom(RawFilePath, out string headerJsonString, out int fileBodyStartIndex);
+                JObject json = JObject.Parse(headerJsonString);
+                JObject metaHeader = (json["__metadata__"] as JObject) ?? [];
+                hash = metaHeader?.Value<string>("modelspec.hash_sha256") ?? metaHeader?.Value<string>("hash_sha256");
+                if (hash is null || !Utilities.IsValidSHA256Hash(hash, false))
+                {
+                    hash = GenerateHashFromFile(reader, fileBodyStartIndex);
+                    normalizeHash = false;
+                }
+            }
+        }
+        // If our hash was not just generated, normalize it to have the '0x' prefix and be all lowercase
+        if (normalizeHash)
+        {
+            string normalizedHash = hash.StartsWithFast("0x") ? hash.ToLowerFast() : "0x" + hash.ToLowerFast();
+            return (normalizedHash, !usingCachedValue || normalizedHash != hash);
+        }
+        else
+        {
+            return (hash, !usingCachedValue);
+        }
+    }
+
+    /// <summary>Generates the file's data hash for a safetensor model at the specified path.</summary>
+    public static string GenerateHashFromFile(string modelPath)
+    {
+        using (FileStream fileStream = GetSafetensorsHeaderAndReaderFrom(modelPath, out string _, out int fileBodyStartIndex))
+        {
+            return GenerateHashFromFile(fileStream, fileBodyStartIndex);
+        }
+    }
+
+    /// <summary>Generates a file's data hash for a safetensor model being read by the file reader.</summary>
+    public static string GenerateHashFromFile(FileStream reader, int fileStartIndex)
+    {
+        reader.Seek(fileStartIndex, SeekOrigin.Begin);
+        return "0x" + Utilities.HashSHA256(reader);
     }
 }
