@@ -58,7 +58,7 @@ function pickle2safetensor_load(mapping = null) {
     }
     for (let type of ['Stable-Diffusion', 'LoRA', 'VAE', 'Embedding', 'ControlNet']) {
         let modelSet = mapping[type];
-        let count = modelSet.filter(x => !x.startsWith("backup") && !x.endsWith('.safetensors') && !x.endsWith('.sft') && !x.endsWith('.engine')).length;
+        let count = modelSet.filter(x => !x.startsWith("backup") && x != "(None)" && !nativelySupportedModelExtensions.includes(x.split('.').pop())).length;
         let counter = getRequiredElementById(`pickle2safetensor_${type.toLowerCase()}_count`);
         counter.innerText = count;
         let button = getRequiredElementById(`pickle2safetensor_${type.toLowerCase()}_button`);

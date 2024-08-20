@@ -10,6 +10,7 @@ let curModelMenuModel = null;
 let curModelMenuBrowser = null;
 let loraWeightPref = {};
 let allWildcards = [];
+let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 
 function test_wildcard_again() {
     let card = curWildcardMenuWildcard;

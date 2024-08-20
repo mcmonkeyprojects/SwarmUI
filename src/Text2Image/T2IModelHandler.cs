@@ -689,7 +689,7 @@ public class T2IModelHandler
         {
             string fn = file.Replace('\\', '/').AfterLast('/');
             string fullFilename = $"{prefix}{fn}";
-            if (fn.EndsWith(".safetensors") || fn.EndsWith(".sft") || fn.EndsWith(".engine"))
+            if (T2IModel.NativelySupportedModelExtensions.Contains(fn.AfterLast('.')))
             {
                 T2IModel model = new()
                 {

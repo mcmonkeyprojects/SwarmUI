@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using FreneticUtilities.FreneticExtensions;
+using Newtonsoft.Json.Linq;
 using SwarmUI.Utils;
 using System.IO;
 
@@ -37,6 +38,9 @@ public class T2IModel
     /// <summary>Metadata about this model.</summary>
     public T2IModelHandler.ModelMetadataStore Metadata;
 
+    /// <summary>Set of all model file extensions that are considered natively supported.</summary>
+    public static HashSet<string> NativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
+
     /// <summary>Gets a networkable copy of this model's data.</summary>
     public JObject ToNetObject(string prefix = "")
     {
@@ -61,7 +65,7 @@ public class T2IModel
             [$"{prefix}trigger_phrase"] = Metadata?.TriggerPhrase,
             [$"{prefix}merged_from"] = Metadata?.MergedFrom,
             [$"{prefix}tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
-            [$"{prefix}is_supported_model_format"] = RawFilePath.EndsWith(".safetensors") || RawFilePath.EndsWith(".sft") || RawFilePath.EndsWith(".engine"),
+            [$"{prefix}is_supported_model_format"] = NativelySupportedModelExtensions.Contains(RawFilePath.AfterLast('.')),
             [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
             [$"{prefix}local"] = true,
             [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
