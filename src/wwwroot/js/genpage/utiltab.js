@@ -184,8 +184,41 @@ class ModelDownloaderUtil {
         this.button = getRequiredElementById('model_downloader_button');
         this.metadataZone = getRequiredElementById('model_downloader_metadatazone');
         this.activeZone = getRequiredElementById('model_downloader_right_sidebar');
+        this.folders = getRequiredElementById('model_downloader_folder');
         this.hfPrefix = 'https://huggingface.co/';
         this.civitPrefix = 'https://civitai.com/';
+    }
+
+    reloadFolders() {
+        if (!coreModelMap) {
+            return;
+        }
+        let selected = this.folders.value;
+        let html = '<option>(None)</option>';
+        let folderList = [];
+        for (let submap of Object.values(coreModelMap)) {
+            for (let model of submap) {
+                let parts = model.split('/');
+                if (parts.length == 1) {
+                    continue;
+                }
+                if (folderList.includes(parts.slice(0, -1).join('/'))) {
+                    continue;
+                }
+                for (let i = 1; i < parts.length; i++) {
+                    let folder = parts.slice(0, i).join('/');
+                    if (!folderList.includes(folder)) {
+                        folderList.push(folder);
+                    }
+                }
+            }
+        }
+        folderList.sort();
+        for (let folder of folderList) {
+            html += `<option>${folder}</option>\n`;
+        }
+        this.folders.innerHTML = html;
+        this.folders.value = selected || '(None)';
     }
 
     getCivitaiMetadata(id, versId, callback) {
@@ -419,7 +452,8 @@ class ModelDownloaderUtil {
 
     run() {
         this.button.disabled = true;
-        let download = new ActiveModelDownload(this, this.name.value, this.url.value, this.metadataZone.dataset.image, this.type.value, this.metadataZone.dataset.raw || '');
+        let name = this.folders.value == '(None)' ? this.name.value : this.folders.value + '/' + this.name.value;
+        let download = new ActiveModelDownload(this, name, this.url.value, this.metadataZone.dataset.image, this.type.value, this.metadataZone.dataset.raw || '');
         download.download();
     }
 }

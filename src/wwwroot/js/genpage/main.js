@@ -1753,6 +1753,7 @@ function updateAllModels(models) {
     }
     selector.value = selectorVal;
     pickle2safetensor_load();
+    modelDownloader.reloadFolders();
 }
 
 let shutdownConfirmationText = translatable("Are you sure you want to shut SwarmUI down?");
