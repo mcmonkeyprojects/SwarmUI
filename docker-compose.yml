@@ -10,6 +10,7 @@ services:
       - swarmbackend:/dlbackend
       - ./Models:/Models
       - ./Output:/Output
+      - ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows
     ports:
       - "7801:7801"
     deploy:

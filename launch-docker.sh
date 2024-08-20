@@ -9,4 +9,5 @@ docker run -it \
     --mount source=swarmbackend,target=/dlbackend \
     -v ./Models:/Models \
     -v ./Output:/Output \
+    -v ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows \
     --gpus=all -p 7801:7801 swarmui
