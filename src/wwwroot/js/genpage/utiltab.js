@@ -183,6 +183,7 @@ class ModelDownloaderUtil {
         this.name = getRequiredElementById('model_downloader_name');
         this.button = getRequiredElementById('model_downloader_button');
         this.metadataZone = getRequiredElementById('model_downloader_metadatazone');
+        this.imageSide = getRequiredElementById('model_downloader_imageside');
         this.activeZone = getRequiredElementById('model_downloader_right_sidebar');
         this.folders = getRequiredElementById('model_downloader_folder');
         this.hfPrefix = 'https://huggingface.co/';
@@ -369,16 +370,17 @@ class ModelDownloaderUtil {
                         <br><b>Version title</b>: ${escapeHtml(rawVersion.name)}
                         <br><b>Base model</b>: ${escapeHtml(rawVersion.baseModel)}
                         <br><b>Date</b>: ${escapeHtml(rawVersion.createdAt)}`
-                        + (img ? `<br><b>Thumbnail</b>:<br> <img src="${img}" style="max-width: 100%; max-height: 100%;">` : '')
                         + `<br><b>Model description</b>: ${safeHtmlOnly(rawData.description)}`
                         + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '')
                         + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join(", "))}` : '');
                     this.metadataZone.dataset.raw = `${JSON.stringify(metadata, null, 2)}`;
                     if (img) {
                         this.metadataZone.dataset.image = img;
+                        this.imageSide.innerHTML = `<img src="${img}"/>`;
                     }
                     else {
                         delete this.metadataZone.dataset.image;
+                        this.imageSide.innerHTML = ``;
                     }
                 });
             }

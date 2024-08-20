@@ -1317,12 +1317,25 @@ body {
     width: 50%;
 }
 .model_downloader_metadatazone {
-    max-width: 100rem;
+    width: 40rem;
+    max-width: calc(100vw - 42rem);
     max-height: 20rem;
     padding: 1rem;
     border: 1px solid var(--light-border);
     border-radius: 0.5rem;
     overflow: auto;
+    display: inline-block;
+    vertical-align: top;
+}
+.model_downloader_imageside {
+    display: inline-block;
+    width: 20rem;
+    vertical-align: top;
+}
+.model_downloader_imageside img {
+    max-width: 100%;
+    max-height: 20rem;
+    object-fit: contain;
 }
 .model-downloader-section-wrapper {
     display: block;
@@ -1331,7 +1344,7 @@ body {
 }
 .model-downloader-main-section {
     display: inline-block;
-    width: fit-content;
+    width: 70rem;
     padding-right: 1rem;
     padding-left: 1rem;
     max-width: calc(100vw - 22rem);
