@@ -696,6 +696,10 @@ public class WorkflowGenerator
         {
             step.Action(this);
         }
+        if (LoadingClip is null)
+        {
+            throw new SwarmUserErrorException($"Model loader for {model.Name} didn't work - are you sure it has an architecture ID set properly?");
+        }
         return (model, LoadingModel, LoadingClip, LoadingVAE);
     }
 
