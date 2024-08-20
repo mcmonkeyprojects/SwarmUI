@@ -460,9 +460,10 @@ function comfyBuildParams(callback) {
                 let subtype = null;
                 let defaultVal = node.inputs['value'];
                 let values = null;
+                let doFixMe = false;
                 switch (node.class_type) {
-                    case 'SwarmInputInteger': type = 'integer'; break;
-                    case 'SwarmInputFloat': type = 'decimal'; break;
+                    case 'SwarmInputInteger': type = 'integer'; doFixMe = true; break;
+                    case 'SwarmInputFloat': type = 'decimal'; doFixMe = true; break;
                     case 'SwarmInputText': type = 'text'; break;
                     case 'SwarmInputModelName':
                         type = 'model';
@@ -493,7 +494,7 @@ function comfyBuildParams(callback) {
                             }
                         }
                     break;
-                    case 'SwarmInputBoolean': type = 'boolean'; break;
+                    case 'SwarmInputBoolean': type = 'boolean'; doFixMe = true; break;
                     case 'SwarmInputImage': type = 'image'; break;
                     default: throw new Error(`Unknown SwarmInput type ${node.class_type}`);
                 }
@@ -543,7 +544,12 @@ function comfyBuildParams(callback) {
                     params[inputId].image_should_resize = node.inputs['auto_resize'];
                     params[inputId].image_always_b64 = true;
                 }
-                node.inputs['value'] = "${" + inputId + ":" + `${node.inputs['value']}`.replaceAll('${', '(').replaceAll('}', ')') + "}";
+                if (doFixMe) {
+                    node.inputs['value'] = "%%_COMFYFIXME_${" + inputId + ":" + `${node.inputs['value']}`.replaceAll('${', '(').replaceAll('}', ')') + "}_ENDFIXME_%%";
+                }
+                else {
+                    node.inputs['value'] = "${" + inputId + ":" + `${node.inputs['value']}`.replaceAll('${', '(').replaceAll('}', ')') + "}";
+                }
             }
             function injectType(id, type) {
                 if (id.startsWith(inputPrefix)) {

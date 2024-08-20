@@ -611,6 +611,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     {
                         return list.JoinString(",");
                     }
+                    else if (val is bool bval)
+                    {
+                        return bval ? "true" : "false";
+                    }
                     return val.ToString();
                 }
                 long fixSeed(long input)
