@@ -133,6 +133,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 - GGUF Quantized "unet" models, such as Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main> are supported in SwarmUI automatically.
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/unet` and work similar to other "unet" format models
+    - You will have to click `Edit Metadata` on the model and set the architecture, it cannot be autodetected currently.
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
     - You can accept this popup, and it will install and reload the backend
