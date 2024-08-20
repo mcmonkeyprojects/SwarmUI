@@ -127,3 +127,13 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
         - This will autoinstall https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4 which is developed by comfyanonymous and lllyasviel, and is under the AGPL license.
     - You can accept this popup, and it will install and reload the backend
     - Then try to generate again, and it should just work
+
+# GGUF Quantized Models
+
+- GGUF Quantized "unet" models, such as Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main> are supported in SwarmUI automatically.
+    - The detection is based on file extension.
+    - They go in `(Swarm)/Models/unet` and work similar to other "unet" format models
+    - The first time you try to load a GGUF model, it will give you a popup asking to install support
+        - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
+    - You can accept this popup, and it will install and reload the backend
+    - Then try to generate again, and it should just work
