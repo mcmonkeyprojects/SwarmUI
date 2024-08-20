@@ -194,7 +194,8 @@ public class T2IModelClassSorter
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = "flux-1", Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return h.ContainsKey("diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight")
-                || h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight");
+                || h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight")
+                || h.ContainsKey("transformer.single_transformer_blocks.0.attn.to_k.lora_A.weight");
         }});
         Register(new() { ID = "Flux.1-dev/controlnet", CompatClass = "flux-1", Name = "Flux.1 ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
