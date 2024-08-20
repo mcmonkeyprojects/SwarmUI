@@ -548,6 +548,10 @@ public class T2IModelHandler
                     break;
                 }
             }
+            if (model.Name.EndsWith(".gguf"))
+            {
+                specialFormat = "gguf";
+            }
             if (specialFormat is not null)
             {
                 Logs.Debug($"Model {model.Name} has special format '{specialFormat}'");

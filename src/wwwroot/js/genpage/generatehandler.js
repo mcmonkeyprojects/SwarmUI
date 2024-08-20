@@ -218,6 +218,10 @@ class GenerateHandler {
                     $('#bnb_nf4_installer').modal('show');
                     return;
                 }
+                if (curModelSpecialFormat == 'gguf' && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
+                    $('#gguf_installer').modal('show');
+                    return;
+                }
                 run();
             });
         }

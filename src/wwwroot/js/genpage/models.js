@@ -395,6 +395,10 @@ class ModelBrowserWrapper {
                     $('#bnb_nf4_installer').modal('show');
                     return;
                 }
+                if (curModelSpecialFormat == 'gguf' && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
+                    $('#gguf_installer').modal('show');
+                    return;
+                }
                 makeWSRequestT2I('SelectModelWS', {'model': model.data.name}, data => {
                     this.browser.navigate(lastModelDir);
                 });

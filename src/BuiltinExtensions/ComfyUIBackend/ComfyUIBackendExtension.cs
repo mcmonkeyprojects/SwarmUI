@@ -50,6 +50,7 @@ public class ComfyUIBackendExtension : Extension
         ["SwarmYoloDetection"] = "yolov8",
         ["PixArtCheckpointLoader"] = "extramodelspixart",
         ["CheckpointLoaderNF4"] = "bnb_nf4",
+        ["UnetLoaderGGUF"] = "gguf",
         ["TensorRTLoader"] = "tensorrt"
     };
 
@@ -92,6 +93,11 @@ public class ComfyUIBackendExtension : Extension
         {
             FeaturesSupported.UnionWith(["bnb_nf4"]);
             FeaturesDiscardIfNotFound.UnionWith(["bnb_nf4"]);
+        }
+        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-GGUF"))
+        {
+            FeaturesSupported.UnionWith(["gguf"]);
+            FeaturesDiscardIfNotFound.UnionWith(["gguf"]);
         }
         static string[] listModelsFor(string subpath)
         {

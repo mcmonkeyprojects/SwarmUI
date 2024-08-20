@@ -1857,6 +1857,12 @@ function installBNBNF4() {
     }, false);
 }
 
+function installGGUF() {
+    doFeatureInstaller('https://github.com/city96/ComfyUI-GGUF', 'city96', 'gguf', 'install_gguf_button', `This will install GGUF support developed by city96.\nDo you wish to install?`, () => {
+        $('#gguf_installer').modal('hide');
+    }, false);
+}
+
 function hideRevisionInputs() {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     promptImageArea.innerHTML = '';

@@ -523,13 +523,28 @@ public class WorkflowGenerator
         }
         else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet")) // Hacky but it works for now
         {
-            string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
-            string modelNode = CreateNode("UNETLoader", new JObject()
+            if (model.Metadata?.SpecialFormat == "gguf")
             {
-                ["unet_name"] = model.ToString(ModelFolderFormat),
-                ["weight_dtype"] = dtype == "automatic" ? (IsFlux() ? "fp8_e4m3fn" : "default") : dtype
-            }, id);
-            LoadingModel = [modelNode, 0];
+                if (!Features.Contains("gguf"))
+                {
+                    throw new SwarmUserErrorException("This model is in GGUF format, but the server does not have GGUF support installed. Cannot run.");
+                }
+                string modelNode = CreateNode("UnetLoaderGGUF", new JObject()
+                {
+                    ["unet_name"] = model.ToString(ModelFolderFormat)
+                }, id);
+                LoadingModel = [modelNode, 0];
+            }
+            else
+            {
+                string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
+                string modelNode = CreateNode("UNETLoader", new JObject()
+                {
+                    ["unet_name"] = model.ToString(ModelFolderFormat),
+                    ["weight_dtype"] = dtype == "automatic" ? (IsFlux() ? "fp8_e4m3fn" : "default") : dtype
+                }, id);
+                LoadingModel = [modelNode, 0];
+            }
             LoadingClip = null;
             LoadingVAE = null;
         }

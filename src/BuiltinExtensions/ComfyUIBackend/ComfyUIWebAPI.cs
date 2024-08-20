@@ -188,6 +188,7 @@ public static class ComfyUIWebAPI
             else if (feature == "comfyui_tensorrt") { return await doRepo("https://github.com/comfyanonymous/ComfyUI_TensorRT", skipPipCache: true); }
             else if (feature == "sam2") { return await doRepo("https://github.com/kijai/ComfyUI-segment-anything-2"); }
             else if (feature == "bnb_nf4") { return await doRepo("https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4"); }
+            else if (feature == "gguf") { return await doRepo("https://github.com/city96/ComfyUI-GGUF"); }
             else
             {
                 Logs.Warning($"User {session.User.UserID} tried to install unknown feature '{feature}'.");
