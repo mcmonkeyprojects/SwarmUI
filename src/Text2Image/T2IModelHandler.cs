@@ -573,7 +573,7 @@ public class T2IModelHandler
             img ??= autoImg;
             string[] tags = null;
             JToken tagsTok = metaHeader.Property("modelspec.tags")?.Value;
-            if (tagsTok is not null)
+            if (tagsTok is not null && tagsTok.Type != JTokenType.Null)
             {
                 if (tagsTok.Type == JTokenType.Array)
                 {
@@ -584,6 +584,21 @@ public class T2IModelHandler
                     tags = tagsTok.Value<string>().Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                 }
             }
+            string pickBest(params string[] options)
+            {
+                foreach (string opt in options)
+                {
+                    if (!string.IsNullOrWhiteSpace(opt))
+                    {
+                        return opt;
+                    }
+                }
+                if (options.Length > 0)
+                {
+                    return options[0];
+                }
+                return null;
+            }
             metadata = new()
             {
                 ModelFileVersion = modified,
@@ -591,24 +606,24 @@ public class T2IModelHandler
                 TimeCreated = new DateTimeOffset(File.GetCreationTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds(),
                 ModelName = modelCacheId,
                 ModelClassType = clazz?.ID,
-                Title = metaHeader?.Value<string>("modelspec.title") ?? metaHeader?.Value<string>("title") ?? altName ?? fileName.BeforeLast('.'),
-                Author = metaHeader?.Value<string>("modelspec.author") ?? metaHeader?.Value<string>("author"),
-                Description = metaHeader?.Value<string>("modelspec.description") ?? metaHeader?.Value<string>("description") ?? altDescription,
+                Title = pickBest(metaHeader?.Value<string>("modelspec.title"), metaHeader?.Value<string>("title"), altName, fileName.BeforeLast('.')),
+                Author = pickBest(metaHeader?.Value<string>("modelspec.author"), metaHeader?.Value<string>("author")),
+                Description = pickBest(metaHeader?.Value<string>("modelspec.description"), metaHeader?.Value<string>("description"), altDescription),
                 PreviewImage = img,
                 StandardWidth = width,
                 StandardHeight = height,
-                UsageHint = metaHeader?.Value<string>("modelspec.usage_hint") ?? metaHeader?.Value<string>("usage_hint"),
-                MergedFrom = metaHeader?.Value<string>("modelspec.merged_from") ?? metaHeader?.Value<string>("merged_from"),
-                TriggerPhrase = metaHeader?.Value<string>("modelspec.trigger_phrase") ?? metaHeader?.Value<string>("trigger_phrase") ?? altTriggerPhrase,
-                License = metaHeader?.Value<string>("modelspec.license") ?? metaHeader?.Value<string>("license"),
-                Date = metaHeader?.Value<string>("modelspec.date") ?? metaHeader?.Value<string>("date"),
-                Preprocessor = metaHeader?.Value<string>("modelspec.preprocessor") ?? metaHeader?.Value<string>("preprocessor"),
+                UsageHint = pickBest(metaHeader?.Value<string>("modelspec.usage_hint"), metaHeader?.Value<string>("usage_hint")),
+                MergedFrom = pickBest(metaHeader?.Value<string>("modelspec.merged_from"), metaHeader?.Value<string>("merged_from")),
+                TriggerPhrase = pickBest(metaHeader?.Value<string>("modelspec.trigger_phrase"), metaHeader?.Value<string>("trigger_phrase"), altTriggerPhrase),
+                License = pickBest(metaHeader?.Value<string>("modelspec.license"), metaHeader?.Value<string>("license")),
+                Date = pickBest(metaHeader?.Value<string>("modelspec.date"), metaHeader?.Value<string>("date")),
+                Preprocessor = pickBest(metaHeader?.Value<string>("modelspec.preprocessor"), metaHeader?.Value<string>("preprocessor")),
                 Tags = tags,
-                IsNegativeEmbedding = (metaHeader?.Value<string>("modelspec.is_negative_embedding") ?? metaHeader?.Value<string>("is_negative_embedding")) == "true",
-                PredictionType = metaHeader?.Value<string>("modelspec.prediction_type") ?? metaHeader?.Value<string>("prediction_type"),
-                Hash = metaHeader?.Value<string>("modelspec.hash_sha256") ?? metaHeader?.Value<string>("hash_sha256"),
+                IsNegativeEmbedding = (pickBest(metaHeader?.Value<string>("modelspec.is_negative_embedding"), metaHeader?.Value<string>("is_negative_embedding")) ?? "false") == "true",
+                PredictionType = pickBest(metaHeader?.Value<string>("modelspec.prediction_type"), metaHeader?.Value<string>("prediction_type")),
+                Hash = pickBest(metaHeader?.Value<string>("modelspec.hash_sha256"), metaHeader?.Value<string>("hash_sha256")),
                 TextEncoders = textEncs,
-                SpecialFormat = metaHeader?.Value<string>("modelspec.special_format") ?? metaHeader?.Value<string>("special_format") ?? specialFormat
+                SpecialFormat = pickBest(metaHeader?.Value<string>("modelspec.special_format"), metaHeader?.Value<string>("special_format"))
             };
             lock (MetadataLock)
             {
