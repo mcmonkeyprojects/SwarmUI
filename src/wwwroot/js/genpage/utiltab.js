@@ -362,7 +362,7 @@ class ModelDownloaderUtil {
                         this.type.value = modelType;
                     }
                     this.urlStatusArea.innerText = "URL appears to be a CivitAI link, and has been loaded from Civitai API.";
-                    this.name.value = `${rawData.name} - ${rawVersion.name}`.replaceAll(/[\|\\\/\:\*\?\"\<\>\|\,\.]/g, '-');
+                    this.name.value = `${rawData.name} - ${rawVersion.name}`.replaceAll(/[\|\\\/\:\*\?\"\<\>\|\,\.\&\!\[\]\(\)]/g, '-');
                     this.nameInput();
                     this.metadataZone.innerHTML = `
                         Found civitai metadata for model ID ${escapeHtml(id)} version id ${escapeHtml(versId)}:
