@@ -584,7 +584,7 @@ public class T2IModelHandler
                     tags = tagsTok.Value<string>().Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
                 }
             }
-            string pickBest(params string[] options)
+            static string pickBest(params string[] options)
             {
                 foreach (string opt in options)
                 {
@@ -623,7 +623,7 @@ public class T2IModelHandler
                 PredictionType = pickBest(metaHeader?.Value<string>("modelspec.prediction_type"), metaHeader?.Value<string>("prediction_type")),
                 Hash = pickBest(metaHeader?.Value<string>("modelspec.hash_sha256"), metaHeader?.Value<string>("hash_sha256")),
                 TextEncoders = textEncs,
-                SpecialFormat = pickBest(metaHeader?.Value<string>("modelspec.special_format"), metaHeader?.Value<string>("special_format"))
+                SpecialFormat = pickBest(metaHeader?.Value<string>("modelspec.special_format"), metaHeader?.Value<string>("special_format"), specialFormat)
             };
             lock (MetadataLock)
             {
