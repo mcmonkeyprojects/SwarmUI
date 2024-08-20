@@ -12,6 +12,9 @@ public class T2IModelClassSorter
     /// <summary>All known model classes.</summary>
     public static Dictionary<string, T2IModelClass> ModelClasses = [];
 
+    /// <summary>Remaps for known typos or alternate labelings.</summary>
+    public static Dictionary<string, string> Remaps = [];
+
     /// <summary>Register a new model class to the sorter.</summary>
     public static void Register(T2IModelClass clazz)
     {
@@ -197,6 +200,14 @@ public class T2IModelClassSorter
         {
             return false;
         }});
+        Remaps["flux-1-dev"] = "Flux.1-dev";
+        Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
+        Remaps["flux-1-dev/controlnet"] = "Flux.1-dev/controlnet";
+        Remaps["flux-1-schnell"] = "Flux.1-schnell";
+        Remaps["flux-1-schnell/lora"] = "Flux.1-dev/lora";
+        Remaps["flux-1-schnell/controlnet"] = "Flux.1-dev/controlnet";
+        Remaps["Flux.1-schnell/lora"] = "Flux.1-dev/lora";
+        Remaps["Flux.1-schnell/controlnet"] = "Flux.1-dev/controlnet";
         // ====================== Random Other Models ======================
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -246,6 +257,10 @@ public class T2IModelClassSorter
             string h = null;
             int width = string.IsNullOrWhiteSpace(res) ? 0 : int.Parse(res.BeforeAndAfter('x', out h));
             int height = string.IsNullOrWhiteSpace(h) ? 0 : int.Parse(h);
+            if (Remaps.TryGetValue(arch, out string remapTo))
+            {
+                arch = remapTo;
+            }
             if (ModelClasses.TryGetValue(arch, out T2IModelClass clazz))
             {
                 if ((width == clazz.StandardWidth && height == clazz.StandardHeight) || (width <= 0 && height <= 0))
