@@ -19,6 +19,10 @@ public class T2IParamInput
     [
         input =>
         {
+            if (!input.RawOriginalSeed.HasValue)
+            {
+                input.RawOriginalSeed = input.Get(T2IParamTypes.Seed, -1);
+            }
             if (!input.TryGet(T2IParamTypes.Seed, out long seed) || seed == -1)
             {
                 input.Set(T2IParamTypes.Seed, Random.Shared.Next());
@@ -480,6 +484,9 @@ public class T2IParamInput
 
     /// <summary>List of reasons this input did not match backend requests, if any.</summary>
     public HashSet<string> RefusalReasons = [];
+
+    /// <summary>Original seed the input had, before randomization handling.</summary>
+    public long? RawOriginalSeed;
 
     /// <summary>Construct a new parameter input handler for a session.</summary>
     public T2IParamInput(Session session)

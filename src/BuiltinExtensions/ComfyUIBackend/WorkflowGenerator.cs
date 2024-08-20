@@ -858,6 +858,10 @@ public class WorkflowGenerator
             ["return_with_leftover_noise"] = returnWithLeftoverNoise ? "enable" : "disable",
             ["add_noise"] = addNoise ? "enable" : "disable"
         };
+        if (UserInput.RawOriginalSeed.HasValue && UserInput.RawOriginalSeed >= 0)
+        {
+            inputs["control_after_generate"] = "fixed";
+        }
         string created;
         if (Features.Contains("variation_seed") && !RestrictCustomNodes)
         {
