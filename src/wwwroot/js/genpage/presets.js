@@ -401,7 +401,7 @@ function importPresetsToData(text) {
         }
         return data;
     }
-    if (text.startsWith('name,prompt,negative_prompt,')) {
+    if (text.startsWith('name,prompt,negative_prompt')) {
         data = {};
         let lines = text.split('\n');
         for (let line of lines.slice(1)) {
