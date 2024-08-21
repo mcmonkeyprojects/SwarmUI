@@ -316,7 +316,7 @@ class ModelDownloaderUtil {
                 parts[4] = parts[4].substring(0, parts[4].length - '?download=true'.length);
                 this.url.value = `${this.hfPrefix}${parts.join('/')}`;
             }
-            if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft') && !parts[4].endsWith('.gguf')) {
+            if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft')) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a safetensors file. Only safetensors can be auto-downloaded.";
                 this.button.disabled = false;
                 return;
@@ -326,14 +326,14 @@ class ModelDownloaderUtil {
                 this.url.value = `${this.hfPrefix}${parts.join('/')}`;
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, and has been autocorrected to a download link.";
                 this.button.disabled = false;
-                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '').replaceAll('.gguf', '');
+                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '');
                 this.nameInput();
                 return;
             }
             if (parts[2] == 'resolve') {
                 this.urlStatusArea.innerText = "URL appears to be a valid HuggingFace download link.";
                 this.button.disabled = false;
-                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '').replaceAll('.gguf', '');
+                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '');
                 this.nameInput();
                 return;
             }
