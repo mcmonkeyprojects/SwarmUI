@@ -106,6 +106,7 @@ public class ComfyUIBackendExtension : Extension
             return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'))).Select(f => f.Replace('\\', '/').AfterLast('/'))];
         }
         T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, listModelsFor("upscale_models").Select(u => $"model-{u}///Model: {u}"));
+        T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, listModelsFor("clip"));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
     }
 
@@ -408,6 +409,14 @@ public class ComfyUIBackendExtension : Extension
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}///{m} (New)"));
             }
+            if (rawObjectInfo.TryGetValue("CLIPLoader", out JToken clipLoader))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, clipLoader["input"]["required"]["clip_name"][0].Select(m => $"{m}"));
+            }
+            if (rawObjectInfo.TryGetValue("CLIPLoaderGGUF", out JToken clipLoaderGguf))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, clipLoaderGguf["input"]["required"]["clip_name"][0].Select(m => $"{m}"));
+            }
             if (rawObjectInfo.TryGetValue("Sam2AutoSegmentation", out JToken nodeData))
             {
                 foreach (string size in new string[] { "base_plus", "large", "small" })
@@ -466,7 +475,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType;
+    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, ClipLModel, ClipGModel, T5XXLModel;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit;
 
@@ -485,6 +494,8 @@ public class ComfyUIBackendExtension : Extension
     public static List<string> GligenModels = ["None"];
 
     public static List<string> YoloModels = [];
+
+    public static List<string> ClipModels = [];
 
     public static List<string> ControlnetUnionTypes = ["auto", "openpose", "depth", "hed/pidi/scribble/ted", "canny/lineart/anime_lineart/mlsd", "normal", "segment", "tile", "repaint"];
 
@@ -577,6 +588,15 @@ public class ComfyUIBackendExtension : Extension
             ));
         YoloModelInternal = T2IParamTypes.Register<string>(new("YOLO Model Internal", "Parameter for internally tracking YOLOv8 models.\nThis is not for real usage, it is just to expose the list to the UI handler.",
             "", IgnoreIf: "", FeatureFlag: "yolov8", Group: ComfyAdvancedGroup, GetValues: (_) => YoloModels, Toggleable: true, IsAdvanced: true, AlwaysRetain: true, VisibleNormally: false
+            ));
+        ClipLModel = T2IParamTypes.Register<string>(new("CLIP-L Model", "Which CLIP-L model to use, for SD3/Flux style 'unet' folder models.",
+            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 15
+            ));
+        ClipGModel = T2IParamTypes.Register<string>(new("CLIP-G Model", "Which CLIP-G model to use, for SD3 style 'unet' folder models.",
+            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 16
+            ));
+        T5XXLModel = T2IParamTypes.Register<string>(new("T5-XXL Model", "Which T5-XXL model to use, for SD3/Flux style 'unet' folder models.",
+            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 17
             ));
         Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
         Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);

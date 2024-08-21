@@ -456,6 +456,41 @@ public class WorkflowGenerator
             DownloadModel(name, filePath, url);
             ClipModelsValid.Add(name);
         }
+        string getT5XXLModel()
+        {
+            if (UserInput.TryGet(ComfyUIBackendExtension.T5XXLModel, out string model))
+            {
+                return model;
+            }
+            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
+            return "t5xxl_enconly.safetensors";
+        }
+        string getClipLModel()
+        {
+            if (UserInput.TryGet(ComfyUIBackendExtension.ClipLModel, out string model))
+            {
+                return model;
+            }
+            if (ComfyUIBackendExtension.ClipModels.Contains("clip_l_sdxl_base.safetensors"))
+            {
+                return "clip_l_sdxl_base.safetensors";
+            }
+            requireClipModel("clip_l.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors");
+            return "clip_l.safetensors";
+        }
+        string getClipGModel()
+        {
+            if (UserInput.TryGet(ComfyUIBackendExtension.ClipGModel, out string model))
+            {
+                return model;
+            }
+            if (ComfyUIBackendExtension.ClipModels.Contains("clip_g_sdxl_base.safetensors"))
+            {
+                return "clip_g_sdxl_base.safetensors";
+            }
+            requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors");
+            return "clip_g.safetensors";
+        }
         IsDifferentialDiffusion = false;
         LoadingModelType = type;
         if (!noCascadeFix && model.ModelClass?.ID == "stable-cascade-v1-stage-b" && model.Name.Contains("stage_b") && Program.MainSDModels.Models.TryGetValue(model.Name.Replace("stage_b", "stage_c"), out T2IModel altCascadeModel))
@@ -499,10 +534,9 @@ public class WorkflowGenerator
                 ["model"] = model.ModelClass.ID == "pixart-ms-sigma-xl-2-2k" ? "PixArtMS_Sigma_XL_2_2K" : "PixArtMS_Sigma_XL_2"
             }, id);
             LoadingModel = [pixartNode, 0];
-            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
             string singleClipLoader = CreateNode("CLIPLoader", new JObject()
             {
-                ["clip_name"] = "t5xxl_enconly.safetensors",
+                ["clip_name"] = getT5XXLModel(),
                 ["type"] = "sd3"
             });
             LoadingClip = [singleClipLoader, 0];
@@ -598,17 +632,16 @@ public class WorkflowGenerator
             if (mode == "CLIP + T5" && tencs.Contains("clip_l") && tencs.Contains("t5xxl")) { mode = null; }
             if (mode is not null)
             {
-                requireClipModel("clip_g_sdxl_base.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors");
-                requireClipModel("clip_l_sdxl_base.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors");
-                if (mode.Contains("T5"))
-                {
-                    requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
-                }
                 if (mode == "T5 Only")
                 {
-                    string singleClipLoader = CreateNode("CLIPLoader", new JObject()
+                    string loaderType = "CLIPLoader";
+                    if (getT5XXLModel().EndsWith(".gguf"))
                     {
-                        ["clip_name"] = "t5xxl_enconly.safetensors",
+                        loaderType = "CLIPLoaderGGUF";
+                    }
+                    string singleClipLoader = CreateNode(loaderType, new JObject()
+                    {
+                        ["clip_name"] = getT5XXLModel(),
                         ["type"] = "sd3"
                     });
                     LoadingClip = [singleClipLoader, 0];
@@ -617,19 +650,24 @@ public class WorkflowGenerator
                 {
                     string dualClipLoader = CreateNode("DualCLIPLoader", new JObject()
                     {
-                        ["clip_name1"] = "clip_g_sdxl_base.safetensors",
-                        ["clip_name2"] = "clip_l_sdxl_base.safetensors",
+                        ["clip_name1"] = getClipGModel(),
+                        ["clip_name2"] = getClipLModel(),
                         ["type"] = "sd3"
                     });
                     LoadingClip = [dualClipLoader, 0];
                 }
                 else
                 {
-                    string tripleClipLoader = CreateNode("TripleCLIPLoader", new JObject()
+                    string loaderType = "TripleCLIPLoader";
+                    if (getT5XXLModel().EndsWith(".gguf"))
                     {
-                        ["clip_name1"] = "clip_g_sdxl_base.safetensors",
-                        ["clip_name2"] = "clip_l_sdxl_base.safetensors",
-                        ["clip_name3"] = "t5xxl_enconly.safetensors"
+                        loaderType = "TripleCLIPLoaderGGUF";
+                    }
+                    string tripleClipLoader = CreateNode(loaderType, new JObject()
+                    {
+                        ["clip_name1"] = getClipGModel(),
+                        ["clip_name2"] = getClipLModel(),
+                        ["clip_name3"] = getT5XXLModel()
                     });
                     LoadingClip = [tripleClipLoader, 0];
                 }
@@ -637,12 +675,15 @@ public class WorkflowGenerator
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null))
         {
-            requireClipModel("clip_l_sdxl_base.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors");
-            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
-            string dualClipLoader = CreateNode("DualCLIPLoader", new JObject()
+            string loaderType = "DualCLIPLoader";
+            if (getT5XXLModel().EndsWith(".gguf"))
             {
-                ["clip_name1"] = "t5xxl_enconly.safetensors",
-                ["clip_name2"] = "clip_l_sdxl_base.safetensors",
+                loaderType = "DualCLIPLoaderGGUF";
+            }
+            string dualClipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name1"] = getT5XXLModel(),
+                ["clip_name2"] = getClipLModel(),
                 ["type"] = "flux"
             });
             LoadingClip = [dualClipLoader, 0];
