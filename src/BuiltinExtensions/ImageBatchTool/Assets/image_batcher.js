@@ -3,7 +3,7 @@ class ImageBatcherClass {
 
     doGenerate() {
         resetBatchIfNeeded();
-        let batch_id = mainGenHandler.batchesEver++;
+        let batch_id = mainGenHandler.getBatchId();
         let inData = {
             'baseParams': getGenInput(),
             'input_folder': getRequiredElementById('ext_image_batcher_inputfolder').value,

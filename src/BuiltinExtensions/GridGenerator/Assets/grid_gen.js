@@ -341,7 +341,7 @@ class GridGenClass {
 
     doGenerate() {
         resetBatchIfNeeded();
-        let batch_id = mainGenHandler.batchesEver++;
+        let batch_id = mainGenHandler.getBatchId();
         let startTime = Date.now();
         let generatedCount = 0;
         let getOpt = (o) => getRequiredElementById('grid-gen-opt-' + o).checked;

@@ -68,6 +68,10 @@ class GenerateHandler {
             this.doGenerate();
         }
     }
+
+    getBatchId() {
+        return ++this.batchesEver;
+    }
     
     doGenerate(input_overrides = {}, input_preoverrides = {}) {
         if (session_id == null) {
@@ -87,7 +91,7 @@ class GenerateHandler {
         let run = () => {
             this.resetBatchIfNeeded();
             let images = {};
-            let batch_id = this.batchesEver++;
+            let batch_id = this.getBatchId();
             let discardable = {};
             let timeLastGenHit = Date.now();
             let actualInput = this.getGenInput(input_overrides, input_preoverrides);
@@ -202,7 +206,8 @@ class GenerateHandler {
                     }
                 }
             }, e => {
-                if (this.interrupted >= this.batchesEver) {
+                console.log(`Error in GenerateText2ImageWS: ${e}, ${this.interrupted}, ${batch_id}`);
+                if (this.interrupted >= batch_id) {
                     return;
                 }
                 this.hadError(e);
