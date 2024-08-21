@@ -169,6 +169,9 @@ function formatMetadata(metadata) {
     let data;
     try {
         let readable = interpretMetadata(metadata);
+        if (!readable) {
+            return '';
+        }
         data = JSON.parse(readable).sui_image_params;
     }
     catch (e) {
