@@ -224,6 +224,9 @@ class ModelDownloaderUtil {
 
     getCivitaiMetadata(id, versId, callback) {
         getJsonDirect(`${this.civitPrefix}api/v1/models/${id}`, (status, rawData) => {
+            let doError = () => {
+                callback(null, null, null, null, null, null);
+            }
             let modelType = null;
             let metadata = null;
             let rawVersion = rawData.modelVersions[0];
@@ -238,6 +241,11 @@ class ModelDownloaderUtil {
                         }
                     }
                 }
+            }
+            if (!file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
+                console.log(`refuse civitai url because download url is ${file.downloadUrl}`);
+                doError();
+                return;
             }
             if (rawData.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
             if (rawData.type == 'LORA') { modelType = 'LoRA'; }
@@ -270,7 +278,7 @@ class ModelDownloaderUtil {
                 applyMetadata('');
             }
         }, (status, data) => {
-            callback(null, null, null, null, null, null);
+            doError();
         });
     }
 
@@ -417,6 +425,7 @@ class ModelDownloaderUtil {
         else {
             this.metadataZone.innerHTML = '';
             this.metadataZone.dataset.raw = '';
+            this.imageSide.innerHTML = '';
         }
         if (url.trim() == '') {
             this.urlStatusArea.innerText = "(...)";
