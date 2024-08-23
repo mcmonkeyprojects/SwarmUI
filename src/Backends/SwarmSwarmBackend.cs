@@ -33,6 +33,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         [ConfigComment("If the remote instance has an 'Authorization:' header required, specify it here.\nFor example, 'Bearer abc123'.\nIf you don't know what this is, you don't need it.")]
         [ValueIsSecret]
         public string AuthorizationHeader = "";
+
+        [ConfigComment("Any other headers here, newline separated, for example:\nMyHeader: MyVal\nSecondHeader: secondVal")]
+        public string OtherHeaders = "";
     }
 
     /// <summary>Internal HTTP handler.</summary>
@@ -80,11 +83,26 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Gets a request adapter appropriate to this Swarm backend, including eg auth headers.</summary>
     public Action<HttpRequestMessage> RequestAdapter()
     {
-        if (string.IsNullOrWhiteSpace(Settings.AuthorizationHeader))
+        return req =>
         {
-            return null;
-        }
-        return req => req.Headers.Authorization = AuthenticationHeaderValue.Parse(Settings.AuthorizationHeader);
+            if (!string.IsNullOrWhiteSpace(Settings.AuthorizationHeader))
+            {
+                req.Headers.Authorization = AuthenticationHeaderValue.Parse(Settings.AuthorizationHeader);
+            }
+            if (!string.IsNullOrWhiteSpace(Settings.OtherHeaders))
+            {
+                foreach (string line in Settings.OtherHeaders.Split('\n'))
+                {
+                    string[] parts = line.Split(':');
+                    if (parts.Length != 2)
+                    {
+                        Logs.Error($"Invalid header line in SwarmSwarmBackend: '{line}'");
+                        continue;
+                    }
+                    req.Headers.Add(parts[0].Trim(), parts[1].Trim());
+                }
+            }
+        };
     }
 
     public async Task ValidateAndBuild()
