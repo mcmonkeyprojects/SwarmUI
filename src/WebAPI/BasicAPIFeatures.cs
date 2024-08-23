@@ -171,7 +171,7 @@ public static class BasicAPIFeatures
                         }
                         catch (HttpRequestException ex)
                         {
-                            Logs.Error($"Comfy download failed: {ex}");
+                            Logs.Error($"Comfy download failed: {ex.ReadableString()}");
                             Logs.Info("Will try alternate download...");
                             await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_or_cpu_nightly_pytorch.7z", "dlbackend/comfyui_dl.7z", updateProgress);
                         }
@@ -321,12 +321,12 @@ public static class BasicAPIFeatures
                 catch (IOException ex)
                 {
                     Logs.Error($"Failed to download '{file}' (IO): {ex.GetType().Name}: {ex.Message}");
-                    Logs.Debug($"Download exception: {ex}");
+                    Logs.Debug($"Download exception: {ex.ReadableString()}");
                 }
                 catch (HttpRequestException ex)
                 {
                     Logs.Error($"Failed to download '{file}' (HTTP): {ex.GetType().Name}: {ex.Message}");
-                    Logs.Debug($"Download exception: {ex}");
+                    Logs.Debug($"Download exception: {ex.ReadableString()}");
                 }
                 stepsThusFar++;
                 updateProgress(0, 0, 0);

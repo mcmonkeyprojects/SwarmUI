@@ -143,7 +143,7 @@ public class API
                 Error($"Remote WebSocket disconnected unexpectedly (ConnectionClosedPrematurely). Did your browser crash while generating?");
                 return;
             }
-            Error($"Internal exception: {ex}");
+            Error($"Internal exception: {ex.ReadableString()}");
             if (socket is null)
             {
                 context.Response.Redirect("/Error/Internal");

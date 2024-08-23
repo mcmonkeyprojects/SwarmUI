@@ -288,7 +288,7 @@ public class ComfyUIBackendExtension : Extension
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error refreshing ComfyUI: {ex}");
+            Logs.Error($"Error refreshing ComfyUI: {ex.ReadableString()}");
         }
         if (!tasks.Any())
         {
@@ -302,7 +302,7 @@ public class ComfyUIBackendExtension : Extension
         catch (Exception ex)
         {
             Logs.Debug("ComfyUI refresh failed, will retry in background");
-            Logs.Verbose($"Error refreshing ComfyUI: {ex}");
+            Logs.Verbose($"Error refreshing ComfyUI: {ex.ReadableString()}");
             Utilities.RunCheckedTask(() =>
             {
                 try

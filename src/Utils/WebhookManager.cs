@@ -55,7 +55,7 @@ public static class WebhookManager
         }
         catch (Exception ex)
         {
-            Logs.Error($"Failed to send queue start webhook: {ex}");
+            Logs.Error($"Failed to send queue start webhook: {ex.ReadableString()}");
         }
         finally
         {
@@ -94,7 +94,7 @@ public static class WebhookManager
         }
         catch (Exception ex)
         {
-            Logs.Error($"Failed to send queue end webhook: {ex}");
+            Logs.Error($"Failed to send queue end webhook: {ex.ReadableString()}");
         }
         finally
         {

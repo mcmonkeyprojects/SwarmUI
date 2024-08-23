@@ -89,7 +89,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 }
                 catch (Exception ex)
                 {
-                    Logs.Error($"Failed to install comfy backend node requirements: {ex}");
+                    Logs.Error($"Failed to install comfy backend node requirements: {ex.ReadableString()}");
                     AddLoadStatus($"Error during requirements installation.");
                 }
                 AddLoadStatus($"Will re-start any backends shut down by the install...");
@@ -148,7 +148,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         catch (Exception ex)
         {
-            Logs.Error($"Failed to auto-update comfy backend node repos: {ex}");
+            Logs.Error($"Failed to auto-update comfy backend node repos: {ex.ReadableString()}");
             AddLoadStatus($"Error while ensuring comfy backend node repos: {ex.GetType().Name}: {ex.Message}");
         }
     }
@@ -295,7 +295,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 catch (Exception ex)
                 {
                     AddLoadStatus($"Auto-update comfy backend failed.");
-                    Logs.Error($"Failed to auto-update comfy backend: {ex}");
+                    Logs.Error($"Failed to auto-update comfy backend: {ex.ReadableString()}");
                 }
             }));
         }
@@ -364,7 +364,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error stopping ComfyUI process: {ex}");
+            Logs.Error($"Error stopping ComfyUI process: {ex.ReadableString()}");
         }
     }
 

@@ -503,7 +503,7 @@ public static class T2IAPI
             }
             else
             {
-                Logs.Error($"Error reading file list: {ex}");
+                Logs.Error($"Error reading file list: {ex.ReadableString()}");
                 return new JObject() { ["error"] = "Error reading file list." };
             }
         }

@@ -149,7 +149,7 @@ public static class NetworkBackendUtils
                 {
                     if (ExceptionIsNonIdleable(ex))
                     {
-                        Logs.Error($"Backend {Backend.BackendData.ID} failed to validate: {ex}");
+                        Logs.Error($"Backend {Backend.BackendData.ID} failed to validate: {ex.ReadableString()}");
                         SetStatus(BackendStatus.ERRORED);
                         return;
                     }
@@ -469,7 +469,7 @@ public static class NetworkBackendUtils
             }
             catch (Exception ex)
             {
-                Logs.Error($"Error in {nameSimple} monitor loop: {ex}");
+                Logs.Error($"Error in {nameSimple} monitor loop: {ex.ReadableString()}");
                 setStatus(BackendStatus.ERRORED);
             }
             lock (Logs.OtherTrackers)

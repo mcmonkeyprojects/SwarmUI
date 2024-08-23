@@ -88,7 +88,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
         catch (Exception ex)
         {
-            Logs.Error($"Comfy backend {BackendData.ID} failed to load raw node backend info: {ex}");
+            Logs.Error($"Comfy backend {BackendData.ID} failed to load raw node backend info: {ex.ReadableString()}");
         }
         Logs.Verbose($"Comfy backend {BackendData.ID} loaded value set and parsed.");
         AddLoadStatus("Done parsing value set.");
@@ -152,7 +152,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             }
             catch (Exception ex)
             {
-                Logs.Verbose($"ComfyUI backend {BackendData.ID} failed to close websocket: {ex}");
+                Logs.Verbose($"ComfyUI backend {BackendData.ID} failed to close websocket: {ex.ReadableString()}");
             }
         }
         Idler.Stop();
@@ -207,7 +207,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
         catch (Exception ex)
         {
-            Logs.Verbose($"Websocket comfy connection failed: {ex}");
+            Logs.Verbose($"Websocket comfy connection failed: {ex.ReadableString()}");
             if (CanIdle)
             {
                 Status = BackendStatus.IDLE;
@@ -744,7 +744,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
         catch (Exception ex)
         {
-            Logs.Verbose($"Error: {ex}");
+            Logs.Verbose($"Error: {ex.ReadableString()}");
             Logs.Debug($"Failed to process comfy workflow: {JObject.Parse(workflow).ToDenseDebugString(noSpacing: true)} for inputs {user_input}");
             throw;
         }

@@ -43,7 +43,7 @@ public class AutoCompleteListHelper
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error while refreshing autocomplete lists: {ex}");
+            Logs.Error($"Error while refreshing autocomplete lists: {ex.ReadableString()}");
         }
     }
 

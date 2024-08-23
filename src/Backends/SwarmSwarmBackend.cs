@@ -176,7 +176,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                         }
                         catch (Exception ex)
                         {
-                            Logs.Error($"Failed to get {runType} models from remote Swarm at {Address}: {ex}");
+                            Logs.Error($"Failed to get {runType} models from remote Swarm at {Address}: {ex.ReadableString()}");
                         }
                     }));
                 }
@@ -297,7 +297,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             }
             catch (Exception ex)
             {
-                Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} failed to load, WillIdle={Settings.AllowIdle}, Status={Status}: {ex}");
+                Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} failed to load, WillIdle={Settings.AllowIdle}, Status={Status}: {ex.ReadableString()}");
                 if (Status != BackendStatus.LOADING)
                 {
                     return;
@@ -309,7 +309,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 else
                 {
                     Status = BackendStatus.ERRORED;
-                    Logs.Error($"Non-real {HandlerTypeData.Name} {BackendData.ID} failed to load: {ex}");
+                    Logs.Error($"Non-real {HandlerTypeData.Name} {BackendData.ID} failed to load: {ex.ReadableString()}");
                 }
             }
             return;
@@ -356,7 +356,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 {
                     if (!Settings.AllowIdle || NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
                     {
-                        Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex}");
+                        Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex.ReadableString()}");
                         Status = BackendStatus.ERRORED;
                         return;
                     }

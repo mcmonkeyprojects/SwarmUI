@@ -56,7 +56,7 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Tick loop encountered exception: {ex}");
+                Logs.Error($"Tick loop encountered exception: {ex.ReadableString()}");
             }
         }
     }
@@ -460,7 +460,7 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Internal error in async task: {ex}");
+                Logs.Error($"Internal error in async task: {ex.ReadableString()}");
             }
         });
     }
@@ -475,7 +475,7 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Internal error in async task: {ex}");
+                Logs.Error($"Internal error in async task: {ex.ReadableString()}");
             }
         });
     }
@@ -778,7 +778,7 @@ public static class Utilities
         }
         catch (Exception ex)
         {
-            Logs.Debug($"Failed to remove bad pycache from {path}: {ex}");
+            Logs.Debug($"Failed to remove bad pycache from {path}: {ex.ReadableString()}");
         }
     }
 
@@ -803,7 +803,7 @@ public static class Utilities
         }
         catch (Exception ex)
         {
-            Logs.Debug($"Failed to get local IP address: {ex}");
+            Logs.Debug($"Failed to get local IP address: {ex.ReadableString()}");
         }
         return null;
     }
@@ -840,7 +840,7 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Debug($"Failed to check dotnet version: {ex}");
+                Logs.Debug($"Failed to check dotnet version: {ex.ReadableString()}");
             }
         });
     }
@@ -918,8 +918,22 @@ public static class Utilities
         }
         catch (Exception ex)
         {
-            Logs.Debug($"Failed to send file to recycle bin: {ex}");
+            Logs.Debug($"Failed to send file to recycle bin: {ex.ReadableString()}");
             File.Delete(file);
         }
+    }
+
+    /// <summary>Gets an appropriately readable exception message string, showing the stacktrace for internal errors.</summary>
+    public static string ReadableString(this Exception ex)
+    {
+        if (ex is SwarmReadableErrorException)
+        {
+            return ex.Message;
+        }
+        else if (ex is AggregateException ae && ae.InnerException is SwarmReadableErrorException inner)
+        {
+            return inner.Message;
+        }
+        return $"{ex}";
     }
 }

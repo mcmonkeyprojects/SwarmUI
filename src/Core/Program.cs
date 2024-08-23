@@ -168,7 +168,7 @@ public class Program
             }
             catch (Exception ex)
             {
-                Logs.Error($"Failed to get git commit date: {ex}");
+                Logs.Error($"Failed to get git commit date: {ex.ReadableString()}");
                 CurrentGitDate = "Git failed to load";
             }
         }));
@@ -237,7 +237,7 @@ public class Program
         }
         catch (Exception ex)
         {
-            Logs.Debug($"Startup tasks took too long: {ex}");
+            Logs.Debug($"Startup tasks took too long: {ex.ReadableString()}");
         }
         Task.Run(() =>
         {
@@ -262,7 +262,7 @@ public class Program
             }
             catch (Exception ex)
             {
-                Logs.Error($"Failed to launch mode '{LaunchMode}' (If this is a headless/server install, change 'LaunchMode' to 'none' in settings): {ex}");
+                Logs.Error($"Failed to launch mode '{LaunchMode}' (If this is a headless/server install, change 'LaunchMode' to 'none' in settings): {ex.ReadableString()}");
             }
         });
         Task.Run(async () =>
@@ -405,7 +405,7 @@ public class Program
             }
             catch (Exception ex)
             {
-                Logs.Error($"Failed to create extension of type {extType.FullName}: {ex}");
+                Logs.Error($"Failed to create extension of type {extType.FullName}: {ex.ReadableString()}");
             }
         }
         RunOnAllExtensions(e => e.OnFirstInit());
@@ -422,7 +422,7 @@ public class Program
             }
             catch (Exception ex)
             {
-                Logs.Error($"Failed to run event on extension {ext.GetType().FullName}: {ex}");
+                Logs.Error($"Failed to run event on extension {ext.GetType().FullName}: {ex.ReadableString()}");
             }
         }
     }
@@ -450,7 +450,7 @@ public class Program
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error loading settings file: {ex}");
+            Logs.Error($"Error loading settings file: {ex.ReadableString()}");
             return;
         }
         // TODO: Legacy format patch from Beta 0.6! Remove this before 1.0.
@@ -496,7 +496,7 @@ public class Program
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error saving settings file: {ex}");
+            Logs.Error($"Error saving settings file: {ex.ReadableString()}");
             return;
         }
     }

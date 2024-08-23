@@ -279,7 +279,7 @@ public class T2IModelHandler
         }
         catch (Exception ex)
         {
-            Logs.Error($"Failed to reset metadata for model '{model.RawFilePath}': {ex}");
+            Logs.Error($"Failed to reset metadata for model '{model.RawFilePath}': {ex.ReadableString()}");
             throw;
         }
     }
@@ -401,7 +401,7 @@ public class T2IModelHandler
             catch (Exception ex)
             {
                 Logs.Error($"Caught an exception trying to load legacy model thumbnail at '{prefix}{suffix}'");
-                Logs.Debug($"Details for above error {ex}");
+                Logs.Debug($"Details for above error {ex.ReadableString()}");
             }
         }
         return null;
@@ -438,7 +438,7 @@ public class T2IModelHandler
             }
             catch (Exception ex)
             {
-                Logs.Debug($"Failed to load metadata for {model.Name} from cache:\n{ex}");
+                Logs.Debug($"Failed to load metadata for {model.Name} from cache:\n{ex.ReadableString()}");
                 metadata = null;
             }
         }
@@ -637,7 +637,7 @@ public class T2IModelHandler
                 }
                 catch (Exception ex)
                 {
-                    Logs.Warning($"Error handling metadata database for model {model.RawFilePath}: {ex}");
+                    Logs.Warning($"Error handling metadata database for model {model.RawFilePath}: {ex.ReadableString()}");
                 }
             }
         }
@@ -686,7 +686,7 @@ public class T2IModelHandler
             }
             catch (Exception ex)
             {
-                Logs.Warning($"Error while scanning model {ModelType} subfolder '{path}': {ex}");
+                Logs.Warning($"Error while scanning model {ModelType} subfolder '{path}': {ex.ReadableString()}");
             }
         });
         Parallel.ForEach(Directory.EnumerateFiles(actualFolder), file =>
@@ -719,7 +719,7 @@ public class T2IModelHandler
                     {
                         throw;
                     }
-                    Logs.Warning($"Failed to load metadata for {fullFilename}:\n{ex}");
+                    Logs.Warning($"Failed to load metadata for {fullFilename}:\n{ex.ReadableString()}");
                 }
             }
             else if (fn.EndsWith(".ckpt") || fn.EndsWith(".pt") || fn.EndsWith(".pth"))

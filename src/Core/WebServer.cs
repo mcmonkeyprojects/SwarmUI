@@ -229,7 +229,7 @@ public class WebServer
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error starting webserver: {ex}");
+            Logs.Error($"Error starting webserver: {ex.ReadableString()}");
             if (canRetry && ex is InvalidOperationException && ex.Message.StartsWith("A path base can only be configured"))
             {
                 Logs.Error("\n\n");
@@ -338,12 +338,12 @@ public class WebServer
         {
             if (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is PathTooLongException)
             {
-                Logs.Verbose($"File-not-found error reading output file '{path}': {ex}");
+                Logs.Verbose($"File-not-found error reading output file '{path}': {ex.ReadableString()}");
                 await context.YieldJsonOutput(null, 404, Utilities.ErrorObj("404, file not found.", "file_not_found"));
             }
             else
             {
-                Logs.Error($"Failed to read output file '{path}': {ex}");
+                Logs.Error($"Failed to read output file '{path}': {ex.ReadableString()}");
                 await context.YieldJsonOutput(null, 500, Utilities.ErrorObj("Error reading file. If you are the server owner, check program console log.", "file_error"));
             }
             return;

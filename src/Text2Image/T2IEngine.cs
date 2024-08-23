@@ -326,7 +326,7 @@ namespace SwarmUI.Text2Image
                 }
                 else
                 {
-                    Logs.Error($"Internal error processing T2I request: {ex}");
+                    Logs.Error($"Internal error processing T2I request: {ex.ReadableString()}");
                     setError("Something went wrong while generating images.");
                     return;
                 }

@@ -84,7 +84,7 @@ public class User
             }
             catch (Exception ex)
             {
-                Logs.Error($"Error loading generic-data for user {UserID}: {ex}");
+                Logs.Error($"Error loading generic-data for user {UserID}: {ex.ReadableString()}");
                 return [];
             }
         }
@@ -138,7 +138,7 @@ public class User
             }
             catch (Exception ex)
             {
-                Logs.Error($"Error loading presets for user {UserID}: {ex}");
+                Logs.Error($"Error loading presets for user {UserID}: {ex.ReadableString()}");
                 return [];
             }
         }

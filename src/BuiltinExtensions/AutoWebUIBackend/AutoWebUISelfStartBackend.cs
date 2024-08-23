@@ -68,7 +68,7 @@ public class AutoWebUISelfStartBackend : AutoWebUIAPIAbstractBackend
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error stopping Auto WebUI process: {ex}");
+            Logs.Error($"Error stopping Auto WebUI process: {ex.ReadableString()}");
         }
     }
 }

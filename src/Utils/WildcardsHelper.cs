@@ -66,7 +66,7 @@ public class WildcardsHelper
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error while refreshing wildcards: {ex}");
+            Logs.Error($"Error while refreshing wildcards: {ex.ReadableString()}");
         }
     }
 

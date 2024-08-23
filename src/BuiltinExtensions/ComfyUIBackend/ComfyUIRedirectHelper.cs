@@ -123,7 +123,7 @@ public class ComfyUIRedirectHelper
         }
         catch (Exception ex)
         {
-            Logs.Error($"object_info read failure: {ex}");
+            Logs.Error($"object_info read failure: {ex.ReadableString()}");
             if (LastObjectInfo is null)
             {
                 throw;
@@ -278,7 +278,7 @@ public class ComfyUIRedirectHelper
                                         }
                                         catch (Exception ex)
                                         {
-                                            Logs.Error($"Failed to parse ComfyUI message: {ex}");
+                                            Logs.Error($"Failed to parse ComfyUI message: {ex.ReadableString()}");
                                         }
                                     }
                                     if (!isJson)
@@ -314,7 +314,7 @@ public class ComfyUIRedirectHelper
                         {
                             return;
                         }
-                        Logs.Debug($"ComfyUI redirection failed (outsocket): {ex}");
+                        Logs.Debug($"ComfyUI redirection failed (outsocket): {ex.ReadableString()}");
                     }
                     finally
                     {
@@ -356,7 +356,7 @@ public class ComfyUIRedirectHelper
                     {
                         return;
                     }
-                    Logs.Debug($"ComfyUI redirection failed (in-socket): {ex}");
+                    Logs.Debug($"ComfyUI redirection failed (in-socket): {ex.ReadableString()}");
                 }
                 finally
                 {
@@ -442,7 +442,7 @@ public class ComfyUIRedirectHelper
                 }
                 catch (Exception ex)
                 {
-                    Logs.Debug($"ComfyUI redirection failed - prompt json parse: {ex}");
+                    Logs.Debug($"ComfyUI redirection failed - prompt json parse: {ex.ReadableString()}");
                 }
             }
             else if (path == "queue" || path == "interrupt") // eg queue delete

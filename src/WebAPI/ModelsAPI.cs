@@ -576,7 +576,7 @@ public static class ModelsAPI
         }
         catch (Exception ex)
         {
-            Logs.Warning($"Failed to download the model due to internal exception: {ex}");
+            Logs.Warning($"Failed to download the model due to internal exception: {ex.ReadableString()}");
             await ws.SendJson(new JObject() { ["error"] = "Failed to download the model due to internal exception." }, API.WebsocketTimeout);
         }
         return null;

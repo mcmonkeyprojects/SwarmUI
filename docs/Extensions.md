@@ -22,5 +22,6 @@ For now, manual list of known extensions:
 
 - [FaceTools](https://github.com/Quaggles/SwarmUI-FaceTools) adds support for CodeFormer FaceRestore, and ReActor.
 - [WDV](https://huggingface.co/waifu-diffusion/wdv-tests) adds support for WaifuDiffusion-V EDM sampling.
+- [ComfyDeployBackendExt](https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt) adds a [ComfyDeploy](https://www.comfydeploy.com/) backend.
 
 In the future if more extensions exist, there will be a better manager for these.
