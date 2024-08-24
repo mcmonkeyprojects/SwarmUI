@@ -12,6 +12,7 @@ using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.IO;
+using System.Net;
 
 namespace SwarmUI.Core;
 
@@ -115,7 +116,12 @@ public class WebServer
                 string authHeader = context.Request.Headers.Authorization.FirstOrDefault();
                 if (authHeader != authKey)
                 {
-                    string remoteIp = context.Connection.RemoteIpAddress.ToString();
+                    IPAddress addr = context.Connection.RemoteIpAddress;
+                    string remoteIp = addr.ToString();
+                    if (addr.IsIPv4MappedToIPv6)
+                    {
+                        remoteIp = addr.MapToIPv4().ToString();
+                    }
                     if (!Program.ServerSettings.Network.AuthBypassIPs.SplitFast(',').Contains(remoteIp))
                     {
                         if (string.IsNullOrWhiteSpace(authHeader))
