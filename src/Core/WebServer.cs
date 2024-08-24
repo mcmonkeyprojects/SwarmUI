@@ -107,26 +107,6 @@ public class WebServer
         builder.Services.AddResponseCompression();
         builder.Logging.SetMinimumLevel(LogLevel);
         WebApp = builder.Build();
-        WebApp.UseResponseCompression();
-        timer.Check("[Web] WebApp build");
-        if (WebApp.Environment.IsDevelopment())
-        {
-            Utilities.VaryID += ".DEV" + ((DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 10L) % 1000000L);
-            WebApp.UseDeveloperExceptionPage();
-        }
-        else
-        {
-            WebApp.UseExceptionHandler("/Error/Internal");
-        }
-        timer.Check("[Web] exception handler");
-        if (Program.ProxyHandler is not null)
-        {
-            WebApp.Lifetime.ApplicationStarted.Register(Program.ProxyHandler.Start);
-        }
-        WebApp.Lifetime.ApplicationStopping.Register(() => Program.Shutdown());
-        timer.Check("[Web] StartStop handler");
-        WebApp.UseStaticFiles(new StaticFileOptions());
-        timer.Check("[Web] static files");
         WebApp.Use(async (context, next) =>
         {
             string authKey = Program.ServerSettings.Network.RequiredAuthorization;
@@ -152,6 +132,30 @@ public class WebServer
                     }
                 }
             }
+            await next();
+        });
+        WebApp.UseResponseCompression();
+        timer.Check("[Web] WebApp build");
+        if (WebApp.Environment.IsDevelopment())
+        {
+            Utilities.VaryID += ".DEV" + ((DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 10L) % 1000000L);
+            WebApp.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            WebApp.UseExceptionHandler("/Error/Internal");
+        }
+        timer.Check("[Web] exception handler");
+        if (Program.ProxyHandler is not null)
+        {
+            WebApp.Lifetime.ApplicationStarted.Register(Program.ProxyHandler.Start);
+        }
+        WebApp.Lifetime.ApplicationStopping.Register(() => Program.Shutdown());
+        timer.Check("[Web] StartStop handler");
+        WebApp.UseStaticFiles(new StaticFileOptions());
+        timer.Check("[Web] static files");
+        WebApp.Use(async (context, next) =>
+        {
             string referrer = (context.Request.Headers.Referer.FirstOrDefault() ?? "").After("://").After('/').ToLowerFast();
             string path = context.Request.Path.Value.ToLowerFast();
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
