@@ -129,6 +129,29 @@ public class WebServer
         timer.Check("[Web] static files");
         WebApp.Use(async (context, next) =>
         {
+            string authKey = Program.ServerSettings.Network.RequiredAuthorization;
+            if (!string.IsNullOrWhiteSpace(authKey))
+            {
+                string authHeader = context.Request.Headers.Authorization.FirstOrDefault();
+                if (authHeader != authKey)
+                {
+                    string remoteIp = context.Connection.RemoteIpAddress.ToString();
+                    if (!Program.ServerSettings.Network.AuthBypassIPs.SplitFast(',').Contains(remoteIp))
+                    {
+                        if (string.IsNullOrWhiteSpace(authHeader))
+                        {
+                            Logs.Debug($"Unauthorized request from {remoteIp} (no auth header)");
+                        }
+                        else
+                        {
+                            Logs.Debug($"Unauthorized request from {remoteIp} (auth header len {authHeader.Length}, expected {authKey.Length})");
+                        }
+                        context.Response.StatusCode = 401;
+                        await context.Response.WriteAsync("Unauthorized");
+                        return;
+                    }
+                }
+            }
             string referrer = (context.Request.Headers.Referer.FirstOrDefault() ?? "").After("://").After('/').ToLowerFast();
             string path = context.Request.Path.Value.ToLowerFast();
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
