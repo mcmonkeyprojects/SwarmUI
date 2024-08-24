@@ -745,7 +745,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         catch (Exception ex)
         {
             Logs.Verbose($"Error: {ex.ReadableString()}");
-            Logs.Debug($"Failed to process comfy workflow: {JObject.Parse(workflow).ToDenseDebugString(noSpacing: true)} for inputs {user_input}");
+            Logs.Debug($"Failed to process comfy workflow for inputs {user_input} with raw workflow {JObject.Parse(workflow).ToDenseDebugString(noSpacing: true)}");
             throw;
         }
         finally
