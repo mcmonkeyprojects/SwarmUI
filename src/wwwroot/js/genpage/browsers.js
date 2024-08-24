@@ -397,7 +397,7 @@ class GenPageBrowserClass {
                 });
                 let textBlock = createDiv(null, 'image-preview-text');
                 textBlock.innerText = desc.display || desc.name;
-                if (textBlock.innerText.length > 40) {
+                if (this.format == "Small Thumbnails" || textBlock.innerText.length > 40) {
                     textBlock.classList.add('image-preview-text-small');
                 }
                 else if (textBlock.innerText.length > 20) {
