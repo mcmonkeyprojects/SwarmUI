@@ -533,8 +533,14 @@ public class ComfyUIRedirectHelper
         }
         Logs.Verbose($"Comfy Redir status code {code} from {context.Response.StatusCode} and type {response.Content.Headers.ContentType} for {context.Request.Method} '{path}'");
         context.Response.StatusCode = code;
-        context.Response.ContentType = response.Content.Headers.ContentType.ToString();
-        await response.Content.CopyToAsync(context.Response.Body);
+        if (response.Content is not null)
+        {
+            if (response.Content.Headers.ContentType is not null)
+            {
+                context.Response.ContentType = response.Content.Headers.ContentType.ToString();
+            }
+            await response.Content.CopyToAsync(context.Response.Body);
+        }
         await context.Response.CompleteAsync();
     }
 }
