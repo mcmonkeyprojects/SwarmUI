@@ -359,13 +359,18 @@
 }
 
 .alt_prompt_textbox {
-    background: var(--background);
+    background-color: var(--background);
     color: var(--text);
     border-radius: 12px;
     padding: 2px 8px;
     box-shadow: 0px 0px 4px 0px #000000 inset, 0px 1px 0px 0px #FFFFFF40, 0px -1px 0px 0px #00000080;
     border: none;
     min-width: 150px;
+}
+
+.alt-negativeprompt-textbox-invalid {
+    background-color: var(--background-panel);
+    box-shadow: 0px 0px 4px 0px #000000 inset, 0px 1px 0px 0px var(--background-panel), 0px -1px 0px 0px #00000080;
 }
 
 .alt-text-tokencount-wrapper {
@@ -375,6 +380,10 @@
 .alt_prompt_textbox::placeholder {
     color: var(--button-foreground);
     opacity: 0.6;
+}
+
+.alt-negativeprompt-textbox-invalid::placeholder {
+    color: color-mix(in srgb, var(--text) 50%, var(--background-panel));
 }
 
 .alt-prompt-buttons {

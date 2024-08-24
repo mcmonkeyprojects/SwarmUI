@@ -1378,6 +1378,21 @@ function resetPageSizer() {
     }
 }
 
+function tweakNegativePromptBox() {
+    let altNegText = getRequiredElementById('alt_negativeprompt_textbox');
+    let cfgScale = document.getElementById('input_cfgscale');
+    let cfgScaleVal = cfgScale ? parseFloat(cfgScale.value) : 7;
+    if (cfgScaleVal == 1) {
+        altNegText.classList.add('alt-negativeprompt-textbox-invalid');
+        altNegText.placeholder = translate(`Negative Prompt is not available when CFG Scale is 1`);
+    }
+    else {
+        altNegText.classList.remove('alt-negativeprompt-textbox-invalid');
+        altNegText.placeholder = translate(`Optionally, type a negative prompt here...`);
+    }
+    altNegText.title = altNegText.placeholder;
+}
+
 function pageSizer() {
     let topSplit = getRequiredElementById('t2i-top-split-bar');
     let topSplit2 = getRequiredElementById('t2i-top-2nd-split-bar');
@@ -1404,6 +1419,7 @@ function pageSizer() {
     let imageEditorSizeBarDrag = false;
     let isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
     function setPageBars() {
+        tweakNegativePromptBox();
         if (altRegion.style.display != 'none') {
             altText.style.height = 'auto';
             altText.style.height = `calc(min(15rem, ${Math.max(altText.scrollHeight, 15) + 5}px))`;

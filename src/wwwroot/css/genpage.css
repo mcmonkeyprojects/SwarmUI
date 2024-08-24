@@ -797,6 +797,13 @@ body {
 #alt_negativeprompt_textbox {
     margin-top: 6px;
 }
+.alt-negativeprompt-textbox-invalid {
+    background-color: var(--background);
+    border-color: var(--background);
+}
+.alt-negativeprompt-textbox-invalid::placeholder {
+    color: color-mix(in srgb, var(--text) 50%, var(--background));
+}
 .alt_prompt_textboxes {
     margin-left: 1rem;
     display: inline-block;

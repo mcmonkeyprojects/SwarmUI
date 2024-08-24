@@ -329,6 +329,13 @@ function genInputs(delay_final = false) {
             inputNegativePrompt.addEventListener('input', update);
             inputNegativePrompt.addEventListener('change', update);
         }
+        let inputCfgScale = document.getElementById('input_cfgscale');
+        if (inputCfgScale) {
+            inputCfgScale.addEventListener('change', () => {
+                tweakNegativePromptBox();
+            });
+            tweakNegativePromptBox();
+        }
         let inputLoras = document.getElementById('input_loras');
         if (inputLoras) {
             inputLoras.addEventListener('change', () => {
