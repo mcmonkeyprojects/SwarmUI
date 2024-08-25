@@ -68,9 +68,10 @@ public static class NetworkBackendUtils
 
     /// <summary>Connects a client websocket to the backend.</summary>
     /// <param name="path">The path to connect on, after the '/', such as 'ws?clientId={uuid}'.</param>
-    public static async Task<ClientWebSocket> ConnectWebsocket(string address, string path)
+    public static async Task<ClientWebSocket> ConnectWebsocket(string address, string path, Action<ClientWebSocket> configure = null)
     {
         ClientWebSocket outSocket = new();
+        configure?.Invoke(outSocket);
         outSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
         string scheme = address.BeforeAndAfter("://", out string addr);
         scheme = scheme == "http" ? "ws" : "wss";

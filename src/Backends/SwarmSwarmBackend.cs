@@ -481,7 +481,26 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         user_input.ProcessPromptEmbeds(x => $"<embedding:{x}>");
         await RunWithSession(async () =>
         {
-            ClientWebSocket websocket = await NetworkBackendUtils.ConnectWebsocket(Address, "API/GenerateText2ImageWS");
+            ClientWebSocket websocket = await NetworkBackendUtils.ConnectWebsocket(Address, "API/GenerateText2ImageWS", ws =>
+            {
+                if (!string.IsNullOrWhiteSpace(Settings.AuthorizationHeader))
+                {
+                    ws.Options.SetRequestHeader("Authorization", Settings.AuthorizationHeader);
+                }
+                if (!string.IsNullOrWhiteSpace(Settings.OtherHeaders))
+                {
+                    foreach (string line in Settings.OtherHeaders.Split('\n'))
+                    {
+                        string[] parts = line.Split(':');
+                        if (parts.Length != 2)
+                        {
+                            Logs.Error($"Invalid header line in SwarmSwarmBackend: '{line}'");
+                            continue;
+                        }
+                        ws.Options.SetRequestHeader(parts[0].Trim(), parts[1].Trim());
+                    }
+                }
+            });
             await websocket.SendJson(BuildRequest(user_input), API.WebsocketTimeout);
             while (true)
             {
