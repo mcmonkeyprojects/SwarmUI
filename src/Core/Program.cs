@@ -400,7 +400,31 @@ public class Program
                 }
                 if (extension.FilePath is null)
                 {
-                    Logs.Error($"Could not determine path for extension {extType.Name} - is the classname mismatched from the filename? Searched in {string.Join(", ", possible)} for '{extType.Name}.cs'");
+                    Logs.Error($"Could not determine path for extension '{extType.Name}'. Searched in {string.Join(", ", possible)} for '{extType.Name}.cs'");
+                    if (extType.Namespace.StartsWith("SwarmUI."))
+                    {
+                        Logs.Error("This is labeled as an internal extension - if you're the developer, make sure you give it a unique namespace (do not use 'SwarmUI.')");
+                    }
+                    else if (!Directory.Exists("./src/Extensions"))
+                    {
+                        Logs.Error($"Extensions directory is missing. Did you accidentally launch Swarm outside its directory?");
+                    }
+                    else if (Directory.EnumerateFiles("./src/Extensions").Any(f => f.EndsWith(".cs")))
+                    {
+                        Logs.Error($"You have .cs files directly contained in your extensions directory. This is invalid, extensions need their own subfolders.");
+                    }
+                    else if (extras.IsEmpty())
+                    {
+                        Logs.Error("You have an Extensions directory, but it's empty of any subdirectories.");
+                    }
+                    else if (extras.Any(e => string.IsNullOrWhiteSpace(e)))
+                    {
+                        Logs.Error("You have an Extensions directory, with subdirectories, but they are invalid or corrupt.");
+                    }
+                    else
+                    {
+                        Logs.Error("You have valid extension directories, but nothing matches the file. Is the classname mismatched from the filename?");
+                    }
                 }
             }
             catch (Exception ex)
