@@ -417,7 +417,7 @@ public class Program
                     {
                         Logs.Error("You have an Extensions directory, but it's empty of any subdirectories.");
                     }
-                    else if (extras.Any(e => string.IsNullOrWhiteSpace(e)))
+                    else if (extras.Any(string.IsNullOrWhiteSpace))
                     {
                         Logs.Error("You have an Extensions directory, with subdirectories, but they are invalid or corrupt.");
                     }

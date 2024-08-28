@@ -4,7 +4,7 @@
 
 Formerly known as StableSwarmUI.
 
-A Modular Stable Diffusion Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility.
+A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports Stable Diffusion, Flux, etc. AI image models, with plans to support AI video, audio, and more in the future.
 
 ![ui-screenshot](.github/images/swarmui.jpg)
 
