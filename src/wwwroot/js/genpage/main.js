@@ -704,7 +704,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {
-            metaParsed = JSON.parse(metadata);
+            metaParsed = JSON.parse(metadata) || metaParsed;
         }
         catch (e) {
             console.log(`Error parsing metadata for image: ${e}, metadata was ${metadata}`);
