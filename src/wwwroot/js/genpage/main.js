@@ -1131,7 +1131,7 @@ function describeImage(image) {
         let metadata = image.data.metadata;
         try {
             metadata = interpretMetadata(image.data.metadata);
-            parsedMeta = JSON.parse(metadata);
+            parsedMeta = JSON.parse(metadata) || parsedMeta;
         }
         catch (e) {
             console.log(`Failed to parse image metadata: ${e}, metadata was ${metadata}`);
