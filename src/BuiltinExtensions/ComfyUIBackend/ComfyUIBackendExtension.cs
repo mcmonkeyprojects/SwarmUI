@@ -589,13 +589,13 @@ public class ComfyUIBackendExtension : Extension
         YoloModelInternal = T2IParamTypes.Register<string>(new("YOLO Model Internal", "Parameter for internally tracking YOLOv8 models.\nThis is not for real usage, it is just to expose the list to the UI handler.",
             "", IgnoreIf: "", FeatureFlag: "yolov8", Group: ComfyAdvancedGroup, GetValues: (_) => YoloModels, Toggleable: true, IsAdvanced: true, AlwaysRetain: true, VisibleNormally: false
             ));
-        ClipLModel = T2IParamTypes.Register<string>(new("CLIP-L Model", "Which CLIP-L model to use, for SD3/Flux style 'unet' folder models.",
+        ClipLModel = T2IParamTypes.Register<string>(new("CLIP-L Model", "Which CLIP-L model to use, for SD3/Flux style 'unet/diffusion_models' folder models.",
             "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 15
             ));
-        ClipGModel = T2IParamTypes.Register<string>(new("CLIP-G Model", "Which CLIP-G model to use, for SD3 style 'unet' folder models.",
+        ClipGModel = T2IParamTypes.Register<string>(new("CLIP-G Model", "Which CLIP-G model to use, for SD3 style 'unet/diffusion_models' folder models.",
             "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 16
             ));
-        T5XXLModel = T2IParamTypes.Register<string>(new("T5-XXL Model", "Which T5-XXL model to use, for SD3/Flux style 'unet' folder models.",
+        T5XXLModel = T2IParamTypes.Register<string>(new("T5-XXL Model", "Which T5-XXL model to use, for SD3/Flux style 'unet/diffusion_models' folder models.",
             "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 17
             ));
         Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);

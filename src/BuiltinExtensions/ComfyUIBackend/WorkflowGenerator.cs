@@ -555,7 +555,7 @@ public class WorkflowGenerator
             });
             LoadingVAE = [vaeLoader, 0];
         }
-        else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet")) // Hacky but it works for now
+        else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet") || model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/diffusion_models")) // Hacky but it works for now
         {
             if (model.Metadata?.SpecialFormat == "gguf")
             {

@@ -154,7 +154,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     }
 
     /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards.</summary>
-    public static List<string> FoldersToForwardInComfyPath = ["clip", "unet", "gligen", "ipadapter", "yolov8", "tensorrt", "clipseg"];
+    public static List<string> FoldersToForwardInComfyPath = ["clip", "unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "tensorrt", "clipseg"];
 
     /// <summary>Filepaths to where custom node packs for comfy can be found, such as extension dirs.</summary>
     public static List<string> CustomNodePaths = [];

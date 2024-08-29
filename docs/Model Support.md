@@ -105,7 +105,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - **or, not recommended:** You can download BFL's original files:
         - Download "Schnell" (Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-schnell>
         - Or "Dev" (non-Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-dev>
-        - Put dev/schnell in `(Swarm)/Models/unet`
+        - Put dev/schnell in `(Swarm)/Models/diffusion_models`
         - Put the `ae.sft` file in `(Swarm)/Models/VAE`
     - For both models, use CFG=1 (negative prompt won't work). Sampling leave default (will use Euler + Simple)
         - For the Dev model, there is also a `Flux Guidance Scale` parameter under `Sampling`, which is a distilled embedding value that the model was trained to use.
@@ -130,9 +130,9 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 # GGUF Quantized Models
 
-- GGUF Quantized "unet" models, such as Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main> are supported in SwarmUI automatically.
+- GGUF Quantized `diffusion_models` models, such as Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main> are supported in SwarmUI automatically.
     - The detection is based on file extension.
-    - They go in `(Swarm)/Models/unet` and work similar to other "unet" format models
+    - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
     - You will have to click `Edit Metadata` on the model and set the architecture, it cannot be autodetected currently.
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
