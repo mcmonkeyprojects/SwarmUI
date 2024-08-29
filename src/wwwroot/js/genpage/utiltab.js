@@ -223,10 +223,10 @@ class ModelDownloaderUtil {
     }
 
     getCivitaiMetadata(id, versId, callback) {
+        let doError = () => {
+            callback(null, null, null, null, null, null);
+        }
         getJsonDirect(`${this.civitPrefix}api/v1/models/${id}`, (status, rawData) => {
-            let doError = () => {
-                callback(null, null, null, null, null, null);
-            }
             let modelType = null;
             let metadata = null;
             let rawVersion = rawData.modelVersions[0];
