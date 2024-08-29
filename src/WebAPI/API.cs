@@ -190,7 +190,7 @@ public class API
         }
         if (t.IsFaulted)
         {
-            Logs.Error($"Error in websocket handler: {t.Exception}");
+            Logs.Error($"Error in websocket handler: {t.Exception.ReadableString()}");
         }
     }
 
