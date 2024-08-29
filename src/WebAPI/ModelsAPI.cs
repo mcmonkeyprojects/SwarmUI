@@ -27,6 +27,7 @@ public static class ModelsAPI
         API.RegisterAPICall(EditWildcard, true);
         API.RegisterAPICall(EditModelMetadata, true);
         API.RegisterAPICall(DoModelDownloadWS, true);
+        API.RegisterAPICall(ForwardMetadataRequest);
     }
 
     public static Dictionary<string, JObject> InternalExtraModels(string subtype)
@@ -580,5 +581,35 @@ public static class ModelsAPI
             await ws.SendJson(new JObject() { ["error"] = "Failed to download the model due to internal exception." }, API.WebsocketTimeout);
         }
         return null;
+    }
+
+    public static AsciiMatcher MetadataUrlAllowedChars = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "/\\-_.?=&%");
+
+    [API.APIDescription("Forwards a metadata request, eg to civitai API.", "")]
+    public static async Task<JObject> ForwardMetadataRequest(Session session, string url)
+    {
+        if (!url.StartsWithFast("https://civitai.com/"))
+        {
+            return new JObject() { ["error"] = "Invalid URL." };
+        }
+        string resp;
+        try
+        {
+            resp = await Utilities.UtilWebClient.GetStringAsync(url);
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"While making metadata request to '{url}', got exception: {ex.ReadableString()}");
+            return new JObject() { ["error"] = $"{ex.GetType().Name}: {ex.Message}" };
+        }
+        try
+        {
+            return new JObject() { ["response"] = resp.ParseToJson() };
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"While parsing JSON response from '{url}', got exception: {ex.ReadableString()}");
+            return new JObject() { ["error"] = $"{ex.GetType().Name}: {ex.Message}" };
+        }
     }
 }

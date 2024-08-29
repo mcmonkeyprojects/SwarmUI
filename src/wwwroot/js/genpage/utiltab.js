@@ -226,7 +226,8 @@ class ModelDownloaderUtil {
         let doError = () => {
             callback(null, null, null, null, null, null);
         }
-        getJsonDirect(`${this.civitPrefix}api/v1/models/${id}`, (status, rawData) => {
+        genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
+            rawData = rawData.response;
             let modelType = null;
             let metadata = null;
             let rawVersion = rawData.modelVersions[0];
