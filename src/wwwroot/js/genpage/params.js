@@ -499,6 +499,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     }
     if (!input['vae'] || input['vae'] == 'Automatic') {
         input['automaticvae'] = true;
+        delete input['vae'];
     }
     let revisionImageArea = getRequiredElementById('alt_prompt_image_area');
     let revisionImages = [...revisionImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
