@@ -23,5 +23,7 @@ For now, manual list of known extensions:
 - [FaceTools](https://github.com/Quaggles/SwarmUI-FaceTools) adds support for CodeFormer FaceRestore, and ReActor.
 - [WDV](https://huggingface.co/waifu-diffusion/wdv-tests) adds support for WaifuDiffusion-V EDM sampling.
 - [ComfyDeployBackendExt](https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt) adds a [ComfyDeploy](https://www.comfydeploy.com/) backend.
+- [MagicPrompt](https://github.com/kalebbroo/SwarmUI-MagicPromptExtension) provides LLM (language model) usage inside SwarmUI to enhance your prompts.
+- [ImgMetadataConverter](https://github.com/Jelosus2/ImgMetadataConverter) is a hack to emit Auto1111 format metadata so you can upload swarm images to civitai and have it parsed (pending civitai fixing their metadata parsing).
 
 In the future if more extensions exist, there will be a better manager for these.

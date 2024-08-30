@@ -795,7 +795,6 @@ public class WorkflowGeneratorSteps
                         });
                     }
                     string applyNode;
-                    string modelCompatClass = g.CurrentCompatClass();
                     if (g.IsSD3() || g.IsFlux())
                     {
                         applyNode = g.CreateNode("ControlNetApplySD3", new JObject()
