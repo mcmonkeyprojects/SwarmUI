@@ -2016,7 +2016,7 @@ function upvertAutoWebuiMetadataToSwarm(metadata) {
     }
     else {
         let lines = metadata.split('\n');
-        realData['prompt'] = lines.slice(0, lines[0].length - 1).join('\n');
+        realData['prompt'] = lines.slice(0, lines.length - 1).join('\n');
         metadata = lines[lines.length - 1];
     }
     let lines = metadata.split('\n');
@@ -2034,6 +2034,9 @@ function upvertAutoWebuiMetadataToSwarm(metadata) {
                         realData['width'] = sizeParts[0];
                         realData['height'] = sizeParts[1];
                     }
+                }
+                else if (clean == "scheduletype") {
+                    realData["scheduler"] = part[1].toLowerCase();
                 }
                 else {
                     realData[part[0]] = part[1];
