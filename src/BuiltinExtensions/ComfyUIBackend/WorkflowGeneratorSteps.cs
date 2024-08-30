@@ -795,7 +795,8 @@ public class WorkflowGeneratorSteps
                         });
                     }
                     string applyNode;
-                    if (g.CurrentCompatClass() == "stable-diffusion-v3-medium")
+                    string modelCompatClass = g.CurrentCompatClass();
+                    if (modelCompatClass == "stable-diffusion-v3-medium" || modelCompatClass == "flux-1")
                     {
                         applyNode = g.CreateNode("ControlNetApplySD3", new JObject()
                         {
