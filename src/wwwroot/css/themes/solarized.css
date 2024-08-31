@@ -1,0 +1,26 @@
+:root {
+    --background-soft: #D9D2C3;
+    --background-gray: #FDF6E4;
+    --background-gray-danger: #e08585;
+    --shadow: #EEE8D6;
+    --light-border: #A4A4A4;
+    --popup-front: hsl(0, 0%, 6%);
+    --button-foreground-disabled: #fff;
+    --text-soft: #525252;
+    --background: #d3cdc0;
+    --text: #101010;
+    --emphasis: #c76bbb;
+    --emphasis-soft: #c76bbb;
+    --button-text: #101010;
+    --background-panel: #ccc6b9;
+    --background-panel-subtle: rgba(0, 0, 0, 0.03);
+    --emphasis-text: #fff;
+    --border-color: #e4dece;
+    --button-background: #a1a1a1;
+    --range-track-color: #B1B1B1;
+    --range-thumb-color: #a1a1a1;
+    --qbutton: #8b6445;
+}
+body {
+    scrollbar-color: #a1a1a1 #dbd4c3;
+}
