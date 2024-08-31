@@ -362,7 +362,7 @@ class UIImprovementHandler {
     }
 
     shouldAlterSelect(elem) {
-        if (elem.options.length > 5) {
+        if (elem.options.length > 1) {
             return true;
         }
         if ([... elem.options].filter(o => o.innerText.includes('(')).length > 0) {
