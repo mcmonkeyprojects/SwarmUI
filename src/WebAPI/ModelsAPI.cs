@@ -505,7 +505,21 @@ public static class ModelsAPI
         }
         try
         {
-            string outPath = $"{handler.FolderPaths[0]}/{name}.safetensors";
+            string baseModel = "";
+            if (!string.IsNullOrWhiteSpace(metadata))
+            {
+                JObject metadataObj = JObject.Parse(metadata);
+                baseModel = metadataObj["modelspec.baseModel"]?.ToString() ?? "";
+            }
+            string outPath;
+            if (!string.IsNullOrWhiteSpace(baseModel))
+            {
+                outPath = $"{handler.FolderPaths[0]}/{baseModel}/{name}.safetensors";
+            }
+            else
+            {
+                outPath = $"{handler.FolderPaths[0]}/{name}.safetensors";
+            }
             if (File.Exists(outPath))
             {
                 await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
@@ -559,7 +573,14 @@ public static class ModelsAPI
             File.Move(tempPath, outPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
-                File.WriteAllText($"{handler.FolderPaths[0]}/{name}.json", metadata);
+                if (!string.IsNullOrWhiteSpace(baseModel))
+                {
+                    File.WriteAllText($"{handler.FolderPaths[0]}/{baseModel}/{name}.json", metadata);
+                }
+                else
+                {
+                    File.WriteAllText($"{handler.FolderPaths[0]}/{name}.json", metadata);
+                }
             }
             await ws.SendJson(new JObject() { ["success"] = true }, API.WebsocketTimeout);
         }

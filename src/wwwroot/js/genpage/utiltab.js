@@ -259,6 +259,7 @@ class ModelDownloaderUtil {
                     'modelspec.author': rawData.creator.username,
                     'modelspec.description': `From <a href="${url}">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
                     'modelspec.date': rawVersion.createdAt,
+                    'modelspec.baseModel': rawVersion.baseModel,
                 };
                 if (rawVersion.trainedWords) {
                     metadata['modelspec.trigger_phrase'] = rawVersion.trainedWords.join(", ");
