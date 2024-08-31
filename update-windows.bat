@@ -23,4 +23,7 @@ if exist src\bin\live_release\ (
 rem Now build the new copy
 dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
 
+for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD2=%%i
+echo !CUR_HEAD2!> src/bin/last_build
+
 timeout 3

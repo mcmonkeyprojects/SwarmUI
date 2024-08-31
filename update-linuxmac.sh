@@ -20,3 +20,6 @@ fi
 
 # Now build the new copy
 dotnet build src/SwarmUI.csproj --configuration Release -o ./src/bin/live_release
+
+cur_head=`git rev-parse HEAD`
+echo $cur_head > src/bin/last_build
