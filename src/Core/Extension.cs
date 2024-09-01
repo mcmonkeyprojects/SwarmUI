@@ -15,6 +15,10 @@ public abstract class Extension
     /// <summary>Optional, filenames (relative to extension directory) of additional CSS files to use, eg "Assets/my_ext.css". You should populate this during <see cref="OnInit"/> or earlier.</summary>
     public List<string> StyleSheetFiles = [];
 
+    /// <summary>Optional, filenames (relative to extension directory) of additional asset files to use, eg "Assets/my_image.png". You should populate this during <see cref="OnInit"/> or earlier.
+    /// You can link these as in HTML/JS/CSS as "/Extensions/(YourExtName)/(file)", eg "/Extensions/MyExtension/Assets/my_image.png"</summary>
+    public List<string> OtherAssets = [];
+
     /// <summary>Called when the extension is initialized for the first time, before settings or anything else is loaded, very early in the extension cycle.</summary>
     public virtual void OnFirstInit()
     {

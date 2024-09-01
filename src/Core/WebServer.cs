@@ -48,6 +48,9 @@ public class WebServer
     /// <summary>Extra file content added by extensions.</summary>
     public Dictionary<string, string> ExtensionSharedFiles = [];
 
+    /// <summary>Extra binary file content added by extensions.</summary>
+    public Dictionary<string, Lazy<byte[]>> ExtensionAssets = [];
+
     /// <summary>Extra content for the page header. Automatically set based on extensions.</summary>
     public static HtmlString PageHeaderExtra = new("");
 
@@ -220,6 +223,7 @@ public class WebServer
     {
         StringBuilder scripts = new(), stylesheets = new(), tabHeader = new(), tabFooter = new();
         ExtensionSharedFiles.Clear();
+        ExtensionAssets.Clear();
         Program.RunOnAllExtensions(e =>
         {
             foreach (string script in e.ScriptFiles)
@@ -233,6 +237,12 @@ public class WebServer
                 string fname = $"/ExtensionFile/{e.ExtensionName}/{css}";
                 ExtensionSharedFiles.Add(fname, File.ReadAllText($"{e.FilePath}{css}"));
                 stylesheets.Append($"<link rel=\"stylesheet\" href=\"{fname}?vary={Utilities.VaryID}\" />");
+            }
+            foreach (string file in e.OtherAssets)
+            {
+                string fname = $"/ExtensionFile/{e.ExtensionName}/{file}";
+                string toRead = $"{e.FilePath}{file}";
+                ExtensionAssets.Add(fname, new(() => File.ReadAllBytes(toRead)));
             }
             if (Directory.Exists($"{e.FilePath}/Tabs/Text2Image/"))
             {
@@ -326,6 +336,12 @@ public class WebServer
             context.Response.ContentType = Utilities.GuessContentType(context.Request.Path.Value);
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync(script);
+        }
+        else if (ExtensionAssets.TryGetValue(context.Request.Path.Value, out Lazy<byte[]> data))
+        {
+            context.Response.ContentType = Utilities.GuessContentType(context.Request.Path.Value);
+            context.Response.StatusCode = 200;
+            await context.Response.Body.WriteAsync(data.Value);
         }
         else
         {
