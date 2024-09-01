@@ -511,16 +511,17 @@ public static class ModelsAPI
                 JObject metadataObj = JObject.Parse(metadata);
                 baseModel = metadataObj["modelspec.baseModel"]?.ToString() ?? "";
             }
-            string outPath;
-            if (!string.IsNullOrWhiteSpace(baseModel))
+            string modelOutPath;
+            if (!string.IsNullOrWhiteSpace(baseModel) && session.User.Settings.GroupDownloadedModelsByBaseType)
             {
-                outPath = $"{handler.FolderPaths[0]}/{baseModel}/{name}.safetensors";
+                modelOutPath = $"{handler.FolderPaths[0]}/{baseModel}/{name}.safetensors";
             }
             else
             {
-                outPath = $"{handler.FolderPaths[0]}/{name}.safetensors";
+                modelOutPath = $"{handler.FolderPaths[0]}/{name}.safetensors";
             }
-            if (File.Exists(outPath))
+            modelOutPath = Utilities.StrictFilenameClean(modelOutPath);
+            if (File.Exists(modelOutPath))
             {
                 await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
                 return null;
@@ -530,7 +531,7 @@ public static class ModelsAPI
             {
                 File.Delete(tempPath);
             }
-            Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(modelOutPath));
             using CancellationTokenSource canceller = new();
             Task downloading = Utilities.DownloadFile(url, tempPath, (progress, total, perSec) =>
             {
@@ -570,17 +571,20 @@ public static class ModelsAPI
                 }
             });
             await downloading;
-            File.Move(tempPath, outPath);
+            File.Move(tempPath, modelOutPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
-                if (!string.IsNullOrWhiteSpace(baseModel))
+                string metadataOutPath;
+                if (!string.IsNullOrWhiteSpace(baseModel) && session.User.Settings.GroupDownloadedModelsByBaseType)
                 {
-                    File.WriteAllText($"{handler.FolderPaths[0]}/{baseModel}/{name}.json", metadata);
+                    metadataOutPath = $"{handler.FolderPaths[0]}/{baseModel}/{name}.json";
                 }
                 else
                 {
-                    File.WriteAllText($"{handler.FolderPaths[0]}/{name}.json", metadata);
+                    metadataOutPath = $"{handler.FolderPaths[0]}/{name}.json";
                 }
+                metadataOutPath = Utilities.StrictFilenameClean(metadataOutPath);
+                File.WriteAllText(metadataOutPath, metadata);
             }
             await ws.SendJson(new JObject() { ["success"] = true }, API.WebsocketTimeout);
         }

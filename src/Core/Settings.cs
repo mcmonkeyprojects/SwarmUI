@@ -273,6 +273,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, folders will be discarded from starred image paths.")]
         public bool StarNoFolders = false;
 
+        [ConfigComment("Whether to automatically use the base model type as part of the model path when downloading using the 'Model Download' tool")]
+        public bool GroupDownloadedModelsByBaseType = false;
+
         public class ThemesImpl : SettingsOptionsAttribute.AbstractImpl
         {
             public override string[] GetOptions => [.. Program.Web.RegisteredThemes.Keys];
