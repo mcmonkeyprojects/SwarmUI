@@ -49,9 +49,9 @@ fi
 
 # Install PyTorch based on GPU type
 if [ "$GPU_TYPE" == "nv" ]; then
-    python3 -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu121
+    python3 -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
 elif [ "$GPU_TYPE" == "amd" ]; then
-    python3 -s -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.0
+    python3 -s -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
 fi
 
 python3 -s -m pip install -r requirements.txt
