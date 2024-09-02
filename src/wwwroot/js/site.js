@@ -647,7 +647,7 @@ function makeDropdownInput(featureid, id, paramid, name, description, values, de
     return html;
 }
 
-function makeMultiselectInput(featureid, id, paramid, name, description, values, defaultVal, placeholder, toggles = false, popover_button = true) {
+function makeMultiselectInput(featureid, id, paramid, name, description, values, defaultVal, placeholder, toggles = false, popover_button = true, alt_names = null) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
     let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
@@ -658,9 +658,12 @@ function makeMultiselectInput(featureid, id, paramid, name, description, values,
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
         </label>
         <select class="form-select" id="${id}" data-param_id="${paramid}" autocomplete="false" data-placeholder="${escapeHtmlNoBr(placeholder)}" multiple>`;
-    for (let value of values) {
+    for (let i = 0; i < values.length; i++) {
+        let value = values[i];
+        let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
         let selected = value == defaultVal ? ' selected="true"' : '';
-        html += `<option value="${escapeHtmlNoBr(value)}"${selected}>${escapeHtml(value)}</option>`;
+        let cleanName = htmlWithParen(alt_name);
+        html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
     }
     html += `
         </select>

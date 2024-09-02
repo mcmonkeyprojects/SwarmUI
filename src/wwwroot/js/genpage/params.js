@@ -45,7 +45,7 @@ function getHtmlForParam(param, prefix) {
                         runnable: () => autoSelectWidth(getRequiredElementById(`${prefix}${param.id}`))};
             case 'list':
                 if (param.values) {
-                    return {html: makeMultiselectInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.values, param.default, "Select...", param.toggleable, !param.no_popover) + pop,
+                    return {html: makeMultiselectInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.values, param.default, "Select...", param.toggleable, !param.no_popover, param['value_names']) + pop,
                         runnable: () => {
                             $(`#${prefix}${param.id}`).select2({ theme: "bootstrap-5", width: 'style', placeholder: $(this).data('placeholder'), closeOnSelect: false });
                         }
