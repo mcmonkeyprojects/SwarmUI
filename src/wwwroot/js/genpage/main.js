@@ -455,7 +455,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
 
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
-    let isCurImgFocused = document.activeElement && 
+    let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');
@@ -661,7 +661,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 canvas.toBlob(blob => {
                     let type = img.src.substring(img.src.lastIndexOf('.') + 1);
                     let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
-                    let container = new DataTransfer(); 
+                    let container = new DataTransfer();
                     container.items.add(file);
                     initImageParam.files = container.files;
                     triggerChangeFor(initImageParam);
@@ -2267,6 +2267,12 @@ function storeImageToHistoryWithCurrentParams(img) {
     });
 }
 
+function registerTopTabs() {
+    let tabList = getRequiredElementById('toptablist');
+    let tabObjects = Array.from(tabList.getElementsByClassName('nav-link'), x => { return { id: x.id, name: x.innerText }; });
+    genericRequest("RegisterTabs", { tabs: tabObjects }, data => { console.debug(`RegisterTabs response: ${JSON.stringify(data)}`) });
+}
+
 function genpageLoad() {
     console.log('Load page...');
     $('#toptablist').on('shown.bs.tab', function (e) {
@@ -2327,6 +2333,7 @@ function genpageLoad() {
     pageSizer();
     reviseStatusBar();
     loadHashHelper();
+    registerTopTabs();
     getSession(() => {
         console.log('First session loaded - prepping page.');
         imageHistoryBrowser.navigate('');

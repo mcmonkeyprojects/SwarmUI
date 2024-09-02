@@ -284,6 +284,17 @@ public class Settings : AutoConfiguration
         [SettingsOptions(Impl = typeof(ThemesImpl))]
         public string Theme = "modern_dark";
 
+        public class HiddenTabsImpl : SettingsOptionsAttribute.AbstractImpl
+        {
+            public override string[] GetOptions => [.. Program.Web.RegisteredTabs.Keys];
+
+            public override string[] Names => Program.Web.RegisteredTabs.Values.Select(v => v.Name).ToArray();
+        }
+
+        [ConfigComment("List of top level tab names to hide in the UI.\nDefault is none. 'User' will be ignored to prevent locking yourself out.")]
+        [SettingsOptions(Impl = typeof(HiddenTabsImpl))]
+        public List<string> HiddenTabs = [];
+
         [ConfigComment("If true, images in the main center area will always grow to better fill the screen.")]
         public bool CenterImageAlwaysGrow = false;
 

@@ -34,6 +34,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(InterruptAll, true);
         API.RegisterAPICall(GetUserSettings);
         API.RegisterAPICall(ChangeUserSettings, true);
+        API.RegisterAPICall(RegisterTabs, true);
         API.RegisterAPICall(SetParamEdits, true);
         API.RegisterAPICall(GetLanguage);
         API.RegisterAPICall(ServerDebugMessage);
@@ -512,6 +513,22 @@ public static class BasicAPIFeatures
         session.User.Data.RawParamEdits = edits.ToString(Formatting.None);
         session.User.Save();
         return new JObject() { ["success"] = true };
+    }
+
+    public static async Task<JObject> RegisterTabs(Session session, JObject rawData)
+    {
+        JArray rawTabs = (JArray)rawData["tabs"];
+        foreach (JObject rawTab in rawTabs.FilterCast<JObject>())
+        {
+            WebServer.TabData tab = new(rawTab["id"].ToString(), rawTab["name"].ToString());
+            if (!Program.Web.RegisteredTabs.ContainsKey(tab.ID))
+            {
+                Logs.Debug($"User '{session.User.UserID}' registered new tab '{tab.Name}' with ID '{tab.ID}'.");
+                Program.Web.RegisterTab(tab);
+            }
+
+        }
+        return new JObject() { ["success"] = true, ["tabs"] = new JArray(Program.Web.RegisteredTabs.Keys) };
     }
 
     public static async Task<JObject> GetLanguage(Session session, string language)

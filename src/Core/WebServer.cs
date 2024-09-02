@@ -13,6 +13,7 @@ using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.IO;
 using System.Net;
+using System.Text.RegularExpressions;
 
 namespace SwarmUI.Core;
 
@@ -62,6 +63,31 @@ public class WebServer
 
     /// <summary>Extra content for the Text2Image page's tab bodies. Automatically set based on extensions.</summary>
     public static HtmlString T2ITabBody = new("");
+
+    /// <summary>Set of registered top-level nav tabs.</summary>
+    public Dictionary<string, TabData> RegisteredTabs = new() {
+        { "simpletabbutton", new("simpletabbutton", "Simple") },
+        { "text2imagetabbutton", new("text2imagetabbutton", "Generate") },
+        { "utilitiestabbutton", new("utilitiestabbutton", "Utilities") },
+        { "usersettingstabbutton", new("usersettingstabbutton", "User") },
+        { "servertabbutton", new("servertabbutton", "Server") },
+    };
+
+    public record class TabData(string ID, string Name) { }
+
+    /// <summary>Register a top-level nav tab.</summary>
+    public void RegisterTab(TabData tab)
+    {
+        RegisteredTabs.Add(tab.ID, tab);
+    }
+
+    /// <summary>Register a top-level nav tab from an extension.</summary>
+    /// <param name="ID">The tab button's <a> element ID</param>
+    /// <param name="Name">The clear name to display to users.</param>
+    public void RegisterTab(string ID, string Name)
+    {
+        RegisterTab(new(ID, Name));
+    }
 
     /// <summary>Set of registered Theme IDs.</summary>
     public Dictionary<string, ThemeData> RegisteredThemes = [];
