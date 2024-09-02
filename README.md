@@ -122,6 +122,12 @@ The installation starts now and downloads the Stable Diffusion models from the i
     - Open your browser to `localhost:7801`
 - Note that it will forward the `Models` and `Output` directory, and will mount `Data` and `dlbackend` as independent persistent volumes.
 
+# One-click install via runtipi
+
+[Runtipi](https://runtipi.io) is a personal home server orchestrator that enables you to manage and run multiple services on a single server. Free and open-source, runtipi lets you install all your favorite self-hosted apps without the hassle of configuring and managing each service. One-click installs and updates for more than 200 popular apps.
+
+Install Runtipi on your server and open the App Store. Locate SwarmUI in the list, navigate to its store page, and click “Install”. In a few moments SwarmUI will be running (and exposed to the internet, if so configured) and ready for initial on-boarding.
+
 # Documentation
 
 See [the documentation folder](/docs/README.md).
