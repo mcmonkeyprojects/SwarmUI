@@ -5,7 +5,6 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Utils;
-using System.Diagnostics.Eventing.Reader;
 
 namespace SwarmUI.Text2Image;
 
@@ -226,11 +225,11 @@ public class T2IParamInput
                 {
                     vals.RemoveAt(index);
                 }
-            }            
+            }
             return result.Trim();
         };
         PromptTagLengthEstimators["random"] = (data) =>
-        {            
+        {
             string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
             string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             int longest = 0;
@@ -243,7 +242,7 @@ public class T2IParamInput
                     longest = interp.Length;
                     longestStr = interp;
                 }
-            }                      
+            }
             return longestStr;
         };
         PromptTagProcessors["alternate"] = (data, context) =>
@@ -279,8 +278,8 @@ public class T2IParamInput
         };
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["wildcard"] = (data, context) =>
-        {            
-            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);            
+        {
+            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
             if (partSeparator is null)
             {
                 return null;
@@ -309,15 +308,13 @@ public class T2IParamInput
                 {
                     vals.RemoveAt(index);
                 }
-            }            
-            context.Variables[varname] = result.Trim(); //Save result as callback variable
+            }
             return result.Trim();
         };
         PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
         PromptTagLengthEstimators["wildcard"] = (data) =>
-        {            
+        {
             string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
-
             if (card is null)
             {
                 return "";
@@ -333,7 +330,7 @@ public class T2IParamInput
                     longest = interp.Length;
                     longestStr = interp;
                 }
-            }            
+            }
             return longestStr;
         };
         PromptTagLengthEstimators["wc"] = PromptTagLengthEstimators["wildcard"];
@@ -490,8 +487,8 @@ public class T2IParamInput
             if (data == null) { return ""; }
             if (!context.Variables.TryGetValue(data, out string value))
             {
-                Logs.Warning($"Variable '{data}' does is not recognized and will be ignored.");
-                return null;
+                Logs.Warning($"Variable '{data}' is not recognized and will be ignored.");
+                return "";
             }
             return (value ?? "");
         };        
@@ -758,7 +755,7 @@ public class T2IParamInput
         {
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
-                (string prefix, string data) = tag.BeforeAndAfter(':');              
+                (string prefix, string data) = tag.BeforeAndAfter(':');
                 string preData = null;
                 if (prefix.EndsWith(']') && prefix.Contains('['))
                 {

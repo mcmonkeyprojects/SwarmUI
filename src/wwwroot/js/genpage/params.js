@@ -1155,7 +1155,7 @@ class PromptTabCompleteClass {
         this.registerPrefix('fromto[0.5]', 'Have the prompt change after a given timestep.', (prefix) => {
             return ['\nSpecify in the brackets a timestep like 10 (for step 10) or 0.5 (for halfway through).', '\nIn the data area specify the before and the after separate by "," or "|".', '\nFor example, "<fromto[10]:cat,dog>" switches from "cat" to "dog" at step 10.'];
         });
-        this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options).', (prefix) => {
+        this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
         });
