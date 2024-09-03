@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Utils;
-using System.Runtime.CompilerServices;
+using System.Diagnostics.Eventing.Reader;
 
 namespace SwarmUI.Text2Image;
 
@@ -103,7 +103,7 @@ public class T2IParamInput
 
         public string[] Embeds, Loras;
 
-        public Dictionary<string, string> RandomVariables = [];
+        public Dictionary<string, string> Variables = [];
 
         public int SectionID = 0;
 
@@ -194,7 +194,7 @@ public class T2IParamInput
     static T2IParamInput()
     {
         PromptTagProcessors["random"] = (data, context) =>
-        {            
+        {
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
             if (partSeparator is null)
             {
@@ -279,8 +279,7 @@ public class T2IParamInput
         };
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["wildcard"] = (data, context) =>
-        {
-            (data, string varname) = data.BeforeAndAfter("$$");
+        {            
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);            
             if (partSeparator is null)
             {
@@ -311,7 +310,7 @@ public class T2IParamInput
                     vals.RemoveAt(index);
                 }
             }            
-            context.RandomVariables[varname] = result.Trim(); //Save result as callback variable
+            context.Variables[varname] = result.Trim(); //Save result as callback variable
             return result.Trim();
         };
         PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
@@ -469,32 +468,37 @@ public class T2IParamInput
         PromptTagLengthEstimators["embed"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["embedding"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
-
         PromptTagProcessors["setvar"] = (data, context) =>
         {
             string varname = context.PreData ?? "";
             data = context.Parse(data);            
-            if (varname != "")
+            if (varname == "")
             {
-                context.RandomVariables[varname] = data ?? "";
+                Logs.Warning($"A variable Name is required when using setvar.");
+            } else
+            {
+                context.Variables[varname] = data ?? "";
             }
             return data;
         };
         PromptTagLengthEstimators["setvar"] = (data) =>
         {
-            return ProcessPromptLikeForLength(data);  //Should really be 0, since the setvar doesn't add anything to the prompt, but it accounts for one use of the variable
+            return ProcessPromptLikeForLength(data);  
         };
-
         PromptTagProcessors["var"] = (data, context) =>
         {           
             if (data == null) { return ""; }
-            return (context.RandomVariables.TryGetValue(data, out string value) ? (value ?? "") : "");
+            if (!context.Variables.TryGetValue(data, out string value))
+            {
+                Logs.Warning($"Variable '{data}' does is not recognized and will be ignored.");
+                return null;
+            }
+            return (value ?? "");
         };        
         PromptTagLengthEstimators["var"] = (data) =>
         {
             return ""; //can't get variable data from in here, so we have to count on setvar
         };
-
     }
 
     /// <summary>The raw values in this input. Do not use this directly, instead prefer:

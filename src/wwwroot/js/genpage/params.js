@@ -1160,7 +1160,7 @@ class PromptTabCompleteClass {
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
         });
         this.registerAltPrefix('wc', 'wildcard');
-        this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards.)', (prefix) => {
+        this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
         });
@@ -1202,7 +1202,7 @@ class PromptTabCompleteClass {
             return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag'];
         });
         this.registerPrefix('var', 'Reference a previously saved variable later', (prefix) => {
-            return ['\nRecall a value previously saved with <setvar:>','\NMust follow after assignment'];
+            return ['\nRecall a value previously saved with <setvar:>','\nMust follow after assignment'];
         });
         this.registerPrefix('clear', 'Automatically clear part of the image to transparent (by CLIP segmentation matching) (iffy quality, prefer the Remove Background parameter over this)', (prefix) => {
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:background>"'];
