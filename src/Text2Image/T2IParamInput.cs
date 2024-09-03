@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Utils;
+using System.Runtime.CompilerServices;
 
 namespace SwarmUI.Text2Image;
 
@@ -102,6 +103,8 @@ public class T2IParamInput
 
         public string[] Embeds, Loras;
 
+        public Dictionary<string, string> RandomVariables = [];
+
         public int SectionID = 0;
 
         public int Depth = 0;
@@ -192,6 +195,7 @@ public class T2IParamInput
     {
         PromptTagProcessors["random"] = (data, context) =>
         {
+            (data, string varname) = data.BeforeAndAfter("$$");
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
             if (partSeparator is null)
             {
@@ -224,10 +228,13 @@ public class T2IParamInput
                     vals.RemoveAt(index);
                 }
             }
+            context.RandomVariables[varname] = result.Trim(); //Save result as callback variable
             return result.Trim();
         };
         PromptTagLengthEstimators["random"] = (data) =>
         {
+            string varname = "";
+            (data, varname) = data.BeforeAndAfter("$$");
             string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
             string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             int longest = 0;
@@ -241,6 +248,12 @@ public class T2IParamInput
                     longestStr = interp;
                 }
             }
+            if (varname != "")
+            {
+                //Since the estimates lean conservative, and estimators can't access variable values, 
+                //increase the estimate based on the variable being used 1-2 times on average (2.5x length total)
+                longestStr += string.Concat(longestStr, longestStr.AsSpan(0, Math.Min(1,longestStr.Length / 2)));
+            }            
             return longestStr;
         };
         PromptTagProcessors["alternate"] = (data, context) =>
@@ -277,7 +290,8 @@ public class T2IParamInput
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["wildcard"] = (data, context) =>
         {
-            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
+            (data, string varname) = data.BeforeAndAfter("$$");
+            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);            
             if (partSeparator is null)
             {
                 return null;
@@ -306,13 +320,17 @@ public class T2IParamInput
                 {
                     vals.RemoveAt(index);
                 }
-            }
+            }            
+            context.RandomVariables[varname] = result.Trim(); //Save result as callback variable
             return result.Trim();
         };
         PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
         PromptTagLengthEstimators["wildcard"] = (data) =>
         {
+            string varname = "";
+            (data, varname) = data.BeforeAndAfter("$$");
             string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
+
             if (card is null)
             {
                 return "";
@@ -328,6 +346,13 @@ public class T2IParamInput
                     longest = interp.Length;
                     longestStr = interp;
                 }
+            }
+
+            if (varname != "")
+            {
+                //Since the estimates are conservative, and estimators can't access variable values, 
+                //increase the estimate based on the variable being used 1-2 times on average (2.5x length total)
+                longestStr += string.Concat(longestStr, longestStr.AsSpan(0, Math.Min(1, longestStr.Length / 2)));
             }
             return longestStr;
         };
@@ -463,6 +488,17 @@ public class T2IParamInput
         PromptTagLengthEstimators["embed"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["embedding"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
+
+        PromptTagProcessors["var"] = (data, context) =>
+        {           
+            if (data == null) { return ""; }
+            return (context.RandomVariables.TryGetValue(data, out string value) ? (value ?? "") : "");
+        };        
+        PromptTagLengthEstimators["var"] = (data) =>
+        {
+            return ""; //Can't calculate this here, since values are stored in context. Handled in the wildcard and random estimators instead
+        };
+
     }
 
     /// <summary>The raw values in this input. Do not use this directly, instead prefer:
@@ -722,7 +758,7 @@ public class T2IParamInput
         {
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
-                (string prefix, string data) = tag.BeforeAndAfter(':');
+                (string prefix, string data) = tag.BeforeAndAfter(':');              
                 string preData = null;
                 if (prefix.EndsWith(']') && prefix.Contains('['))
                 {
