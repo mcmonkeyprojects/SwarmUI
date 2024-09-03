@@ -1144,10 +1144,10 @@ class PromptTabCompleteClass {
         this.prefixes = {
         };
         this.registerPrefix('random', 'Select from a set of random words to include', (prefix) => {
-            return ['\nSpecify a comma-separated list of words to choose from, like "<random:cat,dog,elephant>".', '\nYou can use "||" instead of "," if you need to include commas in your values.', '\nYou can use eg "1-5" to pick a random number in a range.','\nYou can assign the result to a variable by adding $$variable_name to the end of the tag (see "var")'];
+            return ['\nSpecify a comma-separated list of words to choose from, like "<random:cat,dog,elephant>".', '\nYou can use "||" instead of "," if you need to include commas in your values.', '\nYou can use eg "1-5" to pick a random number in a range.'];
         });
         this.registerPrefix('random[2-4]', 'Selects multiple options from a set of random words to include', (prefix) => {
-            return ['\nSpecify a comma-separated list of words to choose from, like "<random[2]:cat,dog,elephant>".', '\nYou can use "||" instead of "," if you need to include commas in your values. You can use eg "1-5" to pick a random number in a range.', '\nPut a comma in the input (eg "random[2,]:") to make the output have commas too.', '\nYou can assign the result to a variable by adding $$variable_name to the end of the tag (see "var")'];
+            return ['\nSpecify a comma-separated list of words to choose from, like "<random[2]:cat,dog,elephant>".', '\nYou can use "||" instead of "," if you need to include commas in your values. You can use eg "1-5" to pick a random number in a range.', '\nPut a comma in the input (eg "random[2,]:") to make the output have commas too.'];
         });
         this.registerPrefix('alternate', 'Cause multiple different words or phrases to be alternated between.', (prefix) => {
             return ['\nSpecify a comma-separated list of words to choose from, like "<alternate:cat,dog>".', '\nYou can use "||" instead of "," if you need to include commas in your values.'];
@@ -1155,12 +1155,12 @@ class PromptTabCompleteClass {
         this.registerPrefix('fromto[0.5]', 'Have the prompt change after a given timestep.', (prefix) => {
             return ['\nSpecify in the brackets a timestep like 10 (for step 10) or 0.5 (for halfway through).', '\nIn the data area specify the before and the after separate by "," or "|".', '\nFor example, "<fromto[10]:cat,dog>" switches from "cat" to "dog" at step 10.'];
         });
-        this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options). Supports $$variable.', (prefix) => {
+        this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options).', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
         });
         this.registerAltPrefix('wc', 'wildcard');
-        this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards, Supports $$variable.)', (prefix) => {
+        this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards.)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
         });
@@ -1198,8 +1198,11 @@ class PromptTabCompleteClass {
             }
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.'];
         });
-        this.registerPrefix('var', 'Reference a previously used "wildcard" or "random" value again elsewhere in the prompt', (prefix) => {
-            return ['\nSave the value of a "wildcard" or "random" value by adding a "$$variable_name" to the tag. eg "<random:red,white,blue$$myColor>".','\nUse the same value later with <var:myColor>','\nHas to be after the tag where the name is assigned','\nSupports single and multi-option versions of both tags'];
+        this.registerPrefix('setvar[var_name]', 'Store text for reference later in the prompt', (prefix) => { 
+            return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag'];
+        });
+        this.registerPrefix('var', 'Reference a previously saved variable later', (prefix) => {
+            return ['\nRecall a value previously saved with <setvar:>','\NMust follow after assignment'];
         });
         this.registerPrefix('clear', 'Automatically clear part of the image to transparent (by CLIP segmentation matching) (iffy quality, prefer the Remove Background parameter over this)', (prefix) => {
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:background>"'];

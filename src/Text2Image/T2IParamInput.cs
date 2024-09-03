@@ -194,8 +194,7 @@ public class T2IParamInput
     static T2IParamInput()
     {
         PromptTagProcessors["random"] = (data, context) =>
-        {
-            (data, string varname) = data.BeforeAndAfter("$$");
+        {            
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
             if (partSeparator is null)
             {
@@ -227,14 +226,11 @@ public class T2IParamInput
                 {
                     vals.RemoveAt(index);
                 }
-            }
-            context.RandomVariables[varname] = result.Trim(); //Save result as callback variable
+            }            
             return result.Trim();
         };
         PromptTagLengthEstimators["random"] = (data) =>
-        {
-            string varname = "";
-            (data, varname) = data.BeforeAndAfter("$$");
+        {            
             string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
             string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             int longest = 0;
@@ -247,13 +243,7 @@ public class T2IParamInput
                     longest = interp.Length;
                     longestStr = interp;
                 }
-            }
-            if (varname != "")
-            {
-                //Since the estimates lean conservative, and estimators can't access variable values, 
-                //increase the estimate based on the variable being used 1-2 times on average (2.5x length total)
-                longestStr += string.Concat(longestStr, longestStr.AsSpan(0, Math.Min(1,longestStr.Length / 2)));
-            }            
+            }                      
             return longestStr;
         };
         PromptTagProcessors["alternate"] = (data, context) =>
@@ -326,9 +316,7 @@ public class T2IParamInput
         };
         PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
         PromptTagLengthEstimators["wildcard"] = (data) =>
-        {
-            string varname = "";
-            (data, varname) = data.BeforeAndAfter("$$");
+        {            
             string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
 
             if (card is null)
@@ -346,14 +334,7 @@ public class T2IParamInput
                     longest = interp.Length;
                     longestStr = interp;
                 }
-            }
-
-            if (varname != "")
-            {
-                //Since the estimates are conservative, and estimators can't access variable values, 
-                //increase the estimate based on the variable being used 1-2 times on average (2.5x length total)
-                longestStr += string.Concat(longestStr, longestStr.AsSpan(0, Math.Min(1, longestStr.Length / 2)));
-            }
+            }            
             return longestStr;
         };
         PromptTagLengthEstimators["wc"] = PromptTagLengthEstimators["wildcard"];
@@ -489,6 +470,21 @@ public class T2IParamInput
         PromptTagLengthEstimators["embedding"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
 
+        PromptTagProcessors["setvar"] = (data, context) =>
+        {
+            string varname = context.PreData ?? "";
+            data = context.Parse(data);            
+            if (varname != "")
+            {
+                context.RandomVariables[varname] = data ?? "";
+            }
+            return data;
+        };
+        PromptTagLengthEstimators["setvar"] = (data) =>
+        {
+            return ProcessPromptLikeForLength(data);  //Should really be 0, since the setvar doesn't add anything to the prompt, but it accounts for one use of the variable
+        };
+
         PromptTagProcessors["var"] = (data, context) =>
         {           
             if (data == null) { return ""; }
@@ -496,7 +492,7 @@ public class T2IParamInput
         };        
         PromptTagLengthEstimators["var"] = (data) =>
         {
-            return ""; //Can't calculate this here, since values are stored in context. Handled in the wildcard and random estimators instead
+            return ""; //can't get variable data from in here, so we have to count on setvar
         };
 
     }
