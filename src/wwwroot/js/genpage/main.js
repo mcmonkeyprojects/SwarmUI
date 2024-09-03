@@ -2267,12 +2267,6 @@ function storeImageToHistoryWithCurrentParams(img) {
     });
 }
 
-function registerTopTabs() {
-    let tabList = getRequiredElementById('toptablist');
-    let tabObjects = Array.from(tabList.getElementsByClassName('nav-link'), x => { return { id: x.id, name: x.innerText }; });
-    genericRequest("RegisterTabs", { tabs: tabObjects }, data => { console.debug(`RegisterTabs response: ${JSON.stringify(data)}`) });
-}
-
 function genpageLoad() {
     console.log('Load page...');
     $('#toptablist').on('shown.bs.tab', function (e) {
@@ -2333,7 +2327,6 @@ function genpageLoad() {
     pageSizer();
     reviseStatusBar();
     loadHashHelper();
-    registerTopTabs();
     getSession(() => {
         console.log('First session loaded - prepping page.');
         imageHistoryBrowser.navigate('');
