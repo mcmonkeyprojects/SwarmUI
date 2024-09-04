@@ -467,34 +467,31 @@ public class T2IParamInput
         PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
         PromptTagProcessors["setvar"] = (data, context) =>
         {
-            string varname = context.PreData ?? "";
-            data = context.Parse(data);            
-            if (varname == "")
+            data = context.Parse(data);
+            if (string.IsNullOrWhiteSpace(context.PreData))
             {
-                Logs.Warning($"A variable Name is required when using setvar.");
-            } else
-            {
-                context.Variables[varname] = data ?? "";
+                Logs.Warning($"A variable name is required when using setvar.");
+                return null;
             }
+            context.Variables[context.PreData] = data;
             return data;
         };
         PromptTagLengthEstimators["setvar"] = (data) =>
         {
-            return ProcessPromptLikeForLength(data);  
+            return ProcessPromptLikeForLength(data);
         };
         PromptTagProcessors["var"] = (data, context) =>
-        {           
-            if (data == null) { return ""; }
-            if (!context.Variables.TryGetValue(data, out string value))
+        {
+            if (!context.Variables.TryGetValue(data, out string val))
             {
                 Logs.Warning($"Variable '{data}' is not recognized and will be ignored.");
                 return "";
             }
-            return (value ?? "");
-        };        
+            return val;
+        };
         PromptTagLengthEstimators["var"] = (data) =>
         {
-            return ""; //can't get variable data from in here, so we have to count on setvar
+            return "";
         };
     }
 
