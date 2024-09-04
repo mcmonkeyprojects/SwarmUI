@@ -368,6 +368,7 @@ public class T2IParamInput
         };
         PromptTagProcessors["preset"] = (data, context) =>
         {
+            string param = context.Param;
             string name = context.Parse(data);
             T2IPreset preset = context.Input.SourceSession.User.GetPreset(name);
             if (preset is null)
@@ -376,18 +377,19 @@ public class T2IParamInput
                 return null;
             }
             preset.ApplyTo(context.Input);
-            if (preset.ParamMap.TryGetValue(context.Param, out string prompt))
+            if (preset.ParamMap.TryGetValue(param, out string prompt))
             {
                 return "\0preset:" + prompt;
             }
             return "";
         };
         PromptTagProcessors["p"] = PromptTagProcessors["preset"];
-        PromptTagLengthEstimators["preset"] = (data) =>
+        static string estimateEmpty(string data)
         {
             return "";
-        };
-        PromptTagLengthEstimators["p"] = PromptTagLengthEstimators["preset"];
+        }
+        PromptTagLengthEstimators["preset"] = estimateEmpty;
+        PromptTagLengthEstimators["p"] = estimateEmpty;
         PromptTagProcessors["embed"] = (data, context) =>
         {
             data = context.Parse(data);
@@ -462,9 +464,9 @@ public class T2IParamInput
         {
             return "<break>";
         };
-        PromptTagLengthEstimators["embed"] = PromptTagLengthEstimators["preset"];
-        PromptTagLengthEstimators["embedding"] = PromptTagLengthEstimators["preset"];
-        PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
+        PromptTagLengthEstimators["embed"] = estimateEmpty;
+        PromptTagLengthEstimators["embedding"] = estimateEmpty;
+        PromptTagLengthEstimators["lora"] = estimateEmpty;
         PromptTagProcessors["setvar"] = (data, context) =>
         {
             string name = context.PreData;
@@ -490,10 +492,7 @@ public class T2IParamInput
             }
             return val;
         };
-        PromptTagLengthEstimators["var"] = (data) =>
-        {
-            return "";
-        };
+        PromptTagLengthEstimators["var"] = estimateEmpty;
     }
 
     /// <summary>The raw values in this input. Do not use this directly, instead prefer:
