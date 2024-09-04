@@ -467,13 +467,14 @@ public class T2IParamInput
         PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
         PromptTagProcessors["setvar"] = (data, context) =>
         {
-            data = context.Parse(data);
-            if (string.IsNullOrWhiteSpace(context.PreData))
+            string name = context.PreData;
+            if (string.IsNullOrWhiteSpace(name))
             {
                 Logs.Warning($"A variable name is required when using setvar.");
                 return null;
             }
-            context.Variables[context.PreData] = data;
+            data = context.Parse(data);
+            context.Variables[name] = data;
             return data;
         };
         PromptTagLengthEstimators["setvar"] = (data) =>
