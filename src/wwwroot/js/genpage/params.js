@@ -1330,7 +1330,10 @@ class PromptTabCompleteClass {
                 this.popover.remove();
                 this.popover = null;
                 this.blockInput = true;
-                setTimeout(() => this.blockInput = false, 10);
+                setTimeout(() => {
+                    this.blockInput = false;
+                    this.onInput(e.target);
+                }, 10);
             }
         }
     }
