@@ -37,6 +37,16 @@
     - This supports the same syntax as `random` to get multiple, for example `<wildcard[1-3]:animals>` might return `cat dog` or `elephant leopard dog`.
     - You can shorthand this as `<wc:my/wildcard/name>`
 
+### Variables
+
+- You can store and reuse variables within a prompt. This is primarily intended for repeating randoms & wildcards.
+    - Store with the syntax: `<setvar[var_name]:data>`
+        - For example: `<setvar[color]:<random:red, blue, purple>>`
+    - Call back with the syntax: `<var:var_name>`
+        - For example: `<var:color>`
+    - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
+        - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
+
 ### Repeat
 
 - You can use the syntax `<repeat:3, cat>` to get the word "cat" 3 times in a row (`cat cat cat`).
