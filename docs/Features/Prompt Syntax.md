@@ -47,6 +47,13 @@
     - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
         - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
 
+### Trigger Phrase
+
+- If your model or current LoRA's have a trigger phrase in their metadata, you can use `<trigger>` to automatically apply those within a prompt.
+    - If you have multiple models with trigger phrases, they will be combined into a comma-separated list. For example `cat` and `dog` will be inserted as `cat, dog`.
+    - Note this is just a simple autofill, especially for usage in grids or other bulk generations, and not meant to robustly handle all cases. If you require specific formatting, you'll want to just copy the trigger phrase in directly yourself.
+    - Fills empty when there's no data to fill.
+
 ### Repeat
 
 - You can use the syntax `<repeat:3, cat>` to get the word "cat" 3 times in a row (`cat cat cat`).

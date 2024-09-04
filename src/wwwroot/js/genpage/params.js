@@ -1224,6 +1224,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('break', 'Split this prompt across multiple lines of conditioning to the model (helps separate concepts for long prompts).', (prefix) => {
             return [];
         }, true);
+        this.registerPrefix('trigger', "Automatically fills with the current model or LoRA's trigger phrase(s), if any.", (prefix) => {
+            return [];
+        }, true);
         this.lastWord = null;
         this.lastResults = null;
         this.blockInput = false;

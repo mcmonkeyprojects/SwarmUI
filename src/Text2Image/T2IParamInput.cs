@@ -130,6 +130,9 @@ public class T2IParamInput
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags.</summary>
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagProcessors = [];
 
+    /// <summary>Mapping of prompt tags that require no input.</summary>
+    public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagBasicProcessors = [];
+
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags - specifically post-processing like lora (which remove from prompt and get read elsewhere).</summary>
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagPostProcessors = [];
 
@@ -456,7 +459,7 @@ public class T2IParamInput
         };
         PromptTagPostProcessors["object"] = PromptTagPostProcessors["segment"];
         PromptTagPostProcessors["region"] = PromptTagPostProcessors["segment"];
-        PromptTagProcessors["break"] = (data, context) =>
+        PromptTagBasicProcessors["break"] = (data, context) =>
         {
             return "<break>";
         };
@@ -487,12 +490,38 @@ public class T2IParamInput
         {
             if (!context.Variables.TryGetValue(data, out string val))
             {
-                Logs.Warning($"Variable '{data}' is not recognized and will be ignored.");
+                Logs.Warning($"Variable '{data}' is not recognized.");
                 return "";
             }
             return val;
         };
         PromptTagLengthEstimators["var"] = estimateEmpty;
+        PromptTagBasicProcessors["trigger"] = (data, context) =>
+        {
+            List<string> phrases = [];
+            void add(string str)
+            {
+                if (!string.IsNullOrWhiteSpace(str))
+                {
+                    phrases.Add(str);
+                }
+            }
+            add(context.Input.Get(T2IParamTypes.Model)?.Metadata?.TriggerPhrase);
+            if (context.Input.TryGet(T2IParamTypes.Loras, out List<string> loras))
+            {
+                context.Loras ??= [.. Program.T2IModelSets["LoRA"].ListModelNamesFor(context.Input.SourceSession)];
+                foreach (string lora in loras)
+                {
+                    string matched = T2IParamTypes.GetBestModelInList(lora, context.Loras);
+                    if (matched is not null)
+                    {
+                        add(Program.T2IModelSets["LoRA"].GetModel(matched)?.Metadata?.TriggerPhrase);
+                    }
+                }
+            }
+            return phrases.JoinString(", ");
+        };
+        PromptTagLengthEstimators["trigger"] = estimateEmpty;
     }
 
     /// <summary>The raw values in this input. Do not use this directly, instead prefer:
@@ -748,7 +777,7 @@ public class T2IParamInput
             return null;
         }
         string addBefore = "", addAfter = "";
-        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set)
+        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set, bool requireData)
         {
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
@@ -762,7 +791,7 @@ public class T2IParamInput
                 context.RawCurrentTag = tag;
                 context.PreData = preData;
                 Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}'");
-                if (!string.IsNullOrWhiteSpace(data) && set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
+                if ((!string.IsNullOrWhiteSpace(data) || !requireData) && set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
                 {
                     string result = proc(data, context);
                     if (result is not null)
@@ -784,15 +813,12 @@ public class T2IParamInput
                         return result;
                     }
                 }
-                else if (tag.ToLowerFast() == "break")
-                {
-                    return "<break>";
-                }
                 return $"<{tag}>";
             }, false, 0);
         }
-        processSet(PromptTagProcessors);
-        processSet(PromptTagPostProcessors);
+        processSet(PromptTagBasicProcessors, false);
+        processSet(PromptTagProcessors, true);
+        processSet(PromptTagPostProcessors, true);
         return addBefore + val + addAfter;
     }
 
@@ -812,7 +838,7 @@ public class T2IParamInput
                 {
                     (prefix, preData) = prefix.BeforeLast(']').BeforeAndAfter('[');
                 }
-                if (!string.IsNullOrWhiteSpace(data) && set.TryGetValue(prefix, out Func<string, string> proc))
+                if (set.TryGetValue(prefix, out Func<string, string> proc))
                 {
                     string result = proc(data);
                     if (result is not null)
