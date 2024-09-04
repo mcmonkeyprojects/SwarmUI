@@ -102,6 +102,8 @@ public class T2IParamInput
 
         public string[] Embeds, Loras;
 
+        public Dictionary<string, string> Variables = [];
+
         public int SectionID = 0;
 
         public int Depth = 0;
@@ -463,6 +465,34 @@ public class T2IParamInput
         PromptTagLengthEstimators["embed"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["embedding"] = PromptTagLengthEstimators["preset"];
         PromptTagLengthEstimators["lora"] = PromptTagLengthEstimators["preset"];
+        PromptTagProcessors["setvar"] = (data, context) =>
+        {
+            data = context.Parse(data);
+            if (string.IsNullOrWhiteSpace(context.PreData))
+            {
+                Logs.Warning($"A variable name is required when using setvar.");
+                return null;
+            }
+            context.Variables[context.PreData] = data;
+            return data;
+        };
+        PromptTagLengthEstimators["setvar"] = (data) =>
+        {
+            return ProcessPromptLikeForLength(data);
+        };
+        PromptTagProcessors["var"] = (data, context) =>
+        {
+            if (!context.Variables.TryGetValue(data, out string val))
+            {
+                Logs.Warning($"Variable '{data}' is not recognized and will be ignored.");
+                return "";
+            }
+            return val;
+        };
+        PromptTagLengthEstimators["var"] = (data) =>
+        {
+            return "";
+        };
     }
 
     /// <summary>The raw values in this input. Do not use this directly, instead prefer:
