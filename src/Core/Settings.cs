@@ -288,7 +288,7 @@ public class Settings : AutoConfiguration
         {
             public override string[] GetOptions => [.. Program.Web.RegisteredTabs.Keys];
 
-            public override string[] Names => Program.Web.RegisteredTabs.Values.Select(v => v.Name).ToArray();
+            public override string[] Names => [.. Program.Web.RegisteredTabs.Values.Select(v => v.Name)];
         }
 
         [ConfigComment("List of top level tab names to hide in the UI.\nDefault is none. 'User' will be ignored to prevent locking yourself out.")]
