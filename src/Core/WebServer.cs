@@ -114,6 +114,19 @@ public class WebServer
         WebApp = builder.Build();
         WebApp.Use(async (context, next) =>
         {
+            if (context.Request.Headers.Host.Any() && context.Request.Headers.Origin.Any())
+            {
+                string host = context.Request.Headers.Host[0].ToLowerFast();
+                string origin = context.Request.Headers.Origin[0].ToLowerFast();
+                Uri uri = new(origin);
+                string originMain = uri.Authority.ToLowerFast();
+                if (host != originMain)
+                {
+                    context.Response.StatusCode = 403;
+                    await context.Response.WriteAsync("Forbidden");
+                    return;
+                }
+            }
             string authKey = Program.ServerSettings.Network.RequiredAuthorization;
             if (!string.IsNullOrWhiteSpace(authKey))
             {
