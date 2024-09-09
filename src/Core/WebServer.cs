@@ -122,9 +122,13 @@ public class WebServer
                 string originMain = uri.Authority.ToLowerFast();
                 if (host != originMain)
                 {
+                    // TODO: Instate this check fully only after comfy's version is stable.
+                    // Swarm doesn't technically need it (as we have session token checks) but still better to validate
+                    /*
                     context.Response.StatusCode = 403;
                     await context.Response.WriteAsync("Forbidden");
                     return;
+                    */
                 }
             }
             string authKey = Program.ServerSettings.Network.RequiredAuthorization;
