@@ -10,6 +10,7 @@ using FreneticUtilities.FreneticExtensions;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.PixelFormats;
 
 /// <summary>Helper to represent an image file cleanly and quickly.</summary>
 public class Image
@@ -30,6 +31,9 @@ public class Image
 
     /// <summary>File extension for this image.</summary>
     public string Extension;
+
+    /// <summary>The bit depth of the image data.</summary>
+    public int BitDepth { get; private set; }
 
     /// <summary>Creates an image object from a web image data URL string.</summary>
     public static Image FromDataString(string data)
@@ -61,10 +65,11 @@ public class Image
     }
 
     /// <summary>Construct an image from raw binary data.</summary>
-    public Image(byte[] data, ImageType type, string extension)
+    public Image(byte[] data, ImageType type, string extension, int bitDepth = 8)
     {
         Extension = extension;
         Type = type;
+        BitDepth = bitDepth;
         if (data is null)
         {
             throw new ArgumentNullException(nameof(data));
@@ -246,7 +251,7 @@ public class Image
     }
 
     /// <summary>Converts an image to the specified format, and the specific metadata text.</summary>
-    public Image ConvertTo(string format, string metadata = null, int dpi = 0)
+    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int bitDepth = 8)
     {
         if (Type != ImageType.IMAGE)
         {
@@ -280,7 +285,7 @@ public class Image
         switch (format)
         {
             case "PNG":
-                PngEncoder encoder = new() { TextCompressionThreshold = int.MaxValue };
+                PngEncoder encoder = new() { TextCompressionThreshold = int.MaxValue, BitDepth = bitDepth == 16 ? PngBitDepth.Bit16 : PngBitDepth.Bit8 };
                 img.SaveAsPng(ms, encoder);
                 ext = "png";
                 break;
@@ -308,6 +313,6 @@ public class Image
             default:
                 throw new SwarmReadableErrorException($"User setting for image format is '{format}', which is invalid");
         }
-        return new(ms.ToArray(), Type, ext);
+        return new(ms.ToArray(), Type, ext, bitDepth);
     }
 }

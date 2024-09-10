@@ -3,6 +3,7 @@ import numpy as np
 import comfy.utils
 from server import PromptServer, BinaryEventTypes
 import time, io, struct
+import cv2
 
 SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
@@ -12,7 +13,8 @@ class SwarmSaveImageWS:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "images": ("IMAGE", )
+                "images": ("IMAGE", ),
+                "bit_depth": (["8", "16"], {"default": "8"})
             }
         }
 
@@ -22,19 +24,46 @@ class SwarmSaveImageWS:
     OUTPUT_NODE = True
     DESCRIPTION = "Acts like a special version of 'SaveImage' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
-    def save_images(self, images):
+    def save_images(self, images, bit_depth):
         pbar = comfy.utils.ProgressBar(SPECIAL_ID)
         step = 0
         for image in images:
-            i = 255.0 * image.cpu().numpy()
-            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            if bit_depth == "16":
+                img_np = image.cpu().numpy()
+
+                if img_np.ndim != 3 or img_np.shape[2] != 3:
+                    raise ValueError("Expected an RGB image with 3 channels.")
+
+                img_np = np.clip(img_np * 65535.0, 0, 65535).astype(np.uint16)
+                img = self.convert_opencv_to_pil(img_np)
+            else:
+                i = image.cpu().numpy()
+                i = np.clip(i * 255.0, 0, 255).astype(np.uint8)
+                img = Image.fromarray(i, mode='RGB')
             pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
             step += 1
 
         return {}
 
+    def convert_opencv_to_pil(self, img_np):
+        try:
+            img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
+            _, img_encoded = cv2.imencode('.png', img_np)
+
+            if img_encoded is None:
+                raise RuntimeError("OpenCV failed to encode image.")
+
+            img_bytes = io.BytesIO(img_encoded.tobytes())
+            img = Image.open(img_bytes)
+            img = img.convert('RGB')
+            return img
+
+        except Exception as e:
+            print(f"Error converting OpenCV image to PIL: {e}")
+            raise
+
     @classmethod
-    def IS_CHANGED(s, images):
+    def IS_CHANGED(s, images, bit_depth):
         return time.time()
 
 

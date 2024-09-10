@@ -428,9 +428,12 @@ public class WorkflowGenerator
     {
         if (Features.Contains("comfy_saveimage_ws") && !RestrictCustomNodes)
         {
+            bool use16Bit = UserInput.Get(T2IParamTypes.BitDepth, false);
+            string bitDepth = use16Bit ? "16" : "8";
             return CreateNode("SwarmSaveImageWS", new JObject()
             {
-                ["images"] = image
+                ["images"] = image,
+                ["bit_depth"] = bitDepth
             }, id);
         }
         else
