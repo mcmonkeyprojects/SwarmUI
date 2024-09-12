@@ -10,7 +10,9 @@ using FreneticUtilities.FreneticExtensions;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Tiff;
 using SixLabors.ImageSharp.PixelFormats;
+using BitMiracle.LibTiff.Classic;
 
 /// <summary>Helper to represent an image file cleanly and quickly.</summary>
 public class Image
@@ -33,7 +35,15 @@ public class Image
     public string Extension;
 
     /// <summary>The bit depth of the image data.</summary>
-    public int BitDepth { get; private set; }
+    public int BitDepth;
+
+    /// <summary>Mapping of bit depth strings to their integer values.</summary>
+    public static readonly Dictionary<string, int> BitDepthMap = new()
+    {
+        { "8bit", 8 },
+        { "16bit", 16 },
+        { "32bit", 32 }
+    };
 
     /// <summary>Creates an image object from a web image data URL string.</summary>
     public static Image FromDataString(string data)
@@ -182,6 +192,8 @@ public class Image
     /// <summary>Image formats that are possible to save as.</summary>
     public enum ImageFormat
     {
+        /// <summary>TIFF: Lossless, big file.</summary>
+        TIFF,
         /// <summary>PNG: Lossless, big file.</summary>
         PNG,
         /// <summary>JPEG: Lossy, (100% quality), small file.</summary>
@@ -238,6 +250,7 @@ public class Image
     {
         return format switch
         {
+            "TIFF" => "tiff",
             "PNG" => "png",
             "JPG" => "jpg",
             "JPG90" => "jpg",
@@ -284,6 +297,17 @@ public class Image
         string ext = "jpg";
         switch (format)
         {
+            case "TIFF":
+                if (bitDepth == 32)
+                {
+                    SaveAs32BitTiff(this, ms);
+                }
+                else
+                {
+                    img.SaveAsTiff(ms, new TiffEncoder() { BitsPerPixel = bitDepth == 16 ? TiffBitsPerPixel.Bit48 : TiffBitsPerPixel.Bit24 });
+                }
+                ext = "tiff";
+                break;
             case "PNG":
                 PngEncoder encoder = new() { TextCompressionThreshold = int.MaxValue, BitDepth = bitDepth == 16 ? PngBitDepth.Bit16 : PngBitDepth.Bit8 };
                 img.SaveAsPng(ms, encoder);
@@ -314,5 +338,67 @@ public class Image
                 throw new SwarmReadableErrorException($"User setting for image format is '{format}', which is invalid");
         }
         return new(ms.ToArray(), Type, ext, bitDepth);
+    }
+
+    private void SaveAs32BitTiff(Image img, Stream stream)
+    {
+        using (Tiff tiff = Tiff.Open("temp.tif", "w"))
+        {
+            ISImage isImage = img.ToIS;
+            tiff.SetField(TiffTag.IMAGEWIDTH, isImage.Width);
+            tiff.SetField(TiffTag.IMAGELENGTH, isImage.Height);
+            tiff.SetField(TiffTag.SAMPLESPERPIXEL, 4); // RGBA
+            tiff.SetField(TiffTag.BITSPERSAMPLE, 32);
+            tiff.SetField(TiffTag.ORIENTATION, Orientation.TOPLEFT);
+            tiff.SetField(TiffTag.PLANARCONFIG, PlanarConfig.CONTIG);
+            tiff.SetField(TiffTag.PHOTOMETRIC, Photometric.RGB);
+            tiff.SetField(TiffTag.ROWSPERSTRIP, isImage.Height);
+            tiff.SetField(TiffTag.SAMPLEFORMAT, SampleFormat.IEEEFP);
+
+            byte[] buffer = new byte[isImage.Width * isImage.Height * 16]; // 32 bits * 4 channels = 16 bytes per pixel
+            FillBufferWith32BitData(isImage, buffer);
+
+            tiff.WriteEncodedStrip(0, buffer, buffer.Length);
+        }
+
+        // Copy the temp file to the stream
+        using (FileStream fs = new FileStream("temp.tif", FileMode.Open, FileAccess.Read))
+        {
+            fs.CopyTo(stream);
+        }
+        File.Delete("temp.tif");
+    }
+
+    private void FillBufferWith32BitData(ISImage img, byte[] buffer)
+    {
+        using (var image = img.CloneAs<Rgba32>())
+        {
+            int stride = image.Width * 16; // 16 bytes per pixel (4 channels * 4 bytes per channel)
+
+            image.ProcessPixelRows(accessor =>
+            {
+                for (int y = 0; y < image.Height; y++)
+                {
+                    Span<Rgba32> pixelRow = accessor.GetRowSpan(y);
+                    for (int x = 0; x < image.Width; x++)
+                    {
+                        int bufferOffset = (y * stride) + (x * 16);
+                        ref Rgba32 pixel = ref pixelRow[x];
+
+                        // Convert 8-bit values to 32-bit float (0.0 to 1.0 range)
+                        float r = pixel.R / 255f;
+                        float g = pixel.G / 255f;
+                        float b = pixel.B / 255f;
+                        float a = pixel.A / 255f;
+
+                        // Write float values to buffer
+                        BitConverter.GetBytes(r).CopyTo(buffer, bufferOffset);
+                        BitConverter.GetBytes(g).CopyTo(buffer, bufferOffset + 4);
+                        BitConverter.GetBytes(b).CopyTo(buffer, bufferOffset + 8);
+                        BitConverter.GetBytes(a).CopyTo(buffer, bufferOffset + 12);
+                    }
+                }
+            });
+        }
     }
 }
