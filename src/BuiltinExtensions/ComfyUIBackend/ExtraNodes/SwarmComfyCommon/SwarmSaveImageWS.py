@@ -16,7 +16,7 @@ class SwarmSaveImageWS:
                 "images": ("IMAGE", ),
             },
             "optional": {
-                "bit_depth": (["8", "16"], {"default": "8"})
+                "bit_depth": (["8bit", "16bit"], {"default": "8bit"})
             }
         }
 
@@ -31,7 +31,7 @@ class SwarmSaveImageWS:
         step = 0
         for image in images:
             img_np = image.cpu().numpy()
-            if bit_depth == "16":
+            if bit_depth == "16bit":
                 img_np = np.clip(img_np * 65535.0, 0, 65535).astype(np.uint16)
                 img = self.convert_opencv_to_pil(img_np)
             else:

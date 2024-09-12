@@ -428,8 +428,7 @@ public class WorkflowGenerator
     {
         if (Features.Contains("comfy_saveimage_ws") && !RestrictCustomNodes)
         {
-            string selectedBitDepth = UserInput.Get(T2IParamTypes.BitDepth, "8bit");
-            int bitDepth = Image.BitDepthMap.TryGetValue(selectedBitDepth, out int depth) ? depth : 8;
+            string bitDepth = UserInput.Get(T2IParamTypes.BitDepth, "8bit");
             return CreateNode("SwarmSaveImageWS", new JObject()
             {
                 ["images"] = image,

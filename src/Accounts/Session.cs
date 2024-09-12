@@ -161,9 +161,7 @@ public class Session : IEquatable<Session>
         }
         string metadata = user_input.GenRawMetadata();
         string format = user_input.Get(T2IParamTypes.ImageFormat, User.Settings.FileFormat.ImageFormat);
-        string selectedBitDepth = user_input.Get(T2IParamTypes.BitDepth, "8bit");
-        int bitDepth = Image.BitDepthMap.TryGetValue(selectedBitDepth, out int depth) ? depth : 8;
-        image = image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, bitDepth);
+        image = image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI);
         return (image, metadata ?? "");
     }
 
