@@ -31,10 +31,6 @@ class SwarmSaveImageWS:
         step = 0
         for image in images:
             img_np = image.cpu().numpy()
-
-            if img_np.ndim != 3 or img_np.shape[2] != 3:
-                raise ValueError("Expected an RGB image with 3 channels.")
-
             if bit_depth == "16":
                 img_np = np.clip(img_np * 65535.0, 0, 65535).astype(np.uint16)
                 img = self.convert_opencv_to_pil(img_np)
