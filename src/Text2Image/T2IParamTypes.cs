@@ -575,8 +575,8 @@ public class T2IParamTypes
                 return s;
             }
             ));
-        BitDepth = Register<string>(new("Color Depth", "Specifies the color depth for PNG and TIFF formats:\n- PNG supports 8-bit and 16-bit\n- TIFF supports 8-bit, 16-bit, and 32-bit\n- Other formats ignore this setting\n\nIf 32-bit is selected for PNG, it will default to 8-bit.",
-            "8bit", GetValues: (_) => ["8bit///8-bit (256 colors)", "16bit///16-bit (65,536 colors)", "32bit///32-bit (16.7 million colors)"], IsAdvanced: true, Toggleable: true, Group: GroupSwarmInternal, OrderPriority: 3
+        BitDepth = Register<string>(new("Color Depth", "Specifies the color depth for PNG format:\n- 8-bit per channel (24-bit total)\n- 16-bit per channel (48-bit total)\n\nOther formats ignore this setting.",
+            "8bit", GetValues: (_) => ["8bit///8-bit per channel (24-bit total)", "16bit///16-bit per channel (48-bit total)"], IsAdvanced: true, Toggleable: true, Group: GroupSwarmInternal, OrderPriority: 3
             ));
         PersonalNote = Register<string>(new("Personal Note", "Optional field to type in any personal text note you want.\nThis will be stored in the image metadata.",
             "", IgnoreIf: "", IsAdvanced: true, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0

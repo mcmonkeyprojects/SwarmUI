@@ -16,7 +16,7 @@ class SwarmSaveImageWS:
                 "images": ("IMAGE", ),
             },
             "optional": {
-                "bit_depth": (["8", "16", "32"], {"default": "8"})
+                "bit_depth": (["8", "16"], {"default": "8"})
             }
         }
 
@@ -35,10 +35,7 @@ class SwarmSaveImageWS:
             if img_np.ndim != 3 or img_np.shape[2] != 3:
                 raise ValueError("Expected an RGB image with 3 channels.")
 
-            if bit_depth == "32":
-                img_np = img_np.astype(np.float32)
-                img = self.convert_opencv_to_pil(img_np)
-            elif bit_depth == "16":
+            if bit_depth == "16":
                 img_np = np.clip(img_np * 65535.0, 0, 65535).astype(np.uint16)
                 img = self.convert_opencv_to_pil(img_np)
             else:
@@ -51,23 +48,17 @@ class SwarmSaveImageWS:
 
     def convert_opencv_to_pil(self, img_np):
         try:
-            if img_np.dtype == np.float32:
-                # For 32-bit float images
-                img_np = (img_np * 65535).astype(np.uint16)
-            elif img_np.dtype == np.uint8:
-                # For 8-bit images, no change needed
-                pass
-            elif img_np.dtype == np.uint16:
-                # For 16-bit images, no change needed
-                pass
-            else:
-                raise ValueError(f"Unsupported image dtype: {img_np.dtype}")
-
             # Convert BGR to RGB
             img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
 
-            # Create PIL Image directly from numpy array
-            img = Image.fromarray(img_np)
+            _, img_encoded = cv2.imencode('.png', img_np)
+
+            if img_encoded is None:
+                raise RuntimeError("OpenCV failed to encode image.")
+
+            img_bytes = io.BytesIO(img_encoded.tobytes())
+            img = Image.open(img_bytes)
+            img = img.convert('RGB')
 
             return img
 

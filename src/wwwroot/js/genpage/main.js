@@ -386,18 +386,6 @@ class ImageFullViewHelper {
             </div>
         </div>`;
         this.modalJq.modal('show');
-        if (src.toLowerCase().endsWith('.tiff') || src.toLowerCase().endsWith('.tif')) {
-            if (window.tiffObserver) {
-                window.tiffObserver.observe(img, { attributes: true, childList: true, subtree: true });
-                img.style.visibility = 'hidden';
-                setTimeout(() => {
-                    img.style.visibility = 'visible';
-                }, 0);
-            } else {
-                console.warn('TIFF observer not found. Falling back to UTIF.replaceIMG()');
-                UTIF.replaceIMG();
-            }
-        }
     }
 
     close() {
@@ -2370,30 +2358,3 @@ function genpageLoad() {
 }
 
 setTimeout(genpageLoad, 1);
-
-const tiffObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-            mutation.addedNodes.forEach(checkNode);
-        } else if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
-            checkNode(mutation.target);
-        }
-    });
-});
-
-function checkNode(node) {
-    if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'IMG') {
-        const src = node.src.toLowerCase();
-        const strippedExt = src.split('?preview=true')[0].split('.').pop();
-        if (strippedExt === 'tiff' || strippedExt === 'tif') {
-            UTIF.replaceIMG();
-        }
-    }
-}
-
-tiffObserver.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: true,
-    attributeFilter: ['src']
-});
