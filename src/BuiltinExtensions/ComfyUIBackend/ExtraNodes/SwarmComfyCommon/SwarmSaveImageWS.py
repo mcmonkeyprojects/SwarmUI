@@ -36,13 +36,13 @@ class SwarmSaveImageWS:
     OUTPUT_NODE = True
     DESCRIPTION = "Acts like a special version of 'SaveImage' that doesn't actual save to disk, instead it sends directly over websocket. This is intended so that SwarmUI can save the image itself rather than having Comfy's Core save it."
 
-    def save_images(self, images, bit_depth):
+    def save_images(self, images, bit_depth = "8bit"):
         pbar = comfy.utils.ProgressBar(SPECIAL_ID)
         step = 0
         for image in images:
             if bit_depth == "16bit":
                 i = 65535.0 * image.cpu().numpy()
-                img = self.convert_opencv_to_pil(np.clip(i, 0, 65535).astype(np.uint16))
+                img = self.convert_img_16bit(np.clip(i, 0, 65535).astype(np.uint16))
                 send_image_to_server_raw(2, lambda out: out.write(img), SPECIAL_ID)
             else:
                 i = 255.0 * image.cpu().numpy()
@@ -52,7 +52,7 @@ class SwarmSaveImageWS:
 
         return {}
 
-    def convert_opencv_to_pil(self, img_np):
+    def convert_img_16bit(self, img_np):
         try:
             import cv2
             img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
@@ -67,7 +67,7 @@ class SwarmSaveImageWS:
             raise
 
     @classmethod
-    def IS_CHANGED(s, images, bit_depth):
+    def IS_CHANGED(s, images, bit_depth = "8bit"):
         return time.time()
 
 
