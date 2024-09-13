@@ -284,7 +284,7 @@ public class Image
                 PngEncoder encoder = new()
                 {
                     TextCompressionThreshold = int.MaxValue,
-                    BitDepth = img.PixelType.BitsPerPixel == 8 ? PngBitDepth.Bit8 : PngBitDepth.Bit16
+                    BitDepth = img.PixelType.BitsPerPixel == 16 ? PngBitDepth.Bit16 : PngBitDepth.Bit8
                 };
                 img.SaveAsPng(ms, encoder);
                 ext = "png";
