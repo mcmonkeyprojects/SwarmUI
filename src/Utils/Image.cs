@@ -10,6 +10,7 @@ using FreneticUtilities.FreneticExtensions;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.PixelFormats;
 
 /// <summary>Helper to represent an image file cleanly and quickly.</summary>
 public class Image
@@ -280,7 +281,11 @@ public class Image
         switch (format)
         {
             case "PNG":
-                PngEncoder encoder = new() { TextCompressionThreshold = int.MaxValue };
+                PngEncoder encoder = new()
+                {
+                    TextCompressionThreshold = int.MaxValue,
+                    BitDepth = img.PixelType.BitsPerPixel == 16 ? PngBitDepth.Bit16 : PngBitDepth.Bit8
+                };
                 img.SaveAsPng(ms, encoder);
                 ext = "png";
                 break;
