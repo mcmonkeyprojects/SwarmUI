@@ -3,7 +3,6 @@ import numpy as np
 import comfy.utils
 from server import PromptServer, BinaryEventTypes
 import time, io, struct
-import cv2
 
 SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
@@ -43,9 +42,8 @@ class SwarmSaveImageWS:
 
     def convert_opencv_to_pil(self, img_np):
         try:
-            # Convert BGR to RGB
+            import cv2
             img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
-
             _, img_encoded = cv2.imencode('.png', img_np)
 
             if img_encoded is None:
@@ -54,9 +52,7 @@ class SwarmSaveImageWS:
             img_bytes = io.BytesIO(img_encoded.tobytes())
             img = Image.open(img_bytes)
             img = img.convert('RGB')
-
             return img
-
         except Exception as e:
             print(f"Error converting OpenCV image to PIL: {e}")
             raise

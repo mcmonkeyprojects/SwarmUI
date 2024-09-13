@@ -12,3 +12,4 @@
 [assembly: SuppressMessage("Performance", "CA1860:Avoid using 'Enumerable.Any()' extension method")]
 [assembly: SuppressMessage("Usage", "ASP0018:Unused route parameter")]
 [assembly: SuppressMessage("Performance", "CA1861:Avoid constant arrays as arguments")]
+[assembly: SuppressMessage("Style", "IDE0130:Namespace does not match folder structure", Justification = "Extensions have intentional mismatch")]
