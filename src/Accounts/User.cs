@@ -229,6 +229,9 @@ public class User
         return Restrictions.PermissionFlags.Contains(permName) || Restrictions.PermissionFlags.Contains("*");
     }
 
+    /// <summary>Simplified keynames for things commonly used in ExtraMeta, to allow for OutputPath builder to treat these cases as empty and not errors.</summary>
+    public static HashSet<string> KnownExtraMetaVals = ["debugbackend", "scoring", "usedembeddings", "generationtime", "intermediate", "usedwildcards", "swarmversion", "date", "originalprompt", "originalnegativeprompt", "presetsused"];
+
     /// <summary>Converts the user's output path setting to a real path for the given parameters. Note that the path is partially cleaned, but not completely.</summary>
     public string BuildImageOutputPath(T2IParamInput user_input, int batchIndex)
     {
@@ -247,6 +250,7 @@ public class User
             }
             return model;
         }
+        Dictionary<string, object> extraMetaSimplified = user_input.ExtraMeta.ToDictionary(p => T2IParamTypes.CleanTypeName(p.Key), p => p.Value);
         string buildPathPart(string part)
         {
             string data = part switch
@@ -288,6 +292,14 @@ public class User
                             data = simplifyModel(data);
                         }
                     }
+                }
+                else if (extraMetaSimplified.TryGetValue(T2IParamTypes.CleanTypeName(part), out object extraVal))
+                {
+                    data = $"{T2IParamInput.SimplifyParamVal(extraVal)}";
+                }
+                else if (KnownExtraMetaVals.Contains(part))
+                {
+                    data = "";
                 }
             }
             if (data.Length > maxLen)
