@@ -32,10 +32,13 @@ class SwarmSaveImageWS:
             if bit_depth == "16bit":
                 i = 65535.0 * image.cpu().numpy()
                 img = self.convert_opencv_to_pil(np.clip(i, 0, 65535).astype(np.uint16))
+                server = PromptServer.instance
+                server.send_sync("progress", {"value": SPECIAL_ID, "max": SPECIAL_ID}, sid=server.client_id)
+                server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, img, sid=server.client_id)
             else:
                 i = 255.0 * image.cpu().numpy()
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
+                pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
             step += 1
 
         return {}
@@ -44,15 +47,12 @@ class SwarmSaveImageWS:
         try:
             import cv2
             img_np = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
-            _, img_encoded = cv2.imencode('.png', img_np)
+            success, img_encoded = cv2.imencode('.png', img_np)
 
-            if img_encoded is None:
+            if img_encoded is None or not success:
                 raise RuntimeError("OpenCV failed to encode image.")
 
-            img_bytes = io.BytesIO(img_encoded.tobytes())
-            img = Image.open(img_bytes)
-            img = img.convert('RGB')
-            return img
+            return img_encoded.tobytes()
         except Exception as e:
             print(f"Error converting OpenCV image to PIL: {e}")
             raise
