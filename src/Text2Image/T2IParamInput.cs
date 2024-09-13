@@ -113,6 +113,8 @@ public class T2IParamInput
 
         public string RawCurrentTag;
 
+        public string TriggerPhraseExtra = "";
+
         public string Parse(string text)
         {
             if (Depth > 1000)
@@ -121,7 +123,7 @@ public class T2IParamInput
                 return text;
             }
             Depth++;
-            string result = Input.ProcessPromptLike(text, this);
+            string result = Input.ProcessPromptLike(text, this, false);
             Depth--;
             return result;
         }
@@ -438,6 +440,12 @@ public class T2IParamInput
             weights.Add(strength.ToString());
             context.Input.Set(T2IParamTypes.Loras, loraList);
             context.Input.Set(T2IParamTypes.LoraWeights, weights);
+            string trigger = Program.T2IModelSets["LoRA"].GetModel(matched)?.Metadata?.TriggerPhrase;
+            if (!string.IsNullOrWhiteSpace(trigger))
+            {
+                context.TriggerPhraseExtra += $"{trigger}, ";
+                Logs.Verbose($"TriggerPhraseExtra is now {context.TriggerPhraseExtra}");
+            }
             if (confinements is null)
             {
                 confinements = [];
@@ -519,7 +527,12 @@ public class T2IParamInput
                     }
                 }
             }
-            return phrases.JoinString(", ");
+            if (phrases.Any() && string.IsNullOrWhiteSpace(context.TriggerPhraseExtra))
+            {
+                context.TriggerPhraseExtra = ", ";
+                Logs.Verbose("Added trigger phrase extra prefix");
+            }
+            return phrases.JoinString(", ") + "\0triggerextra";
         };
         PromptTagLengthEstimators["trigger"] = estimateEmpty;
     }
@@ -761,7 +774,7 @@ public class T2IParamInput
         }
         string fixedVal = val.Replace('\0', '\a').Replace("\a", "");
         PromptTagContext context = new() { Input = this, Param = param.Type.ID };
-        fixedVal = ProcessPromptLike(fixedVal, context);
+        fixedVal = ProcessPromptLike(fixedVal, context, true);
         if (fixedVal != val && !ExtraMeta.ContainsKey($"original_{param.Type.ID}"))
         {
             ExtraMeta[$"original_{param.Type.ID}"] = val;
@@ -770,7 +783,7 @@ public class T2IParamInput
     }
 
     /// <summary>Special utility to process prompt inputs before the request is executed (to parse wildcards, embeddings, etc).</summary>
-    public string ProcessPromptLike(string val, PromptTagContext context)
+    public string ProcessPromptLike(string val, PromptTagContext context, bool isMain)
     {
         if (val is null)
         {
@@ -819,6 +832,15 @@ public class T2IParamInput
         processSet(PromptTagBasicProcessors, false);
         processSet(PromptTagProcessors, true);
         processSet(PromptTagPostProcessors, true);
+        if (isMain)
+        {
+            string triggerPhrase = context.TriggerPhraseExtra;
+            if (triggerPhrase.Length > 1) // trim the ", "
+            {
+                triggerPhrase = triggerPhrase[..^2];
+            }
+            val = val.Replace("\0triggerextra", triggerPhrase);
+        }
         return addBefore + val + addAfter;
     }
 
