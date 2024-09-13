@@ -7,6 +7,17 @@ import time, io, struct
 SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
 
+def send_image_to_server_raw(type_num: int, save_me: callable, id: int):
+    out = io.BytesIO()
+    header = struct.pack(">I", type_num)
+    out.write(header)
+    save_me(out)
+    out.seek(0)
+    preview_bytes = out.getvalue()
+    server = PromptServer.instance
+    server.send_sync("progress", {"value": id, "max": id}, sid=server.client_id)
+    server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=server.client_id)
+
 class SwarmSaveImageWS:
     @classmethod
     def INPUT_TYPES(s):
@@ -32,9 +43,7 @@ class SwarmSaveImageWS:
             if bit_depth == "16bit":
                 i = 65535.0 * image.cpu().numpy()
                 img = self.convert_opencv_to_pil(np.clip(i, 0, 65535).astype(np.uint16))
-                server = PromptServer.instance
-                server.send_sync("progress", {"value": SPECIAL_ID, "max": SPECIAL_ID}, sid=server.client_id)
-                server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, img, sid=server.client_id)
+                send_image_to_server_raw(2, lambda out: out.write(img), SPECIAL_ID)
             else:
                 i = 255.0 * image.cpu().numpy()
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -91,16 +100,9 @@ class SwarmSaveAnimatedWebpWS:
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             pil_images.append(img)
 
-        out = io.BytesIO()
-        type_num = 3
-        header = struct.pack(">I", type_num)
-        out.write(header)
-        pil_images[0].save(out, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
-        out.seek(0)
-        preview_bytes = out.getvalue()
-        server = PromptServer.instance
-        server.send_sync("progress", {"value": 12346, "max": 12346}, sid=server.client_id)
-        server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=server.client_id)
+        def do_save(out):
+            pil_images[0].save(out, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
+        send_image_to_server_raw(3, do_save, 12346)
 
         return { }
 
