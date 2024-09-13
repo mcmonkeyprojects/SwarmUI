@@ -30,13 +30,12 @@ class SwarmSaveImageWS:
         pbar = comfy.utils.ProgressBar(SPECIAL_ID)
         step = 0
         for image in images:
-            img_np = image.cpu().numpy()
             if bit_depth == "16bit":
-                img_np = np.clip(img_np * 65535.0, 0, 65535).astype(np.uint16)
-                img = self.convert_opencv_to_pil(img_np)
+                i = 65535.0 * image.cpu().numpy()
+                img = self.convert_opencv_to_pil(np.clip(i, 0, 65535).astype(np.uint16))
             else:
-                i = np.clip(img_np * 255.0, 0, 255).astype(np.uint8)
-                img = Image.fromarray(i, mode='RGB')
+                i = 255.0 * image.cpu().numpy()
+                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
             pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
             step += 1
 
