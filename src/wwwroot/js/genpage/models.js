@@ -391,12 +391,7 @@ class ModelBrowserWrapper {
         if (this.subType == 'Stable-Diffusion' && model.data.local) {
             let buttonLoad = () => {
                 directSetModel(model.data);
-                if (curModelSpecialFormat == 'bnb_nf4' && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
-                    $('#bnb_nf4_installer').modal('show');
-                    return;
-                }
-                if (curModelSpecialFormat == 'gguf' && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
-                    $('#gguf_installer').modal('show');
+                if (doModelInstallRequiredCheck()) {
                     return;
                 }
                 makeWSRequestT2I('SelectModelWS', {'model': model.data.name}, data => {
@@ -862,6 +857,18 @@ function currentModelChanged() {
         directSetModel(data.model);
         noModelChangeDup = false;
     });
+}
+
+function doModelInstallRequiredCheck() {
+    if (curModelSpecialFormat == 'bnb_nf4' && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
+        $('#bnb_nf4_installer').modal('show');
+        return true;
+    }
+    if (curModelSpecialFormat == 'gguf' && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
+        $('#gguf_installer').modal('show');
+        return true;
+    }
+    return false;
 }
 
 getRequiredElementById('current_model').addEventListener('change', currentModelChanged);

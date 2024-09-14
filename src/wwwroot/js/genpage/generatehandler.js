@@ -219,12 +219,7 @@ class GenerateHandler {
                 return;
             }
             setCurrentModel(() => {
-                if (curModelSpecialFormat == 'bnb_nf4' && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
-                    $('#bnb_nf4_installer').modal('show');
-                    return;
-                }
-                if (curModelSpecialFormat == 'gguf' && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
-                    $('#gguf_installer').modal('show');
+                if (doModelInstallRequiredCheck()) {
                     return;
                 }
                 run();
