@@ -188,6 +188,7 @@ class ModelDownloaderUtil {
         this.folders = getRequiredElementById('model_downloader_folder');
         this.hfPrefix = 'https://huggingface.co/';
         this.civitPrefix = 'https://civitai.com/';
+        this.civitGreenPrefix = 'https://civitai.green/';
     }
 
     reloadFolders() {
@@ -284,6 +285,9 @@ class ModelDownloaderUtil {
     }
 
     parseCivitaiUrl(url) {
+        if (url.startsWith(this.civitGreenPrefix)) {
+            url = this.civitPrefix + url.substring(this.civitGreenPrefix.length);
+        }
         let parts = url.substring(this.civitPrefix.length).split('/', 4); // 'models', id, name + sometimes version OR 'api', 'download', 'models', versid
         if (parts.length == 2 && parts[0] == 'models' && parts[1].includes('?')) {
             let subparts = parts[1].split('?', 2);
@@ -349,6 +353,9 @@ class ModelDownloaderUtil {
             this.urlStatusArea.innerText = "URL appears to be a huggingface link, but seems to not be valid. Please double-check the link.";
             this.button.disabled = false;
             return;
+        }
+        if (url.startsWith(this.civitGreenPrefix)) {
+            url = this.civitPrefix + url.substring(this.civitGreenPrefix.length);
         }
         if (url.startsWith(this.civitPrefix)) {
             let parts = url.substring(this.civitPrefix.length).split('/', 4); // 'models', id, name + sometimes version OR 'api', 'download', 'models', versid
