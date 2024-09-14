@@ -388,11 +388,17 @@ public class Settings : AutoConfiguration
     /// <summary>Webhook settings.</summary>
     public class WebHooksData : AutoConfiguration
     {
-        [ConfigComment("Webhook to call (empty JSON POST) when queues are starting up from idle.\nLeave empty to disable any webhook.\nCall must return before the first generation starts.")]
+        [ConfigComment("Webhook to call (JSON POST) when queues are starting up from idle.\nLeave empty to disable any webhook.\nCall must return before the first generation starts.")]
         public string QueueStartWebhook = "";
 
-        [ConfigComment("Webhook to call (empty JSON POST) when all queues are done and the server is going idle.\nLeave empty to disable any webhook.\nCall must return before queuing may restart.")]
+        [ConfigComment("If you want to send additional data with the queue start webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used.")]
+        public string QueueStartWebhookData = "";
+
+        [ConfigComment("Webhook to call (JSON POST) when all queues are done and the server is going idle.\nLeave empty to disable any webhook.\nCall must return before queuing may restart.")]
         public string QueueEndWebhook = "";
+
+        [ConfigComment("If you want to send additional data with the queue end webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used.")]
+        public string QueueEndWebhookData = "";
 
         [ConfigComment("How long to wait (in seconds) after all queues are done before sending the queue end webhook.\nThis is useful to prevent rapid start+end calls.")]
         public double QueueEndDelay = 1;

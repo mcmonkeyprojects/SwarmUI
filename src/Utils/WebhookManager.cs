@@ -47,7 +47,12 @@ public static class WebhookManager
             }
             TimeStoppedGenerating = 0;
             Logs.Verbose("[Webhooks] Marking server as starting generations, sending Queue Start webhook.");
-            HttpResponseMessage msg = await Client.PostAsync(HookSettings.QueueStartWebhook, Utilities.JSONContent([]));
+            JObject toSend = [];
+            if (!string.IsNullOrWhiteSpace(HookSettings.QueueStartWebhookData))
+            {
+                toSend = HookSettings.QueueStartWebhookData.ParseToJson();
+            }
+            HttpResponseMessage msg = await Client.PostAsync(HookSettings.QueueStartWebhook, Utilities.JSONContent(toSend));
             string response = await msg.Content.ReadAsStringAsync();
             Logs.Verbose($"[Webhooks] Queue Start webhook response: {msg.StatusCode}: {response}");
             IsServerGenerating = true;
@@ -87,7 +92,12 @@ public static class WebhookManager
             TimeStoppedGenerating = 0;
             IsServerGenerating = false;
             Logs.Verbose("[Webhooks] Marking server as done generating, sending Queue End webhook.");
-            HttpResponseMessage msg = await Client.PostAsync(HookSettings.QueueEndWebhook, Utilities.JSONContent([]));
+            JObject toSend = [];
+            if (!string.IsNullOrWhiteSpace(HookSettings.QueueStartWebhookData))
+            {
+                toSend = HookSettings.QueueStartWebhookData.ParseToJson();
+            }
+            HttpResponseMessage msg = await Client.PostAsync(HookSettings.QueueEndWebhook, Utilities.JSONContent(toSend));
             string response = await msg.Content.ReadAsStringAsync();
             Logs.Verbose($"[Webhooks] Queue End webhook response: {msg.StatusCode}: {response}");
             return;
