@@ -866,7 +866,7 @@ public class WorkflowGeneratorSteps
             else
             {
                 g.CreateKSampler(g.FinalModel, g.FinalPrompt, g.FinalNegativePrompt, g.FinalLatentImage, cfg, steps, startStep, endStep,
-                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10");
+                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true);
                 if (g.UserInput.Get(T2IParamTypes.UseReferenceOnly, false))
                 {
                     string fromBatch = g.CreateNode("LatentFromBatch", new JObject()
