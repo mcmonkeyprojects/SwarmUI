@@ -396,6 +396,11 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("Optional suffix to append to autocompletes, eg ', ' to append commas.")]
             public string Suffix = "";
+
+            [ConfigComment("How to match and list results.\n'Contains' lists any match that contains your current text\n'StartsWith' only lists matches that start with your current text\n'Bucketed' shows StartsWith matches first, and Contains matches after.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["Bucketed", "Contains", "StartsWith"])]
+            public string MatchMode = "Bucketed";
+
         }
     }
 
