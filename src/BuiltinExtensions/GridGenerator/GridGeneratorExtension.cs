@@ -182,10 +182,12 @@ public class GridGeneratorExtension : Extension
                             metadata ??= "{}";
                             File.WriteAllBytes($"{mainpath}.metadata.js", $"all_metadata[\"{set.BaseFilepath}\"] = {metadata}\n{metaExtra}".EncodeUTF8());
                         }
+                        string output = $"/{set.Grid.Runner.URLBase}/{set.BaseFilepath}.{ext}";
                         if (data.ShowOutputs)
                         {
-                            data.AddOutput(new JObject() { ["image"] = $"/{set.Grid.Runner.URLBase}/{set.BaseFilepath}.{ext}", ["metadata"] = metadata });
+                            data.AddOutput(new JObject() { ["image"] = output, ["metadata"] = metadata });
                         }
+                        WebhookManager.SendEveryGenWebhook(thisParams, output);
                     }
                     else
                     {
@@ -199,6 +201,7 @@ public class GridGeneratorExtension : Extension
                         {
                             data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                         }
+                        WebhookManager.SendEveryGenWebhook(thisParams, url);
                         if (set.Grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE)
                         {
                             data.GeneratedOutputs.TryAdd(set.BaseFilepath, image.Img);

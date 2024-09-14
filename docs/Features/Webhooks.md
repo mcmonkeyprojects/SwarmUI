@@ -12,6 +12,20 @@ Swarm webhooks are configured under the tab `Server` -> `Server Configuration` (
 
 Webhook configuration comes in two parts: the URL, and the JSON data. For the URL, simply copy in whatever server URL you received externally. For the JSON data, you can either leave it blank (and it will send an empty JSON, ie `{}`), or fill it in with JSON data (eg `{ "somekey": "someval", ... }`).
 
+### Image Metadata In The JSON
+
+For some webhooks, eg the `Every Gen` Webhook, you can include image metadata in the JSON body. This uses `%tag%` syntax, and mostly follows the same rules as the `Output Path` setting for what you can fill in. For example, `%prompt%` can be used to fill the prompt. Unlike `Output Path`, this text won't be trimmed or formatted, other than escaped to fit within a JSON string.
+
+You may also use `%image%` to include the URL to an image. Be warned if `DoNotSave` is used this URL maybe a very large Base64 blob. This will use the `External URL` setting under `Server Configuration` to format the URL. Note that unless your server is externally accessible, this URL cannot be opened by anyone but you. This means for example you cannot embed the image onto a Discord message via the webhook, because Discord's servers cannot read the URL.
+
+For example, if you wanted to send a message on Discord after every generation, you would set the Every Gen Webhook URL to `https://discord.com/api/webhooks/(whatever your generated url is here)`, and set the JSON data to something like:
+```json
+{
+  "username": "SwarmUI",
+  "content": "Generated your image! Prompt was `%prompt%`, link is [here!](%image%)"
+}
+```
+
 ## Available Hooks
 
 ### Queue Start Webhook
@@ -25,3 +39,7 @@ This is useful, for example, to trigger another process to unload separate memor
 This webhook is fired whenever the server was generating images, and has emptied its queue, and thus is now idle. This webhook, if configured, will block and force the server to remain in an idle state until the webhook's HTTP request is completed.
 
 This is useful, for example, to signal to another process that it is now clear to use server memory again.
+
+### Every Gen Webhook
+
+This webhook is fired after each and every image generation. This is non-blocking async, ie the server process will not wait for any result processing on the remote server.

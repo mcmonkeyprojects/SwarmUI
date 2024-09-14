@@ -240,6 +240,7 @@ public static class T2IAPI
             {
                 imageSet.Add(image);
             }
+            WebhookManager.SendEveryGenWebhook(thisParams, url);
             output(new JObject() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
         }
         for (int i = 0; i < images && !claim.ShouldCancel; i++)

@@ -299,7 +299,8 @@ public class User
             };
             if (data is null)
             {
-                if (T2IParamTypes.TryGetType(part, out T2IParamType type, UserInput))
+                string clean = T2IParamTypes.CleanTypeName(part);
+                if (T2IParamTypes.TryGetType(clean, out T2IParamType type, UserInput))
                 {
                     data = "";
                     if (UserInput.TryGetRaw(type, out object val))
@@ -311,11 +312,11 @@ public class User
                         }
                     }
                 }
-                else if (ExtraMetaSimplified.TryGetValue(T2IParamTypes.CleanTypeName(part), out object extraVal))
+                else if (ExtraMetaSimplified.TryGetValue(clean, out object extraVal))
                 {
                     data = $"{T2IParamInput.SimplifyParamVal(extraVal)}";
                 }
-                else if (KnownExtraMetaVals.Contains(part))
+                else if (KnownExtraMetaVals.Contains(clean))
                 {
                     data = "";
                 }
