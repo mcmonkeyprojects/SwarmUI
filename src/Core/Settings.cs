@@ -420,6 +420,12 @@ public class Settings : AutoConfiguration
         [ConfigComment("If you want to send additional data with the every-gen webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used." + $"\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/Webhooks.md\">docs Features/Webhooks</a> for info about special tags you can include in the JSON.")]
         public string EveryGenWebhookData = "";
 
+        [ConfigComment("Webhook to call (JSON POST) after gens that set Swarm internal param 'Webook' as 'Manual' or 'Manual At End'.\nLeave empty to disable any webhook.\nCurrently runs async, does not delay gen completion.")]
+        public string ManualGenWebhook = "";
+
+        [ConfigComment("If you want to send additional data with the 'manual gen' webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used." + $"\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/Webhooks.md\">docs Features/Webhooks</a> for info about special tags you can include in the JSON.")]
+        public string ManualGenWebhookData = "";
+
         [ConfigComment("How long to wait (in seconds) after all queues are done before sending the queue end webhook.\nThis is useful to prevent rapid start+end calls.")]
         public double QueueEndDelay = 1;
     }

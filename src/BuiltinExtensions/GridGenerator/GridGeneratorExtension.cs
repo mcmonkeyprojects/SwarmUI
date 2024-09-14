@@ -578,6 +578,7 @@ public class GridGeneratorExtension : Extension
             await socket.SendJson(err, TimeSpan.FromMinutes(1));
             return null;
         }
+        WebhookManager.SendManualAtEndWebhook(baseParams);
         Logs.Info("Grid Generator completed successfully");
         claim.Complete(gens: 1);
         claim.Dispose();

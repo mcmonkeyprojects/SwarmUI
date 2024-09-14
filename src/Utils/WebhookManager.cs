@@ -199,6 +199,11 @@ public static class WebhookManager
         {
             return;
         }
+        string webhookPreference = input.Get(T2IParamTypes.Webhooks, "Normal");
+        if (webhookPreference == "None")
+        {
+            return;
+        }
         JObject data = [];
         if (!string.IsNullOrWhiteSpace(HookSettings.EveryGenWebhookData))
         {
@@ -210,6 +215,44 @@ public static class WebhookManager
             string response = await msg.Content.ReadAsStringAsync();
             Logs.Verbose($"[Webhooks] Every Gen webhook response: {msg.StatusCode}: {response}");
         });
+        if (webhookPreference == "Manual" && !string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhook))
+        {
+            JObject manualData = [];
+            if (!string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhookData))
+            {
+                manualData = ParseJsonForHook(HookSettings.ManualGenWebhookData, input, imageData);
+            }
+            Utilities.RunCheckedTask(async () =>
+            {
+                HttpResponseMessage msg = await Client.PostAsync(HookSettings.ManualGenWebhook, Utilities.JSONContent(manualData));
+                string response = await msg.Content.ReadAsStringAsync();
+                Logs.Verbose($"[Webhooks] Manual Gen webhook response: {msg.StatusCode}: {response}");
+            });
+        }
     }
 
+    /// <summary>Sends the every-gen webhook.</summary>
+    public static void SendManualAtEndWebhook(T2IParamInput input)
+    {
+        if (string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhook))
+        {
+            return;
+        }
+        string webhookPreference = input.Get(T2IParamTypes.Webhooks, "Normal");
+        if (webhookPreference != "Manual At End")
+        {
+            return;
+        }
+        JObject data = [];
+        if (!string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhookData))
+        {
+            data = ParseJsonForHook(HookSettings.ManualGenWebhookData, input, null);
+        }
+        Utilities.RunCheckedTask(async () =>
+        {
+            HttpResponseMessage msg = await Client.PostAsync(HookSettings.ManualGenWebhook, Utilities.JSONContent(data));
+            string response = await msg.Content.ReadAsStringAsync();
+            Logs.Verbose($"[Webhooks] Manual (at end) Gen webhook response: {msg.StatusCode}: {response}");
+        });
+    }
 }

@@ -205,6 +205,7 @@ public class ImageBatchToolExtension : Extension
             await Task.WhenAny(tasks);
             removeDoneTasks();
         }
+        WebhookManager.SendManualAtEndWebhook(baseParams);
         claim.Dispose();
         await sendStatus();
         finalError = Volatile.Read(ref finalError);

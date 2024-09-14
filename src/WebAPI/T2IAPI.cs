@@ -334,6 +334,7 @@ public static class T2IAPI
         }
         T2IEngine.PostBatchEvent?.Invoke(new(user_input, [.. griddables]));
         output(new JObject() { ["discard_indices"] = JToken.FromObject(discard) });
+        WebhookManager.SendManualAtEndWebhook(user_input);
     }
 
     public static (int, int)[] GridShapeTable =
