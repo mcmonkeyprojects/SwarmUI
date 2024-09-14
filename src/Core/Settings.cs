@@ -405,6 +405,9 @@ public class Settings : AutoConfiguration
             [ManualSettingsOptions(Impl = null, Vals = ["Active", "Alphabetical", "Frequency", "None"])]
             public string SortMode = "Active";
 
+            [ConfigComment("If your completion list is booru tags, use this to optionally alter how spaces/underscores are handled.\nSelect 'None' to just use what's in the file,\n'Spaces' to replace underscores to spaces,\nor 'Underscores' to replace spaces to underscores.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None", "Spaces", "Underscores"])]
+            public string SpacingMode = "None";
         }
     }
 

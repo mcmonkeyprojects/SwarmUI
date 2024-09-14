@@ -48,7 +48,7 @@ public class AutoCompleteListHelper
     }
 
     /// <summary>Gets a specific data list.</summary>
-    public static string[] GetData(string name, bool escapeParens, string suffix)
+    public static string[] GetData(string name, bool escapeParens, string suffix, string spaceMode)
     {
         if (!FileNames.Contains(name))
         {
@@ -58,6 +58,8 @@ public class AutoCompleteListHelper
         {
             return [.. File.ReadAllText($"{FolderPath}/{name}").Replace('\r', '\n').SplitFast('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s) && !s.StartsWithFast('#'))];
         });
+        bool doSpace = spaceMode == "Spaces";
+        bool doUnderscore = spaceMode == "Underscores";
         result = [.. result];
         for (int i = 0; i < result.Length; i++)
         {
@@ -66,7 +68,16 @@ public class AutoCompleteListHelper
             {
                 parts = [parts[0], "0", parts[1], ""];
             }
-            string word = $"{parts[0]}{suffix}";
+            string word = parts[0];
+            if (doSpace)
+            {
+                word = word.Replace("_", " ");
+            }
+            else if (doUnderscore)
+            {
+                word = word.Replace(" ", "_");
+            }
+            word += suffix;
             if (escapeParens)
             {
                 word = word.Replace("(", "\\(").Replace(")", "\\)");

@@ -353,12 +353,13 @@ public static class BasicAPIFeatures
     /// <summary>API Route to get the user's own base data.</summary>
     public static async Task<JObject> GetMyUserData(Session session)
     {
+        Settings.User.AutoCompleteData settings = session.User.Settings.AutoComplete;
         return new JObject()
         {
             ["user_name"] = session.User.UserID,
             ["presets"] = new JArray(session.User.GetAllPresets().Select(p => p.NetData()).ToArray()),
             ["language"] = session.User.Settings.Language,
-            ["autocompletions"] = string.IsNullOrWhiteSpace(session.User.Settings.AutoComplete.Source) ? null : new JArray(AutoCompleteListHelper.GetData(session.User.Settings.AutoComplete.Source, session.User.Settings.AutoComplete.EscapeParens, session.User.Settings.AutoComplete.Suffix))
+            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
         };
     }
 
