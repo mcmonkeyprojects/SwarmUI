@@ -40,7 +40,7 @@ function getWSAddress() {
         console.log("URL is not HTTP or HTTPS, cannot determine WebSocket path.");
         return null;
     }
-    let slashIndex = url.indexOf("/");
+    let slashIndex = url.lastIndexOf("/");
     if (slashIndex != -1) {
         url = url.substring(0, slashIndex);
     }

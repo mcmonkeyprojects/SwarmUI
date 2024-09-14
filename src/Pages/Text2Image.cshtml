@@ -5,13 +5,13 @@
     string experimentalHide = Program.ServerSettings.ShowExperimentalFeatures ? "" : "secretexperimental";
 }
 @section Header {
-    <link rel="stylesheet" href="/css/genpage.css?vary=@Utilities.VaryID" />
+    <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
 }
 
 @if (!Program.ServerSettings.IsInstalled)
 {
     <script>
-        window.location.href = "/Install";
+        window.location.href = "Install";
     </script>
     return;
 }
@@ -904,21 +904,21 @@
 </div>
 
 @section Scripts {
-    <script src="/js/exifr.min.js"></script>
-    <script src="/js/genpage/welcomemessages.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/backends.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/browsers.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/presets.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/models.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/params.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/utiltab.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/usertab.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/image_editor.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/generatehandler.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/simpletab.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/main.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/settings_editor.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/logs.js?vary=@Utilities.VaryID"></script>
-    <script src="/js/genpage/ui_improvements.js?vary=@Utilities.VaryID"></script>
+    <script src="js/exifr.min.js"></script>
+    <script src="js/genpage/welcomemessages.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/backends.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/browsers.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/presets.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/models.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/params.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/utiltab.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/usertab.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/image_editor.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/generatehandler.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/simpletab.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/main.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/settings_editor.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/logs.js?vary=@Utilities.VaryID"></script>
+    <script src="js/genpage/ui_improvements.js?vary=@Utilities.VaryID"></script>
     @WebServer.PageFooterExtra
 }

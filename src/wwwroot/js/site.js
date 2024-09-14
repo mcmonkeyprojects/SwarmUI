@@ -143,7 +143,7 @@ function genericRequest(url, in_data, callback, depth = 0, errorHandle = null) {
         console.log(e);
         showError(e);
     }
-    sendJsonToServer(`/API/${url}`, in_data, (status, data) => {
+    sendJsonToServer(`API/${url}`, in_data, (status, data) => {
         if (!data) {
             console.log(`Tried making generic request ${url} but failed.`);
             fail(failedCrash.get());

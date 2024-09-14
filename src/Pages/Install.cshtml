@@ -3,14 +3,14 @@
     ViewData["Title"] = "SwarmUI Installer";
 }
 @section Header {
-    <link rel="stylesheet" href="/css/installer.css?vary=@Utilities.VaryID" />
+    <link rel="stylesheet" href="css/installer.css?vary=@Utilities.VaryID" />
 }
 
 @{
     if (Program.ServerSettings.IsInstalled)
     {
         <script>
-            window.location.href = "/Text2Image";
+            window.location.href = "Text2Image";
         </script>
         return;
     }
@@ -256,5 +256,5 @@
 </div>
 
 @section Scripts {
-    <script src="/js/installer.js?vary=@Utilities.VaryID"></script>
+    <script src="js/installer.js?vary=@Utilities.VaryID"></script>
 }

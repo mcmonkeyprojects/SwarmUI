@@ -177,7 +177,7 @@ class InstallerClass {
                 stepBar.style.width = `${stepPercent}%`;
             }
             else if (response.success) {
-                window.location.href = '/Text2Image';
+                window.location.href = 'Text2Image';
             }
         }, 0, (e) => {
             getRequiredElementById('installer_button_confirm').disabled = false;

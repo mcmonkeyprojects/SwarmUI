@@ -201,7 +201,7 @@ public class WebServer
         WebApp.UseWebSockets(new WebSocketOptions() { KeepAliveInterval = TimeSpan.FromSeconds(30) });
         WebApp.MapRazorPages();
         timer.Check("[Web] core use calls");
-        WebApp.MapGet("/", () => Results.Redirect("/Text2Image"));
+        WebApp.MapGet("/", () => Results.Redirect("Text2Image"));
         WebApp.Map("/API/{*Call}", API.HandleAsyncRequest);
         WebApp.MapGet("/Output/{*Path}", ViewOutput);
         WebApp.MapGet("/View/{*Path}", ViewOutput);
