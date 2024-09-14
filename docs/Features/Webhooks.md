@@ -43,3 +43,11 @@ This is useful, for example, to signal to another process that it is now clear t
 ### Every Gen Webhook
 
 This webhook is fired after each and every image generation. This is non-blocking async, ie the server process will not wait for any result processing on the remote server.
+
+Users may suppress this webhook by setting the `Swarm Internal` advanced parameter `Webhooks` to `None`. All other options of this parameter will include the this webhook.
+
+### Manual Gen Webhook
+
+This webhook is fired when manually requested by a user, via the `Swarm Internal` advanced parameter `Webhooks`. Users may set this to `Manual` to fire this webook for every gen, or to `Manual At End` to fire this webhook at the end of a batch of generations.
+
+Note that `Manual At End` does not include any `%image%` value, but does still include the core parameter set the batch was generated with. Values that are dynamically added to metadata later in generation will also be missing from the available JSON settings for this webhook.
