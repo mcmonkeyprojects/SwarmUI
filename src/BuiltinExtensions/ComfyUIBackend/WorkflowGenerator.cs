@@ -447,6 +447,15 @@ public class WorkflowGenerator
     /// <summary>Creates a model loader and adapts it with any registered model adapters, and returns (Model, Clip, VAE).</summary>
     public (T2IModel, JArray, JArray, JArray) CreateStandardModelLoader(T2IModel model, string type, string id = null, bool noCascadeFix = false)
     {
+        string helper = $"modelloader_{model.Name}_{type}";
+        if (NodeHelpers.TryGetValue(helper, out string alreadyLoaded))
+        {
+            string[] parts = alreadyLoaded.SplitFast(':');
+            LoadingModel = [parts[0], int.Parse(parts[1])];
+            LoadingClip = parts[2].Length == 0 ? null : [parts[2], int.Parse(parts[3])];
+            LoadingVAE = parts[4].Length == 0 ? null : [parts[4], int.Parse(parts[5])];
+            return (model, LoadingModel, LoadingClip, LoadingVAE);
+        }
         void requireClipModel(string name, string url)
         {
             if (ClipModelsValid.Contains(name))
@@ -742,6 +751,7 @@ public class WorkflowGenerator
         {
             throw new SwarmUserErrorException($"Model loader for {model.Name} didn't work - are you sure it has an architecture ID set properly?");
         }
+        NodeHelpers[helper] = $"{LoadingModel[0]}:{LoadingModel[1]}" + (LoadingClip is null ? "::" : $":{LoadingClip[0]}:{LoadingClip[1]}") + (LoadingVAE is null ? "::" : $":{LoadingVAE[0]}:{LoadingVAE[1]}");
         return (model, LoadingModel, LoadingClip, LoadingVAE);
     }
 
