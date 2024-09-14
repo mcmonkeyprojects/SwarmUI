@@ -16,6 +16,8 @@
 - `[second]`: 2-digit second, eg 30
 - `[prompt]`: the prompt (often cut off by `MaxLenPerPart`)
 - `[negative_prompt]`: the negative prompt (often cut off by `MaxLenPerPart`)
+- `[prompthash]`: a short (8 character) SHA256 hash prefix of the prompt
+- `[negativeprompthash]`: a short (8 character) SHA256 hash prefix of the negative prompt
 - `[seed]`: the seed number parameter
 - `[cfg_scale]`: the CFG Scale parameter
 - `[width]`: the Width parameter

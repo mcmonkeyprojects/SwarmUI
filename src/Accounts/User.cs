@@ -6,6 +6,7 @@ using SwarmUI.DataHolders;
 using SwarmUI.Utils;
 using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticExtensions;
+using System.Security.Cryptography;
 
 namespace SwarmUI.Accounts;
 
@@ -271,10 +272,11 @@ public class User
             SkipFolders = LinkedUser?.Settings?.OutPathBuilder?.ModelPathsSkipFolders ?? false;
         }
 
+        /// <summary>Simplify a model filename appropriately in accordance with settings. Strips file extensions.</summary>
         public string SimplifyModel(string model)
         {
             model = model.Replace('\\', '/').Trim();
-            if (model.EndsWith(".safetensors") || model.EndsWith(".sft") || model.EndsWith(".ckpt"))
+            if (model.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(model.AfterLast('.')))
             {
                 model = model.BeforeLast('.');
             }
@@ -283,6 +285,12 @@ public class User
                 model = model.AfterLast('/');
             }
             return model;
+        }
+
+        /// <summary>Quick 8 character hash of some text.</summary>
+        public string QuickHash(string val)
+        {
+            return Utilities.BytesToHex(SHA256.HashData(val.EncodeUTF8())[0..4]);
         }
 
         public string FillPartUnformatted(string part)
@@ -298,7 +306,9 @@ public class User
                 "minute" => $"{Time.Minute:00}",
                 "second" => $"{Time.Second:00}",
                 "prompt" => UserInput.Get(T2IParamTypes.Prompt),
+                "prompthash" => QuickHash(UserInput.Get(T2IParamTypes.Prompt)),
                 "negative_prompt" => UserInput.Get(T2IParamTypes.NegativePrompt),
+                "negativeprompthash" => QuickHash(UserInput.Get(T2IParamTypes.NegativePrompt)),
                 "seed" => $"{UserInput.Get(T2IParamTypes.Seed)}",
                 "cfg_scale" => $"{UserInput.Get(T2IParamTypes.CFGScale)}",
                 "width" => $"{UserInput.GetImageWidth()}",

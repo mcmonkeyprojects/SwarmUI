@@ -14,7 +14,7 @@ Webhook configuration comes in two parts: the URL, and the JSON data. For the UR
 
 ### Image Metadata In The JSON
 
-For some webhooks, eg the `Every Gen` Webhook, you can include image metadata in the JSON body. This uses `%tag%` syntax, and mostly follows the same rules as the `Output Path` setting for what you can fill in. For example, `%prompt%` can be used to fill the prompt. Unlike `Output Path`, this text won't be trimmed or formatted, other than escaped to fit within a JSON string.
+For some webhooks, eg the `Every Gen` Webhook, you can include image metadata in the JSON body. This uses `%tag%` syntax, and mostly follows the same rules as the `Output Path` setting for what you can fill in (refer to [User Settings - Path Format](/docs/User%20Settings.md#path-format)). For example, `%prompt%` can be used to fill the prompt. Unlike `Output Path`, this text won't be trimmed or formatted, other than escaped to fit within a JSON string.
 
 You may also use `%image%` to include the URL to an image. Be warned if `DoNotSave` is used this URL maybe a very large Base64 blob. This will use the `External URL` setting under `Server Configuration` to format the URL. Note that unless your server is externally accessible, this URL cannot be opened by anyone but you. This means for example you cannot embed the image onto a Discord message via the webhook, because Discord's servers cannot read the URL.
 
