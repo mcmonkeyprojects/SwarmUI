@@ -111,13 +111,13 @@ public class Program
                 return;
             }
             Logs.Init("Loading settings file...");
-            DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, CommandLineFlags.GetValueOrDefault("data_dir", "Data"));
+            DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, GetCommandLineFlag("data_dir", "Data"));
             SettingsFilePath = CommandLineFlags.GetValueOrDefault("settings_file", "Data/Settings.fds");
             LoadSettingsFile();
             // TODO: Legacy format patch from Alpha 0.5! Remove this before 1.0.
             if (ServerSettings.DefaultUser.FileFormat.ImageFormat == "jpg")
             {
-                  ServerSettings.DefaultUser.FileFormat.ImageFormat = "JPG";
+                ServerSettings.DefaultUser.FileFormat.ImageFormat = "JPG";
             }
             if (!LockSettings)
             {
