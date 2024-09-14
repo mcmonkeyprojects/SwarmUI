@@ -1275,7 +1275,6 @@ class PromptTabCompleteClass {
             }
             let wordLow = word.toLowerCase();
             let rawMatchSet = [];
-            let matchMode = getUserSetting('autocomplete.matchmode');
             if (completionSet) {
                 let startWithList = [];
                 let containList = [];
@@ -1291,9 +1290,20 @@ class PromptTabCompleteClass {
                         rawMatchSet.push(entry);
                     }
                 }
+                let sortMode = getUserSetting('autocomplete.sortmode');
                 let doSortList = (list) => {
-                    return list.sort((a, b) => a.low.length - b.low.length || a.low.localeCompare(b.low));
+                    if (sortMode == 'Active') {
+                        list.sort((a, b) => a.low.length - b.low.length || a.low.localeCompare(b.low));
+                    }
+                    else if (sortMode == 'Alphabetical') {
+                        list.sort((a, b) => a.low.localeCompare(b.low));
+                    }
+                    else if (sortMode == 'Frequency') {
+                        list.sort((a, b) => b.count - a.count);
+                    }
+                    // else 'None'
                 }
+                let matchMode = getUserSetting('autocomplete.matchmode');
                 if (matchMode == 'Bucketed') {
                     doSortList(startWithList);
                     doSortList(containList);

@@ -401,6 +401,10 @@ public class Settings : AutoConfiguration
             [ManualSettingsOptions(Impl = null, Vals = ["Bucketed", "Contains", "StartsWith"])]
             public string MatchMode = "Bucketed";
 
+            [ConfigComment("How to sort the results.\n'Active' sorts shortest tags first, then alphabetically after.\n'Alphabetical' sorts results alphabetically.\n'Frequency' sorts results by how popular the tag is (for tag csvs).\n'None' uses whatever the source list's order is.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["Active", "Alphabetical", "Frequency", "None"])]
+            public string SortMode = "Active";
+
         }
     }
 
