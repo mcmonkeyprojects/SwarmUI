@@ -376,20 +376,27 @@ public class Settings : AutoConfiguration
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
         public string ReuseParamExcludeList = "";
 
-        public class AutocompletionsImpl : SettingsOptionsAttribute.AbstractImpl
+        [ConfigComment("Settings related to autocompletions.")]
+        public AutoCompleteData AutoComplete = new();
+
+        /// <summary>Settings related to autocompletions.</summary>
+        public class AutoCompleteData : AutoConfiguration
         {
-            public override string[] GetOptions => ["", .. AutoCompleteListHelper.FileNames];
+            public class SourceImpl : SettingsOptionsAttribute.AbstractImpl
+            {
+                public override string[] GetOptions => ["", .. AutoCompleteListHelper.FileNames];
+            }
+
+            [ConfigComment($"Optional source file for auto-completion texts (inside Data/Autocompletions).\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/Autocompletions.md#word-lists\">docs/Features/Autocompletions</a> for info.")]
+            [SettingsOptions(Impl = typeof(SourceImpl))]
+            public string Source = "";
+
+            [ConfigComment("If true, the auto-completion will escape parentheses with backslashes to prevent parsing errors.")]
+            public bool EscapeParens = true;
+
+            [ConfigComment("Optional suffix to append to autocompletes, eg ', ' to append commas.")]
+            public string Suffix = "";
         }
-
-        [ConfigComment($"Optional source file for auto-completion texts (inside Data/Autocompletions).\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/Autocompletions.md#word-lists\">docs/Features/Autocompletions</a> for info.")]
-        [SettingsOptions(Impl = typeof(AutocompletionsImpl))]
-        public string AutoCompletionsSource = "";
-
-        [ConfigComment("If true, the auto-completion will escape parentheses with backslashes to prevent parsing errors.")]
-        public bool AutoCompleteEscapeParens = true;
-
-        [ConfigComment("Optional suffix to append to autocompletes, eg ', ' to append commas.")]
-        public string AutoCompleteSuffix = "";
     }
 
     /// <summary>UI-related settings.</summary>

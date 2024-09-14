@@ -6,8 +6,6 @@ using SwarmUI.DataHolders;
 using SwarmUI.Utils;
 using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticExtensions;
-using System.Xml.Linq;
-using Newtonsoft.Json.Linq;
 
 namespace SwarmUI.Accounts;
 
@@ -44,7 +42,24 @@ public class User
         {
             Restrictions.TrySetFieldModified(field, false);
         }
-        Settings.Load(new FDSSection(data.RawSettings));
+        FDSSection settingsRaw = new(data.RawSettings);
+        // TODO: Legacy format patch from beta 0.9.2!
+        bool? autoCompleteEscapeParens = settingsRaw.GetBool("AutoCompleteEscapeParens", null);
+        if (autoCompleteEscapeParens.HasValue)
+        {
+            settingsRaw.Set("AutoComplete.EscapeParens", autoCompleteEscapeParens.Value);
+        }
+        string autoCompleteSource = settingsRaw.GetString("AutoCompletionsSource", null);
+        if (autoCompleteSource is not null)
+        {
+            settingsRaw.Set("AutoComplete.Source", autoCompleteSource);
+        }
+        string autoCompleteSuffix = settingsRaw.GetString("AutoCompleteSuffix", null);
+        if (autoCompleteSuffix is not null)
+        {
+            settingsRaw.Set("AutoComplete.Suffix", autoCompleteSuffix);
+        }
+        Settings.Load(settingsRaw);
     }
 
     /// <summary>Save this user's data to the internal user database.</summary>

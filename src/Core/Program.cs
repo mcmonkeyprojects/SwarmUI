@@ -501,6 +501,22 @@ public class Program
         {
             section.Set("Metadata.ImageMetadataPerFolder", imagePerFolder.Value);
         }
+        // TODO: Legacy format patch from beta 0.9.2!
+        bool? autoCompleteEscapeParens = section.GetBool("DefaultUser.AutoCompleteEscapeParens", null);
+        if (autoCompleteEscapeParens.HasValue)
+        {
+            section.Set("DefaultUser.AutoComplete.EscapeParens", autoCompleteEscapeParens.Value);
+        }
+        string autoCompleteSource = section.GetString("DefaultUser.AutoCompletionsSource", null);
+        if (autoCompleteSource is not null)
+        {
+            section.Set("DefaultUser.AutoComplete.Source", autoCompleteSource);
+        }
+        string autoCompleteSuffix = section.GetString("DefaultUser.AutoCompleteSuffix", null);
+        if (autoCompleteSuffix is not null)
+        {
+            section.Set("DefaultUser.AutoComplete.Suffix", autoCompleteSuffix);
+        }
         ServerSettings.Load(section);
     }
 
