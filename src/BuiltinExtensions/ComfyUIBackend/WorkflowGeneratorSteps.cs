@@ -1128,6 +1128,10 @@ public class WorkflowGeneratorSteps
             PromptRegion.Part[] parts = new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.ClearSegment).ToArray();
             foreach (PromptRegion.Part part in parts)
             {
+                if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                {
+                    g.CreateImageSaveNode(g.FinalImageOut, g.GetStableDynamicID(50000, 0));
+                }
                 string segmentNode = g.CreateNode("SwarmClipSeg", new JObject()
                 {
                     ["images"] = g.FinalImageOut,
@@ -1162,6 +1166,10 @@ public class WorkflowGeneratorSteps
             }
             if (g.UserInput.Get(T2IParamTypes.RemoveBackground, false))
             {
+                if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                {
+                    g.CreateImageSaveNode(g.FinalImageOut, g.GetStableDynamicID(50000, 0));
+                }
                 string removed = g.CreateNode("SwarmRemBg", new JObject()
                 {
                     ["images"] = g.FinalImageOut
