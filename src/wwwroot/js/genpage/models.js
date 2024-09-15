@@ -381,6 +381,9 @@ class ModelBrowserWrapper {
             if (fix) {
                 fix();
             }
+        }, 0, e => {
+            showError(`Failed to list models: ${e}`);
+            callback([], []);
         });
     }
 
