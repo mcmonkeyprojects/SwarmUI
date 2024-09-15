@@ -337,7 +337,7 @@ class ModelBrowserWrapper {
             }
         }
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
-        genericRequest('ListModels', {'path': path, 'depth': depth, 'subtype': this.subType, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
+        genericRequest('ListModels', {'path': path, 'depth': Math.round(depth), 'subtype': this.subType, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
             let files = data.files.sort((a,b) => sortModelLocal(a, b, data.files)).map(f => { return { 'name': f.name, 'data': f }; });
             for (let file of files) {
                 file.data.display = cleanModelName(file.data.name.substring(prefix.length));
