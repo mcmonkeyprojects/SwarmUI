@@ -156,6 +156,7 @@ public static class BasicAPIFeatures
                     Directory.CreateDirectory("dlbackend/");
                     string path;
                     string extraArgs = "";
+                    bool enablePreviews = true;
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     {
                         try
@@ -223,6 +224,7 @@ public static class BasicAPIFeatures
                         Logs.Debug($"ComfyUI Install git checkout master response: {checkoutResp}");
                         if (install_amd)
                         {
+                            enablePreviews = false;
                             Logs.LogLevel level = Logs.MinimumLevel;
                             Logs.MinimumLevel = Logs.LogLevel.Verbose;
                             try
@@ -276,7 +278,7 @@ public static class BasicAPIFeatures
                         gpu = mostVRAM.ID;
                     }
                     await output("Enabling ComfyUI...");
-                    Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim() });
+                    Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim(), EnablePreviews = enablePreviews });
                     break;
                 }
             case "none":
