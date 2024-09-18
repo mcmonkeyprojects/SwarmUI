@@ -150,7 +150,18 @@ function editModel(model, browser) {
     }
     getRequiredElementById('edit_model_technical_data').innerText = technical;
     getRequiredElementById('edit_model_name').value = model.title || model.name;
-    getRequiredElementById('edit_model_type').value = model.architecture || '';
+    let modelTypeSelector = getRequiredElementById('edit_model_type');
+    modelTypeSelector.value = model.architecture || '';
+    for (let opt of modelTypeSelector.options) {
+        let slash = opt.value.indexOf('/');
+        let postSlash = slash > 0 ? opt.value.substring(slash + 1) : '';
+        if (opt.value == model.architecture || browser.subIds.includes(postSlash)) {
+            opt.style.display = 'block';
+        }
+        else {
+            opt.style.display = 'none';
+        }
+    }
     getRequiredElementById('edit_model_prediction_type').value = model.prediction_type || '';
     getRequiredElementById('edit_model_resolution').value = `${model.standard_width}x${model.standard_height}`;
     for (let val of ['description', 'author', 'usage_hint', 'date', 'license', 'trigger_phrase', 'tags']) {
@@ -302,8 +313,9 @@ function sortModelLocal(a, b, files) {
 }
 
 class ModelBrowserWrapper {
-    constructor(subType, container, id, selectOne, extraHeader = '') {
+    constructor(subType, subIds, container, id, selectOne, extraHeader = '') {
         this.subType = subType;
+        this.subIds = subIds;
         this.selectOne = selectOne;
         let format = subType == 'Wildcards' ? 'Small Cards' : 'Cards';
         extraHeader += `<label for="models_${subType}_sort_by">Sort:</label> <select id="models_${subType}_sort_by"><option>Name</option><option>Title</option><option>DateCreated</option><option>DateModified</option></select> <input type="checkbox" id="models_${subType}_sort_reverse"> <label for="models_${subType}_sort_reverse">Reverse</label>`;
@@ -518,12 +530,12 @@ class ModelBrowserWrapper {
     }
 }
 
-let sdModelBrowser = new ModelBrowserWrapper('Stable-Diffusion', 'model_list', 'modelbrowser', (model) => { directSetModel(model.data); });
-let sdVAEBrowser = new ModelBrowserWrapper('VAE', 'vae_list', 'sdvaebrowser', (vae) => { directSetVae(vae.data); });
-let sdLoraBrowser = new ModelBrowserWrapper('LoRA', 'lora_list', 'sdlorabrowser', (lora) => { toggleSelectLora(cleanModelName(lora.data.name)); });
-let sdEmbedBrowser = new ModelBrowserWrapper('Embedding', 'embedding_list', 'sdembedbrowser', (embed) => { selectEmbedding(embed.data); });
-let sdControlnetBrowser = new ModelBrowserWrapper('ControlNet', 'controlnet_list', 'sdcontrolnetbrowser', (controlnet) => { setControlNet(controlnet.data); });
-let wildcardsBrowser = new ModelBrowserWrapper('Wildcards', 'wildcard_list', 'wildcardsbrowser', (wildcard) => { selectWildcard(wildcard.data); }, `<button id="wildcards_list_create_new_button" class="refresh-button" onclick="create_new_wildcard_button()">Create New Wildcard</button>`);
+let sdModelBrowser = new ModelBrowserWrapper('Stable-Diffusion', ['', 'inpaint', 'tensorrt'], 'model_list', 'modelbrowser', (model) => { directSetModel(model.data); });
+let sdVAEBrowser = new ModelBrowserWrapper('VAE', ['vae'], 'vae_list', 'sdvaebrowser', (vae) => { directSetVae(vae.data); });
+let sdLoraBrowser = new ModelBrowserWrapper('LoRA', ['lora'], 'lora_list', 'sdlorabrowser', (lora) => { toggleSelectLora(cleanModelName(lora.data.name)); });
+let sdEmbedBrowser = new ModelBrowserWrapper('Embedding', ['embedding', 'textual-inversion'], 'embedding_list', 'sdembedbrowser', (embed) => { selectEmbedding(embed.data); });
+let sdControlnetBrowser = new ModelBrowserWrapper('ControlNet', ['controlnet', 'control-lora'], 'controlnet_list', 'sdcontrolnetbrowser', (controlnet) => { setControlNet(controlnet.data); });
+let wildcardsBrowser = new ModelBrowserWrapper('Wildcards', [], 'wildcard_list', 'wildcardsbrowser', (wildcard) => { selectWildcard(wildcard.data); }, `<button id="wildcards_list_create_new_button" class="refresh-button" onclick="create_new_wildcard_button()">Create New Wildcard</button>`);
 
 let allModelBrowsers = [sdModelBrowser, sdVAEBrowser, sdLoraBrowser, sdEmbedBrowser, sdControlnetBrowser, wildcardsBrowser];
 
