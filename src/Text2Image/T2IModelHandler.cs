@@ -641,6 +641,10 @@ public class T2IModelHandler
                 }
             }
         }
+        if (!string.IsNullOrWhiteSpace(metadata.ModelClassType))
+        {
+            metadata.ModelClassType = T2IModelClassSorter.Remaps.GetValueOrDefault(metadata.ModelClassType, metadata.ModelClassType);
+        }
         if (metadata.TimeModified == 0)
         {
             metadata.TimeModified = modified;
