@@ -121,12 +121,14 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 # Bits-and-Bytes NF4 Format Models
 
-- BnB NF4 format models, such as this copy of Flux Dev <https://huggingface.co/lllyasviel/flux1-dev-bnb-nf4/tree/main?show_file_info=flux1-dev-bnb-nf4.safetensors>, are supported in SwarmUI automatically.
+- BnB NF4 format models, such as this copy of Flux Dev <https://huggingface.co/lllyasviel/flux1-dev-bnb-nf4/tree/main?show_file_info=flux1-dev-bnb-nf4.safetensors>, are partially supported in SwarmUI automatically.
     - The detection internally works by looking for `bitsandbytes__nf4` in the model's keys
     - The first time you try to load an NF4 model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4 which is developed by comfyanonymous and lllyasviel, and is under the AGPL license.
     - You can accept this popup, and it will install and reload the backend
-    - Then try to generate again, and it should just work
+    - Then try to generate again, and it should work
+- Note that BnB-NF4 models have multiple compatibility limitations, including even LoRAs don't apply properly.
+    - If you want a quantized flux model, GGUF is recommended instead.
 
 # GGUF Quantized Models
 
