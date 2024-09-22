@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Version>0.9.2.2</Version>
+    <Version>0.9.2.3</Version>
     <NoWarn>CS1998</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
