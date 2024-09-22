@@ -27,6 +27,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
         public string AutoUpdate = "true";
 
+        [ConfigComment("Which version of the ComfyUI frontend to enable.\n'Latest' uses the latest version available (including dev commits).\n'None' uses whatever is baked into ComfyUI itself.\n'Latest Swarm Validated' uses the latest version that Swarm has been tested and confirmed to work with.\n'Legacy' uses the pre-September-2024 legacy UI.")]
+        [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
+        public string FrontendVersion = "LatestSwarmValidated";
+
         [ConfigComment("If checked, tells Comfy to generate image previews. If unchecked, previews will not be generated, and images won't show up until they're done.")]
         public bool EnablePreviews = true;
 
@@ -259,6 +263,19 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 addedArgs += " --preview-method latent2rgb";
             }
+            if (settings.FrontendVersion == "Latest")
+            {
+                addedArgs += " --front-end-version Comfy-Org/ComfyUI_frontend@latest";
+            }
+            else if (settings.FrontendVersion == "LatestSwarmValidated")
+            {
+                addedArgs += " --front-end-version Comfy-Org/ComfyUI_frontend@v1.2.47";
+            }
+            else if (settings.FrontendVersion == "Legacy")
+            {
+                addedArgs += " --front-end-version Comfy-Org/ComfyUI_legacy_frontend@latest";
+            }
+            // None needs no arg
             AddLoadStatus($"Will add args: {addedArgs}");
         }
         settings.StartScript = settings.StartScript.Trim(' ', '"', '\'', '\n', '\r', '\t');
