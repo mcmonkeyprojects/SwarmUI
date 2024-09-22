@@ -182,6 +182,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         Logs.Verbose("Will await a job, do parse...");
         JObject workflowJson = Utilities.ParseToJson(workflow);
         Logs.Verbose("JSON parsed.");
+        JObject metadataObj = user_input.GenMetadataObject();
+        metadataObj["is_preview"] = true;
+        metadataObj["preview_notice"] = "Image is not done generating";
+        string previewMetadata = T2IParamInput.MetadataToString(metadataObj);
         int expectedNodes = workflowJson.Count;
         string id = null;
         ClientWebSocket socket = null;
@@ -226,6 +230,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             takeOutput(new JObject()
             {
                 ["batch_index"] = batchId,
+                ["metadata"] = previewMetadata,
                 ["overall_percent"] = nodesDone / (float)expectedNodes,
                 ["current_percent"] = curPercent
             });

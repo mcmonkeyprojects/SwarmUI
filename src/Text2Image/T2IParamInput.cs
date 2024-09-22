@@ -706,6 +706,12 @@ public class T2IParamInput
     public string GenRawMetadata()
     {
         JObject obj = GenMetadataObject();
+        return MetadataToString(obj);
+    }
+
+    /// <summary>Converts a metadata JSON object to a string.</summary>
+    public static string MetadataToString(JObject obj)
+    {
         return JsonConvert.SerializeObject(new JObject() { ["sui_image_params"] = obj }, SafeSerializer).Replace("\r\n", "\n");
     }
 
