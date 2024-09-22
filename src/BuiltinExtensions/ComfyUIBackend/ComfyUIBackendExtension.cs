@@ -608,17 +608,18 @@ public class ComfyUIBackendExtension : Extension
         WebServer.WebApp.Map("/ComfyBackendDirect/{*Path}", ComfyUIRedirectHelper.ComfyBackendDirectHandler);
     }
 
-    public record struct ComfyBackendData(HttpClient Client, string Address, AbstractT2IBackend Backend);
+    public record struct ComfyBackendData(HttpClient Client, string APIAddress, string WebAddress, AbstractT2IBackend Backend);
 
     public static IEnumerable<ComfyBackendData> ComfyBackendsDirect()
     {
         foreach (ComfyUIAPIAbstractBackend backend in RunningComfyBackends)
         {
-            yield return new(ComfyUIAPIAbstractBackend.HttpClient, backend.Address, backend);
+            yield return new(ComfyUIAPIAbstractBackend.HttpClient, backend.APIAddress, backend.WebAddress, backend);
         }
         foreach (SwarmSwarmBackend swarmBackend in Program.Backends.RunningBackendsOfType<SwarmSwarmBackend>().Where(b => b.RemoteBackendTypes.Any(b => b.StartsWith("comfyui_"))))
         {
-            yield return new(SwarmSwarmBackend.HttpClient, $"{swarmBackend.Address}/ComfyBackendDirect", swarmBackend);
+            string addr = $"{swarmBackend.Address}/ComfyBackendDirect";
+            yield return new(SwarmSwarmBackend.HttpClient, addr, addr, swarmBackend);
         }
     }
 }

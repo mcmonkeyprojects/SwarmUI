@@ -48,7 +48,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
     public int Port;
 
-    public override string Address => $"http://localhost:{Port}";
+    public override string APIAddress => $"http://localhost:{Port}";
+
+    public override string WebAddress => $"http://localhost:{Port}";
 
     public override bool CanIdle => false;
 
