@@ -251,6 +251,16 @@ class UIImprovementHandler {
     constructor() {
         this.lastPopover = null;
         let lastShift = false;
+        this.lastSelectedTextbox = null;
+        this.timeOfLastTextboxSelectTrack = 0;
+        this.lastTextboxCursorPos = -1;
+        document.addEventListener('focusout', (e) => {
+            if (e.target.tagName == 'TEXTAREA') {
+                this.lastSelectedTextbox = e.target;
+                this.timeOfLastTextboxSelectTrack = Date.now();
+                this.lastTextboxCursorPos = e.target.selectionEnd;
+            }
+        }, true);
         document.addEventListener('mousedown', (e) => {
             if (e.target.tagName == 'SELECT') {
                 lastShift = e.shiftKey;
@@ -359,6 +369,14 @@ class UIImprovementHandler {
                 lastY = 0;
             }
         }, true);
+    }
+
+    getLastSelectedTextbox() {
+        let now = Date.now();
+        if (now - this.timeOfLastTextboxSelectTrack > 1000) {
+            return [null, -1];
+        }
+        return [this.lastSelectedTextbox, this.lastTextboxCursorPos];
     }
 
     shouldAlterSelect(elem) {

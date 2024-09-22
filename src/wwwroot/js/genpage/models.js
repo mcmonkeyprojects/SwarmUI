@@ -545,18 +545,28 @@ function matchWildcard(prompt, wildcard) {
 }
 
 function selectWildcard(model) {
-    let promptBox = getRequiredElementById('alt_prompt_textbox');
-    let trimmed = promptBox.value.trim();
+    let [promptBox, cursorPos] = uiImprover.getLastSelectedTextbox();
+    if (!promptBox) {
+        promptBox = getRequiredElementById('alt_prompt_textbox');
+        cursorPos = promptBox.value.length;
+    }
+    let prefix = promptBox.value.substring(0, cursorPos);
+    let suffix = promptBox.value.substring(cursorPos);
+    let trimmed = prefix.trim();
     let match = matchWildcard(trimmed, model.name);
     if (match && match.length > 0) {
         let last = match[match.length - 1];
         if (trimmed.endsWith(last.trim())) {
-            promptBox.value = trimmed.substring(0, trimmed.length - last.length).trim();
+            promptBox.value = (trimmed.substring(0, trimmed.length - last.length).trim() + ' ' + suffix).trim();
             triggerChangeFor(promptBox);
             return;
         }
     }
-    promptBox.value = `${trimmed} <wildcard:${model.name}>`.trim();
+    let wildcardText = `<wildcard:${model.name}>`;
+    promptBox.value = `${prefix.trim()} ${wildcardText} ${suffix.trim()}`.trim();
+    promptBox.selectionStart = cursorPos + wildcardText.length + 1;
+    promptBox.selectionEnd = cursorPos + wildcardText.length + 1;
+    promptBox.focus();
     triggerChangeFor(promptBox);
 }
 
