@@ -227,13 +227,18 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         float curPercent = 0;
         void yieldProgressUpdate()
         {
-            takeOutput(new JObject()
+            JObject toSend = new()
             {
                 ["batch_index"] = batchId,
-                ["metadata"] = previewMetadata,
                 ["overall_percent"] = nodesDone / (float)expectedNodes,
                 ["current_percent"] = curPercent
-            });
+            };
+            if (previewMetadata is not null)
+            {
+                toSend["metadata"] = previewMetadata;
+                previewMetadata = null;
+            }
+            takeOutput(toSend);
         }
         try
         {
