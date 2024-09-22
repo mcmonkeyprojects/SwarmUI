@@ -446,7 +446,7 @@
 }
 
 .current_image_batch_core {
-    max-height: calc(100% - 50px);
+    max-height: calc(100% - 10px);
     overflow: auto;
     padding-top: 50px;
     padding-bottom: 50px;
