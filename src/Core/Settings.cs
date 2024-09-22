@@ -154,6 +154,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If set, connections will require an Authorization header.\nThis is intended for if you're hosting your Swarm instance to a public IP and want to reduce the risks from it being exposed.\nUsing a safe reverse proxy with actual authentication such as Apache2 is recommended instead.\nThis is a simple equality check, and should be something like `Bearer some_passphrase_or_something_here`.\nDefaults to empty (no authorization required).\nIf you accidentally lock yourself out, edit `Data/Settings.fds` to remove this setting and restart Swarm.")]
         public string RequiredAuthorization = "";
+
+        [ConfigComment("If true, special network forwarding logic will apply for developer modes.\nNotably, ComfyUI Frontend NPM Developer Mode requires significant special forwarding as it misroutes itself.\nDefaults to false.")]
+        public bool EnableSpecialDevForwarding = false;
     }
 
     /// <summary>Settings related to file paths.</summary>

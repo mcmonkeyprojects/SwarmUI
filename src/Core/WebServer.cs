@@ -187,13 +187,30 @@ public class WebServer
             string path = context.Request.Path.Value.ToLowerFast();
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
             {
-                context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
                 Logs.Debug($"ComfyBackendDirect call was misrouted, rerouting to '{context.Request.Path}'");
+                context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
+                return;
             }
             else if (path.StartsWith("/assets/"))
             {
-                context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
                 Logs.Debug($"ComfyBackendDirect assets call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
+                context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
+                return;
+            }
+            if (Program.ServerSettings.Network.EnableSpecialDevForwarding)
+            {
+                if (path.StartsWith("/node_modules/") || path.StartsWith("/@") || path.StartsWith("/src/"))
+                {
+                    Logs.Debug($"ComfyBackendDirect node frontend call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
+                    context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
+                    return;
+                }
+                else if ((path.EndsWith(".vue") || path.EndsWith(".ts")) && !path.StartsWith("/comfybackenddirect/"))
+                {
+                    Logs.Debug($"ComfyBackendDirect frontend related file ext call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
+                    context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
+                    return;
+                }
             }
             await next();
         });
