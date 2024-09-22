@@ -135,6 +135,8 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 - GGUF Quantized `diffusion_models` models, such as Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main> are supported in SwarmUI automatically.
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
+        - You will need a relevant VAE in your `(Swarm)/Models/VAE` folder
+        - For Flux you need <https://huggingface.co/black-forest-labs/FLUX.1-schnell/blob/main/ae.safetensors>
     - You will have to click `Edit Metadata` on the model and set the architecture, it cannot be autodetected currently.
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
