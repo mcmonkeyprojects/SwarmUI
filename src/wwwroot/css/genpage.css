@@ -205,6 +205,7 @@ body {
     min-width: 20rem;
     vertical-align: top;
     margin-left: 0.5rem;
+    max-height: 10rem;
 }
 .batch-gear-button {
     height: 1.4rem;
