@@ -211,6 +211,11 @@ public class WebServer
                     context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
                     return;
                 }
+                else if (context.Request.Headers.SecWebSocketProtocol.FirstOrDefault() == "vite-hmr")
+                {
+                    Logs.Debug($"ComfyBackendDirect frontend related Vite HMR call was misrouted and improperly referrered, forwarding to '{context.Request.Path}'");
+                    context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
+                }
             }
             await next();
         });
