@@ -202,14 +202,12 @@ public class WebServer
                 if (path.StartsWith("/node_modules/") || path.StartsWith("/@") || path.StartsWith("/src/"))
                 {
                     Logs.Debug($"ComfyBackendDirect node frontend call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
-                    context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
-                    return;
+                    context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
                 }
                 else if ((path.EndsWith(".vue") || path.EndsWith(".ts")) && !path.StartsWith("/comfybackenddirect/"))
                 {
                     Logs.Debug($"ComfyBackendDirect frontend related file ext call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
-                    context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
-                    return;
+                    context.Request.Path = $"/ComfyBackendDirect{context.Request.Path}";
                 }
                 else if (context.Request.Headers.SecWebSocketProtocol.FirstOrDefault() == "vite-hmr")
                 {
