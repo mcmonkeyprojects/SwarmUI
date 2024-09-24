@@ -165,6 +165,8 @@ public class Settings : AutoConfiguration
         [ConfigComment("Root path for model files. Use a full-formed path (starting with '/' or a Windows drive like 'C:') to use an absolute path.\nDefaults to 'Models'.")]
         public string ModelRoot = "Models";
 
+        public string ActualModelRoot => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ModelRoot);
+
         [ConfigComment("The model folder to use within 'ModelRoot'.\nDefaults to 'Stable-Diffusion'.\nAbsolute paths work too.")]
         public string SDModelFolder = "Stable-Diffusion";
 
@@ -179,6 +181,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("The ControlNets model folder to use within 'ModelRoot'.\nDefaults to 'controlnet'.\nAbsolute paths work too.")]
         public string SDControlNetsFolder = "controlnet";
+
+        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'clip'.\nAbsolute paths work too.")]
+        public string SDClipFolder = "clip";
 
         [ConfigComment("The CLIP Vision model folder to use within 'ModelRoot'.\nDefaults to 'clip_vision'.\nAbsolute paths work too.")]
         public string SDClipVisionFolder = "clip_vision";

@@ -462,7 +462,7 @@ public class WorkflowGenerator
             {
                 return;
             }
-            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, "clip", name);
+            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipFolder, name);
             DownloadModel(name, filePath, url);
             ClipModelsValid.Add(name);
         }

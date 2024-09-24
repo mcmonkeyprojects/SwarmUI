@@ -101,12 +101,12 @@ public class ComfyUIBackendExtension : Extension
         }
         static string[] listModelsFor(string subpath)
         {
-            string path = $"{Program.ServerSettings.Paths.ModelRoot}/{subpath}";
+            string path = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, subpath);
             Directory.CreateDirectory(path);
             return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'))).Select(f => f.Replace('\\', '/').AfterLast('/'))];
         }
         T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, listModelsFor("upscale_models").Select(u => $"model-{u}///Model: {u}"));
-        T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, listModelsFor("clip"));
+        T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, listModelsFor(Program.ServerSettings.Paths.SDClipFolder));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
     }
 
