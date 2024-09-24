@@ -30,7 +30,7 @@ class SwarmClipTextEncodeAdvanced:
         encoding_cache = {}
 
         def text_to_cond(text: str, start_percent: float, end_percent: float):
-            text = text.replace("\0\1", "[").replace("\0\2", "]")
+            text = text.replace("\0\1", "[").replace("\0\2", "]").replace("\0\3", "embedding:")
             if text in encoding_cache:
                 cond, pooled = encoding_cache[text]
             else:
@@ -48,48 +48,72 @@ class SwarmClipTextEncodeAdvanced:
                 result["guidance"] = guidance
             return [cond, result]
 
-        prompt = prompt.replace("\\[", "\0\1").replace("\\]", "\0\2")
+        prompt = prompt.replace("\\[", "\0\1").replace("\\]", "\0\2").replace("embedding:", "\0\3")
 
-        remaining = prompt
         chunks = []
-        any = False
-        while True:
-            start = remaining.find("[")
-            if start == -1:
-                chunks.append({'text': remaining, 'type': 'text'})
-                break
-            end = remaining.find("]", start)
-            if end == -1:
-                chunks[-1].text += remaining
-                break
-            chunks.append({'text': remaining[:start], 'type': 'text'})
-            control = remaining[start + 1:end]
-            ctrltype = 'raw'
-            data = control
-            piped = control.split("|")
-            coloned = control.split(":")
-            if len(piped) > 1:
-                data = piped
-                ctrltype = 'pipe'
-                any = True
-            elif len(coloned) == 3:
-                when = float(coloned[2])
-                if when < 1:
-                    when = when * steps
-                data = { 'before': coloned[0], 'after': coloned[1], 'when': when }
-                ctrltype = 'coloned'
-                any = True
-            elif len(coloned) == 2:
-                when = float(coloned[1])
-                if when < 1:
-                    when = when * steps
-                data = { 'before': '', 'after': coloned[0], 'when': when }
-                ctrltype = 'coloned'
-                any = True
-            chunks.append({'text': control, 'data': data, 'type': ctrltype})
-            remaining = remaining[end + 1:]
+        any = [False]
 
-        if not any:
+        def append_chunk(text: str, applies_to: list[int], can_subprocess: bool, limit_to: list[int]):
+            applies_to = [i for i in applies_to if i in limit_to]
+            if can_subprocess and '[' in text:
+                get_chunks(text, applies_to)
+            else:
+                chunks.append({'text': text, 'applies_to': applies_to})
+
+        def get_chunks(remaining: str, limit_to: list[int] = [i for i in range(steps)]):
+            while True:
+                start = remaining.find("[")
+                if start == -1:
+                    append_chunk(remaining, [i for i in range(steps)], False, limit_to)
+                    break
+                end = -1
+                count = 0
+                colon_indices = []
+                pipe_indices = []
+                for i in range(start + 1, len(remaining)):
+                    if remaining[i] == "[":
+                        count += 1
+                    elif remaining[i] == "]":
+                        if count == 0:
+                            end = i
+                            break
+                        count -= 1
+                    elif remaining[i] == ":" and count == 0 and len(pipe_indices) == 0:
+                        colon_indices.append(i)
+                    elif remaining[i] == "|" and count == 0 and len(colon_indices) == 0:
+                        pipe_indices.append(i)
+                if end == -1:
+                    chunks[-1].text += remaining
+                    break
+                append_chunk(remaining[:start], [i for i in range(steps)], False, limit_to)
+                control = remaining[start + 1:end]
+                if len(pipe_indices) > 0:
+                    data = split_text_on(control, pipe_indices, start + 1)
+                    for i in range(len(data)):
+                        append_chunk(data[i], [step for step in range(steps) if step % len(data) == i], True, limit_to)
+                    any[0] = True
+                elif len(colon_indices) == 2:
+                    coloned = split_text_on(control, colon_indices, start + 1)
+                    when = float(coloned[2])
+                    if when < 1:
+                        when = when * steps
+                    append_chunk(coloned[0], [i for i in range(steps) if i < when], True, limit_to)
+                    append_chunk(coloned[1], [i for i in range(steps) if i >= when], True, limit_to)
+                    any[0] = True
+                elif len(colon_indices) == 1:
+                    coloned = split_text_on(control, colon_indices, start + 1)
+                    when = float(coloned[1])
+                    if when < 1:
+                        when = when * steps
+                    append_chunk(coloned[0], [i for i in range(steps) if i >= when], True, limit_to)
+                    any[0] = True
+                else:
+                    append_chunk(control, [i for i in range(steps)], False, limit_to)
+                remaining = remaining[end + 1:]
+
+        get_chunks(prompt)
+
+        if not any[0]:
             return ([text_to_cond(prompt, 0, 1)], )
 
         conds_out = []
@@ -99,18 +123,8 @@ class SwarmClipTextEncodeAdvanced:
             perc = i / steps
             text = ""
             for chunk in chunks:
-                if chunk['type'] == 'text':
+                if i in chunk['applies_to']:
                     text += chunk['text']
-                else:
-                    if chunk['type'] == 'pipe':
-                        text += chunk['data'][i % len(chunk['data'])]
-                    elif chunk['type'] == 'coloned':
-                        if i >= chunk['data']['when']:
-                            text += chunk['data']['after']
-                        else:
-                            text += chunk['data']['before']
-                    else:
-                        text += chunk['data']
             if text != last_text or i == 0:
                 if i != 0:
                     conds_out.append(text_to_cond(last_text, start_perc - 0.001, perc + 0.001))
@@ -118,6 +132,16 @@ class SwarmClipTextEncodeAdvanced:
                 start_perc = perc
         conds_out.append(text_to_cond(last_text, start_perc - 0.001, 1))
         return (conds_out, )
+
+
+def split_text_on(text: str, indices: list[str], offset: int) -> list[str]:
+    indices = [i - offset for i in indices]
+    result = []
+    result.append(text[:indices[0]])
+    for i in range(len(indices) - 1):
+        result.append(text[indices[i] + 1:indices[i + 1]])
+    result.append(text[indices[-1] + 1:])
+    return result
 
 
 NODE_CLASS_MAPPINGS = {
