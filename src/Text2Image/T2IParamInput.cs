@@ -129,6 +129,46 @@ public class T2IParamInput
         }
     }
 
+    /// <summary>Splits the text within a tag input, in a way that avoids splitting inside subtags, and allows for double-pipe, pipe, or comma separation.</summary>
+    public static string[] SplitSmart(string input)
+    {
+        string separator = ",";
+        int count = 0;
+        for (int i = 0; i < input.Length; i++)
+        {
+            if (input[i] == '<') { count++; }
+            else if (input[i] == '>') { count--; }
+            else if (count == 0 && (input[i] == '|' && i > 0 && input[i - 1] == '|'))
+            {
+                separator = "||";
+                break;
+            }
+            else if (count == 0 && (input[i] == '|'))
+            {
+                separator = "|";
+            }
+        }
+        List<string> output = [];
+        count = 0;
+        int start = 0;
+        for (int i = 0; i < input.Length; i++)
+        {
+            if (input[i] == '<') { count++; }
+            else if (input[i] == '>') { count--; }
+            else if (count == 0 && i + separator.Length - 1 < input.Length && input[i..(i + separator.Length)] == separator)
+            {
+                output.Add(input[start..i]);
+                start = i + separator.Length;
+                i += separator.Length - 1;
+            }
+        }
+        if (start < input.Length)
+        {
+            output.Add(input[start..]);
+        }
+        return [.. output.Select(v => v.Trim()).Where(v => !string.IsNullOrWhiteSpace(v))];
+    }
+
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags.</summary>
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagProcessors = [];
 
@@ -204,8 +244,7 @@ public class T2IParamInput
             {
                 return null;
             }
-            string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
-            string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] rawVals = SplitSmart(data);
             if (rawVals.Length == 0)
             {
                 Logs.Warning($"Random input '{data}' is empty and will be ignored.");
@@ -235,8 +274,7 @@ public class T2IParamInput
         };
         PromptTagLengthEstimators["random"] = (data) =>
         {
-            string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
-            string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] rawVals = SplitSmart(data);
             int longest = 0;
             string longestStr = "";
             foreach (string val in rawVals)
@@ -252,8 +290,7 @@ public class T2IParamInput
         };
         PromptTagProcessors["alternate"] = (data, context) =>
         {
-            string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
-            string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] rawVals = SplitSmart(data);
             if (rawVals.Length == 0)
             {
                 Logs.Warning($"Alternate input '{data}' is empty and will be ignored.");
@@ -276,8 +313,7 @@ public class T2IParamInput
                 Logs.Warning($"FromTo input 'fromto[{context.PreData}]:{data}' has invalid predata step-index (not a number) and will be ignored.");
                 return null;
             }
-            string separator = data.Contains("||") ? "||" : (data.Contains('|') ? "|" : ",");
-            string[] rawVals = data.Split(separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] rawVals = SplitSmart(data);
             if (rawVals.Length != 2)
             {
                 Logs.Warning($"Alternate input '{data}' is invalid (len=${rawVals.Length}, should be 2) and will be ignored.");
