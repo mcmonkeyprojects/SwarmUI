@@ -115,11 +115,18 @@ public class T2IParamInput
 
         public string TriggerPhraseExtra = "";
 
+        public void TrackWarning(string warning)
+        {
+            Logs.Warning(warning);
+            List<string> warnings = Input.ExtraMeta.GetOrCreate("parser_warnings", () => new List<string>()) as List<string>;
+            warnings.Add(warning);
+        }
+
         public string Parse(string text)
         {
             if (Depth > 1000)
             {
-                Logs.Error("Recursive prompt tags - infinite loop, cannot return valid result.");
+                TrackWarning("Recursive prompt tags - infinite loop, cannot return valid result.");
                 return text;
             }
             Depth++;
@@ -166,7 +173,7 @@ public class T2IParamInput
         {
             output.Add(input[start..]);
         }
-        return [.. output.Select(v => v.Trim()).Where(v => !string.IsNullOrWhiteSpace(v))];
+        return [.. output.Select(v => v.Trim())];
     }
 
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags.</summary>
@@ -247,7 +254,7 @@ public class T2IParamInput
             string[] rawVals = SplitSmart(data);
             if (rawVals.Length == 0)
             {
-                Logs.Warning($"Random input '{data}' is empty and will be ignored.");
+                context.TrackWarning($"Random input '{data}' is empty and will be ignored.");
                 return null;
             }
             string result = "";
@@ -293,7 +300,7 @@ public class T2IParamInput
             string[] rawVals = SplitSmart(data);
             if (rawVals.Length == 0)
             {
-                Logs.Warning($"Alternate input '{data}' is empty and will be ignored.");
+                context.TrackWarning($"Alternate input '{data}' is empty and will be ignored.");
                 return null;
             }
             for (int i = 0; i < rawVals.Length; i++)
@@ -310,13 +317,13 @@ public class T2IParamInput
             double? stepIndex = InterpretNumber(context.PreData);
             if (!stepIndex.HasValue)
             {
-                Logs.Warning($"FromTo input 'fromto[{context.PreData}]:{data}' has invalid predata step-index (not a number) and will be ignored.");
+                context.TrackWarning($"FromTo input 'fromto[{context.PreData}]:{data}' has invalid predata step-index (not a number) and will be ignored.");
                 return null;
             }
             string[] rawVals = SplitSmart(data);
             if (rawVals.Length != 2)
             {
-                Logs.Warning($"Alternate input '{data}' is invalid (len=${rawVals.Length}, should be 2) and will be ignored.");
+                context.TrackWarning($"FromTo input '{data}' is invalid (len={rawVals.Length}, should be 2) and will be ignored.");
                 return null;
             }
             for (int i = 0; i < rawVals.Length; i++)
@@ -336,7 +343,7 @@ public class T2IParamInput
             string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
             if (card is null)
             {
-                Logs.Warning($"Wildcard input '{data}' does not match any wildcard file and will be ignored.");
+                context.TrackWarning($"Wildcard input '{data}' does not match any wildcard file and will be ignored.");
                 return null;
             }
             WildcardsHelper.Wildcard wildcard = WildcardsHelper.GetWildcard(card);
@@ -389,7 +396,7 @@ public class T2IParamInput
             double? countVal = InterpretNumber(count);
             if (!countVal.HasValue)
             {
-                Logs.Warning($"Repeat input '{data}' has invalid count (not a number) and will be ignored.");
+                context.TrackWarning($"Repeat input '{data}' has invalid count (not a number) and will be ignored.");
                 return null;
             }
             string result = "";
@@ -422,7 +429,7 @@ public class T2IParamInput
             T2IPreset preset = context.Input.SourceSession.User.GetPreset(name);
             if (preset is null)
             {
-                Logs.Warning($"Preset '{name}' does not exist and will be ignored.");
+                context.TrackWarning($"Preset '{name}' does not exist and will be ignored.");
                 return null;
             }
             preset.ApplyTo(context.Input);
@@ -447,13 +454,12 @@ public class T2IParamInput
             string matched = T2IParamTypes.GetBestModelInList(want, context.Embeds);
             if (matched is null)
             {
-                Logs.Warning($"Embedding '{want}' does not exist and will be ignored.");
+                context.TrackWarning($"Embedding '{want}' does not exist and will be ignored.");
                 return "";
             }
             if (matched.Contains(' '))
             {
-                Logs.Warning($"Embedding model {matched} contains a space and will most likely not function as intended. Please remove spaces from the filename.");
-                context.Input.ExtraMeta["bad_embed_warning"] = "You tried to use an embedding model with a space in the filename, these likely do not function as intended. Please remove spaces from the filename.";
+                context.TrackWarning($"Embedding model {matched} contains a space and will most likely not function as intended. Please remove spaces from the filename.");
             }
             else
             {
@@ -477,7 +483,7 @@ public class T2IParamInput
             string matched = T2IParamTypes.GetBestModelInList(lora, context.Loras);
             if (matched is null)
             {
-                Logs.Warning($"Lora '{lora}' does not exist and will be ignored.");
+                context.TrackWarning($"Lora '{lora}' does not exist and will be ignored.");
                 return null;
             }
             List<string> loraList = context.Input.Get(T2IParamTypes.Loras) ?? [];
@@ -535,7 +541,7 @@ public class T2IParamInput
             string name = context.PreData;
             if (string.IsNullOrWhiteSpace(name))
             {
-                Logs.Warning($"A variable name is required when using setvar.");
+                context.TrackWarning($"A variable name is required when using setvar.");
                 return null;
             }
             data = context.Parse(data);
@@ -550,7 +556,7 @@ public class T2IParamInput
         {
             if (!context.Variables.TryGetValue(data, out string val))
             {
-                Logs.Warning($"Variable '{data}' is not recognized.");
+                context.TrackWarning($"Variable '{data}' is not recognized.");
                 return "";
             }
             return val;
