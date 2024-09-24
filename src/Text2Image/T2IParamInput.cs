@@ -406,8 +406,16 @@ public class T2IParamInput
                 Logs.Warning($"Embedding '{want}' does not exist and will be ignored.");
                 return "";
             }
-            List<string> usedEmbeds = context.Input.ExtraMeta.GetOrCreate("used_embeddings", () => new List<string>()) as List<string>;
-            usedEmbeds.Add(T2IParamTypes.CleanModelName(matched));
+            if (matched.Contains(' '))
+            {
+                Logs.Warning($"Embedding model {matched} contains a space and will most likely not function as intended. Please remove spaces from the filename.");
+                context.Input.ExtraMeta["bad_embed_warning"] = "You tried to use an embedding model with a space in the filename, these likely do not function as intended. Please remove spaces from the filename.";
+            }
+            else
+            {
+                List<string> usedEmbeds = context.Input.ExtraMeta.GetOrCreate("used_embeddings", () => new List<string>()) as List<string>;
+                usedEmbeds.Add(T2IParamTypes.CleanModelName(matched));
+            }
             return "\0swarmembed:" + matched + "\0end";
         };
         PromptTagProcessors["embedding"] = PromptTagProcessors["embed"];
