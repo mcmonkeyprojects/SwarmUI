@@ -259,6 +259,10 @@ public class T2IParamInput
                 Logs.Warning($"Alternate input '{data}' is empty and will be ignored.");
                 return null;
             }
+            for (int i = 0; i < rawVals.Length; i++)
+            {
+                rawVals[i] = context.Parse(rawVals[i]);
+            }
             return $"[{rawVals.JoinString("|")}]";
         };
         PromptTagProcessors["alt"] = PromptTagProcessors["alternate"];
@@ -278,6 +282,10 @@ public class T2IParamInput
             {
                 Logs.Warning($"Alternate input '{data}' is invalid (len=${rawVals.Length}, should be 2) and will be ignored.");
                 return null;
+            }
+            for (int i = 0; i < rawVals.Length; i++)
+            {
+                rawVals[i] = context.Parse(rawVals[i]);
             }
             return $"[{rawVals.JoinString(":")}:{stepIndex}]";
         };
