@@ -1355,7 +1355,7 @@ body {
     width: 70rem;
     padding-right: 1rem;
     padding-left: 1rem;
-    max-width: calc(100vw - 22rem);
+    max-width: calc(100vw - 44rem);
 }
 .model-downloader-right-sidebar {
     display: inline-block;
