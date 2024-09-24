@@ -169,7 +169,7 @@ public class T2IParamInput
                 i += separator.Length - 1;
             }
         }
-        if (start < input.Length)
+        if (start <= input.Length)
         {
             output.Add(input[start..]);
         }
