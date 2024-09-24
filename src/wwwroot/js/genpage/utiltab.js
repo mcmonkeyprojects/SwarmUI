@@ -459,13 +459,15 @@ class ModelDownloaderUtil {
         else {
             this.name.style.borderColor = '';
         }
-
         if (this.url.value.trim() == '') {
             this.url.style.borderColor = 'red';
             this.button.disabled = true;
         }
         else {
             this.url.style.borderColor = '';
+        }
+        if (this.name.value.includes(' ')) {
+            this.name.value = this.name.value.replaceAll(' ', '_');
         }
     }
 

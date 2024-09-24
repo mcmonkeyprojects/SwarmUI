@@ -478,7 +478,7 @@ public static class ModelsAPI
             await ws.SendJson(new JObject() { ["error"] = "Invalid URL." }, API.WebsocketTimeout);
             return null;
         }
-        name = Utilities.StrictFilenameClean(name);
+        name = Utilities.StrictFilenameClean(name.Replace(' ', '_'));
         if (TryGetRefusalForModel(session, name, out JObject refusal))
         {
             await ws.SendJson(refusal, API.WebsocketTimeout);
