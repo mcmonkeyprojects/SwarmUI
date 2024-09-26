@@ -11,13 +11,17 @@ class SwarmYoloDetection:
                 "model_name": (folder_paths.get_filename_list("yolov8"), ),
                 "index": ("INT", { "default": 0, "min": 0, "max": 256, "step": 1 }),
             },
+            "optional": {
+                "sort_order": (["left-right", "top-bottom", "largest-smallest", "default"], ),
+                "reverse_order": ("BOOL", { "default": False })
+            }
         }
 
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 
-    def seg(self, image, model_name, index):
+    def seg(self, image, model_name, index, sort_order="default", reverse_order=False):
         # TODO: Batch support?
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -40,6 +44,14 @@ class SwarmYoloDetection:
         else:
             masks = masks.data.cpu()
         masks = torch.nn.functional.interpolate(masks.unsqueeze(1), size=(image.shape[1], image.shape[2]), mode="bilinear").squeeze(1)
+
+        if sort_order != "default":
+            boxes = results[0].boxes
+            if boxes is not None and len(boxes) > 0:
+                sorted_indices = self.sort_masks(boxes, sort_order, reverse_order)
+                masks = masks[sorted_indices]
+            return (masks[0].unsqueeze(0), )
+
         if index == 0:
             result = masks[0]
             for i in range(1, len(masks)):
@@ -56,6 +68,32 @@ class SwarmYoloDetection:
             sortedindices = np.argsort(sortedindices)
             masks = masks[sortedindices]
             return (masks[index - 1].unsqueeze(0), )
+
+    def sort_masks(self, boxes, sort_order, reverse_order):
+        if sort_order == "left-right":
+            if reverse_order:
+                # Sort based on the maximum x-coordinate
+                sorted_indices = sorted(range(len(boxes)), key=lambda i: boxes[i].xyxy[0][2].item(), reverse=True)
+            else:
+                # Sort based on the minimum x-coordinate
+                sorted_indices = sorted(range(len(boxes)), key=lambda i: boxes[i].xyxy[0][0].item())
+        elif sort_order == "top-bottom":
+            if reverse_order:
+                # Sort based on the maximum y-coordinate
+                sorted_indices = sorted(range(len(boxes)), key=lambda i: boxes[i].xyxy[0][3].item(), reverse=True)
+            else:
+                # Sort based on the minimum y-coordinate
+                sorted_indices = sorted(range(len(boxes)), key=lambda i: boxes[i].xyxy[0][1].item())
+        elif sort_order == "largest-smallest":
+            if reverse_order:
+                # Sort based on the area (width * height) in ascending order
+                sorted_indices = sorted(range(len(boxes)), key=lambda i: (boxes[i].xyxy[0][2] - boxes[i].xyxy[0][0]).item() *
+                                                                  (boxes[i].xyxy[0][3] - boxes[i].xyxy[0][1]).item())
+            else:
+                # Sort based on the area (width * height) in descending order
+                sorted_indices = sorted(range(len(boxes)), key=lambda i: (boxes[i].xyxy[0][2] - boxes[i].xyxy[0][0]).item() *
+                                                              (boxes[i].xyxy[0][3] - boxes[i].xyxy[0][1]).item(), reverse=True)
+        return sorted_indices
 
 NODE_CLASS_MAPPINGS = {
     "SwarmYoloDetection": SwarmYoloDetection,
