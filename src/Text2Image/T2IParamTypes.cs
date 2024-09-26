@@ -628,11 +628,8 @@ public class T2IParamTypes
         SaveSegmentMask = Register<bool>(new("Save Segment Mask", "If checked, any usage of '<segment:>' syntax in prompts will save the generated mask in output.",
             "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 3
             ));
-        SegmentationSortOrder = Register<string>(new("Segmentation Sort Order", "How to sort segments when using '<segment:yolo->' syntax.\nleft-right, top-bottom, largest-smallest, or by-name.\nBy-name requires a pre-processing step to remap segment IDs to a consistent order.",
-            "default", Toggleable: true, IgnoreIf: "default", GetValues: _ => ["left-right", "top-bottom", "largest-smallest", "default"], Group: GroupRegionalPrompting, OrderPriority: 4
-            ));
-        ReverseSegmentationOrder = Register<bool>(new("Reverse Segmentation Order", "If checked, reverses the order of segments when using '<segment:yolo->' syntax.\nOnly applies if 'Segmentation Sort Order' is enabled. When enabled, 'left-right' becomes right-left, 'top-bottom' becomes bottom-top, and 'largest-smallest' becomes smallest-largest.",
-            "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 5
+        SegmentationSortOrder = Register<string>(new("Segmentation Sort Order", "How to sort segments when using '<segment:yolo->' syntax.\nleft-right, top-bottom, bottom-top, largest-smallest, or smallest-largest.\nYou can also use indexes to specify a segment in the given order.\nExmaple: <segment:yolo-face_yolov9c.pt-2> when largest-smallest, will select the second largest face segment.",
+            "left-right", Toggleable: true, IgnoreIf: "left-right", GetValues: _ => ["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], Group: GroupRegionalPrompting, OrderPriority: 4
             ));
         SegmentMaskBlur = Register<int>(new("Segment Mask Blur", "Amount of blur to apply to the segment mask before using it.\nThis is for '<segment:>' syntax usage.\nDefaults to 10.",
             "10", Min: 0, Max: 64, Group: GroupRegionalPrompting, Examples: ["0", "4", "8", "16"], Toggleable: true, OrderPriority: 4
