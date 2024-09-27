@@ -80,7 +80,7 @@ class SwarmYoloDetection:
 
         sorted_indices_array = np.array(sortedindices)
         if sort_order in ["right-left", "bottom-top", "largest-smallest"]:
-            return np.argsort(sorted_indices_array)[::-1]
+            return np.argsort(sorted_indices_array)[::-1].copy()
         else:
             return np.argsort(sorted_indices_array)
 
