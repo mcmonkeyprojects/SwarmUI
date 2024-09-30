@@ -7,6 +7,7 @@ using SwarmUI.Core;
 using SwarmUI.Utils;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -165,6 +166,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>Filepaths to where custom node packs for comfy can be found, such as extension dirs.</summary>
     public static List<string> CustomNodePaths = [];
 
+    private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
     public void EnsureComfyFile()
     {
         lock (ComfyModelFileHelperLock)
@@ -174,62 +177,58 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 return;
             }
             AddLoadStatus($"Will emit comfy model paths file...");
-            string root = Program.ServerSettings.Paths.ActualModelRoot;
-            string yaml = $"""
-            swarmui:
-                base_path: {root}
-                checkpoints: {Program.ServerSettings.Paths.SDModelFolder}
-                vae: |
-                    {Program.ServerSettings.Paths.SDVAEFolder}
-                    VAE
-                loras: |
-                    {Program.ServerSettings.Paths.SDLoraFolder}
-                    Lora
-                    LyCORIS
-                upscale_models: |
-                    ESRGAN
-                    RealESRGAN
-                    SwinIR
-                    upscale-models
-                    upscale_models
-                embeddings: |
-                    {Program.ServerSettings.Paths.SDEmbeddingFolder}
-                    embeddings
-                hypernetworks: hypernetworks
-                controlnet: |
-                    {Program.ServerSettings.Paths.SDControlNetsFolder}
-                    ControlNet
-                clip: |
-                    {Program.ServerSettings.Paths.SDClipFolder}
-                    clip
-                clip_vision: |
-                    {Program.ServerSettings.Paths.SDClipVisionFolder}
-                    clip_vision
-                custom_nodes: |
-                    {Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")}
-                    {Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")}
-
-            """;
-            foreach (string path in CustomNodePaths)
+            string[] roots = Program.ServerSettings.Paths.ActualModelRoot.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string yaml = "";
+            int count = 0;
+            static string buildSection(string root, string path)
             {
-                yaml +=
-                $"""
-                        {Path.GetFullPath(path)}
+                HashSet<string> strs = [];
+                string[] opts = path.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                string ret = "|";
+                foreach (string opt in opts)
+                {
+                    string fullPath;
+                    if (IsWindows)
+                    {
+                        fullPath = Utilities.CombinePathWithAbsolute(root, opt.ToLowerFast());
+                    }
+                    else
+                    {
+                        fullPath = Utilities.CombinePathWithAbsolute(root, opt);
+                    }
+                    if (strs.Add(fullPath))
+                    {
+                        ret += $"\n       {opt}";
+                    }
+                }
+                return ret == "|" ? "" : ret;
+            }
+            foreach (string root in roots)
+            {
+                int id = ++count;
+                yaml += $"""
+                swarmui{(id == 1 ? "" : $"{id}")}:
+                    base_path: {root}
+                    checkpoints: {buildSection(root, Program.ServerSettings.Paths.SDModelFolder)}
+                    vae: {buildSection(root, Program.ServerSettings.Paths.SDVAEFolder + ";VAE")}
+                    loras: {buildSection(root, Program.ServerSettings.Paths.SDLoraFolder + ";Lora;LyCORIS")}
+                    upscale_models: {buildSection(root, "ESRGAN;RealESRGAN;SwinIR;upscale-models;upscale_models")}
+                    embeddings: {buildSection(root, Program.ServerSettings.Paths.SDEmbeddingFolder + ";embeddings")}
+                    hypernetworks: {buildSection(root, "hypernetworks")}
+                    controlnet: {buildSection(root, Program.ServerSettings.Paths.SDControlNetsFolder + ";ControlNet")}
+                    clip: {buildSection(root, Program.ServerSettings.Paths.SDClipFolder + ";clip;CLIP")}
+                    clip_vision: {buildSection(root, Program.ServerSettings.Paths.SDClipVisionFolder + ";clip_vision")}
+                    custom_nodes: {buildSection(root, $"{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")};{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")};{CustomNodePaths.Select(Path.GetFullPath).JoinString(";")}")}
 
                 """;
+                foreach (string folder in FoldersToForwardInComfyPath)
+                {
+                    yaml += $"    {folder}: {buildSection(root, folder)}\n";
+                }
             }
-            foreach (string folder in FoldersToForwardInComfyPath)
-            {
-                yaml +=
-                $"""
-                    {folder}: |
-                        {folder}
-
-                """;
-            }
-            Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(root, Program.ServerSettings.Paths.SDClipVisionFolder));
-            Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(root, Program.ServerSettings.Paths.SDClipFolder));
-            Directory.CreateDirectory($"{root}/upscale_models");
+            Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipVisionFolder));
+            Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipFolder));
+            Directory.CreateDirectory($"{roots[0]}/upscale_models");
             File.WriteAllBytes($"{Program.DataDir}/comfy-auto-model.yaml", yaml.EncodeUTF8());
             IsComfyModelFileEmitted = true;
             AddLoadStatus($"Done emitting comfy model paths file.");

@@ -162,30 +162,30 @@ public class Settings : AutoConfiguration
     /// <summary>Settings related to file paths.</summary>
     public class PathsData : AutoConfiguration
     {
-        [ConfigComment("Root path for model files. Use a full-formed path (starting with '/' or a Windows drive like 'C:') to use an absolute path.\nDefaults to 'Models'.")]
+        [ConfigComment("Root path for model files. Use a full-formed path (starting with '/' or a Windows drive like 'C:') to use an absolute path.\nDefaults to 'Models'.\nUse a semicolon ';' to split multiple paths.")]
         public string ModelRoot = "Models";
 
         public string ActualModelRoot => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ModelRoot);
 
-        [ConfigComment("The model folder to use within 'ModelRoot'.\nDefaults to 'Stable-Diffusion'.\nAbsolute paths work too.")]
+        [ConfigComment("The model folder to use within 'ModelRoot'.\nDefaults to 'Stable-Diffusion'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDModelFolder = "Stable-Diffusion";
 
-        [ConfigComment("The LoRA (or related adapter type) model folder to use within 'ModelRoot'.\nDefaults to 'Lora'.\nAbsolute paths work too.")]
+        [ConfigComment("The LoRA (or related adapter type) model folder to use within 'ModelRoot'.\nDefaults to 'Lora'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDLoraFolder = "Lora";
 
-        [ConfigComment("The VAE (autoencoder) model folder to use within 'ModelRoot'.\nDefaults to 'VAE'.\nAbsolute paths work too.")]
+        [ConfigComment("The VAE (autoencoder) model folder to use within 'ModelRoot'.\nDefaults to 'VAE'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDVAEFolder = "VAE";
 
-        [ConfigComment("The Embedding (eg textual inversion) model folder to use within 'ModelRoot'.\nDefaults to 'Embeddings'.\nAbsolute paths work too.")]
+        [ConfigComment("The Embedding (eg textual inversion) model folder to use within 'ModelRoot'.\nDefaults to 'Embeddings'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDEmbeddingFolder = "Embeddings";
 
-        [ConfigComment("The ControlNets model folder to use within 'ModelRoot'.\nDefaults to 'controlnet'.\nAbsolute paths work too.")]
+        [ConfigComment("The ControlNets model folder to use within 'ModelRoot'.\nDefaults to 'controlnet'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDControlNetsFolder = "controlnet";
 
-        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'clip'.\nAbsolute paths work too.")]
+        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'clip'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDClipFolder = "clip";
 
-        [ConfigComment("The CLIP Vision model folder to use within 'ModelRoot'.\nDefaults to 'clip_vision'.\nAbsolute paths work too.")]
+        [ConfigComment("The CLIP Vision model folder to use within 'ModelRoot'.\nDefaults to 'clip_vision'.\nAbsolute paths work too.\nUse a semicolon ';' to split multiple paths.")]
         public string SDClipVisionFolder = "clip_vision";
 
         [ConfigComment("Root path for data (user configs, etc).\nDefaults to 'Data'")]
