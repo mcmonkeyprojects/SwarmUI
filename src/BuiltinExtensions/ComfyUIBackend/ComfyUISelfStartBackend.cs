@@ -209,6 +209,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 yaml += $"""
                 swarmui{(id == 1 ? "" : $"{id}")}:
                     base_path: {root}
+                    is_default: true
                     checkpoints: {buildSection(root, Program.ServerSettings.Paths.SDModelFolder)}
                     vae: {buildSection(root, Program.ServerSettings.Paths.SDVAEFolder + ";VAE")}
                     loras: {buildSection(root, Program.ServerSettings.Paths.SDLoraFolder + ";Lora;LyCORIS")}
