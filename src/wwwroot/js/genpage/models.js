@@ -140,6 +140,24 @@ function editModelFillTechnicalInfo(model) {
     getRequiredElementById('edit_model_technical_data').innerHTML = technical;
 }
 
+/** Returns either the expected CivitAI url for a model, or empty string if unknown. */
+function getCivitUrlGuessFor(model) {
+    let civitUrl = '';
+    // (Hacky but we don't have a dedicated datastore for this, just included at the top of descriptions generally)
+    let civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.com/models/');
+    if (civitUrlStartIndex != -1) {
+        let end = model.description.indexOf('"', civitUrlStartIndex + '<a href="'.length);
+        if (end != -1) {
+            civitUrl = model.description.substring(civitUrlStartIndex + '<a href="'.length, end);
+            if (!civitUrl.includes("?modelVersionId=") || civitUrl.length > 200) {
+                console.log(`Invalid CivitAI URL (failed sanity check): ${civitUrl}`);
+                civitUrl = '';
+            }
+        }
+    }
+    return civitUrl;
+}
+
 function editModel(model, browser) {
     if (model == null) {
         return;
@@ -166,6 +184,8 @@ function editModel(model, browser) {
         enableImage.disabled = false;
     }
     editModelFillTechnicalInfo(model);
+    getRequiredElementById('edit_model_civitai_url').value = getCivitUrlGuessFor(model);
+    getRequiredElementById('edit_model_civitai_info').innerText = '';
     getRequiredElementById('edit_model_name').value = model.title || model.name;
     let modelTypeSelector = getRequiredElementById('edit_model_type');
     modelTypeSelector.value = model.architecture || '';
