@@ -223,6 +223,22 @@ class ModelDownloaderUtil {
         this.folders.value = selected || '(None)';
     }
 
+    searchCivitaiForHash(hash, callback) {
+        if (hash.startsWith('0x')) {
+            hash = hash.substring(2);
+        }
+        hash = hash.substring(0, 12);
+        genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/model-versions/by-hash/${hash}` }, (rawData) => {
+            if (rawData.response['error']) {
+                callback(null);
+                return;
+            }
+            callback(`https://civitai.com/models/${rawData.response.modelId}?modelVersionId=${rawData.response.id}`);
+        }, 0, () => {
+            callback(null);
+        });
+    }
+
     getCivitaiMetadata(id, versId, callback) {
         let doError = () => {
             callback(null, null, null, null, null, null);

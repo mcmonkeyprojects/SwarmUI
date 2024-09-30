@@ -123,9 +123,12 @@ function editModelGetHashNow() {
     if (curModelMenuModel == null) {
         return;
     }
+    let model = curModelMenuModel;
     genericRequest('GetModelHash', { 'modelName': curModelMenuModel.name, 'subtype': curModelMenuBrowser.subType }, data => {
-        curModelMenuModel.hash = data.hash;
-        editModelFillTechnicalInfo(curModelMenuModel);
+        model.hash = data.hash;
+        if (curModelMenuModel == model) {
+            editModelFillTechnicalInfo(curModelMenuModel);
+        }
     });
 }
 
@@ -213,7 +216,25 @@ function edit_model_load_civitai() {
     let url = getRequiredElementById('edit_model_civitai_url').value;
     let info = getRequiredElementById('edit_model_civitai_info');
     if (!url) {
-        info.innerText = 'No URL provided.';
+        let model = curModelMenuModel;
+        info.innerText = 'Loading hash...';
+        genericRequest('GetModelHash', { 'modelName': curModelMenuModel.name, 'subtype': curModelMenuBrowser.subType }, data => {
+            model.hash = data.hash;
+            if (curModelMenuModel == model) {
+                editModelFillTechnicalInfo(curModelMenuModel);
+                info.innerText = 'Hash loaded, searching civitai...';
+                modelDownloader.searchCivitaiForHash(model.hash, (url) => {
+                    if (url) {
+                        info.innerText = 'URL found, loading...';
+                        getRequiredElementById('edit_model_civitai_url').value = url;
+                        edit_model_load_civitai();
+                    }
+                    else {
+                        info.innerText = 'No CivitAI URL found for this model hash.';
+                    }
+                });
+            }
+        });
         return;
     }
     let [id, versId] = modelDownloader.parseCivitaiUrl(url);
