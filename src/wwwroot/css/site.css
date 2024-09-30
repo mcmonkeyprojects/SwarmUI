@@ -483,6 +483,13 @@ textarea, input, select {
     cursor: pointer;
     text-decoration: none;
 }
+.small-button {
+    font-size: 90%;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
 .basic-button.btn-primary {
     background-color: var(--emphasis);
 }

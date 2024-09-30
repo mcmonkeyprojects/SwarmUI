@@ -27,6 +27,7 @@ public static class ModelsAPI
         API.RegisterAPICall(EditWildcard, true);
         API.RegisterAPICall(EditModelMetadata, true);
         API.RegisterAPICall(DoModelDownloadWS, true);
+        API.RegisterAPICall(GetModelHash, true);
         API.RegisterAPICall(ForwardMetadataRequest);
     }
 
@@ -42,7 +43,7 @@ public static class ModelsAPI
     }
 
     /// <summary>Placeholder model indicating the lack of a model.</summary>
-    public static T2IModel NoneModel = new() { Name = "(None)", Description = "No model selected.", RawFilePath = "(ERROR_NONE_MODEL_USED_LITERALLY)" };
+    public static T2IModel NoneModel = new(null, null, null, "(None)") { Description = "No model selected.", RawFilePath = "(ERROR_NONE_MODEL_USED_LITERALLY)" };
 
     [API.APIDescription("Returns a full description for a single model.",
         """
@@ -461,7 +462,7 @@ public static class ModelsAPI
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
         }
         handler.ResetMetadataFrom(actualModel);
-        _ = Utilities.RunCheckedTask(() => handler.ApplyNewMetadataDirectly(actualModel));
+        _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel());
         return new JObject() { ["success"] = true };
     }
 
@@ -581,6 +582,41 @@ public static class ModelsAPI
             await ws.SendJson(new JObject() { ["error"] = "Failed to download the model due to internal exception." }, API.WebsocketTimeout);
         }
         return null;
+    }
+
+    [API.APIDescription("Gets or creates a valid tensor hash for the requested model.", "\"hash\": \"0xABC123\"")]
+    public static async Task<JObject> GetModelHash(Session session,
+        [API.APIParameter("Full filepath name of the model being requested.")] string modelName,
+        [API.APIParameter("What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc.")] string subtype = "Stable-Diffusion")
+    {
+        if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
+        {
+            return new JObject() { ["error"] = "Invalid sub-type." };
+        }
+        modelName = modelName.Replace('\\', '/');
+        while (modelName.Contains("//"))
+        {
+            modelName = modelName.Replace("//", "/");
+        }
+        string allowedStr = session.User.Restrictions.AllowedModels;
+        Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        T2IModel match = null;
+        if (allowed is null || allowed.IsMatch(modelName))
+        {
+            if (handler.Models.TryGetValue(modelName + ".safetensors", out T2IModel model))
+            {
+                match = model;
+            }
+            else if (handler.Models.TryGetValue(modelName, out model))
+            {
+                match = model;
+            }
+        }
+        if (match is null)
+        {
+            return new JObject() { ["error"] = "Model not found." };
+        }
+        return new JObject() { ["hash"] = match.GetOrGenerateTensorHashSha256() };
     }
 
     public static AsciiMatcher MetadataUrlAllowedChars = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "/\\-_.?=&%");
