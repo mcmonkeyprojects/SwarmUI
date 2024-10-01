@@ -145,6 +145,9 @@ function editModelFillTechnicalInfo(model) {
 
 /** Returns either the expected CivitAI url for a model, or empty string if unknown. */
 function getCivitUrlGuessFor(model) {
+    if (!model.description) {
+        return '';
+    }
     let civitUrl = '';
     // (Hacky but we don't have a dedicated datastore for this, just included at the top of descriptions generally)
     let civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.com/models/');

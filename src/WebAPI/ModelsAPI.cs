@@ -402,7 +402,7 @@ public static class ModelsAPI
         [API.APIParameter("Exact filepath name of the model.")] string model,
         [API.APIParameter("New model `title` metadata value.")] string title,
         [API.APIParameter("New model `author` metadata value.")] string author,
-        [API.APIParameter("New model `description` metadata value (architecture ID).")] string type,
+        [API.APIParameter("New model `architecture` metadata value (architecture ID).")] string type,
         [API.APIParameter("New model `description` metadata value.")] string description,
         [API.APIParameter("New model `standard_width` metadata value.")] int standard_width,
         [API.APIParameter("New model `standard_height` metadata value.")] int standard_height,

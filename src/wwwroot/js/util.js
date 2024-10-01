@@ -870,3 +870,28 @@ function strBeforeLast(str, char) {
     let index = str.lastIndexOf(char);
     return index < 0 ? str : str.substring(0, index);
 }
+
+/** Returns a simple matcher function based on some asterisked text. */
+function simpleAsteriskedMatcher(matcher, caseSensitive = false) {
+    if (!caseSensitive) {
+        matcher = matcher.toLowerCase();
+    }
+    let parts = matcher.split('*');
+    return (text) => {
+        if (!caseSensitive) {
+            text = text.toLowerCase();
+        }
+        if (!text.startsWith(parts[0]) || !text.endsWith(parts[parts.length - 1])) {
+            return false;
+        }
+        let index = 0;
+        for (let part of parts) {
+            let found = text.indexOf(part, index);
+            if (found < 0) {
+                return false;
+            }
+            index = found + part.length;
+        }
+        return true;
+    };
+}

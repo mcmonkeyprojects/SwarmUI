@@ -494,9 +494,9 @@
                 </div>
                 <br>
                 <div class="card border-secondary mb-3 card-center-container">
-                    <div class="card-header translate">Metadata Reset</div>
+                    <div class="card-header translate">Metadata Utilities</div>
                     <div class="card-body">
-                        <p class="card-text translate">
+                        <p class="card-text">
                             <div class="card-center-container">
                                 <button id="util_massmetadataclear_button" class="basic-button translate" onclick="util_massMetadataClear()">Reset All Metadata</button>
                             </div>
@@ -504,6 +504,48 @@
                             <br>This is useful for example if you've externally modified your model or image files and want to clean out or update Swarm's metadata tracking.
                             <br>Note that this does not remove metadata from the models or images themselves, just from the databases that keep an efficient tracker of them.
                             <br>This may take a moment to run.
+                            <hr>
+                            <div class="card-center-container">
+                                <button id="util_modelmetadatascanner_button" class="basic-button translate" onclick="modelMetadataScanner.run()">Scan Civitai For Metadata</button>
+                            </div>
+                            <br>Model Sub-type: <select id="util_modelmetadatascanner_subtype" class="auto-dropdown">
+                                <option value="all" class="translate" selected>all</option>
+                                @foreach (string key in Program.T2IModelSets.Keys)
+                                {
+                                    <option value="@key" class="translate">@key</option>
+                                }
+                            </select>
+                            &emsp;Date range: <select id="util_modelmetadatascanner_date" class="auto-dropdown">
+                                <option value="all" class="translate" selected>All (ignore time)</option>
+                                <option value="today" class="translate">Models downloaded today (24 hours)</option>
+                                <option value="week" class="translate">Models downloaded this week (7 days)</option>
+                                <option value="month" class="translate">Models downloaded this month (31 days)</option>
+                            </select>
+                            <br>Filter: <select id="util_modelmetadatascanner_requirements" class="auto-dropdown">
+                                <option value="all" class="translate" selected>All</option>
+                                <option value="no_thumbnail" class="translate">Only models without a thumbnail</option>
+                                <option value="no_description" class="translate">Only models without a description</option>
+                                <option value="no_author" class="translate">Only models without an author</option>
+                                <option value="explicit_url" class="translate">Only models with an explicit civitai url in the description</option>
+                            </select>
+                            &emsp;Replace: <select id="util_modelmetadatascanner_replace" class="auto-dropdown">
+                                <option value="only_missing" class="translate" selected>Only missing data</option>
+                                <option value="all" class="translate">All (Replace everything)</option>
+                                <option value="only_thumbnail" class="translate">Only the thumbnail image</option>
+                                <option value="only_text" class="translate">Only the basic text inputs (eg description)</option>
+                            </select>
+                            <br>
+                            Model filename filter: <input type="text" id="util_modelmetadatascanner_filter" class="auto-text" placeholder="Filter by filename" />
+                            <br><span id="util_modelmetadatascanner_result"></span>
+                            <br>
+                            <br>If you click this button, Swarm will scan Civitai for metadata on models, and update the metadata database with any information found.
+                            <br>You can filter by date range (eg only recently downloaded model files), and/or by required missing content (eg only scan those without images).
+                            <br>You can also choose what metadata gets updated (eg only the image).
+                            <br>Optionally use the model filename filter to only scan models with a specific filename. Use '*' as a wildcard.
+                            <br>(For example, 'SDXL/*' will scan only models within a folder named 'SDXL/'. This is case-insensitive.)
+                            <br>Will take a while, and may seem to freeze up if it has to apply edits. This is normal.
+                            <br>Additional debug info while running can be found in the browser console.
+                            <br><b>Be careful!</b> If you have manually edited metadata, you can easily accidentally delete it. There is no undo for unwanted changes, they are applied rapidly in bulk.
                         </p>
                     </div>
                 </div>

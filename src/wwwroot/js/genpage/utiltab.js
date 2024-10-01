@@ -239,12 +239,17 @@ class ModelDownloaderUtil {
         });
     }
 
-    getCivitaiMetadata(id, versId, callback) {
+    getCivitaiMetadata(id, versId, callback, identifier = '') {
         let doError = () => {
             callback(null, null, null, null, null, null);
         }
         genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
             rawData = rawData.response;
+            if (!rawData) {
+                console.log(`refuse civitai url because response is empty - for model id ${id} / ${identifier}`);
+                doError();
+                return;
+            }
             let modelType = null;
             let metadata = null;
             let rawVersion = rawData.modelVersions[0];
@@ -261,7 +266,7 @@ class ModelDownloaderUtil {
                 }
             }
             if (!file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
-                console.log(`refuse civitai url because download url is ${file.downloadUrl}`);
+                console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${identifier}`);
                 doError();
                 return;
             }
@@ -273,10 +278,12 @@ class ModelDownloaderUtil {
                 let url = `${this.civitPrefix}models/${id}?modelVersionId=${versId}`;
                 metadata = {
                     'modelspec.title': `${rawData.name} - ${rawVersion.name}`,
-                    'modelspec.author': rawData.creator.username,
                     'modelspec.description': `From <a href="${url}">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
                     'modelspec.date': rawVersion.createdAt,
                 };
+                if (rawData.creator) {
+                    metadata['modelspec.author'] = rawData.creator.username;
+                }
                 if (rawVersion.trainedWords) {
                     metadata['modelspec.trigger_phrase'] = rawVersion.trainedWords.join(", ");
                 }
@@ -586,3 +593,234 @@ class ActiveModelDownload {
 }
 
 modelDownloader = new ModelDownloaderUtil();
+
+class ModelMetadataScanner {
+    constructor() {
+        this.button = getRequiredElementById('util_modelmetadatascanner_button');
+        this.subTypeSelector = getRequiredElementById('util_modelmetadatascanner_subtype');
+        this.dateSelector = getRequiredElementById('util_modelmetadatascanner_date');
+        this.filterSelector = getRequiredElementById('util_modelmetadatascanner_requirements');
+        this.replaceSelector = getRequiredElementById('util_modelmetadatascanner_replace');
+        this.nameFilter = getRequiredElementById('util_modelmetadatascanner_filter');
+        this.resultArea = getRequiredElementById('util_modelmetadatascanner_result');
+        this.maxSimulLoads = 30;
+    }
+
+    async runForList(list) {
+        if (this.button.disabled) {
+            return;
+        }
+        this.button.disabled = true;
+        let date = this.dateSelector.value;
+        let filter = this.filterSelector.value;
+        let replace = this.replaceSelector.value;
+        let nameFilter = this.nameFilter.value;
+        let nameMatcher = simpleAsteriskedMatcher(nameFilter);
+        let timeNow = new Date().getTime();
+        let running = 0;
+        let scanned = 0;
+        let updated = 0;
+        let failed = 0;
+        let invalidDescriptions = ['', '(None)', '(Unset)'];
+        let update = () => {
+            this.resultArea.innerText = `${running} scans currently running, already scanned ${scanned} models, ${failed} couldn't be found on civitai, ${updated} models updated with new metadata.`;
+        };
+        let removeOne = () => {
+            running--;
+            update();
+        }
+        for (let key of list) {
+            if (key.name == '(None)' || !nameMatcher(key.name)) {
+                continue;
+            }
+            while (running >= this.maxSimulLoads) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            running++;
+            update();
+            genericRequest('DescribeModel', { 'modelName': key.name, 'subtype': key.type }, data => {
+                let model = data.model;
+                if (date != 'all') {
+                    let createTime = new Date(model.time_created).getTime();
+                    let limit = 24 * 60 * 60 * 1000;
+                    if (date == 'week') {
+                        limit *= 7;
+                    }
+                    else if (date == 'month') {
+                        limit *= 31;
+                    }
+                    if (timeNow - createTime > limit) {
+                        removeOne();
+                        return;
+                    }
+                }
+                let civitUrl = getCivitUrlGuessFor(model);
+                if (filter != 'all') {
+                    let allowed = true;
+                    if (filter == 'no_thumbnail' && model.preview_image) {
+                        allowed = false;
+                    }
+                    else if (filter == 'no_description' && !invalidDescriptions.includes(model.description.trim())) {
+                        allowed = false;
+                    }
+                    else if (filter == 'no_author' && model.author) {
+                        allowed = false;
+                    }
+                    else if (filter == 'explicit_url' && !civitUrl) {
+                        allowed = false;
+                    }
+                    if (!allowed) {
+                        removeOne();
+                        return;
+                    }
+                }
+                let doApply = () => {
+                    let [id, versId] = modelDownloader.parseCivitaiUrl(civitUrl);
+                    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img) => {
+                        if (!rawData) {
+                            failed++;
+                            removeOne();
+                            return;
+                        }
+                        let backup = JSON.parse(JSON.stringify(model));
+                        if (replace == 'all') {
+                            model.preview_image = img || model.preview_image;
+                            model.title = metadata['modelspec.title'] || model.title;
+                            model.description = metadata['modelspec.description'] || model.description;
+                            model.author = metadata['modelspec.author'] || model.author;
+                            model.date = metadata['modelspec.date'] || model.date;
+                            model.trigger_phrase = metadata['modelspec.trigger_phrase'] || model.trigger_phrase;
+                            if (metadata['modelspec.tags']) {
+                                model.tags = metadata['modelspec.tags'].split(',').map(x => x.trim());
+                            }
+                        }
+                        else if (replace == 'only_missing') {
+                            if (img && !model.preview_image) {
+                                model.preview_image = img;
+                            }
+                            model.title = model.title || metadata['modelspec.title'];
+                            model.description = model.description || metadata['modelspec.description'];
+                            model.author = model.author || metadata['modelspec.author'];
+                            model.date = model.date || metadata['modelspec.date'];
+                            model.trigger_phrase = model.trigger_phrase || metadata['modelspec.trigger_phrase'];
+                            if (metadata['modelspec.tags'] && !model.tags) {
+                                model.tags = metadata['modelspec.tags'].split(',').map(x => x.trim());
+                            }
+                        }
+                        else if (replace == 'only_thumbnail') {
+                            model.preview_image = img || model.preview_image;
+                        }
+                        else if (replace == 'only_text') {
+                            model.title = metadata['modelspec.title'] || model.title;
+                            model.description = metadata['modelspec.description'] || model.description;
+                            model.author = metadata['modelspec.author'] || model.author;
+                            model.date = metadata['modelspec.date'] || model.date;
+                            model.trigger_phrase = metadata['modelspec.trigger_phrase'] || model.trigger_phrase;
+                            if (metadata['modelspec.tags']) {
+                                model.tags = metadata['modelspec.tags'].split(',').map(x => x.trim());
+                            }
+                        }
+                        scanned++;
+                        update();
+                        let tagsMatch = (!model.tags == !backup.tags) && (!model.tags || backup.tags.join(', ') == model.tags.join(', '));
+                        let anyChanged = backup.preview_image != model.preview_image || backup.title != model.title || backup.description != model.description || backup.author != model.author || backup.date != model.date || backup.trigger_phrase != model.trigger_phrase || !tagsMatch;
+                        if (!anyChanged) {
+                            removeOne();
+                            return;
+                        }
+                        console.log(`Model ${key.name} (${key.type}) - change report: image: ${backup.preview_image != model.preview_image}, title: ${backup.title != model.title}, description: ${backup.description != model.description}, author: ${backup.author != model.author}, date: ${backup.date != model.date}, trigger: ${backup.trigger_phrase != model.trigger_phrase}, tags: ${!tagsMatch}`);
+                        let newMetadata = {
+                            'model': key.name,
+                            'subtype': key.type,
+                            'title': model.title,
+                            'author': model.author,
+                            'type': model.architecture,
+                            'description': model.description,
+                            'standard_width': model.standard_width,
+                            'standard_height': model.standard_height,
+                            'usage_hint': model.usage_hint,
+                            'date': model.date,
+                            'license': model.license,
+                            'trigger_phrase': model.trigger_phrase,
+                            'prediction_type': model.prediction_type,
+                            'tags': model.tags ? model.tags.join(', ') : null,
+                            'preview_image': model.preview_image,
+                            'preview_image_metadata': null,
+                            'is_negative_embedding': model.is_negative_embedding
+                        };
+                        genericRequest('EditModelMetadata', newMetadata, data => {
+                            updated++;
+                            removeOne();
+                        }, 0, e => {
+                            failed++;
+                            removeOne();
+                        });
+                    }, model.name);
+                };
+                if (civitUrl) {
+                    doApply();
+                }
+                else {
+                    let applyWithHash = () => {
+                        modelDownloader.searchCivitaiForHash(model.hash, url => {
+                            civitUrl = url;
+                            if (civitUrl) {
+                                doApply();
+                            }
+                            else {
+                                failed++;
+                                removeOne();
+                            }
+                        });
+                    };
+                    if (model.hash) {
+                        applyWithHash();
+                    }
+                    else {
+                        genericRequest('GetModelHash', { 'modelName': key.name, 'subtype': key.type }, data => {
+                            model.hash = data.hash;
+                            applyWithHash();
+                        }, 0, e => { failed++; removeOne(); });
+                    }
+                }
+
+            }, 0, e => { removeOne(); });
+        }
+        while (running > 0) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        this.button.disabled = false;
+        this.resultArea.innerText = `All scans completed: ${scanned} models scanned, ${failed} couldn't be found on civitai, ${updated} models updated with new metadata.`;
+    }
+
+    run() {
+        if (!confirm("This may take a long time, and may replace data, and cannot be undone. Your browser must stay open while this runs. Are you sure you want to proceed?")) {
+            return;
+        }
+        let subType = this.subTypeSelector.value;
+        if (subType == 'all') {
+            let list = [];
+            for (let type of Object.keys(coreModelMap)) {
+                let names = coreModelMap[type];
+                for (let name of names) {
+                    list.push({ 'name': name, 'type': type });
+                }
+            }
+            this.runForList(list);
+        }
+        else {
+            let names = coreModelMap[subType];
+            if (names == null) {
+                this.resultArea.innerText = "Invalid subtype.";
+                return;
+            }
+            let list = [];
+            for (let name of names) {
+                list.push({ 'name': name, 'type': subType });
+            }
+            this.runForList(list);
+        }
+    }
+}
+
+modelMetadataScanner = new ModelMetadataScanner();
