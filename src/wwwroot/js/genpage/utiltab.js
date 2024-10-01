@@ -302,7 +302,7 @@ class ModelDownloaderUtil {
             else {
                 applyMetadata('');
             }
-        }, (status, data) => {
+        }, 0, (status, data) => {
             doError();
         });
     }
@@ -634,7 +634,7 @@ class ModelMetadataScanner {
                 continue;
             }
             while (running >= this.maxSimulLoads) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 200));
             }
             running++;
             update();
@@ -744,7 +744,7 @@ class ModelMetadataScanner {
                             'trigger_phrase': model.trigger_phrase || '',
                             'prediction_type': model.prediction_type || '',
                             'tags': model.tags ? model.tags.join(', ') : null,
-                            'preview_image': model.preview_image,
+                            'preview_image': model.preview_image == "imgs/model_placeholder.jpg" ? null : model.preview_image,
                             'preview_image_metadata': null,
                             'is_negative_embedding': model.is_negative_embedding
                         };
@@ -787,7 +787,7 @@ class ModelMetadataScanner {
             }, 0, e => { removeOne(); });
         }
         while (running > 0) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 200));
         }
         this.button.disabled = false;
         this.resultArea.innerText = `All scans completed: ${scanned} models scanned, ${failed} couldn't be found on civitai, ${updated} models updated with new metadata.`;
