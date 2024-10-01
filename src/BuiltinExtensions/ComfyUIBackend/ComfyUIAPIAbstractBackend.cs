@@ -183,6 +183,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         JObject workflowJson = Utilities.ParseToJson(workflow);
         Logs.Verbose("JSON parsed.");
         JObject metadataObj = user_input.GenMetadataObject();
+        metadataObj.Remove("donotsave");
+        metadataObj.Remove("exactbackendid");
         metadataObj["is_preview"] = true;
         metadataObj["preview_notice"] = "Image is not done generating";
         string previewMetadata = T2IParamInput.MetadataToString(metadataObj);
