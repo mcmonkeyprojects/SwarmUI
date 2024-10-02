@@ -241,7 +241,7 @@ class ModelDownloaderUtil {
 
     getCivitaiMetadata(id, versId, callback, identifier = '') {
         let doError = () => {
-            callback(null, null, null, null, null, null);
+            callback(null, null, null, null, null, null, null);
         }
         genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
             rawData = rawData.response;
@@ -274,6 +274,7 @@ class ModelDownloaderUtil {
             if (rawData.type == 'LORA') { modelType = 'LoRA'; }
             if (rawData.type == 'TextualInversion') { modelType = 'Embedding'; }
             if (rawData.type == 'ControlNet') { modelType = 'ControlNet'; }
+            let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
             let applyMetadata = (img) => {
                 let url = `${this.civitPrefix}models/${id}?modelVersionId=${versId}`;
                 metadata = {
@@ -293,9 +294,8 @@ class ModelDownloaderUtil {
                 if (img) {
                     metadata['modelspec.thumbnail'] = img;
                 }
-                callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img);
+                callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url));
             }
-            let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
             if (imgs.length > 0) {
                 imageToData(imgs[0].url, img => applyMetadata(img));
             }
@@ -390,7 +390,7 @@ class ModelDownloaderUtil {
                 parts = ['models', parts[1], ''];
             }
             let loadMetadata = (id, versId) => {
-                this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img) => {
+                this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs) => {
                     if (!rawData) {
                         this.urlStatusArea.innerText = "URL appears to be a CivitAI link, but seems to not be valid. Please double-check the link.";
                         this.nameInput();
@@ -416,6 +416,34 @@ class ModelDownloaderUtil {
                     if (img) {
                         this.metadataZone.dataset.image = img;
                         this.imageSide.innerHTML = `<img src="${img}"/>`;
+                        if (imgs.length > 1) {
+                            this.imageSide.innerHTML += `<br><div class="model_downloader_imageselector">
+                                    <button class="image-select-prev basic-button">Previous</button>
+                                    <button class="image-select-next basic-button">Next</button>
+                                </div>`;
+                            let imgElem = this.imageSide.querySelector('img');
+                            let prevButton = this.imageSide.querySelector('.image-select-prev');
+                            let nextButton = this.imageSide.querySelector('.image-select-next');
+                            let imgIndex = 0;
+                            let updateImage = () => {
+                                imgIndex = (imgIndex + imgs.length) % imgs.length;
+                                let ind = imgIndex;
+                                let url = imgs[imgIndex];
+                                if (url.startsWith('data:')) {
+                                    this.metadataZone.dataset.image = url;
+                                    imgElem.src = url;
+                                }
+                                else {
+                                    imageToData(url, (img) => {
+                                        imgs[ind] = img;
+                                        this.metadataZone.dataset.image = url;
+                                        imgElem.src = img;
+                                    });
+                                }
+                            };
+                            prevButton.onclick = () => { imgIndex--; updateImage(); };
+                            nextButton.onclick = () => { imgIndex++; updateImage(); };
+                        }
                     }
                     else {
                         delete this.metadataZone.dataset.image;
@@ -676,7 +704,7 @@ class ModelMetadataScanner {
                 }
                 let doApply = () => {
                     let [id, versId] = modelDownloader.parseCivitaiUrl(civitUrl);
-                    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img) => {
+                    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs) => {
                         if (!rawData) {
                             failed++;
                             removeOne();

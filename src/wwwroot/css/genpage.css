@@ -1345,6 +1345,9 @@ body {
     max-height: 20rem;
     object-fit: contain;
 }
+.model_downloader_imageselector {
+    text-align: center;
+}
 .model-downloader-section-wrapper {
     display: block;
     width: fit-content;
