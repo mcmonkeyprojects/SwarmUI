@@ -849,7 +849,7 @@ public static class Utilities
     public static MultiSemaphoreSet<string> GitOverlapLocks = new(32);
 
     /// <summary>Launch, run, and return the text output of, a 'git' command input.</summary>
-    public static async Task<string> RunGitProcess(string args, string dir = null)
+    public static async Task<string> RunGitProcess(string args, string dir = null, bool canRetry = true)
     {
         dir ??= Environment.CurrentDirectory;
         dir = Path.GetFullPath(dir);
@@ -871,11 +871,18 @@ public static class Utilities
             {
                 string stdout = await stdOutRead;
                 string stderr = await stdErrRead;
+                string result = stdout;
                 if (!string.IsNullOrWhiteSpace(stderr))
                 {
-                    return $"{stdout}\n{stderr}";
+                    result = $"{stdout}\n{stderr}";
                 }
-                return stdout;
+                result = result.Trim();
+                if (canRetry && result.Contains("detected dubious ownership in repository at") && result.Contains("git config --global --add safe.directory"))
+                {
+                    await RunGitProcess($"config --global --add safe.directory {dir}", dir, false);
+                    result = await RunGitProcess(args, dir, false);
+                }
+                return result;
             }
             Task exitTask = p.WaitForExitAsync(Program.GlobalProgramCancel);
             Task finished = await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromMinutes(1)));
