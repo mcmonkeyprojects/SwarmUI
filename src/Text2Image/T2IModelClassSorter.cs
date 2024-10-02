@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
 using SwarmUI.Utils;
-using System.IO;
 
 namespace SwarmUI.Text2Image;
 
@@ -193,9 +192,22 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = "flux-1", Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return h.ContainsKey("diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight")
-                || h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.proj.lora_down.weight")
-                || h.ContainsKey("transformer.single_transformer_blocks.0.attn.to_k.lora_A.weight");
+            // some models only have some but not all blocks, so...
+            for (int i = 0; i < 22; i++)
+            {
+                // All of these examples seen in the way - so many competing LoRA formats for flux, wtf.
+                if (h.ContainsKey($"diffusion_model.double_blocks.{i}.img_attn.proj.lora_down.weight")
+                    || h.ContainsKey($"model.diffusion_model.double_blocks.{i}.img_attn.proj.lora_down.weight")
+                    || h.ContainsKey($"lora_unet_double_blocks_{i}_img_attn_proj.lora_down.weight")
+                    || h.ContainsKey($"lora_unet_single_blocks_{i}_linear1.lora_down.weight")
+                    || h.ContainsKey($"lora_transformer_single_transformer_blocks_{i}_attn_to_k.lora_down.weight")
+                    || h.ContainsKey($"transformer.single_transformer_blocks.{i}.attn.to_k.lora_A.weight")
+                    || h.ContainsKey($"transformer.single_transformer_blocks.{i}.proj_out.lora_A.weight"))
+                {
+                    return true;
+                }
+            }
+            return false;
         }});
         Register(new() { ID = "Flux.1-dev/controlnet", CompatClass = "flux-1", Name = "Flux.1 ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -253,10 +265,18 @@ public class T2IModelClassSorter
         {
             return model.ModelClass;
         }
-        string arch = header?["__metadata__"]?.Value<string>("modelspec.architecture") ?? header?["__metadata__"]?.Value<string>("architecture") ?? header.Value<string>("modelspec.architecture") ?? header.Value<string>("architecture");
+        // "ot" trained loras seem to emit empty strings?! why god. Argh.
+        static string fix(string s) => string.IsNullOrWhiteSpace(s) ? null : s;
+        string arch = fix(header?["__metadata__"]?.Value<string>("modelspec.architecture"))
+            ?? fix(header?["__metadata__"]?.Value<string>("architecture"))
+            ?? fix(header.Value<string>("modelspec.architecture"))
+            ?? fix(header.Value<string>("architecture"));
         if (arch is not null)
         {
-            string res = header["__metadata__"]?.Value<string>("modelspec.resolution") ?? header["__metadata__"]?.Value<string>("resolution") ?? header.Value<string>("modelspec.resolution") ?? header.Value<string>("resolution");
+            string res = fix(header["__metadata__"]?.Value<string>("modelspec.resolution"))
+                ?? fix(header["__metadata__"]?.Value<string>("resolution"))
+                ?? fix(header.Value<string>("modelspec.resolution"))
+                ?? fix(header.Value<string>("resolution"));
             string h = null;
             int width = string.IsNullOrWhiteSpace(res) ? 0 : int.Parse(res.BeforeAndAfter('x', out h));
             int height = string.IsNullOrWhiteSpace(h) ? 0 : int.Parse(h);
