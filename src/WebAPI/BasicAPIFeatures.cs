@@ -312,7 +312,7 @@ public static class BasicAPIFeatures
                     return null;
                 }
                 await output($"Downloading model from '{file}'... please wait...");
-                string path = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDModelFolder);
+                string path = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDModelFolder.Split(';')[0]);
                 string folder = $"{path}/{subfolder}";
                 Directory.CreateDirectory(folder);
                 string filename = file.AfterLast('/');

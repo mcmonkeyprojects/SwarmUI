@@ -343,7 +343,7 @@ public class WorkflowGeneratorSteps
             {
                 return;
             }
-            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder, name);
+            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0], name);
             g.DownloadModel(name, filePath, url);
             WorkflowGenerator.VisionModelsValid.Add(name);
         }
@@ -481,7 +481,7 @@ public class WorkflowGeneratorSteps
                             {
                                 return;
                             }
-                            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDLoraFolder, $"ipadapter/{name}");
+                            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDLoraFolder.Split(';')[0], $"ipadapter/{name}");
                             g.DownloadModel(name, filePath, url);
                             WorkflowGenerator.IPAdapterModelsValid.Add($"LORA-{name}");
                         }
