@@ -13,3 +13,4 @@
 [assembly: SuppressMessage("Usage", "ASP0018:Unused route parameter")]
 [assembly: SuppressMessage("Performance", "CA1861:Avoid constant arrays as arguments")]
 [assembly: SuppressMessage("Style", "IDE0130:Namespace does not match folder structure", Justification = "Extensions have intentional mismatch")]
+[assembly: SuppressMessage("Style", "IDE0019:Use pattern matching", Justification = "Often wants to change to pretty bad code")]

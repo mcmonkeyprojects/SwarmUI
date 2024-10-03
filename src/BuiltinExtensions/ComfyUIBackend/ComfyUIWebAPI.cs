@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
+using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
@@ -140,6 +141,12 @@ public static class ComfyUIWebAPI
             input = T2IAPI.RequestToParams(session, rawInput);
             input.PreparsePromptLikes();
             ComfyUIAPIAbstractBackend backend = ComfyUIBackendExtension.ComfyBackendsDirect().FirstOrDefault().Backend as ComfyUIAPIAbstractBackend;
+            if (backend is null)
+            {
+                SwarmSwarmBackend remoteBackend = Program.Backends.RunningBackendsOfType<SwarmSwarmBackend>().Where(s => s.LinkedRemoteBackendType is not null && s.LinkedRemoteBackendType.StartsWith("comfyui_")).FirstOrDefault()
+                    ?? throw new SwarmReadableErrorException("No ComfyUI backend available.");
+                return await remoteBackend.SendAPIJSON("ComfyGetGeneratedWorkflow", rawInput);
+            }
             string format = backend.SupportedFeatures.Contains("folderbackslash") ? "\\" : "/";
             Logs.Verbose($"ComfyGetWorkflow for input: {input}");
             string flow = ComfyUIAPIAbstractBackend.CreateWorkflow(input, w => w, format, features: backend.SupportedFeatures.ToHashSet());

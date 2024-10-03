@@ -452,17 +452,25 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         return req;
     }
 
+    public async Task<JObject> SendAPIJSON(string endpoint, JObject req)
+    {
+        req = req.DeepClone() as JObject;
+        JObject result = null;
+        await RunWithSession(async () =>
+        {
+            req["session_id"] = Session;
+            result = await HttpClient.PostJson($"{Address}/API/{endpoint}", req, RequestAdapter());
+            AutoThrowException(result);
+        });
+        return result;
+    }
+
     /// <inheritdoc/>
     public override async Task<Image[]> Generate(T2IParamInput user_input)
     {
         user_input.ProcessPromptEmbeds(x => $"<embedding:{x}>");
-        Image[] images = null;
-        await RunWithSession(async () =>
-        {
-            JObject generated = await HttpClient.PostJson($"{Address}/API/GenerateText2Image", BuildRequest(user_input), RequestAdapter());
-            AutoThrowException(generated);
-            images = generated["images"].Select(img => Image.FromDataString(img.ToString())).ToArray();
-        });
+        JObject generated = SendAPIJSON("GenerateText2Image", BuildRequest(user_input)).Result;
+        Image[] images = generated["images"].Select(img => Image.FromDataString(img.ToString())).ToArray();
         return images;
     }
 
