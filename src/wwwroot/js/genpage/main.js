@@ -130,6 +130,9 @@ function copy_current_image_params() {
         metadata.loras = newLoras;
         metadata.loraweights = newWeights;
     }
+    if (!('aspectratio' in metadata) && 'width' in metadata && 'height' in metadata) {
+        metadata.aspectratio = 'Custom';
+    }
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
     resetParamsToDefault(exclude);
     for (let param of gen_param_types) {
