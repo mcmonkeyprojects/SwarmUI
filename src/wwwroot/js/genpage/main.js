@@ -139,11 +139,6 @@ function copy_current_image_params() {
         let val = metadata[param.id];
         if (elem && val !== undefined && val !== null && val !== '') {
             setDirectParamValue(param, val);
-            if (param.toggleable && param.visible) {
-                let toggle = getRequiredElementById(`input_${param.id}_toggle`);
-                toggle.checked = true;
-                doToggleEnable(elem.id);
-            }
             if (param.group && param.group.toggles) {
                 let toggle = getRequiredElementById(`input_group_content_${param.group.id}_toggle`);
                 if (!toggle.checked) {

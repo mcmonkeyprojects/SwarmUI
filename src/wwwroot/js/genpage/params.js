@@ -595,7 +595,7 @@ function refreshParameterValues(strong = true, callback = null) {
     });
 }
 
-function setDirectParamValue(param, value, paramElem = null) {
+function setDirectParamValue(param, value, paramElem = null, forceDropdowns = false) {
     if (!paramElem) {
         paramElem = getRequiredElementById(`input_${param.id}`);
     }
@@ -614,6 +614,15 @@ function setDirectParamValue(param, value, paramElem = null) {
     }
     else if (param.type == "image" || param.type == "image_list") {
         // do not edit images directly, this will just misbehave
+    }
+    else if (paramElem.tagName == "SELECT") {
+        if (![...paramElem.querySelectorAll('option')].map(o => o.value).includes(value)) {
+            if (!forceDropdowns) {
+                return;
+            }
+            paramElem.add(new Option(`${value} (Invalid)`, value, false, false));
+        }
+        paramElem.value = value;
     }
     else {
         paramElem.value = value;
