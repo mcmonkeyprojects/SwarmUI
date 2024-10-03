@@ -279,6 +279,10 @@ public static class AdminAPI
         {
             logText = logText[0..(100 * 1024)] + "\n\n\n... (log too long, truncated) ..." + logText[^(2500 * 1024)..];
         }
+        if (logText.Length < 200)
+        {
+            throw new SwarmReadableErrorException($"Something went wrong - logs contain no content! Cannot pastebin: {logText.Length}: {logText}");
+        }
         FormUrlEncodedContent content = new(new Dictionary<string, string>()
         {
             ["pastetype"] = "swarm",
