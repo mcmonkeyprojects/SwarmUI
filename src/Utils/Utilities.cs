@@ -879,7 +879,11 @@ public static class Utilities
                 result = result.Trim();
                 if (canRetry && result.Contains("detected dubious ownership in repository at") && result.Contains("git config --global --add safe.directory"))
                 {
-                    await RunGitProcess($"config --global --add safe.directory {dir}", dir, false);
+                    Logs.Warning($"Git process '{args}' in '{dir}' had a safe.directory warning, will try to autofix -- {result}");
+                    semaphore.Release();
+                    semaphore = null;
+                    string safeDirResponse = await RunGitProcess($"config --global --add safe.directory {dir}", dir, false);
+                    Logs.Debug($"Git Safe.Directory response: {safeDirResponse}");
                     result = await RunGitProcess(args, dir, false);
                 }
                 return result;
@@ -912,7 +916,7 @@ public static class Utilities
         }
         finally
         {
-            semaphore.Release();
+            semaphore?.Release();
         }
     }
 
