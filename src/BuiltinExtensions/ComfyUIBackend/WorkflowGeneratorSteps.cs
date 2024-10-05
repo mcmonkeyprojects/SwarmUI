@@ -391,7 +391,7 @@ public class WorkflowGeneratorSteps
                         });
                         g.FinalNegativePrompt = [zeroed, 0];
                     }
-                    if (!g.UserInput.TryGet(T2IParamTypes.Model, out T2IModel model) || model.ModelClass is null ||
+                    if (!g.UserInput.TryGet(T2IParamTypes.Model, out T2IModel model) || model.ModelClass is null || 
                         (model.ModelClass.CompatClass != "stable-diffusion-xl-v1"/* && model.ModelClass.CompatClass != "stable-diffusion-v3-medium"*/))
                     {
                         throw new SwarmUserErrorException($"Model type must be SDXL for ReVision (currently is {model?.ModelClass?.Name ?? "Unknown"}). Set ReVision Strength to 0 if you just want IP-Adapter.");
@@ -583,7 +583,7 @@ public class WorkflowGeneratorSteps
                         }
                         double ipAdapterStart = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterStart, 0.0);
                         double ipAdapterEnd = g.UserInput.Get(ComfyUIBackendExtension.IPAdapterEnd, 1.0);
-                        if (ipAdapterStart >= ipAdapterEnd)
+                        if (ipAdapterStart >= ipAdapterEnd) 
                         {
                             throw new SwarmUserErrorException($"IP-Adapter Start must be less than IP-Adapter End.");
                         }
