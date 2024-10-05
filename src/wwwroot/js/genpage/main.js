@@ -700,9 +700,25 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 'width': width * 2,
                 'height': height * 2
             };
-            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
+            let upscaleCreativity = parseFloat(getUserSetting('UpscaleCreativity', '0.4'));
+            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': upscaleCreativity });
         }));
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
+    includeButton('Refine Image', () => {
+        toDataURL(img.src, (url => {
+            let input_overrides = {
+                'images': 1,
+            };
+            let toggler = getRequiredElementById('input_group_content_refineupscale_toggle');
+            toggler.checked = true;
+            triggerChangeFor(toggler);
+            reuseLastParamVal('input_seed');
+            mainGenHandler.doGenerate(input_overrides);
+            toggler.checked = false;
+            triggerChangeFor(toggler);
+            setSeedToRandom('input_seed');
+        }));
+    }, '', 'Runs an instant generation with Refine / Upscale turned on');
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {

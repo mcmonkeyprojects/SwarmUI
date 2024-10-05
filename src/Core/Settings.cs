@@ -317,6 +317,9 @@ public class Settings : AutoConfiguration
             + "\nThe default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'")]
         public string ButtonsUnderMainImages = "";
 
+        [ConfigComment("The ammount of image creativity used by the Upscale 2x button.")]
+        public double UpscaleCreativity = 0.4;
+
         [ConfigComment("If enabled, batch size will be reset to 1 when parameters are loaded.\nThis can prevent accidents that might thrash your GPU or cause compatibility issues, especially for example when importing a comfy workflow.\nYou can still set the batch size at will in the GUI.")]
         public bool ResetBatchSizeToOne = false;
 
