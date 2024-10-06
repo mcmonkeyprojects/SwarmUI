@@ -313,11 +313,11 @@ public class Settings : AutoConfiguration
         public bool AutoSwapImagesIncludesFullView = false;
 
         [ConfigComment("A list of what buttons to include directly under images in the main prompt area of the Generate tab.\nOther buttons will be moved into the 'More' dropdown.\nThis should be a comma separated list."
-            + "\nThe following options are available: \"Use As Init\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"View In History\""
+            + "\nThe following options are available: \"Use As Init\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"View In History\", \"Refine Image\""
             + "\nThe default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'")]
         public string ButtonsUnderMainImages = "";
 
-        [ConfigComment("The ammount of image creativity used by the Upscale 2x button.")]
+        [ConfigComment("The amount of image creativity used by the Upscale 2x button.")]
         public double UpscaleCreativity = 0.4;
 
         [ConfigComment("If enabled, batch size will be reset to 1 when parameters are loaded.\nThis can prevent accidents that might thrash your GPU or cause compatibility issues, especially for example when importing a comfy workflow.\nYou can still set the batch size at will in the GUI.")]
