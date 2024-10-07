@@ -782,6 +782,9 @@
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Server" id="serverconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Server Configuration</a>
             </li>
             <li class="nav-item" role="presentation">
+                <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Extensions" id="extensionstabbutton" aria-selected="false" tabindex="-1" role="tab">Extensions</a>
+            </li>
+            <li class="nav-item" role="presentation">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Logs" id="logtabbutton" aria-selected="false" tabindex="-1" role="tab">Logs</a>
             </li>
         </ul>
@@ -794,6 +797,7 @@
                             The "Server" tab provides access to SwarmUI's server internals, including:
                             <br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)
                             <br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)
+                            <br>&bullet; The <a href="#Server-Extensions" onclick="getRequiredElementById('extensionstabbutton').click()">Logs</a> tab, which provides ways to manage your Swarm extensions or install new ones
                             <br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)
                             <br>
                             <br>This is not to be confused with the <a href="#user_tab" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userconfigtabbutton').click()">User Settings</a> tab, which allows you to configure your user settings (eg save path/format, default VAE choice, etc)
@@ -940,6 +944,48 @@
                 @WebUtil.ModalFooter()
                 <center>View: <select id="server_log_type_selector"></select> Filter: <input type="text" id="server_log_filter" placeholder="Filter" /> <button class="basic-button" id="server_log_pastebin">Pastebin</button></center>
                 <div id="server_logs_container" class="server_logs_container"></div>
+            </div>
+            <div class="tab-pane" id="Server-Extensions" role="tabpanel">
+                <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card-header translate">Extensions</div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            The "Extensions" tab lets you control your installed Swarm extensions, or install new ones.
+                            <br>(WARNING: This page is a work-in-progress)
+                        </p>
+                    </div>
+                </div>
+                <center>
+                    <h3>Installed Extensions</h3>
+                    <table class="simple-table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Version</th>
+                            <th>Tags</th>
+                            <th>Author</th>
+                            <th>Description</th>
+                            <th>Readme</th>
+                            <th>Actions</th>
+                        </tr>
+                        @foreach (Extension ext in Program.Extensions.Extensions.Where(e => !e.IsCore))
+                        {
+                            <tr>
+                                <td>@ext.ExtensionName</td>
+                                <td><code>@ext.Version</code></td>
+                                <td>@ext.Tags.JoinString(", ")</td>
+                                <td>@ext.ExtensionAuthor</td>
+                                <td>@ext.Description</td>
+                                <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
+                                <td>
+                                    @if (ext.CanUpdate)
+                                    {
+                                        <button class="basic-button" onclick="alert('Not yet implemented')">Update</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </center>
             </div>
         </div>
     </div>
