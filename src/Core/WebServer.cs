@@ -262,7 +262,7 @@ public class WebServer
         StringBuilder scripts = new(), stylesheets = new(), tabHeader = new(), tabFooter = new();
         ExtensionSharedFiles.Clear();
         ExtensionAssets.Clear();
-        Program.RunOnAllExtensions(e =>
+        Program.Extensions.RunOnAllExtensions(e =>
         {
             foreach (string script in e.ScriptFiles)
             {
