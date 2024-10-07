@@ -21,9 +21,17 @@ In the future when more extensions exist, we'll build out more support for easil
 For now, manual list of known extensions:
 
 - [FaceTools](https://github.com/Quaggles/SwarmUI-FaceTools) adds support for CodeFormer FaceRestore, and ReActor.
-- [WaifuDiffusionV](https://github.com/waifu-diffusion/SwarmWaifuDiffusionV) adds support for WaifuDiffusion-V EDM sampling.
+- [WaifuDiffusionV](https://github.com/waifu-diffusion/SwarmWaifuDiffusionV) adds support for WaifuDiffusion-V-EDM sampling.
+
+Extensions that connect to paid backends or services:
+
 - [ComfyDeployBackendExt](https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt) adds a [ComfyDeploy](https://www.comfydeploy.com/) backend.
-- [MagicPrompt](https://github.com/kalebbroo/SwarmUI-MagicPromptExtension) provides LLM (language model) usage inside SwarmUI to enhance your prompts.
+
+<!-- Extensions that are not ready for listing, but should be monitored for future adding
+- [MagicPrompt](https://github.com/HartsyAI/SwarmUI-MagicPromptExtension) provides LLM (language model) usage inside SwarmUI to enhance your prompts.
+- [UniversalTab](https://github.com/HartsyAI/SwarmUI-UniversalTabExtension) lets you embed iframes of other webservices into subtabs in SwarmUI.
+- [WildcardImporter](https://github.com/aimerib/SwarmUI-WildcardImporter) lets you import Wildcards from Auto1111-extension-syntax YAML cards into Swarm's standardizable format.
+-->
 
 See also the Extensions channel in The SwarmUI Discord.
 
