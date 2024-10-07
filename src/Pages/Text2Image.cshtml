@@ -797,7 +797,7 @@
                             The "Server" tab provides access to SwarmUI's server internals, including:
                             <br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)
                             <br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)
-                            <br>&bullet; The <a href="#Server-Extensions" onclick="getRequiredElementById('extensionstabbutton').click()">Logs</a> tab, which provides ways to manage your Swarm extensions or install new ones
+                            <br>&bullet; The <a href="#Server-Extensions" onclick="getRequiredElementById('extensionstabbutton').click()">Extensions</a> tab, which provides ways to manage your Swarm extensions or install new ones
                             <br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)
                             <br>
                             <br>This is not to be confused with the <a href="#user_tab" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userconfigtabbutton').click()">User Settings</a> tab, which allows you to configure your user settings (eg save path/format, default VAE choice, etc)
@@ -981,6 +981,31 @@
                                     {
                                         <button class="basic-button" onclick="alert('Not yet implemented')">Update</button>
                                     }
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                    <br>
+                    <h3>Available Extensions</h3>
+                    <table class="simple-table">
+                        <tr>
+                            <th>Name</th>
+                            <th>Tags</th>
+                            <th>Author</th>
+                            <th>Description</th>
+                            <th>Readme</th>
+                            <th>Actions</th>
+                        </tr>
+                        @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionNames.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
+                        {
+                            <tr>
+                                <td>@ext.Name</td>
+                                <td>@ext.HtmlTags()</td>
+                                <td>@ext.Author</td>
+                                <td>@ext.Description</td>
+                                <td><a href="@ext.URL">Here</a></td>
+                                <td>
+                                    <button class="basic-button" onclick="alert('Not yet implemented')">Install</button>
                                 </td>
                             </tr>
                         }

@@ -1,0 +1,63 @@
+# This file is the list of known online extensions.
+
+# Author should be your name.
+# Description should be a short description of what the extension does.
+# URL should be a link to the GitHub repo. Do not use a sublink, do not end with '/'. This URL is used to git clone the repo.
+
+# Tags info:
+# 'parameters': Adds new T2I Parameters
+# 'tabs': adds new tabs on the main page
+# 'nodes': adds Comfy nodes
+# 'backend': adds a new backend
+# 'hidden': don't show on the main listing yet
+# 'paid': requires a paid account
+# 'beta': treat as an alpha or beta, not ready for general use
+# 'none': no tags of relevance to add
+
+FaceTools:
+    author: Quaggles
+    description: Adds support for CodeFormer FaceRestore and ReActor.
+    url: https://github.com/Quaggles/SwarmUI-FaceTools
+    tags:
+    - parameters
+
+WaifuDiffusionV:
+    author: Neggles & Waifu Diffusion Team
+    description: Adds support for WaifuDiffusion-V-EDM sampling.
+    url: https://github.com/waifu-diffusion/SwarmWaifuDiffusionV
+    tags:
+    - parameters
+    - nodes
+
+ComfyDeployBackendExt:
+    author: mcmonkey
+    description: Adds a ComfyDeploy ( https://www.comfydeploy.com/ ) backend.
+    url: https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt
+    tags:
+    - paid
+    - backend
+
+MagicPrompt:
+    author: Hartsy AI
+    description: Provides LLM (language model) usage inside SwarmUI to enhance your prompts.
+    url: https://github.com/HartsyAI/SwarmUI-MagicPromptExtension
+    tags:
+    # Hidden pending removal of "HartsyCore"
+    - hidden
+
+UniversalTab:
+    author: Hartsy AI
+    description: Lets you embed iframes of other webservices into subtabs in SwarmUI.
+    url: https://github.com/HartsyAI/SwarmUI-UniversalTabExtension
+    tags:
+    # Hidden pending removal of "HartsyCore"
+    - hidden
+
+WildcardImporter:
+    author: spoomples
+    description: Lets you import Wildcards from Auto1111-extension-syntax YAML cards into Swarm's standardizable format.
+    url: https://github.com/aimerib/SwarmUI-WildcardImporter
+    tags:
+    # Hidden due to being very early alpha
+    - hidden
+    - beta

@@ -1,4 +1,6 @@
-﻿using FreneticUtilities.FreneticExtensions;
+﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticExtensions;
+using Microsoft.AspNetCore.Html;
 using SwarmUI.Utils;
 using System.IO;
 
@@ -8,6 +10,35 @@ public class ExtensionsManager
 {
     /// <summary>All extensions currently loaded.</summary>
     public List<Extension> Extensions = [];
+
+    /// <summary>Hashset of names of all extensions currently loaded.</summary>
+    public HashSet<string> LoadedExtensionNames = [];
+
+    /// <summary>Simple holder of information about extensions available online.</summary>
+    public record class ExtensionInfo(string Name, string Author, string Description, string URL, string[] Tags, string FolderName)
+    {
+        public HtmlString HtmlTags()
+        {
+            return new(Tags.Select(t =>
+            {
+                return t switch
+                {
+                    "parameters" => "<span class=\"tag\" title=\"Adds new T2I Parameters\">Parameters</span>",
+                    "tabs" => "<span class=\"tag\" title=\"Adds new tabs on the main page\">Tabs</span>",
+                    "nodes" => "<span class=\"tag\" title=\"Adds Comfy nodes\">Nodes</span>",
+                    "backend" => "<span class=\"tag\" title=\"Adds a new backend\">Backend</span>",
+                    "hidden" => "<span class=\"tag hidden-tag\" title=\"Should not be visible\">Hidden</span>",
+                    "paid" => "<span class=\"tag paid-tag\" title=\"Requires a paid account\">Paid</span>",
+                    "beta" => "<span class=\"tag beta-tag\" title=\"Not ready for general use\">Beta</span>",
+                    "none" => "<span class=\"tag\" title=\"No tags\">None</span>",
+                    _ => $"<abbr class=\"tag\" title=\"Unrecognized tag\">{t}</abbr>"
+                };
+            }).JoinString(", "));
+        }
+    }
+
+    /// <summary>List of known online available extensions.</summary>
+    public List<ExtensionInfo> KnownExtensions = [];
 
     /// <summary>Initial call that prepares the extensions list.</summary>
     public void PrepExtensions()
@@ -22,6 +53,7 @@ public class ExtensionsManager
                 Extension extension = Activator.CreateInstance(extType) as Extension;
                 extension.ExtensionName = extType.Name;
                 Extensions.Add(extension);
+                LoadedExtensionNames.Add(extension.ExtensionName);
                 extension.IsCore = extType.Namespace.StartsWith("SwarmUI.");
                 if (extension.IsCore)
                 {
@@ -78,6 +110,13 @@ public class ExtensionsManager
         }
         RunOnAllExtensions(e => e.OnFirstInit());
         RunOnAllExtensions(e => e.PopulateMetadata());
+        FDSSection extensionsOutThere = FDSUtility.ReadFile("./launchtools/extension_list.fds");
+        foreach (string name in extensionsOutThere.GetRootKeys())
+        {
+            FDSSection section = extensionsOutThere.GetSection(name);
+            string url = section.GetString("url");
+            KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
+        }
     }
 
     /// <summary>Runs an action on all extensions.</summary>

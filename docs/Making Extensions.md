@@ -14,6 +14,7 @@ Here's some general info:
 - You can add custom tabs by just making a folder inside your extension of `Tabs/Text2Image/` and inside of that put `Your Tab Name.html`
 - See the [`Extension` class source here](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/src/Core/Extension.cs) for more things you can do.
     - This has several different launch points (eg `OnInit`, `OnPreInit`, etc.) and some registration points (eg `ScriptFiles` and `StyleSheetFiles` to register custom web assets to the main page).
+- After making an extension, PR it to the [extension list file](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/launchtools/extension_list.fds)
 
 # Extension Standards
 
