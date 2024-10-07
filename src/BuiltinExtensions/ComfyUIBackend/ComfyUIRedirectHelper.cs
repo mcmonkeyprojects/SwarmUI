@@ -418,6 +418,7 @@ public class ComfyUIRedirectHelper
                                 {
                                     client.QueueRemaining++;
                                     webAddress = client.Address;
+                                    backend = client.Backend;
                                     parsed["client_id"] = client.SID;
                                     client.FixUpPrompt(parsed["prompt"] as JObject);
                                     string userId = BasicAPIFeatures.GetUserIdFor(context);
@@ -437,6 +438,8 @@ public class ComfyUIRedirectHelper
                     if (!redirected)
                     {
                         Logs.Debug($"Was not able to redirect Comfy backend direct prompt request");
+                        backend.BackendData.UpdateLastReleaseTime();
+                        Logs.Info($"Sent Comfy backend improper API call direct prompt requested to backend #{backend.BackendData.ID}");
                     }
                     content = Utilities.JSONContent(parsed);
                 }
