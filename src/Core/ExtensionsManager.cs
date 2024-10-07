@@ -22,7 +22,15 @@ public class ExtensionsManager
                 Extension extension = Activator.CreateInstance(extType) as Extension;
                 extension.ExtensionName = extType.Name;
                 Extensions.Add(extension);
-                string[] possible = extType.Namespace.StartsWith("SwarmUI.") ? builtins : extras;
+                extension.IsCore = extType.Namespace.StartsWith("SwarmUI.");
+                if (extension.IsCore)
+                {
+                    extension.ExtensionAuthor = "SwarmUI Team";
+                    extension.Description = "(Core component of SwarmUI)";
+                    extension.Version = Utilities.Version;
+                    extension.ReadmeURL = Utilities.RepoRoot;
+                }
+                string[] possible = extension.IsCore ? builtins : extras;
                 foreach (string path in possible)
                 {
                     if (File.Exists($"src/{path}/{extType.Name}.cs"))
@@ -37,7 +45,7 @@ public class ExtensionsManager
                 if (extension.FilePath is null)
                 {
                     Logs.Error($"Could not determine path for extension '{extType.Name}'. Searched in {string.Join(", ", possible)} for '{extType.Name}.cs'");
-                    if (extType.Namespace.StartsWith("SwarmUI."))
+                    if (extension.IsCore)
                     {
                         Logs.Error("This is labeled as an internal extension - if you're the developer, make sure you give it a unique namespace (do not use 'SwarmUI.')");
                     }
@@ -69,6 +77,7 @@ public class ExtensionsManager
             }
         }
         RunOnAllExtensions(e => e.OnFirstInit());
+        RunOnAllExtensions(e => e.PopulateMetadata());
     }
 
     /// <summary>Runs an action on all extensions.</summary>

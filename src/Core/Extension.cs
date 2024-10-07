@@ -1,4 +1,8 @@
-﻿namespace SwarmUI.Core;
+﻿using FreneticUtilities.FreneticExtensions;
+using SwarmUI.Utils;
+using System.IO;
+
+namespace SwarmUI.Core;
 
 /// <summary>Abstract representation of an extension. Extensions should have a 'main' class that derives from this one.</summary>
 public abstract class Extension
@@ -8,6 +12,27 @@ public abstract class Extension
 
     /// <summary>Automatically set, extension internal name. Editing this is a bad idea.</summary>
     public string ExtensionName;
+
+    /// <summary>Version ID for this extension.</summary>
+    public string Version = "(Unset)"; // TODO: Auto-set this validly somehow
+
+    /// <summary>Author of this extension.</summary>
+    public string ExtensionAuthor = "(Unknown)";
+
+    /// <summary>Human-readable short description of this extension.</summary>
+    public string Description = "(No description provided)";
+
+    /// <summary>URL to the readme or GitHub repo for this extension.</summary>
+    public string ReadmeURL = "";
+
+    /// <summary>If true, this is a core extension.</summary>
+    public bool IsCore = false;
+
+    /// <summary>If true, this extension is capable of automatic updates.</summary>
+    public bool CanUpdate = false;
+
+    /// <summary>Tags for this extension.</summary>
+    public string[] Tags = [];
 
     /// <summary>Optional, filenames (relative to extension directory) of additional script files to use, eg "Assets/my_ext.js". You should populate this during <see cref="OnInit"/> or earlier.</summary>
     public List<string> ScriptFiles = [];
@@ -42,5 +67,38 @@ public abstract class Extension
     /// <summary>Called when the extension is shutting down (and/or the whole program is). Note that this is not strictly guaranteed to be called (eg if the process crashes).</summary>
     public virtual void OnShutdown()
     {
+    }
+
+    /// <summary>Called very early in Swarm launch cycle (but after PreInit) to populate this extension's metadata. If not overriden, Git is used to source as much data as possible.</summary>
+    public virtual void PopulateMetadata()
+    {
+        if (IsCore)
+        {
+            return;
+        }
+        if (!Directory.Exists($"{FilePath}/.git"))
+        {
+            Logs.Warning($"Extension '{ExtensionName}' did not come from git. Cannot populate metadata.");
+            return;
+        }
+        CanUpdate = true;
+        Utilities.RunCheckedTask(async () =>
+        {
+            string url = await Utilities.RunGitProcess("config --get remote.origin.url", FilePath);
+            if (!url.StartsWith("https://") || url.CountCharacter('\n') > 0)
+            {
+                Description = "This extension has an invalid git";
+                return;
+            }
+            ReadmeURL = url.Trim();
+            string tagsRaw = await Utilities.RunGitProcess("show-ref --tags", FilePath);
+            List<(string, string)> tags = [.. tagsRaw.Split('\n').Select(s => s.Trim().Split(' ')).Where(p => p.Length == 2).Select(pair => (pair[0], pair[1].After("refs/tags/")))];
+            string commitDate = await Utilities.RunGitProcess("show --no-patch --format=%ci HEAD", FilePath);
+            DateTimeOffset date = DateTimeOffset.Parse(commitDate.Trim()).ToUniversalTime();
+            string currentCommitDate = $"{date:yyyy-MM-dd HH:mm:ss}";
+            string currentCommit = await Utilities.RunGitProcess("rev-parse HEAD", FilePath);
+            string matchedTag = tags.FirstOrDefault(t => t.Item1 == currentCommit).Item2;
+            Version = $"{matchedTag ?? currentCommit[..7]} ({currentCommitDate})";
+        });
     }
 }
