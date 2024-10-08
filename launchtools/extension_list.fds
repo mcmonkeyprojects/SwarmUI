@@ -29,7 +29,7 @@ WaifuDiffusionV:
     - parameters
     - nodes
 
-ComfyDeployBackendExt:
+ComfyDeployBackend:
     author: mcmonkey
     description: Adds a ComfyDeploy ( https://www.comfydeploy.com/ ) backend.
     url: https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt

@@ -74,6 +74,7 @@ public abstract class Extension
     {
         if (IsCore)
         {
+            Logs.Verbose($"Don't populate metadata for core extension '{ExtensionName}'");
             return;
         }
         if (!Directory.Exists($"{FilePath}/.git"))
@@ -84,13 +85,27 @@ public abstract class Extension
         CanUpdate = true;
         Utilities.RunCheckedTask(async () =>
         {
+            Logs.Verbose($"Will fetch metadata for extension '{ExtensionName}'");
             string url = await Utilities.RunGitProcess("config --get remote.origin.url", FilePath);
+            url = url.Trim();
+            if (url.EndsWith(".git"))
+            {
+                url = url.BeforeLast('.');
+            }
+            Logs.Verbose($"Extension '{ExtensionName}' reports remote git URL '{url}'");
             if (!url.StartsWith("https://") || url.CountCharacter('\n') > 0)
             {
                 Description = "This extension has an invalid git";
                 return;
             }
             ReadmeURL = url.Trim();
+            ExtensionsManager.ExtensionInfo relevantInfo = Program.Extensions.KnownExtensions.FirstOrDefault(e => e.URL == ReadmeURL);
+            if (relevantInfo is not null)
+            {
+                ExtensionAuthor = relevantInfo.Author;
+                Description = relevantInfo.Description;
+                Tags = relevantInfo.Tags;
+            }
             string tagsRaw = await Utilities.RunGitProcess("show-ref --tags", FilePath);
             List<(string, string)> tags = [.. tagsRaw.Split('\n').Select(s => s.Trim().Split(' ')).Where(p => p.Length == 2).Select(pair => (pair[0], pair[1].After("refs/tags/")))];
             string commitDate = await Utilities.RunGitProcess("show --no-patch --format=%ci HEAD", FilePath);

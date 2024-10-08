@@ -972,7 +972,7 @@
                             <tr>
                                 <td>@ext.ExtensionName</td>
                                 <td><code>@ext.Version</code></td>
-                                <td>@ext.Tags.JoinString(", ")</td>
+                                <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
                                 <td>@ext.ExtensionAuthor</td>
                                 <td>@ext.Description</td>
                                 <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
@@ -996,11 +996,11 @@
                             <th>Readme</th>
                             <th>Actions</th>
                         </tr>
-                        @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionNames.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
+                        @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
                         {
                             <tr>
                                 <td>@ext.Name</td>
-                                <td>@ext.HtmlTags()</td>
+                                <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
                                 <td>@ext.Author</td>
                                 <td>@ext.Description</td>
                                 <td><a href="@ext.URL">Here</a></td>
