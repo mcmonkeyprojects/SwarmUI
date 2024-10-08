@@ -703,6 +703,41 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
+    includeButton('Refine Image', () => {
+        toDataURL(img.src, (url => {
+            let seed;
+            if (!currentMetadataVal) {
+                seed = -1;
+            }
+            else {
+                let readable = interpretMetadata(currentMetadataVal);
+                let metadata = JSON.parse(readable).sui_image_params;
+                if ('seed' in metadata) {
+                    seed = metadata.seed;
+                }
+                else {
+                    seed = -1;
+                }
+            }
+            let input_overrides = {
+                'initimage': url,
+                'images': 1,
+                'seed': seed,
+            };
+            let togglerInit = getRequiredElementById('input_group_content_initimage_toggle');
+            let togglerInitOriginal = togglerInit.checked;
+            togglerInit.checked = false;
+            triggerChangeFor(togglerInit);
+            let togglerRefine = getRequiredElementById('input_group_content_refineupscale_toggle');
+            togglerRefine.checked = true;
+            triggerChangeFor(togglerRefine);
+            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0 });
+            togglerInit.checked = togglerInitOriginal;
+            triggerChangeFor(togglerInit);
+            togglerRefine.checked = false;
+            triggerChangeFor(togglerRefine);
+        }));
+    }, '', 'Runs an instant generation with Refine / Upscale turned on');
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {
