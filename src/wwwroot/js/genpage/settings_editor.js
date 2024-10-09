@@ -96,6 +96,23 @@ function aggressivelySetTheme(them_id) {
     save_user_settings();
 }
 
+/** Applies the hidden tabs setting to the top tab list. */
+function applyHiddenTabsSetting() {
+    let hiddenTabIDs = getUserSetting("HiddenTabs");
+    if (hiddenTabIDs == null || hiddenTabIDs == "") {
+        return;
+    }
+    let tabList = getRequiredElementById("toptablist");
+
+    for (let tab of tabList.children) {
+        if (tab.firstElementChild.id == "usersettingstabbutton") {
+            // Skip this tab so you don't lock yourself out
+            continue;
+        }
+        tab.style.display = tab.firstElementChild.id in hiddenTabIDs ? "none" : "block";
+    }
+}
+
 function applyThemeSetting(theme_info) {
     setTimeout(() => {
         let themeSelectorElement = getRequiredElementById('usersettings_theme');
@@ -128,6 +145,7 @@ function loadUserSettings(callback = null) {
         }
         buildSettingsMenu(userSettingsContainer, data.settings, 'usersettings_', userSettingsData);
         applyThemeSetting(data.themes);
+        applyHiddenTabsSetting();
         // Build a second time to self-apply settings
         buildSettingsMenu(userSettingsContainer, data.settings, 'usersettings_', userSettingsData);
         findParentOfClass(getRequiredElementById('usersettings_language'), 'auto-input').style.display = 'none';
