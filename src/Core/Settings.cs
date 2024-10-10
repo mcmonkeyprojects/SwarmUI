@@ -313,7 +313,7 @@ public class Settings : AutoConfiguration
         public bool AutoSwapImagesIncludesFullView = false;
 
         [ConfigComment("A list of what buttons to include directly under images in the main prompt area of the Generate tab.\nOther buttons will be moved into the 'More' dropdown.\nThis should be a comma separated list."
-            + "\nThe following options are available: \"Use As Init\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"View In History\""
+            + "\nThe following options are available: \"Use As Init\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"View In History\", \"Refine Image\""
             + "\nThe default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'")]
         public string ButtonsUnderMainImages = "";
 
