@@ -705,36 +705,30 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
     includeButton('Refine Image', () => {
         toDataURL(img.src, (url => {
-            let seed;
-            if (!currentMetadataVal) {
-                seed = -1;
-            }
-            else {
-                let readable = interpretMetadata(currentMetadataVal);
-                let metadata = JSON.parse(readable).sui_image_params;
-                if ('seed' in metadata) {
-                    seed = metadata.seed;
-                }
-                else {
-                    seed = -1;
-                }
-            }
             let input_overrides = {
                 'initimage': url,
-                'images': 1,
-                'seed': seed,
+                'initimagecreativity': 0,
+                'images': 1
             };
+            if (currentMetadataVal) {
+                let readable = interpretMetadata(currentMetadataVal);
+                let metadata = readable ? JSON.parse(readable).sui_image_params : {};
+                if ('seed' in metadata) {
+                    input_overrides['seed'] = metadata.seed;
+                }
+            }
             let togglerInit = getRequiredElementById('input_group_content_initimage_toggle');
-            let togglerInitOriginal = togglerInit.checked;
-            togglerInit.checked = false;
-            triggerChangeFor(togglerInit);
             let togglerRefine = getRequiredElementById('input_group_content_refineupscale_toggle');
+            let togglerInitOriginal = togglerInit.checked;
+            let togglerRefineOriginal = togglerRefine.checked;
+            togglerInit.checked = false;
             togglerRefine.checked = true;
-            triggerChangeFor(togglerRefine);
-            mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0 });
-            togglerInit.checked = togglerInitOriginal;
             triggerChangeFor(togglerInit);
-            togglerRefine.checked = false;
+            triggerChangeFor(togglerRefine);
+            mainGenHandler.doGenerate(input_overrides);
+            togglerInit.checked = togglerInitOriginal;
+            togglerRefine.checked = togglerRefineOriginal;
+            triggerChangeFor(togglerInit);
             triggerChangeFor(togglerRefine);
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
