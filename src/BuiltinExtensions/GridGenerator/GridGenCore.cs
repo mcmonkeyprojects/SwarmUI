@@ -201,7 +201,7 @@ public partial class GridGenCore
                     {
                         valStr = T2IParamTypes.ValidateParam(Mode, valStr, grid.InitialParams.SourceSession);
                     }
-                    string key = ValidKeysMatcher.TrimToMatches(valStr.ToLowerFast());
+                    string key = ValidKeysMatcher.TrimToMatches(valStr.Replace('.', '_').ToLowerFast());
                     if (key.Length > 15)
                     {
                         // Long keys might be model names or similar, so trim them to a probably better name
@@ -211,7 +211,7 @@ public partial class GridGenCore
                             key = key[0..15];
                         }
                     }
-                    if (key.Length < 4 || keys.Contains(key))
+                    if (key.Length < 1 || keys.Contains(key))
                     {
                         key = $"{key}{index}";
                     }
