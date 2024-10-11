@@ -366,6 +366,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, the Image History view will cache small preview thumbnails of images.\nThis should make things run faster. You can turn it off if you don't want that.")]
         public bool ImageHistoryUsePreviews = true;
 
+        [ConfigComment("If true, will refresh Image History Browser after every new image generation.\nWARNING: This may cause heavy resource usage depending on your system and how many images exist.")]
+        public bool ImageHistoryAutoRefresh = false;
+
         [ConfigComment("Delay, in seconds, betweeen Generate Forever updates.\nIf the delay hits and a generation is still waiting, it will be skipped.\nDefault is 0.1 seconds.")]
         public double GenerateForeverDelay = 0.1;
 

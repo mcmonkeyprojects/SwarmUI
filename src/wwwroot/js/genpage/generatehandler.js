@@ -142,6 +142,9 @@ class GenerateHandler {
                         discardable[data.batch_index] = images[data.batch_index];
                         delete images[data.batch_index];
                     }
+                    if (getUserSetting('ImageHistoryAutoRefresh')) {
+                        imageHistoryBrowser.update();
+                    }
                 }
                 if (data.gen_progress) {
                     let thisBatchId = `${batch_id}_${data.gen_progress.batch_index}`;
