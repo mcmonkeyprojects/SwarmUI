@@ -439,16 +439,20 @@ public static class AdminAPI
             "success": true, // or false if not updated
             "result": "No changes found." // or any other applicable human-readable English message
         """)]
-    public static async Task<JObject> UpdateAndRestart(Session session)
+    public static async Task<JObject> UpdateAndRestart(Session session,
+        [API.APIParameter("True to always rebuild and restart even if there's no visible update.")] bool force = false)
     {
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
-        string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-        await Utilities.RunGitProcess("pull");
-        string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-        Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
-        if (priorHash == localHash)
+        if (!force)
         {
-            return new JObject() { ["success"] = false, ["result"] = "No changes found." };
+            string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
+            await Utilities.RunGitProcess("pull");
+            string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
+            Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
+            if (priorHash == localHash)
+            {
+                return new JObject() { ["success"] = false, ["result"] = "No changes found." };
+            }
         }
         File.WriteAllText("src/bin/must_rebuild", "yes");
         _ = Utilities.RunCheckedTask(() => Program.Shutdown(42));
