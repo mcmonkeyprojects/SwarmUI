@@ -1859,7 +1859,7 @@ function doFeatureInstaller(name, button_div_id, alt_confirm, callback = null, d
         buttonDiv.querySelector('button').disabled = true;
         buttonDiv.appendChild(createDiv('', null, 'Installing...'));
     }
-    genericRequest('ComfyInstallFeatures', {'feature': name}, data => {
+    genericRequest('ComfyInstallFeatures', {'features': name}, data => {
         if (buttonDiv) {
             buttonDiv.appendChild(createDiv('', null, "Installed! Please wait while backends restart. If it doesn't work, you may need to restart Swarm."));
         }
@@ -1883,13 +1883,17 @@ function doFeatureInstaller(name, button_div_id, alt_confirm, callback = null, d
     });
 }
 
-function installFeatureById(id, buttonId = null, modalId = null) {
-    let feature = comfy_features[id];
-    if (!feature) {
-        console.error(`Feature ID ${id} not found in comfy_features, can't install`);
-        return;
+function installFeatureById(ids, buttonId = null, modalId = null) {
+    let notice = '';
+    for (let id of ids.split(',')) {
+        let feature = comfy_features[id];
+        if (!feature) {
+            console.error(`Feature ID ${id} not found in comfy_features, can't install`);
+            return;
+        }
+        notice += feature.notice + '\n';
     }
-    doFeatureInstaller(feature.id, buttonId, feature.notice, () => {
+    doFeatureInstaller(ids, buttonId, notice.trim(), () => {
         if (modalId) {
             $(`#${modalId}`).modal('hide');
         }

@@ -169,7 +169,7 @@ public static class ComfyUIWebAPI
     public static SemaphoreSlim MultiInstallLock = new(1, 1);
 
     /// <summary>API route to ensure to install a given ComfyUI custom node feature.</summary>
-    public static async Task<JObject> ComfyInstallFeatures(Session session, string feature)
+    public static async Task<JObject> ComfyInstallFeatures(Session session, string features)
     {
         await MultiInstallLock.WaitAsync(Program.GlobalProgramCancel);
         try
@@ -177,19 +177,41 @@ public static class ComfyUIWebAPI
             ComfyUISelfStartBackend backend = Program.Backends.RunningBackendsOfType<ComfyUISelfStartBackend>().FirstOrDefault();
             if (backend is null)
             {
-                Logs.Warning($"User {session.User.UserID} tried to install feature '{feature}' but have no comfy self-start backends.");
+                Logs.Warning($"User {session.User.UserID} tried to install feature '{features}' but have no comfy self-start backends.");
                 return new JObject() { ["error"] = $"Cannot install Comfy features as this Swarm instance has no running ComfyUI Self-Start backends currently." };
             }
-            feature = feature.ToLowerFast().Trim();
-            if (!InstallableFeatures.ComfyFeatures.TryGetValue(feature, out InstallableFeatures.ComfyInstallableFeature featureData))
+            features = features.ToLowerFast();
+            List<InstallableFeatures.ComfyInstallableFeature> installMe = [];
+            foreach (string feature in features.Split(',').Select(f => f.Trim()))
             {
-                Logs.Warning($"User {session.User.UserID} tried to install unknown feature '{feature}'.");
-                return new JObject() { ["error"] = $"Unknown feature ID {feature}." };
+                if (!InstallableFeatures.ComfyFeatures.TryGetValue(feature, out InstallableFeatures.ComfyInstallableFeature featureData))
+                {
+                    Logs.Warning($"User {session.User.UserID} tried to install unknown feature '{feature}'.");
+                    return new JObject() { ["error"] = $"Unknown feature ID {feature}." };
+                }
+                installMe.Add(featureData);
             }
-            bool didRestart = await backend.EnsureNodeRepo(featureData.URL, featureData.SkipPipCache);
-            if (!didRestart)
+            ComfyUISelfStartBackend[] backendsToStart = [];
+            bool doFullRestart = false;
+            foreach (InstallableFeatures.ComfyInstallableFeature featureData in installMe)
+            {
+                ComfyUISelfStartBackend[] backendsStopped = await backend.EnsureNodeRepo(featureData.URL, featureData.SkipPipCache, false);
+                if (backendsStopped is null)
+                {
+                    doFullRestart = true;
+                }
+                else
+                {
+                    backendsToStart = [.. backendsToStart.Concat(backendsStopped).Distinct()];
+                }
+            }
+            if (doFullRestart)
             {
                 _ = Utilities.RunCheckedTask(ComfyUIBackendExtension.RestartAllComfyBackends);
+            }
+            foreach (ComfyUISelfStartBackend backendToStart in backendsToStart)
+            {
+                Program.Backends.DoInitBackend(backendToStart.BackendData);
             }
             return new JObject() { ["success"] = true };
         }

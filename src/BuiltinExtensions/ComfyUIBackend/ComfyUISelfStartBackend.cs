@@ -62,7 +62,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static bool IsComfyModelFileEmitted = false;
 
     /// <summary>Downloads or updates the named relevant ComfyUI custom node repo.</summary>
-    public async Task<bool> EnsureNodeRepo(string url, bool skipPipCache = false)
+    public async Task<ComfyUISelfStartBackend[]> EnsureNodeRepo(string url, bool skipPipCache = false, bool doRestart = true)
     {
         AddLoadStatus($"Will ensure node repo '{url}'...");
         string nodePath = Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes");
@@ -99,13 +99,16 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Failed to install comfy backend node requirements: {ex.ReadableString()}");
                     AddLoadStatus($"Error during requirements installation.");
                 }
-                AddLoadStatus($"Will re-start any backends shut down by the install...");
-                foreach (ComfyUISelfStartBackend backend in backends)
+                if (doRestart)
                 {
-                    AddLoadStatus($"Will re-start backend {backend.BackendData.ID}...");
-                    Program.Backends.DoInitBackend(backend.BackendData);
+                    AddLoadStatus($"Will re-start any backends shut down by the install...");
+                    foreach (ComfyUISelfStartBackend backend in backends)
+                    {
+                        AddLoadStatus($"Will re-start backend {backend.BackendData.ID}...");
+                        Program.Backends.DoInitBackend(backend.BackendData);
+                    }
                 }
-                return true;
+                return backends;
             }
         }
         else
@@ -114,7 +117,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             string response = await Utilities.RunGitProcess($"pull", $"{nodePath}/{folderName}");
             AddLoadStatus($"Node pull response for {folderName}: {response.Trim()}");
         }
-        return false;
+        return null;
     }
 
     public async Task EnsureNodeRepos()
