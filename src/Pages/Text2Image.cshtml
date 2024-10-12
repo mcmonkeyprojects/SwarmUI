@@ -963,8 +963,7 @@
                     <div class="card-header translate">Extensions</div>
                     <div class="card-body">
                         <p class="card-text">
-                            The "Extensions" tab lets you control your installed Swarm extensions, or install new ones.
-                            <br>(WARNING: This page is a work-in-progress)
+                            <span class="translate">The "Extensions" tab lets you control your installed Swarm extensions, or install new ones.</span>
                         </p>
                     </div>
                 </div>
@@ -972,8 +971,8 @@
                     <div class="card-header translate">New Extensions Installed</div>
                     <div class="card-body">
                         <p class="card-text">
-                            You installed new extensions, they will apply the next time you restart the SwarmUI server.
-                            <button class="basic-button translate" id="extension_restart_button" onclick="extensionsManager.restartServer()">Restart Now</button>
+                            <span class="translate">Extensions installed or updated. Changes will apply the next time you restart the SwarmUI server.</span>
+                            <div><button class="basic-button translate" id="extension_restart_button" onclick="extensionsManager.restartServer()">Restart Now</button></div>
                         </p>
                     </div>
                 </div>
@@ -1001,7 +1000,7 @@
                                 <td>
                                     @if (ext.CanUpdate)
                                     {
-                                        <button class="basic-button" onclick="alert('Not yet implemented')">Update</button>
+                                        <button class="basic-button" onclick="extensionsManager.updateExtension('@ext.ExtensionName', this)">Update</button>
                                     }
                                 </td>
                             </tr>

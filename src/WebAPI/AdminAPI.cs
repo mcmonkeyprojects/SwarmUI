@@ -30,6 +30,7 @@ public static class AdminAPI
         API.RegisterAPICall(ListConnectedUsers);
         API.RegisterAPICall(UpdateAndRestart, true);
         API.RegisterAPICall(InstallExtension, true);
+        API.RegisterAPICall(UpdateExtension, true);
     }
 
     public static JObject AutoConfigToParamData(AutoConfiguration config)
@@ -476,6 +477,31 @@ public static class AdminAPI
             return new JObject() { ["error"] = "Extension already installed." };
         }
         await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
+        File.WriteAllText("src/bin/must_rebuild", "yes");
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.",
+        """
+            "success": true // or false if no update available
+        """)]
+    public static async Task<JObject> UpdateExtension(Session session,
+        [API.APIParameter("The name of the extension to update.")] string extensionName)
+    {
+        Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
+        if (ext is null)
+        {
+            return new JObject() { ["error"] = "Unknown extension." };
+        }
+        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
+        string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
+        await Utilities.RunGitProcess("pull", path);
+        string localHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
+        Logs.Debug($"Extension updater: prior hash was {priorHash}, new hash is {localHash}");
+        if (priorHash == localHash)
+        {
+            return new JObject() { ["success"] = false };
+        }
         File.WriteAllText("src/bin/must_rebuild", "yes");
         return new JObject() { ["success"] = true };
     }
