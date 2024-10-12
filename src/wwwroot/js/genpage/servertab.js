@@ -17,6 +17,9 @@ class ExtensionsManager {
     }
 
     restartServer() {
+        let restartButton = getRequiredElementById('extension_restart_button');
+        restartButton.disabled = true;
+        restartButton.parentElement.appendChild(createDiv(null, null, 'Restarting server... please wait a moment then refresh the page'));
         genericRequest('UpdateAndRestart', {'force': true}, data => {});
     }
 }
