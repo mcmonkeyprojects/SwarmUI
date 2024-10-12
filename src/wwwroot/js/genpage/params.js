@@ -427,10 +427,10 @@ function genInputs(delay_final = false) {
         if (videoGroup && !currentBackendFeatureSet.includes('frameinterps')) {
             videoGroup.append(createDiv(`video_install_frameinterps`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('frame_interpolation', 'video_install_frameinterps')">Install Frame Interpolation</button>`));
         }
-        hideUnsupportableParams();
         for (let runnable of postParamBuildSteps) {
             runnable();
         }
+        hideUnsupportableParams();
         let loras = document.getElementById('input_loras');
         if (loras) {
             reapplyLoraWeights();
@@ -759,7 +759,7 @@ function hideUnsupportableParams() {
     for (let group in groups) {
         let groupData = groups[group];
         let groupElem = getRequiredElementById(`auto-group-${group}`);
-        if (groupData.visible == 0) {
+        if (groupData.visible == 0 && !groupElem.querySelector('.keep_group_visible')) {
             groupElem.style.display = 'none';
         }
         else {
