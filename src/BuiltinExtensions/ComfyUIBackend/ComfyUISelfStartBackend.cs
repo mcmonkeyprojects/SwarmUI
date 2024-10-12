@@ -128,12 +128,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 Directory.CreateDirectory(nodePath);
             }
-            List<Task> tasks =
-            [
-                Task.Run(async () => await EnsureNodeRepo("https://github.com/mcmonkeyprojects/sd-dynamic-thresholding")),
-                Task.Run(async () => await EnsureNodeRepo("https://github.com/Stability-AI/ComfyUI-SAI_API"))
-            ];
-            await Task.WhenAll(tasks);
+            List<Task> tasks = [.. InstallableFeatures.ComfyFeatures.Values.Where(f => f.AutoInstall).Select(f => Utilities.RunCheckedTask(async () => await EnsureNodeRepo(f.URL)))];
+            if (tasks.Any())
+            {
+                await Task.WhenAll(tasks);
+            }
             tasks.Clear();
             foreach (string node in Directory.EnumerateDirectories(nodePath))
             {

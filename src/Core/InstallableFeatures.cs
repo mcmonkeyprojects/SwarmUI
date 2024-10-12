@@ -4,7 +4,11 @@
 public static class InstallableFeatures
 {
     /// <summary>Represents a comfy based feature you can install.</summary>
-    public record class ComfyInstallableFeature(string DisplayName, string ID, string URL, string Author, string HtmlButtonElem, string ModalID, string Notice = null, bool SkipPipCache = false);
+    /// <param name="DisplayName">Human-readable display name for this feature.</param>
+    /// <param name="ID">Internal registration identifier. Keep it short, simple, lowercase, no spaces.</param>
+    /// <param name="Author">Name of the author of the relevant comfy nodes.</param>
+    /// <param name="HtmlButtonElem">Optional HTML ID for a button element that handles this installer normally.</param>
+    public record class ComfyInstallableFeature(string DisplayName, string ID, string URL, string Author, string Notice = null, bool SkipPipCache = false, bool AutoInstall = false);
 
     /// <summary>Mapping of all known installable comfy based features.</summary>
     public static Dictionary<string, ComfyInstallableFeature> ComfyFeatures = [];
