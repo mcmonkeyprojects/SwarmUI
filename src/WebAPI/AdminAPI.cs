@@ -28,7 +28,8 @@ public static class AdminAPI
         API.RegisterAPICall(DebugLanguageAdd, true);
         API.RegisterAPICall(DebugGenDocs, true);
         API.RegisterAPICall(ListConnectedUsers);
-        API.RegisterAPICall(UpdateAndRestart);
+        API.RegisterAPICall(UpdateAndRestart, true);
+        API.RegisterAPICall(InstallExtension, true);
     }
 
     public static JObject AutoConfigToParamData(AutoConfiguration config)
@@ -443,19 +444,39 @@ public static class AdminAPI
         [API.APIParameter("True to always rebuild and restart even if there's no visible update.")] bool force = false)
     {
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
-        if (!force)
+        string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
+        await Utilities.RunGitProcess("pull");
+        string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
+        Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
+        if (priorHash == localHash && !force)
         {
-            string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-            await Utilities.RunGitProcess("pull");
-            string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-            Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
-            if (priorHash == localHash)
-            {
-                return new JObject() { ["success"] = false, ["result"] = "No changes found." };
-            }
+            return new JObject() { ["success"] = false, ["result"] = "No changes found." };
         }
         File.WriteAllText("src/bin/must_rebuild", "yes");
         _ = Utilities.RunCheckedTask(() => Program.Shutdown(42));
         return new JObject() { ["success"] = true, ["result"] = "Update successful. Restarting... (please wait a moment, then refresh the page)" };
+    }
+
+    [API.APIDescription("Installs an extension from the known extensions list. Does not trigger a restart. Does signal required rebuild.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> InstallExtension(Session session,
+        [API.APIParameter("The name of the extension to install, from the known extensions list.")] string extensionName)
+    {
+        ExtensionsManager.ExtensionInfo ext = Program.Extensions.KnownExtensions.FirstOrDefault(e => e.Name == extensionName);
+        if (ext is null)
+        {
+            return new JObject() { ["error"] = "Unknown extension." };
+        }
+        string extensionsFolder = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions");
+        string folder = Utilities.CombinePathWithAbsolute(extensionsFolder, ext.FolderName);
+        if (Directory.Exists(folder))
+        {
+            return new JObject() { ["error"] = "Extension already installed." };
+        }
+        await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
+        File.WriteAllText("src/bin/must_rebuild", "yes");
+        return new JObject() { ["success"] = true };
     }
 }
