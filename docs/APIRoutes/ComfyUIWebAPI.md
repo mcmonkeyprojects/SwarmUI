@@ -14,6 +14,7 @@
 - HTTP Route [ComfyReadWorkflow](#http-route-apicomfyreadworkflow)
 - HTTP Route [ComfySaveWorkflow](#http-route-apicomfysaveworkflow)
 - WebSocket Route [DoLoraExtractionWS](#websocket-route-apidoloraextractionws)
+- WebSocket Route [DoTensorRTCreateWS](#websocket-route-apidotensorrtcreatews)
 
 ## HTTP Route /API/ComfyDeleteWorkflow
 
@@ -137,6 +138,7 @@
 | image | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | description | String | (PARAMETER DESCRIPTION NOT SET) | (Empty String) |
 | enable_in_simple | Boolean | (PARAMETER DESCRIPTION NOT SET) | `False` |
+| replace | String | (PARAMETER DESCRIPTION NOT SET) | (null) |
 
 #### Return Format
 
@@ -158,6 +160,28 @@
 | otherModel | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | rank | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | outName | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+(RETURN INFO NOT SET)
+```
+
+## WebSocket Route /API/DoTensorRTCreateWS
+
+#### Description
+
+(ROUTE DESCRIPTION NOT SET)
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| model | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| aspect | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| aspectRange | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| optBatch | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| maxBatch | Int32 | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 
 #### Return Format
 

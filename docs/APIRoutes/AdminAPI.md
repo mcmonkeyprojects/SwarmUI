@@ -10,12 +10,15 @@ Administrative APIs related to server management.
 - HTTP Route [DebugGenDocs](#http-route-apidebuggendocs)
 - HTTP Route [DebugLanguageAdd](#http-route-apidebuglanguageadd)
 - HTTP Route [GetServerResourceInfo](#http-route-apigetserverresourceinfo)
+- HTTP Route [InstallExtension](#http-route-apiinstallextension)
 - HTTP Route [ListConnectedUsers](#http-route-apilistconnectedusers)
 - HTTP Route [ListLogTypes](#http-route-apilistlogtypes)
 - HTTP Route [ListRecentLogMessages](#http-route-apilistrecentlogmessages)
 - HTTP Route [ListServerSettings](#http-route-apilistserversettings)
+- HTTP Route [LogSubmitToPastebin](#http-route-apilogsubmittopastebin)
 - HTTP Route [ShutdownServer](#http-route-apishutdownserver)
 - HTTP Route [UpdateAndRestart](#http-route-apiupdateandrestart)
+- HTTP Route [UpdateExtension](#http-route-apiupdateextension)
 
 ## HTTP Route /API/ChangeServerSettings
 
@@ -103,6 +106,24 @@ Returns information about the server's resource usage.
             "used_memory": 0
         }
     }
+```
+
+## HTTP Route /API/InstallExtension
+
+#### Description
+
+Installs an extension from the known extensions list. Does not trigger a restart. Does signal required rebuild.
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| extensionName | String | The name of the extension to install, from the known extensions list. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
 ```
 
 ## HTTP Route /API/ListConnectedUsers
@@ -203,6 +224,24 @@ Returns a list of the server settings, will full metadata.
     }
 ```
 
+## HTTP Route /API/LogSubmitToPastebin
+
+#### Description
+
+Submits current server log info to a pastebin service automatically.
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| type | String | The minimum log level (verbose, debug, info) to include. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+  "url": "a url to the paste here"
+```
+
 ## HTTP Route /API/ShutdownServer
 
 #### Description
@@ -227,12 +266,32 @@ Causes swarm to update, then close and restart itself. If there's no update to a
 
 #### Parameters
 
-**None.**
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| force | Boolean | True to always rebuild and restart even if there's no visible update. | `False` |
 
 #### Return Format
 
 ```js
     "success": true, // or false if not updated
     "result": "No changes found." // or any other applicable human-readable English message
+```
+
+## HTTP Route /API/UpdateExtension
+
+#### Description
+
+Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| extensionName | String | The name of the extension to update. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true // or false if no update available
 ```
 

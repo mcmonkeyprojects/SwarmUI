@@ -10,8 +10,8 @@ API routes to manage the server's backends.
 - HTTP Route [DeleteBackend](#http-route-apideletebackend)
 - HTTP Route [EditBackend](#http-route-apieditbackend)
 - HTTP Route [FreeBackendMemory](#http-route-apifreebackendmemory)
-- HTTP Route [ListBackends](#http-route-apilistbackends)
 - HTTP Route [ListBackendTypes](#http-route-apilistbackendtypes)
+- HTTP Route [ListBackends](#http-route-apilistbackends)
 - HTTP Route [RestartBackends](#http-route-apirestartbackends)
 - HTTP Route [ToggleBackend](#http-route-apitogglebackend)
 
@@ -117,6 +117,39 @@ Free memory from all backends or a specific one.
     "count": 1 // Number of backends memory was freed from
 ```
 
+## HTTP Route /API/ListBackendTypes
+
+#### Description
+
+Returns of a list of all available backend types.
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+    "list":
+    [
+        "id": "idhere",
+        "name": "namehere",
+        "description": "descriptionhere",
+        "settings":
+        [
+            {
+                "name": "namehere",
+                "type": "typehere",
+                "description": "descriptionhere",
+                "placeholder": "placeholderhere",
+                "values": ["a", "b"], // For dropdowns only
+                "value_names": ["Alpha", "Beta"] // For dropdowns only, optional even then
+            }
+        ],
+        "is_standard": false
+    ]
+```
+
 ## HTTP Route /API/ListBackends
 
 #### Description
@@ -150,37 +183,6 @@ Returns a list of currently registered backends.
         "max_usages": 0,
         "current_model": "modelnamehere" // Only if `full_data` is true
     }
-```
-
-## HTTP Route /API/ListBackendTypes
-
-#### Description
-
-Returns of a list of all available backend types.
-
-#### Parameters
-
-**None.**
-
-#### Return Format
-
-```js
-    "list":
-    [
-        "id": "idhere",
-        "name": "namehere",
-        "description": "descriptionhere",
-        "settings":
-        [
-            {
-                "name": "namehere",
-                "type": "typehere",
-                "description": "descriptionhere",
-                "placeholder": "placeholderhere"
-            }
-        ],
-        "is_standard": false
-    ]
 ```
 
 ## HTTP Route /API/RestartBackends

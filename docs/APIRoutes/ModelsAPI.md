@@ -8,8 +8,11 @@ API routes related to handling models (including loras, wildcards, etc).
 
 - HTTP Route [DeleteWildcard](#http-route-apideletewildcard)
 - HTTP Route [DescribeModel](#http-route-apidescribemodel)
+- WebSocket Route [DoModelDownloadWS](#websocket-route-apidomodeldownloadws)
 - HTTP Route [EditModelMetadata](#http-route-apieditmodelmetadata)
 - HTTP Route [EditWildcard](#http-route-apieditwildcard)
+- HTTP Route [ForwardMetadataRequest](#http-route-apiforwardmetadatarequest)
+- HTTP Route [GetModelHash](#http-route-apigetmodelhash)
 - HTTP Route [ListLoadedModels](#http-route-apilistloadedmodels)
 - HTTP Route [ListModels](#http-route-apilistmodels)
 - HTTP Route [SelectModel](#http-route-apiselectmodel)
@@ -69,10 +72,32 @@ Returns a full description for a single model.
         "trigger_phrase": "triggerphrasehere",
         "merged_from": "mergedfromhere",
         "tags": ["tag1", "tag2"],
-        "is_safetensors": true,
+        "is_supported_model_format": true,
         "is_negative_embedding": false,
         "local": true // false means remote servers (Swarm-API-Backend) have this model, but this server does not
     }
+```
+
+## WebSocket Route /API/DoModelDownloadWS
+
+#### Description
+
+Downloads a model to the server, with websocket progress updates.
+Note that this does not trigger a model refresh itself, you must do that after a 'success' reply.
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| url | String | The URL to download a model from. | **(REQUIRED)** |
+| type | String | The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc. | **(REQUIRED)** |
+| name | String | The filename to use for the model. | **(REQUIRED)** |
+| metadata | String | Optional raw text of JSON metadata to inject to the model. | (null) |
+
+#### Return Format
+
+```js
+
 ```
 
 ## HTTP Route /API/EditModelMetadata
@@ -88,17 +113,18 @@ Modifies the metadata of a model. Returns before the file update is necessarily 
 | model | String | Exact filepath name of the model. | **(REQUIRED)** |
 | title | String | New model `title` metadata value. | **(REQUIRED)** |
 | author | String | New model `author` metadata value. | **(REQUIRED)** |
-| type | String | New model `description` metadata value (architecture ID). | **(REQUIRED)** |
+| type | String | New model `architecture` metadata value (architecture ID). | **(REQUIRED)** |
 | description | String | New model `description` metadata value. | **(REQUIRED)** |
 | standard_width | Int32 | New model `standard_width` metadata value. | **(REQUIRED)** |
 | standard_height | Int32 | New model `standard_height` metadata value. | **(REQUIRED)** |
-| preview_image | String | New model `preview_image` metadata value (image-data-string format, or null to not change). | **(REQUIRED)** |
 | usage_hint | String | New model `usage_hint` metadata value. | **(REQUIRED)** |
 | date | String | New model `date` metadata value. | **(REQUIRED)** |
 | license | String | New model `license` metadata value. | **(REQUIRED)** |
 | trigger_phrase | String | New model `trigger_phrase` metadata value. | **(REQUIRED)** |
 | prediction_type | String | New model `prediction_type` metadata value. | **(REQUIRED)** |
 | tags | String | New model `tags` metadata value (comma-separated list). | **(REQUIRED)** |
+| preview_image | String | New model `preview_image` metadata value (image-data-string format, or null to not change). | (null) |
+| preview_image_metadata | String | Optional raw text of metadata to inject to the preview image. | (null) |
 | is_negative_embedding | Boolean | New model `is_negative_embedding` metadata value. | `False` |
 | subtype | String | The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc. | `Stable-Diffusion` |
 
@@ -120,12 +146,50 @@ Edits a wildcard file.
 | --- | --- | --- | --- |
 | card | String | Exact filepath name of the wildcard. | **(REQUIRED)** |
 | options | String | Newline-separated string listing of wildcard options. | **(REQUIRED)** |
-| preview_image | String | Image-data-string of a preview, or null to not change. | **(REQUIRED)** |
+| preview_image | String | Image-data-string of a preview, or null to not change. | (null) |
+| preview_image_metadata | String | Optional raw text of metadata to inject to the preview image. | (null) |
 
 #### Return Format
 
 ```js
 "success": true
+```
+
+## HTTP Route /API/ForwardMetadataRequest
+
+#### Description
+
+Forwards a metadata request, eg to civitai API.
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| url | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+
+```
+
+## HTTP Route /API/GetModelHash
+
+#### Description
+
+Gets or creates a valid tensor hash for the requested model.
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| modelName | String | Full filepath name of the model being requested. | **(REQUIRED)** |
+| subtype | String | What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc. | `Stable-Diffusion` |
+
+#### Return Format
+
+```js
+"hash": "0xABC123"
 ```
 
 ## HTTP Route /API/ListLoadedModels
@@ -164,6 +228,7 @@ Returns a list of models available on the server within a given folder, with the
 | depth | Int32 | Maximum depth (number of recursive folders) to search. | **(REQUIRED)** |
 | subtype | String | Model sub-type - `LoRA`, `Wildcards`, etc. | `Stable-Diffusion` |
 | sortBy | String | What to sort the list by - `Name`, `DateCreated`, or `DateModified. | `Name` |
+| allowRemote | Boolean | If true, allow remote models. If false, only local models. | `True` |
 | sortReverse | Boolean | If true, the sorting should be done in reverse. | `False` |
 
 #### Return Format
