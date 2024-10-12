@@ -26,8 +26,6 @@
                 "id": "@feature.ID",
                 "url": "@feature.URL",
                 "author": "@feature.Author",
-                "html_button_elem": "@feature.HtmlButtonElem",
-                "modal_id": "@feature.ModalID",
                 "notice": "@(new HtmlString(Utilities.EscapeJsonString(feature.Notice)))"
             };
         </text>
@@ -207,7 +205,7 @@
                         <br>You can then use the paintbucket tool to fill mask with sections you want, then delete or hide the segment layer.
                     </div>
                     <div class="modal-footer" id="install_sam2_button">
-                        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('sam2')">Install</button>
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('sam2', 'install_sam2_button', 'sam2_installer')">Install</button>
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#sam2_installer').modal('hide')">Cancel</button>
                     </div>
                 @WebUtil.ModalFooter()
@@ -218,7 +216,7 @@
                         <br>This requires an extension released by comfyanonymous and lllyasviel (AGPL license) to run. Would you like to install it?
                     </div>
                     <div class="modal-footer" id="install_bnbnf4_button">
-                        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('bnb_nf4')">Install</button>
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('bnb_nf4', 'install_bnbnf4_button', 'bnb_nf4_installer')">Install</button>
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#bnb_nf4_installer').modal('hide');localStorage.setItem('hide_bnb_nf4_check', 'true')">No and don't show again</button>
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#bnb_nf4_installer').modal('hide')">Cancel</button>
                     </div>
@@ -230,7 +228,7 @@
                         <br>This requires an extension released by city96 to run. Would you like to install it?
                     </div>
                     <div class="modal-footer" id="install_gguf_button">
-                        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('gguf')">Install</button>
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('gguf', 'install_gguf_button', 'gguf_installer')">Install</button>
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#gguf_installer').modal('hide');localStorage.setItem('hide_gguf_check', 'true')">No and don't show again</button>
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#gguf_installer').modal('hide')">Cancel</button>
                     </div>

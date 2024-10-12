@@ -1850,18 +1850,22 @@ function setTitles() {
 }
 setTitles();
 
-function doFeatureInstaller(path, author, name, button_div_id, alt_confirm = null, callback = null, deleteButton = true) {
-    if (!confirm(alt_confirm || `This will install ${path} which is a third-party extension maintained by community developer '${author}'.\nWe cannot make any guarantees about it.\nDo you wish to install?`)) {
+function doFeatureInstaller(name, button_div_id, alt_confirm, callback = null, deleteButton = true) {
+    if (!confirm(alt_confirm)) {
         return;
     }
-    let buttonDiv = getRequiredElementById(button_div_id);
-    buttonDiv.querySelector('button').disabled = true;
-    buttonDiv.appendChild(createDiv('', null, 'Installing...'));
+    let buttonDiv = document.getElementById(button_div_id);
+    if (buttonDiv) {
+        buttonDiv.querySelector('button').disabled = true;
+        buttonDiv.appendChild(createDiv('', null, 'Installing...'));
+    }
     genericRequest('ComfyInstallFeatures', {'feature': name}, data => {
-        buttonDiv.appendChild(createDiv('', null, "Installed! Please wait while backends restart. If it doesn't work, you may need to restart Swarm."));
+        if (buttonDiv) {
+            buttonDiv.appendChild(createDiv('', null, "Installed! Please wait while backends restart. If it doesn't work, you may need to restart Swarm."));
+        }
         reviseStatusBar();
         setTimeout(() => {
-            if (deleteButton) {
+            if (deleteButton && buttonDiv) {
                 buttonDiv.remove();
             }
             hasAppliedFirstRun = false;
@@ -1872,26 +1876,28 @@ function doFeatureInstaller(path, author, name, button_div_id, alt_confirm = nul
         }, 8000);
     }, 0, (e) => {
         showError(e);
-        buttonDiv.appendChild(createDiv('', null, 'Failed to install!'));
-        buttonDiv.querySelector('button').disabled = false;
+        if (buttonDiv) {
+            buttonDiv.appendChild(createDiv('', null, 'Failed to install!'));
+            buttonDiv.querySelector('button').disabled = false;
+        }
     });
 }
 
-function installFeatureById(id) {
+function installFeatureById(id, buttonId = null, modalId = null) {
     let feature = comfy_features[id];
     if (!feature) {
         console.error(`Feature ID ${id} not found in comfy_features, can't install`);
         return;
     }
-    doFeatureInstaller(feature.url, feature.author, feature.id, feature.html_button_elem, feature.notice, () => {
-        if (feature.modal_id) {
-            $(`#${feature.modal_id}`).modal('hide');
+    doFeatureInstaller(feature.id, buttonId, feature.notice, () => {
+        if (modalId) {
+            $(`#${modalId}`).modal('hide');
         }
     });
 }
 
 function installTensorRT() {
-    doFeatureInstaller('https://github.com/comfyanonymous/ComfyUI_TensorRT', 'comfyanonymous + NVIDIA', 'comfyui_tensorrt', 'install_trt_button', `This will install TensorRT support developed by Comfy and NVIDIA.\nDo you wish to install?`, () => {
+    doFeatureInstaller('comfyui_tensorrt', 'install_trt_button', `This will install TensorRT support developed by Comfy and NVIDIA.\nDo you wish to install?`, () => {
         getRequiredElementById('tensorrt_mustinstall').style.display = 'none';
         getRequiredElementById('tensorrt_modal_ready').style.display = '';
     });
