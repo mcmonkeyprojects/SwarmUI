@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Builtin_ComfyUIBackend;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
+using SwarmUI.Utils;
 
 namespace SwarmUI.Builtin_DynamicThresholding;
 
@@ -16,8 +17,13 @@ public class DynamicThresholdingExtension : Extension
 
     public override void OnInit()
     {
+        // Add the installable info for the comfy node backend
         InstallableFeatures.RegisterInstallableFeature(new("Dynamic Thresholding", "dynamic_thresholding", "https://github.com/mcmonkeyprojects/sd-dynamic-thresholding", "mcmonkey", "This will install Dynamic Thresholding support developed by mcmonkey.\nDo you wish to install?"));
+        // Add the JS file, which manages the install button for the comfy node
         ScriptFiles.Add("assets/dyn_thresh.js");
+        // Track a feature ID that will automatically be enabled for a backend if the comfy node is installed
+        ComfyUIBackendExtension.NodeToFeatureMap["DynamicThresholdingFull"] = "dynamic_thresholding";
+        // Build the actual parameters list for inside SwarmUI, note the usage of the feature flag defined above
         T2IParamGroup dynThreshGroup = new("Dynamic Thresholding", Toggles: true, Open: false, IsAdvanced: true);
         MimicScale = T2IParamTypes.Register<double>(new("[DT] Mimic Scale", "[Dynamic Thresholding]\nMimic Scale value (target for the CFG Scale recentering).",
             "7", Min: 0, Max: 100, Group: dynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 1,
@@ -60,13 +66,17 @@ public class DynamicThresholdingExtension : Extension
             "1", Min: 0, Max: 1, Step: 0.05, Group: dynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 11,
             Examples: ["0", "0.25", "0.5", "0.75", "1"]
             ));
-
-        // TODO: Auto WebUI Converter (use DynThres ext on auto webui)
-        ComfyUIBackendExtension.NodeToFeatureMap["DynamicThresholdingFull"] = "dynamic_thresholding";
+        // The actual implementation: add the node as a step in the workflow generator.
         WorkflowGenerator.AddStep(g =>
         {
-            if (ComfyUIBackendExtension.FeaturesSupported.Contains("dynamic_thresholding") && g.UserInput.TryGet(MimicScale, out double mimicScale))
+            // Only activate if parameters are used - because the whole group toggles as once, any one parameter being set indicates the full set is valid (excluding corrupted API calls)
+            if (g.UserInput.TryGet(MimicScale, out double mimicScale))
             {
+                // This shouldn't be possible outside of corrupt API calls, but check just to be safe
+                if (!ComfyUIBackendExtension.FeaturesSupported.Contains("dynamic_thresholding"))
+                {
+                    throw new SwarmUserErrorException("Dynamic thresholding parameters specified, but feature isn't installed");
+                }
                 string newNode = g.CreateNode("DynamicThresholdingFull", new JObject()
                 {
                     ["model"] = g.FinalModel,
@@ -82,8 +92,12 @@ public class DynamicThresholdingExtension : Extension
                     ["variability_measure"] = g.UserInput.Get(VariabilityMeasure),
                     ["interpolate_phi"] = g.UserInput.Get(InterpolatePhi)
                 });
+                // Workflow additions generally only do anything if a key passthrough field is updated.
+                // In our case, we're replacing the Model node, so update FinalModel to point at our node's output.
                 g.FinalModel = [$"{newNode}", 0];
             }
+            // See WorkflowGeneratorSteps for definition of the priority values.
+            // -5.5 puts this before the main Sampler, but after most other model changes (eg controlnet)
         }, -5.5);
     }
 }
