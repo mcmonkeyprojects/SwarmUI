@@ -16,6 +16,8 @@ public class DynamicThresholdingExtension : Extension
 
     public override void OnInit()
     {
+        InstallableFeatures.RegisterInstallableFeature(new("Dynamic Thresholding", "dynamic_thresholding", "https://github.com/mcmonkeyprojects/sd-dynamic-thresholding", "mcmonkey", "This will install Dynamic Thresholding support developed by mcmonkey.\nDo you wish to install?"));
+        ScriptFiles.Add("assets/dyn_thresh.js");
         T2IParamGroup dynThreshGroup = new("Dynamic Thresholding", Toggles: true, Open: false, IsAdvanced: true);
         MimicScale = T2IParamTypes.Register<double>(new("[DT] Mimic Scale", "[Dynamic Thresholding]\nMimic Scale value (target for the CFG Scale recentering).",
             "7", Min: 0, Max: 100, Group: dynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 1,
