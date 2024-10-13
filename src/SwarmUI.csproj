@@ -5,6 +5,12 @@
     <Version>0.9.2.3</Version>
     <NoWarn>CS1998</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>SwarmUI</AssemblyName>
+    <Title>SwarmUI</Title>
+    <Product>SwarmUI</Product>
+    <Authors>Alex "mcmonkey" Goodwin</Authors>
+    <Copyright>Copyright (c) 2024 Alex "mcmonkey" Goodwin</Copyright>
+    <Description>SwarmUI, an AI Image Generation User-Interface</Description>
   </PropertyGroup>
 
   <ItemGroup>
