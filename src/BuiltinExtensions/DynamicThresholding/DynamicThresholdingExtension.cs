@@ -73,7 +73,7 @@ public class DynamicThresholdingExtension : Extension
             if (g.UserInput.TryGet(MimicScale, out double mimicScale))
             {
                 // This shouldn't be possible outside of corrupt API calls, but check just to be safe
-                if (!ComfyUIBackendExtension.FeaturesSupported.Contains("dynamic_thresholding"))
+                if (!g.Features.Contains("dynamic_thresholding"))
                 {
                     throw new SwarmUserErrorException("Dynamic thresholding parameters specified, but feature isn't installed");
                 }
