@@ -16,4 +16,4 @@ ASPNETCORE_URLS="http://*:7801"
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 
 # Actual runner.
-dotnet src/bin/live_release/SwarmUI.dll $@
+./src/bin/live_release/SwarmUI $@

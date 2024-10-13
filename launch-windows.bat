@@ -37,7 +37,7 @@ if exist .\src\bin\must_rebuild (
 )
 
 rem Build the program if it isn't already built
-if not exist src\bin\live_release\SwarmUI.dll (
+if not exist src\bin\live_release\SwarmUI.exe (
     rem For some reason Microsoft's nonsense is missing the official nuget source? So forcibly add that to be safe.
     dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source"
 
@@ -50,7 +50,7 @@ rem Default env configuration, gets overwritten by the C# code's settings handle
 set ASPNETCORE_ENVIRONMENT="Production"
 set ASPNETCORE_URLS="http://*:7801"
 
-dotnet src\bin\live_release\SwarmUI.dll %*
+.\src\bin\live_release\SwarmUI.exe %*
 
 rem Exit code 42 means restart, anything else = don't.
 if %ERRORLEVEL% EQU 42 (

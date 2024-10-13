@@ -11,6 +11,7 @@
     <Authors>Alex "mcmonkey" Goodwin</Authors>
     <Copyright>Copyright (c) 2024 Alex "mcmonkey" Goodwin</Copyright>
     <Description>SwarmUI, an AI Image Generation User-Interface</Description>
+    <OutputType>exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>

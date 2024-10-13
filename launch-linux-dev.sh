@@ -23,4 +23,4 @@ dotnet build src/SwarmUI.csproj --configuration Debug -o ./src/bin/live_release
 export ASPNETCORE_ENVIRONMENT="Production"
 export ASPNETCORE_URLS="http://*:7801"
 # Actual runner.
-dotnet src/bin/live_release/SwarmUI.dll $@
+./src/bin/live_release/SwarmUI $@
