@@ -99,15 +99,25 @@ public class ComfyUIBackendExtension : Extension
             FeaturesSupported.UnionWith(["gguf"]);
             FeaturesDiscardIfNotFound.UnionWith(["gguf"]);
         }
-        static string[] listModelsFor(string subpath)
-        {
-            string path = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, subpath);
-            Directory.CreateDirectory(path);
-            return [.. Directory.EnumerateFiles(path).Where(f => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'))).Select(f => f.Replace('\\', '/').AfterLast('/'))];
-        }
-        T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, listModelsFor("upscale_models").Select(u => $"model-{u}///Model: {u}"));
-        T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, listModelsFor(Program.ServerSettings.Paths.SDClipFolder));
+        T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, InternalListModelsFor("upscale_models", true).Select(u => $"model-{u}///Model: {u}"));
+        T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, InternalListModelsFor(Program.ServerSettings.Paths.SDClipFolder, true));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
+    }
+
+    /// <summary>Helper to quickly read a list of model files in a model subfolder, for prepopulating model lists during startup.</summary>
+    public static string[] InternalListModelsFor(string subpath, bool createDir)
+    {
+        string path = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, subpath);
+        if (createDir)
+        {
+            Directory.CreateDirectory(path);
+        }
+        else if (!Directory.Exists(path))
+        {
+            return [];
+        }
+        static bool isModelFile(string f) => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'));
+        return [.. Directory.EnumerateFiles(path).Where(isModelFile).Select(f => f.Replace('\\', '/').AfterLast('/'))];
     }
 
     /// <inheritdoc/>
