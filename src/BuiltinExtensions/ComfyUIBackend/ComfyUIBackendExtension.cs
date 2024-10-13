@@ -101,6 +101,8 @@ public class ComfyUIBackendExtension : Extension
         }
         T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, InternalListModelsFor("upscale_models", true).Select(u => $"model-{u}///Model: {u}"));
         T2IParamTypes.ConcatDropdownValsClean(ref ClipModels, InternalListModelsFor(Program.ServerSettings.Paths.SDClipFolder, true));
+        T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, InternalListModelsFor("yolov8", false));
+        T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, InternalListModelsFor("gligen", false));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
     }
 
@@ -117,7 +119,7 @@ public class ComfyUIBackendExtension : Extension
             return [];
         }
         static bool isModelFile(string f) => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'));
-        return [.. Directory.EnumerateFiles(path).Where(isModelFile).Select(f => f.Replace('\\', '/').AfterLast('/'))];
+        return [.. Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(isModelFile).Select(f => Path.GetRelativePath(path, f))];
     }
 
     /// <inheritdoc/>
