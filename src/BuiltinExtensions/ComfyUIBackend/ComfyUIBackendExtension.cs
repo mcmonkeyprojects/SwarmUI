@@ -490,7 +490,14 @@ public class ComfyUIBackendExtension : Extension
             }
             foreach (Action<JObject> parser in RawObjectInfoParsers)
             {
-                parser(rawObjectInfo);
+                try
+                {
+                    parser(rawObjectInfo);
+                }
+                catch (Exception ex)
+                {
+                    Logs.Error($"Error while running extension parsing on raw object info: {ex.ReadableString()}");
+                }
             }
         }
     }
