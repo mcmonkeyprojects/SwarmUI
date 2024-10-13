@@ -6,8 +6,10 @@ export PATH="$SCRIPT_DIR/.dotnet:~/.dotnet:$PATH"
 # Set the expected runtime root
 if [ -d "$SCRIPT_DIR/.dotnet" ]; then
     export DOTNET_ROOT="$SCRIPT_DIR/.dotnet"
+    export DOTNET_ROOT_X64="$SCRIPT_DIR/.dotnet"
 elif [ -d "~/.dotnet" ]; then
     export DOTNET_ROOT="~/.dotnet"
+    export DOTNET_ROOT_X64="~/.dotnet"
 fi
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
