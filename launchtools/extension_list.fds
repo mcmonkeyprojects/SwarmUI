@@ -61,3 +61,10 @@ WildcardImporter:
     # Hidden due to being very early alpha
     - hidden
     - beta
+
+PostRender:
+    author: HellerCommaA
+    description: Adds support for ProPost (LUTs, film grain, vignette, blur, and more to come)
+    url: https://github.com/HellerCommaA/SwarmUI-PostRender
+    tags:
+    - parameters
