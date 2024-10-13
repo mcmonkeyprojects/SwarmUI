@@ -689,6 +689,12 @@ body {
     overflow: hidden;
     margin-left: 0.5rem;
 }
+.browser-header-count {
+    color: var(--text-soft);
+    font-size: 80%;
+    margin-left: 0.5rem;
+    opacity: 0.8;
+}
 .browser-fullcontent-container {
     margin-left: 0.2rem;
     display: inline-block;

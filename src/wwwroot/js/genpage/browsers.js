@@ -633,9 +633,13 @@ class GenPageBrowserClass {
             this.folderTreeDiv.innerHTML = '';
             this.contentDiv.innerHTML = '';
             this.headerPath.remove();
+            this.headerCount.remove();
         }
         this.headerPath = this.genPath(path, this.upButton);
         this.headerBar.appendChild(this.headerPath);
+        this.headerCount = createSpan(null, 'browser-header-count');
+        this.headerCount.innerText = files.length;
+        this.headerBar.appendChild(this.headerCount);
         this.buildTreeElements(this.folderTreeDiv, '', this.tree);
         this.buildContentList(this.contentDiv, files);
         this.folderTreeDiv.scrollTop = folderScroll;
