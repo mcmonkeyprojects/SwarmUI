@@ -4,10 +4,7 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "$SCRIPT_DIR"
 
-# Add dotnet non-admin-install to path
-export PATH="$SCRIPT_DIR/.dotnet:~/.dotnet:$PATH"
-
-export DOTNET_CLI_TELEMETRY_OPTOUT=1
+source ./launchtools/linux-path-fix.sh
 
 # The actual update
 git pull
