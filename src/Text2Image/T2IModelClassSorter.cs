@@ -215,6 +215,10 @@ public class T2IModelClassSorter
         {
             return isFluxControlnet(h);
         }});
+        Register(new() { ID = "flux.1-dev/controlnet-alimamainpaint", CompatClass = "flux-1", Name = "Flux.1 ControlNet - AliMama Inpaint", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Remaps["flux-1-dev"] = "Flux.1-dev";
         Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
         Remaps["flux-1-dev/controlnet"] = "Flux.1-dev/controlnet";
