@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Add dotnet non-admin-install to path
-export PATH="$SCRIPT_DIR/.dotnet:~/.dotnet:$PATH"
+export PATH="$SCRIPT_DIR/.dotnet:$HOME/.dotnet:$PATH"
 
 # Set the expected runtime root
 if [ -d "$SCRIPT_DIR/.dotnet" ]; then
