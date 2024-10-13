@@ -795,7 +795,26 @@ public class WorkflowGeneratorSteps
                         });
                     }
                     string applyNode;
-                    if (g.IsSD3() || g.IsFlux())
+                    if (controlModel.Metadata?.ModelClassType == "flux.1-dev/controlnet-alimamainpaint")
+                    {
+                        if (g.FinalMask is null)
+                        {
+                            throw new SwarmUserErrorException("Alimama Inpainting ControlNet requires a mask.");
+                        }
+                        applyNode = g.CreateNode("ControlNetInpaintingAliMamaApply", new JObject()
+                        {
+                            ["positive"] = g.FinalPrompt,
+                            ["negative"] = g.FinalNegativePrompt,
+                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["vae"] = g.FinalVae,
+                            ["image"] = imageNodeActual,
+                            ["mask"] = g.FinalMask,
+                            ["strength"] = controlStrength,
+                            ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
+                            ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
+                        });
+                    }
+                    else if (g.IsSD3() || g.IsFlux())
                     {
                         applyNode = g.CreateNode("ControlNetApplySD3", new JObject()
                         {
