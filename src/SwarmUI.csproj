@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Version>0.9.2.3</Version>
+    <Version>0.9.3.0</Version>
     <NoWarn>CS1998</NoWarn>
     <InvariantGlobalization>true</InvariantGlobalization>
     <AssemblyName>SwarmUI</AssemblyName>
@@ -17,7 +17,7 @@
 
   <ItemGroup>
     <PackageReference Include="FreneticLLC.FreneticUtilities" Version="1.0.33" />
-    <PackageReference Include="Hardware.Info" Version="100.1.0.1" />
+    <PackageReference Include="Hardware.Info" Version="101.0.0" />
     <PackageReference Include="LiteDB" Version="5.0.21" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.5" />

@@ -1,6 +1,6 @@
 # SwarmUI
 
-**SwarmUI v0.9.2 Beta**.
+**SwarmUI v0.9.3 Beta**.
 
 Formerly known as StableSwarmUI.
 
