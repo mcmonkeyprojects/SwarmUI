@@ -39,7 +39,9 @@ public class T2IModelClassSorter
         bool isControlLora(JObject h) => h.ContainsKey("lora_controlnet");
         bool isTurbo21(JObject h) => h.ContainsKey("denoiser.sigmas") && h.ContainsKey("conditioner.embedders.0.model.ln_final.bias");
         bool isSD3(JObject h) => h.ContainsKey("model.diffusion_model.joint_blocks.0.context_block.attn.proj.bias");
-        bool isSD3Cnet(JObject h) => h.ContainsKey("controlnet_blocks.0.bias") && h.ContainsKey("transformer_blocks.0.ff.net.0.proj.bias");
+        bool isDitControlnet(JObject h) => h.ContainsKey("controlnet_blocks.0.bias") && h.ContainsKey("transformer_blocks.0.ff.net.0.proj.bias");
+        bool isFluxControlnet(JObject h) => isDitControlnet(h) && h.ContainsKey("transformer_blocks.0.attn.norm_added_k.weight");
+        bool isSD3Controlnet(JObject h) => isDitControlnet(h) && !isFluxControlnet(h);
         bool isCascadeA(JObject h) => h.ContainsKey("vquantizer.codebook.weight");
         bool isCascadeB(JObject h) => h.ContainsKey("model.diffusion_model.clf.1.weight") && h.ContainsKey("model.diffusion_model.clip_mapper.weight");
         bool isCascadeC(JObject h) => h.ContainsKey("model.diffusion_model.clf.1.weight") && h.ContainsKey("model.diffusion_model.clip_txt_mapper.weight");
@@ -58,7 +60,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "stable-diffusion-v1/controlnet", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 ControlNet", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
-            return isV1CNet(h) && !isControlLora(h) && !isSD3Cnet(h);
+            return isV1CNet(h) && !isControlLora(h) && !isDitControlnet(h);
         }});
         JToken GetEmbeddingKey(JObject h)
         {
@@ -140,7 +142,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "stable-diffusion-xl-v1-base/controlnet", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isXLControlnet(h) && !isSD3Cnet(h);
+            return isXLControlnet(h) && !isDitControlnet(h);
         }});
         Register(new() { ID = "stable-diffusion-xl-v1-base/textual-inversion", CompatClass = "stable-diffusion-xl-v1", Name = "Stable Diffusion XL 1.0-Base Embedding", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -176,7 +178,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "stable-diffusion-v3-medium/controlnet", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isSD3Cnet(h);
+            return isSD3Controlnet(h);
         }});
         // ====================== BFL Flux.1 ======================
         Register(new() { ID = "flux.1/vae", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
@@ -211,7 +213,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.1-dev/controlnet", CompatClass = "flux-1", Name = "Flux.1 ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return false;
+            return isFluxControlnet(h);
         }});
         Remaps["flux-1-dev"] = "Flux.1-dev";
         Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
