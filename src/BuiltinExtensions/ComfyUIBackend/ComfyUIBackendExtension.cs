@@ -352,7 +352,11 @@ public class ComfyUIBackendExtension : Extension
             AssignValuesFromRaw(rawObjectInfo);
         });
     }
+
     public static LockObject ValueAssignmentLocker = new();
+    
+    /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
+    public static List<Action<JObject>> RawObjectInfoParsers = [];
 
     public static void AssignValuesFromRaw(JObject rawObjectInfo)
     {
@@ -471,6 +475,10 @@ public class ComfyUIBackendExtension : Extension
             foreach (string feature in FeaturesDiscardIfNotFound)
             {
                 FeaturesSupported.Remove(feature);
+            }
+            foreach (Action<JObject> parser in RawObjectInfoParsers)
+            {
+                parser(rawObjectInfo);
             }
         }
     }
