@@ -1022,7 +1022,13 @@ public class T2IParamInput
             {
                 return null;
             }
-            return handler.GetModel(best);
+            T2IModel model = handler.GetModel(best);
+            if (model is null)
+            {
+                return null;
+            }
+            model.AutoWarn();
+            return model;
         }
         if (param.IgnoreIf is not null && param.IgnoreIf == val)
         {

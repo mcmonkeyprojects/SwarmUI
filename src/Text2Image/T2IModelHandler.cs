@@ -631,6 +631,7 @@ public class T2IModelHandler
                     }
                     Logs.Warning($"Failed to load metadata for {fullFilename}:\n{ex.ReadableString()}");
                 }
+                model.AutoWarn();
             }
             else if (fn.EndsWith(".ckpt") || fn.EndsWith(".pt") || fn.EndsWith(".pth"))
             {
@@ -641,6 +642,7 @@ public class T2IModelHandler
                 };
                 model.PreviewImage = GetAutoFormatImage(model) ?? model.PreviewImage;
                 Models[fullFilename] = model;
+                model.AutoWarn();
             }
         });
     }

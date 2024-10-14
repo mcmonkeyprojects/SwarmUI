@@ -1,4 +1,5 @@
 ﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
 using SwarmUI.Utils;
@@ -266,5 +267,20 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     public override string ToString()
     {
         return Name.Replace('/', Path.DirectorySeparatorChar);
+    }
+
+    public static AsciiMatcher DangerousModelNameChars = new("\n\t,%*\"<>");
+
+    /// <summary>Display any necessary warnings related to this model in logs.</summary>
+    public void AutoWarn()
+    {
+        if (DangerousModelNameChars.ContainsAnyMatch(Name))
+        {
+            Logs.Warning($"{Handler?.ModelType} model '{Name}' contains special characters in its name, which might cause parsing issues. Consider renaming the file.");
+        }
+        if (Handler?.ModelType == "Embedding" && Name.Contains(' '))
+        {
+            Logs.Warning($"Embedding model '{Name}' contains spaces in its name, which will cause it to not parse properly on the backend. Please rename the file.");
+        }
     }
 }
