@@ -2292,6 +2292,17 @@ function storeImageToHistoryWithCurrentParams(img) {
     });
 }
 
+function clearInput() {
+    let mainInputsFilter = document.getElementById('main_inputs_filter');
+    if (mainInputsFilter) {
+        mainInputsFilter.value = '';
+        // refocus on input element
+        mainInputsFilter.focus();
+        // reshow now cleared variables
+        hideUnsupportableParams();
+    }
+}
+
 function genpageLoad() {
     console.log('Load page...');
     $('#toptablist').on('shown.bs.tab', function (e) {

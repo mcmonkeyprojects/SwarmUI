@@ -1197,10 +1197,32 @@ body {
     background-color: orange;
     color: black;
 }
+.input-wrapper {
+    width: 100%;
+    position: relative;
+    display: inline-block;
+}
 .main_inputs_filter {
     width: 100%;
     margin: auto;
     margin-bottom: 0.2rem;
+}
+.main_inputs_filter:not(:placeholder-shown)~.clear-icon {
+    display: inline-block;
+}
+.main_inputs_filter:focus~.clear-icon {
+    display: inline-block;
+}
+.clear-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 14px;
+    color: #aaa;
+    /* initially hidden */
+    display: none;
 }
 .card-collection-inline {
     display: block;
