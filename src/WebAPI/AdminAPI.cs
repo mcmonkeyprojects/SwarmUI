@@ -446,7 +446,11 @@ public static class AdminAPI
     {
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
         string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-        await Utilities.RunGitProcess("pull");
+        string pullResult = await Utilities.RunGitProcess("pull");
+        if (pullResult.Contains("error: Your local changes to the following files would be overwritten by merge:"))
+        {
+            return new JObject() { ["error"] = "Git pull failed because you have local changes to source files. Please remove them, or manually run 'git pull --autostash' in the SwarmUI folder." };
+        }
         string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
         Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
         if (priorHash == localHash && !force)
