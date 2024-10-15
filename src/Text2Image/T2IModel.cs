@@ -47,6 +47,9 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     /// <summary>Set of all model file extensions that are considered natively supported.</summary>
     public static HashSet<string> NativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 
+    /// <summary>Set of all model file extensions that are considered supported for legacy reasons only.</summary>
+    public static HashSet<string> LegacyModelExtensions = ["ckpt", "pt", "pth", "bin"];
+
     /// <summary>Returns the model's SHA-256 Tensor Hash - either from metadata, or by generating it from the file.
     /// Returns null if hashing is impossible (no handler, no metadata construct, no source file).
     /// Can optionally update cache and/or file when generating.</summary>

@@ -118,7 +118,7 @@ public class ComfyUIBackendExtension : Extension
         {
             return [];
         }
-        static bool isModelFile(string f) => f.EndsWith(".pth") || f.EndsWith(".pt") || f.EndsWith(".ckpt") || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'));
+        static bool isModelFile(string f) => T2IModel.LegacyModelExtensions.Contains(f.AfterLast('.')) || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'));
         return [.. Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(isModelFile).Select(f => Path.GetRelativePath(path, f))];
     }
 

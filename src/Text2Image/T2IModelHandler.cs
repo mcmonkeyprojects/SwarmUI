@@ -633,7 +633,7 @@ public class T2IModelHandler
                 }
                 model.AutoWarn();
             }
-            else if (fn.EndsWith(".ckpt") || fn.EndsWith(".pt") || fn.EndsWith(".pth"))
+            else if (T2IModel.LegacyModelExtensions.Contains(fn.AfterLast('.')))
             {
                 T2IModel model = new(this, pathBase, file, fullFilename)
                 {
