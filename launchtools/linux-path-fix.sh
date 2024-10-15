@@ -18,20 +18,22 @@ if [ -z "$DOTNET_ROOT" ]; then
 fi
 
 # Fallback to a list of expected locations it could also be in
-expected_location=(
-    "$SCRIPT_DIR/.dotnet"
-    "$HOME/.dotnet"
-    "/usr/lib/dotnet"
-    "/usr/share/dotnet"
-)
+if [ -z "$DOTNET_ROOT" ]; then
+    expected_location=(
+        "$SCRIPT_DIR/.dotnet"
+        "$HOME/.dotnet"
+        "/usr/lib/dotnet"
+        "/usr/share/dotnet"
+    )
 
-for location in "${expected_location[@]}"; do
-    if [ -d "$location" ]; then
-        export DOTNET_ROOT="$location"
-        export DOTNET_ROOT_X64="$location"
-        break
-    fi
-done
+    for location in "${expected_location[@]}"; do
+        if [ -d "$location" ]; then
+            export DOTNET_ROOT="$location"
+            export DOTNET_ROOT_X64="$location"
+            break
+        fi
+    done
+fi
 
 if [ -z "$DOTNET_ROOT" ]; then
     echo "Could not find dotnet runtime path, please report on Discord @ https://discord.gg/q2y38cqjNw with info about your dotnet installation"
