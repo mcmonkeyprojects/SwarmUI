@@ -1806,37 +1806,6 @@ function updateAllModels(models) {
     modelDownloader.reloadFolders();
 }
 
-let shutdownConfirmationText = translatable("Are you sure you want to shut SwarmUI down?");
-
-function shutdown_server() {
-    if (confirm(shutdownConfirmationText.get())) {
-        genericRequest('ShutdownServer', {}, data => {
-            close();
-        });
-    }
-}
-
-let restartConfirmationText = translatable("Are you sure you want to update and restart SwarmUI?");
-let checkingForUpdatesText = translatable("Checking for updates...");
-
-function update_and_restart_server() {
-    let noticeArea = getRequiredElementById('shutdown_notice_area');
-    if (confirm(restartConfirmationText.get())) {
-        noticeArea.innerText = checkingForUpdatesText.get();
-        genericRequest('UpdateAndRestart', {}, data => {
-            noticeArea.innerText = data.result;
-        });
-    }
-}
-
-function server_clear_vram() {
-    genericRequest('FreeBackendMemory', { 'system_ram': false }, data => {});
-}
-
-function server_clear_sysram() {
-    genericRequest('FreeBackendMemory', { 'system_ram': true }, data => {});
-}
-
 /** Set some element titles via JavaScript (to allow '\n'). */
 function setTitles() {
     getRequiredElementById('alt_prompt_textbox').title = "Tell the AI what you want to see, then press Enter to submit.\nConsider 'a photo of a cat', or 'cartoonish drawing of an astronaut'";
