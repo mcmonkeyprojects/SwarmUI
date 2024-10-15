@@ -7,7 +7,17 @@ export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 # Add dotnet non-admin-install to path
 export PATH="$SCRIPT_DIR/.dotnet:$HOME/.dotnet:/usr/lib/dotnet:/usr/share/dotnet:$PATH"
 
-# Try to set the expected runtime root from expected locations
+# Try to set the expected runtime root by parsing dotnet cli output
+if [ -z "$DOTNET_ROOT" ]; then
+    runtime_path=$(dotnet --list-runtimes | head -n 1 | awk -F'[\\[\\]]' '{print $2}')
+    if [ -d "$runtime_path" ]; then
+        actual_path="$(dirname "$(dirname "$runtime_path")")"
+        export DOTNET_ROOT="$actual_path"
+        export DOTNET_ROOT_X64="$actual_path"
+    fi
+fi
+
+# Fallback to a list of expected locations it could also be in
 expected_location=(
     "$SCRIPT_DIR/.dotnet"
     "$HOME/.dotnet"
@@ -22,16 +32,6 @@ for location in "${expected_location[@]}"; do
         break
     fi
 done
-
-# Fallback to trying to parse dotnet cli outputs
-if [ -z "$DOTNET_ROOT" ]; then
-    runtime_path=$(dotnet --list-runtimes | head -n 1 | awk -F'[\\[\\]]' '{print $2}')
-    if [ -d "$runtime_path" ]; then
-        actual_path="$(dirname "$(dirname "$runtime_path")")"
-        export DOTNET_ROOT="$actual_path"
-        export DOTNET_ROOT_X64="$actual_path"
-    fi
-fi
 
 if [ -z "$DOTNET_ROOT" ]; then
     echo "Could not find dotnet runtime path, please report on Discord @ https://discord.gg/q2y38cqjNw with info about your dotnet installation"
