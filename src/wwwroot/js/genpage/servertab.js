@@ -64,10 +64,13 @@ let checkingForUpdatesText = translatable("Checking for updates...");
 
 function update_and_restart_server() {
     let noticeArea = getRequiredElementById('shutdown_notice_area');
+    noticeArea.style.display = 'block';
     if (confirm(restartConfirmationText.get())) {
         noticeArea.innerText = checkingForUpdatesText.get();
         genericRequest('UpdateAndRestart', {}, data => {
             noticeArea.innerText = data.result;
+        }, 0, e => {
+            noticeArea.innerText = e;
         });
     }
 }
