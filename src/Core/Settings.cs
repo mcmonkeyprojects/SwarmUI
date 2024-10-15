@@ -322,12 +322,14 @@ public class Settings : AutoConfiguration
 
         public enum HintFormatOptions
         {
-            BUTTON, HOVER, NONE
+            BUTTON, HOVER, HOVER_DELAY, NONE
         }
 
         [ConfigComment("The format for parameter hints to display as.\nDefault is 'BUTTON'.")]
         [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<HintFormatOptions>))]
         public string HintFormat = "BUTTON";
+        [ConfigComment("The delay, in seconds, for parameter hints when 'HOVER_DELAY' is selected")]
+        public int HoverDelaySeconds = 1;
 
         public class VAEsData : AutoConfiguration
         {
