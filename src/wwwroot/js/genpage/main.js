@@ -45,7 +45,7 @@ function clearBatch() {
 
 /** Reference to the auto-clear-batch toggle checkbox. */
 let autoClearBatchElem = getRequiredElementById('auto_clear_batch_checkbox');
-autoClearBatchElem.checked = localStorage.getItem('autoClearBatch') != 'false';
+autoClearBatchElem.checked = localStorage.getItem('autoClearBatch') == 'true';
 /** Called when the user changes auto-clear-batch toggle to update local storage. */
 function toggleAutoClearBatch() {
     localStorage.setItem('autoClearBatch', `${autoClearBatchElem.checked}`);
