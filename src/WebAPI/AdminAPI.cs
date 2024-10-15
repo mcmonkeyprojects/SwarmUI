@@ -449,7 +449,7 @@ public static class AdminAPI
         string pullResult = await Utilities.RunGitProcess("pull");
         if (pullResult.Contains("error: Your local changes to the following files would be overwritten by merge:"))
         {
-            return new JObject() { ["error"] = "Git pull failed because you have local changes to source files. Please remove them, or manually run 'git pull --autostash' in the SwarmUI folder." };
+            return new JObject() { ["error"] = "Git pull failed because you have local changes to source files.\nPlease remove them, or manually run 'git pull --autostash', or 'git fetch origin && git checkout -f master' in the SwarmUI folder." };
         }
         string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
         Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
