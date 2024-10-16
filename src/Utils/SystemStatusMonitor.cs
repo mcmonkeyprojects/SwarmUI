@@ -24,6 +24,12 @@ public static class SystemStatusMonitor
     /// <summary>Semaphore to prevent the monitor tick firing off overlapping.</summary>
     public static SemaphoreSlim DeDuplicator = new(1, 1);
 
+    /// <summary>How many recent hardware info reports to store in the <see cref="HardwareInfoQueue"/>.</summary>
+    public static int QueueSize = 10;
+
+    /// <summary>Holds recent hardware info reports for the last <see cref="QueueSize"/> seconds.</summary>
+    public static ConcurrentQueue<HardwareInfo> HardwareInfoQueue = new();
+
     /// <summary>Updates system status.</summary>
     public static void Tick()
     {
@@ -41,7 +47,14 @@ public static class SystemStatusMonitor
                 ProcessCPUUsage = Math.Max(0, (newProcessorTime - LastProcessorTime) / (double)(newTick - LastTick));
                 LastProcessorTime = newProcessorTime;
                 LastTick = newTick;
-                HardwareInfo.RefreshMemoryStatus();
+                HardwareInfo newInfo = new();
+                newInfo.RefreshMemoryStatus();
+                HardwareInfo = newInfo;
+                HardwareInfoQueue.Enqueue(newInfo);
+                if (HardwareInfoQueue.Count > QueueSize)
+                {
+                    HardwareInfoQueue.TryDequeue(out _);
+                }
             }
             finally
             {

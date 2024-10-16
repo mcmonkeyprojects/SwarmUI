@@ -1,4 +1,5 @@
 ﻿using FreneticUtilities.FreneticExtensions;
+using Hardware.Info;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
@@ -365,6 +366,27 @@ public static class NetworkBackendUtils
                 if (everLoaded && !Program.GlobalProgramCancel.IsCancellationRequested)
                 {
                     Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
+                    (HardwareInfo, float)[] info = [.. SystemStatusMonitor.HardwareInfoQueue.Select(x => (x, x.MemoryStatus.AvailableVirtual / (float)x.MemoryStatus.TotalVirtual)).Where(x => x.Item2 > 0.8)];
+                    if (info.Any())
+                    {
+                        Logs.Warning($"Your system memory usage exceeded {info[0].Item2 * 100:#.0}% just before the backend process failed. This might indicate a memory overload.");
+                        ulong virtualMem = info[0].Item1.MemoryStatus.TotalVirtual - info[0].Item1.MemoryStatus.TotalPhysical;
+                        if (virtualMem < 16ul * 1024 * 1024 * 1024 || virtualMem * 2 < info[0].Item1.MemoryStatus.TotalPhysical)
+                        {
+                            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                            {
+                                Logs.Warning($"You appear to have a small or disabled pagefile. You should enable/expand it to prevent memory oveloads. See https://www.windowscentral.com/software-apps/windows-11/how-to-manage-virtual-memory-on-windows-11 for more info.");
+                            }
+                            else
+                            {
+                                Logs.Warning("You appear to have a small or disabled system swapfile. Please research how to enable one on your OS, and size it to at least 16GiB (larger is better).");
+                            }
+                        }
+                        else
+                        {
+                            Logs.Warning("You appear to have a sufficient pagefile, so you might have too many background processes, or you might just be trying to run too much.\nConsider closing background processes, or greatly expanding your pagefile size.\nOr, reduce the size of what you're trying to run. If you're running an FP16 or FP8 model, consider a quantized variant like GGUF Q4.");
+                        }
+                    }
                     Utilities.RunCheckedTask(async () =>
                     {
                         await Task.Delay(TimeSpan.FromSeconds(2), Program.GlobalProgramCancel);
