@@ -63,6 +63,25 @@ public class WebServer
     /// <summary>Extra content for the Text2Image page's tab bodies. Automatically set based on extensions.</summary>
     public static HtmlString T2ITabBody = new("");
 
+    /// <summary>Set of registered top-level nav tabs.</summary>
+    public Dictionary<string, TabData> RegisteredTabs = [];
+
+    public record class TabData(string ID, string Name) { }
+
+    /// <summary>Register a top-level nav tab.</summary>
+    public void RegisterTab(TabData tab)
+    {
+        RegisteredTabs.Add(tab.ID, tab);
+    }
+
+    /// <summary>Register a top-level nav tab from an extension.</summary>
+    /// <param name="ID">The tab button's <a> element ID.</param>
+    /// <param name="Name">The clear name to display to users.</param>
+    public void RegisterTab(string ID, string Name)
+    {
+        RegisterTab(new(ID, Name));
+    }
+
     /// <summary>Set of registered Theme IDs.</summary>
     public Dictionary<string, ThemeData> RegisteredThemes = [];
 
@@ -97,6 +116,13 @@ public class WebServer
         RegisterTheme(new("cyber_swarm", "Cyber Swarm", ["/css/themes/cyber_swarm.css"], true));
         RegisterTheme(new("punked", "Punked", ["/css/themes/punked.css"], true));
         RegisterTheme(new("eyesear_white", "Eyesear White", ["/css/themes/eyesear_white.css"], false));
+
+        RegisteredTabs.Clear();
+        RegisterTab(new("simpletabbutton", "Simple"));
+        RegisterTab(new("text2imagetabbutton", "Generate"));
+        RegisterTab(new("utilitiestabbutton", "Utilities"));
+        RegisterTab(new("usersettingstabbutton", "User"));
+        RegisterTab(new("servertabbutton", "Server"));
     }
 
     /// <summary>Main prep, called by <see cref="Program"/>, generally should not be touched externally.</summary>
@@ -289,6 +315,7 @@ public class WebServer
                     string simpleName = file.AfterLast('/').BeforeLast('.');
                     string id = T2IParamTypes.CleanTypeName(simpleName);
                     string content = File.ReadAllText(file);
+                    RegisterTab(id, simpleName);
                     tabHeader.Append($"<li class=\"nav-item\" role=\"presentation\"><a class=\"nav-link translate\" id=\"maintab_{id}\" data-bs-toggle=\"tab\" href=\"#{id}\" aria-selected=\"false\" tabindex=\"-1\" role=\"tab\">{simpleName}</a></li>\n");
                     tabFooter.Append($"<div class=\"tab-pane tab-pane-vw\" id=\"{id}\" role=\"tabpanel\">\n{content}\n</div>\n");
                 }
