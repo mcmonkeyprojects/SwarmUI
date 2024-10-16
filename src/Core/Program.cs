@@ -177,7 +177,7 @@ public class Program
             NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
             SystemStatusMonitor.HardwareInfo.RefreshMemoryStatus();
             MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo.MemoryStatus;
-            Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available");
+            Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.FixedTotalVirtual())} virtual, {new MemoryNum((long)memStatus.FixedTotalVirtual() - (long)memStatus.TotalPhysical)} swap");
             if (gpuInfo is not null)
             {
                 JObject gpus = [];
