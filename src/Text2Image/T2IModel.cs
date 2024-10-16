@@ -279,11 +279,11 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     {
         if (DangerousModelNameChars.ContainsAnyMatch(Name))
         {
-            Logs.Warning($"{Handler?.ModelType} model '{Name}' contains special characters in its name, which might cause parsing issues. Consider renaming the file.");
+            Logs.Warning($"{Handler?.ModelType} model '{Name}' contains special characters in its name, which might cause parsing issues. Consider renaming the file (or folder).");
         }
         if (Handler?.ModelType == "Embedding" && Name.Contains(' '))
         {
-            Logs.Warning($"Embedding model '{Name}' contains spaces in its name, which will cause it to not parse properly on the backend. Please rename the file.");
+            Logs.Warning($"Embedding model '{Name}' contains spaces in its name, which will cause it to not parse properly on the backend. Please rename the file or folder to remove spaces.");
         }
     }
 }
