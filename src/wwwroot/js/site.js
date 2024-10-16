@@ -461,6 +461,12 @@ function makeGenericPopover(id, name, type, description, example) {
     return `<div class="sui-popover" id="popover_${id}"><b>${escapeHtml(name)}</b> (${type}):<br>&emsp;${safeHtmlOnly(description)}${example}</div>`;
 }
 
+let popoverHoverTimer = null;
+
+function doPopoverHoverDelay(id, ms) {
+    popoverHoverTimer = setTimeout(function () { doPopoverHover(id); }, ms);
+}
+
 function doPopoverHover(id) {
     let input = getRequiredElementById(id);
     let parent = findParentOfClass(input, 'auto-input');
@@ -480,6 +486,10 @@ function doPopoverHover(id) {
 }
 
 function hidePopoverHover(id) {
+    if (popoverHoverTimer != null) {
+        clearTimeout(popoverHoverTimer);
+        popoverHoverTimer = null;
+    }
     let pop = getRequiredElementById(`popover_${id}`);
     if (pop.dataset.visible == "true") {
         pop.classList.remove('sui-popover-visible');
@@ -501,6 +511,13 @@ function getPopoverElemsFor(id, popover_button) {
     }
     else if (format == 'HOVER') {
         return ['', ` onmouseover="doPopoverHover('${id}')" onmouseout="hidePopoverHover('${id}')"`];
+    }
+    else if (format == 'HOVER_DELAY') {
+        let seconds = document.getElementById('usersettings_hoverdelayseconds');
+        if (seconds) {
+            let delayMs = parseInt(1000 * seconds.value);
+            return ['', ` onmouseover="doPopoverHoverDelay('${id}', ${delayMs})" onmouseout="hidePopoverHover('${id}')"`]
+        }
     }
     return ['', ''];
 }
