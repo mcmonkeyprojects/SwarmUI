@@ -464,7 +464,7 @@ function makeGenericPopover(id, name, type, description, example) {
 let popoverHoverTimer = null;
 
 function doPopoverHoverDelay(id, ms) {
-    popoverHoverTimer = setTimeout(function () { doPopoverHover(id); }, parseInt(ms));
+    popoverHoverTimer = setTimeout(function () { doPopoverHover(id); }, ms);
 }
 
 function doPopoverHover(id) {
@@ -515,8 +515,8 @@ function getPopoverElemsFor(id, popover_button) {
     else if (format == 'HOVER_DELAY') {
         let seconds = document.getElementById('usersettings_hoverdelayseconds');
         if (seconds) {
-            let delayMs = 1000 * parseInt(seconds.value);
-            return ['', ` onmouseover="doPopoverHoverDelay('${id}', '${delayMs}')" onmouseout="hidePopoverHover('${id}')"`]
+            let delayMs = parseInt(1000 * seconds.value);
+            return ['', ` onmouseover="doPopoverHoverDelay('${id}', ${delayMs})" onmouseout="hidePopoverHover('${id}')"`]
         }
     }
     return ['', ''];
