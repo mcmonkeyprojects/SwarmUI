@@ -24,6 +24,7 @@ if [ -z "$DOTNET_ROOT" ]; then
         "$HOME/.dotnet"
         "/usr/lib/dotnet"
         "/usr/share/dotnet"
+        "/opt/homebrew/opt/dotnet/libexec"
     )
 
     for location in "${expected_location[@]}"; do
