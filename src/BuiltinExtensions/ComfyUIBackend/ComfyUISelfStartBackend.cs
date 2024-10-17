@@ -344,17 +344,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await p.WaitForExitAsync(Program.GlobalProgramCancel);
                 AddLoadStatus($"Done installing '{pipName}' for ComfyUI.");
             }
-            // ComfyUI added these dependencies, didn't used to have it
-            await install("kornia", "kornia");
-            await install("sentencepiece", "sentencepiece");
-            await install("spandrel", "spandrel");
-            // Other added dependencies
-            await install("rembg", "rembg");
-            await install("matplotlib", "matplotlib==3.9"); // Old version due to "mesonpy" curse
-            await install("opencv_python_headless", "opencv-python-headless");
-            await install("imageio_ffmpeg", "imageio-ffmpeg");
-            await install("dill", "dill");
-            await install("ultralytics", "ultralytics==8.1.47"); // Old version due to "mesonpy" curse
+            foreach ((string libFolder, string pipName) in RequiredPythonPackages)
+            {
+                await install(libFolder, pipName);
+            }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
             {
                 // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
@@ -374,6 +367,22 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         AddLoadStatus("Starting self-start ComfyUI process...");
         await NetworkBackendUtils.DoSelfStart(settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", settings.GPU_ID, settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, settings.AutoRestart);
     }
+
+    /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
+    public static List<(string, string)> RequiredPythonPackages =
+    [
+        // ComfyUI added these dependencies, didn't used to have it
+        ("kornia", "kornia"),
+        ("sentencepiece", "sentencepiece"),
+        ("spandrel", "spandrel"),
+        // Other added dependencies
+        ("rembg", "rembg"),
+        ("matplotlib", "matplotlib==3.9"), // Old version due to "mesonpy" curse
+        ("opencv_python_headless", "opencv-python-headless"),
+        ("imageio_ffmpeg", "imageio-ffmpeg"),
+        ("dill", "dill"),
+        ("ultralytics", "ultralytics==8.1.47") // Old version due to "mesonpy" curse
+    ];
 
     public override async Task Shutdown()
     {
