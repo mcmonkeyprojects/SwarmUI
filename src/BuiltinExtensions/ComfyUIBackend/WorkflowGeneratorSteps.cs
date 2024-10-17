@@ -1073,11 +1073,13 @@ public class WorkflowGeneratorSteps
                         {
                             index = 0;
                         }
+                        string sortOrder = g.UserInput.Get(T2IParamTypes.SegmentationSortOrder, "left-right");
                         segmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
                         {
                             ["image"] = g.FinalImageOut,
                             ["model_name"] = fullname,
-                            ["index"] = index
+                            ["index"] = index,
+                            ["sort_order"] = sortOrder,
                         });
                     }
                     else
