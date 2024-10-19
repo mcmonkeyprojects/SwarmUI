@@ -1453,9 +1453,9 @@ function pageSizer() {
         tweakNegativePromptBox();
         if (altRegion.style.display != 'none') {
             altText.style.height = 'auto';
-            altText.style.height = `calc(min(15rem, ${Math.max(altText.scrollHeight, 15) + 5}px))`;
+            altText.style.height = `calc(min(10rem, ${Math.max(altText.scrollHeight, 15) + 5}px))`;
             altNegText.style.height = 'auto';
-            altNegText.style.height = `calc(min(15rem, ${Math.max(altNegText.scrollHeight, 15) + 5}px))`;
+            altNegText.style.height = `calc(min(10rem, ${Math.max(altNegText.scrollHeight, 15) + 5}px))`;
             altRegion.style.top = `calc(-${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px - 2rem)`;
         }
         setCookie('barspot_pageBarTop', pageBarTop, 365);
