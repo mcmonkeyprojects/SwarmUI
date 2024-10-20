@@ -68,3 +68,10 @@ PostRender:
     url: https://github.com/HellerCommaA/SwarmUI-PostRender
     tags:
     - parameters
+
+SkimmedCFG:
+    author: Quaggles
+    description: Adds support for SkimmedCFG anti-burn allowing much higher CFG scales.
+    url: https://github.com/Quaggles/SwarmUI-SkimmedCFG
+    tags:
+    - parameters
