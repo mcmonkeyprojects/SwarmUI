@@ -182,7 +182,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>Helper to download a core model file required by the workflow.</summary>
-    public void DownloadModel(string name, string filePath, string url)
+    public void DownloadModel(string name, string filePath, string url, string hash)
     {
         if (File.Exists(filePath))
         {
@@ -208,7 +208,7 @@ public class WorkflowGenerator
                         // TODO: Send a signal back so a progress bar can be displayed on a UI
                         nextPerc = Math.Round(perc / 0.05) * 0.05 + 0.05;
                     }
-                }).Wait();
+                }, verifyHash: hash).Wait();
             }
             catch (Exception ex)
             {
@@ -460,14 +460,14 @@ public class WorkflowGenerator
             LoadingVAE = parts[4].Length == 0 ? null : [parts[4], int.Parse(parts[5])];
             return (model, LoadingModel, LoadingClip, LoadingVAE);
         }
-        void requireClipModel(string name, string url)
+        void requireClipModel(string name, string url, string hash)
         {
             if (ClipModelsValid.Contains(name))
             {
                 return;
             }
             string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipFolder, name);
-            DownloadModel(name, filePath, url);
+            DownloadModel(name, filePath, url, hash);
             ClipModelsValid.Add(name);
         }
         string getT5XXLModel()
@@ -476,7 +476,7 @@ public class WorkflowGenerator
             {
                 return model;
             }
-            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors");
+            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors", "7d330da4816157540d6bb7838bf63a0f02f573fc48ca4d8de34bb0cbfd514f09");
             return "t5xxl_enconly.safetensors";
         }
         string getClipLModel()
@@ -489,7 +489,7 @@ public class WorkflowGenerator
             {
                 return "clip_l_sdxl_base.safetensors";
             }
-            requireClipModel("clip_l.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors");
+            requireClipModel("clip_l.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors", "660c6f5b1abae9dc498ac2d21e1347d2abdb0cf6c0c0c8576cd796491d9a6cdd");
             return "clip_l.safetensors";
         }
         string getClipGModel()
@@ -502,7 +502,7 @@ public class WorkflowGenerator
             {
                 return "clip_g_sdxl_base.safetensors";
             }
-            requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors");
+            requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors", "ec310df2af79c318e24d20511b601a591ca8cd4f1fce1d8dff822a356bcdb1f4");
             return "clip_g.safetensors";
         }
         IsDifferentialDiffusion = false;
