@@ -565,7 +565,7 @@ function refreshParameterValues(strong = true, callback = null) {
                 }
                 let values = param.values;
                 if (!values && param.type == "model") {
-                    values = coreModelMap[param.subtype || 'Stable-Diffusion'];
+                    values = coreModelMap[param.subtype || 'Stable-Diffusion'].map(m => cleanModelName(m));
                 }
                 if ((param.type == "dropdown" || param.type == "model") && values) {
                     let val = elem.value;
@@ -579,6 +579,7 @@ function refreshParameterValues(strong = true, callback = null) {
                         html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
                     }
                     elem.innerHTML = html;
+                    elem.value = val;
                     presetElem.innerHTML = html;
                 }
                 else if (param.type == "list" && values) {
