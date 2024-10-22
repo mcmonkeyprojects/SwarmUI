@@ -520,7 +520,7 @@ public static class Utilities
     public static HttpClient UtilWebClient = NetworkBackendUtils.MakeHttpClient();
 
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
-    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null)
+    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null)
     {
         altUrl ??= url;
         cancel ??= new();
@@ -567,11 +567,17 @@ public static class Utilities
                 }
             }
         });
+        void removeFile()
+        {
+            writer.Dispose();
+            File.Delete(filepath);
+        }
         Task saveChunks = Task.Run(async () =>
         {
             long progress = 0;
             long startTime = Environment.TickCount64;
             long lastUpdate = startTime;
+            SHA256 sha256 = SHA256.Create();
             while (true)
             {
                 if (chunks.TryDequeue(out byte[] chunk))
@@ -582,11 +588,21 @@ public static class Utilities
                         progUpdates.Enqueue((progress, length, 0, true));
                         if (length != 0 && progress != length)
                         {
+                            removeFile();
                             if (cancel is not null && cancel.IsCancellationRequested)
                             {
                                 throw new TaskCanceledException($"Download {altUrl} was cancelled.");
                             }
                             throw new SwarmReadableErrorException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
+                        }
+                        sha256.TransformFinalBlock([], 0, 0);
+                        byte[] hash = sha256.Hash;
+                        string hashStr = Convert.ToHexString(hash).ToLowerFast();
+                        Logs.Verbose($"Raw file hash for {altUrl} is {hashStr}");
+                        if (verifyHash is not null && hashStr != verifyHash.ToLowerFast())
+                        {
+                            removeFile();
+                            throw new SwarmReadableErrorException($"Download {altUrl} failed: expected SHA256 hash {verifyHash} but got {hashStr}.");
                         }
                         break;
                     }
@@ -599,6 +615,7 @@ public static class Utilities
                         progUpdates.Enqueue((progress, length, bytesPerSecond, false));
                         lastUpdate = timeNow;
                     }
+                    sha256.TransformBlock(chunk, 0, chunk.Length, null, 0);
                     await writer.WriteAsync(chunk, combinedCancel.Token);
                 }
                 else
