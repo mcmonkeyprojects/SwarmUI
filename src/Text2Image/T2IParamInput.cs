@@ -1057,7 +1057,11 @@ public class T2IParamInput
         }
         if (obj is null)
         {
-            Logs.Debug($"Ignoring input to parameter {param.ID} because the value maps to null.");
+            Logs.Debug($"Ignoring input to parameter '{param.ID}' of '{val}' because the value maps to null.");
+            if (param.ID == "model")
+            {
+                Logs.Warning($"Model input '{val}' appears to be null.");
+            }
             return;
         }
         ValuesInput[param.ID] = obj;
