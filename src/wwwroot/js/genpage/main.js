@@ -1260,7 +1260,7 @@ function reviseStatusBar() {
 function reviseBackendFeatureSet() {
     currentBackendFeatureSet = Array.from(currentBackendFeatureSet);
     let addMe = [], removeMe = [];
-    if (curModelCompatClass == 'stable-diffusion-v3-medium') {
+    if (curModelCompatClass.startsWith('stable-diffusion-v3')) {
         addMe.push('sd3');
     }
     else {

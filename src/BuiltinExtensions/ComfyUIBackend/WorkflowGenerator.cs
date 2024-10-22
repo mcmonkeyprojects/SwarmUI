@@ -687,7 +687,7 @@ public class WorkflowGenerator
                 }
             }
         }
-        else if (IsFlux() && (LoadingClip is null || LoadingVAE is null))
+        else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null || UserInput.Get(ComfyUIBackendExtension.ClipLModel) is not null))
         {
             string loaderType = "DualCLIPLoader";
             if (getT5XXLModel().EndsWith(".gguf"))
