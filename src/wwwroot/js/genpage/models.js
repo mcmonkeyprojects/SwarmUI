@@ -381,6 +381,8 @@ class ModelBrowserWrapper {
         let format = subType == 'Wildcards' ? 'Small Cards' : 'Cards';
         extraHeader += `<label for="models_${subType}_sort_by">Sort:</label> <select id="models_${subType}_sort_by"><option>Name</option><option>Title</option><option>DateCreated</option><option>DateModified</option></select> <input type="checkbox" id="models_${subType}_sort_reverse"> <label for="models_${subType}_sort_reverse">Reverse</label>`;
         this.browser = new GenPageBrowserClass(container, this.listModelFolderAndFiles.bind(this), id, format, this.describeModel.bind(this), this.selectModel.bind(this), extraHeader);
+        this.promptBox = getRequiredElementById('alt_prompt_textbox');
+        this.models = {};
     }
 
     listModelFolderAndFiles(path, isRefresh, callback, depth) {
@@ -414,6 +416,7 @@ class ModelBrowserWrapper {
             let files = data.files.sort((a,b) => sortModelLocal(a, b, data.files)).map(f => { return { 'name': f.name, 'data': f }; });
             for (let file of files) {
                 file.data.display = cleanModelName(file.data.name.substring(prefix.length));
+                this.models[file.name] = file;
             }
             if (this.subType == 'VAE') {
                 let autoFile = {
@@ -461,7 +464,6 @@ class ModelBrowserWrapper {
     }
 
     describeModel(model) {
-        let promptBox = getRequiredElementById('alt_prompt_textbox');
         let description = '';
         let buttons = [];
         if (this.subType == 'Stable-Diffusion' && model.data.local) {
@@ -517,7 +519,7 @@ class ModelBrowserWrapper {
                 raw = raw.substring(0, 512) + '...';
             }
             description = `<span class="wildcard_title">${escapeHtml(name)}</span><br>${escapeHtml(raw)}`;
-            let match = matchWildcard(promptBox.value, model.data.name);
+            let match = matchWildcard(this.promptBox.value, model.data.name);
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
             let searchable = `${model.data.name}, ${description}`;
@@ -548,6 +550,12 @@ class ModelBrowserWrapper {
         else {
             description = `${escapeHtml(name)}<br>(Metadata only available for 'safetensors' models.)<br><b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.<br>`;
         }
+        let className = this.getClassFor(model, isCorrect);
+        let searchable = `${model.data.name}, ${description}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
+        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display };
+    }
+
+    isSelected(name) {
         let selector = 'current_model';
         switch (this.subType) {
             case 'Stable-Diffusion': selector = 'current_model'; break;
@@ -555,39 +563,89 @@ class ModelBrowserWrapper {
             case 'LoRA': selector = 'input_loras'; break;
             case 'ControlNet': selector = 'input_controlnetmodel'; break;
         }
-        let isSelected;
         let selectorElem = document.getElementById(selector);
-        let clean = cleanModelName(model.data.name);
+        let clean = cleanModelName(name);
+        let isSelected;
         if (!selectorElem) {
             isSelected = false;
         }
         else if (this.subType == 'VAE' && !document.getElementById('input_vae_toggle').checked) {
-            isSelected = model.data.name == 'Automatic';
+            isSelected = name == 'Automatic';
         }
         else if (this.subType == 'LoRA') {
             isSelected = [...selectorElem.selectedOptions].map(option => option.value).filter(value => value == clean).length > 0;
         }
         else if (this.subType == 'Embedding') {
-            isSelected = promptBox.value.includes(`<embed:${clean}>`);
+            isSelected = this.promptBox.value.includes(`<embed:${clean}>`);
             let negativePrompt = document.getElementById('input_negativeprompt');
             if (negativePrompt) {
                 isSelected = isSelected || negativePrompt.value.includes(`<embed:${clean}>`);
             }
         }
+        else if (this.subType == 'Wildcards') {
+            let match = matchWildcard(this.promptBox.value, name);
+            isSelected = match && match.length > 0;
+        }
         else {
             isSelected = selectorElem.value == clean;
         }
+        return isSelected;
+    }
+
+    getClassFor(model, isCorrect) {
+        let isSelected = this.isSelected(model.data.name);
         let className = isSelected ? 'model-selected' : (model.data.loaded ? 'model-loaded' : (!isCorrect ? 'model-unavailable' : ''));
         if (!model.data.local) {
             className += ' model-remote';
         }
-        let searchable = `${model.data.name}, ${description}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
-        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display };
+        return className;
+    }
+
+    rebuildSelectedClasses() {
+        if (this.willRebuildSelected || !this.browser.contentDiv) {
+            return;
+        }
+        this.willRebuildSelected = true;
+        setTimeout(() => {
+            this.willRebuildSelected = false;
+            for (let child of this.browser.contentDiv.children) {
+                if (child.dataset.name) {
+                    let hasSelectedClass = child.classList.contains('model-selected');
+                    let isSelected = this.isSelected(child.dataset.name);
+                    if (hasSelectedClass == isSelected) {
+                        continue;
+                    }
+                    if (isSelected) {
+                        child.classList.add('model-selected');
+                        child.classList.remove('model-loaded');
+                        child.classList.remove('model-unavailable');
+                    }
+                    else {
+                        child.classList.remove('model-selected');
+                        let model = this.models[child.dataset.name];
+                        if (!model) {
+                            continue;
+                        }
+                        if (this.subType != 'Wildcards') {
+                            if (model.data.loaded) {
+                                child.classList.add('model.loaded');
+                            }
+                            else {
+                                let isCorrect = this.subType == 'Stable-Diffusion' || isModelArchCorrect(model.data);
+                                if (!isCorrect) {
+                                    child.classList.add('model-unavailable');
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }, 1);
     }
 
     selectModel(model) {
         this.selectOne(model);
-        this.browser.planRerender(50);
+        this.rebuildSelectedClasses();
     }
 }
 
@@ -599,6 +657,7 @@ let sdControlnetBrowser = new ModelBrowserWrapper('ControlNet', ['controlnet', '
 let wildcardsBrowser = new ModelBrowserWrapper('Wildcards', [], 'wildcard_list', 'wildcardsbrowser', (wildcard) => { selectWildcard(wildcard.data); }, `<button id="wildcards_list_create_new_button" class="refresh-button" onclick="create_new_wildcard_button()">Create New Wildcard</button>`);
 
 let allModelBrowsers = [sdModelBrowser, sdVAEBrowser, sdLoraBrowser, sdEmbedBrowser, sdControlnetBrowser, wildcardsBrowser];
+let subModelBrowsers = [sdVAEBrowser, sdLoraBrowser, sdEmbedBrowser, sdControlnetBrowser];
 
 function matchWildcard(prompt, wildcard) {
     let matcher = new RegExp(`<(wildcard(?:\\[\\d+(?:-\\d+)?\\])?):${regexEscape(wildcard)}>`, 'g');
@@ -636,14 +695,14 @@ function embedClearFromPrompt(model, element) {
     let chunk = `<embed:${cleanModelName(model.name)}>`;
     box.value = box.value.replace(` ${chunk}`, '').replace(chunk, '').trim();
     triggerChangeFor(box);
-    sdEmbedBrowser.browser.planRerender(5);
+    sdEmbedBrowser.rebuildSelectedClasses();
 }
 
 function embedAddToPrompt(model, element) {
     let box = getRequiredElementById(element);
     box.value += ` <embed:${cleanModelName(model.name)}>`;
     triggerChangeFor(box);
-    sdEmbedBrowser.browser.planRerender(5);
+    sdEmbedBrowser.rebuildSelectedClasses();
 }
 
 function selectEmbedding(model) {
@@ -674,12 +733,12 @@ function monitorPromptChangeForEmbed(promptText, type) {
     let countNew = promptText.split(`<embed:`).length - 1;
     let countOld = last.split(`<embed:`).length - 1;
     if (countNew != countOld || (countNew > 0 && countEndsNew != countEndsOld)) {
-        sdEmbedBrowser.browser.planRerender(5);
+        sdEmbedBrowser.rebuildSelectedClasses();
     }
     let countNewWc = promptText.split(`<wildcard`).length - 1;
     let countOldWc = last.split(`<wildcard`).length - 1;
     if (countNewWc != countOldWc || (countNewWc > 0 && countEndsNew != countEndsOld)) {
-        wildcardsBrowser.browser.planRerender(5);
+        wildcardsBrowser.rebuildSelectedClasses();
     }
 }
 
@@ -767,7 +826,7 @@ function updateLoraList() {
         removeButton.addEventListener('click', () => {
             toggleSelectLora(lora);
             updateLoraList();
-            sdLoraBrowser.browser.planRerender(5);
+            sdLoraBrowser.rebuildSelectedClasses();
         });
         div.appendChild(weightInput);
         div.appendChild(removeButton);
@@ -846,8 +905,9 @@ function directSetModel(model) {
     if (aspect) {
         aspect.dispatchEvent(new Event('change'));
     }
-    for (let browser of allModelBrowsers) {
-        browser.browser.update();
+    sdModelBrowser.rebuildSelectedClasses();
+    for (let browser of subModelBrowsers) {
+        browser.browser.updateWithoutDup();
     }
 }
 

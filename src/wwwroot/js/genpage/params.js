@@ -340,7 +340,7 @@ function genInputs(delay_final = false) {
         if (inputLoras) {
             inputLoras.addEventListener('change', () => {
                 updateLoraList();
-                sdLoraBrowser.browser.planRerender(5);
+                sdLoraBrowser.rebuildSelectedClasses();
             });
         }
         let inputLoraWeights = document.getElementById('input_loraweights');

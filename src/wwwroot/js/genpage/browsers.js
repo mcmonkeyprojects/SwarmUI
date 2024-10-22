@@ -426,6 +426,7 @@ class GenPageBrowserClass {
                 div.appendChild(menu);
             }
             div.title = stripHtmlToText(desc.description);
+            div.dataset.name = file.name;
             img.classList.add('lazyload');
             img.dataset.src = desc.image;
             if (desc.dragimage) {
@@ -489,6 +490,18 @@ class GenPageBrowserClass {
     }
 
     /**
+     * Returns the visible element block for a given file name.
+     */
+    getVisibleEntry(name) {
+        for (let child of this.contentDiv.children) {
+            if (child.dataset.name == name) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Central call to build the browser content area.
      */
     build(path, folders, files) {
@@ -544,7 +557,7 @@ class GenPageBrowserClass {
             formatSelector.addEventListener('change', () => {
                 this.format = formatSelector.value;
                 localStorage.setItem(`browser_${this.id}_format`, this.format);
-                this.update();
+                this.updateWithoutDup();
             });
             if (!this.showDisplayFormat) {
                 formatSelector.style.display = 'none';
@@ -560,7 +573,7 @@ class GenPageBrowserClass {
             depthInput.addEventListener('change', () => {
                 this.depth = depthInput.value;
                 localStorage.setItem(`browser_${this.id}_depth`, this.depth);
-                this.update();
+                this.updateWithoutDup();
             });
             if (!this.showDepth) {
                 depthInput.parentElement.style.display = 'none';
