@@ -480,7 +480,7 @@ public class T2IParamTypes
         ControlNetPreviewOnly = Register<bool>(new("ControlNet Preview Only", "(For API usage) If enabled, requests preview output from ControlNet and no image generation at all.",
             "false", IgnoreIf: "false", FeatureFlag: "controlnet", VisibleNormally: false
             ));
-        GroupVideo = new("Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos with Stable Video Diffusion.\n<a href=\"{Utilities.RepoDocsRoot}/Features/Video.md\">See more docs here.</a>");
+        GroupVideo = new("Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos with Stable Video Diffusion.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/Video.md\">See more docs here.</a>");
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nThis should be an SVD (Stable Video Diffusion) model.\nNote that SVD favors a low CFG (~2.5).",
             "", GetValues: s => Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && m.ModelClass.ID.Contains("stable-video-diffusion")).OrderBy(m => m.Name).Select(m => CleanModelName(m.Name)).ToList(),
             OrderPriority: 1, Group: GroupVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
