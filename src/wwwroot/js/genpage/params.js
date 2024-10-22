@@ -1166,29 +1166,29 @@ class PromptTabCompleteClass {
         });
         this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
+            return this.getOrderedMatches(allWildcards, prefixLow);
         });
         this.registerAltPrefix('wc', 'wildcard');
         this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return allWildcards.filter(w => w.toLowerCase().includes(prefixLow));
+            return this.getOrderedMatches(allWildcards, prefixLow);
         });
         this.registerPrefix('repeat', 'Repeat a value several times', (prefix) => {
             return ['\nUse for example like "<repeat:3,very> big" to get "very very very big",', '\nor "<repeat:1-3,very>" to get randomly between 1 to 3 "very"s,', '\nor <repeat:3,<random:cat,dog>>" to get "cat" or "dog" 3 times in a row eg "cat dog cat".'];
         });
         this.registerPrefix('preset', 'Forcibly apply a preset onto the current generation (useful eg inside wildcards or other automatic inclusions - normally use the Presets UI tab)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return allPresets.map(p => p.title).filter(p => p.toLowerCase().includes(prefixLow));
+            return this.getOrderedMatches(allPresets.map(p => p.title), prefixLow);
         });
         this.registerAltPrefix('p', 'preset');
         this.registerPrefix('embed', 'Use a pretrained CLIP TI Embedding', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return coreModelMap['Embedding'].map(cleanModelName).filter(e => e.toLowerCase().includes(prefixLow));
+            return this.getOrderedMatches(coreModelMap['Embedding'].map(cleanModelName), prefixLow);
         });
         this.registerAltPrefix('embedding', 'embed');
         this.registerPrefix('lora', 'Forcibly apply a pretrained LoRA model (useful eg inside wildcards or other automatic inclusions - normally use the LoRAs UI tab)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return coreModelMap['LoRA'].map(cleanModelName).filter(m => m.toLowerCase().includes(prefixLow));
+            return this.getOrderedMatches(coreModelMap['LoRA'].map(cleanModelName), prefixLow);
         });
         this.registerPrefix('region', 'Apply a different prompt to a sub-region within the image', (prefix) => {
             return ['\nx,y,width,height eg "0.25,0.25,0.5,0.5"', '\nor x,y,width,height,strength eg "0,0,1,1,0.5"', '\nwhere strength is how strongly to apply the prompt to the region (vs global prompt). Can do "region:background" for background-only region.'];
@@ -1202,7 +1202,7 @@ class PromptTabCompleteClass {
                 let modelList = rawGenParamTypesFromServer.filter(p => p.id == 'yolomodelinternal');
                 if (modelList && modelList.length > 0) {
                     let yolomodels = modelList[0].values;
-                    return yolomodels.map(m => `yolo-${m}`).filter(m => m.toLowerCase().includes(prefixLow));
+                    return this.getOrderedMatches(yolomodels.map(m => `yolo-${m}`), prefixLow);
                 }
             }
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.'];
@@ -1239,6 +1239,13 @@ class PromptTabCompleteClass {
         this.lastWord = null;
         this.lastResults = null;
         this.blockInput = false;
+    }
+
+    getOrderedMatches(set, prefixLow) {
+        let matched = set.filter(m => m.toLowerCase().includes(prefixLow));
+        let prefixed = matched.filter(m => m.toLowerCase().startsWith(prefixLow));
+        let suffixed = matched.filter(m => !m.toLowerCase().startsWith(prefixLow));
+        return prefixed.concat(suffixed);
     }
 
     enableFor(box) {
