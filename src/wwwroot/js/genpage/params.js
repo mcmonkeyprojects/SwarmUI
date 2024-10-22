@@ -563,10 +563,13 @@ function refreshParameterValues(strong = true, callback = null) {
                     console.log(`Could not find element for param ${param.id}`);
                     continue;
                 }
-                if ((param.type == "dropdown" || param.type == "model") && param.values) {
+                let values = param.values;
+                if (!values && param.type == "model") {
+                    values = coreModelMap[param.subtype || 'Stable-Diffusion'];
+                }
+                if ((param.type == "dropdown" || param.type == "model") && values) {
                     let val = elem.value;
                     let html = '';
-                    let values = param.values;
                     let alt_names = param['value_names'];
                     for (let i = 0; i < values.length; i++) {
                         let value = values[i];
@@ -578,9 +581,9 @@ function refreshParameterValues(strong = true, callback = null) {
                     elem.innerHTML = html;
                     presetElem.innerHTML = html;
                 }
-                else if (param.type == "list" && param.values) {
+                else if (param.type == "list" && values) {
                     let listOpts = [...elem.options].map(o => o.value);
-                    let newVals = param.values.filter(v => !listOpts.includes(v));
+                    let newVals = values.filter(v => !listOpts.includes(v));
                     for (let val of newVals) {
                         $(elem).append(new Option(val, val, false, false));
                         $(presetElem).append(new Option(val, val, false, false));
