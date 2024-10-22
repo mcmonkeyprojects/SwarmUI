@@ -139,7 +139,11 @@ public class WorkflowGenerator
     public bool IsSD3()
     {
         string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "stable-diffusion-v3-medium";
+        if (clazz is null)
+        {
+            return false;
+        }
+        return clazz.StartsWith("stable-diffusion-v3");
     }
 
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>

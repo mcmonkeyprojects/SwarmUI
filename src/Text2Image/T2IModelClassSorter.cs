@@ -172,13 +172,29 @@ public class T2IModelClassSorter
         {
             return isSD3(h);
         }});
+        Register(new() { ID = "stable-diffusion-v3.5-large", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
+        Register(new() { ID = "stable-diffusion-v3.5-large-turbo", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large Turbo", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "stable-diffusion-v3-medium/lora", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO: ?
         }});
+        Register(new() { ID = "stable-diffusion-v3.5-large/lora", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "stable-diffusion-v3-medium/controlnet", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isSD3Controlnet(h);
+        }});
+        Register(new() { ID = "stable-diffusion-v3.5-large/controlnet", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
         }});
         // ====================== BFL Flux.1 ======================
         Register(new() { ID = "flux.1/vae", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
