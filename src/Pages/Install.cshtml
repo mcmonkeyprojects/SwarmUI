@@ -219,14 +219,19 @@
                 <div class="install_hint">SDXL is a very popular core Stable Diffusion version (from July 2023), requiring 6.5 GiB of drive space and a decent GPU, able to generate at 1024x1024, with noticably much higher quality results than past versions, but no longer standing up to the latest DiT models.</div>
             </div>
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="downloadmodel_fluxschnell">
-                <label class="form-check-label" for="downloadmodel_fluxschnell">Flux.1 Schnell</label>
-                <div class="install_hint">Flux.1 from Black Forest Labs (the new company of the research team that originally built Stable Diffusion) is a very large model (12B DiT with 5B textenc) requiring a powerful GPU, but creates the highest quality results in the world (as of July 2024). Flux supports almost any resolution or aspect ratio (at least from 256x256 to 1536x1536). 'Schnell' specifically is a Steps=4 CFG=1 'Turbo' variant. On an RTX 4090, this runs as fast as SDXL does.</div>
-            </div>
-            <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="downloadmodel_fluxdev">
                 <label class="form-check-label" for="downloadmodel_fluxdev">Flux.1 Dev</label>
-                <div class="install_hint">Like Flux.1 Schnell above, the 'Dev' variant is a Steps=20 CFG=1 'guidance distilled' version that takes longer to run but yields even higher quality.</div>
+                <div class="install_hint">Flux.1 from Black Forest Labs (the new company of the research team that originally built Stable Diffusion) is a very large model (12B DiT with 5B textenc) requiring a powerful GPU, but creates the highest quality results in the world (as of July 2024). Flux supports almost any resolution or aspect ratio (at least from 256x256 to 1536x1536). The 'Dev' variant specifically is a Steps=20 CFG=1 'guidance distilled' version that takes longer to run but yields even higher quality.</div>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="downloadmodel_fluxschnell">
+                <label class="form-check-label" for="downloadmodel_fluxschnell">Flux.1 Schnell</label>
+                <div class="install_hint">Like Flux.1 Dev above, the 'Schnell' variant, specifically is a Steps=4 CFG=1 'Turbo' variant designed to run much faster at the cost of some result quality. On an RTX 4090, this runs as fast as SDXL does.</div>
+            </div>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="downloadmodel_sd35large">
+                <label class="form-check-label" for="downloadmodel_sd35large">Stable Diffusion 3.5 Large</label>
+                <div class="install_hint">Stable Diffusion 3.5 Large (released October 2024), is a very large (8B DiT) model requiring a powerful GPU, and competitive quality close to Flux.1 Dev.</div>
             </div>
         </fieldset>
         <label>Or community models!</label>

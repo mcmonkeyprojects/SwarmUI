@@ -297,10 +297,11 @@ public static class BasicAPIFeatures
             {
                 (string file, string subfolder) = model.Trim() switch
                 {
-                    "sd15" => ("https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors", "OfficialStableDiffusion"),
+                    "sd15" => ("https://huggingface.co/Comfy-Org/stable-diffusion-v1-5-archive/resolve/main/v1-5-pruned-emaonly-fp16.safetensors", "OfficialStableDiffusion"),
                     "sd21" => ("https://huggingface.co/stabilityai/stable-diffusion-2-1/resolve/main/v2-1_768-ema-pruned.safetensors", "OfficialStableDiffusion"),
                     "sdxl1" => ("https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors", "OfficialStableDiffusion"),
                     "sdxl1refiner" => ("https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors", "OfficialStableDiffusion"),
+                    "sd35large" => ("https://huggingface.co/Comfy-Org/stable-diffusion-3.5-fp8/resolve/main/sd3.5_large_fp8_scaled.safetensors", "OfficialStableDiffusion"),
                     "fluxschnell" => ("https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main/flux1-schnell-fp8.safetensors", "Flux"),
                     "fluxdev" => ("https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "Flux"),
                     _ => (null, null)
