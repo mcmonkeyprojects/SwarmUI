@@ -485,6 +485,8 @@ public class WorkflowGeneratorSteps
                             g.DownloadModel(name, filePath, url);
                             WorkflowGenerator.IPAdapterModelsValid.Add($"LORA-{name}");
                         }
+                        // IPAdapter model links @ https://github.com/cubiq/ComfyUI_IPAdapter_plus?tab=readme-ov-file#installation
+                        // required model for any given type @ https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/main/utils.py#L29
                         if (presetLow.StartsWith("light"))
                         {
                             if (isXl) { throw new SwarmUserErrorException("IP-Adapter light model is not supported for SDXL"); }
@@ -554,6 +556,11 @@ public class WorkflowGeneratorSteps
                         {
                             if (isXl) { requireIPAdapterModel("ip-adapter-faceid-portrait_sdxl_unnorm.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl_unnorm.bin"); }
                             else { throw new SwarmUserErrorException("IP-Adapter FaceID Portrait UnNorm model is only supported for SDXL"); }
+                        }
+                        else if (presetLow.StartsWith("faceid portrait"))
+                        {
+                            if (isXl) { requireIPAdapterModel("ip-adapter-faceid-portrait_sdxl.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait_sdxl.bin"); }
+                            else { requireIPAdapterModel("ip-adapter-faceid-portrait-v11_sd15.bin", "https://huggingface.co/h94/IP-Adapter-FaceID/resolve/main/ip-adapter-faceid-portrait-v11_sd15.bin"); }
                         }
                         string ipAdapterLoader;
                         if (presetLow.StartsWith("faceid"))
