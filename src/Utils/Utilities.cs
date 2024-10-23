@@ -525,6 +525,7 @@ public static class Utilities
         altUrl ??= url;
         cancel ??= new();
         using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
+        Directory.CreateDirectory(Path.GetDirectoryName(filepath));
         using FileStream writer = File.OpenWrite(filepath);
         using HttpResponseMessage response = await UtilWebClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;

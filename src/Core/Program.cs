@@ -192,6 +192,7 @@ public class Program
         timer.Check("Extension PreInit");
         Logs.Init("Prepping options...");
         BuildModelLists();
+        CommonModels.RegisterCoreSet();
         T2IParamTypes.RegisterDefaults();
         Backends = new();
         Backends.SaveFilePath = GetCommandLineFlag("backends_file", Backends.SaveFilePath);
