@@ -46,7 +46,7 @@
     <li class="nav-item" role="presentation">
         <a class="nav-link translate" data-bs-toggle="tab" href="#user_tab" id="usersettingstabbutton" aria-selected="false" tabindex="-1" role="tab">User</a>
     </li>
-    <li class="nav-item" role="presentation">
+    <li class="nav-item" role="presentation" data-requiredpermission="view_server_tab">
         <a class="nav-link translate" data-bs-toggle="tab" href="#server_tab" id="servertabbutton" aria-selected="false" tabindex="-1" role="tab">Server</a>
     </li>
 </ul>
@@ -482,16 +482,16 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link active translate" data-bs-toggle="tab" href="#Utilities-Info-Tab" aria-selected="true" role="tab">Info</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="use_tokenizer">
                 <a class="nav-link translate" data-bs-toggle="tab" id="cliptokentabbutton" href="#Utilities-CLIP-Token-Tab" aria-selected="false" tabindex="-1" role="tab">CLIP Tokenization</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="pickle2safetensors">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Utilities-Pickle2Safetensor-Tab" aria-selected="false" tabindex="-1" role="tab">Pickle To Safetensors</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="extra_loras">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Utilities-LoraExtractor-Tab" id="loraextractortabbutton" aria-selected="false" tabindex="-1" role="tab">LoRA Extractor</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="download_models">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Utilities-ModelDownloader-Tab" id="modeldownloadertabbutton" aria-selected="false" tabindex="-1" role="tab">Model Downloader</a>
             </li>
         </ul>
@@ -506,7 +506,7 @@
                     </div>
                 </div>
                 <br>
-                <div class="card border-secondary mb-3 card-center-container">
+                <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="reset_metadata">
                     <div class="card-header translate">Metadata Utilities</div>
                     <div class="card-body">
                         <p class="card-text">
@@ -518,47 +518,49 @@
                             <br>Note that this does not remove metadata from the models or images themselves, just from the databases that keep an efficient tracker of them.
                             <br>This may take a moment to run.
                             <hr>
-                            <div class="card-center-container">
-                                <button id="util_modelmetadatascanner_button" class="basic-button translate" onclick="modelMetadataScanner.run()">Scan Civitai For Metadata</button>
-                            </div>
-                            <br>Model Sub-type: <select id="util_modelmetadatascanner_subtype" class="auto-dropdown">
-                                <option value="all" class="translate" selected>all</option>
-                                @foreach (string key in Program.T2IModelSets.Keys)
-                                {
-                                    <option value="@key" class="translate">@key</option>
-                                }
-                            </select>
-                            &emsp;Date range: <select id="util_modelmetadatascanner_date" class="auto-dropdown">
-                                <option value="all" class="translate" selected>All (ignore time)</option>
-                                <option value="today" class="translate">Models downloaded today (24 hours)</option>
-                                <option value="week" class="translate">Models downloaded this week (7 days)</option>
-                                <option value="month" class="translate">Models downloaded this month (31 days)</option>
-                            </select>
-                            <br>Filter: <select id="util_modelmetadatascanner_requirements" class="auto-dropdown">
-                                <option value="all" class="translate" selected>All</option>
-                                <option value="no_thumbnail" class="translate">Only models without a thumbnail</option>
-                                <option value="no_description" class="translate">Only models without a description</option>
-                                <option value="no_author" class="translate">Only models without an author</option>
-                                <option value="explicit_url" class="translate">Only models with an explicit civitai url in the description</option>
-                            </select>
-                            &emsp;Replace: <select id="util_modelmetadatascanner_replace" class="auto-dropdown">
-                                <option value="only_missing" class="translate" selected>Only missing data</option>
-                                <option value="all" class="translate">All (Replace everything)</option>
-                                <option value="only_thumbnail" class="translate">Only the thumbnail image</option>
-                                <option value="only_text" class="translate">Only the basic text inputs (eg description)</option>
-                            </select>
-                            <br>
-                            Model filename filter: <input type="text" id="util_modelmetadatascanner_filter" class="auto-text" placeholder="Filter by filename" />
-                            <br><span id="util_modelmetadatascanner_result"></span>
-                            <br>
-                            <br>If you click this button, Swarm will scan Civitai for metadata on models, and update the metadata database with any information found.
-                            <br>You can filter by date range (eg only recently downloaded model files), and/or by required missing content (eg only scan those without images).
-                            <br>You can also choose what metadata gets updated (eg only the image).
-                            <br>Optionally use the model filename filter to only scan models with a specific filename. Use '*' as a wildcard.
-                            <br>(For example, 'SDXL/*' will scan only models within a folder named 'SDXL/'. This is case-insensitive.)
-                            <br>Will take a while, and may seem to freeze up if it has to apply edits. This is normal.
-                            <br>Additional debug info while running can be found in the browser console.
-                            <br><b>Be careful!</b> If you have manually edited metadata, you can easily accidentally delete it. There is no undo for unwanted changes, they are applied rapidly in bulk.
+                            <span data-requiredpermission="edit_model_metadata">
+                                <div class="card-center-container">
+                                    <button id="util_modelmetadatascanner_button" class="basic-button translate" onclick="modelMetadataScanner.run()">Scan Civitai For Metadata</button>
+                                </div>
+                                <br>Model Sub-type: <select id="util_modelmetadatascanner_subtype" class="auto-dropdown">
+                                    <option value="all" class="translate" selected>all</option>
+                                    @foreach (string key in Program.T2IModelSets.Keys)
+                                    {
+                                        <option value="@key" class="translate">@key</option>
+                                    }
+                                </select>
+                                &emsp;Date range: <select id="util_modelmetadatascanner_date" class="auto-dropdown">
+                                    <option value="all" class="translate" selected>All (ignore time)</option>
+                                    <option value="today" class="translate">Models downloaded today (24 hours)</option>
+                                    <option value="week" class="translate">Models downloaded this week (7 days)</option>
+                                    <option value="month" class="translate">Models downloaded this month (31 days)</option>
+                                </select>
+                                <br>Filter: <select id="util_modelmetadatascanner_requirements" class="auto-dropdown">
+                                    <option value="all" class="translate" selected>All</option>
+                                    <option value="no_thumbnail" class="translate">Only models without a thumbnail</option>
+                                    <option value="no_description" class="translate">Only models without a description</option>
+                                    <option value="no_author" class="translate">Only models without an author</option>
+                                    <option value="explicit_url" class="translate">Only models with an explicit civitai url in the description</option>
+                                </select>
+                                &emsp;Replace: <select id="util_modelmetadatascanner_replace" class="auto-dropdown">
+                                    <option value="only_missing" class="translate" selected>Only missing data</option>
+                                    <option value="all" class="translate">All (Replace everything)</option>
+                                    <option value="only_thumbnail" class="translate">Only the thumbnail image</option>
+                                    <option value="only_text" class="translate">Only the basic text inputs (eg description)</option>
+                                </select>
+                                <br>
+                                Model filename filter: <input type="text" id="util_modelmetadatascanner_filter" class="auto-text" placeholder="Filter by filename" />
+                                <br><span id="util_modelmetadatascanner_result"></span>
+                                <br>
+                                <br>If you click this button, Swarm will scan Civitai for metadata on models, and update the metadata database with any information found.
+                                <br>You can filter by date range (eg only recently downloaded model files), and/or by required missing content (eg only scan those without images).
+                                <br>You can also choose what metadata gets updated (eg only the image).
+                                <br>Optionally use the model filename filter to only scan models with a specific filename. Use '*' as a wildcard.
+                                <br>(For example, 'SDXL/*' will scan only models within a folder named 'SDXL/'. This is case-insensitive.)
+                                <br>Will take a while, and may seem to freeze up if it has to apply edits. This is normal.
+                                <br>Additional debug info while running can be found in the browser console.
+                                <br><b>Be careful!</b> If you have manually edited metadata, you can easily accidentally delete it. There is no undo for unwanted changes, they are applied rapidly in bulk.
+                            </span>
                         </p>
                     </div>
                 </div>
@@ -788,16 +790,16 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link active translate" data-bs-toggle="tab" href="#Server-Info" id="serverinfotabbutton" aria-selected="true" role="tab">Server Info</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="view_backends_list">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Backends" id="serverbackendstabbutton" aria-selected="false" role="tab">Backends</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="read_server_settings">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Server" id="serverconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Server Configuration</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="manage_extensions">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Extensions" id="extensionstabbutton" aria-selected="false" tabindex="-1" role="tab">Extensions</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="view_logs">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Logs" id="logtabbutton" aria-selected="false" tabindex="-1" role="tab">Logs</a>
             </li>
         </ul>
@@ -818,7 +820,7 @@
                     </div>
                 </div>
                 <div class="card-collection-inline">
-                    <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
                         <div class="card-header translate">Local Network</div>
                         <div class="card-body">
                             <p class="card-text">
@@ -848,7 +850,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
                         <div class="card-header translate">Resource Usage</div>
                         <div class="card-body">
                             <p class="card-text" id="resource_usage_area">
@@ -856,7 +858,7 @@
                             </p>
                         </div>
                     </div>
-                    <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
                         <div class="card-header translate">Connected Users</div>
                         <div class="card-body">
                             <p class="card-text" id="connected_users_list">
@@ -890,20 +892,24 @@
                     }
                 </div>
                 <div class="card-collection-inline">
-                    <div class="card border-danger mb-3 card-center-container">
+                    <div class="card border-danger mb-3 card-center-container" data-requiredpermission="shutdown,restart">
                         <div class="card-header translate">Shutdown</div>
                         <div class="card-body">
                             <p class="card-text">
+                                <span data-requiredpermission="shutdown">
                                 <span class="translate">If you want to shut down the server, click the button below.</span>
                                 <br><button class="basic-button danger-button translate" onclick="shutdown_server()">Shutdown Server</button>
+                                </span>
                                 <br>
+                                <span data-requiredpermission="restart">
                                 <br><span class="translate">Or you can update and restart if there are updates available:</span>
                                 <br><button class="basic-button danger-button translate" onclick="update_and_restart_server()">Update and Restart Server</button>
+                                </span>
                                 <span id="shutdown_notice_area"></span>
                             </p>
                         </div>
                     </div>
-                    <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="control_mem_clean">
                         <div class="card-header translate">Free Memory</div>
                         <div class="card-body">
                             <p class="card-text">

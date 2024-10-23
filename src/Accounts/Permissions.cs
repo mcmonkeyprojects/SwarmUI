@@ -35,6 +35,7 @@ public static class Permissions
     public static PermInfo AdminDebug = Register(new("admin_debug", "Admin Debug APIs", "Allows the user to access administrative debug APIs.", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo ManageExtensions = Register(new("manage_extensions", "Manage Extensions", "Allows the user to manage (install, update, remove) extensions.", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo ViewOthersOutputs = Register(new("view_others_outputs", "View Others Outputs", "Allows the user to view the outputs of other users.", PermissionDefault.ADMINS, GroupAdmin));
+    public static PermInfo ViewServerTab = Register(new("view_server_tab", "View Server Tab", "Allows the user to view the server tab.", PermissionDefault.POWERUSERS, GroupAdmin));
 
     public static PermInfoGroup GroupBackendsAdmin = new("Backends Admin", "Permissions for managing backends.");
 
@@ -79,6 +80,8 @@ public static class Permissions
     public static PermInfo EditUserSettings = Register(new("edit_user_settings", "Edit User Settings", "Allows this user to edit their own settings.", PermissionDefault.USER, GroupUser));
     public static PermInfo EditParams = Register(new("edit_params", "Edit Params", "Allows this user to edit params (in a way that only affects themself, not other users).", PermissionDefault.USER, GroupUser));
     public static PermInfo ManagePresets = Register(new("manage_presets", "Manage Presets", "Allows this user to manage (add, edit, delete) their own presets.", PermissionDefault.USER, GroupUser));
+
+    public static PermInfoGroup GroupExtensionTabs = new("Extension Tabs", "Permissions related to extension tabs.");
 }
 
 /// <summary>Enumeration of default modes for permissions.</summary>

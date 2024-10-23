@@ -289,7 +289,12 @@ public class WebServer
                     string simpleName = file.AfterLast('/').BeforeLast('.');
                     string id = T2IParamTypes.CleanTypeName(simpleName);
                     string content = File.ReadAllText(file);
-                    tabHeader.Append($"<li class=\"nav-item\" role=\"presentation\"><a class=\"nav-link translate\" id=\"maintab_{id}\" data-bs-toggle=\"tab\" href=\"#{id}\" aria-selected=\"false\" tabindex=\"-1\" role=\"tab\">{simpleName}</a></li>\n");
+                    string perm = $"view_extension_tab_{id}";
+                    if (!Permissions.Registered.ContainsKey(perm))
+                    {
+                        Permissions.Register(new(perm, $"View Extension Tab {simpleName}", $"Allows access to the {simpleName} extension tab on the main page.", PermissionDefault.USER, Permissions.GroupExtensionTabs));
+                    }
+                    tabHeader.Append($"<li class=\"nav-item\" role=\"presentation\" data-requiredpermission=\"{perm}\"><a class=\"nav-link translate\" id=\"maintab_{id}\" data-bs-toggle=\"tab\" href=\"#{id}\" aria-selected=\"false\" tabindex=\"-1\" role=\"tab\">{simpleName}</a></li>\n");
                     tabFooter.Append($"<div class=\"tab-pane tab-pane-vw\" id=\"{id}\" role=\"tabpanel\">\n{content}\n</div>\n");
                 }
             }
