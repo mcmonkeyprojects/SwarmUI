@@ -329,17 +329,6 @@ public class WebServer
     }
 
     /// <summary>Test the validity of a user-given file path. Returns (path, consoleError, userError).</summary>
-    public (string, string, string) CheckOutputFilePath(string path, string userId, bool isExact)
-    {
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath);
-        if (Program.ServerSettings.Paths.AppendUserNameToOutputPath && !isExact)
-        {
-            root = $"{root}/{userId}";
-        }
-        return CheckFilePath(root, path);
-    }
-
-    /// <summary>Test the validity of a user-given file path. Returns (path, consoleError, userError).</summary>
     public static (string, string, string) CheckFilePath(string root, string path)
     {
         path = path.Replace('\\', '/').Replace("%20", " ");
@@ -350,7 +339,7 @@ public class WebServer
         }
         root = root.Replace('\\', '/');
         path = $"{root}/{path.Trim()}";
-        if (path.Contains("//"))
+        while (path.Contains("//"))
         {
             path = path.Replace("//", "/");
         }
@@ -419,13 +408,42 @@ public class WebServer
             path = path.After("/View/");
             isExact = true;
         }
-        else
+        else if (path.StartsWith("/Output/"))
         {
             path = path.After("/Output/");
         }
+        else
+        {
+            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("view output path prefix does not make sense", "bad_path"));
+            return;
+        }
         path = Uri.UnescapeDataString(path).Replace('\\', '/');
-        string userId = BasicAPIFeatures.GetUserIdFor(context);
-        (path, string consoleError, string userError) = CheckOutputFilePath(path, userId, isExact);
+        User user = GetUserFor(context);
+        if (user is null)
+        {
+            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
+            return;
+        }
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath);
+        if (Program.ServerSettings.Paths.AppendUserNameToOutputPath)
+        {
+            if (isExact)
+            {
+                (string forUser, string newPath) = path.BeforeAndAfter('/');
+                if (forUser != user.UserID && !user.HasPermission(Permissions.ViewOthersOutputs))
+                {
+                    await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("unauthorized - you may not view other users' outputs", "unauthorized"));
+                    return;
+                }
+                root = $"{root}/{forUser}";
+                path = newPath;
+            }
+            else
+            {
+                root = $"{root}/{user.UserID}";
+            }
+        }
+        (path, string consoleError, string userError) = CheckFilePath(root, path);
         if (consoleError is not null)
         {
             Logs.Error(consoleError);
@@ -435,7 +453,7 @@ public class WebServer
         byte[] data = null;
         try
         {
-            if (context.Request.Query.TryGetValue("preview", out StringValues previewToken) && $"{previewToken}" == "true" && Program.Sessions.GetUser(userId).Settings.ImageHistoryUsePreviews)
+            if (context.Request.Query.TryGetValue("preview", out StringValues previewToken) && $"{previewToken}" == "true" && user.Settings.ImageHistoryUsePreviews)
             {
                 data = ImageMetadataTracker.GetOrCreatePreviewFor(path);
             }

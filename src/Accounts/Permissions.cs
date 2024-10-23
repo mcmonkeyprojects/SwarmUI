@@ -29,11 +29,12 @@ public static class Permissions
     public static PermInfo Shutdown = Register(new("shutdown", "Shutdown Server", "Allows the user to fully shut down the server.", PermissionDefault.NOBODY, GroupAdmin));
     public static PermInfo Restart = Register(new("restart", "Restart Server", "Allows the user to fully restart the server.", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo ReadServerSettings = Register(new("read_server_settings", "Read Server Settings", "Allows the user to read (but not necessarily edit) server settings.", PermissionDefault.ADMINS, GroupAdmin));
-    public static PermInfo EditServerSettings = Register(new("edit_server_settings", "Edit Server Settings", "Allows the user to edit server settings.", PermissionDefault.ADMINS, GroupAdmin));
+    public static PermInfo EditServerSettings = Register(new("edit_server_settings", "Edit Server Settings", "Allows the user to edit server settings. Note that this is basically god power, a user can disable auth requirements here and then give themselves more permissions.", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo ViewLogs = Register(new("view_logs", "View Server Logs", "Allows the user to view server logs.", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo ReadServerInfoPanels = Register(new("read_server_info_panels", "Read Server Info Panels", "Allows the user to read server info panels (resource usage, connected users, ...).", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo AdminDebug = Register(new("admin_debug", "Admin Debug APIs", "Allows the user to access administrative debug APIs.", PermissionDefault.ADMINS, GroupAdmin));
     public static PermInfo ManageExtensions = Register(new("manage_extensions", "Manage Extensions", "Allows the user to manage (install, update, remove) extensions.", PermissionDefault.ADMINS, GroupAdmin));
+    public static PermInfo ViewOthersOutputs = Register(new("view_others_outputs", "View Others Outputs", "Allows the user to view the outputs of other users.", PermissionDefault.ADMINS, GroupAdmin));
 
     public static PermInfoGroup GroupBackendsAdmin = new("Backends Admin", "Permissions for managing backends.");
 
