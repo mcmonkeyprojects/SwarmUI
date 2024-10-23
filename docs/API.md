@@ -1,23 +1,33 @@
 # SwarmUI API Documentation
 
+### The Basics
+
 SwarmUI has a full-capability network API that you can use from external programs, both to use Swarm features (eg generate images) and to manage the Swarm instance (eg modify backends).
 
 Swarm uses its own API - you can simply open the web interface, open your browser tools, and interact with Swarm to watch what API calls are made, and then replicate those from your own code.
 
 The majority of Swarm's API takes the form of `POST` requests sent to `(your server)/API/(route)`, containing JSON formatted inputs and receiving JSON formatted outputs.
 
+### Websockets
+
 Some API routes, designated with a `WS` suffix, take WebSocket connections. Usually these take one up front input, and give several outputs slowly over time (for example `GenerateText2ImageWS` gives progress updates as it goes and preview images).
 
+### Authorization
+
 All API routes, with the exception of `GetNewSession`, require a `session_id` input in the JSON. Naturally, call `GetNewSession` to get a session ID to use.
+
+If the Swarm instance is configured to require accounts, you must feed a `cookie` named `swarm_user_token` with the value of a token associated with a valid SwarmUI account gotten from the UI (or direct API calls from an admin API handler).
+
+### Errors
 
 Any API route can potentially return an `error` or `error_id`.
 - If the `error_id` is `invalid_session_id`, you must recall `/API/GetNewSession` and try again.
 - Other `error_id`s are used contextually for specific calls.
 - Otherwise, generally `error` is display text fit to display to end users.
 
-### Quick Call Guide To Generate An Image
+## Quick Call Guide To Generate An Image
 
-The follow example generates an image using bash curl commands. This assumes running locally, on the default port.
+The follow example generates an image using bash curl commands. This assumes running locally, on the default port without authorization requirement.
 
 ```bash
 # First, get a usable session ID:
@@ -34,10 +44,9 @@ curl -H "Content-Type: application/json" -d '{"session_id":"9D3534E30DA38499DE78
 
 # Now download the image to look at it
 wget "http://localhost:7801/View/local/raw/2024-05-19/a cat-OfficialStableDiffusionsd_xl_base_10s-1872258705.png"
-
 ```
 
-### Routes
+## Routes
 
 Route documentation is categorized into a few sections:
 
@@ -52,7 +61,7 @@ Route documentation is categorized into a few sections:
     - [ComfyUIWebAPI](/docs/APIRoutes/ComfyUIWebAPI.md)
     - [ImageBatchToolExtension](/docs/APIRoutes/ImageBatchToolExtension.md)
 
-### GET Routes
+## GET Routes
 
 The following `GET` routes are also available:
 - `/Text2Image` - HTML main page of the interface.
@@ -66,7 +75,7 @@ The following `GET` routes are also available:
 - `/ExtensionFile/(extension)/*.*` - gets a web asset file from an extension.
 - `/ComfyBackendDirect/*.*` - direct pass-through to a comfy instance, if the [ComfyUI Backend Extension](/src/BuiltinExtensions/ComfyUIBackend/README.md) is in use.
 
-### Example Client (C#)
+## Example Client (C#)
 
 ```cs
 using System.Text;

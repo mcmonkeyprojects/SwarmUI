@@ -21,6 +21,10 @@ API routes to manage the server's backends.
 
 Add a new backend of the specified type.
 
+#### Permission Flag
+
+`add_remove_backends` - `Add/Remove Backends` in group `Backends Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -51,6 +55,10 @@ Add a new backend of the specified type.
 
 Shuts down and deletes a registered backend by ID.
 
+#### Permission Flag
+
+`add_remove_backends` - `Add/Remove Backends` in group `Backends Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -70,6 +78,10 @@ Shuts down and deletes a registered backend by ID.
 #### Description
 
 Modify and re-init an already registered backend.
+
+#### Permission Flag
+
+`edit_backends` - `Edit Backends` in group `Backends Admin`
 
 #### Parameters
 
@@ -103,6 +115,10 @@ Modify and re-init an already registered backend.
 
 Free memory from all backends or a specific one.
 
+#### Permission Flag
+
+`control_mem_clean` - `Control Memory Cleaning` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -122,6 +138,10 @@ Free memory from all backends or a specific one.
 #### Description
 
 Returns of a list of all available backend types.
+
+#### Permission Flag
+
+`view_backends_list` - `View Backends List` in group `Backends Admin`
 
 #### Parameters
 
@@ -155,6 +175,10 @@ Returns of a list of all available backend types.
 #### Description
 
 Returns a list of currently registered backends.
+
+#### Permission Flag
+
+`view_backends_list` - `View Backends List` in group `Backends Admin`
 
 #### Parameters
 
@@ -191,6 +215,10 @@ Returns a list of currently registered backends.
 
 Restart all backends or a specific one.
 
+#### Permission Flag
+
+`restart_backends` - `Restart Backends` in group `Backends Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -209,6 +237,10 @@ Restart all backends or a specific one.
 #### Description
 
 Disables or re-enables a backend by ID.
+
+#### Permission Flag
+
+`toggle_backends` - `Toggle Backends` in group `Backends Admin`
 
 #### Parameters
 

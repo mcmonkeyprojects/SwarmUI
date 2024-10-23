@@ -14,6 +14,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`imagebatcher_use_image_batcher` - `[Image Batch Tool] Use Image Batcher` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |

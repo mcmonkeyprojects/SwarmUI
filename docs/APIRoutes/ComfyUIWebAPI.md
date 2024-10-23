@@ -22,6 +22,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`comfy_edit_workflows` - `ComfyUI Edit Workflows` in group `ComfyUI`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -40,6 +44,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`comfy_direct_calls` - `ComfyUI Direct Calls` in group `ComfyUI`
+
 #### Parameters
 
 **None.**
@@ -55,6 +63,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`comfy_direct_calls` - `ComfyUI Direct Calls` in group `ComfyUI`
 
 #### Parameters
 
@@ -74,11 +86,15 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`install_features` - `Install New Features` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| feature | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| features | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 
 #### Return Format
 
@@ -91,6 +107,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`comfy_read_workflows` - `ComfyUI Read Workflows` in group `ComfyUI`
 
 #### Parameters
 
@@ -107,6 +127,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`comfy_read_workflows` - `ComfyUI Read Workflows` in group `ComfyUI`
 
 #### Parameters
 
@@ -125,6 +149,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`comfy_edit_workflows` - `ComfyUI Edit Workflows` in group `ComfyUI`
 
 #### Parameters
 
@@ -152,6 +180,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`extra_loras` - `Extract LoRAs` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -172,6 +204,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`create_tensorrt` - `Create TensorRT Models` in group `Control`
 
 #### Parameters
 

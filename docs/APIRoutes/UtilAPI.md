@@ -17,6 +17,10 @@ General utility API routes.
 
 Count the CLIP-like tokens in a given text prompt.
 
+#### Permission Flag
+
+`use_tokenizer` - `Use Tokenizer` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -38,6 +42,10 @@ Count the CLIP-like tokens in a given text prompt.
 
 Trigger bulk conversion of models from pickle format to safetensors.
 
+#### Permission Flag
+
+`pickle2safetensors` - `Pickle2SafeTensors` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -56,6 +64,10 @@ Trigger bulk conversion of models from pickle format to safetensors.
 #### Description
 
 Tokenize some prompt text and get thorough detail about it.
+
+#### Permission Flag
+
+`use_tokenizer` - `Use Tokenizer` in group `User`
 
 #### Parameters
 
@@ -83,6 +95,10 @@ Tokenize some prompt text and get thorough detail about it.
 #### Description
 
 Trigger a mass metadata reset.
+
+#### Permission Flag
+
+`reset_metadata` - `Reset Metadata` in group `Control`
 
 #### Parameters
 

@@ -26,6 +26,10 @@ Administrative APIs related to server management.
 
 Changes server settings.
 
+#### Permission Flag
+
+`edit_server_settings` - `Edit Server Settings` in group `Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -44,6 +48,10 @@ Changes server settings.
 
 (Internal/Debug route), generates API docs.
 
+#### Permission Flag
+
+`admin_debug` - `Admin Debug APIs` in group `Admin`
+
 #### Parameters
 
 **None.**
@@ -59,6 +67,10 @@ Changes server settings.
 #### Description
 
 (Internal/Debug route), adds language data to the language file builder.
+
+#### Permission Flag
+
+`admin_debug` - `Admin Debug APIs` in group `Admin`
 
 #### Parameters
 
@@ -77,6 +89,10 @@ Changes server settings.
 #### Description
 
 Returns information about the server's resource usage.
+
+#### Permission Flag
+
+`read_server_info_panels` - `Read Server Info Panels` in group `Admin`
 
 #### Parameters
 
@@ -114,6 +130,10 @@ Returns information about the server's resource usage.
 
 Installs an extension from the known extensions list. Does not trigger a restart. Does signal required rebuild.
 
+#### Permission Flag
+
+`manage_extensions` - `Manage Extensions` in group `Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -131,6 +151,10 @@ Installs an extension from the known extensions list. Does not trigger a restart
 #### Description
 
 Returns a list of currently connected users.
+
+#### Permission Flag
+
+`read_server_info_panels` - `Read Server Info Panels` in group `Admin`
 
 #### Parameters
 
@@ -156,6 +180,10 @@ Returns a list of currently connected users.
 
 Returns a list of the available log types.
 
+#### Permission Flag
+
+`view_logs` - `View Server Logs` in group `Admin`
+
 #### Parameters
 
 **None.**
@@ -177,6 +205,10 @@ Returns a list of the available log types.
 #### Description
 
 Returns a list of recent server log messages.
+
+#### Permission Flag
+
+`view_logs` - `View Server Logs` in group `Admin`
 
 #### Parameters
 
@@ -205,6 +237,10 @@ Returns a list of recent server log messages.
 
 Returns a list of the server settings, will full metadata.
 
+#### Permission Flag
+
+`read_server_settings` - `Read Server Settings` in group `Admin`
+
 #### Parameters
 
 **None.**
@@ -230,6 +266,10 @@ Returns a list of the server settings, will full metadata.
 
 Submits current server log info to a pastebin service automatically.
 
+#### Permission Flag
+
+`view_logs` - `View Server Logs` in group `Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -248,6 +288,10 @@ Submits current server log info to a pastebin service automatically.
 
 Shuts the server down. Returns success before the server is gone.
 
+#### Permission Flag
+
+`shutdown` - `Shutdown Server` in group `Admin`
+
 #### Parameters
 
 **None.**
@@ -263,6 +307,10 @@ Shuts the server down. Returns success before the server is gone.
 #### Description
 
 Causes swarm to update, then close and restart itself. If there's no update to apply, won't restart.
+
+#### Permission Flag
+
+`restart` - `Restart Server` in group `Admin`
 
 #### Parameters
 
@@ -282,6 +330,10 @@ Causes swarm to update, then close and restart itself. If there's no update to a
 #### Description
 
 Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.
+
+#### Permission Flag
+
+`manage_extensions` - `Manage Extensions` in group `Admin`
 
 #### Parameters
 

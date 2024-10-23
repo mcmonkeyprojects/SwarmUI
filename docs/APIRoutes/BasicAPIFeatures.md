@@ -28,6 +28,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`manage_presets` - `Manage Presets` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -51,6 +55,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`edit_user_settings` - `Edit User Settings` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -68,6 +76,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`manage_presets` - `Manage Presets` in group `User`
 
 #### Parameters
 
@@ -87,6 +99,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`manage_presets` - `Manage Presets` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -104,6 +120,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`read_user_settings` - `Read User Settings` in group `User`
 
 #### Parameters
 
@@ -123,6 +143,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`fundamental_generate_tab_access` - `Fundamental Generate Tab Access` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -140,6 +164,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`fundamental_generate_tab_access` - `Fundamental Generate Tab Access` in group `User`
 
 #### Parameters
 
@@ -159,6 +187,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`fundamental_generate_tab_access` - `Fundamental Generate Tab Access` in group `User`
+
 #### Parameters
 
 **None.**
@@ -174,6 +206,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+(MISSING)
 
 #### Parameters
 
@@ -193,6 +229,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`read_user_settings` - `Read User Settings` in group `User`
+
 #### Parameters
 
 **None.**
@@ -208,6 +248,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`install` - `Install` in group `Admin`
 
 #### Parameters
 
@@ -232,6 +276,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`basic_image_generation` - `Basic Image Generation` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -249,6 +297,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`server_debug_message` - `Server Debug Message` in group `Admin`
 
 #### Parameters
 
@@ -268,6 +320,10 @@ Basic general API routes, primarily for users and session handling.
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`edit_user_settings` - `Edit User Settings` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -286,6 +342,10 @@ Basic general API routes, primarily for users and session handling.
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`edit_params` - `Edit Params` in group `User`
 
 #### Parameters
 

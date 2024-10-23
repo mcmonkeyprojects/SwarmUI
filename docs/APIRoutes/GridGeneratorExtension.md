@@ -19,6 +19,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`gridgen_save_grids` - `[Grid Generator] Save Grids` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -36,6 +40,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`gridgen_read_grids` - `[Grid Generator] Read Grids` in group `User`
 
 #### Parameters
 
@@ -55,6 +63,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`gridgen_read_grids` - `[Grid Generator] Read Grids` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -73,6 +85,10 @@
 
 (ROUTE DESCRIPTION NOT SET)
 
+#### Permission Flag
+
+`gridgen_read_grids` - `[Grid Generator] Read Grids` in group `User`
+
 #### Parameters
 
 **None.**
@@ -88,6 +104,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`gridgen_generate_grids` - `[Grid Generator] Generate Grids` in group `User`
 
 #### Parameters
 
@@ -116,6 +136,10 @@
 #### Description
 
 (ROUTE DESCRIPTION NOT SET)
+
+#### Permission Flag
+
+`gridgen_save_grids` - `[Grid Generator] Save Grids` in group `User`
 
 #### Parameters
 

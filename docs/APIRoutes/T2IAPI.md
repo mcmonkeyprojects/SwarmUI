@@ -23,6 +23,10 @@ API routes for actual text-to-image processing and directly related features.
 Takes an image and stores it directly in the user's history.
 Behaves identical to GenerateText2Image but never queues a generation.
 
+#### Permission Flag
+
+`basic_image_generation` - `Basic Image Generation` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -49,6 +53,10 @@ Behaves identical to GenerateText2Image but never queues a generation.
 
 Delete an image from history.
 
+#### Permission Flag
+
+`user_delete_image` - `User Delete Image` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -66,6 +74,10 @@ Delete an image from history.
 #### Description
 
 Generate images from text prompts, directly as an HTTP route. See the examples in the API docs root page.
+
+#### Permission Flag
+
+`basic_image_generation` - `Basic Image Generation` in group `User`
 
 #### Parameters
 
@@ -92,6 +104,10 @@ Generate images from text prompts, directly as an HTTP route. See the examples i
 #### Description
 
 Generate images from text prompts, with WebSocket updates. This is the most important route inside of Swarm.
+
+#### Permission Flag
+
+`basic_image_generation` - `Basic Image Generation` in group `User`
 
 #### Parameters
 
@@ -147,6 +163,10 @@ Generate images from text prompts, with WebSocket updates. This is the most impo
 
 Gets a list of images in a saved image history folder.
 
+#### Permission Flag
+
+`view_image_history` - `View Image History` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -174,6 +194,10 @@ Gets a list of images in a saved image history folder.
 #### Description
 
 Get a list of available T2I parameters.
+
+#### Permission Flag
+
+`fundamental_generate_tab_access` - `Fundamental Generate Tab Access` in group `User`
 
 #### Parameters
 
@@ -239,6 +263,10 @@ Get a list of available T2I parameters.
 
 Open an image folder in the file explorer. Used for local users directly.
 
+#### Permission Flag
+
+`local_image_folder` - `Local Image Folder` in group `Admin`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -257,6 +285,10 @@ Open an image folder in the file explorer. Used for local users directly.
 
 Toggle whether an image is starred or not.
 
+#### Permission Flag
+
+`user_star_images` - `User Star Images` in group `User`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -273,7 +305,11 @@ Toggle whether an image is starred or not.
 
 #### Description
 
-Trigger a refresh of the server's data, returning parameter data.
+Trigger a refresh of the server's data, returning parameter data. Requires permission 'control_model_refresh' to actually take effect, otherwise just pulls latest data.
+
+#### Permission Flag
+
+`fundamental_generate_tab_access` - `Fundamental Generate Tab Access` in group `User`
 
 #### Parameters
 

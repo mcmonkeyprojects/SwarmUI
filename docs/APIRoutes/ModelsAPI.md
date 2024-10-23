@@ -25,6 +25,10 @@ API routes related to handling models (including loras, wildcards, etc).
 
 Deletes a wildcard file.
 
+#### Permission Flag
+
+`edit_wildcards` - `Edit Wildcards` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -42,6 +46,10 @@ Deletes a wildcard file.
 #### Description
 
 Returns a full description for a single model.
+
+#### Permission Flag
+
+`fundamental_model_access` - `Fundamental Model Access` in group `User`
 
 #### Parameters
 
@@ -85,6 +93,10 @@ Returns a full description for a single model.
 Downloads a model to the server, with websocket progress updates.
 Note that this does not trigger a model refresh itself, you must do that after a 'success' reply.
 
+#### Permission Flag
+
+`download_models` - `Download Models` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -105,6 +117,10 @@ Note that this does not trigger a model refresh itself, you must do that after a
 #### Description
 
 Modifies the metadata of a model. Returns before the file update is necessarily saved.
+
+#### Permission Flag
+
+`edit_model_metadata` - `Edit Model Metadata` in group `Control`
 
 #### Parameters
 
@@ -140,6 +156,10 @@ Modifies the metadata of a model. Returns before the file update is necessarily 
 
 Edits a wildcard file.
 
+#### Permission Flag
+
+`edit_wildcards` - `Edit Wildcards` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -161,6 +181,10 @@ Edits a wildcard file.
 
 Forwards a metadata request, eg to civitai API.
 
+#### Permission Flag
+
+`edit_model_metadata` - `Edit Model Metadata` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -178,6 +202,10 @@ Forwards a metadata request, eg to civitai API.
 #### Description
 
 Gets or creates a valid tensor hash for the requested model.
+
+#### Permission Flag
+
+`edit_model_metadata` - `Edit Model Metadata` in group `Control`
 
 #### Parameters
 
@@ -197,6 +225,10 @@ Gets or creates a valid tensor hash for the requested model.
 #### Description
 
 Returns a list of currently loaded Stable-Diffusion models (ie at least one backend has it loaded).
+
+#### Permission Flag
+
+`fundamental_model_access` - `Fundamental Model Access` in group `User`
 
 #### Parameters
 
@@ -219,6 +251,10 @@ Returns a list of currently loaded Stable-Diffusion models (ie at least one back
 #### Description
 
 Returns a list of models available on the server within a given folder, with their metadata.
+
+#### Permission Flag
+
+`fundamental_model_access` - `Fundamental Model Access` in group `User`
 
 #### Parameters
 
@@ -250,6 +286,10 @@ Returns a list of models available on the server within a given folder, with the
 
 Forcibly loads a model immediately on some or all backends.
 
+#### Permission Flag
+
+`load_models_now` - `Load Models Now` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -269,6 +309,10 @@ Forcibly loads a model immediately on some or all backends.
 
 Forcibly loads a model immediately on some or all backends, with live status updates over websocket.
 
+#### Permission Flag
+
+`load_models_now` - `Load Models Now` in group `Control`
+
 #### Parameters
 
 | Name | Type | Description | Default |
@@ -286,6 +330,10 @@ Forcibly loads a model immediately on some or all backends, with live status upd
 #### Description
 
 Tests how a prompt fills. Useful for testing wildcards, `<random:...`, etc.
+
+#### Permission Flag
+
+`fundamental_model_access` - `Fundamental Model Access` in group `User`
 
 #### Parameters
 
