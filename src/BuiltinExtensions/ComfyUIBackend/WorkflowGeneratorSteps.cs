@@ -58,23 +58,15 @@ public class WorkflowGeneratorSteps
         {
             if (g.IsRefinerStage && g.UserInput.TryGet(T2IParamTypes.RefinerVAE, out T2IModel rvae))
             {
-                string vaeNode = g.CreateNode("VAELoader", new JObject()
-                {
-                    ["vae_name"] = rvae.ToString(g.ModelFolderFormat)
-                }, g.HasNode("21") ? null : "21");
-                g.LoadingVAE = [vaeNode, 0];
+                g.LoadingVAE = g.CreateVAELoader(rvae.ToString(g.ModelFolderFormat), g.HasNode("21") ? null : "21");
             }
             else if (!g.NoVAEOverride && g.UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vae))
             {
-                if (g.FinalLoadedModel.ModelClass?.ID == "stable-diffusion-v3-medium")
+                if (g.FinalLoadedModel.ModelClass?.ID == "stable-diffusion-v3-medium" && vae.ModelClass?.CompatClass != "stable-diffusion-v3")
                 {
-                    Logs.Warning($"WARNING: Model {g.FinalLoadedModel.Title} is an SD3 model, but you have VAE {vae.Title} selected. If that VAE is not an SD3 specific VAE, this is likely a mistake. Errors may follow. If this breaks, disable the custom VAE.");
+                    Logs.Warning($"Model {g.FinalLoadedModel.Title} is an SD3 model, but you have VAE {vae.Title} selected. If that VAE is not an SD3 specific VAE, this is likely a mistake. Errors may follow. If this breaks, disable the custom VAE.");
                 }
-                string vaeNode = g.CreateNode("VAELoader", new JObject()
-                {
-                    ["vae_name"] = vae.ToString(g.ModelFolderFormat)
-                }, g.HasNode("11") ? null : "11");
-                g.LoadingVAE = [vaeNode, 0];
+                g.LoadingVAE = g.CreateVAELoader(vae.ToString(g.ModelFolderFormat), g.HasNode("11") ? null : "11");
             }
             else if (!g.NoVAEOverride && g.UserInput.Get(T2IParamTypes.AutomaticVAE, false))
             {
@@ -94,11 +86,7 @@ public class WorkflowGeneratorSteps
                     if (match is not null)
                     {
                         T2IModel vaeModel = Program.T2IModelSets["VAE"].Models[match];
-                        string vaeNode = g.CreateNode("VAELoader", new JObject()
-                        {
-                            ["vae_name"] = vaeModel.ToString(g.ModelFolderFormat)
-                        }, g.HasNode("11") ? null : "11");
-                        g.LoadingVAE = [vaeNode, 0];
+                        g.LoadingVAE = g.CreateVAELoader(vaeModel.ToString(g.ModelFolderFormat), g.HasNode("11") ? null : "11");
                     }
                 }
             }
@@ -1242,11 +1230,7 @@ public class WorkflowGeneratorSteps
                     {
                         throw new SwarmUserErrorException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
                     }
-                    string vaeLoader = g.CreateNode("VAELoader", new JObject()
-                    {
-                        ["vae_name"] = svdVae
-                    });
-                    vae = [vaeLoader, 0];
+                    vae = g.CreateVAELoader(svdVae, g.HasNode("11") ? null : "11");
                 }
                 else
                 {

@@ -563,11 +563,7 @@ public class WorkflowGenerator
             {
                 throw new SwarmUserErrorException("No default SDXL VAE found, please download an SDXL VAE and set it as default in User Settings");
             }
-            string vaeLoader = CreateNode("VAELoader", new JObject()
-            {
-                ["vae_name"] = xlVae
-            });
-            LoadingVAE = [vaeLoader, 0];
+            LoadingVAE = CreateVAELoader(xlVae);
         }
         else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet") || model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/diffusion_models")) // Hacky but it works for now
         {
@@ -689,6 +685,12 @@ public class WorkflowGenerator
             if (LoadingVAE is null)
             {
                 string sd3Vae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
+                string nodeId = null;
+                if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
+                {
+                    sd3Vae = vaeModel.Name;
+                    nodeId = "11";
+                }
                 if (string.IsNullOrWhiteSpace(sd3Vae) || sd3Vae == "None")
                 {
                     sd3Vae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "stable-diffusion-v3")?.Name;
@@ -697,11 +699,7 @@ public class WorkflowGenerator
                 {
                     throw new SwarmUserErrorException("No default SD3 VAE found, please download a SD3 VAE and set it as default in User Settings");
                 }
-                string vaeLoader = CreateNode("VAELoader", new JObject()
-                {
-                    ["vae_name"] = sd3Vae
-                });
-                LoadingVAE = [vaeLoader, 0];
+                LoadingVAE = CreateVAELoader(sd3Vae, nodeId);
             }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null || UserInput.Get(ComfyUIBackendExtension.ClipLModel) is not null))
@@ -719,6 +717,12 @@ public class WorkflowGenerator
             });
             LoadingClip = [dualClipLoader, 0];
             string fluxVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
+            string nodeId = null;
+            if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
+            {
+                fluxVae = vaeModel.Name;
+                nodeId = "11";
+            }
             if (string.IsNullOrWhiteSpace(fluxVae) || fluxVae == "None")
             {
                 fluxVae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "flux-1")?.Name;
@@ -727,11 +731,7 @@ public class WorkflowGenerator
             {
                 throw new SwarmUserErrorException("No default Flux VAE found, please download a Flux VAE and set it as default in User Settings");
             }
-            string vaeLoader = CreateNode("VAELoader", new JObject()
-            {
-                ["vae_name"] = fluxVae
-            });
-            LoadingVAE = [vaeLoader, 0];
+            LoadingVAE = CreateVAELoader(fluxVae, nodeId);
         }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
@@ -774,6 +774,22 @@ public class WorkflowGenerator
         }
         NodeHelpers[helper] = $"{LoadingModel[0]}:{LoadingModel[1]}" + (LoadingClip is null ? "::" : $":{LoadingClip[0]}:{LoadingClip[1]}") + (LoadingVAE is null ? "::" : $":{LoadingVAE[0]}:{LoadingVAE[1]}");
         return (model, LoadingModel, LoadingClip, LoadingVAE);
+    }
+
+    /// <summary>Creates a VAELoader node and returns its node ID. Avoids duplication.</summary>
+    public JArray CreateVAELoader(string vae, string id = null)
+    {
+        string vaeFixed = vae.Replace('\\', '/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}");
+        if (id is null && NodeHelpers.TryGetValue($"vaeloader-{vaeFixed}", out string helper))
+        {
+            return [helper, 0];
+        }
+        string vaeLoader = CreateNode("VAELoader", new JObject()
+        {
+            ["vae_name"] = vaeFixed
+        }, id);
+        NodeHelpers[$"vaeloader-{vae}"] = vaeLoader;
+        return [vaeLoader, 0];
     }
 
     /// <summary>Creates a VAEDecode node and returns its node ID.</summary>
