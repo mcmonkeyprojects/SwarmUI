@@ -26,6 +26,10 @@ public class API
     /// <summary>Register a new API call handler.</summary>
     public static void RegisterAPICall(Delegate method, bool isUserUpdate = false, PermInfo permission = null)
     {
+        if (permission is null && method.Method.Name != "GetNewSession")
+        {
+            Logs.Error($"Warning: API method '{method.Method.Name}' registered without permission! (legacy call, or debugging? Make sure it has a permission added before committing to public access)");
+        }
         RegisterAPICall(APICallReflectBuilder.BuildFor(method.Target, method.Method, isUserUpdate, permission));
     }
 
@@ -243,7 +247,8 @@ public class API
                 toc.Append($"- HTTP Route [{call.Name}](#http-route-api{call.Name.ToLowerFast()})\n");
             }
             APIDescriptionAttribute methodDesc = call.Original.GetCustomAttribute<APIDescriptionAttribute>();
-            docText.Append($"#### Description\n\n{methodDesc?.Description ?? "(ROUTE DESCRIPTION NOT SET)"}\n\n#### Parameters\n\n");
+            string perm = call.Permission is null ? "(MISSING)" : $"`{call.Permission.ID}` - `{call.Permission.DisplayName}` in group `{call.Permission.Group.DisplayName}`";
+            docText.Append($"#### Description\n\n{methodDesc?.Description ?? "(ROUTE DESCRIPTION NOT SET)"}\n\n#### Permission Flag\n\n{perm}\n\n#### Parameters\n\n");
             ParameterInfo[] paramInf = [.. call.Original.GetParameters().Where(m => m.ParameterType != typeof(Session) && m.ParameterType != typeof(WebSocket))];
             if (paramInf.Length == 0)
             {

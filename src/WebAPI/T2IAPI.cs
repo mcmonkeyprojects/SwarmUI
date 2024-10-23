@@ -26,15 +26,15 @@ public static class T2IAPI
     public static void Register()
     {
         // TODO: Some of these shouldn't be here?
-        API.RegisterAPICall(GenerateText2Image, true);
-        API.RegisterAPICall(GenerateText2ImageWS, true);
-        API.RegisterAPICall(AddImageToHistory, true);
-        API.RegisterAPICall(ListImages, false);
-        API.RegisterAPICall(ToggleImageStarred, true);
-        API.RegisterAPICall(OpenImageFolder, true);
+        API.RegisterAPICall(GenerateText2Image, true, Permissions.BasicImageGeneration);
+        API.RegisterAPICall(GenerateText2ImageWS, true, Permissions.BasicImageGeneration);
+        API.RegisterAPICall(AddImageToHistory, true, Permissions.BasicImageGeneration);
+        API.RegisterAPICall(ListImages, false, Permissions.ViewImageHistory);
+        API.RegisterAPICall(ToggleImageStarred, true, Permissions.UserStarImages);
+        API.RegisterAPICall(OpenImageFolder, true, Permissions.LocalImageFolder);
         API.RegisterAPICall(DeleteImage, true, Permissions.UserDeleteImage);
-        API.RegisterAPICall(ListT2IParams, false);
-        API.RegisterAPICall(TriggerRefresh, true); // Intentionally no perm here: internal check for readonly vs true refresh
+        API.RegisterAPICall(ListT2IParams, false, Permissions.FundamentalGenerateTabAccess);
+        API.RegisterAPICall(TriggerRefresh, true, Permissions.FundamentalGenerateTabAccess); // Intentionally weird perm here: internal check for readonly vs true refresh
     }
 
     [API.APIDescription("Generate images from text prompts, with WebSocket updates. This is the most important route inside of Swarm.",
@@ -661,7 +661,7 @@ public static class T2IAPI
 
     public static SemaphoreSlim RefreshSemaphore = new(1, 1);
 
-    [API.APIDescription("Trigger a refresh of the server's data, returning parameter data.",
+    [API.APIDescription("Trigger a refresh of the server's data, returning parameter data. Requires permission 'control_model_refresh' to actually take effect, otherwise just pulls latest data.",
         """
             // see `ListT2IParams` for details
             "list": [...],

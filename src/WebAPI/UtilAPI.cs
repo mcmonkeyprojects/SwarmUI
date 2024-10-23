@@ -1,5 +1,6 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
@@ -13,10 +14,10 @@ public static class UtilAPI
 {
     public static void Register()
     {
-        API.RegisterAPICall(CountTokens, false);
-        API.RegisterAPICall(TokenizeInDetail, false);
-        API.RegisterAPICall(Pickle2SafeTensor, true);
-        API.RegisterAPICall(WipeMetadata, true);
+        API.RegisterAPICall(CountTokens, false, Permissions.UseTokenizer);
+        API.RegisterAPICall(TokenizeInDetail, false, Permissions.UseTokenizer);
+        API.RegisterAPICall(Pickle2SafeTensor, true, Permissions.Pickle2Safetensors);
+        API.RegisterAPICall(WipeMetadata, true, Permissions.ResetMetadata);
     }
 
     public static ConcurrentDictionary<string, CliplikeTokenizer> Tokenizers = new();

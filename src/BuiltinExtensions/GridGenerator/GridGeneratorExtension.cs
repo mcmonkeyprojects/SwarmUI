@@ -24,6 +24,10 @@ public class GridGeneratorExtension : Extension
 {
     public static T2IRegisteredParam<string> PromptReplaceParameter, PresetsParameter;
 
+    public static PermInfo PermGenerateGrids = Permissions.Register(new("gridgen_generate_grids", "[Grid Generator] Generate Grids", "Allows the user to generate grids with the Grid Generator tool.", PermissionDefault.USER, Permissions.GroupUser));
+    public static PermInfo PermReadGrids = Permissions.Register(new("gridgen_read_grids", "[Grid Generator] Read Grids", "Allows the user to read their list of saved grids.", PermissionDefault.USER, Permissions.GroupUser));
+    public static PermInfo PermSaveGrids = Permissions.Register(new("gridgen_save_grids", "[Grid Generator] Save Grids", "Allows the user to save new custom grids to their list of saved grids.", PermissionDefault.USER, Permissions.GroupUser));
+
     public override void OnPreInit()
     {
         ScriptFiles.Add("Assets/grid_gen.js");
@@ -235,12 +239,12 @@ public class GridGeneratorExtension : Extension
 
     public override void OnInit()
     {
-        API.RegisterAPICall(GridGenRun);
-        API.RegisterAPICall(GridGenDoesExist);
-        API.RegisterAPICall(GridGenSaveData);
-        API.RegisterAPICall(GridGenDeleteData);
-        API.RegisterAPICall(GridGenGetData);
-        API.RegisterAPICall(GridGenListData);
+        API.RegisterAPICall(GridGenRun, true, PermGenerateGrids);
+        API.RegisterAPICall(GridGenDoesExist, false, PermReadGrids);
+        API.RegisterAPICall(GridGenSaveData, true, PermSaveGrids);
+        API.RegisterAPICall(GridGenDeleteData, true, PermSaveGrids);
+        API.RegisterAPICall(GridGenGetData, false, PermReadGrids);
+        API.RegisterAPICall(GridGenListData, false, PermReadGrids);
     }
 
     public async Task<JObject> GridGenSaveData(Session session, string gridName, bool isPublic, JObject rawData)

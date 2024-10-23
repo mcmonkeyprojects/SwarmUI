@@ -17,18 +17,18 @@ public static class ModelsAPI
 {
     public static void Register()
     {
-        API.RegisterAPICall(ListModels, false);
-        API.RegisterAPICall(DescribeModel, false);
-        API.RegisterAPICall(ListLoadedModels, false);
-        API.RegisterAPICall(SelectModel, true);
-        API.RegisterAPICall(SelectModelWS, true);
-        API.RegisterAPICall(DeleteWildcard, true);
-        API.RegisterAPICall(TestPromptFill, false);
-        API.RegisterAPICall(EditWildcard, true);
-        API.RegisterAPICall(EditModelMetadata, true);
-        API.RegisterAPICall(DoModelDownloadWS, true);
-        API.RegisterAPICall(GetModelHash, true);
-        API.RegisterAPICall(ForwardMetadataRequest, false);
+        API.RegisterAPICall(ListModels, false, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(DescribeModel, false, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(ListLoadedModels, false, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(SelectModel, true, Permissions.LoadModelsNow);
+        API.RegisterAPICall(SelectModelWS, true, Permissions.LoadModelsNow);
+        API.RegisterAPICall(DeleteWildcard, true, Permissions.EditWildcards);
+        API.RegisterAPICall(TestPromptFill, false, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(EditWildcard, true, Permissions.EditWildcards);
+        API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
+        API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
+        API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
+        API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
     }
 
     public static Dictionary<string, JObject> InternalExtraModels(string subtype)
@@ -307,10 +307,6 @@ public static class ModelsAPI
     /// <summary>Internal handler of the stable-diffusion model-load API route.</summary>
     public static async Task SelectModelInternal(Session session, (string, string) data, Action<JObject> output, bool isWS)
     {
-        if (!session.User.HasPermission(Permissions.LoadModelsNow))
-        {
-            output(new JObject() { ["error"] = "You do not have permission to load models." });
-        }
         (string model, string backendId) = data;
         Logs.Verbose($"API request to select model '{model}' on backend '{backendId}' from user '{session.User.UserID}'");
         if (TryGetRefusalForModel(session, model, out JObject refusal))

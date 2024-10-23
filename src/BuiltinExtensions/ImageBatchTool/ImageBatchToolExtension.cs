@@ -16,6 +16,8 @@ namespace SwarmUI.Builtin_ImageBatchToolExtension;
 /// <summary>Extension that adds a tool to generate batches of image-inputs.</summary>
 public class ImageBatchToolExtension : Extension
 {
+    public static PermInfo PermUseImageBatchTool = Permissions.Register(new("imagebatcher_use_image_batcher", "[Image Batch Tool] Use Image Batcher", "If true, the user may use the Image Batcher tool. Only makes sense for localhost users.", PermissionDefault.ADMINS, Permissions.GroupUser));
+
     public override void OnPreInit()
     {
         ScriptFiles.Add("Assets/image_batcher.js");
@@ -23,7 +25,7 @@ public class ImageBatchToolExtension : Extension
 
     public override void OnInit()
     {
-        API.RegisterAPICall(ImageBatchRun);
+        API.RegisterAPICall(ImageBatchRun, true, PermUseImageBatchTool);
     }
 
     /// <summary>API route to generate images with WebSocket updates.</summary>

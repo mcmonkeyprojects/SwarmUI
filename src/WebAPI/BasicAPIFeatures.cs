@@ -25,20 +25,20 @@ public static class BasicAPIFeatures
     public static void Register()
     {
         API.RegisterAPICall(GetNewSession); // GetNewSession is special
-        API.RegisterAPICall(InstallConfirmWS, true);
-        API.RegisterAPICall(GetMyUserData, false);
-        API.RegisterAPICall(AddNewPreset, true);
-        API.RegisterAPICall(DuplicatePreset, true);
-        API.RegisterAPICall(DeletePreset, true);
-        API.RegisterAPICall(GetCurrentStatus, false);
-        API.RegisterAPICall(InterruptAll, true);
-        API.RegisterAPICall(GetUserSettings, false);
-        API.RegisterAPICall(ChangeUserSettings, true);
-        API.RegisterAPICall(SetParamEdits, true);
-        API.RegisterAPICall(GetLanguage, false);
-        API.RegisterAPICall(ServerDebugMessage, false);
-        API.RegisterAPICall(SetAPIKey, true);
-        API.RegisterAPICall(GetAPIKeyStatus, false);
+        API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
+        API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
+        API.RegisterAPICall(AddNewPreset, true, Permissions.ManagePresets);
+        API.RegisterAPICall(DuplicatePreset, true, Permissions.ManagePresets);
+        API.RegisterAPICall(DeletePreset, true, Permissions.ManagePresets);
+        API.RegisterAPICall(GetCurrentStatus, false, Permissions.FundamentalGenerateTabAccess);
+        API.RegisterAPICall(InterruptAll, true, Permissions.BasicImageGeneration);
+        API.RegisterAPICall(GetUserSettings, false, Permissions.ReadUserSettings);
+        API.RegisterAPICall(ChangeUserSettings, true, Permissions.EditUserSettings);
+        API.RegisterAPICall(SetParamEdits, true, Permissions.EditParams);
+        API.RegisterAPICall(GetLanguage, false, Permissions.FundamentalGenerateTabAccess);
+        API.RegisterAPICall(ServerDebugMessage, false, Permissions.ServerDebugMessage);
+        API.RegisterAPICall(SetAPIKey, true, Permissions.EditUserSettings);
+        API.RegisterAPICall(GetAPIKeyStatus, false, Permissions.ReadUserSettings);
         T2IAPI.Register();
         ModelsAPI.Register();
         BackendAPI.Register();

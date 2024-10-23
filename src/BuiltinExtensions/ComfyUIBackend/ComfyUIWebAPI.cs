@@ -100,10 +100,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to read a list of available Comfy custom workflows.</summary>
     public static async Task<JObject> ComfyListWorkflows(Session session)
     {
-        if (!session.User.HasPermission(ComfyUIBackendExtension.PermReadWorkflows))
-        {
-            return new JObject() { ["error"] = "You do not have permission to read the ComfyUI workflow list." };
-        }
         return new JObject() { ["workflows"] = JToken.FromObject(ComfyUIBackendExtension.CustomWorkflows.Keys.ToList()
             .Select(ComfyUIBackendExtension.GetWorkflowByName).OrderBy(w => w.Name).Select(w => new JObject()
             {
@@ -117,10 +113,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to read a delete a saved Comfy custom workflows.</summary>
     public static async Task<JObject> ComfyDeleteWorkflow(Session session, string name)
     {
-        if (!session.User.HasPermission(ComfyUIBackendExtension.PermEditWorkflows))
-        {
-            return new JObject() { ["error"] = "You do not have permission to edit the ComfyUI workflow list." };
-        }
         string path = Utilities.StrictFilenameClean(name);
         if (!ComfyUIBackendExtension.CustomWorkflows.Remove(path, out _))
         {
