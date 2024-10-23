@@ -181,6 +181,38 @@ public class WorkflowGenerator
         return CreateNode(classType, (_, n) => n["inputs"] = input, id);
     }
 
+    public void DownloadCommonModel(string id)
+    {
+        CommonModels.ModelInfo info = CommonModels.Known[id];
+        string path = $"{Program.T2IModelSets[info.FolderType].FolderPaths[0]}/{info.FileName}";
+        if (File.Exists(path))
+        {
+            return;
+        }
+        Logs.Info($"Downloading {info.DisplayName} to {path}...");
+        double nextPerc = 0.05;
+        try
+        {
+            info.DownloadNow((bytes, total, perSec) =>
+            {
+                double perc = bytes / (double)total;
+                if (perc >= nextPerc)
+                {
+                    Logs.Info($"{info.DisplayName} download at {perc * 100:0.0}%...");
+                    // TODO: Send a signal back so a progress bar can be displayed on a UI
+                    nextPerc = Math.Round(perc / 0.05) * 0.05 + 0.05;
+                }
+            }).Wait();
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Failed to download {info.DisplayName} from {info.URL}: {ex.Message}");
+            File.Delete(path);
+            throw new SwarmReadableErrorException("Required model download failed.");
+        }
+        Logs.Info($"Downloading complete, continuing.");
+    }
+
     /// <summary>Helper to download a core model file required by the workflow.</summary>
     public void DownloadModel(string name, string filePath, string url, string hash)
     {
@@ -194,7 +226,6 @@ public class WorkflowGenerator
             {
                 return;
             }
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
             Logs.Info($"Downloading {name} to {filePath}...");
             double nextPerc = 0.05;
             try
@@ -697,7 +728,9 @@ public class WorkflowGenerator
                 }
                 if (string.IsNullOrWhiteSpace(sd3Vae))
                 {
-                    throw new SwarmUserErrorException("No default SD3 VAE found, please download a SD3 VAE and set it as default in User Settings");
+                    CommonModels.Known["sd35-vae"].DownloadNow().Wait();
+                    Program.RefreshAllModelSets();
+                    sd3Vae = CommonModels.Known["sd35-vae"].FileName;
                 }
                 LoadingVAE = CreateVAELoader(sd3Vae, nodeId);
             }
@@ -729,7 +762,9 @@ public class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(fluxVae))
             {
-                throw new SwarmUserErrorException("No default Flux VAE found, please download a Flux VAE and set it as default in User Settings");
+                CommonModels.Known["flux-ae"].DownloadNow().Wait();
+                Program.RefreshAllModelSets();
+                fluxVae = CommonModels.Known["flux-ae"].FileName;
             }
             LoadingVAE = CreateVAELoader(fluxVae, nodeId);
         }

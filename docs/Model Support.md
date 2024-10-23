@@ -114,7 +114,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
         - Download "Schnell" (Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-schnell>
         - Or "Dev" (non-Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-dev>
         - Put dev/schnell in `(Swarm)/Models/diffusion_models`
-        - Put the `ae.sft` file in `(Swarm)/Models/VAE`
+        - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
     - For both models, use CFG=1 (negative prompt won't work). Sampling leave default (will use Euler + Simple)
         - For the Dev model, there is also a `Flux Guidance Scale` parameter under `Sampling`, which is a distilled embedding value that the model was trained to use.
         - Dev can use some slightly-higher CFG values (allowing for negative prompt), possibly higher if you reduce the Flux Guidance value and/or use Dynamic Thresholding.
@@ -146,8 +146,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
         - SD3.5 Large <https://huggingface.co/city96/stable-diffusion-3.5-large-gguf/tree/main> or LargeTurbo <https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf/tree/main>
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
-        - You will need a relevant VAE in your `(Swarm)/Models/VAE` folder
-        - For Flux you need <https://huggingface.co/black-forest-labs/FLUX.1-schnell/blob/main/ae.safetensors>
+        - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
     - You will have to click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to the relevant correct one (it cannot be autodetected currently).
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
