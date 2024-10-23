@@ -124,7 +124,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Status = BackendStatus.RUNNING;
             LoadStatusReport = null;
         }
-        catch (Exception e)
+        catch (HttpRequestException e)
         {
             if (!ignoreWebError)
             {
