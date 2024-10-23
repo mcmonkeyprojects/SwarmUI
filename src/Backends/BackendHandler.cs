@@ -681,7 +681,7 @@ public class BackendHandler
             }
             catch (Exception ex)
             {
-                Logs.Error($"Error loading model on backend {backend.ID} ({backend.Backend.HandlerTypeData.Name}): {ex.ReadableString()}");
+                Logs.Error($"Error loading model '{model.RawFilePath}' on backend {backend.ID} ({backend.Backend.HandlerTypeData.Name}): {ex.ReadableString()}");
             }
             backend.ReserveModelLoad = false;
         }
@@ -1157,9 +1157,9 @@ public class BackendHandler
                     List<T2IBackendData> valid = availableLoaders.Where(b => !highestPressure.BadBackends.Contains(b.ID)).ToList();
                     if (valid.IsEmpty())
                     {
-                        Logs.Warning("[BackendHandler] All backends failed to load the model! Cannot generate anything.");
+                        Logs.Warning($"[BackendHandler] All backends failed to load the model '{highestPressure.Model.RawFilePath}'! Cannot generate anything.");
                         releasePressure();
-                        throw new SwarmReadableErrorException("All available backends failed to load the model.");
+                        throw new SwarmReadableErrorException($"All available backends failed to load the model '{highestPressure.Model.RawFilePath}'.");
                     }
                     valid = valid.Where(b => b.Backend.CurrentModelName != highestPressure.Model.Name).ToList();
                     if (valid.IsEmpty())
@@ -1170,7 +1170,7 @@ public class BackendHandler
                     List<T2IBackendData> unused = valid.Where(a => a.Usages == 0).ToList();
                     valid = unused.Any() ? unused : valid;
                     T2IBackendData availableBackend = valid.MinBy(a => a.TimeLastRelease);
-                    Logs.Debug($"[BackendHandler] backend #{availableBackend.ID} will load a model: {highestPressure.Model.Name}, with {highestPressure.Count} requests waiting for {timeWait / 1000f:0.#} seconds");
+                    Logs.Debug($"[BackendHandler] backend #{availableBackend.ID} will load a model: {highestPressure.Model.RawFilePath}, with {highestPressure.Count} requests waiting for {timeWait / 1000f:0.#} seconds");
                     highestPressure.IsLoading = true;
                     List<Session.GenClaim> claims = [];
                     foreach (Session sess in highestPressure.Sessions)
