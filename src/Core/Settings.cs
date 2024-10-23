@@ -48,6 +48,9 @@ public class Settings : AutoConfiguration
     [ConfigComment("If true, Swarm will automatically download and apply any development version updates as soon as they're available.\nDefaults to false.")]
     public bool AutoPullDevUpdates = false;
 
+    [ConfigComment("Settings related to authorization.")]
+    public AuthorizationData Authorization = new();
+
     [ConfigComment("Settings related to logging.")]
     public LogsData Logs = new();
 
@@ -59,6 +62,16 @@ public class Settings : AutoConfiguration
 
     [ConfigComment("Settings related to server performance.")]
     public PerformanceData Performance = new();
+
+    /// <summary>Settings related to authorization.</summary>
+    public class AuthorizationData : AutoConfiguration
+    {
+        [ConfigComment("If true, Swarm will require users to log in or use an API key to access the UI. If false, the UI will be open to anyone who can connect to it.\nDefaults to false.")]
+        public bool AuthorizationRequired = false;
+
+        [ConfigComment("If true, a direct connection from localhost can bypass login requirements.\nIf false, even local users will be required to login (they can just go manually edit the server settings file to toggle this though).\nDefaults to true.")]
+        public bool AllowLocalhostBypass = true;
+    }
 
     /// <summary>Settings related to logging.</summary>
     public class LogsData : AutoConfiguration

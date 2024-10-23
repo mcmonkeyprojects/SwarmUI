@@ -139,9 +139,8 @@ public class ComfyUIRedirectHelper
         {
             return;
         }
-        string userId = BasicAPIFeatures.GetUserIdFor(context);
-        User swarmUser = Program.Sessions.GetUser(userId);
-        if (!swarmUser.HasPermission(ComfyUIBackendExtension.PermDirectCalls))
+        User swarmUser = WebServer.GetUserFor(context);
+        if (swarmUser is null || !swarmUser.HasPermission(ComfyUIBackendExtension.PermDirectCalls))
         {
             context.Response.ContentType = "text/html";
             context.Response.StatusCode = 401;
@@ -439,7 +438,7 @@ public class ComfyUIRedirectHelper
                                     backend = client.Backend;
                                     parsed["client_id"] = client.SID;
                                     client.FixUpPrompt(parsed["prompt"] as JObject);
-                                    string userText = $" (from user {userId})";
+                                    string userText = $" (from user {swarmUser.UserID})";
                                     swarmUser.UpdateLastUsedTime();
                                     Logs.Info($"Sent Comfy backend direct prompt requested to backend #{backend.BackendData.ID}{userText}");
                                     backend.BackendData.UpdateLastReleaseTime();
