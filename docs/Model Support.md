@@ -30,6 +30,14 @@ Under `Advanced Sampling`, the parameter `Sigma Shift` is available. This defaul
 
 For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended (SD3 does not respond well to regular upscaling without tiling).
 
+#### Stable Diffusion 3.5
+
+Stable Diffusion 3.5 Large is supported and works as normal, including both normal and Turbo variants.
+
+They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
+
+You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+
 ### SDXL Turbo and SD Turbo
 
 Turbo models work the same as regular models, just set `CFG Scale` to `1` and `Steps` to `1` as well. Under the `Sampling` group set `Scheduler` to `Turbo`.
@@ -132,12 +140,15 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 # GGUF Quantized Models
 
-- GGUF Quantized `diffusion_models` models, such as Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main> are supported in SwarmUI automatically.
+- GGUF Quantized `diffusion_models` models are supported in SwarmUI automatically.
+    - Examples of GGUF core models include:
+        - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
+        - SD3.5 Large <https://huggingface.co/city96/stable-diffusion-3.5-large-gguf/tree/main> or LargeTurbo <https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf/tree/main>
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
         - You will need a relevant VAE in your `(Swarm)/Models/VAE` folder
         - For Flux you need <https://huggingface.co/black-forest-labs/FLUX.1-schnell/blob/main/ae.safetensors>
-    - You will have to click `Edit Metadata` on the model and set the architecture, it cannot be autodetected currently.
+    - You will have to click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to the relevant correct one (it cannot be autodetected currently).
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
     - You can accept this popup, and it will install and reload the backend
