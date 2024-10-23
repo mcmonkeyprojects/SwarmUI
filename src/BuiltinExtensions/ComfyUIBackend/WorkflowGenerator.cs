@@ -686,6 +686,23 @@ public class WorkflowGenerator
                     LoadingClip = [tripleClipLoader, 0];
                 }
             }
+            if (LoadingVAE is null)
+            {
+                string sd3Vae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
+                if (string.IsNullOrWhiteSpace(sd3Vae) || sd3Vae == "None")
+                {
+                    sd3Vae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "stable-diffusion-v3")?.Name;
+                }
+                if (string.IsNullOrWhiteSpace(sd3Vae))
+                {
+                    throw new SwarmUserErrorException("No default SD3 VAE found, please download a SD3 VAE and set it as default in User Settings");
+                }
+                string vaeLoader = CreateNode("VAELoader", new JObject()
+                {
+                    ["vae_name"] = sd3Vae
+                });
+                LoadingVAE = [vaeLoader, 0];
+            }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null || UserInput.Get(ComfyUIBackendExtension.ClipLModel) is not null))
         {

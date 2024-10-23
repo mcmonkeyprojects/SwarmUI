@@ -349,6 +349,10 @@ public class Settings : AutoConfiguration
             [ConfigComment("What VAE to use with Flux models by default.")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultFluxVAE = "None";
+
+            [ConfigComment("What VAE to use with SD3 models by default.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None"])]
+            public string DefaultSD3VAE = "None";
         }
 
         [ConfigComment("Options to override default VAEs with.")]

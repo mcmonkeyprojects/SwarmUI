@@ -335,6 +335,10 @@ function isModelArchCorrect(model) {
     if (model.compat_class && curModelCompatClass) {
         let slash = model.architecture.indexOf('/');
         if (slash != -1) { // Base models are excluded
+            // VAEs have more mixed intercompat
+            if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('stable-diffusion-v3') && curModelCompatClass.startsWith('stable-diffusion-v3')) {
+                return true;
+            }
             return model.compat_class == curModelCompatClass;
         }
     }

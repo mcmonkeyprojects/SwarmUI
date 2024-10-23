@@ -122,7 +122,7 @@ function applyThemeSetting(theme_info) {
 function loadUserSettings(callback = null) {
     genericRequest('GetUserSettings', {}, data => {
         if (coreModelMap['VAE'] != null) {
-            for (let setting of ['defaultsdxlvae', 'defaultsdv1vae', 'defaultsvdvae', 'defaultfluxvae']) {
+            for (let setting of ['defaultsdxlvae', 'defaultsdv1vae', 'defaultsvdvae', 'defaultfluxvae', 'defaultsd3vae']) {
                 data.settings.vaes.value[setting].values = ['None'].concat(coreModelMap['VAE']);
             }
         }

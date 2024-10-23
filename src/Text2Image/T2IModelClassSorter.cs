@@ -220,6 +220,10 @@ public class T2IModelClassSorter
         {
             return false;
         }});
+        Register(new() { ID = "stable-diffusion-v3/vae", CompatClass = "stable-diffusion-v3", Name = "Stable Diffusion 3 VAE", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         // ====================== BFL Flux.1 ======================
         Register(new() { ID = "flux.1/vae", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "Flux.1-schnell", CompatClass = "flux-1", Name = "Flux.1 Schnell", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
