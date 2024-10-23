@@ -79,12 +79,12 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         if (firstBackSlash is not null)
         {
             ModelFolderFormat = "\\";
-            Logs.Debug($"Comfy backend {BackendData.ID} using model folder format: backslash \\ due to model {firstBackSlash}");
+            Logs.Verbose($"Comfy backend {BackendData.ID} using model folder format: backslash \\ due to model {firstBackSlash}");
         }
         else
         {
             ModelFolderFormat = "/";
-            Logs.Debug($"Comfy backend {BackendData.ID} using model folder format: forward slash / as no backslash was found");
+            Logs.Verbose($"Comfy backend {BackendData.ID} using model folder format: forward slash / as no backslash was found");
         }
         try
         {

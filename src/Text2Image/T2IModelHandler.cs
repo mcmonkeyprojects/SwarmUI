@@ -216,8 +216,8 @@ public class T2IModelHandler
             foreach (string path in FolderPaths)
             {
                 AddAllFromFolder(path, "");
-                Logs.Debug($"Have {Models.Count} {ModelType} models.");
             }
+            Logs.Debug($"Have {Models.Count} {ModelType} models.");
             if (UnathorizedAccessSet.Any())
             {
                 Logs.Warning($"Got UnauthorizedAccessException while loading {ModelType} model paths: {UnathorizedAccessSet.Select(m => $"'{m}'").JoinString(", ")}");
