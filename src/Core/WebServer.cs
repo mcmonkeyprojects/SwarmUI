@@ -389,6 +389,26 @@ public class WebServer
         await context.Response.CompleteAsync();
     }
 
+    public static string GetUserIdFor(HttpContext context)
+    {
+        if (Program.ServerSettings.Authorization.AuthorizationRequired)
+        {
+            // TODO
+            return null;
+        }
+        if (context.Request.Headers.TryGetValue("X-SWARM-USER_ID", out StringValues user_id))
+        {
+            return user_id[0];
+        }
+        return SessionHandler.LocalUserID; // TODO: disable this if non-local swarm instance
+    }
+
+    public static User GetUserFor(HttpContext context)
+    {
+        string id = GetUserIdFor(context);
+        return id is null ? null : Program.Sessions.GetUser(id);
+    }
+
     /// <summary>Web route for viewing output images.</summary>
     public async Task ViewOutput(HttpContext context)
     {
