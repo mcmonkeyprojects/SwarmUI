@@ -13,14 +13,14 @@ public class BackendAPI
 {
     public static void Register()
     {
-        API.RegisterAPICall(ListBackendTypes);
-        API.RegisterAPICall(ListBackends);
-        API.RegisterAPICall(DeleteBackend, true);
-        API.RegisterAPICall(ToggleBackend, true);
-        API.RegisterAPICall(EditBackend, true);
-        API.RegisterAPICall(AddNewBackend, true);
-        API.RegisterAPICall(RestartBackends, true);
-        API.RegisterAPICall(FreeBackendMemory, true);
+        API.RegisterAPICall(ListBackendTypes, false, Permissions.ViewBackendsList);
+        API.RegisterAPICall(ListBackends, false, Permissions.ViewBackendsList);
+        API.RegisterAPICall(DeleteBackend, true, Permissions.AddRemoveBackends);
+        API.RegisterAPICall(ToggleBackend, true, Permissions.ToggleBackends);
+        API.RegisterAPICall(EditBackend, true, Permissions.EditBackends);
+        API.RegisterAPICall(AddNewBackend, true, Permissions.AddRemoveBackends);
+        API.RegisterAPICall(RestartBackends, true, Permissions.RestartBackends);
+        API.RegisterAPICall(FreeBackendMemory, true, Permissions.ControlMemClean);
     }
 
     [API.APIDescription("Returns of a list of all available backend types.",
@@ -46,10 +46,6 @@ public class BackendAPI
         """)]
     public static async Task<JObject> ListBackendTypes(Session session)
     {
-        if (!session.User.HasPermission(Permissions.ViewBackendsList))
-        {
-            return new() { ["error"] = "You do not have permission to view the server backends." };
-        }
         return new() { ["list"] = JToken.FromObject(Program.Backends.BackendTypes.Values.Select(b => b.NetDescription).ToList()) };
     }
 
@@ -89,10 +85,6 @@ public class BackendAPI
     public static async Task<JObject> DeleteBackend(Session session,
         [API.APIParameter("ID of the backend to delete.")] int backend_id)
     {
-        if (!session.User.HasPermission(Permissions.AddRemoveBackends))
-        {
-            return new() { ["error"] = "You do not have permission to delete backends." };
-        }
         Logs.Warning($"User {session.User.UserID} requested delete of backend {backend_id}.");
         if (Program.LockSettings)
         {
@@ -115,10 +107,6 @@ public class BackendAPI
         [API.APIParameter("ID of the backend to toggle.")] int backend_id,
         [API.APIParameter("If true, backend should be enabled. If false, backend should be disabled.")] bool enabled)
     {
-        if (!session.User.HasPermission(Permissions.ToggleBackends))
-        {
-            return new() { ["error"] = "You do not have permission to toggle backends." };
-        }
         Logs.Warning($"User {session.User.UserID} requested toggle of backend {backend_id}, enabled={enabled}.");
         if (Program.LockSettings)
         {
@@ -177,10 +165,6 @@ public class BackendAPI
         [API.APIParameter("New title of the backend.")] string title,
         [API.APIParameter(" Input should contain a map of `\"settingname\": value`.")] JObject raw_inp)
     {
-        if (!session.User.HasPermission(Permissions.EditBackends))
-        {
-            return new() { ["error"] = "You do not have permission to edit backends." };
-        }
         Logs.Warning($"User {session.User.UserID} requested edit of backend {backend_id}.");
         if (Program.LockSettings)
         {
@@ -224,10 +208,6 @@ public class BackendAPI
         [API.APIParameter("If true, include 'nonreal' backends (ones that were spawned temporarily/internally).")] bool nonreal = false,
         [API.APIParameter("If true, include nonessential data about backends (eg what model is currently loaded).")] bool full_data = false)
     {
-        if (!session.User.HasPermission(Permissions.ViewBackendsList))
-        {
-            return new() { ["error"] = "You do not have permission to view the server backends." };
-        }
         JObject toRet = [];
         foreach (BackendHandler.T2IBackendData data in Program.Backends.T2IBackends.Values.OrderBy(d => d.ID))
         {
@@ -259,10 +239,6 @@ public class BackendAPI
     public static async Task<JObject> AddNewBackend(Session session,
         [API.APIParameter("ID of what type of backend to add (see `ListBackendTypes`).")] string type_id)
     {
-        if (!session.User.HasPermission(Permissions.AddRemoveBackends))
-        {
-            return new() { ["error"] = "You do not have permission to add new backends." };
-        }
         Logs.Warning($"User {session.User.UserID} requested add-new-backend of type {type_id}.");
         if (Program.LockSettings)
         {
@@ -284,10 +260,6 @@ public class BackendAPI
     public static async Task<JObject> RestartBackends(Session session,
         [API.APIParameter("What backend ID to restart, or `all` for all.")] string backend = "all")
     {
-        if (!session.User.HasPermission(Permissions.RestartBackends))
-        {
-            return new() { ["error"] = "You do not have permission to restart backends." };
-        }
         Logs.Warning($"User {session.User.UserID} requested restart of backend {backend}.");
         if (Program.LockSettings)
         {
@@ -319,10 +291,6 @@ public class BackendAPI
         [API.APIParameter("If true, system RAM should be cleared too. If false, only VRAM should be cleared.")] bool system_ram = false,
         [API.APIParameter("What backend ID to restart, or `all` for all.")] string backend = "all")
     {
-        if (!session.User.HasPermission(Permissions.ControlMemClean))
-        {
-            return new() { ["error"] = "You do not have permission to free memory." };
-        }
         List<Task> tasks = [];
         foreach (AbstractT2IBackend target in Program.Backends.RunningBackendsOfType<AbstractT2IBackend>())
         {

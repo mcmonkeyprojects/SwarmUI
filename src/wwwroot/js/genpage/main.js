@@ -1764,6 +1764,7 @@ function loadUserData(callback) {
         else {
             autoCompletionsList = null;
         }
+        permissions.updateFrom(data.permissions);
         allPresets = data.presets;
         if (!language) {
             language = data.language;

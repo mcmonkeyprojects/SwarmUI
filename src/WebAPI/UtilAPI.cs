@@ -13,8 +13,8 @@ public static class UtilAPI
 {
     public static void Register()
     {
-        API.RegisterAPICall(CountTokens);
-        API.RegisterAPICall(TokenizeInDetail);
+        API.RegisterAPICall(CountTokens, false);
+        API.RegisterAPICall(TokenizeInDetail, false);
         API.RegisterAPICall(Pickle2SafeTensor, true);
         API.RegisterAPICall(WipeMetadata, true);
     }

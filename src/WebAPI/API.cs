@@ -24,9 +24,9 @@ public class API
     }
 
     /// <summary>Register a new API call handler.</summary>
-    public static void RegisterAPICall(Delegate method, bool isUserUpdate = false)
+    public static void RegisterAPICall(Delegate method, bool isUserUpdate = false, PermInfo permission = null)
     {
-        RegisterAPICall(APICallReflectBuilder.BuildFor(method.Target, method.Method, isUserUpdate));
+        RegisterAPICall(APICallReflectBuilder.BuildFor(method.Target, method.Method, isUserUpdate, permission));
     }
 
     /// <summary>Web access call route, triggered from <see cref="WebServer"/>.</summary>
@@ -119,6 +119,12 @@ public class API
                 if (handler.IsUserUpdate)
                 {
                     session.UpdateLastUsedTime();
+                }
+                if (handler.Permission is not null && !session.User.HasPermission(handler.Permission))
+                {
+                    Error($"User lacks required permission '{handler.Permission.ID}' ('{handler.Permission.DisplayName}' in group '{handler.Permission.Group.DisplayName}')");
+                    context.Response.Redirect("/Error/Permissions");
+                    return;
                 }
             }
             JObject output = await handler.Call(context, session, socket, input);

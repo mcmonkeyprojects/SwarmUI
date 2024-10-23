@@ -13,7 +13,7 @@ namespace SwarmUI.WebAPI;
 /// <param name="Call">Actual call function: an async function that takes the HttpContext and the JSON input, and returns JSON output.</param>
 /// <param name="IsWebSocket">Whether this call is for websockets. If false, normal HTTP API.</param>
 /// <param name="IsUserUpdate">If true, this is considered a 'user update' behavior of some form. Use false for basic getters or automated actions.</param>
-public record class APICall(string Name, MethodInfo Original, Func<HttpContext, Session, WebSocket, JObject, Task<JObject>> Call, bool IsWebSocket, bool IsUserUpdate)
+/// <param name="Permission">Optional required permission for this API call.</param>
+public record class APICall(string Name, MethodInfo Original, Func<HttpContext, Session, WebSocket, JObject, Task<JObject>> Call, bool IsWebSocket, bool IsUserUpdate, PermInfo Permission)
 {
-    // TODO: Permissions, etc.
 }

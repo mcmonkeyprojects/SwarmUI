@@ -24,21 +24,21 @@ public static class BasicAPIFeatures
     /// <summary>Called by <see cref="Program"/> to register the core API calls.</summary>
     public static void Register()
     {
-        API.RegisterAPICall(GetNewSession);
+        API.RegisterAPICall(GetNewSession); // GetNewSession is special
         API.RegisterAPICall(InstallConfirmWS, true);
-        API.RegisterAPICall(GetMyUserData);
+        API.RegisterAPICall(GetMyUserData, false);
         API.RegisterAPICall(AddNewPreset, true);
         API.RegisterAPICall(DuplicatePreset, true);
         API.RegisterAPICall(DeletePreset, true);
-        API.RegisterAPICall(GetCurrentStatus);
+        API.RegisterAPICall(GetCurrentStatus, false);
         API.RegisterAPICall(InterruptAll, true);
-        API.RegisterAPICall(GetUserSettings);
+        API.RegisterAPICall(GetUserSettings, false);
         API.RegisterAPICall(ChangeUserSettings, true);
         API.RegisterAPICall(SetParamEdits, true);
-        API.RegisterAPICall(GetLanguage);
-        API.RegisterAPICall(ServerDebugMessage);
+        API.RegisterAPICall(GetLanguage, false);
+        API.RegisterAPICall(ServerDebugMessage, false);
         API.RegisterAPICall(SetAPIKey, true);
-        API.RegisterAPICall(GetAPIKeyStatus);
+        API.RegisterAPICall(GetAPIKeyStatus, false);
         T2IAPI.Register();
         ModelsAPI.Register();
         BackendAPI.Register();
@@ -347,6 +347,7 @@ public static class BasicAPIFeatures
             ["user_name"] = session.User.UserID,
             ["presets"] = new JArray(session.User.GetAllPresets().Select(p => p.NetData()).ToArray()),
             ["language"] = session.User.Settings.Language,
+            ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
         };
     }

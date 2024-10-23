@@ -25,7 +25,7 @@ public class APICallReflectBuilder
         [typeof(string[])] = (JToken input) => (true, input.ToList().Select(j => j.ToString()).ToArray())
     };
 
-    public static APICall BuildFor(object obj, MethodInfo method, bool isUserUpdate)
+    public static APICall BuildFor(object obj, MethodInfo method, bool isUserUpdate, PermInfo permission)
     {
         if (method.ReturnType != typeof(Task<JObject>))
         {
@@ -124,7 +124,7 @@ public class APICallReflectBuilder
                 throw new Exception($"Invalid API parameter type '{param.ParameterType.Name}' for param '{param.Name}' of method '{method.DeclaringType.Name}.{method.Name}'");
             }
         }
-        return new APICall(method.Name, method, caller.Call, isWebSocket, isUserUpdate);
+        return new APICall(method.Name, method, caller.Call, isWebSocket, isUserUpdate, permission);
     }
 
     public record class APICaller(object Obj, MethodInfo Method, List<Func<HttpContext, Session, WebSocket, JObject, (string, object)>> InputMappers)

@@ -28,13 +28,13 @@ public static class T2IAPI
         // TODO: Some of these shouldn't be here?
         API.RegisterAPICall(GenerateText2Image, true);
         API.RegisterAPICall(GenerateText2ImageWS, true);
-        API.RegisterAPICall(AddImageToHistory);
-        API.RegisterAPICall(ListImages);
+        API.RegisterAPICall(AddImageToHistory, true);
+        API.RegisterAPICall(ListImages, false);
         API.RegisterAPICall(ToggleImageStarred, true);
         API.RegisterAPICall(OpenImageFolder, true);
-        API.RegisterAPICall(DeleteImage, true);
-        API.RegisterAPICall(ListT2IParams);
-        API.RegisterAPICall(TriggerRefresh);
+        API.RegisterAPICall(DeleteImage, true, Permissions.UserDeleteImage);
+        API.RegisterAPICall(ListT2IParams, false);
+        API.RegisterAPICall(TriggerRefresh, true); // Intentionally no perm here: internal check for readonly vs true refresh
     }
 
     [API.APIDescription("Generate images from text prompts, with WebSocket updates. This is the most important route inside of Swarm.",
@@ -554,10 +554,6 @@ public static class T2IAPI
     public static async Task<JObject> DeleteImage(Session session,
         [API.APIParameter("The path to the image to delete.")] string path)
     {
-        if (!session.User.HasPermission(Permissions.UserDeleteImage))
-        {
-            return new JObject() { ["error"] = "You do not have permission to delete images." };
-        }
         string origPath = path;
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
         (path, string consoleError, string userError) = WebServer.CheckFilePath(root, path);
@@ -760,7 +756,7 @@ public static class T2IAPI
         }
         return new JObject()
         {
-            ["list"] = new JArray(T2IParamTypes.Types.Values.Where(p => session.User.HasPermission(p.Permission)).Select(v => v.ToNet(session)).ToList()),
+            ["list"] = new JArray(T2IParamTypes.Types.Values.Where(p => p.Permission is null || session.User.HasPermission(p.Permission)).Select(v => v.ToNet(session)).ToList()),
             ["models"] = modelData,
             ["wildcards"] = new JArray(WildcardsHelper.ListFiles),
             ["param_edits"] = string.IsNullOrWhiteSpace(session.User.Data.RawParamEdits) ? null : JObject.Parse(session.User.Data.RawParamEdits)

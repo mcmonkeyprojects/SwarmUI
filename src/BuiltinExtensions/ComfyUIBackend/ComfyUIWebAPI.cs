@@ -16,24 +16,20 @@ public static class ComfyUIWebAPI
 {
     public static void Register()
     {
-        API.RegisterAPICall(ComfySaveWorkflow, true);
-        API.RegisterAPICall(ComfyReadWorkflow);
-        API.RegisterAPICall(ComfyListWorkflows);
-        API.RegisterAPICall(ComfyDeleteWorkflow, true);
-        API.RegisterAPICall(ComfyGetGeneratedWorkflow);
-        API.RegisterAPICall(DoLoraExtractionWS, true);
-        API.RegisterAPICall(ComfyEnsureRefreshable);
-        API.RegisterAPICall(ComfyInstallFeatures, true);
-        API.RegisterAPICall(DoTensorRTCreateWS, true);
+        API.RegisterAPICall(ComfySaveWorkflow, true, ComfyUIBackendExtension.PermEditWorkflows);
+        API.RegisterAPICall(ComfyReadWorkflow, false, ComfyUIBackendExtension.PermReadWorkflows);
+        API.RegisterAPICall(ComfyListWorkflows, false, ComfyUIBackendExtension.PermReadWorkflows);
+        API.RegisterAPICall(ComfyDeleteWorkflow, true, ComfyUIBackendExtension.PermEditWorkflows);
+        API.RegisterAPICall(ComfyGetGeneratedWorkflow, false, ComfyUIBackendExtension.PermDirectCalls);
+        API.RegisterAPICall(DoLoraExtractionWS, true, Permissions.ExtractLoRAs);
+        API.RegisterAPICall(ComfyEnsureRefreshable, false, ComfyUIBackendExtension.PermDirectCalls);
+        API.RegisterAPICall(ComfyInstallFeatures, true, Permissions.InstallFeatures);
+        API.RegisterAPICall(DoTensorRTCreateWS, true, Permissions.CreateTRT);
     }
 
     /// <summary>API route to save a comfy workflow object to persistent file.</summary>
     public static async Task<JObject> ComfySaveWorkflow(Session session, string name, string workflow, string prompt, string custom_params, string param_values, string image, string description = "", bool enable_in_simple = false, string replace = null)
     {
-        if (!session.User.HasPermission(ComfyUIBackendExtension.PermEditWorkflows))
-        {
-            return new JObject() { ["error"] = "You do not have permission to edit the ComfyUI workflow list." };
-        }
         string origPath = Utilities.StrictFilenameClean(string.IsNullOrWhiteSpace(replace) ? name : replace);
         string cleaned = Utilities.StrictFilenameClean(name);
         string path = $"{ComfyUIBackendExtension.Folder}/CustomWorkflows/{cleaned}.json";
@@ -93,10 +89,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to read a comfy workflow object from persistent file.</summary>
     public static async Task<JObject> ComfyReadWorkflow(Session session, string name)
     {
-        if (!session.User.HasPermission(ComfyUIBackendExtension.PermReadWorkflows))
-        {
-            return new JObject() { ["error"] = "You do not have permission to read the ComfyUI workflow list." };
-        }
         JObject val = ReadCustomWorkflow(name);
         if (val.ContainsKey("error"))
         {
@@ -151,10 +143,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to get a generated workflow for a T2I input.</summary>
     public static async Task<JObject> ComfyGetGeneratedWorkflow(Session session, JObject rawInput)
     {
-        if (!session.User.HasPermission(ComfyUIBackendExtension.PermDirectCalls))
-        {
-            return new JObject() { ["error"] = "You do not have permission to interact with the ComfyUI backend." };
-        }
         T2IParamInput input;
         try
         {
@@ -191,10 +179,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to ensure to install a given ComfyUI custom node feature.</summary>
     public static async Task<JObject> ComfyInstallFeatures(Session session, string features)
     {
-        if (!session.User.HasPermission(Permissions.InstallFeatures))
-        {
-            return new JObject() { ["error"] = "You do not have permission to install new features." };
-        }
         await MultiInstallLock.WaitAsync(Program.GlobalProgramCancel);
         try
         {
@@ -270,11 +254,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to create a TensorRT model.</summary>
     public static async Task<JObject> DoTensorRTCreateWS(Session session, WebSocket ws, string model, string aspect, string aspectRange, int optBatch, int maxBatch)
     {
-        if (!session.User.HasPermission(Permissions.CreateTRT))
-        {
-            await ws.SendJson(new JObject() { ["error"] = "You do not have permission to create TensorRT models." }, API.WebsocketTimeout);
-            return null;
-        }
         if (ModelsAPI.TryGetRefusalForModel(session, model, out JObject refusal))
         {
             await ws.SendJson(refusal, API.WebsocketTimeout);
@@ -426,11 +405,6 @@ public static class ComfyUIWebAPI
     /// <summary>API route to extract a LoRA from two models.</summary>
     public static async Task<JObject> DoLoraExtractionWS(Session session, WebSocket ws, string baseModel, string otherModel, int rank, string outName)
     {
-        if (!session.User.HasPermission(Permissions.ExtractLoRAs))
-        {
-            await ws.SendJson(new JObject() { ["error"] = "You do not have permission to extract LoRAs." }, API.WebsocketTimeout);
-            return null;
-        }
         outName = Utilities.StrictFilenameClean(outName);
         if (ModelsAPI.TryGetRefusalForModel(session, baseModel, out JObject refusal)
             || ModelsAPI.TryGetRefusalForModel(session, otherModel, out refusal)

@@ -245,6 +245,12 @@ public class User
         return Restrictions.PermissionFlags.Contains(permission.ID) || Restrictions.PermissionFlags.Contains("*");
     }
 
+    /// <summary>Gets the underlying list of permission flags for this user.</summary>
+    public string[] GetPermissions()
+    {
+        return [.. Restrictions.PermissionFlags];
+    }
+
     /// <summary>Simplified keynames for things commonly used in ExtraMeta, to allow for OutputPath builder to treat these cases as empty and not errors.</summary>
     public static HashSet<string> KnownExtraMetaVals = ["debugbackend", "scoring", "usedembeddings", "generationtime", "intermediate", "usedwildcards", "swarmversion", "date", "originalprompt", "originalnegativeprompt", "presetsused"];
 

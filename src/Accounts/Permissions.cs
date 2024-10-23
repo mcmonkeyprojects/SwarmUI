@@ -52,7 +52,8 @@ public static class Permissions
     public static PermInfo CreateTRT = Register(new("create_tensorrt", "Create TensorRT Models", "Allows this user to create new TensorRT models.", PermissionDefault.POWERUSERS, GroupParams));
     public static PermInfo ExtractLoRAs = Register(new("extra_loras", "Extract LoRAs", "Allows this user to extra LoRAs.", PermissionDefault.POWERUSERS, GroupParams));
     public static PermInfo ControlMemClean = Register(new("control_mem_clean", "Control Memory Cleaning", "Allows this user to control memory cleaning (eg cleanup VRAM or system RAM usage).", PermissionDefault.POWERUSERS, GroupParams));
-
+    public static PermInfo LoadModelsNow = Register(new("load_models_now", "Load Models Now", "Allows this user to load models immediately across all backends.", PermissionDefault.POWERUSERS, GroupParams));
+ 
     public static PermInfoGroup GroupUser = new("User", "Permissions related to basic user access.");
 
     public static PermInfo UserDeleteImage = Register(new("user_delete_image", "User Delete Image", "Allows this user to delete images they generated.", PermissionDefault.USER, GroupParams));

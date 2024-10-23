@@ -18,19 +18,19 @@ public static class AdminAPI
 {
     public static void Register()
     {
-        API.RegisterAPICall(ListServerSettings);
-        API.RegisterAPICall(ChangeServerSettings, true);
-        API.RegisterAPICall(ListLogTypes);
-        API.RegisterAPICall(ListRecentLogMessages);
-        API.RegisterAPICall(LogSubmitToPastebin, true);
-        API.RegisterAPICall(ShutdownServer, true);
-        API.RegisterAPICall(GetServerResourceInfo);
-        API.RegisterAPICall(DebugLanguageAdd, true);
-        API.RegisterAPICall(DebugGenDocs, true);
-        API.RegisterAPICall(ListConnectedUsers);
-        API.RegisterAPICall(UpdateAndRestart, true);
-        API.RegisterAPICall(InstallExtension, true);
-        API.RegisterAPICall(UpdateExtension, true);
+        API.RegisterAPICall(ListServerSettings, false, Permissions.ReadServerSettings);
+        API.RegisterAPICall(ChangeServerSettings, true, Permissions.EditServerSettings);
+        API.RegisterAPICall(ListLogTypes, false, Permissions.ViewLogs);
+        API.RegisterAPICall(ListRecentLogMessages, false, Permissions.ViewLogs);
+        API.RegisterAPICall(LogSubmitToPastebin, true, Permissions.ViewLogs);
+        API.RegisterAPICall(ShutdownServer, true, Permissions.Shutdown);
+        API.RegisterAPICall(GetServerResourceInfo, false, Permissions.ReadServerInfoPanels);
+        API.RegisterAPICall(DebugLanguageAdd, true, Permissions.AdminDebug);
+        API.RegisterAPICall(DebugGenDocs, true, Permissions.AdminDebug);
+        API.RegisterAPICall(ListConnectedUsers, false, Permissions.ReadServerInfoPanels);
+        API.RegisterAPICall(UpdateAndRestart, true, Permissions.Restart);
+        API.RegisterAPICall(InstallExtension, true, Permissions.ManageExtensions);
+        API.RegisterAPICall(UpdateExtension, true, Permissions.ManageExtensions);
     }
 
     public static JObject AutoConfigToParamData(AutoConfiguration config)
@@ -95,10 +95,6 @@ public static class AdminAPI
         """)]
     public static async Task<JObject> ListServerSettings(Session session)
     {
-        if (!session.User.HasPermission(Permissions.ReadServerSettings))
-        {
-            return new JObject() { ["error"] = "You do not have permission to read server settings." };
-        }
         return new JObject() { ["settings"] = AutoConfigToParamData(Program.ServerSettings) };
     }
 
@@ -106,10 +102,6 @@ public static class AdminAPI
     public static async Task<JObject> ChangeServerSettings(Session session,
         [API.APIParameter("Dynamic input of `\"settingname\": valuehere`.")] JObject rawData)
     {
-        if (!session.User.HasPermission(Permissions.EditServerSettings))
-        {
-            return new JObject() { ["error"] = "You do not have permission to edit server settings." };
-        }
         FDSSection origPaths = Program.ServerSettings.Paths.Save(true);
         JObject settings = (JObject)rawData["settings"];
         List<string> changed = [];
@@ -182,10 +174,6 @@ public static class AdminAPI
         """)]
     public static async Task<JObject> ListLogTypes(Session session)
     {
-        if (!session.User.HasPermission(Permissions.ViewLogs))
-        {
-            return new JObject() { ["error"] = "You do not have permission to view server logs." };
-        }
         JArray types = [];
         lock (Logs.OtherTrackers)
         {
@@ -218,10 +206,6 @@ public static class AdminAPI
     public static async Task<JObject> ListRecentLogMessages(Session session,
         [API.APIParameter("Optionally input `\"last_sequence_ids\": { \"info\": 123 }` to set the start point.")] JObject raw)
     {
-        if (!session.User.HasPermission(Permissions.ViewLogs))
-        {
-            return new JObject() { ["error"] = "You do not have permission to view server logs." };
-        }
         JObject result = await ListLogTypes(session);
         long lastSeq = Interlocked.Read(ref Logs.LogTracker.LastSequenceID);
         result["last_sequence_id"] = lastSeq;
@@ -276,10 +260,6 @@ public static class AdminAPI
     public static async Task<JObject> LogSubmitToPastebin(Session session,
         [API.APIParameter("The minimum log level (verbose, debug, info) to include.")] string type)
     {
-        if (!session.User.HasPermission(Permissions.ViewLogs))
-        {
-            return new JObject() { ["error"] = "You do not have permission to view server logs." };
-        }
         if (!Enum.TryParse(type, true, out Logs.LogLevel level))
         {
             return new JObject() { ["error"] = "Invalid log level type specified." };
@@ -333,10 +313,6 @@ public static class AdminAPI
     [API.APIDescription("Shuts the server down. Returns success before the server is gone.", "\"success\": true")]
     public static async Task<JObject> ShutdownServer(Session session)
     {
-        if (!session.User.HasPermission(Permissions.Shutdown))
-        {
-            return new JObject() { ["error"] = "You do not have permission to shutdown the server." };
-        }
         Logs.Warning($"User {session.User.UserID} requested server shutdown.");
         _ = Task.Run(() => Program.Shutdown());
         return new JObject() { ["success"] = true };
@@ -369,10 +345,6 @@ public static class AdminAPI
                )]
     public static async Task<JObject> GetServerResourceInfo(Session session)
     {
-        if (!session.User.HasPermission(Permissions.ReadServerInfoPanels))
-        {
-            return new JObject() { ["error"] = "You do not have permission to read server info panels." };
-        }
         NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
         MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo.MemoryStatus;
         JObject result = new()
@@ -415,10 +387,6 @@ public static class AdminAPI
     public static async Task<JObject> DebugLanguageAdd(Session session,
         [API.APIParameter("\"set\": [ \"word\", ... ]")] JObject raw)
     {
-        if (!session.User.HasPermission(Permissions.AdminDebug))
-        {
-            return new JObject() { ["error"] = "You do not have permission to access admin debug APIs." };
-        }
         LanguagesHelper.TrackSet(raw["set"].ToArray().Select(v => $"{v}").ToArray());
         return new JObject() { ["success"] = true };
     }
@@ -426,10 +394,6 @@ public static class AdminAPI
     [API.APIDescription("(Internal/Debug route), generates API docs.", "\"success\": true")]
     public static async Task<JObject> DebugGenDocs(Session session)
     {
-        if (!session.User.HasPermission(Permissions.AdminDebug))
-        {
-            return new JObject() { ["error"] = "You do not have permission to access admin debug APIs." };
-        }
         await API.GenerateAPIDocs();
         return new JObject() { ["success"] = true };
     }
@@ -448,10 +412,6 @@ public static class AdminAPI
         """)]
     public static async Task<JObject> ListConnectedUsers(Session session)
     {
-        if (!session.User.HasPermission(Permissions.ReadServerInfoPanels))
-        {
-            return new JObject() { ["error"] = "You do not have permission to read server info panels." };
-        }
         static JArray sessWrangle(IEnumerable<string> addresses)
         {
             Dictionary<string, int> counts = [];
@@ -484,10 +444,6 @@ public static class AdminAPI
     public static async Task<JObject> UpdateAndRestart(Session session,
         [API.APIParameter("True to always rebuild and restart even if there's no visible update.")] bool force = false)
     {
-        if (!session.User.HasPermission(Permissions.Restart))
-        {
-            return new JObject() { ["error"] = "You do not have permission to restart the server." };
-        }
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
         string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
         string pullResult = await Utilities.RunGitProcess("pull");
@@ -513,10 +469,6 @@ public static class AdminAPI
     public static async Task<JObject> InstallExtension(Session session,
         [API.APIParameter("The name of the extension to install, from the known extensions list.")] string extensionName)
     {
-        if (!session.User.HasPermission(Permissions.ManageExtensions))
-        {
-            return new JObject() { ["error"] = "You do not have permission to install extensions." };
-        }
         ExtensionsManager.ExtensionInfo ext = Program.Extensions.KnownExtensions.FirstOrDefault(e => e.Name == extensionName);
         if (ext is null)
         {
@@ -540,10 +492,6 @@ public static class AdminAPI
     public static async Task<JObject> UpdateExtension(Session session,
         [API.APIParameter("The name of the extension to update.")] string extensionName)
     {
-        if (!session.User.HasPermission(Permissions.ManageExtensions))
-        {
-            return new JObject() { ["error"] = "You do not have permission to update extensions." };
-        }
         Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
         if (ext is null)
         {
