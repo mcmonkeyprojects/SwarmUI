@@ -74,7 +74,8 @@ public static class BasicAPIFeatures
             ["output_append_user"] = Program.ServerSettings.Paths.AppendUserNameToOutputPath,
             ["version"] = Utilities.VaryID,
             ["server_id"] = Utilities.LoopPreventionID.ToString(),
-            ["count_running"] = Program.Backends.T2IBackends.Values.Count(b => b.Backend.Status == BackendStatus.RUNNING || b.Backend.Status == BackendStatus.LOADING)
+            ["count_running"] = Program.Backends.T2IBackends.Values.Count(b => b.Backend.Status == BackendStatus.RUNNING || b.Backend.Status == BackendStatus.LOADING),
+            ["permissions"] = JArray.FromObject(session.User.GetPermissions())
         };
     }
 

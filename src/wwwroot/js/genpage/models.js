@@ -492,10 +492,11 @@ class ModelBrowserWrapper {
                     toggleGroupOpen(toggler, true);
                 }
             }
-            buttons = [
-                { label: 'Load Now', onclick: buttonLoad },
-                { label: 'Set as Refiner', onclick: buttonRefiner }
-            ];
+            buttons = [];
+            if (permissions.hasPermission('load_models_now')) {
+                buttons.push({ label: 'Load Now', onclick: buttonLoad });
+            }
+            buttons.push({ label: 'Set as Refiner', onclick: buttonRefiner });
         }
         else if (this.subType == 'Embedding') {
             buttons = [
@@ -507,17 +508,20 @@ class ModelBrowserWrapper {
         let name = cleanModelName(model.data.name);
         let display = (model.data.display || name).replaceAll('/', ' / ');
         if (this.subType == 'Wildcards') {
-            buttons = [
-                { label: 'Edit Wildcard', onclick: () => editWildcard(model.data) },
-                { label: 'Test Wildcard', onclick: () => testWildcard(model.data) },
-                { label: 'Delete Wildcard', onclick: () => {
+            buttons = [];
+            if (permissions.hasPermission('edit_wildcards')) {
+                buttons.push({ label: 'Edit Wildcard', onclick: () => editWildcard(model.data) });
+            }
+            buttons.push({ label: 'Test Wildcard', onclick: () => testWildcard(model.data) });
+            if (permissions.hasPermission('edit_wildcards')) {
+                buttons.push({ label: 'Delete Wildcard', onclick: () => {
                     if (confirm("Are you sure want to delete that wildcard?")) {
                         genericRequest('DeleteWildcard', { card: model.data.name }, data => {
                             wildcardsBrowser.browser.refresh();
                         });
                     }
-                } }
-            ];
+                } });
+            }
             let raw = model.data.raw;
             if (raw.length > 512) {
                 raw = raw.substring(0, 512) + '...';
@@ -544,10 +548,10 @@ class ModelBrowserWrapper {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
             }
             description = `<span class="model_filename">${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}`;
-            if (model.data.local) {
+            if (model.data.local && permissions.hasPermission('edit_model_metadata')) {
                 buttons.push({ label: 'Edit Metadata', onclick: () => editModel(model.data, this) });
             }
-            if (model.data.local && this.subType == 'Stable-Diffusion' && !model.data.name.endsWith('.engine')) {
+            if (model.data.local && this.subType == 'Stable-Diffusion' && !model.data.name.endsWith('.engine') && permissions.hasPermission('create_tensorrt')) {
                 buttons.push({ label: 'Create TensorRT Engine', onclick: () => showTrtMenu(model.data) });
             }
         }

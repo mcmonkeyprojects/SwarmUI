@@ -200,6 +200,7 @@ function getSession(callback) {
         setCookie('session_id', session_id, 31);
         user_id = data.user_id;
         outputAppendUser = data.output_append_user;
+        permissions.updateFrom(data.permissions);
         if (lastServerVersion == null) {
             lastServerVersion = data.version;
         }

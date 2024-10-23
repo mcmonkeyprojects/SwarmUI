@@ -39,6 +39,9 @@ class Permissions {
     }
 
     hasPermission(key) {
+        if (!this.hasLoaded) {
+            return true;
+        }
         if (key.includes(',')) {
             for (let k of key.split(',')) {
                 if (this.hasPermission(k)) {

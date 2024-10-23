@@ -698,10 +698,10 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link active translate" data-bs-toggle="tab" href="#user-info" id="userinfotabbutton" aria-selected="true" role="tab">User Info</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="read_user_settings">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-User" id="userconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">User Settings</a>
             </li>
-            <li class="nav-item" role="presentation">
+            <li class="nav-item" role="presentation" data-requiredpermission="edit_params">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Param-Config-User" id="userparamconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Parameter Configuration</a>
             </li>
         </ul>
@@ -1057,7 +1057,6 @@
     <script src="js/genpage/image_editor.js?vary=@Utilities.VaryID"></script>
     <script src="js/genpage/generatehandler.js?vary=@Utilities.VaryID"></script>
     <script src="js/genpage/simpletab.js?vary=@Utilities.VaryID"></script>
-    <script src="js/genpage/permissions.js?vary=@Utilities.VaryID"></script>
     <script src="js/genpage/main.js?vary=@Utilities.VaryID"></script>
     <script src="js/genpage/settings_editor.js?vary=@Utilities.VaryID"></script>
     <script src="js/genpage/logs.js?vary=@Utilities.VaryID"></script>

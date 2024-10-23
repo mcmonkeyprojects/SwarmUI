@@ -1109,25 +1109,30 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
 }
 
 function buttonsForImage(fullsrc, src) {
-    return [
-        {
+    buttons = [];
+    if (permissions.hasPermission('user_star_images')) {
+        buttons.push({
             label: 'Star',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
             }
-        },
-        {
+        });
+    }
+    if (permissions.hasPermission('local_image_folder')) {
+        buttons.push({
             label: 'Open In Folder',
             onclick: (e) => {
                 genericRequest('OpenImageFolder', {'path': fullsrc}, data => {});
             }
-        },
-        {
-            label: 'Download',
-            href: src,
-            is_download: true
-        },
-        {
+        });
+    }
+    buttons.push({
+        label: 'Download',
+        href: src,
+        is_download: true
+    });
+    if (permissions.hasPermission('user_delete_image')) {
+        buttons.push({
             label: 'Delete',
             onclick: (e) => {
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
@@ -1151,8 +1156,9 @@ function buttonsForImage(fullsrc, src) {
                     }
                 });
             }
-        }
-    ];
+        });
+    }
+    return buttons;
 }
 
 function describeImage(image) {
@@ -1735,6 +1741,7 @@ function resetBatchIfNeeded() {
 
 function loadUserData(callback) {
     genericRequest('GetMyUserData', {}, data => {
+        permissions.updateFrom(data.permissions);
         autoCompletionsList = {};
         if (data.autocompletions) {
             let allSet = [];
@@ -1764,7 +1771,6 @@ function loadUserData(callback) {
         else {
             autoCompletionsList = null;
         }
-        permissions.updateFrom(data.permissions);
         allPresets = data.presets;
         if (!language) {
             language = data.language;
