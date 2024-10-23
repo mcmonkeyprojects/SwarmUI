@@ -16,6 +16,29 @@ public static class Permissions
         return perm;
     }
 
+    public static PermInfoGroup GroupAdmin = new("Admin", "Permissions for server administration access.");
+
+    public static PermInfo Admin = Register(new("*", "Full Control", "Allows full control over everything.\nA magic wildcard to allow all permissions.\nOnly the owner should have this.", PermissionDefault.NOBODY, GroupAdmin));
+    public static PermInfo ConfigureRoles = Register(new("configure_roles", "Configure Roles", "Allows access to role configuration.\nThis is basically total control, as you can give yourself more permissions with this.", PermissionDefault.NOBODY, GroupAdmin));
+
+    public static PermInfoGroup GroupParams = new("Parameters", "Permissions for basic parameter access.");
+
+    public static PermInfo ModelParams = Register(new("model_params", "Model Params", "Allows the user to select models.", PermissionDefault.USER, GroupParams));
+    public static PermInfo ParamBackendType = Register(new("param_backend_type", "Backend Type Parameter", "Allows the user to select a specific backend type.", PermissionDefault.POWERUSERS, GroupParams));
+    public static PermInfo ParamBackendID = Register(new("param_backend_id", "Backend ID Parameter", "Allows the user to select a specific backend ID.", PermissionDefault.POWERUSERS, GroupParams));
+    public static PermInfo ParamVideo = Register(new("param_video", "Video Params", "Allows the user to generate videos.", PermissionDefault.USER, GroupParams));
+    public static PermInfo ParamControlNet = Register(new("param_controlnet", "ControlNet Params", "Allows the user to generate with controlnets.", PermissionDefault.USER, GroupParams));
+
+    public static PermInfoGroup GroupControl = new("Control", "Control over common server functionality.");
+
+    public static PermInfo ControlModelRefresh = Register(new("control_model_refresh", "Control Model Refresh", "Allows this user to refresh model lists.", PermissionDefault.POWERUSERS, GroupParams));
+    public static PermInfo InstallFeatures = Register(new("install_features", "Install New Features", "Allows this user to install new features (from the list of safe pre-defined features).", PermissionDefault.POWERUSERS, GroupParams));
+    public static PermInfo CreateTRT = Register(new("create_tensorrt", "Create TensorRT Models", "Allows this user to create new TensorRT models.", PermissionDefault.POWERUSERS, GroupParams));
+    public static PermInfo ExtractLoRAs = Register(new("extra_loras", "Extract LoRAs", "Allows this user to extra LoRAs.", PermissionDefault.POWERUSERS, GroupParams));
+
+    public static PermInfoGroup GroupUser = new("User", "Permissions related to basic user access.");
+
+    public static PermInfo UserDeleteImage = Register(new("user_delete_image", "User Delete Image", "Allows this user to delete images they generated.", PermissionDefault.USER, GroupParams));
 }
 
 /// <summary>Enumeration of default modes for permissions.</summary>

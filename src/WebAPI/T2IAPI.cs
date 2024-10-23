@@ -554,6 +554,10 @@ public static class T2IAPI
     public static async Task<JObject> DeleteImage(Session session,
         [API.APIParameter("The path to the image to delete.")] string path)
     {
+        if (!session.User.HasPermission(Permissions.UserDeleteImage))
+        {
+            return new JObject() { ["error"] = "You do not have permission to delete images." };
+        }
         string origPath = path;
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
         (path, string consoleError, string userError) = WebServer.CheckFilePath(root, path);
@@ -674,6 +678,11 @@ public static class T2IAPI
     {
         Logs.Verbose($"User {session.User.UserID} triggered a {(strong ? "strong" : "weak")} data refresh");
         bool botherToRun = strong && RefreshSemaphore.CurrentCount > 0; // no need to run twice at once
+        if (!session.User.HasPermission(Permissions.ControlModelRefresh))
+        {
+            Logs.Debug($"User {session.User.UserID} requested refresh, but will not perform actual refresh as they lack permission.");
+            botherToRun = false;
+        }
         try
         {
             await RefreshSemaphore.WaitAsync(Program.GlobalProgramCancel);
@@ -751,7 +760,7 @@ public static class T2IAPI
         }
         return new JObject()
         {
-            ["list"] = new JArray(T2IParamTypes.Types.Values.Select(v => v.ToNet(session)).ToList()),
+            ["list"] = new JArray(T2IParamTypes.Types.Values.Where(p => session.User.HasPermission(p.Permission)).Select(v => v.ToNet(session)).ToList()),
             ["models"] = modelData,
             ["wildcards"] = new JArray(WildcardsHelper.ListFiles),
             ["param_edits"] = string.IsNullOrWhiteSpace(session.User.Data.RawParamEdits) ? null : JObject.Parse(session.User.Data.RawParamEdits)

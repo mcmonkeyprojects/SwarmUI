@@ -139,6 +139,16 @@ public class ComfyUIRedirectHelper
         {
             return;
         }
+        string userId = BasicAPIFeatures.GetUserIdFor(context);
+        User swarmUser = Program.Sessions.GetUser(userId);
+        if (!swarmUser.HasPermission(ComfyUIBackendExtension.PermDirectCalls))
+        {
+            context.Response.ContentType = "text/html";
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsync("<!DOCTYPE html><html><head><stylesheet>body{background-color:#101010;color:#eeeeee;}</stylesheet></head><body><span class=\"comfy-failed-to-load\">Permission denied.</span></body></html>");
+            await context.Response.CompleteAsync();
+            return;
+        }
         List<ComfyUIBackendExtension.ComfyBackendData> allBackends = ComfyUIBackendExtension.ComfyBackendsDirect().ToList();
         if (context.Request.Headers.TryGetValue("X-Swarm-Backend-ID", out StringValues backendId) && int.TryParse(backendId, out int backendIdInt))
         {
@@ -370,6 +380,14 @@ public class ComfyUIRedirectHelper
         HttpResponseMessage response = null;
         if (context.Request.Method == "POST")
         {
+            if (!swarmUser.HasPermission(ComfyUIBackendExtension.PermBackendGenerate))
+            {
+                context.Response.ContentType = "text/html";
+                context.Response.StatusCode = 401;
+                await context.Response.WriteAsync("<!DOCTYPE html><html><head><stylesheet>body{background-color:#101010;color:#eeeeee;}</stylesheet></head><body><span class=\"comfy-failed-to-load\">Permission denied.</span></body></html>");
+                await context.Response.CompleteAsync();
+                return;
+            }
             HttpContent content = null;
             if (path == "prompt")
             {
@@ -421,9 +439,8 @@ public class ComfyUIRedirectHelper
                                     backend = client.Backend;
                                     parsed["client_id"] = client.SID;
                                     client.FixUpPrompt(parsed["prompt"] as JObject);
-                                    string userId = BasicAPIFeatures.GetUserIdFor(context);
                                     string userText = $" (from user {userId})";
-                                    Program.Sessions.GetUser(userId).UpdateLastUsedTime();
+                                    swarmUser.UpdateLastUsedTime();
                                     Logs.Info($"Sent Comfy backend direct prompt requested to backend #{backend.BackendData.ID}{userText}");
                                     backend.BackendData.UpdateLastReleaseTime();
                                     redirected = true;
@@ -503,9 +520,7 @@ public class ComfyUIRedirectHelper
             else if (path == "user.css")
             {
                 string remoteUserThemeText = await webClient.GetStringAsync($"{webAddress}/user.css");
-                string userId = BasicAPIFeatures.GetUserIdFor(context);
-                User user = Program.Sessions.GetUser(userId);
-                string theme = user.Settings.Theme ?? Program.ServerSettings.DefaultUser.Theme;
+                string theme = swarmUser.Settings.Theme ?? Program.ServerSettings.DefaultUser.Theme;
                 if (Program.Web.RegisteredThemes.ContainsKey(theme))
                 {
                     string themeText = ComfyThemeData.GetOrCreate(theme, () =>

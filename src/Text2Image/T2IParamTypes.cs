@@ -461,68 +461,68 @@ public class T2IParamTypes
                 NameSuffix = suffix,
                 Group = group,
                 Image = Register<Image>(new($"ControlNet{suffix} Image Input", "The image to use as the input to ControlNet guidance.\nThis image will be preprocessed by the chosen preprocessor.\nIf ControlNet is enabled, but this input is not, Init Image will be used instead.",
-                    null, Toggleable: true, FeatureFlag: "controlnet", Group: group, OrderPriority: 1, ChangeWeight: 2
+                    null, Toggleable: true, FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Group: group, OrderPriority: 1, ChangeWeight: 2
                     )),
                 Model = Register<T2IModel>(new($"ControlNet{suffix} Model", "The ControlNet model to use.",
-                    "(None)", FeatureFlag: "controlnet", Group: group, Subtype: "ControlNet", OrderPriority: 5, ChangeWeight: 5
+                    "(None)", FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Group: group, Subtype: "ControlNet", OrderPriority: 5, ChangeWeight: 5
                     )),
                 Strength = Register<double>(new($"ControlNet{suffix} Strength", "Higher values make the ControlNet apply more strongly. Weaker values let the prompt overrule the ControlNet.",
-                    "1", FeatureFlag: "controlnet", Min: 0, Max: 2, Step: 0.05, OrderPriority: 8, ViewType: ParamViewType.SLIDER, Group: group, Examples: ["0", "0.5", "1", "2"]
+                    "1", FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Min: 0, Max: 2, Step: 0.05, OrderPriority: 8, ViewType: ParamViewType.SLIDER, Group: group, Examples: ["0", "0.5", "1", "2"]
                     )),
                 Start = Register<double>(new($"ControlNet{suffix} Start", "When to start applying controlnet, as a fraction of steps.\nFor example, 0.5 starts applying halfway through. Must be less than End.\nExcluding early steps reduces the controlnet's impact on overall image structure.",
-                    "0", IgnoreIf: "0", FeatureFlag: "controlnet", Min: 0, Max: 1, Step: 0.05, OrderPriority: 10, IsAdvanced: true, ViewType: ParamViewType.SLIDER, Group: group, Examples: ["0", "0.2", "0.5"]
+                    "0", IgnoreIf: "0", FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Min: 0, Max: 1, Step: 0.05, OrderPriority: 10, IsAdvanced: true, ViewType: ParamViewType.SLIDER, Group: group, Examples: ["0", "0.2", "0.5"]
                     )),
                 End = Register<double>(new($"ControlNet{suffix} End", "When to stop applying controlnet, as a fraction of steps.\nFor example, 0.5 stops applying halfway through. Must be greater than Start.\nExcluding later steps reduces the controlnet's impact on finer details.",
-                    "1", IgnoreIf: "1", FeatureFlag: "controlnet", Min: 0, Max: 1, Step: 0.05, OrderPriority: 11, IsAdvanced: true, ViewType: ParamViewType.SLIDER, Group: group, Examples: ["1", "0.8", "0.5"]
+                    "1", IgnoreIf: "1", FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Min: 0, Max: 1, Step: 0.05, OrderPriority: 11, IsAdvanced: true, ViewType: ParamViewType.SLIDER, Group: group, Examples: ["1", "0.8", "0.5"]
                     )),
             };
         }
         ControlNetPreviewOnly = Register<bool>(new("ControlNet Preview Only", "(For API usage) If enabled, requests preview output from ControlNet and no image generation at all.",
-            "false", IgnoreIf: "false", FeatureFlag: "controlnet", VisibleNormally: false
+            "false", IgnoreIf: "false", FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, VisibleNormally: false
             ));
         GroupVideo = new("Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos with Stable Video Diffusion.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/Video.md\">See more docs here.</a>");
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nThis should be an SVD (Stable Video Diffusion) model.\nNote that SVD favors a low CFG (~2.5).",
             "", GetValues: s => Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && m.ModelClass.ID.Contains("stable-video-diffusion")).OrderBy(m => m.Name).Select(m => CleanModelName(m.Name)).ToList(),
-            OrderPriority: 1, Group: GroupVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
+            OrderPriority: 1, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
             ));
         VideoFrames = Register<int>(new("Video Frames", "How many frames to generate within the video.",
-            "25", Min: 1, Max: 100, OrderPriority: 2, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
+            "25", Min: 1, Max: 100, OrderPriority: 2, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoFPS = Register<int>(new("Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video will try to generate for.",
-            "6", Min: 1, Max: 1024, ViewMax: 30, ViewType: ParamViewType.SLIDER, OrderPriority: 2.5, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
+            "6", Min: 1, Max: 1024, ViewMax: 30, ViewType: ParamViewType.SLIDER, OrderPriority: 2.5, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoSteps = Register<int>(new("Video Steps", "How many steps to use for the video model.\nHigher step counts yield better quality, but much longer generation time.\n40 well get good quality, but 20 is sufficient as a basis.",
-            "40", Min: 1, Max: 200, ViewMax: 100, ViewType: ParamViewType.SLIDER, OrderPriority: 3, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
+            "40", Min: 1, Max: 200, ViewMax: 100, ViewType: ParamViewType.SLIDER, OrderPriority: 3, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoCFG = Register<double>(new("Video CFG", "The CFG Scale to use for video generation.\nVideos start with this CFG on the first frame, and then reduce to MinCFG (normally 1) by the end frame.\nSVD-XT normally uses 25 frames, and SVD (non-XT) 0.9 used 14 frames.",
-            "2.5", Min: 1, Max: 100, ViewMax: 20, Step: 0.5, OrderPriority: 4, ViewType: ParamViewType.SLIDER, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
+            "2.5", Min: 1, Max: 100, ViewMax: 20, Step: 0.5, OrderPriority: 4, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoMinCFG = Register<double>(new("Video Min CFG", "The minimum CFG to use for video generation.\nVideos start with max CFG on first frame, and then reduce to this CFG. Set to -1 to disable.",
-            "1.0", Min: -1, Max: 100, ViewMax: 30, Step: 0.5, OrderPriority: 4.5, ViewType: ParamViewType.SLIDER, Group: GroupVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
+            "1.0", Min: -1, Max: 100, ViewMax: 30, Step: 0.5, OrderPriority: 4.5, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
             ));
         VideoMotionBucket = Register<int>(new("Video Motion Bucket", "Which trained 'motion bucket' to use for the video model.\nHigher values induce more motion. Most values should stay in the 100-200 range.\n127 is a good baseline, as it is the most common value in SVD's training set.",
-            "127", Min: 1, Max: 1023, OrderPriority: 10, Group: GroupVideo, FeatureFlag: "video", IsAdvanced: true
+            "127", Min: 1, Max: 1023, OrderPriority: 10, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true
             ));
         VideoAugmentationLevel = Register<double>(new("Video Augmentation Level", "How much noise to add to the init image.\nHigher values yield more motion.",
-            "0.0", Min: 0, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
+            "0.0", Min: 0, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
             ));
         VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
-            "false", IgnoreIf: "false", OrderPriority: 18, Group: GroupVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true
+            "false", IgnoreIf: "false", OrderPriority: 18, Group: GroupVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoResolution = Register<string>(new("Video Resolution", "What resolution/aspect the video should use.\n'Image Aspect, Model Res' uses the aspect-ratio of the image, but the pixel-count size of the model standard resolution.\n'Model Preferred' means use the model's exact resolution (eg 1024x576).\n'Image' means your input image resolution.",
-            "Image Aspect, Model Res", GetValues: _ => ["Image Aspect, Model Res", "Model Preferred", "Image"], OrderPriority: 19, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
+            "Image Aspect, Model Res", GetValues: _ => ["Image Aspect, Model Res", "Model Preferred", "Image"], OrderPriority: 19, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoFormat = Register<string>(new("Video Format", "What format to save videos in.",
-            "webp", GetValues: _ => ["webp", "gif", "webm", "h264-mp4", "prores"], OrderPriority: 20, Group: GroupVideo, FeatureFlag: "video", DoNotPreview: true
+            "webp", GetValues: _ => ["webp", "gif", "webm", "h264-mp4", "prores"], OrderPriority: 20, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
-            "", Permission: "param_model", VisibleNormally: false, Subtype: "Stable-Diffusion", ChangeWeight: 10
+            "", Permission: Permissions.ModelParams, VisibleNormally: false, Subtype: "Stable-Diffusion", ChangeWeight: 10
             ));
         VAE = Register<T2IModel>(new("VAE", "The VAE (Variational Auto-Encoder) controls the translation between images and latent space.\nIf your images look faded out, or glitched, you may have the wrong VAE.\nAll models have a VAE baked in by default, this option lets you swap to a different one if you want to.",
-            "None", IgnoreIf: "None", Permission: "param_model", IsAdvanced: true, Toggleable: true, GetValues: listVaes, Subtype: "VAE", Group: GroupAdvancedModelAddons, ChangeWeight: 7
+            "None", IgnoreIf: "None", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, GetValues: listVaes, Subtype: "VAE", Group: GroupAdvancedModelAddons, ChangeWeight: 7
             ));
         AutomaticVAE = Register<bool>(new("Automatic VAE", "Whether to automatically select the VAE based on the main model and your user settings.\nOnly applied if a VAE is not specified.",
-            "false", IgnoreIf: "false", Permission: "param_model", IsAdvanced: true, Toggleable: true, VisibleNormally: false, Group: GroupAdvancedModelAddons, ChangeWeight: 7
+            "false", IgnoreIf: "false", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, VisibleNormally: false, Group: GroupAdvancedModelAddons, ChangeWeight: 7
             ));
         Loras = Register<List<string>>(new("LoRAs", "LoRAs (Low-Rank-Adaptation Models) are a way to customize the content of a model without totally replacing it.\nYou can enable one or several LoRAs over top of one model.",
             "", IgnoreIf: "", IsAdvanced: true, Toggleable: true, Clean: (_, s) => CleanModelNameList(s), GetValues: (session) => Program.T2IModelSets["LoRA"].ListModelNamesFor(session).Order().Select(CleanModelName).ToList(), Group: GroupAdvancedModelAddons, VisibleNormally: false, ChangeWeight: 8
@@ -554,10 +554,10 @@ public class T2IParamTypes
             ));
         BackendType = Register<string>(new("[Internal] Backend Type", "Which SwarmUI backend type should be used for this request.",
             "Any", IgnoreIf: "Any", GetValues: (_) => ["Any", .. Program.Backends.BackendTypes.Values.Select(b => $"{b.ID}///{b.Name}")],
-            IsAdvanced: true, Permission: "param_backend_type", Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -10
+            IsAdvanced: true, Permission: Permissions.ParamBackendType, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -10
             ));
         ExactBackendID = Register<int>(new("Exact Backend ID", "Manually force a specific exact backend (by ID #) to be used for this generation.",
-            "0", Toggleable: true, IsAdvanced: true, ViewType: ParamViewType.BIG, Permission: "param_backend_id", Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -9
+            "0", Toggleable: true, IsAdvanced: true, ViewType: ParamViewType.BIG, Permission: Permissions.ParamBackendID, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -9
             ));
         WildcardSeed = Register<long>(new("Wildcard Seed", "Wildcard selection seed.\nIf enabled, this seed will be used for selecting entries from wildcards.\nIf disabled, the image seed will be used.\n-1 = random.",
             "-1", Min: -1, Max: uint.MaxValue, Step: 1, Toggleable: true, Examples: ["1", "2", "...", "10"], ViewType: ParamViewType.SEED, Group: GroupSwarmInternal, AlwaysRetain: true, ChangeWeight: -4, OrderPriority: -5

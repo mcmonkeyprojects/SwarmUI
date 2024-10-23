@@ -3,6 +3,7 @@ using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Builder;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
@@ -18,6 +19,15 @@ public class ComfyUIBackendExtension : Extension
 {
     /// <summary>Copy of <see cref="Extension.FilePath"/> for ComfyUI.</summary>
     public static string Folder;
+
+    public static PermInfoGroup ComfyPermGroup = new("ComfyUI", "Permissions related to direct interaction with the ComfyUI backend.");
+
+    public static PermInfo PermDirectCalls = Permissions.Register(new("comfy_direct_calls", "ComfyUI Direct Calls", "Allows the user to make direct calls to the ComfyUI backend. Required for most ComfyUI features.", PermissionDefault.POWERUSERS, ComfyPermGroup));
+    public static PermInfo PermBackendGenerate = Permissions.Register(new("comfy_backend_generate", "ComfyUI Backend Generate", "Allows the user to generate directly from the ComfyUI backend.", PermissionDefault.POWERUSERS, ComfyPermGroup));
+    public static PermInfo PermDynamicCustomWorkflows = Permissions.Register(new("comfy_dynamic_custom_workflows", "ComfyUI Dynamic Custom Workflows", "Allows the user to use dynamic custom workflows via Generate tab parameters.", PermissionDefault.POWERUSERS, ComfyPermGroup));
+    public static PermInfo PermStoredCustomWorkflows = Permissions.Register(new("comfy_stored_custom_workflows", "ComfyUI Stored Custom Workflows", "Allows the user to use stored (already saved by a user with direct access) custom workflows via Generate tab parameters.", PermissionDefault.POWERUSERS, ComfyPermGroup));
+    public static PermInfo PermReadWorkflows = Permissions.Register(new("comfy_read_workflows", "ComfyUI Read Workflows", "Allows the user read stored workflow data.", PermissionDefault.POWERUSERS, ComfyPermGroup));
+    public static PermInfo PermEditWorkflows = Permissions.Register(new("comfy_edit_workflows", "ComfyUI Edit Workflows", "Allows the save, delete, or edit stored workflows.", PermissionDefault.POWERUSERS, ComfyPermGroup));
 
     public record class ComfyCustomWorkflow(string Name, string Workflow, string Prompt, string CustomParams, string ParamValues, string Image, string Description, bool EnableInSimple);
 
@@ -148,6 +158,10 @@ public class ComfyUIBackendExtension : Extension
     {
         try
         {
+            if (!context.SourceSession?.User?.HasPermission(PermDynamicCustomWorkflows) ?? false)
+            {
+                return null;
+            }
             if (name == "comfyworkflowraw")
             {
                 return FakeRawInputType;
@@ -551,7 +565,7 @@ public class ComfyUIBackendExtension : Extension
         ComfyGroup = new("ComfyUI", Toggles: false, Open: false);
         ComfyAdvancedGroup = new("ComfyUI Advanced", Toggles: false, IsAdvanced: true, Open: false);
         CustomWorkflowParam = T2IParamTypes.Register<string>(new("[ComfyUI] Custom Workflow", "What custom workflow to use in ComfyUI (built in the Comfy Workflow Editor tab).\nGenerally, do not use this directly.",
-            "", Toggleable: true, FeatureFlag: "comfyui", Group: ComfyGroup, IsAdvanced: true, ValidateValues: false, ChangeWeight: 8,
+            "", Toggleable: true, FeatureFlag: "comfyui", Group: ComfyGroup, IsAdvanced: true, ValidateValues: false, ChangeWeight: 8, Permission: PermStoredCustomWorkflows,
             GetValues: (_) => [.. CustomWorkflows.Keys.Order()],
             Clean: (_, val) => CustomWorkflows.ContainsKey(val) ? $"PARSED%{val}%{ComfyUIWebAPI.ReadCustomWorkflow(val)["prompt"]}" : val,
             MetadataFormat: v => v.StartsWith("PARSED%") ? v.After("%").Before("%") : v
@@ -586,10 +600,10 @@ public class ComfyUIBackendExtension : Extension
         for (int i = 0; i < 3; i++)
         {
             ControlNetPreprocessorParams[i] = T2IParamTypes.Register<string>(new($"ControlNet{T2IParamTypes.Controlnets[i].NameSuffix} Preprocessor", "The preprocessor to use on the ControlNet input image.\nIf toggled off, will be automatically selected.\nUse 'None' to disable preprocessing.",
-                "None", Toggleable: true, FeatureFlag: "controlnet", Group: T2IParamTypes.Controlnets[i].Group, OrderPriority: 3, GetValues: (_) => [.. ControlNetPreprocessors.Keys.Order().OrderBy(v => v == "None" ? -1 : 0)], ChangeWeight: 2
+                "None", Toggleable: true, FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Group: T2IParamTypes.Controlnets[i].Group, OrderPriority: 3, GetValues: (_) => [.. ControlNetPreprocessors.Keys.Order().OrderBy(v => v == "None" ? -1 : 0)], ChangeWeight: 2
                 ));
             ControlNetUnionTypeParams[i] = T2IParamTypes.Register<string>(new($"ControlNet{T2IParamTypes.Controlnets[i].NameSuffix} Union Type", "For Union ControlNets, you can optionally manually specify the union controlnet type.",
-                "auto", Toggleable: true, IsAdvanced: true, FeatureFlag: "controlnet", Group: T2IParamTypes.Controlnets[i].Group, OrderPriority: 4, GetValues: (_) => ControlnetUnionTypes
+                "auto", Toggleable: true, IsAdvanced: true, FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, Group: T2IParamTypes.Controlnets[i].Group, OrderPriority: 4, GetValues: (_) => ControlnetUnionTypes
                 ));
         }
         DebugRegionalPrompting = T2IParamTypes.Register<bool>(new("Debug Regional Prompting", "If checked, outputs masks from regional prompting for debug reasons.",
@@ -599,13 +613,13 @@ public class ComfyUIBackendExtension : Extension
             "256", Min: 64, Max: 2048, Step: 32, Toggleable: true, IsAdvanced: true, FeatureFlag: "comfyui", ViewType: ParamViewType.POT_SLIDER, Group: T2IParamTypes.GroupRefiners, OrderPriority: 20
             ));
         VideoPreviewType = T2IParamTypes.Register<string>(new("Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",
-            "animate", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupVideo, GetValues: (_) => ["animate", "iterate", "one", "none"]
+            "animate", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, GetValues: (_) => ["animate", "iterate", "one", "none"]
             ));
         VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
-            "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, GetValues: (_) => ["RIFE", "FILM"], OrderPriority: 32
+            "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, GetValues: (_) => ["RIFE", "FILM"], OrderPriority: 32
             ));
         VideoFrameInterpolationMultiplier = T2IParamTypes.Register<int>(new("Video Frame Interpolation Multiplier", "How many frames to interpolate between each frame in the video.\nHigher values are smoother, but make take significant time to save the output, and may have quality artifacts.",
-            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, OrderPriority: 33
+            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, OrderPriority: 33
             ));
         GligenModel = T2IParamTypes.Register<string>(new("GLIGEN Model", "Optionally use a GLIGEN model.\nGLIGEN is only compatible with SDv1 at time of writing.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRegionalPrompting, GetValues: (_) => GligenModels
@@ -617,13 +631,13 @@ public class ComfyUIBackendExtension : Extension
             "", IgnoreIf: "", FeatureFlag: "yolov8", Group: ComfyAdvancedGroup, GetValues: (_) => YoloModels, Toggleable: true, IsAdvanced: true, AlwaysRetain: true, VisibleNormally: false
             ));
         ClipLModel = T2IParamTypes.Register<string>(new("CLIP-L Model", "Which CLIP-L model to use, for SD3/Flux style 'diffusion_models' folder models.",
-            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 15
+            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 15
             ));
         ClipGModel = T2IParamTypes.Register<string>(new("CLIP-G Model", "Which CLIP-G model to use, for SD3 style 'diffusion_models' folder models.",
-            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 16
+            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 16
             ));
         T5XXLModel = T2IParamTypes.Register<string>(new("T5-XXL Model", "Which T5-XXL model to use, for SD3/Flux style 'diffusion_models' folder models.",
-            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Toggleable: true, IsAdvanced: true, OrderPriority: 17
+            "", IgnoreIf: "", Group: T2IParamTypes.GroupAdvancedModelAddons, GetValues: (_) => ClipModels, Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 17
             ));
         Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
         Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);
