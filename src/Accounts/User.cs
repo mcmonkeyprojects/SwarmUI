@@ -239,10 +239,10 @@ public class User
     /// <summary>Time since the last time this user was seen as currently connected.</summary>
     public TimeSpan TimeSinceLastPresent => TimeSpan.FromMilliseconds(Environment.TickCount64 - Volatile.Read(ref LastTickedPresent));
 
-    /// <summary>Returns whether this user has the given generic permission flag.</summary>
-    public bool HasGenericPermission(string permName)
+    /// <summary>Returns whether this user has the given permission.</summary>
+    public bool HasPermission(PermInfo permission)
     {
-        return Restrictions.PermissionFlags.Contains(permName) || Restrictions.PermissionFlags.Contains("*");
+        return Restrictions.PermissionFlags.Contains(permission.ID) || Restrictions.PermissionFlags.Contains("*");
     }
 
     /// <summary>Simplified keynames for things commonly used in ExtraMeta, to allow for OutputPath builder to treat these cases as empty and not errors.</summary>
