@@ -143,7 +143,7 @@ public static class AdminAPI
                 {
                     foreach (string subpath in path.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)))
                     {
-                        Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, subpath));
+                        Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, subpath));
                     }
                 }
             }

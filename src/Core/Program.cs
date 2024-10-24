@@ -295,9 +295,9 @@ public class Program
             T2IModelSets[key].Shutdown();
         }
         T2IModelSets.Clear();
-        string modelRoot = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ServerSettings.Paths.ModelRoot);
         try
         {
+            string modelRoot = ServerSettings.Paths.ActualModelRoot;
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDModelFolder));
             Directory.CreateDirectory($"{modelRoot}/upscale_models");
             Directory.CreateDirectory($"{modelRoot}/clip");
@@ -306,17 +306,30 @@ public class Program
         {
             Logs.Error($"Failed to create directories for models. You may need to check your ModelRoot or SDModelFolder settings. {ex.Message}");
         }
-        string[] buildPathList(string folder)
+        static string[] buildPathList(string folder)
         {
-            return [.. folder.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => Utilities.CombinePathWithAbsolute(modelRoot, p.Trim()))];
+            List<string> result = [];
+            int rootCount = 0;
+            foreach (string modelRoot in ServerSettings.Paths.ModelRoot.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)))
+            {
+                int sfCount = 0;
+                foreach (string subfolder in folder.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)))
+                {
+                    string patched = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, modelRoot, subfolder.Trim());
+                    if ((sfCount > 0 || rootCount > 0) && !Directory.Exists(patched))
+                    {
+                        continue;
+                    }
+                    result.Add(patched);
+                    sfCount++;
+                }
+                rootCount++;
+            }
+            return [.. result];
         }
-        List<string> folderPaths = [.. buildPathList(ServerSettings.Paths.SDModelFolder).Concat([Utilities.CombinePathWithAbsolute(modelRoot, "tensorrt"), Utilities.CombinePathWithAbsolute(modelRoot, "diffusion_models")])];
-        string unetPath = Utilities.CombinePathWithAbsolute(modelRoot, "unet");
-        if (Directory.Exists(unetPath))
-        {
-            folderPaths.Add(unetPath);
-        }
-        T2IModelSets["Stable-Diffusion"] = new() { ModelType = "Stable-Diffusion", FolderPaths = [.. folderPaths] };
+        Directory.CreateDirectory(ServerSettings.Paths.ActualModelRoot + "/tensorrt");
+        Directory.CreateDirectory(ServerSettings.Paths.ActualModelRoot + "/diffusion_models");
+        T2IModelSets["Stable-Diffusion"] = new() { ModelType = "Stable-Diffusion", FolderPaths = buildPathList(ServerSettings.Paths.SDModelFolder + ";tensorrt;diffusion_models;unet") };
         T2IModelSets["VAE"] = new() { ModelType = "VAE", FolderPaths = buildPathList(ServerSettings.Paths.SDVAEFolder) };
         T2IModelSets["LoRA"] = new() { ModelType = "LoRA", FolderPaths = buildPathList(ServerSettings.Paths.SDLoraFolder) };
         T2IModelSets["Embedding"] = new() { ModelType = "Embedding", FolderPaths = buildPathList(ServerSettings.Paths.SDEmbeddingFolder) };

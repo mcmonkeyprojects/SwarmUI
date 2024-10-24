@@ -372,7 +372,7 @@ public static class ComfyUIWebAPI
                 a(new() { ["error"] = "Process completed but TensorRT model did not save. Something went wrong?" });
                 return;
             }
-            string outPathRaw = $"{Program.ServerSettings.Paths.ModelRoot}/tensorrt/{modelData.Name}_TensorRT";
+            string outPathRaw = $"{Program.ServerSettings.Paths.ActualModelRoot}/tensorrt/{modelData.Name}_TensorRT";
             string outPath = outPathRaw;
             int id = 0;
             while (File.Exists($"{outPath}.engine"))

@@ -331,7 +331,7 @@ public class WorkflowGeneratorSteps
             {
                 return;
             }
-            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0], name);
+            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0], name);
             g.DownloadModel(name, filePath, url, hash);
             WorkflowGenerator.VisionModelsValid.Add(name);
         }
@@ -459,7 +459,7 @@ public class WorkflowGeneratorSteps
                             {
                                 return;
                             }
-                            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, $"ipadapter/{name}");
+                            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, $"ipadapter/{name}");
                             g.DownloadModel(name, filePath, url, hash);
                             WorkflowGenerator.IPAdapterModelsValid.Add(name);
                         }
@@ -469,7 +469,7 @@ public class WorkflowGeneratorSteps
                             {
                                 return;
                             }
-                            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ModelRoot, Program.ServerSettings.Paths.SDLoraFolder.Split(';')[0], $"ipadapter/{name}");
+                            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDLoraFolder.Split(';')[0], $"ipadapter/{name}");
                             g.DownloadModel(name, filePath, url, hash);
                             WorkflowGenerator.IPAdapterModelsValid.Add($"LORA-{name}");
                         }
