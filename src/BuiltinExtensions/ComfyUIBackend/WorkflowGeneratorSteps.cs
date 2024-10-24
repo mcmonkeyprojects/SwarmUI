@@ -321,7 +321,14 @@ public class WorkflowGeneratorSteps
         #region Positive Prompt
         AddStep(g =>
         {
-            g.FinalPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, g.UserInput.Get(T2IParamTypes.Model), true, "6");
+            if (g.UserInput.TryGet(T2IParamTypes.EditPrompt, out string editPrompt) && !string.IsNullOrWhiteSpace(editPrompt))
+            {
+                g.FinalPrompt = g.CreateConditioning(editPrompt, g.FinalClip, g.UserInput.Get(T2IParamTypes.Model), true, "6");
+            }
+            else
+            {
+                g.FinalPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, g.UserInput.Get(T2IParamTypes.Model), true, "6");
+            }
         }, -8);
         #endregion
         #region ReVision/UnCLIP/IPAdapter
