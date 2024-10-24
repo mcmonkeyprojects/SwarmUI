@@ -179,7 +179,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 return;
             }
             AddLoadStatus($"Will emit comfy model paths file...");
-            string[] roots = Program.ServerSettings.Paths.ActualModelRoot.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            string[] roots = Program.ServerSettings.Paths.ModelRoot.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             string yaml = "";
             int count = 0;
             static string buildSection(string root, string path)
@@ -207,26 +207,27 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             foreach (string root in roots)
             {
+                string rootFixed = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, root);
                 int id = ++count;
                 yaml += $"""
                 swarmui{(id == 1 ? "" : $"{id}")}:
-                    base_path: {root}
+                    base_path: {rootFixed}
                     is_default: true
-                    checkpoints: {buildSection(root, Program.ServerSettings.Paths.SDModelFolder)}
-                    vae: {buildSection(root, Program.ServerSettings.Paths.SDVAEFolder + ";VAE")}
-                    loras: {buildSection(root, Program.ServerSettings.Paths.SDLoraFolder + ";Lora;LyCORIS")}
-                    upscale_models: {buildSection(root, "ESRGAN;RealESRGAN;SwinIR;upscale-models;upscale_models")}
-                    embeddings: {buildSection(root, Program.ServerSettings.Paths.SDEmbeddingFolder + ";embeddings")}
-                    hypernetworks: {buildSection(root, "hypernetworks")}
-                    controlnet: {buildSection(root, Program.ServerSettings.Paths.SDControlNetsFolder + ";ControlNet")}
-                    clip: {buildSection(root, Program.ServerSettings.Paths.SDClipFolder + ";clip;CLIP")}
-                    clip_vision: {buildSection(root, Program.ServerSettings.Paths.SDClipVisionFolder + ";clip_vision")}
-                    custom_nodes: {buildSection(root, $"{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")};{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")};{CustomNodePaths.Select(Path.GetFullPath).JoinString(";")}")}
+                    checkpoints: {buildSection(rootFixed, Program.ServerSettings.Paths.SDModelFolder)}
+                    vae: {buildSection(rootFixed, Program.ServerSettings.Paths.SDVAEFolder + ";VAE")}
+                    loras: {buildSection(rootFixed, Program.ServerSettings.Paths.SDLoraFolder + ";Lora;LyCORIS")}
+                    upscale_models: {buildSection(rootFixed, "ESRGAN;RealESRGAN;SwinIR;upscale-models;upscale_models")}
+                    embeddings: {buildSection(rootFixed, Program.ServerSettings.Paths.SDEmbeddingFolder + ";embeddings")}
+                    hypernetworks: {buildSection(rootFixed, "hypernetworks")}
+                    controlnet: {buildSection(rootFixed, Program.ServerSettings.Paths.SDControlNetsFolder + ";ControlNet")}
+                    clip: {buildSection(rootFixed, Program.ServerSettings.Paths.SDClipFolder + ";clip;CLIP")}
+                    clip_vision: {buildSection(rootFixed, Program.ServerSettings.Paths.SDClipVisionFolder + ";clip_vision")}
+                    custom_nodes: {buildSection(rootFixed, $"{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")};{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")};{CustomNodePaths.Select(Path.GetFullPath).JoinString(";")}")}
 
                 """;
                 foreach (string folder in FoldersToForwardInComfyPath)
                 {
-                    yaml += $"    {folder}: {buildSection(root, folder)}\n";
+                    yaml += $"    {folder}: {buildSection(rootFixed, folder)}\n";
                 }
             }
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0]));
