@@ -88,6 +88,7 @@ public static class BasicAPIFeatures
         }
         if (Directory.Exists("dlbackend/comfy"))
         {
+            Logs.Error("It looks like a previous install already exists here. If you are intentionally rerunning the installer, please delete 'Data' and 'dlbackend' folders from the Swarm folder.");
             await socket.SendJson(new JObject() { ["error"] = $"It looks like a previous install already exists here. If you are intentionally rerunning the installer, please delete 'Data' and 'dlbackend' folders from the Swarm folder." }, API.WebsocketTimeout);
             return null;
         }
@@ -288,6 +289,12 @@ public static class BasicAPIFeatures
         }
         stepsThusFar++;
         updateProgress(0, 0, 0);
+        Program.ServerSettings.IsInstalled = true;
+        if (Program.ServerSettings.LaunchMode == "webinstall")
+        {
+            Program.ServerSettings.LaunchMode = "web";
+        }
+        Program.SaveSettingsFile();
         if (models != "none")
         {
             foreach (string model in models.Split(','))
@@ -321,12 +328,6 @@ public static class BasicAPIFeatures
         }
         stepsThusFar++;
         updateProgress(0, 0, 0);
-        Program.ServerSettings.IsInstalled = true;
-        if (Program.ServerSettings.LaunchMode == "webinstall")
-        {
-            Program.ServerSettings.LaunchMode = "web";
-        }
-        Program.SaveSettingsFile();
         await Program.Backends.ReloadAllBackends();
         stepsThusFar++;
         updateProgress(0, 0, 0);
