@@ -542,7 +542,21 @@ public static class Utilities
             int nextOffset = 0;
             while (true)
             {
-                int read = await dlStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token);
+                Task<int> readTask = Task.Run(async () => await dlStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token));
+                Task waiting = Task.Delay(TimeSpan.FromMinutes(2));
+                Task reading = Task.Run(async () => await readTask);
+                Task first = await Task.WhenAny(waiting, reading);
+                if (first == waiting)
+                {
+                    Logs.Warning($"Download from '{url}' has had no update for 2 minutes. Download may be failing. Will wait 3 more minutes and consider failed if it exceeds 5 total minutes.");
+                    Task waiting2 = Task.Delay(TimeSpan.FromMinutes(5));
+                    if (waiting2 == waiting)
+                    {
+                        chunks.Enqueue(null);
+                        throw new SwarmReadableErrorException("Download timed out, 5 minutes with no new data over stream.");
+                    }
+                }
+                int read = await readTask;
                 if (read <= 0)
                 {
                     if (nextOffset > 0)

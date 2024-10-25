@@ -310,6 +310,10 @@ public static class BasicAPIFeatures
                 {
                     await modelInfo.DownloadNow(updateProgress);
                 }
+                catch (SwarmReadableErrorException ex)
+                {
+                    Logs.Error($"Failed to download '{modelInfo.URL}': {ex.Message}");
+                }
                 catch (IOException ex)
                 {
                     Logs.Error($"Failed to download '{modelInfo.URL}' (IO): {ex.GetType().Name}: {ex.Message}");
