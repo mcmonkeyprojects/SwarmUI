@@ -86,9 +86,9 @@ public static class BasicAPIFeatures
             await socket.SendJson(new JObject() { ["error"] = $"Server is already installed!" }, API.WebsocketTimeout);
             return null;
         }
-        if (!session.User.Restrictions.Admin)
+        if (Directory.Exists("dlbackend/comfy"))
         {
-            await socket.SendJson(new JObject() { ["error"] = $"You are not an admin of this server, install request refused." }, API.WebsocketTimeout);
+            await socket.SendJson(new JObject() { ["error"] = $"It looks like a previous install already exists here. If you are intentionally rerunning the installer, please delete 'Data' and 'dlbackend' folders from the Swarm folder." }, API.WebsocketTimeout);
             return null;
         }
         async Task output(string str)
