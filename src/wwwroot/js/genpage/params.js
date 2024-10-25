@@ -751,7 +751,7 @@ function hideUnsupportableParams() {
             }
             box.dataset.disabled = supported ? 'false' : 'true';
             if (param.group) {
-                let groupData = groups[param.group.id] || { visible: 0 };
+                let groupData = groups[param.group.id] || { visible: 0, data: param.group };
                 groups[param.group.id] = groupData;
                 if (show) {
                     groupData.visible++;
@@ -763,11 +763,20 @@ function hideUnsupportableParams() {
     for (let group in groups) {
         let groupData = groups[group];
         let groupElem = getRequiredElementById(`auto-group-${group}`);
-        if (groupData.visible == 0 && !groupElem.querySelector('.keep_group_visible')) {
-            groupElem.style.display = 'none';
+        let visible = false;
+        if (groupData.visible > 0) {
+            visible = true;
+        }
+        else if (groupElem.querySelector('.keep_group_visible')) {
+            if (!groupData.data.advanced || showAdvanced) {
+                visible = true;
+            }
+        }
+        if (visible) {
+            groupElem.style.display = 'block';
         }
         else {
-            groupElem.style.display = 'block';
+            groupElem.style.display = 'none';
         }
     }
 }
