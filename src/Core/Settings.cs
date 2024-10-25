@@ -239,15 +239,6 @@ public class Settings : AutoConfiguration
         [ConfigComment("How many directories deep a user's custom OutPath can be.\nDefault is 5.")]
         public int MaxOutPathDepth = 5;
 
-        [ConfigComment("Which user-settings the user is allowed to modify.\nDefault is all of them.")]
-        public List<string> AllowedSettings = ["*"];
-
-        [ConfigComment("If true, the user is treated as a full admin.\nThis includes the ability to modify these settings.")]
-        public bool Admin = false;
-
-        [ConfigComment("If true, user may load models.\nIf false, they may only use already-loaded models.")]
-        public bool CanChangeModels = true;
-
         [ConfigComment("What models are allowed, as a path regex.\nDirectory-separator is always '/'. Can be '.*' for all, 'MyFolder/.*' for only within that folder, etc.\nDefault is all.")]
         public string AllowedModels = ".*";
 

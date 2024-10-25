@@ -93,7 +93,6 @@ public class SessionHandler
         }
         userId ??= LocalUserID;
         User user = GetUser(userId);
-        user.Restrictions.Admin = true;
         Logs.Info($"Creating new admin session '{userId}' for {source}");
         for (int i = 0; i < 1000; i++)
         {

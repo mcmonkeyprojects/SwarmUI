@@ -810,10 +810,10 @@
                     <div class="card-body">
                         <p class="card-text">
                             The "Server" tab provides access to SwarmUI's server internals, including:
-                            <br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)
-                            <br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)
-                            <br>&bullet; The <a href="#Server-Extensions" onclick="getRequiredElementById('extensionstabbutton').click()">Extensions</a> tab, which provides ways to manage your Swarm extensions or install new ones
-                            <br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)
+                            <span data-requiredpermission="view_backends_list"><br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)</span>
+                            <span data-requiredpermission="read_server_settings"><br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)</span>
+                            <span data-requiredpermission="manage_extensions"><br>&bullet; The <a href="#Server-Extensions" onclick="getRequiredElementById('extensionstabbutton').click()">Extensions</a> tab, which provides ways to manage your Swarm extensions or install new ones</span>
+                            <span data-requiredpermission="view_logs"><br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)</span>
                             <br>
                             <br>This is not to be confused with the <a href="#user_tab" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userconfigtabbutton').click()">User Settings</a> tab, which allows you to configure your user settings (eg save path/format, default VAE choice, etc)
                         </p>

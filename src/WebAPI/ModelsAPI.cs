@@ -286,11 +286,6 @@ public static class ModelsAPI
 
     public static bool TryGetRefusalForModel(Session session, string name, out JObject refusal)
     {
-        if (!session.User.Restrictions.CanChangeModels)
-        {
-            refusal = new JObject() { ["error"] = "You are not allowed to change models." };
-            return true;
-        }
         // TODO: model-metadata-edit permission check
         string allowedStr = session.User.Restrictions.AllowedModels;
         Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
