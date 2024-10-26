@@ -24,6 +24,24 @@ If on Windows, open File Explorer to `%appdata%/NuGet` and delete the entire fol
 
 If on Linux/Mac, `rm -rf ~/.nuget`
 
+## AMD On Windows
+
+If you have an AMD (Radeon) GPU on Windows, by default SwarmUI installs the comfy backend with DirectML. DirectML is a Microsoft Windows library for AI processing that is compatible with AMD, but very buggy and limited compared to the CUDA library used for Nvidia GPUs. A variety of issues exist with this.
+
+If you see an error about `libtorchaudio.pyd`, or `OSError: [WinError 127] The specified procedure could not be found` in relation to `torchaudio`, this is a known bug with AMD+DirectML+Windows, you can ignore it, or swap backend (see below).
+
+If you see `Cannot handle this data type: (1, 1, 3), <f4`, that is because live previews don't work right on AMD+DirectML+Windows, you can go to `Server`->`Backends`->edit the comfy backend->uncheck `EnablePreviews`->`Save` and it should work, or swap backend (see below).
+
+If you see `The parameter is incorrect.`, you are running something incompatible with AMD+DirectML+Windows, and can either just not run that, or swap backend (see below).
+
+### Swap AMD Backend
+
+There are several alternate AMD backend options that work better than DirectML:
+
+- **A:** `zluda` is a library that tries to crossport CUDA support to AMD cards. It's legal status is messy, and its maintenance is questionable, so it's not used by default, but if you can figure out setting it up, it will likely work much better than DirectML does.
+- **B:** If you can swap your PC to Linux (eg via dualbooting), Linux drivers for AMD are much more reliable than Windows one, the `ROCm` backend will install by default on a Linux install of Swarm and should work (relatively) well.
+- **C:** If you don't want to swap to Linux, Windows can install `WSL` ("Windows Subsystem for Linux") which gives you Linux drivers within a Windows environment. It's a bit weird to setup, but not too hard, and probably easier than dualbooting. It similarly to real Linux should let you install Swarm in the WSL env and use ROCm drivers.
+
 ## I Have An Error Message And Don't Know What To Do
 
 Step 1 is read the error message. A lot of error messages in Swarm are intentionally written in clear plain English to tell you exactly what went wrong and how to fix it. Sometimes it's not clear enough or you'll get an internal error without good info, so:
