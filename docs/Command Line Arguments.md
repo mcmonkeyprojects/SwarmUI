@@ -13,8 +13,8 @@ Note that if your inputs are invalid, the program will refuse to start, with an 
 Argument | Default | Description
 --- | --- | ---
 `--data_dir` | `Data` | Override the default data directory.
-`--settings_file` | `Data/Settings.fds` | If your settings file is anywhere other than the default, you must specify as a command line arg.
-`--backends_file` | `Data/Backends.fds` | If your backends file is anywhere other than the default, you must specify as a command line arg.
+`--settings_file` | `Data/Settings.fds` | If your settings file is anywhere other than the default, you must specify as a command line arg. The default value is relative to your `--data_dir`.
+`--backends_file` | `Data/Backends.fds` | If your backends file is anywhere other than the default, you must specify as a command line arg. The default value is relative to your `--data_dir`.
 `--environment` | `Production` | Can be `development` or `production` to set what ASP.NET Web Environment to use. `Development` gives detailed debug logs and errors, while `Production` is optimized for normal usage.
 `--host` | `localhost` | Can be used to override the 'Network.Host' server setting.
 `--port` | `7801` | Can be used to override the 'Network.Port' server setting.
