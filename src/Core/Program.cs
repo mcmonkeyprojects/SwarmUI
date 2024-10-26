@@ -112,7 +112,7 @@ public class Program
             }
             Logs.Init("Loading settings file...");
             DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, GetCommandLineFlag("data_dir", "Data"));
-            SettingsFilePath = GetCommandLineFlag("settings_file", "Data/Settings.fds");
+            SettingsFilePath = GetCommandLineFlag("settings_file", $"{DataDir}/Settings.fds");
             LoadSettingsFile();
             // TODO: Legacy format patch from Alpha 0.5! Remove this before 1.0.
             if (ServerSettings.DefaultUser.FileFormat.ImageFormat == "jpg")
@@ -194,8 +194,10 @@ public class Program
         BuildModelLists();
         CommonModels.RegisterCoreSet();
         T2IParamTypes.RegisterDefaults();
-        Backends = new();
-        Backends.SaveFilePath = GetCommandLineFlag("backends_file", Backends.SaveFilePath);
+        Backends = new()
+        {
+            SaveFilePath = GetCommandLineFlag("backends_file", $"{DataDir}/Backends.fds")
+        };
         Sessions = new();
         Web = new();
         timer.Check("Prep Objects");
