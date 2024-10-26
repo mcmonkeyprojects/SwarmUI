@@ -10,6 +10,7 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 rem For some reason Microsoft's nonsense is missing the official nuget source? So forcibly add that to be safe.
 dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source"
+echo ==Please ignore the above error about source already specified, actual update stuff follows below==
 
 rem The actual update
 git pull
