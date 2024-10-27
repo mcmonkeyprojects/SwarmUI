@@ -311,6 +311,12 @@ public class T2IParamTypes
     /// <summary>(For extensions) list of functions that provide fake types for given type names.</summary>
     public static List<Func<string, T2IParamInput, T2IParamType>> FakeTypeProviders = [];
 
+    /// <summary>Cleans and sorts a model listing for output in a user-exposed parameter.</summary>
+    public static List<string> CleanModelList(IEnumerable<string> models)
+    {
+        return [.. models.Select(CleanModelName).OrderBy(s => s.ToLowerFast())];
+    }
+
     /// <summary>(Called by <see cref="Program"/> during startup) registers all default parameter types.</summary>
     public static void RegisterDefaults()
     {
@@ -420,8 +426,8 @@ public class T2IParamTypes
         {
             List<T2IModel> baseList = [.. Program.MainSDModels.ListModelsFor(s).OrderBy(m => m.Name)];
             List<T2IModel> refinerList = baseList.Where(m => m.ModelClass is not null && m.ModelClass.Name.Contains("Refiner")).ToList();
-            List<string> bases = baseList.Select(m => CleanModelName(m.Name)).ToList();
-            return ["(Use Base)", .. refinerList.Select(m => CleanModelName(m.Name)), "-----", .. bases];
+            List<string> bases = CleanModelList(baseList.Select(m => m.Name));
+            return ["(Use Base)", .. CleanModelList(refinerList.Select(m => m.Name)), "-----", .. bases];
         }
         RefinerModel = Register<T2IModel>(new("Refiner Model", "The model to use for refinement. This should be a model that's good at small-details, and use a structural model as your base model.\n'Use Base' will use your base model rather than switching.\nSDXL 1.0 released with an official refiner model.",
             "(Use Base)", IgnoreIf: "(Use Base)", GetValues: listRefinerModels, OrderPriority: -5, Group: GroupRefiners, FeatureFlag: "refiners", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
@@ -450,7 +456,7 @@ public class T2IParamTypes
             ));
         static List<string> listVaes(Session s)
         {
-            return ["None", .. Program.T2IModelSets["VAE"].ListModelsFor(s).Select(m => CleanModelName(m.Name))];
+            return ["Automatic", "None", .. CleanModelList(Program.T2IModelSets["VAE"].ListModelsFor(s).Select(m => m.Name))];
         }
         for (int i = 1; i <= 3; i++)
         {
@@ -482,7 +488,7 @@ public class T2IParamTypes
             ));
         GroupVideo = new("Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos with Stable Video Diffusion.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/Video.md\">See more docs here.</a>");
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nThis should be an SVD (Stable Video Diffusion) model.\nNote that SVD favors a low CFG (~2.5).",
-            "", GetValues: s => Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && m.ModelClass.ID.Contains("stable-video-diffusion")).OrderBy(m => m.Name).Select(m => CleanModelName(m.Name)).ToList(),
+            "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && m.ModelClass.ID.Contains("stable-video-diffusion")).Select(m => m.Name)),
             OrderPriority: 1, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
             ));
         VideoFrames = Register<int>(new("Video Frames", "How many frames to generate within the video.",
@@ -525,7 +531,7 @@ public class T2IParamTypes
             "false", IgnoreIf: "false", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, VisibleNormally: false, Group: GroupAdvancedModelAddons, ChangeWeight: 7
             ));
         Loras = Register<List<string>>(new("LoRAs", "LoRAs (Low-Rank-Adaptation Models) are a way to customize the content of a model without totally replacing it.\nYou can enable one or several LoRAs over top of one model.",
-            "", IgnoreIf: "", IsAdvanced: true, Toggleable: true, Clean: (_, s) => CleanModelNameList(s), GetValues: (session) => Program.T2IModelSets["LoRA"].ListModelNamesFor(session).Order().Select(CleanModelName).ToList(), Group: GroupAdvancedModelAddons, VisibleNormally: false, ChangeWeight: 8
+            "", IgnoreIf: "", IsAdvanced: true, Toggleable: true, Clean: (_, s) => CleanModelNameList(s), GetValues: (session) => CleanModelList(Program.T2IModelSets["LoRA"].ListModelNamesFor(session)), Group: GroupAdvancedModelAddons, VisibleNormally: false, ChangeWeight: 8
             ));
         LoraWeights = Register<List<string>>(new("LoRA Weights", "Weight values for the LoRA model list.\nComma separated list of weight numbers.\nMust match the length of the LoRAs input.",
             "", IgnoreIf: "", Min: -10, Max: 10, Step: 0.1, IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, VisibleNormally: false
