@@ -6,7 +6,7 @@
 
 # Tags info:
 # 'parameters': Adds new T2I Parameters
-# 'tabs': adds new tabs on the main page
+# 'tabs': adds new tabs on the main page (including subtabs, eg inside Utilities)
 # 'nodes': adds Comfy nodes
 # 'backend': adds a new backend
 # 'hidden': don't show on the main listing yet
@@ -42,16 +42,14 @@ MagicPrompt:
     description: Provides LLM (language model) usage inside SwarmUI to enhance your prompts.
     url: https://github.com/HartsyAI/SwarmUI-MagicPromptExtension
     tags:
-    # Hidden pending removal of "HartsyCore"
-    - hidden
+    - tabs
 
 UniversalTab:
     author: Hartsy AI
     description: Lets you embed iframes of other webservices into subtabs in SwarmUI.
     url: https://github.com/HartsyAI/SwarmUI-UniversalTabExtension
     tags:
-    # Hidden pending removal of "HartsyCore"
-    - hidden
+    - tabs
 
 WildcardImporter:
     author: spoomples
