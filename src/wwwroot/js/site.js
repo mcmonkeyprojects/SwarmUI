@@ -129,6 +129,7 @@ function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null, on
         callback(data);
     }
     socket.onerror = errorHandle ? () => errorHandle(genericServerErrorMsg.get()) : genericServerError;
+    return socket;
 }
 
 let failedCrash = translatable(`Failed to send request to server. Did the server crash?`);

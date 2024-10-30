@@ -6,6 +6,7 @@ class GenerateHandler {
         this.totalGenRunTime = 0;
         this.validateModel = true;
         this.interrupted = -1;
+        this.socket = null;
         this.imageContainerDivId = 'current_image';
         this.imageId = 'current_image_img';
         this.progressBarHtml = `<div class="image-preview-progress-inner"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"></div></div>`;
@@ -95,7 +96,20 @@ class GenerateHandler {
             let discardable = {};
             let timeLastGenHit = Date.now();
             let actualInput = this.getGenInput(input_overrides, input_preoverrides);
-            makeWSRequestT2I('GenerateText2ImageWS', actualInput, data => {
+            let socket = null;
+            let handleData = data => {
+                if ('socket_intention' in data && data.socket_intention == 'close') {
+                    if (this.socket == socket) {
+                        this.socket = null;
+                    }
+                    if (Object.keys(discardable).length > 0) {
+                        // clear any lingering previews
+                        for (let img of Object.values(images)) {
+                            img.div.remove();
+                        }
+                    }
+                    return;
+                }
                 if (isPreview) {
                     if (data.image) {
                         this.setCurrentImage(data.image, data.metadata, `${batch_id}_${data.batch_index}`, false, true);
@@ -197,20 +211,22 @@ class GenerateHandler {
                             this.setCurrentImage(imgs[0].image, imgs[0].metadata);
                         }
                     }
-                    if (Object.keys(discardable).length > 0) {
-                        // clear any lingering previews
-                        for (let img of Object.values(images)) {
-                            img.div.remove();
-                        }
-                    }
                 }
-            }, e => {
+            };
+            let handleError = e => {
                 console.log(`Error in GenerateText2ImageWS: ${e}, ${this.interrupted}, ${batch_id}`);
                 if (this.interrupted >= batch_id) {
                     return;
                 }
                 this.hadError(e);
-            });
+            };
+            if (this.socket && this.socket.readyState == WebSocket.OPEN) {
+                this.socket.send(JSON.stringify(actualInput));
+            }
+            else {
+                socket = makeWSRequestT2I('GenerateText2ImageWS', actualInput, handleData, handleError);
+                this.socket = socket;
+            }
         };
         if (this.validateModel) {
             if (getRequiredElementById('current_model').value == '') {

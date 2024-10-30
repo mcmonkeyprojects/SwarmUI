@@ -4,7 +4,6 @@ using Newtonsoft.Json.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SwarmUI.Accounts;
-using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
@@ -80,7 +79,68 @@ public static class T2IAPI
         [API.APIParameter("The number of images to generate.")] int images,
         [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.")] JObject rawInput)
     {
-        await API.RunWebsocketHandlerCallWS(GenT2I_Internal, session, (images, rawInput), socket);
+        using CancellationTokenSource cancelTok = new();
+        bool retain = false, ended = false;
+        using CancellationTokenSource linked = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancelTok.Token);
+        SharedGenT2IData data = new();
+        ConcurrentDictionary<Task, Task> tasks = [];
+        static int guessBatchSize(JObject input)
+        {
+            if (input.TryGetValue("batchsize", out JToken batch))
+            {
+                return batch.Value<int>();
+            }
+            return 1;
+        }
+        _ = Utilities.RunCheckedTask(async () =>
+        {
+            try
+            {
+                int batchOffset = images * guessBatchSize(rawInput);
+                while (!cancelTok.IsCancellationRequested)
+                {
+                    byte[] rec = await socket.ReceiveData(1024 * 1024 * 256, linked.Token);
+                    Volatile.Write(ref retain, true);
+                    if (socket.State != WebSocketState.Open || cancelTok.IsCancellationRequested || Volatile.Read(ref ended))
+                    {
+                        return;
+                    }
+                    JObject newInput = StringConversionHelper.UTF8Encoding.GetString(rec).ParseToJson();
+                    int newImages = newInput.Value<int>("images");
+                    Task handleMore = API.RunWebsocketHandlerCallWS(GenT2I_Internal, session, (newImages, newInput, data, batchOffset), socket);
+                    tasks.TryAdd(handleMore, handleMore);
+                    Volatile.Write(ref retain, false);
+                    batchOffset += newImages * guessBatchSize(newInput);
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+            finally
+            {
+                Volatile.Write(ref retain, false);
+            }
+        });
+        Task handle = API.RunWebsocketHandlerCallWS(GenT2I_Internal, session, (images, rawInput, data, 0), socket);
+        tasks.TryAdd(handle, handle);
+        while (Volatile.Read(ref retain) || tasks.Any())
+        {
+            await Task.WhenAny(tasks.Keys.ToList());
+            foreach (Task t in tasks.Keys.Where(t => t.IsCompleted).ToList())
+            {
+                tasks.TryRemove(t, out _);
+            }
+            if (tasks.IsEmpty())
+            {
+                await socket.SendJson(new JObject() { ["socket_intention"] = "close" }, API.WebsocketTimeout);
+                await Task.Delay(TimeSpan.FromSeconds(2)); // Give 2 seconds to allow a new gen request before actually closing
+                if (tasks.IsEmpty())
+                {
+                    Volatile.Write(ref ended, true);
+                }
+            }
+        }
         await socket.SendJson(BasicAPIFeatures.GetCurrentStatusRaw(session), API.WebsocketTimeout);
         return null;
     }
@@ -100,7 +160,7 @@ public static class T2IAPI
         [API.APIParameter("The number of images to generate.")] int images,
         [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.")] JObject rawInput)
     {
-        List<JObject> outputs = await API.RunWebsocketHandlerCallDirect(GenT2I_Internal, session, (images, rawInput));
+        List<JObject> outputs = await API.RunWebsocketHandlerCallDirect(GenT2I_Internal, session, (images, rawInput, new SharedGenT2IData(), 0));
         Dictionary<int, string> imageOutputs = [];
         int[] discards = null;
         foreach (JObject obj in outputs)
@@ -169,10 +229,15 @@ public static class T2IAPI
         return user_input;
     }
 
-    /// <summary>Internal route for generating images.</summary>
-    public static async Task GenT2I_Internal(Session session, (int, JObject) input, Action<JObject> output, bool isWS)
+    public class SharedGenT2IData
     {
-        (int images, JObject rawInput) = input;
+        public int NumExtra, NumNonReal;
+    }
+
+    /// <summary>Internal route for generating images.</summary>
+    public static async Task GenT2I_Internal(Session session, (int, JObject, SharedGenT2IData, int) input, Action<JObject> output, bool isWS)
+    {
+        (int images, JObject rawInput, SharedGenT2IData data, int batchOffset) = input;
         using Session.GenClaim claim = session.Claim(gens: images);
         void setError(string message)
         {
@@ -214,7 +279,6 @@ public static class T2IAPI
         }
         int max_degrees = session.User.Restrictions.CalcMaxT2ISimultaneous;
         List<int> discard = [];
-        int numExtra = 0, numNonReal = 0;
         int batchSizeExpected = user_input.Get(T2IParamTypes.BatchSize, 1);
         void saveImage(T2IEngine.ImageOutput image, int actualIndex, T2IParamInput thisParams, string metadata)
         {
@@ -255,7 +319,7 @@ public static class T2IAPI
             {
                 break;
             }
-            int imageIndex = i * batchSizeExpected;
+            int imageIndex = i * batchSizeExpected + batchOffset;
             T2IParamInput thisParams = user_input.Clone();
             if (!thisParams.Get(T2IParamTypes.NoSeedIncrement, false))
             {
@@ -278,12 +342,12 @@ public static class T2IAPI
                         numCalls++;
                         if (numCalls > batchSizeExpected)
                         {
-                            actualIndex = images * batchSizeExpected + Interlocked.Increment(ref numExtra);
+                            actualIndex = images * batchSizeExpected + Interlocked.Increment(ref data.NumExtra);
                         }
                     }
                     else
                     {
-                        actualIndex = -10 - Interlocked.Increment(ref numNonReal);
+                        actualIndex = -10 - Interlocked.Increment(ref data.NumNonReal);
                     }
                     saveImage(image, actualIndex, thisParams, metadata);
                 })));
