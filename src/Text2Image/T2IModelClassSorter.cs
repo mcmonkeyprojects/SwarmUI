@@ -204,6 +204,10 @@ public class T2IModelClassSorter
         {
             return false;
         }});
+        Register(new() { ID = "stable-diffusion-v3.5-medium", CompatClass = "stable-diffusion-v3.5-medium", Name = "Stable Diffusion 3.5 Medium", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "stable-diffusion-v3-medium/lora", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO: ?
@@ -212,11 +216,19 @@ public class T2IModelClassSorter
         {
             return isSD35Lora(h);
         }});
+        Register(new() { ID = "stable-diffusion-v3.5-medium/lora", CompatClass = "stable-diffusion-v3.5-medium", Name = "Stable Diffusion 3.5 Medium LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "stable-diffusion-v3-medium/controlnet", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isSD3Controlnet(h);
         }});
         Register(new() { ID = "stable-diffusion-v3.5-large/controlnet", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
+        Register(new() { ID = "stable-diffusion-v3.5-medium/controlnet", CompatClass = "stable-diffusion-v3.5-medium", Name = "Stable Diffusion 3.5 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return false;
         }});

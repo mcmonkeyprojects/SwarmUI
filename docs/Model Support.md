@@ -30,13 +30,23 @@ Under `Advanced Sampling`, the parameter `Sigma Shift` is available. This defaul
 
 For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended (SD3 does not respond well to regular upscaling without tiling).
 
-### Stable Diffusion 3.5
+### Stable Diffusion 3.5 Large
 
 Stable Diffusion 3.5 Large is supported and works as normal, including both normal and Turbo variants.
 
 They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
 
 You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+
+### Stable Diffusion 3.5 Medium
+
+Stable Diffusion 3.5 Large is supported and works as normal.
+
+They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
+
+You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+
+SD 3.5 Medium support resolutions from 512x512 to 1440x1440, and the model metadata of the official model recommends 1440x1440. However, the official model is not good at this resolution. You will want to click the `☰` hamburger menu on a model, then `Edit Metadata`, then change the resolution to `1024x1024` for better results. You can of course set the `Aspect Ratio` parameter to `Custom` and the edit resolutions on the fly per-image.
 
 ## SDXL Turbo and SD Turbo
 
@@ -132,6 +142,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Examples of GGUF core models include:
         - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
         - SD3.5 Large <https://huggingface.co/city96/stable-diffusion-3.5-large-gguf/tree/main> or LargeTurbo <https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf/tree/main>
+        - SD3.5 Medium <https://huggingface.co/city96/stable-diffusion-3.5-medium-gguf/tree/main>
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
