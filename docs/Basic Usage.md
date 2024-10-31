@@ -11,16 +11,20 @@ Nonetheless, here's a step-by-step you can follow:
 Step one: [Install SwarmUI](/README.md#installing-on-windows).
 
 Once you've ran the basic program-installation, if all went well, it will open a web interface to select basic install settings.
-- Agree to the SD license
-- Pick a theme (I think default is best, but you got options)
-- Pick who the UI is for (usually just Yourself or Yourself on LAN)
-- Pick what backend(s) to install. If you already have ComfyUI or another backend you can skip this - if not, pick one. I recommend ComfyUI for local usage.
-- Pick any model(s) you want to download. If you already have some you can skip this, if not, I recommend SDXL 1.0.
+- It starts with an option to skip the installer and use defaults. New users might prefer this. Otherwise:
+    - Pick a theme (I think default is best, but you got options)
+    - Pick who the UI is for (usually just Yourself or Yourself on LAN)
+    - Pick what backend(s) to install. If you already have ComfyUI or another backend you can skip this - if not, pick one. I recommend ComfyUI for local usage.
+        - If you already have a Comfy install and want to use it, this is not recommended for most users, but:
+            - you can select no backend in the install page
+            - and then add your existing install in the main UI later via `Server`->`Backends`->add a `ComfyUI Self-Starting`->give it your comfy `main.py` path->`Save`
+            - you'll also want to edit `Server Configuration`->`Model Root` to be your existing comfy models dir, and change `SDModelFolder` to `checkpoints` to match Comfy's folder format.
+    - Pick any starter model(s) you want to download. If you already have some you can skip this.
 - Confirm you want the settings you selected, and install.
 
 Once this is done, it should automatically redirect you to the main interface.
 
-(You can close the server at any time by just closing that console window it pulls up, and you can start it again via the desktop icon, or the `launch` script in the folder).
+(You can close the server at any time by just closing that console window it pulls up or via `Server`->`Shutdown`, and you can start it again via the desktop icon, or the `launch` script in the folder).
 
 ## Configuring
 
@@ -50,13 +54,14 @@ If you have pre-existing Stable Diffusion files, you'll want to configure settin
 
 If it didn't go well, ... well it's alpha software, hopefully there's an error message telling you what went wrong. If you can't figure it out, open an [issue here](https://github.com/mcmonkeyprojects/SwarmUI/issues) or ask on [discord](https://discord.gg/q2y38cqjNw).
 
-## Using The SDXL Refiner
+## Using A Refiner / Upscaling Images
 
-So, you want *refined* images, huh? Well, if the base isn't enough, and you downloaded the refiner, you can put it to use!
+So, you want *refined* images, huh? Well, if the first pass of generation is enough, you can use the Upscale/Refine options.
 
-- Just open the `Refiner` parameter group (you might have to scroll down if your screen is small - it's right below `Init Image`).
-- Enable the `Refiner Model` parameter and select your model (it lists recognized refiners at the top, you can use other models too if you want)
-- Set the other parameters however you want.  Click the `?` if you're not sure what a parameter does.
+- Just open the `Refine / Upscale` parameter group (you might have to scroll down if your screen is small - it's right below `Init Image`), and toggle the checkbox next to the group title.
+- If you have a dedicated refiner model, Enable the `Refiner Model` parameter and select your model
+- If you want to upscale, drag the `Refiner Upscale` over to `1.5` or `2`. If you're using a DiT model (eg SD3 or Flux), enable `Refiner Do Tiling`
+- Set the other parameters however you want. Click the `?` if you're not sure what a parameter does.
 - Click Generate! Yup that's literally all you have to do. Easy, huh?
 - You can turn it off at any time by toggling the toggler on the group (right next to where it says `Refiner` as the group label).
 

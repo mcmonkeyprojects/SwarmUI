@@ -11,6 +11,7 @@ You can also view the ComfyUI node graph and work with custom workflows directly
 - Self-Start lets swarm configure, launch, and manage the ComfyUI backend. This is highly recommended.
 - API-By-URL is for if you want to launch and manage the ComfyUI instance entirely yourself, but still connect it from Swarm.
     - Configuration is significantly more complex, and misbehavior may occur. This is not recommended.
+    - In other words: Unless you're a professional getting paid by the hour to build a complex AI network, you almost certainly do not need or want the API-By-URL option.
 
 ### Installation (Self-Start)
 
@@ -23,11 +24,12 @@ You can also view the ComfyUI node graph and work with custom workflows directly
 - First: have a valid and working ComfyUI installation.
 - Make sure it uses the exact same model paths as your SwarmUI instance does. This means that if you have eg `OfficialStableDiffusion/sd_xl_base_1.0.safetensors` in Swarm, you need have *EXACTLY* that in ComfyUI. The only exception is Windows paths that use `\` instead of `/` are fine, Swarm will automatically correct for that (If you use Self-Start, this is automatically managed from your Swarm settings).
 - Note that swarm may leave stray Input or Output images in the ComfyUI folder that you may wish to clean up (if you use Self-Start, this will be prevented automatically).
-- Swarm provides extra Comfy nodes automatically to Self-Start ComfyUI instances from folders within the ComfyUI extension folder, including `DLNodes` and `ExtraNodes` - it is highly recommended you copy these to your remote Comfy's `custom_nodes` path.
+- Swarm provides extra Comfy nodes automatically to Self-Start ComfyUI instances from folders within the ComfyUI extension folder, including `DLNodes` and `ExtraNodes` - it is highly recommended you copy these to your remote Comfy's `custom_nodes` path, or point to them with your `extra_model_paths` file.
+- If you use a Self-Start backend, it will autogenerate a valid extra model paths file into the `Data` folder, you may wish to do that to copy for your comfy API instance.
 
 ### Basic Usage Within SwarmUI
 
-(TODO)
+(TODO): tldr don't worry about it, it just works, follow general Swarm usage docs
 
 ### Using Workflows In The UI
 
