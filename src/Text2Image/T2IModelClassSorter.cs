@@ -70,6 +70,7 @@ public class T2IModelClassSorter
         }
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && !isFluxLora(h);
         bool isMochi(JObject h) => h.ContainsKey("model.diffusion_model.blocks.0.attn.k_norm_x.weight") || h.ContainsKey("diffusion_model.blocks.0.attn.k_norm_x.weight") || h.ContainsKey("blocks.0.attn.k_norm_x.weight");
+        bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -186,7 +187,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "genmo-mochi-1/vae", CompatClass = "genmo-mochi-1", Name = "Genmo Mochi 1 VAE", StandardWidth = 848, StandardHeight = 480, IsThisModelOfClass = (m, h) =>
         {
-            return false;
+            return isMochiVae(h);
         }});
         // ====================== Stable Cascade ======================
         Register(new() { ID = "stable-cascade-v1-stage-a/vae", CompatClass = "stable-cascade-v1", Name = "Stable Cascade v1 (Stage A)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
