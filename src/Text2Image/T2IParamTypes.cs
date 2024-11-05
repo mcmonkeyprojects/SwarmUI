@@ -362,7 +362,7 @@ public class T2IParamTypes
             "25", Min: 1, Max: 1000, OrderPriority: 1, Group: GroupText2Video, FeatureFlag: "text2video"
             ));
         Text2VideoFPS = Register<int>(new("Text2Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video is expecting to work at.\nFor Mochi, this is 24.",
-            "24", Min: 1, Max: 1024, ViewType: ParamViewType.BIG, OrderPriority: 2, Group: GroupText2Video, FeatureFlag: "text2video"
+            "24", Min: 1, Max: 1024, ViewType: ParamViewType.BIG, OrderPriority: 2, Group: GroupText2Video, FeatureFlag: "text2video", IsAdvanced: true
             ));
         Text2VideoBoomerang = Register<bool>(new("Text2Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
             "false", IgnoreIf: "false", OrderPriority: 20, Group: GroupText2Video, IsAdvanced: true, FeatureFlag: "text2video"
