@@ -2,7 +2,7 @@
 
 Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata and can import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
 
-Swarm supports models of all the common architectures:
+# Image Models
 
 ## Stable Diffusion v1 and v2
 
@@ -64,26 +64,6 @@ Lightning models work the same as regular models, just set `CFG Scale` to `1` an
 
 SegMind SSD-1B models work the same as SD models.
 
-## Stable Video Diffusion
-
-SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
-
-You can do text2video by just checking Video as normal, or image2video by using an Init Image and setting Creativity to 0.
-
-## Genmo Mochi 1 (Text2Video)
-
-- Genmo Mochi 1 is supported natively in SwarmUI as a Text-To-Video model.
-- You can get either the all-in-one checkpoint <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/all_in_one>
-    - save to `Stable-Diffusion` folder
-- Or get the DiT only variant <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/split_files/diffusion_models> (FP8 Scaled option recommended)
-    - save to `diffusion_models` folder
-- The text encoder (T5-XXL) and VAE will be automatically downloaded
-    - You can also set these manually if preferred
-- When selected, the `Text To Video` parameter group will become visible
-- Mochi is very GPU and memory intensive, especially the VAE
-- The model is trained for 24 fps, and frame counts dynamic anywhere up to 200. Multiples of 6 plus 1 (7, 13, 19, 25, ...) are required due to the 6x temporal compression in the Mochi VAE. The input parameter will automatically round if you enter an invalid value.
-- The VAE has a harsh memory requirement that may limit you from high duration videos.
-
 ## Stable Cascade
 
 Stable Cascade is supported if you use the "ComfyUI Format" models (aka "All In One") https://huggingface.co/stabilityai/stable-cascade/tree/main/comfyui_checkpoints that come as a pair of `stage_b` and `stage_c` models.
@@ -138,8 +118,33 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - It natively supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results.
         - You can mess with the resolution quite a lot and still get decent results. It's very flexible even past what it was trained on.
     - You _can_ do a refiner upscale 2x and it will work but take a long time and might not have excellent quality. Refiner tiling may be better.
+    - You can also use [GGUF Versions](#gguf-quantized-models) of the models.
 
-# Bits-and-Bytes NF4 Format Models
+# Video Models
+
+## Stable Video Diffusion
+
+SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
+
+You can do text2video by just checking Video as normal, or image2video by using an Init Image and setting Creativity to 0.
+
+## Genmo Mochi 1 (Text2Video)
+
+- Genmo Mochi 1 is supported natively in SwarmUI as a Text-To-Video model.
+- You can get either the all-in-one checkpoint <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/all_in_one>
+    - save to `Stable-Diffusion` folder
+- Or get the DiT only variant <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/split_files/diffusion_models> (FP8 Scaled option recommended)
+    - save to `diffusion_models` folder
+- The text encoder (T5-XXL) and VAE will be automatically downloaded
+    - You can also set these manually if preferred
+- When selected, the `Text To Video` parameter group will become visible
+- Mochi is very GPU and memory intensive, especially the VAE
+- The model is trained for 24 fps, and frame counts dynamic anywhere up to 200. Multiples of 6 plus 1 (7, 13, 19, 25, ...) are required due to the 6x temporal compression in the Mochi VAE. The input parameter will automatically round if you enter an invalid value.
+- The VAE has a harsh memory requirement that may limit you from high duration videos.
+
+# Alternative Model Formats
+
+## Bits-and-Bytes NF4 Format Models
 
 - BnB NF4 format models, such as this copy of Flux Dev <https://huggingface.co/lllyasviel/flux1-dev-bnb-nf4/tree/main?show_file_info=flux1-dev-bnb-nf4.safetensors>, are partially supported in SwarmUI automatically.
     - The detection internally works by looking for `bitsandbytes__nf4` in the model's keys
@@ -150,7 +155,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 - Note that BnB-NF4 models have multiple compatibility limitations, including even LoRAs don't apply properly.
     - If you want a quantized flux model, GGUF is recommended instead.
 
-# GGUF Quantized Models
+## GGUF Quantized Models
 
 - GGUF Quantized `diffusion_models` models are supported in SwarmUI automatically.
     - Examples of GGUF core models include:
@@ -166,7 +171,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - You can accept this popup, and it will install and reload the backend
     - Then try to generate again, and it should just work
 
-# TensorRT
+## TensorRT
 
 TensorRT support (`.engine`) is available for SDv1, SDv2-768-v, SDXL Base, SDXL Refiner, SVD, SD3-Medium
 
