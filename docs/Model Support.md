@@ -2,6 +2,28 @@
 
 Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata and can import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
 
+- [Image Models](#image-models)
+    - [Stable Diffusion v1 and v2](#stable-diffusion-v1-and-v2)
+    - [Stable Diffusion v1 Inpainting Models](#stable-diffusion-v1-inpainting-models)
+    - [Stable Diffusion XL](#stable-diffusion-xl)
+    - [Stable Diffusion 3](#stable-diffusion-3)
+    - [Stable Diffusion 3.5 Large](#stable-diffusion-35-large)
+    - [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium)
+    - [SDXL Turbo and SD Turbo](#sdxl-turbo-and-sd-turbo)
+    - [Lightning Models](#lightning-models)
+    - [Segmind SSD 1B](#segmind-ssd-1b)
+    - [Stable Cascade](#stable-cascade)
+    - [PixArt Sigma](#pixart-sigma)
+    - [AuraFlow v0.1 and v0.2](#auraflow-v01)
+    - [Black Forest Labs' Flux.1](#black-forest-labs-flux1-models)
+- [Video Models](#video-models)
+    - [Genmo Mochi 1](#genmo-mochi-1-text2video)
+    - [Stable Video Diffusion](#stable-video-diffusion)
+- [Alternative Model Formats](#alternative-model-formats)
+    - [BnB NF4](#bits-and-bytes-nf4-format-models)
+    - [GGUF](#gguf-quantized-models)
+    - [TensorRT](#tensorrt)
+
 # Image Models
 
 ## Stable Diffusion v1 and v2
