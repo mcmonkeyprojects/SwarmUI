@@ -146,6 +146,17 @@ public class WorkflowGenerator
         return clazz.StartsWith("stable-diffusion-v3");
     }
 
+    /// <summary>Returns true if the current model is Mochi Text2Video.</summary>
+    public bool IsMochi()
+    {
+        string clazz = CurrentCompatClass();
+        if (clazz is null)
+        {
+            return false;
+        }
+        return clazz is not null && clazz == "genmo-mochi-1";
+    }
+
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
     public bool IsFlux()
     {
@@ -461,7 +472,27 @@ public class WorkflowGenerator
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
-        if (Features.Contains("comfy_saveimage_ws") && !RestrictCustomNodes)
+        if (IsMochi())
+        {
+            if (UserInput.Get(T2IParamTypes.Text2VideoBoomerang, false))
+            {
+                string bounced = CreateNode("SwarmVideoBoomerang", new JObject()
+                {
+                    ["images"] = image
+                });
+                image = [bounced, 0];
+            }
+            return CreateNode("SwarmSaveAnimationWS", new JObject()
+            {
+                ["images"] = image,
+                ["fps"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 24),
+                ["lossless"] = false,
+                ["quality"] = 95,
+                ["method"] = "default",
+                ["format"] = UserInput.Get(T2IParamTypes.Text2VideoFormat, "webp")
+            }, id);
+        }
+        else if (Features.Contains("comfy_saveimage_ws") && !RestrictCustomNodes)
         {
             return CreateNode("SwarmSaveImageWS", new JObject()
             {
@@ -767,6 +798,38 @@ public class WorkflowGenerator
                 fluxVae = CommonModels.Known["flux-ae"].FileName;
             }
             LoadingVAE = CreateVAELoader(fluxVae, nodeId);
+        }
+        else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null))
+        {
+            string loaderType = "CLIPLoader";
+            if (getT5XXLModel().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getT5XXLModel(),
+                ["type"] = "mochi"
+            });
+            LoadingClip = [clipLoader, 0];
+            string mochiVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultMochiVAE;
+            string nodeId = null;
+            if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
+            {
+                mochiVae = vaeModel.Name;
+                nodeId = "11";
+            }
+            if (string.IsNullOrWhiteSpace(mochiVae) || mochiVae == "None")
+            {
+                mochiVae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "genmo-mochi-1")?.Name;
+            }
+            if (string.IsNullOrWhiteSpace(mochiVae))
+            {
+                CommonModels.Known["mochi-vae"].DownloadNow().Wait();
+                Program.RefreshAllModelSets();
+                mochiVae = CommonModels.Known["mochi-vae"].FileName;
+            }
+            LoadingVAE = CreateVAELoader(mochiVae, nodeId);
         }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
@@ -1074,6 +1137,16 @@ public class WorkflowGenerator
             return CreateNode("EmptySD3LatentImage", new JObject()
             {
                 ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
+        else if (IsMochi())
+        {
+            return CreateNode("EmptyMochiLatentVideo", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 25),
                 ["height"] = height,
                 ["width"] = width
             }, id);

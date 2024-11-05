@@ -73,5 +73,6 @@ public static class CommonModels
         Register(new("fluxdev", "Flux.1-Dev", "Flux.1 (Dev/standard variant) from 2024.", "https://huggingface.co/Comfy-Org/flux1-dev/resolve/main/flux1-dev-fp8.safetensors", "8e91b68084b53a7fc44ed2a3756d821e355ac1a7b6fe29be760c1db532f3d88a", "Stable-Diffusion", "Flux/flux1-dev-fp8.safetensors"));
         Register(new("sd35-vae", "Stable Diffusion v3.5 VAE", "The VAE for Stable Diffusion v3", "https://huggingface.co/mcmonkey/swarm-vaes/resolve/main/sd35_vae.safetensors", "6ad8546282f0f74d6a1184585f1c9fe6f1509f38f284e7c4f7ed578554209859", "VAE", "OfficialStableDiffusion/sd35_vae.safetensors"));
         Register(new("flux-ae", "Flux.1-AE", "The AE for Flux.1", "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors", "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38", "VAE", "Flux/ae.safetensors"));
+        Register(new("mochi-vae", "Genmo Mochi 1 VAE", "The VAE for Genmo Mochi 1", "https://huggingface.co/Comfy-Org/mochi_preview_repackaged/resolve/main/split_files/vae/mochi_vae.safetensors", "1be451cec94b911980406169286babc5269e7cf6a94bbbbdf45e8d3f2c961083", "VAE", "Mochi/mochi_vae.safetensors"));
     }
 }

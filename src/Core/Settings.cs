@@ -357,6 +357,10 @@ public class Settings : AutoConfiguration
             [ConfigComment("What VAE to use with SD3 models by default.")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultSD3VAE = "None";
+
+            [ConfigComment("What VAE to use with Mochi Text2Video models by default.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None"])]
+            public string DefaultMochiVAE = "None";
         }
 
         [ConfigComment("Options to override default VAEs with.")]

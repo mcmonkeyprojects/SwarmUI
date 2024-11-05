@@ -66,9 +66,23 @@ SegMind SSD-1B models work the same as SD models.
 
 ## Stable Video Diffusion
 
-SVD models are supported via the "Video" parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
+SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
 
 You can do text2video by just checking Video as normal, or image2video by using an Init Image and setting Creativity to 0.
+
+## Genmo Mochi 1 (Text2Video)
+
+- Genmo Mochi 1 is supported natively in SwarmUI as a Text-To-Video model.
+- You can get either the all-in-one checkpoint <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/all_in_one>
+    - save to `Stable-Diffusion` folder
+- Or get the DiT only variant <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/split_files/diffusion_models> (FP8 Scaled option recommended)
+    - save to `diffusion_models` folder
+- The text encoder (T5-XXL) and VAE will be automatically downloaded
+    - You can also set these manually if preferred
+- When selected, the `Text To Video` parameter group will become visible
+- Mochi is very GPU and memory intensive, especially the VAE
+- The model is trained for 24 fps, and frame counts dynamic anywhere up to 200. Multiples of 6 plus 1 (7, 13, 19, 25, ...) are required due to the 6x temporal compression in the Mochi VAE. The input parameter will automatically round if you enter an invalid value.
+- The VAE has a harsh memory requirement that may limit you from high duration videos.
 
 ## Stable Cascade
 

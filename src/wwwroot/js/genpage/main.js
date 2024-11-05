@@ -1278,6 +1278,12 @@ function reviseBackendFeatureSet() {
     else {
         removeMe.push('flux-dev');
     }
+    if (curModelArch == 'genmo-mochi-1') {
+        addMe.push('text2video');
+    }
+    else {
+        removeMe.push('text2video');
+    }
     let anyChanged = false;
     for (let add of addMe) {
         if (!currentBackendFeatureSet.includes(add)) {
