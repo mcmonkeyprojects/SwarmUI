@@ -376,13 +376,12 @@ public static class NetworkBackendUtils
                         Logs.Warning($"Your system memory usage exceeded {match.Item2 * 100:#.0}% just before the backend process failed. This might indicate a memory overload.");
                         ulong virtualMem = match.Item1.MemoryStatus.TotalVirtual - match.Item1.MemoryStatus.TotalPhysical;
                         float gigs = new MemoryNum((long)virtualMem).GiB;
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // TODO: Temporary because windows API is probably just wrong about virtual memory
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // Windows API reports virtual memory weirdly, so just sub in page file here, seems to be more accurate
                         {
-                            Logs.Warning($"You might not have enough pagefile space, or you might have too many background processes, or you might just be trying to run too much.");
-                            Logs.Warning("Consider closing background processes, or greatly expanding your pagefile size (see https://www.windowscentral.com/software-apps/windows-11/how-to-manage-virtual-memory-on-windows-11 for more info).");
-                            Logs.Warning("Or, reduce the size of what you're trying to run. If you're running an FP16 or FP8 model, consider a quantized variant like GGUF Q4.");
+                            virtualMem = match.Item1.MemoryStatus.TotalPageFile;
+                            gigs = new MemoryNum((long)virtualMem).GiB;
                         }
-                        else if (gigs < 32 || virtualMem * 2 < match.Item1.MemoryStatus.TotalPhysical)
+                        if (gigs < 32 || virtualMem * 2 < match.Item1.MemoryStatus.TotalPhysical)
                         {
                             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                             {

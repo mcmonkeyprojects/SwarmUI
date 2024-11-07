@@ -178,9 +178,9 @@ public class Program
             NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
             SystemStatusMonitor.HardwareInfo.RefreshMemoryStatus();
             MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo.MemoryStatus;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // TODO: Temporary because windows API is probably just wrong about virtual memory
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available");
+                Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalPageFile)} total page file, {new MemoryNum((long)memStatus.AvailablePageFile)} available page file");
             }
             else
             {
