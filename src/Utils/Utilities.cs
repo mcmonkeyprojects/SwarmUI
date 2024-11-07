@@ -879,6 +879,34 @@ public static class Utilities
     /// <summary>MultiSemaphoreSet to prevent git calls in the same directory from overlapping.</summary>
     public static MultiSemaphoreSet<string> GitOverlapLocks = new(32);
 
+    /// <summary>Quick and simple run a process async and get the result.</summary>
+    public static async Task<string> QuickRunProcess(string process, string args, string workingDirectory = null)
+    {
+        ProcessStartInfo start = new(process, args)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        if (workingDirectory is not null)
+        {
+            start.WorkingDirectory = workingDirectory;
+        }
+        Process p = Process.Start(start);
+        Task<string> stdOutRead = p.StandardOutput.ReadToEndAsync();
+        Task<string> stdErrRead = p.StandardError.ReadToEndAsync();
+        await p.WaitForExitAsync(Program.GlobalProgramCancel);
+        string stdout = await stdOutRead;
+        string stderr = await stdErrRead;
+        string result = stdout;
+        if (!string.IsNullOrWhiteSpace(stderr))
+        {
+            result = $"{stdout}\n{stderr}";
+        }
+        result = result.Trim();
+        return result;
+    }
+
     /// <summary>Launch, run, and return the text output of, a 'git' command input.</summary>
     public static async Task<string> RunGitProcess(string args, string dir = null, bool canRetry = true)
     {

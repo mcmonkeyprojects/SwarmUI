@@ -163,6 +163,7 @@ You can do text2video by just checking Video as normal, or image2video by using 
 - Mochi is very GPU and memory intensive, especially the VAE
 - The model is trained for 24 fps, and frame counts dynamic anywhere up to 200. Multiples of 6 plus 1 (7, 13, 19, 25, ...) are required due to the 6x temporal compression in the Mochi VAE. The input parameter will automatically round if you enter an invalid value.
 - The VAE has a harsh memory requirement that may limit you from high duration videos.
+    - To reduce VRAM impact, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. There will be a slightly noticeable tiling pattern on the output, but not too bad at 160 and 96.
 
 # Alternative Model Formats
 

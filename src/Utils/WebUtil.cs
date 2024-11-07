@@ -1,5 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Html;
+using SwarmUI.Core;
+using System.Runtime.InteropServices;
 
 namespace SwarmUI.Utils;
 
@@ -122,5 +124,41 @@ public static class WebUtil
     public static HtmlString TextPopoverButton(string id, string text)
     {
         return RawHtmlPopover(EscapeHtmlNoBr(id), EscapeHtml(text), "translate");
+    }
+
+    /// <summary>Gets an error message for the installer to display on Linux machines regarding python install, if any.</summary>
+    public static async Task<string> NeedLinuxPythonWarn()
+    {
+        if (Program.ServerSettings.IsInstalled)
+        {
+            return null;
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return null;
+        }
+        try
+        {
+            string pythonVersion = await Utilities.QuickRunProcess("python3", "--version");
+            if (!pythonVersion.StartsWith("Python 3.10") && !pythonVersion.StartsWith("Python 3.11"))
+            {
+                if (pythonVersion.StartsWith("Python 3."))
+                {
+                    return "You have a python version installed, but it is not 3.11. Please install Python 3.11 before installing SwarmUI. Older versions will not work, and newer versions will have compatibility issues. If you have a newer version (eg 3.12), proceed at your own risk.";
+                }
+                return "Python does not appear to be installed on your system. You must install Python 3.11 before installing SwarmUI.";
+            }
+            string venvInfo = await Utilities.QuickRunProcess("python3", "-m venv");
+            if (!venvInfo.StartsWith("usage: venv"))
+            {
+                return "You have Python installed, but 'venv' is missing. Please install it before proceeding (eg on Ubuntu, run 'sudo apt install python3-venv').";
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logs.Debug($"Failed to check python version: {ex}");
+            return "Failure to check python version. You must install Python 3.11 before installing SwarmUI.";
+        }
     }
 }

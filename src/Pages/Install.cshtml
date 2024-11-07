@@ -49,6 +49,18 @@
         For example, the SDXL 1.0 Base license can be found <a href="https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md">Here</a>.
         <br>SwarmUI itself is free for any usage under the <a href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/LICENSE.txt">MIT License</a>.
         <br>By using this software you agree to follow its license and the applicable licenses of any models included or separately downloaded.
+        @{
+            string pythonWarn = await WebUtil.NeedLinuxPythonWarn();
+            if (!string.IsNullOrWhiteSpace(pythonWarn))
+            {
+                <br><br><br>
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading">Python Warning</h4>
+                    <p class="mb-0">@pythonWarn</p>
+                </div>
+                <br><br>
+            }
+        }
     </div>
 
     @if (WebUtil.ProbablyHasAMDGpu())
