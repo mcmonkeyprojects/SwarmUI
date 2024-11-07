@@ -11,26 +11,30 @@ set DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 rem Server settings option
 if exist .\src\bin\always_pull (
-    echo "Pulling latest changes..."
+    echo Pulling latest changes...
     git pull
 )
 
 if exist .\src\bin\must_rebuild (
-    echo "Rebuilding..."
+    echo Rebuilding...
     rmdir /s /q .\src\bin\live_release_backup
     move .\src\bin\live_release .\src\bin\live_release_backup
     del .\src\bin\must_rebuild
 ) else if not exist .git (
-    echo "" & echo ""
-    echo "WARNING: YOU DID NOT CLONE FROM GIT. THIS WILL BREAK SOME SYSTEMS. PLEASE INSTALL PER THE README."
-    echo "" & echo ""
+    echo.
+    echo.
+    echo WARNING: YOU DID NOT CLONE FROM GIT. THIS WILL BREAK SOME SYSTEMS. PLEASE INSTALL PER THE README.
+    echo.
+    echo.
 ) else (
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD=%%i
     set /p BUILT_HEAD=<src/bin/last_build
     if not "!CUR_HEAD!"=="!BUILT_HEAD!" (
-        echo "" & echo ""
-        echo "WARNING: You did a git pull without building. Will now build for you..."
-        echo "" & echo ""
+        echo.
+        echo.
+        echo WARNING: You did a git pull without building. Will now build for you...
+        echo.
+        echo.
         rmdir /s /q .\src\bin\live_release_backup
         move .\src\bin\live_release .\src\bin\live_release_backup
     )
@@ -54,7 +58,7 @@ set ASPNETCORE_URLS="http://*:7801"
 
 rem Exit code 42 means restart, anything else = don't.
 if %ERRORLEVEL% EQU 42 (
-    echo "Restarting..."
+    echo Restarting...
     call launch-windows.bat %*
 )
 
