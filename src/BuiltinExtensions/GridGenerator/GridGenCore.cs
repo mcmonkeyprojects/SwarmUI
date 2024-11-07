@@ -785,6 +785,10 @@ public partial class GridGenCore
         {
             json = runner.EmitWebData(folder, baseParams, dryRun, footerExtra);
         }
+        if (grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE && grid.Axes.Count > 3)
+        {
+            throw new SwarmUserErrorException($"Request a grid image, but have more axes than a grid image can hold (X, Y, and Y2, no more). Cannot generate.");
+        }
         runner.Run(dryRun);
         if (dryRun)
         {
