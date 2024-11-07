@@ -899,7 +899,8 @@ public class WorkflowGenerator
             {
                 ["vae"] = vae,
                 ["samples"] = latent,
-                ["tile_size"] = tileSize
+                ["tile_size"] = tileSize,
+                ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64)
             }, id);
         }
         return CreateNode("VAEDecode", new JObject()

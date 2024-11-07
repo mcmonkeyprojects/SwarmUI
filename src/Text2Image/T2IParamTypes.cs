@@ -280,7 +280,7 @@ public class T2IParamTypes
     }
 
     public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, Text2VideoFrames, Text2VideoFPS;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, VAETileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, Text2VideoFrames, Text2VideoFPS;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, FluxGuidanceScale;
@@ -661,31 +661,34 @@ public class T2IParamTypes
             ));
         GroupAdvancedSampling = new("Advanced Sampling", Open: false, OrderPriority: 10, IsAdvanced: true);
         SamplerSigmaMin = Register<double>(new("Sampler Sigma Min", "Minimum sigma value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
-            "0", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling
+            "0", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -23
             ));
         SamplerSigmaMax = Register<double>(new("Sampler Sigma Max", "Maximum sigma value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
-            "10", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, FeatureFlag: "sd3"
+            "10", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, FeatureFlag: "sd3", OrderPriority: -22
             ));
         SigmaShift = Register<double>(new("Sigma Shift", "Sigma shift is used for MMDiT models (like SD3) specifically.\nFor SD3, this value is recommended to be in the range of 1.5 to 3, normally 3.\nFor AuraFlow, 1.73 (square root of 3) is recommended.\nFor Flux, Schnell uses 0, 1.15 may be good for Dev.",
-            "3", Min: 0, Max: 100, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling
+            "3", Min: 0, Max: 100, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -21
             ));
         SamplerRho = Register<double>(new("Sampler Rho", "Rho value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
-            "7", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling
+            "7", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -20
             ));
         IP2PCFG2 = Register<double>(new("IP2P CFG 2", "CFG Scale for Cond2-Negative in InstructPix2Pix (Edit) models.",
-            "1.5", Toggleable: true, Min: 1, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["1.5", "2"], ViewType: ParamViewType.SLIDER, Group: GroupAdvancedSampling
+            "1.5", Toggleable: true, Min: 1, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["1.5", "2"], ViewType: ParamViewType.SLIDER, Group: GroupAdvancedSampling, OrderPriority: -12
             ));
         ClipStopAtLayer = Register<int>(new("CLIP Stop At Layer", "What layer of CLIP to stop at, from the end.\nAlso known as 'CLIP Skip'. Default CLIP Skip is -1 for SDv1, some models prefer -2.\nSDv2, SDXL, and beyond do not need this set ever.",
-            "-1", Min: -24, Max: -1, Step: 1, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling
+            "-1", Min: -24, Max: -1, Step: 1, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -10
             ));
         CascadeLatentCompression = Register<int>(new("Cascade Latent Compression", "How deeply to compress latents when using Stable Cascade.\nDefault is 32, you can get slightly faster but lower quality results by using 42.",
-            "32", IgnoreIf: "32", Min: 1, Max: 100, Step: 1, IsAdvanced: true, Group: GroupAdvancedSampling
+            "32", IgnoreIf: "32", Min: 1, Max: 100, Step: 1, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -8
             ));
         VAETileSize = Register<int>(new("VAE Tile Size", "If enabled, decodes images through the VAE using tiles of this size.\nVAE Tiling reduces VRAM consumption, but takes longer and may impact quality.",
-            "512", Min: 320, Max: 4096, Step: 64, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling
+            "512", Min: 128, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -5
             ));
-        RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis uses RemBG.",
-            "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling
+        VAETileOverlap = Register<int>(new("VAE Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between tiles there should be.\nHigher overlap improves quality but takes longer.",
+            "64", Min: 0, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.8
+            ));
+        RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis internally uses RemBG.",
+            "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -2
              ));
     }
 
