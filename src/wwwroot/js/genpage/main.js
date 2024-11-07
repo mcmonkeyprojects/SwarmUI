@@ -649,6 +649,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             subButtons.push({ key: name, action: action });
         }
     }
+    let isDataImage = src.startsWith('data:');
     includeButton('Use As Init', () => {
         let initImageParam = document.getElementById('input_initimage');
         if (initImageParam) {
@@ -741,19 +742,23 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             console.log(`Error parsing metadata for image: '${e}', metadata was '${metadata}'`);
         }
     }
-    includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
-        toggleStar(imagePathClean, src);
-    }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
+    if (!isDataImage) {
+        includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
+            toggleStar(imagePathClean, src);
+        }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
+    }
     includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
-    includeButton('View In History', () => {
-        let folder = imagePathClean;
-        let lastSlash = folder.lastIndexOf('/');
-        if (lastSlash != -1) {
-            folder = folder.substring(0, lastSlash);
-        }
-        getRequiredElementById('imagehistorytabclickable').click();
-        imageHistoryBrowser.navigate(folder);
-    }, '', 'Jumps the Image History browser to where this image is at.');
+    if (!isDataImage) {
+        includeButton('View In History', () => {
+            let folder = imagePathClean;
+            let lastSlash = folder.lastIndexOf('/');
+            if (lastSlash != -1) {
+                folder = folder.substring(0, lastSlash);
+            }
+            getRequiredElementById('imagehistorytabclickable').click();
+            imageHistoryBrowser.navigate(folder);
+        }, '', 'Jumps the Image History browser to where this image is at.');
+    }
     for (let added of buttonsForImage(imagePathClean, src)) {
         if (added.label == 'Star') {
             continue;
@@ -768,7 +773,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
         let rect = button.getBoundingClientRect();
         new AdvancedPopover('image_more_popover', subButtons, false, rect.x, rect.y + button.offsetHeight + 6, document.body, null);
-
     });
     extrasWrapper.appendChild(buttons);
     let data = createDiv(null, 'current-image-data');
@@ -1109,8 +1113,9 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
 }
 
 function buttonsForImage(fullsrc, src) {
+    let isDataImage = src.startsWith('data:');
     buttons = [];
-    if (permissions.hasPermission('user_star_images')) {
+    if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
             label: 'Star',
             onclick: (e) => {
@@ -1118,7 +1123,7 @@ function buttonsForImage(fullsrc, src) {
             }
         });
     }
-    if (permissions.hasPermission('local_image_folder')) {
+    if (permissions.hasPermission('local_image_folder') && !isDataImage) {
         buttons.push({
             label: 'Open In Folder',
             onclick: (e) => {
@@ -1131,7 +1136,7 @@ function buttonsForImage(fullsrc, src) {
         href: src,
         is_download: true
     });
-    if (permissions.hasPermission('user_delete_image')) {
+    if (permissions.hasPermission('user_delete_image') && !isDataImage) {
         buttons.push({
             label: 'Delete',
             onclick: (e) => {
