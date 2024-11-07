@@ -682,7 +682,7 @@ public class T2IParamTypes
             "32", IgnoreIf: "32", Min: 1, Max: 100, Step: 1, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -8
             ));
         VAETileSize = Register<int>(new("VAE Tile Size", "If enabled, decodes images through the VAE using tiles of this size.\nVAE Tiling reduces VRAM consumption, but takes longer and may impact quality.",
-            "512", Min: 128, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -5
+            "256", Min: 128, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -5
             ));
         VAETileOverlap = Register<int>(new("VAE Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between tiles there should be.\nHigher overlap improves quality but takes longer.",
             "64", Min: 0, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.8
