@@ -246,6 +246,24 @@ function genInputs(delay_final = false) {
                 doToggleEnable(`input_${param.id}`);
                 doToggleEnable(`preset_input_${param.id}`);
             }
+            if (param.group && param.group.toggles) {
+                let elem = document.getElementById(`input_${param.id}`);
+                if (elem) {
+                    let groupId = param.group.id;
+                    let groupToggler = document.getElementById(`input_group_content_${groupId}_toggle`);
+                    if (groupToggler) {
+                        function autoActivate() {
+                            groupToggler.checked = true;
+                            doToggleGroup(`input_group_content_${groupId}`);
+                        }
+                        // Tiny delay to avoid activating the group during setup
+                        setTimeout(() => {
+                            elem.addEventListener('focus', autoActivate);
+                            elem.addEventListener('change', autoActivate);
+                        }, 1);
+                    }
+                }
+            }
         }
         let inputAspectRatio = document.getElementById('input_aspectratio');
         let inputWidth = document.getElementById('input_width');
