@@ -32,6 +32,14 @@ public class Installation
         await InstallSocket.SendJson(new JObject() { ["info"] = str }, API.WebsocketTimeout);
     }
 
+    /// <summary>Send a progress update for the installation down the websocket.</summary>
+    public static void UpdateProgress(long progress, long total, long perSec)
+    {
+        // TODO: better way to send these out without waiting
+        InstallSocket.SendJson(new JObject() { ["progress"] = progress, ["total"] = total, ["steps"] = StepsThusFar, ["total_steps"] = TotalSteps, ["per_second"] = perSec }, API.WebsocketTimeout).Wait();
+    }
+
+    /// <summary>Configure the theme during installation.</summary>
     public static async Task Theme(string theme)
     {
         if (Program.Web.RegisteredThemes.ContainsKey(theme))
@@ -46,6 +54,7 @@ public class Installation
         }
     }
 
+    /// <summary>Configure the "installed for" setting during installation.</summary>
     public static async Task InstalledFor(string installed_for)
     {
         switch (installed_for)
@@ -68,12 +77,8 @@ public class Installation
                 throw new SwarmUserErrorException($"Invalid install type '{installed_for}'!");
         }
     }
-    public static void UpdateProgress(long progress, long total, long perSec)
-    {
-        // TODO: better way to send these out without waiting
-        InstallSocket.SendJson(new JObject() { ["progress"] = progress, ["total"] = total, ["steps"] = StepsThusFar, ["total_steps"] = TotalSteps, ["per_second"] = perSec }, API.WebsocketTimeout).Wait();
-    }
 
+    /// <summary>Configure the backend as ComfyUI specifically for Windows during installation.</summary>
     public static async Task<(string, string, bool)> BackendComfyWindows(bool install_amd)
     {
         try
@@ -163,6 +168,7 @@ public class Installation
         return (path, extraArgs, enablePreviews);
     }
 
+    /// <summary>Configure the backend as ComfyUI during installation.</summary>
     public static async Task BackendComfy(bool install_amd)
     {
         await Output("Downloading ComfyUI backend... please wait...");
@@ -208,6 +214,7 @@ public class Installation
         Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim(), EnablePreviews = enablePreviews });
     }
 
+    /// <summary>Configure the backend during installation.</summary>
     public static async Task Backend(string backend, bool install_amd)
     {
         switch (backend)
@@ -225,6 +232,7 @@ public class Installation
         }
     }
 
+    /// <summary>Run model downloads during installation.</summary>
     public static async Task Models(string models)
     {
         if (models == "none")
@@ -270,9 +278,7 @@ public class Installation
     {
         if (Directory.Exists("dlbackend/comfy"))
         {
-            Logs.Error("It looks like a previous install already exists here. If you are intentionally rerunning the installer, please delete 'Data' and 'dlbackend' folders from the Swarm folder.");
-            await socket.SendJson(new JObject() { ["error"] = $"It looks like a previous install already exists here. If you are intentionally rerunning the installer, please delete 'Data' and 'dlbackend' folders from the Swarm folder." }, API.WebsocketTimeout);
-            return;
+            throw new SwarmUserErrorException("It looks like a previous install already exists here. If you are intentionally rerunning the installer, please delete 'Data' and 'dlbackend' folders from the Swarm folder.");
         }
         InstallSocket = socket;
         await Output("Installation request received, processing...");
