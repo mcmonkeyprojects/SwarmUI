@@ -13,13 +13,11 @@ using System.Net.WebSockets;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using System;
 using System.Net;
 using System.Diagnostics;
 using SwarmUI.Text2Image;
 using System.Net.Sockets;
 using Microsoft.VisualBasic.FileIO;
-using Hardware.Info;
 
 namespace SwarmUI.Utils;
 
@@ -979,18 +977,5 @@ public static class Utilities
             return inner.Message;
         }
         return $"{ex}";
-    }
-
-    /// <summary>Returns the total virtual memory for this <see cref="MemoryStatus"/> instance, equivalent to <see cref="MemoryStatus.TotalVirtual"/>, but with a correction for the fact that this appears to scale gigabytes up to terabytes in some cases.
-    /// TODO: This is probably wrong, the root issue is probably actually just Windows API is giving entirely wrong values.
-    /// </summary>
-    public static ulong FixedTotalVirtual(this MemoryStatus memStatus)
-    {
-        ulong totalVirtual = memStatus.TotalVirtual;
-        if (totalVirtual > 2ul * 1024 * 1024 * 1024 * 1024)
-        {
-            totalVirtual /= 1024;
-        }
-        return totalVirtual;
     }
 }

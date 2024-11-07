@@ -366,12 +366,15 @@ public static class NetworkBackendUtils
                 if (everLoaded && !Program.GlobalProgramCancel.IsCancellationRequested)
                 {
                     Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
-                    (HardwareInfo, float)[] info = [.. SystemStatusMonitor.HardwareInfoQueue.Select(x => (x, x.MemoryStatus.AvailableVirtual / (float)x.MemoryStatus.TotalVirtual)).Where(x => x.Item2 > 0.8)];
-                    if (info.Any())
+                    Func<HardwareInfo, float> memSelector = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? x => 1 - (x.MemoryStatus.AvailablePhysical / (float)x.MemoryStatus.TotalPhysical) : x => 1 - (x.MemoryStatus.AvailableVirtual / (float)x.MemoryStatus.TotalVirtual);
+                    (HardwareInfo, float)[] info = [.. SystemStatusMonitor.HardwareInfoQueue.Select(x => (x, memSelector(x)))];
+                    Logs.Debug($"Memory usage before crash was: {info.Reverse().Take(5).Select(x => $"{x.Item2 * 100:#.0}%").JoinString(", ")}");
+                    (HardwareInfo, float) match = info.FirstOrDefault(x => x.Item2 > 0.8);
+                    if (match.Item1 is not null)
                     {
                         Logs.Warning("\n\n");
-                        Logs.Warning($"Your system memory usage exceeded {info[0].Item2 * 100:#.0}% just before the backend process failed. This might indicate a memory overload.");
-                        ulong virtualMem = info[0].Item1.MemoryStatus.TotalVirtual - info[0].Item1.MemoryStatus.TotalPhysical;
+                        Logs.Warning($"Your system memory usage exceeded {match.Item2 * 100:#.0}% just before the backend process failed. This might indicate a memory overload.");
+                        ulong virtualMem = match.Item1.MemoryStatus.TotalVirtual - match.Item1.MemoryStatus.TotalPhysical;
                         float gigs = new MemoryNum((long)virtualMem).GiB;
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // TODO: Temporary because windows API is probably just wrong about virtual memory
                         {
@@ -379,7 +382,7 @@ public static class NetworkBackendUtils
                             Logs.Warning("Consider closing background processes, or greatly expanding your pagefile size (see https://www.windowscentral.com/software-apps/windows-11/how-to-manage-virtual-memory-on-windows-11 for more info).");
                             Logs.Warning("Or, reduce the size of what you're trying to run. If you're running an FP16 or FP8 model, consider a quantized variant like GGUF Q4.");
                         }
-                        else if (gigs < 32 || virtualMem * 2 < info[0].Item1.MemoryStatus.TotalPhysical)
+                        else if (gigs < 32 || virtualMem * 2 < match.Item1.MemoryStatus.TotalPhysical)
                         {
                             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                             {
