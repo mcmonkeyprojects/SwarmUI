@@ -135,33 +135,28 @@ public class Installation
         await Process.Start(new ProcessStartInfo(Path.GetFullPath("dlbackend/vc_redist.x64.exe"), "/quiet /install /passive /norestart") { UseShellExecute = true }).WaitForExitAsync(Program.GlobalProgramCancel);
         string path = "dlbackend/comfy/ComfyUI/main.py";
         string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
+        if (install_amd)
+        {
+            await Output("Fixing Comfy install for AMD...");
+            // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
+            File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
+        }
         string fetchResp = await Utilities.RunGitProcess($"fetch", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git fetch response: {fetchResp}");
         string checkoutResp = await Utilities.RunGitProcess($"checkout master", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git checkout master response: {checkoutResp}");
+        string response = await Utilities.RunGitProcess($"pull", $"{comfyFolderPath}/ComfyUI");
+        Logs.Debug($"ComfyUI Install git pull response: {response}");
+        await Output("Ensuring all current Comfy requirements are installed...");
+        await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install -U -r ComfyUI/requirements.txt") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
         string extraArgs = "";
         bool enablePreviews = true;
         if (install_amd)
         {
             enablePreviews = false;
-            Logs.LogLevel level = Logs.MinimumLevel;
-            Logs.MinimumLevel = Logs.LogLevel.Verbose;
-            try
-            {
-                await Output("Fixing Comfy install...");
-                // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
-                File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
-                string response = await Utilities.RunGitProcess($"pull", $"{comfyFolderPath}/ComfyUI");
-                Logs.Debug($"ComfyUI Install git pull response: {response}");
-                await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install -U -r ComfyUI/requirements.txt") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
-                await Output("Installing AMD compatible Torch-DirectML...");
-                await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install torch-directml") { UseShellExecute = false, WorkingDirectory = comfyFolderPath }, "ComfyUI Install (directml)", "comfyinstall");
-                extraArgs += "--directml ";
-            }
-            finally
-            {
-                Logs.MinimumLevel = level;
-            }
+            await Output("Installing AMD compatible Torch-DirectML...");
+            await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install torch-directml") { UseShellExecute = false, WorkingDirectory = comfyFolderPath }, "ComfyUI Install (directml)", "comfyinstall");
+            extraArgs += "--directml ";
         }
         return (path, extraArgs, enablePreviews);
     }
