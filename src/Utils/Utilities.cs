@@ -981,7 +981,9 @@ public static class Utilities
         return $"{ex}";
     }
 
-    /// <summary>Returns the total virtual memory for this <see cref="MemoryStatus"/> instance, equivalent to <see cref="MemoryStatus.TotalVirtual"/>, but with a correction for the fact that this appears to scale gigabytes up to terabytes in some cases.</summary>
+    /// <summary>Returns the total virtual memory for this <see cref="MemoryStatus"/> instance, equivalent to <see cref="MemoryStatus.TotalVirtual"/>, but with a correction for the fact that this appears to scale gigabytes up to terabytes in some cases.
+    /// TODO: This is probably wrong, the root issue is probably actually just Windows API is giving entirely wrong values.
+    /// </summary>
     public static ulong FixedTotalVirtual(this MemoryStatus memStatus)
     {
         ulong totalVirtual = memStatus.TotalVirtual;
