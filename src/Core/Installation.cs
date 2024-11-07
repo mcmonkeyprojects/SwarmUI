@@ -155,7 +155,10 @@ public class Installation
         string response = await Utilities.RunGitProcess($"pull", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git pull response: {response}");
         await Output("Ensuring all current Comfy requirements are installed...");
-        await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install -U -r ComfyUI/requirements.txt") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
+        string requirementsRaw = File.ReadAllText($"{comfyFolderPath}/ComfyUI/requirements.txt");
+        // Exclude torch requirements here as pip installing those just breaks things
+        string[] requirements = [.. requirementsRaw.Replace('\r', '\n').Split('\n').Select(r => r.Trim()).Where(r => !string.IsNullOrWhiteSpace(r) && !r.StartsWith("torch"))];
+        await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", $"-s -m pip install{(install_amd ? "-U " : "")} {requirements.JoinString(" ")}") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
         string extraArgs = "";
         bool enablePreviews = true;
         if (install_amd)
