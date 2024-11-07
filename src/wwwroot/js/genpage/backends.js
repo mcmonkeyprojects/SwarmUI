@@ -9,10 +9,12 @@ let hasLoadedBackends = false;
 
 function addNewBackend(type_id) {
     if (confirm(`Are you sure you want to add a new backend of type ${backend_types[type_id].name}?`)) {
-        genericRequest('AddNewBackend', {'type_id': type_id}, data => {
-            backends_loaded[data.id] = data;
-            addBackendToHtml(data, false);
-        });
+        if (backend_types[type_id].is_standard || confirm('This backend type is labeled as Advanced users only. This is likely not a backend you want to use. Are you sure you want to continue?')) {
+            genericRequest('AddNewBackend', {'type_id': type_id}, data => {
+                backends_loaded[data.id] = data;
+                addBackendToHtml(data, false);
+            });
+        }
     }
 }
 
