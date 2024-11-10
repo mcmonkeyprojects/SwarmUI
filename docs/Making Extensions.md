@@ -47,6 +47,8 @@ These standards are newly written as of October 2024, and may change over time b
     - I say "minimal" because if you want to put a "Sponsor me on GitHub (here)" link in your readme or something, that's okay. Just don't be in people's faces about it (no popups, no centerscreen messages, etc.)
     - Non-financial promotions (such as advertising your other Swarm extensions) falls under the same rule - minimal mention in a readme or something is fine, shoving it in people's faces is not.
     - Advertisement of any form for any entity that is not yourself (the creator of the extension) is strictly forbidden.
+- **7: General Style Match**: The UI portions of your extension should aim to match the general styling of Swarm itself, in a way that is compatible with user theme selection.
+    - If you think Swarm could look better, maybe make a PR to Swarm's CSS or PR a new theme?
 
 # Example: A Custom Comfy-Node-Backed Parameter
 
