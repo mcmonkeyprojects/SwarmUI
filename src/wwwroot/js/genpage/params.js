@@ -527,8 +527,8 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     if (imageEditor.active) {
         input["initimage"] = imageEditor.getFinalImageData();
         input["maskimage"] = imageEditor.getFinalMaskData();
-        input["width"] = imageEditor.realWidth;
-        input["height"] = imageEditor.realHeight;
+        input["width"] = Math.floor(imageEditor.realWidth / 8) * 8;
+        input["height"] = Math.floor(imageEditor.realHeight / 8) * 8;
         if (!input["initimagecreativity"]) {
             let param = document.getElementById('input_initimagecreativity');
             if (param) {
