@@ -389,7 +389,7 @@ public class T2IParamTypes
             ));
         GroupSampling = new("Sampling", Toggles: false, Open: false, OrderPriority: -8);
         SD3TextEncs = Register<string>(new("SD3 TextEncs", "Which text encoders to use for Stable Diffusion 3 (SD3) models.\nCan use CLIP pairs, or T5, or both.\nBoth is the standard way to run SD3, but CLIP only uses fewer system resources.",
-            "CLIP Only", GetValues: _ => ["CLIP Only", "T5 Only", "CLIP + T5"], Toggleable: true, Group: GroupSampling, FeatureFlag: "sd3", OrderPriority: 5, ChangeWeight: 9
+            "CLIP + T5", GetValues: _ => ["CLIP Only", "T5 Only", "CLIP + T5"], Toggleable: true, Group: GroupSampling, FeatureFlag: "sd3", OrderPriority: 5, ChangeWeight: 9
             ));
         FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux-Dev models.\nDoes not apply to Flux-Schnell.\nThis is a distilled embedded value the model was trained on, this is based on an alternative guidance methodology, and is not CFG.\n3.5 is default, but closer to 2.0 may allow for more stylistic flexibility.",
             "3.5", Min: 0, Max: 100, ViewMax: 10, Step: 0.1, Toggleable: true, Group: GroupSampling, ViewType: ParamViewType.SLIDER, FeatureFlag: "flux-dev"
@@ -413,7 +413,7 @@ public class T2IParamTypes
         MaskImage = Register<Image>(new("Mask Image", "Mask-image, white pixels are changed, black pixels are not changed, gray pixels are half-changed.",
             null, OrderPriority: -4, Group: GroupInitImage, ChangeWeight: 2
             ));
-        MaskShrinkGrow = Register<int>(new("Mask Shrink Grow", "If enabled, the image will be shrunk to just the mask, and then grow by this value many pixels.\nAfter that, the generation process will run in full, and the image will be composited back into the original image at the end.\nThis allows for refining small details of an image for effectively.\nThis is also known as 'Inpaint Only Masked'.\nLarger values increase the surrounding context the generation receives, lower values contain it tighter and allow the AI to create more detail.",
+        MaskShrinkGrow = Register<int>(new("Mask Shrink Grow", "If enabled, the image will be shrunk to just the mask, and then grow by this value many pixels.\nAfter that, the generation process will run in full, and the image will be composited back into the original image at the end.\nThis allows for refining small details of an image more effectively.\nThis is also known as 'Inpaint Only Masked'.\nLarger values increase the surrounding context the generation receives, lower values contain it tighter and allow the AI to create more detail.",
             "8", Toggleable: true, Min: 0, Max: 512, OrderPriority: -3.7, Group: GroupInitImage, Examples: ["0", "8", "32"]
             ));
         MaskBlur = Register<int>(new("Mask Blur", "If enabled, the mask will be blurred by this blur factor.\nThis makes the transition for the new image smoother.\nSet to 0 to disable.",

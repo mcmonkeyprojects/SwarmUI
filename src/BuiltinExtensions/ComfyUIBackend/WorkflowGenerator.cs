@@ -692,7 +692,7 @@ public class WorkflowGenerator
             {
                 if (tencs == "")
                 {
-                    mode = "CLIP Only";
+                    mode = "CLIP + T5";
                 }
                 else
                 {
