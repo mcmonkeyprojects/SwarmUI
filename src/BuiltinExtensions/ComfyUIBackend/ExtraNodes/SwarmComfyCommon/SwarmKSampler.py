@@ -72,6 +72,10 @@ def make_swarm_sampler_callback(steps, device, model, previews):
     def callback(step, x0, x, total_steps):
         pbar.update_absolute(step + 1, total_steps, None)
         if previewer:
+            if x0.ndim == 5:
+                # mochi shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
+                x0 = x0[0].permute(1, 0, 2, 3)
+                x0 = torch.flip(x0, [0])
             def do_preview(id, index):
                 preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])
                 swarm_send_extra_preview(id, preview_img[1])
