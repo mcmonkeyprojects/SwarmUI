@@ -1271,24 +1271,26 @@ function reviseStatusBar() {
 function reviseBackendFeatureSet() {
     currentBackendFeatureSet = Array.from(currentBackendFeatureSet);
     let addMe = [], removeMe = [];
-    if (curModelCompatClass && curModelCompatClass.startsWith('stable-diffusion-v3')) {
-        addMe.push('sd3');
+    function doCompatFeature(compatClass, featureFlag) {
+        if (curModelCompatClass && curModelCompatClass.startsWith(compatClass)) {
+            addMe.push(featureFlag);
+        }
+        else {
+            removeMe.push(featureFlag);
+        }
     }
-    else {
-        removeMe.push('sd3');
+    function doArchFeature(compatClass, featureFlag) {
+        if (curModelArch && curModelArch.startsWith(compatClass)) {
+            addMe.push(featureFlag);
+        }
+        else {
+            removeMe.push(featureFlag);
+        }
     }
-    if (curModelArch == 'Flux.1-dev') {
-        addMe.push('flux-dev');
-    }
-    else {
-        removeMe.push('flux-dev');
-    }
-    if (curModelArch == 'genmo-mochi-1') {
-        addMe.push('text2video');
-    }
-    else {
-        removeMe.push('text2video');
-    }
+    doCompatFeature('stable-diffusion-v3', 'sd3');
+    doCompatFeature('stable-cascade-v1', 'cascade');
+    doArchFeature('Flux.1-dev', 'flux-dev');
+    doArchFeature('genmo-mochi-1', 'text2video');
     let anyChanged = false;
     for (let add of addMe) {
         if (!currentBackendFeatureSet.includes(add)) {
