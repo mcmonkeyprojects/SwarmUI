@@ -112,8 +112,8 @@ public class WorkflowGenerator
     /// <summary>If true, Differential Diffusion node has been attached to the current model.</summary>
     public bool IsDifferentialDiffusion = false;
 
-    /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int)"/> if used for the main image.</summary>
-    public (string, string, string) MaskShrunkInfo = (null, null, null);
+    /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/> if used for the main image.</summary>
+    public ImageMaskCropData MaskShrunkInfo = new(null, null, null, null);
 
     /// <summary>Gets the current loaded model class.</summary>
     public T2IModelClass CurrentModelClass()
@@ -334,6 +334,9 @@ public class WorkflowGenerator
         return result;
     }
 
+    /// <summary>For <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/>.</summary>
+    public record class ImageMaskCropData(string BoundsNode, string CroppedMask, string MaskedLatent, string ScaledImage);
+
     /// <summary>Creates an automatic image mask-crop before sampling, to be followed by <see cref="RecompositeCropped(string, string, JArray, JArray)"/> after sampling.</summary>
     /// <param name="mask">The mask node input.</param>
     /// <param name="image">The image node input.</param>
@@ -342,8 +345,8 @@ public class WorkflowGenerator
     /// <param name="model">The model in use, for determining resolution.</param>
     /// <param name="threshold">Optional minimum value threshold.</param>
     /// <param name="thresholdMax">Optional maximum value of the threshold.</param>
-    /// <returns>(boundsNode, croppedMask, maskedLatent).</returns>
-    public (string, string, string) CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1)
+    /// <returns>(boundsNode, croppedMask, maskedLatent, scaledImage).</returns>
+    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1)
     {
         if (threshold > 0)
         {
@@ -389,7 +392,7 @@ public class WorkflowGenerator
             ["samples"] = new JArray() { vaeEncoded, 0 },
             ["mask"] = new JArray() { croppedMask, 0 }
         });
-        return (boundsNode, croppedMask, masked);
+        return new(boundsNode, croppedMask, masked, scaledImage);
     }
 
     /// <summary>Returns a masked image composite with mask thresholding.</summary>

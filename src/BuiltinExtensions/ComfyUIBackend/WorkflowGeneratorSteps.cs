@@ -225,8 +225,8 @@ public class WorkflowGeneratorSteps
                     if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
                     {
                         g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel);
-                        currentMask = [g.MaskShrunkInfo.Item2, 0];
-                        g.FinalLatentImage = [g.MaskShrunkInfo.Item3, 0];
+                        currentMask = [g.MaskShrunkInfo.CroppedMask, 0];
+                        g.FinalLatentImage = [g.MaskShrunkInfo.MaskedLatent, 0];
                     }
                     else
                     {
@@ -632,24 +632,40 @@ public class WorkflowGeneratorSteps
         #region ControlNet
         AddStep(g =>
         {
-            Image firstImage = g.UserInput.Get(T2IParamTypes.Controlnets[0].Image, null) ?? g.UserInput.Get(T2IParamTypes.InitImage, null);
+            JArray firstImageNode = null;
             for (int i = 0; i < 3; i++)
             {
                 T2IParamTypes.ControlNetParamHolder controlnetParams = T2IParamTypes.Controlnets[i];
                 if (g.UserInput.TryGet(controlnetParams.Strength, out double controlStrength))
                 {
                     string imageInput = "${" + controlnetParams.Image.Type.ID + "}";
-                    if (!g.UserInput.TryGet(controlnetParams.Image, out Image img))
+                    JArray imageNodeActual = null;
+                    if (g.UserInput.TryGet(controlnetParams.Image, out Image img))
                     {
-                        if (firstImage is null)
+                        string imageNode = g.CreateLoadImageNode(img, imageInput, true);
+                        imageNodeActual = [imageNode, 0];
+                    }
+                    else
+                    {
+                        if (i == 0 ? g.FinalInputImage is null : firstImageNode is null)
                         {
                             Logs.Verbose($"Following error relates to parameters: {g.UserInput.ToJSON().ToDenseDebugString()}");
                             throw new SwarmUserErrorException("Must specify either a ControlNet Image, or Init image. Or turn off ControlNet if not wanted.");
                         }
-                        img = firstImage;
+                        if (i == 0)
+                        {
+                            firstImageNode = g.FinalInputImage;
+                            if (g.MaskShrunkInfo.ScaledImage is not null)
+                            {
+                                firstImageNode = [g.MaskShrunkInfo.ScaledImage, 0];
+                            }
+                        }
+                        imageNodeActual = firstImageNode;
                     }
-                    string imageNode = g.CreateLoadImageNode(img, imageInput, true);
-                    JArray imageNodeActual = [imageNode, 0];
+                    if (i == 0)
+                    {
+                        firstImageNode = imageNodeActual;
+                    }
                     T2IModel controlModel = g.UserInput.Get(controlnetParams.Model, null);
                     if (!g.UserInput.TryGet(ComfyUIBackendExtension.ControlNetPreprocessorParams[i], out string preprocessor))
                     {
@@ -721,7 +737,7 @@ public class WorkflowGeneratorSteps
                         JArray preprocActual;
                         if (objectData is JObject objObj && objObj.TryGetValue("swarm_custom", out JToken swarmCustomTok) && swarmCustomTok.Value<bool>())
                         {
-                            preprocActual = g.CreateNodesFromSpecialSyntax(objObj, [[imageNode, 0]]);
+                            preprocActual = g.CreateNodesFromSpecialSyntax(objObj, [imageNodeActual]);
                         }
                         else
                         {
@@ -729,7 +745,7 @@ public class WorkflowGeneratorSteps
                             {
                                 n["inputs"] = new JObject()
                                 {
-                                    ["image"] = new JArray() { $"{imageNode}", 0 }
+                                    ["image"] = imageNodeActual
                                 };
                                 foreach (string type in new[] { "required", "optional" })
                                 {
@@ -895,8 +911,8 @@ public class WorkflowGeneratorSteps
         }, -5);
         JArray doMaskShrinkApply(WorkflowGenerator g, JArray imgIn)
         {
-            (string boundsNode, string croppedMask, string masked) = g.MaskShrunkInfo;
-            g.MaskShrunkInfo = (null, null, null);
+            (string boundsNode, string croppedMask, string masked, string scaledImage) = g.MaskShrunkInfo;
+            g.MaskShrunkInfo = new(null, null, null, null);
             if (boundsNode is not null)
             {
                 imgIn = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalInputImage, imgIn);
@@ -934,7 +950,7 @@ public class WorkflowGeneratorSteps
                 bool doUspcale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
                 // TODO: Better same-VAE check
                 bool doPixelUpscale = doUspcale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
-                if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.Item1 is not null)
+                if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
                     g.CreateVAEDecode(origVae, g.FinalSamples, "24");
                     JArray pixelsNode = ["24", 0];
@@ -1119,7 +1135,7 @@ public class WorkflowGeneratorSteps
                         });
                         g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                     }
-                    (string boundsNode, string croppedMask, string masked) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
+                    (string boundsNode, string croppedMask, string masked, string scaledImage) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
                     g.EnableDifferential();
                     (model, clip) = g.LoadLorasForConfinement(part.ContextID, model, clip);
                     JArray prompt = g.CreateConditioning(part.Prompt, clip, t2iModel, true);
