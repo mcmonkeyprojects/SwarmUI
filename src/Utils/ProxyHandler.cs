@@ -2,7 +2,6 @@
 using SwarmUI.Core;
 using System.Diagnostics;
 using System.IO;
-using System.Net.NetworkInformation;
 
 namespace SwarmUI.Utils;
 
@@ -44,7 +43,7 @@ public class PublicProxyHandler
         else if (Name == "Ngrok")
         {
             start.ArgumentList.Add("http");
-            start.ArgumentList.Add(WebServer.HostURL);
+            start.ArgumentList.Add($"http://localhost:{WebServer.Port}");
             if (Region is not null)
             {
                 start.ArgumentList.Add("--region");
@@ -62,7 +61,7 @@ public class PublicProxyHandler
         {
             start.ArgumentList.Add("tunnel");
             start.ArgumentList.Add("--url");
-            start.ArgumentList.Add(WebServer.HostURL);
+            start.ArgumentList.Add($"http://localhost:{WebServer.Port}");
             if (Region is not null)
             {
                 start.ArgumentList.Add($"--region={Region}");
