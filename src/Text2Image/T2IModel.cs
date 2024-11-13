@@ -68,6 +68,10 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
         }
         lock (Handler.ModificationLock)
         {
+            if (Metadata.Hash is not null)
+            {
+                return Metadata.Hash;
+            }
             using FileStream reader = File.OpenRead(RawFilePath);
             byte[] headerLen = new byte[8];
             reader.ReadExactly(headerLen, 0, 8);
