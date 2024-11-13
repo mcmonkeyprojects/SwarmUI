@@ -623,7 +623,6 @@ public class T2IParamInput
     {
         SourceSession = session;
         InterruptToken = session is null ? new CancellationTokenSource().Token : session.SessInterrupt.Token;
-        ExtraMeta["swarm_version"] = Utilities.Version;
         ExtraMeta["date"] = DateTime.Now.ToString("yyyy-MM-dd");
     }
 
@@ -709,25 +708,34 @@ public class T2IParamInput
         return result;
     }
 
-    /// <summary>Generates a metadata JSON object for this input and the given set of extra parameters.</summary>
-    public JObject GenMetadataObject()
+    public static JToken MetadatableToJTok(object val)
+    {
+        if (val is Image)
+        {
+            return null;
+        }
+        if (val is string str)
+        {
+            val = FillEmbedsInString(str, e => $"<embed:{e}>");
+        }
+        if (val is T2IModel model)
+        {
+            val = T2IParamTypes.CleanModelName(model.Name);
+        }
+        return JToken.FromObject(val);
+    }
+
+    /// <summary>Generates a metadata JSON object for this input's parameters.</summary>
+    public JObject GenParameterMetadata()
     {
         JObject output = [];
-        foreach ((string key, object origVal) in ValuesInput.Union(ExtraMeta))
+        foreach ((string key, object origVal) in ValuesInput)
         {
             object val = origVal;
             if (val is null)
             {
                 Logs.Warning($"Null parameter {key} in T2I parameters?");
-                continue;
-            }
-            if (val is Image)
-            {
-                continue;
-            }
-            if (val is string str)
-            {
-                val = FillEmbedsInString(str, e => $"<embed:{e}>");
+                return null;
             }
             if (T2IParamTypes.TryGetType(key, out T2IParamType type, this))
             {
@@ -740,11 +748,11 @@ public class T2IParamInput
                     val = type.MetadataFormat($"{val}");
                 }
             }
-            if (val is T2IModel model)
+            JToken token = MetadatableToJTok(val);
+            if (token is not null)
             {
-                val = T2IParamTypes.CleanModelName(model.Name);
+                output[key] = token;
             }
-            output[key] = JToken.FromObject(val);
         }
         if (output.TryGetValue("original_prompt", out JToken origPrompt) && output.TryGetValue("prompt", out JToken prompt) && origPrompt == prompt)
         {
@@ -757,20 +765,44 @@ public class T2IParamInput
         return output;
     }
 
-    /// <summary>Aggressively safe JSON Serializer Settings for metadata encoding.</summary>
-    public static JsonSerializerSettings SafeSerializer = new() { Formatting = Formatting.Indented, StringEscapeHandling = StringEscapeHandling.EscapeNonAscii };
+    /// <summary>Keys for <see cref="ExtraMeta"/> that identify lists of extra models to track, as a pair of (key, model-sub-type).</summary>
+    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("used_loras", "LoRA")];
+
+    /// <summary>Generates a metadata JSON object for this input's data.</summary>
+    public JObject GenFullMetadataObject()
+    {
+        JObject paramData = GenParameterMetadata();
+        paramData["swarm_version"] = Utilities.Version;
+        JObject final = new() { ["sui_image_params"] = paramData };
+        JObject extraData = [];
+        foreach ((string key, object val) in ExtraMeta)
+        {
+            JToken token = MetadatableToJTok(val);
+            if (token is not null)
+            {
+                extraData[key] = token;
+            }
+        }
+        if (extraData.Count > 0)
+        {
+            final["sui_extra_data"] = extraData;
+        }
+        return final;
+    }
 
     /// <summary>Generates a metadata JSON object for this input and creates a proper string form of it, fit for inclusion in an image.</summary>
     public string GenRawMetadata()
     {
-        JObject obj = GenMetadataObject();
-        return MetadataToString(obj);
+        return MetadataToString(GenFullMetadataObject());
     }
+
+    /// <summary>Aggressively safe JSON Serializer Settings for metadata encoding.</summary>
+    public static JsonSerializerSettings SafeSerializer = new() { Formatting = Formatting.Indented, StringEscapeHandling = StringEscapeHandling.EscapeNonAscii };
 
     /// <summary>Converts a metadata JSON object to a string.</summary>
     public static string MetadataToString(JObject obj)
     {
-        return JsonConvert.SerializeObject(new JObject() { ["sui_image_params"] = obj }, SafeSerializer).Replace("\r\n", "\n");
+        return JsonConvert.SerializeObject(obj, SafeSerializer).Replace("\r\n", "\n");
     }
 
     /// <summary>Special utility to process prompt inputs before the request is executed (to parse wildcards, embeddings, etc).</summary>

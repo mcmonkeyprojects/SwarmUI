@@ -83,12 +83,14 @@ function copy_current_image_params() {
         return;
     }
     let readable = interpretMetadata(currentMetadataVal);
-    let metadata = JSON.parse(readable).sui_image_params;
-    if ('original_prompt' in metadata) {
-        metadata.prompt = metadata.original_prompt;
+    let metadataFull = JSON.parse(readable);
+    let metadata = metadataFull.sui_image_params;
+    let extra = metadataFull.sui_extra_data || metadata;
+    if ('original_prompt' in extra) {
+        metadata.prompt = extra.original_prompt;
     }
-    if ('original_negativeprompt' in metadata) {
-        metadata.negativeprompt = metadata.original_negativeprompt;
+    if ('original_negativeprompt' in extra) {
+        metadata.negativeprompt = extra.original_negativeprompt;
     }
     // Special hacks to repair edge cases in LoRA reuse
     // There should probably just be a direct "for lora in list, set lora X with weight Y" instead of this
@@ -171,7 +173,7 @@ function formatMetadata(metadata) {
         if (!readable) {
             return '';
         }
-        data = JSON.parse(readable).sui_image_params;
+        data = JSON.parse(readable);
     }
     catch (e) {
         console.log(`Error parsing metadata '${metadata}': ${e}`);
@@ -203,7 +205,10 @@ function formatMetadata(metadata) {
             }
         }
     };
-    appendObject(data);
+    appendObject(data.sui_image_params);
+    if ('sui_extra_data' in data) {
+        appendObject(data.sui_extra_data);
+    }
     return result;
 }
 

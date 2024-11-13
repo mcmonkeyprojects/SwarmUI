@@ -3,7 +3,8 @@
 let all_metadata = {};
 
 function getScoreFor(img) {
-    return (((all_metadata[img] || {})['sui_image_params'] || {})['scoring'] || {})['average'] || null;
+    let meta = all_metadata[img] || {};
+    return ((meta['sui_image_params'] || {})['scoring'] || {})['average'] || ((meta['sui_extra_data'] || {})['scoring'] || {})['average'] || null;
 }
 
 function getMetadataScriptFor(slashed) {
@@ -19,8 +20,7 @@ function getMetadataForImage(img) {
 }
 
 function formatMetadata(metadata) {
-    let data = metadata.sui_image_params;
-    if (!data) {
+    if (!metadata || !metadata['sui_image_params']) {
         return '';
     }
     let result = '';
@@ -39,6 +39,9 @@ function formatMetadata(metadata) {
             }
         }
     };
-    appendObject(data);
+    appendObject(data.sui_image_params);
+    if ('sui_extra_data' in data) {
+        appendObject(data.sui_extra_data);
+    }
     return result;
 }
