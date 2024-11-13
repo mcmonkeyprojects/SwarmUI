@@ -22,6 +22,9 @@ public abstract class Extension
     /// <summary>Human-readable short description of this extension.</summary>
     public string Description = "(No description provided)";
 
+    /// <summary>What license this extension is under (eg 'MIT', 'LGPL', ...).</summary>
+    public string License = "(Unknown)";
+
     /// <summary>URL to the readme or GitHub repo for this extension.</summary>
     public string ReadmeURL = "";
 
@@ -103,6 +106,7 @@ public abstract class Extension
             if (relevantInfo is not null)
             {
                 ExtensionAuthor = relevantInfo.Author;
+                License = relevantInfo.License;
                 Description = relevantInfo.Description;
                 Tags = relevantInfo.Tags;
             }

@@ -1384,3 +1384,6 @@ body {
 .active-model-download-card .status-text {
     font-size: 80%;
 }
+.ext-danger-license {
+    background-color: rgba(255, 0, 0, 0.03);
+}

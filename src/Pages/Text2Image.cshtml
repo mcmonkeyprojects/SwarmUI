@@ -992,6 +992,7 @@
                             <th>Author</th>
                             <th>Description</th>
                             <th>Readme</th>
+                            <th>License</th>
                             <th>Actions</th>
                         </tr>
                         @foreach (Extension ext in Program.Extensions.Extensions.Where(e => !e.IsCore))
@@ -1003,6 +1004,7 @@
                                 <td>@ext.ExtensionAuthor</td>
                                 <td>@ext.Description</td>
                                 <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
+                                <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                                 <td>
                                     @if (ext.CanUpdate)
                                     {
@@ -1021,6 +1023,7 @@
                             <th>Author</th>
                             <th>Description</th>
                             <th>Readme</th>
+                            <th>License</th>
                             <th>Actions</th>
                         </tr>
                         @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
@@ -1030,6 +1033,7 @@
                                 <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
                                 <td>@ext.Author</td>
                                 <td>@ext.Description</td>
+                                <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                                 <td><a href="@ext.URL">Here</a></td>
                                 <td>
                                     <button class="basic-button" onclick="extensionsManager.installExtension('@ext.Name', this)">Install</button>

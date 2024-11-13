@@ -15,7 +15,7 @@ public class ExtensionsManager
     public HashSet<string> LoadedExtensionFolders = [];
 
     /// <summary>Simple holder of information about extensions available online.</summary>
-    public record class ExtensionInfo(string Name, string Author, string Description, string URL, string[] Tags, string FolderName)
+    public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string[] Tags, string FolderName)
     {
     }
 
@@ -115,7 +115,7 @@ public class ExtensionsManager
         {
             FDSSection section = extensionsOutThere.GetSection(name);
             string url = section.GetString("url");
-            KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
+            KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
         }
         RunOnAllExtensions(e => e.PopulateMetadata());
     }
