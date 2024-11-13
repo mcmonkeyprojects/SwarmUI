@@ -185,7 +185,7 @@ public class T2IModelHandler
 
     public T2IModel GetModel(string name)
     {
-        if (Models.TryGetValue(name, out T2IModel model))
+        if (Models.TryGetValue(name, out T2IModel model) || Models.TryGetValue(name + ".safetensors", out model))
         {
             return model;
         }

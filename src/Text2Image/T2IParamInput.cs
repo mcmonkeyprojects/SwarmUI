@@ -776,7 +776,7 @@ public class T2IParamInput
     }
 
     /// <summary>Keys for <see cref="ExtraMeta"/> that identify lists of extra models to track, as a pair of (key, model-sub-type).</summary>
-    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("used_loras", "LoRA")];
+    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("loras", "LoRA")];
 
     /// <summary>Generates a metadata JSON object for this input's data.</summary>
     public JObject GenFullMetadataObject()
@@ -804,6 +804,7 @@ public class T2IParamInput
             {
                 if (model is null)
                 {
+                    Logs.Debug($"Model param '{param}' is null, will not list in sui_models metadata");
                     return;
                 }
                 models.Add(new JObject()
@@ -833,7 +834,7 @@ public class T2IParamInput
             }
             foreach ((string modelListKey, string subType) in ModelListExtraKeys)
             {
-                if (ExtraMeta.TryGetValue(modelListKey, out object val))
+                if (ExtraMeta.TryGetValue(modelListKey, out object val) || ValuesInput.TryGetValue(modelListKey, out val))
                 {
                     addModelsFor(modelListKey, val);
                     if (val is List<string> strlist)
