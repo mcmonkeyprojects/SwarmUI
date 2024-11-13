@@ -285,7 +285,7 @@ public class GridGeneratorExtension : Extension
         string[] history = LoadableHistoryList.GetOrCreate(session.User.UserID, () =>
         {
             List<string> results = [];
-            foreach (string dir in Directory.EnumerateDirectories($"{session.User.OutputDirectory}/Grids/"))
+            foreach (string dir in Directory.EnumerateDirectories($"{session.User.OutputDirectory}/Grids/").OrderByDescending(Directory.GetCreationTimeUtc))
             {
                 if (File.Exists($"{dir}/swarm_save_config.json"))
                 {
