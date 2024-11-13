@@ -285,6 +285,10 @@ public class WorkflowGenerator
                     throw new SwarmUserErrorException($"LoRA Model '{loras[i]}' not found in the model set.");
                 }
             }
+            if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+            {
+                lora.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
+            }
             if (confinements is not null && confinements.Count > i)
             {
                 int confinementId = int.Parse(confinements[i]);

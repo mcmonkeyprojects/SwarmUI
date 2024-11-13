@@ -457,6 +457,11 @@ public class T2IParamInput
                 context.TrackWarning($"Embedding '{want}' does not exist and will be ignored.");
                 return "";
             }
+            T2IModel embedModel = Program.T2IModelSets["Embedding"].GetModel(matched);
+            if (embedModel is not null && Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+            {
+                embedModel.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded
+            }
             if (matched.Contains(' '))
             {
                 context.TrackWarning($"Embedding model {matched} contains a space and will most likely not function as intended. Please remove spaces from the filename.");
@@ -486,6 +491,11 @@ public class T2IParamInput
                 context.TrackWarning($"Lora '{lora}' does not exist and will be ignored.");
                 return null;
             }
+            T2IModel loraModel = Program.T2IModelSets["LoRA"].GetModel(matched);
+            if (loraModel is not null && Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+            {
+                loraModel.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded
+            }
             List<string> loraList = context.Input.Get(T2IParamTypes.Loras) ?? [];
             List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights) ?? [];
             List<string> confinements = context.Input.Get(T2IParamTypes.LoraSectionConfinement);
@@ -498,7 +508,7 @@ public class T2IParamInput
             weights.Add(strength.ToString());
             context.Input.Set(T2IParamTypes.Loras, loraList);
             context.Input.Set(T2IParamTypes.LoraWeights, weights);
-            string trigger = Program.T2IModelSets["LoRA"].GetModel(matched)?.Metadata?.TriggerPhrase;
+            string trigger = loraModel?.Metadata?.TriggerPhrase;
             if (!string.IsNullOrWhiteSpace(trigger))
             {
                 context.TriggerPhraseExtra += $"{trigger}, ";
@@ -1114,6 +1124,10 @@ public class T2IParamInput
                 return null;
             }
             model.AutoWarn();
+            if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+            {
+                model.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
+            }
             return model;
         }
         if (param.IgnoreIf is not null && param.IgnoreIf == val)
