@@ -547,8 +547,9 @@ public static class Utilities
                 if (first == waiting)
                 {
                     Logs.Warning($"Download from '{url}' has had no update for 2 minutes. Download may be failing. Will wait 3 more minutes and consider failed if it exceeds 5 total minutes.");
-                    Task waiting2 = Task.Delay(TimeSpan.FromMinutes(5));
-                    if (waiting2 == waiting)
+                    Task waiting2 = Task.Delay(TimeSpan.FromMinutes(3));
+                    Task second = await Task.WhenAny(waiting2, reading);
+                    if (second == waiting2)
                     {
                         chunks.Enqueue(null);
                         throw new SwarmReadableErrorException("Download timed out, 5 minutes with no new data over stream.");
