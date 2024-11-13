@@ -785,7 +785,7 @@ function hideUnsupportableParams() {
         if (groupData.visible > 0) {
             visible = true;
         }
-        else if (groupElem.querySelector('.keep_group_visible')) {
+        else if (groupElem.querySelector('.keep_group_visible') && filter == "") {
             if (!groupData.data.advanced || showAdvanced) {
                 visible = true;
             }
