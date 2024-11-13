@@ -613,7 +613,7 @@ public class ComfyUIBackendExtension : Extension
             "256", Min: 64, Max: 2048, Step: 32, Toggleable: true, IsAdvanced: true, FeatureFlag: "comfyui", ViewType: ParamViewType.POT_SLIDER, Group: T2IParamTypes.GroupRefiners, OrderPriority: 20
             ));
         Text2VideoPreviewType = T2IParamTypes.Register<string>(new("Text2Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",
-            "animate", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupText2Video, IsAdvanced: true, GetValues: (_) => ["animate", "iterate", "one", "none"]
+            "animate", FeatureFlag: "text2video", Group: T2IParamTypes.GroupText2Video, IsAdvanced: true, GetValues: (_) => ["animate", "iterate", "one", "none"]
             ));
         VideoPreviewType = T2IParamTypes.Register<string>(new("Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",
             "animate", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, GetValues: (_) => ["animate", "iterate", "one", "none"]
