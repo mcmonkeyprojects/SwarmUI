@@ -231,6 +231,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, editing model metadata should write a '.swarm.json' file next to the model.\nIf false, apply metadata to the model itself.\nApplying directly to the model is generally better, however the JSON file might be preferable if you have a very slow data drive, as it avoids rewriting the model content.")]
         public bool EditMetadataWriteJSON = false;
+
+        [ConfigComment("If true, image metadata will include a list of models with their hashes.\nThis is useful for services like civitai to automatically link models.\nThis will cause extra time to be taken when new hashes need to be loaded.")]
+        public bool ImageMetadataIncludeModelHash = false;
     }
 
     /// <summary>Settings to control restrictions on users.</summary>

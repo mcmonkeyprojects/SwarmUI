@@ -787,6 +787,60 @@ public class T2IParamInput
         {
             final["sui_extra_data"] = extraData;
         }
+        if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+        {
+            JArray models = [];
+            void addModel(T2IModel model, string param)
+            {
+                if (model is null)
+                {
+                    return;
+                }
+                models.Add(new JObject()
+                {
+                    ["name"] = model.Name,
+                    ["param"] = param,
+                    ["hash"] = model.GetOrGenerateTensorHashSha256()
+                });
+            }
+            void addModelsFor(string key, object val)
+            {
+                if (val is T2IModel model)
+                {
+                    addModel(model, key);
+                }
+                else if (val is List<T2IModel> modelList)
+                {
+                    foreach (T2IModel m in modelList)
+                    {
+                        addModel(m, key);
+                    }
+                }
+            }
+            foreach ((string key, object val) in ValuesInput)
+            {
+                addModelsFor(key, val);
+            }
+            foreach ((string modelListKey, string subType) in ModelListExtraKeys)
+            {
+                if (ExtraMeta.TryGetValue(modelListKey, out object val))
+                {
+                    addModelsFor(modelListKey, val);
+                    if (val is List<string> strlist)
+                    {
+                        foreach (string str in strlist)
+                        {
+                            T2IModel model = Program.T2IModelSets[subType].GetModel(str);
+                            addModel(model, modelListKey);
+                        }
+                    }
+                }
+            }
+            if (models.Count > 0)
+            {
+                final["sui_models"] = models;
+            }
+        }
         return final;
     }
 

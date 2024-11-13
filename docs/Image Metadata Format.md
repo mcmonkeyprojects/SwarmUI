@@ -50,6 +50,20 @@ The key `swarm_version` is also present in the params block.
 
 `sui_extra_data` key is optional, but when present holds extra data generated while processing the image, such as generation time, an `original_prompt` for dynamic prompting, etc.
 
+### sui_models
+
+`sui_models` key is optional, but when present holds an Array of objects identifying all used models.
+
+This is only active when the `ImageMetadataIncludeModelHash` server setting is enabled.
+
+Each model-object contains keys `name`, `param`, and `hash`.
+- `name` is the model's full filename (including the `.safetensors` suffix, only the path after the configured model folder, always forward slashes for subfolders)
+- `param` is what parameter ID the model is attached to, eg `model`, or an ExtraData key like `used_loras`.
+- `hash` is either a SHA256 model tensorhash string, or null.
+    - A tensorhash is a hash of the data of the model processing only its tensor sections and not its header (ie to allow metadata to change without affecting the hash).
+    - A valid hash is `0x` followed by 64 hexadecimal characters.
+    - This may be null if the include hashes setting is enabled but a given model doesn't or can't have a proper hash (eg remote models might not record a hash)
+
 ## Full Example
 
 Here's a full example of the metadata that you might find on an image:
@@ -73,5 +87,12 @@ Here's a full example of the metadata that you might find on an image:
     "date": "2024-11-13",
     "generation_time": "6.11 (prep) and 4.84 (gen) seconds"
   },
+  "sui_models": [
+    {
+      "name": "OfficialStableDiffusion/sd_xl_base_1.0.safetensors",
+      "param": "model",
+      "hash": "0xd7a9105a900fd52748f20725fe52fe52b507fd36bee4fc107b1550a26e6ee1d7"
+    }
+  ]
 }
 ```
