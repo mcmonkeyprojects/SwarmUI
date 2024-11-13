@@ -3,8 +3,8 @@ services:
     image: swarmui
     build: .
     container_name: swarmui
-    # uncomment `networks: host` if you want to access other services on the host network (eg a separated comfy instance)
-    # networks: host
+    # uncomment `network_mode: host` if you want to access other services on the host network (eg a separated comfy instance)
+    # network_mode: host
     volumes:
       - swarmdata:/Data
       - swarmbackend:/dlbackend
