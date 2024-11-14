@@ -97,6 +97,10 @@ public class WebServer
         RegisterTheme(new("cyber_swarm", "Cyber Swarm", ["/css/themes/cyber_swarm.css"], true));
         RegisterTheme(new("punked", "Punked", ["/css/themes/punked.css"], true));
         RegisterTheme(new("eyesear_white", "Eyesear White", ["/css/themes/eyesear_white.css"], false));
+        RegisterTheme(new("beweish", "Beweish", ["/css/themes/beweish.css"], true));
+		RegisterTheme(new("swarmpunk", "Swarm Punk", ["/css/themes/swarmpunk.css"], true));
+		RegisterTheme(new("modern_swarmpunk", "Modern Swarm Punk", ["/css/themes/modern_swarmpunk.css"], true));
+		RegisterTheme(new("modern_beweish", "Modern Beweish", ["/css/themes/modern_beweish.css"], true));
     }
 
     /// <summary>Main prep, called by <see cref="Program"/>, generally should not be touched externally.</summary>
