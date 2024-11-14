@@ -1,0 +1,61 @@
+:root {
+    /* Core colors */
+    --background: #0a0a1f;
+    --background-soft: #0a0a1f;
+    --background-gray: #1a1a3a;
+    --background-gray-danger: #361f1f;
+    --background-danger: #200b0b;
+    --shadow: #00ff9d40;
+    --light-border: #00ff9d40;
+    
+    /* Text colors */
+    --text: #00ff9d;
+    --text-soft: #00ccff;
+    --popup-front: #00ff9d;
+    
+    /* UI Elements */
+    --emphasis: #ff00ff;
+    --emphasis-soft: #cc00cc;
+    --emphasis-text: #00ff9d;
+    --border-color: #00ff9d40;
+    
+    /* Buttons */
+    --button-text: #00ff9d;
+    --button-background: #12122a;
+    --button-background-hover: #1a1a3a;
+    --button-foreground-hover: #00ccff;
+    --button-foreground-disabled: #005544;
+    --button-background-disabled: #0a0a1f;
+    --button-border: #00ff9d40;
+    
+    /* Danger buttons */
+    --danger-button-background-hover: color-mix(in srgb, #550000 70%, black);
+    --danger-button-foreground-hover: #aaaaaa;
+    --danger-button-border: #3f3f46;
+    --danger-button-foreground: #ffffff;
+    --danger-button-background: #550000;
+    
+    /* Panels and backgrounds */
+    --background-panel: #12122a;
+    --background-panel-subtle: rgba(0, 255, 157, 0.05);
+    
+    /* Input elements */
+    --range-track-color: #12122a;
+    --range-thumb-color: #ff00ff;
+    
+    /* Other UI elements */
+    --qbutton: var(--emphasis);
+    --batch-0: rgba(0, 255, 157, 0.3);
+    --batch-1: rgba(0, 204, 255, 0.3);
+    --popup-back: var(--background);
+    
+    /* Selection colors */
+    --box-selected-border: rgba(255, 0, 255, 0.8);
+    --box-selected-background: rgba(255, 0, 255, 0.2);
+    --box-selected-border-stronger: rgba(255, 0, 255, 1.0);
+    --box-selected-background-stronger: rgba(255, 0, 255, 0.3);
+    
+    /* Standard colors */
+    --red: #ff0000;
+    --green: #00ff00;
+}
