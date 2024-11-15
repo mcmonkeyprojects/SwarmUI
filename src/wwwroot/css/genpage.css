@@ -232,6 +232,12 @@ body {
     display: block;
     margin: auto;
 }
+.image-block-placeholder img {
+    filter: blur(5px);
+}
+.current_image_placeholder img {
+    filter: blur(10px);
+}
 .image-block-legacy {
     position: relative;
     height: 11.5rem;
@@ -282,6 +288,38 @@ body {
 }
 .image-block-starred {
     box-shadow: 0 0 1px 1px yellow;
+}
+.image-block .loading-spinner-parent {
+    width: 0;
+    height: 0;
+    top: -10rem;
+    left: calc(50% - 5rem);
+    position: relative;
+}
+.image-block .loading-spinner {
+    position: absolute;
+    width: 10rem;
+    height: 10rem;
+}
+.image-block-failed {
+    height: 0;
+    width: 0;
+    top: -5rem;
+    left: calc(50% - 5rem);
+    position: relative;
+}
+.image-block-failed::before, .image-block-failed::after {
+    position: absolute;
+    content: '';
+    width: 10rem;
+    height: 1rem;
+    background-color: var(--emphasis);
+}
+.image-block-failed::before {
+    transform: rotate(45deg);
+}
+.image-block-failed::after {
+    transform: rotate(-45deg);
 }
 .image-batch-0 {
     background-color: var(--batch-0);

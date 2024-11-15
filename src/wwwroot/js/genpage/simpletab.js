@@ -273,7 +273,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
 
     gotImagePreview(image, metadata, batchId) {
         simpleTab.markLoading();
-        if (image == 'imgs/model_placeholder.jpg') {
+        if (image.startsWith('DOPLACEHOLDER:')) {
             return;
         }
         simpleTab.setImage(image);

@@ -75,6 +75,9 @@ class AdvancedPopover {
                 else {
                     optionDiv.innerText = button.key;
                 }
+                if (button.title) {
+                    optionDiv.title = button.title;
+                }
                 if (button.key == selected) {
                     optionDiv.classList.add('sui_popover_model_button_selected');
                     didSelect = true;
@@ -495,4 +498,23 @@ function doPopover(id, e) {
         e.preventDefault();
         e.stopImmediatePropagation();
     }
+}
+
+/** Shows a notice popover with the given text and color. */
+function doNoticePopover(text, className, targetX = mouseX, targetY = mouseY) {
+    let pop = createDiv(null, `sui-popover sui_popover_model ${className} sui-popover-notice`);
+    pop.style.width = '200px';
+    let x = Math.min(targetX, window.innerWidth - pop.offsetWidth - 10);
+    let y = Math.min(targetY, window.innerHeight - pop.offsetHeight);
+    pop.style.left = `${x}px`;
+    pop.style.top = `${y}px`;
+    pop.style.width = '';
+    pop.innerText = translate(text);
+    document.body.appendChild(pop);
+    setTimeout(() => {
+        pop.classList.add('sui-popover-notice-fade-1s');
+        setTimeout(() => {
+            pop.remove();
+        }, 1500);
+    }, 1000);
 }

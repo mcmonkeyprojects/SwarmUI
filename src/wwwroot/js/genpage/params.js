@@ -917,6 +917,15 @@ function controlnetShowPreview() {
     });
 }
 
+/** Gets the parameter with a given ID, from either the current param set, or the raw set from server. If unavailable, returns null. */
+function getParamById(id) {
+    let param = gen_param_types.find(p => p.id == id);
+    if (!param) {
+        param = rawGenParamTypesFromServer.find(p => p.id == id);
+    }
+    return param;
+}
+
 /** Central handler for user-edited parameters. */
 class ParamConfigurationClass {
 
@@ -1204,8 +1213,8 @@ class PromptTabCompleteClass {
             let prefixLow = prefix.toLowerCase();
             return this.getOrderedMatches(allWildcards, prefixLow);
         });
-        this.registerPrefix('repeat', 'Repeat a value several times', (prefix) => {
-            return ['\nUse for example like "<repeat:3,very> big" to get "very very very big",', '\nor "<repeat:1-3,very>" to get randomly between 1 to 3 "very"s,', '\nor <repeat:3,<random:cat,dog>>" to get "cat" or "dog" 3 times in a row eg "cat dog cat".'];
+        this.registerPrefix('repeat[3]', 'Repeat a value several times', (prefix) => {
+            return ['\nUse for example like "<repeat[3]:very> big" to get "very very very big",', '\nor "<repeat[1-3]:very>" to get randomly between 1 to 3 "very"s,', '\nor <repeat[3]:<random:cat,dog>>" to get "cat" or "dog" 3 times in a row eg "cat dog cat".'];
         });
         this.registerPrefix('preset', 'Forcibly apply a preset onto the current generation (useful eg inside wildcards or other automatic inclusions - normally use the Presets UI tab)', (prefix) => {
             let prefixLow = prefix.toLowerCase();

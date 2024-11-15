@@ -708,6 +708,25 @@ textarea, input, select {
 .parens {
     color: var(--text-soft);
 }
+.sui-popover-notice {
+    visibility: visible;
+    opacity: 1;
+    font-size: 80%;
+    min-width: 0;
+    border-radius: 1rem;
+    padding: 0.3rem;
+    border: none;
+}
+.sui-popover-notice-fade-1s {
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s 1s, opacity 1s linear;
+    width: fit-content;
+}
+.notice-pop-green {
+    background-color: #005500;
+    color: #ffffff;
+}
 
 
 

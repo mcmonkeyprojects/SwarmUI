@@ -73,7 +73,7 @@ function clickImageInBatch(div) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata);
         return;
     }
-    setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true');
+    setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
 /** "Reuse Parameters" button impl. */
@@ -189,9 +189,23 @@ function formatMetadata(metadata) {
                         key = cleaner(key);
                     }
                     let hash = Math.abs(hashCode(key.toLowerCase().replaceAll(' ', '').replaceAll('_', ''))) % 10;
+                    let title = '';
+                    let keyTitle = '';
                     let added = '';
                     if (key.includes('model') || key.includes('lora') || key.includes('embedding')) {
                         added += ' param_view_block_model';
+                    }
+                    let param = getParamById(key);
+                    if (param) {
+                        key = param.name;
+                        keyTitle = param.description;
+                        if (param.values && param.value_names && param.values.length == param.value_names.length) {
+                            let index = param.values.indexOf(val);
+                            if (index != -1) {
+                                title = val;
+                                val = param.value_names[index];
+                            }
+                        }
                     }
                     if (typeof val == 'object') {
                         result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: `;
@@ -199,13 +213,28 @@ function formatMetadata(metadata) {
                         result += `</span>, `;
                     }
                     else {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}">${escapeHtml(`${val}`)}</span></span>, `;
+                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtml(keyTitle)}">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtml(title)}">${escapeHtml(`${val}`)}</span></span>, `;
                     }
                 }
             }
         }
     };
+    if ('swarm_version' in data.sui_image_params && 'sui_extra_data' in data) {
+        data.sui_extra_data['Swarm Version'] = data.sui_image_params.swarm_version;
+        delete data.sui_image_params.swarm_version;
+    }
+    if ('prompt' in data.sui_image_params && data.sui_image_params.prompt) {
+        appendObject({ 'prompt': data.sui_image_params.prompt });
+        result += '\n<br>';
+        delete data.sui_image_params.prompt;
+    }
+    if ('negativeprompt' in data.sui_image_params && data.sui_image_params.negativeprompt) {
+        appendObject({ 'negativeprompt': data.sui_image_params.negativeprompt });
+        result += '\n<br>';
+        delete data.sui_image_params.negativeprompt;
+    }
     appendObject(data.sui_image_params);
+    result += '\n<br>';
     if ('sui_extra_data' in data) {
         appendObject(data.sui_extra_data);
     }
@@ -541,7 +570,7 @@ function toggleStar(path, rawSrc) {
     });
 }
 
-function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true) {
+function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
         metadata = interpretMetadata(metadata);
@@ -563,6 +592,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         return;
     }
     let curImg = getRequiredElementById('current_image');
+    if (isPlaceholder) {
+        curImg.classList.add('current_image_placeholder');
+    }
+    else {
+        curImg.classList.remove('current_image_placeholder');
+    }
     let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
     let img;
     let isReuse = false;
@@ -651,7 +686,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
         }
         else {
-            subButtons.push({ key: name, action: action });
+            subButtons.push({ key: name, action: action, title: title });
         }
     }
     let isDataImage = src.startsWith('data:');
@@ -764,15 +799,15 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             imageHistoryBrowser.navigate(folder);
         }, '', 'Jumps the Image History browser to where this image is at.');
     }
-    for (let added of buttonsForImage(imagePathClean, src)) {
+    for (let added of buttonsForImage(imagePathClean, src, metadata)) {
         if (added.label == 'Star') {
             continue;
         }
         if (added.href) {
-            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download });
+            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
         else {
-            includeButton(added.label, added.onclick, '', '');
+            includeButton(added.label, added.onclick, '', added.title);
         }
     }
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
@@ -797,6 +832,18 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
     div.dataset.batch_id = batchId;
     div.dataset.preview_text = textPreview;
+    if (imageSrc.startsWith('DOPLACEHOLDER:')) {
+        let model = imageSrc.substring('DOPLACEHOLDER:'.length);
+        let cache = modelIconUrlCache[model] || modelIconUrlCache[`${model}.safetensors`];
+        if (model && cache) {
+            imageSrc = cache;
+        }
+        else {
+            imageSrc = 'imgs/model_placeholder.jpg';
+        }
+        div.dataset.is_placeholder = true;
+        div.classList.add('image-block-placeholder');
+    }
     div.dataset.src = imageSrc;
     div.dataset.metadata = metadata;
     let img = document.createElement('img');
@@ -844,7 +891,9 @@ function gotImagePreview(image, metadata, batchId) {
     let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && image != 'imgs/model_placeholder.jpg')) {
+    let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
+    batch_div.appendChild(spinnerDiv);
+    if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && !image.startsWith('DOPLACEHOLDER:'))) {
         setCurrentImage(src, metadata, batchId, true);
     }
     return batch_div;
@@ -1117,20 +1166,32 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     });
 }
 
-function buttonsForImage(fullsrc, src) {
+function buttonsForImage(fullsrc, src, metadata) {
     let isDataImage = src.startsWith('data:');
     buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
             label: 'Star',
+            title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
+            }
+        });
+    }
+    if (metadata) {
+        buttons.push({
+            label: 'Copy Raw Metadata',
+            title: `Copies the raw form of the image's metadata to your clipboard (usually JSON text).`,
+            onclick: (e) => {
+                navigator.clipboard.writeText(metadata);
+                doNoticePopover('Copied!', 'notice-pop-green');
             }
         });
     }
     if (permissions.hasPermission('local_image_folder') && !isDataImage) {
         buttons.push({
             label: 'Open In Folder',
+            title: 'Opens the folder containing this image in your local PC file explorer.',
             onclick: (e) => {
                 genericRequest('OpenImageFolder', {'path': fullsrc}, data => {});
             }
@@ -1138,12 +1199,14 @@ function buttonsForImage(fullsrc, src) {
     }
     buttons.push({
         label: 'Download',
+        title: 'Downloads this image to your PC.',
         href: src,
         is_download: true
     });
     if (permissions.hasPermission('user_delete_image') && !isDataImage) {
         buttons.push({
             label: 'Delete',
+            title: 'Deletes this image from the server.',
             onclick: (e) => {
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
                     if (e) {
@@ -1172,7 +1235,7 @@ function buttonsForImage(fullsrc, src) {
 }
 
 function describeImage(image) {
-    let buttons = buttonsForImage(image.data.fullsrc, image.data.src);
+    let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
     let parsedMeta = { is_starred: false };
     if (image.data.metadata) {
         let metadata = image.data.metadata;

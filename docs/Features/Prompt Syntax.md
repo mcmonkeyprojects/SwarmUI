@@ -56,8 +56,8 @@
 
 ### Repeat
 
-- You can use the syntax `<repeat:3, cat>` to get the word "cat" 3 times in a row (`cat cat cat`).
-    - You can use for example like `<repeat:1-3, <random:cat, dog>>` to get between 1 and 3 copies of either `cat` or `dog`, for example it might return `cat dog cat`.
+- You can use the syntax `<repeat[3]:cat>` to get the word "cat" 3 times in a row (`cat cat cat`).
+    - You can use for example like `<repeat[1-3]: <random:cat, dog>>` to get between 1 and 3 copies of either `cat` or `dog`, for example it might return `cat dog cat`.
 
 ### Textual Inversion Embeddings
 
