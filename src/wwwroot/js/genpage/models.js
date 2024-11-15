@@ -11,6 +11,7 @@ let curModelMenuBrowser = null;
 let loraWeightPref = {};
 let allWildcards = [];
 let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
+let modelIconUrlCache = {};
 
 function test_wildcard_again() {
     let card = curWildcardMenuWildcard;
@@ -421,6 +422,9 @@ class ModelBrowserWrapper {
             for (let file of files) {
                 file.data.display = cleanModelName(file.data.name.substring(prefix.length));
                 this.models[file.name] = file;
+                if (this.subType == 'Stable-Diffusion') {
+                    modelIconUrlCache[file.name] = file.data.preview_image;
+                }
             }
             if (this.subType == 'VAE') {
                 let autoFile = {
@@ -470,6 +474,9 @@ class ModelBrowserWrapper {
     describeModel(model) {
         let description = '';
         let buttons = [];
+        if (this.subType == 'Stable-Diffusion') {
+            modelIconUrlCache[model.name] = model.data.preview_image;
+        }
         if (this.subType == 'Stable-Diffusion' && model.data.local) {
             let buttonLoad = () => {
                 directSetModel(model.data);

@@ -73,7 +73,7 @@ function clickImageInBatch(div) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata);
         return;
     }
-    setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true');
+    setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
 /** "Reuse Parameters" button impl. */
@@ -570,7 +570,7 @@ function toggleStar(path, rawSrc) {
     });
 }
 
-function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true) {
+function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
         metadata = interpretMetadata(metadata);
@@ -592,6 +592,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         return;
     }
     let curImg = getRequiredElementById('current_image');
+    if (isPlaceholder) {
+        curImg.classList.add('current_image_placeholder');
+    }
+    else {
+        curImg.classList.remove('current_image_placeholder');
+    }
     let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
     let img;
     let isReuse = false;
@@ -826,6 +832,18 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
     div.dataset.batch_id = batchId;
     div.dataset.preview_text = textPreview;
+    if (imageSrc.startsWith('DOPLACEHOLDER:')) {
+        let model = imageSrc.substring('DOPLACEHOLDER:'.length);
+        let cache = modelIconUrlCache[model] || modelIconUrlCache[`${model}.safetensors`];
+        if (model && cache) {
+            imageSrc = cache;
+        }
+        else {
+            imageSrc = 'imgs/model_placeholder.jpg';
+        }
+        div.dataset.is_placeholder = true;
+        div.classList.add('image-block-placeholder');
+    }
     div.dataset.src = imageSrc;
     div.dataset.metadata = metadata;
     let img = document.createElement('img');
@@ -873,7 +891,7 @@ function gotImagePreview(image, metadata, batchId) {
     let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && image != 'imgs/model_placeholder.jpg')) {
+    if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && !image.startsWith('DOPLACEHOLDER:'))) {
         setCurrentImage(src, metadata, batchId, true);
     }
     return batch_div;

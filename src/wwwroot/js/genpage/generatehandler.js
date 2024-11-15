@@ -73,6 +73,17 @@ class GenerateHandler {
     getBatchId() {
         return ++this.batchesEver;
     }
+
+    setImageFor(imgHolder, src) {
+        let imgElem = imgHolder.div.querySelector('img');
+        if (imgHolder.div.dataset.is_placeholder) {
+            delete imgHolder.div.dataset.is_placeholder;
+            imgHolder.div.classList.remove('image-block-placeholder');
+        }
+        imgElem.src = src;
+        imgHolder.image = src;
+        imgHolder.div.dataset.src = src;
+    }
     
     doGenerate(input_overrides = {}, input_preoverrides = {}) {
         if (session_id == null) {
@@ -137,10 +148,8 @@ class GenerateHandler {
                             }
                         }
                         let imgElem = imgHolder.div.querySelector('img');
-                        imgElem.src = data.image;
+                        this.setImageFor(imgHolder, data.image);
                         delete imgElem.dataset.previewGrow;
-                        imgHolder.image = data.image;
-                        imgHolder.div.dataset.src = data.image;
                         imgHolder.div.dataset.metadata = data.metadata;
                         let progress_bars = imgHolder.div.querySelector('.image-preview-progress-wrapper');
                         if (progress_bars) {
@@ -161,7 +170,7 @@ class GenerateHandler {
                     let thisBatchId = `${batch_id}_${data.gen_progress.batch_index}`;
                     if (!(data.gen_progress.batch_index in images)) {
                         let metadataRaw = data.gen_progress.metadata ?? '{}';
-                        let batch_div = this.gotImagePreview(data.gen_progress.preview ?? 'imgs/model_placeholder.jpg', metadataRaw, thisBatchId);
+                        let batch_div = this.gotImagePreview(data.gen_progress.preview ?? `DOPLACEHOLDER:${actualInput.model || ''}`, metadataRaw, thisBatchId);
                         if (batch_div) {
                             images[data.gen_progress.batch_index] = {div: batch_div, image: null, metadata: metadataRaw, overall_percent: 0, current_percent: 0};
                             let progress_bars = createDiv(null, 'image-preview-progress-wrapper', this.progressBarHtml);
@@ -184,9 +193,7 @@ class GenerateHandler {
                                 if (curImgElem && curImgElem.dataset.batch_id == thisBatchId) {
                                     curImgElem.src = data.gen_progress.preview;
                                 }
-                                imgHolder.div.dataset.src = data.gen_progress.preview;
-                                imgHolder.div.querySelector('img').src = data.gen_progress.preview;
-                                imgHolder.image = data.gen_progress.preview;
+                                this.setImageFor(imgHolder, data.gen_progress.preview);
                             }
                         }
                     }
