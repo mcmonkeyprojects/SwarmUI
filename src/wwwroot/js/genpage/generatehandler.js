@@ -231,6 +231,8 @@ class GenerateHandler {
                         let spinner = imgHolder.div.querySelector('.loading-spinner-parent');
                         if (spinner) {
                             spinner.remove();
+                            let failIcon = createDiv(null, 'image-block-failed');
+                            imgHolder.div.appendChild(failIcon);
                         }
                         let progress_bars = imgHolder.div.querySelector('.image-preview-progress-wrapper');
                         if (progress_bars) {

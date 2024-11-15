@@ -301,6 +301,26 @@ body {
     width: 10rem;
     height: 10rem;
 }
+.image-block-failed {
+    height: 0;
+    width: 0;
+    top: -5rem;
+    left: calc(50% - 5rem);
+    position: relative;
+}
+.image-block-failed::before, .image-block-failed::after {
+    position: absolute;
+    content: '';
+    width: 10rem;
+    height: 1rem;
+    background-color: var(--emphasis);
+}
+.image-block-failed::before {
+    transform: rotate(45deg);
+}
+.image-block-failed::after {
+    transform: rotate(-45deg);
+}
 .image-batch-0 {
     background-color: var(--batch-0);
 }
