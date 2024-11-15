@@ -232,6 +232,12 @@ body {
     display: block;
     margin: auto;
 }
+.image-block-placeholder img {
+    filter: blur(5px);
+}
+.current_image_placeholder img {
+    filter: blur(10px);
+}
 .image-block-legacy {
     position: relative;
     height: 11.5rem;
