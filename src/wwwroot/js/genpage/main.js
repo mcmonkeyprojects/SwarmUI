@@ -738,6 +738,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             triggerChangeFor(togglerRefine);
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
+    if (metadata) {
+        includeButton('Copy Raw Metadata', () => {
+            navigator.clipboard.writeText(metadata);
+            doNoticePopover('Copied!', 'notice-pop-green');
+        }, '', `Copies the raw form of the image's metadata to your clipboard (usually JSON text).`);
+    }
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {
