@@ -75,6 +75,9 @@ class AdvancedPopover {
                 else {
                     optionDiv.innerText = button.key;
                 }
+                if (button.title) {
+                    optionDiv.title = button.title;
+                }
                 if (button.key == selected) {
                     optionDiv.classList.add('sui_popover_model_button_selected');
                     didSelect = true;

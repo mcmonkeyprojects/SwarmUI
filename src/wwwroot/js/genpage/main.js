@@ -651,7 +651,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
         }
         else {
-            subButtons.push({ key: name, action: action });
+            subButtons.push({ key: name, action: action, title: title });
         }
     }
     let isDataImage = src.startsWith('data:');
