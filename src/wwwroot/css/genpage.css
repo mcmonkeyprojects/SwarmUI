@@ -289,6 +289,18 @@ body {
 .image-block-starred {
     box-shadow: 0 0 1px 1px yellow;
 }
+.image-block .loading-spinner-parent {
+    width: 0;
+    height: 0;
+    top: -10rem;
+    left: calc(50% - 5rem);
+    position: relative;
+}
+.image-block .loading-spinner {
+    position: absolute;
+    width: 10rem;
+    height: 10rem;
+}
 .image-batch-0 {
     background-color: var(--batch-0);
 }

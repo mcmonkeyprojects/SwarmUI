@@ -149,6 +149,10 @@ class GenerateHandler {
                         }
                         let imgElem = imgHolder.div.querySelector('img');
                         this.setImageFor(imgHolder, data.image);
+                        let spinner = imgHolder.div.querySelector('.loading-spinner-parent');
+                        if (spinner) {
+                            spinner.remove();
+                        }
                         delete imgElem.dataset.previewGrow;
                         imgHolder.div.dataset.metadata = data.metadata;
                         let progress_bars = imgHolder.div.querySelector('.image-preview-progress-wrapper');
