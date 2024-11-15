@@ -189,9 +189,23 @@ function formatMetadata(metadata) {
                         key = cleaner(key);
                     }
                     let hash = Math.abs(hashCode(key.toLowerCase().replaceAll(' ', '').replaceAll('_', ''))) % 10;
+                    let title = '';
+                    let keyTitle = '';
                     let added = '';
                     if (key.includes('model') || key.includes('lora') || key.includes('embedding')) {
                         added += ' param_view_block_model';
+                    }
+                    let param = getParamById(key);
+                    if (param) {
+                        key = param.name;
+                        keyTitle = param.description;
+                        if (param.values && param.value_names && param.values.length == param.value_names.length) {
+                            let index = param.values.indexOf(val);
+                            if (index != -1) {
+                                title = val;
+                                val = param.value_names[index];
+                            }
+                        }
                     }
                     if (typeof val == 'object') {
                         result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: `;
@@ -199,13 +213,28 @@ function formatMetadata(metadata) {
                         result += `</span>, `;
                     }
                     else {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}">${escapeHtml(`${val}`)}</span></span>, `;
+                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtml(keyTitle)}">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtml(title)}">${escapeHtml(`${val}`)}</span></span>, `;
                     }
                 }
             }
         }
     };
+    if ('swarm_version' in data.sui_image_params && 'sui_extra_data' in data) {
+        data.sui_extra_data['Swarm Version'] = data.sui_image_params.swarm_version;
+        delete data.sui_image_params.swarm_version;
+    }
+    if ('prompt' in data.sui_image_params && data.sui_image_params.prompt) {
+        appendObject({ 'prompt': data.sui_image_params.prompt });
+        result += '\n<br>';
+        delete data.sui_image_params.prompt;
+    }
+    if ('negativeprompt' in data.sui_image_params && data.sui_image_params.negativeprompt) {
+        appendObject({ 'negativeprompt': data.sui_image_params.negativeprompt });
+        result += '\n<br>';
+        delete data.sui_image_params.negativeprompt;
+    }
     appendObject(data.sui_image_params);
+    result += '\n<br>';
     if ('sui_extra_data' in data) {
         appendObject(data.sui_extra_data);
     }

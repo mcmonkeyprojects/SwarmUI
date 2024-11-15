@@ -324,11 +324,7 @@
 .current-image-data {
     margin-top: 20px;
     color: transparent;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
-    row-gap: 5px;
+    text-align: center;
 }
 
 .current-image-data .param_view_block {
