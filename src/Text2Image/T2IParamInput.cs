@@ -186,7 +186,7 @@ public class T2IParamInput
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagPostProcessors = [];
 
     /// <summary>Mapping of prompt tag prefixes, to strings intended to allow for estimating token count.</summary>
-    public static Dictionary<string, Func<string, string>> PromptTagLengthEstimators = [];
+    public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagLengthEstimators = [];
 
     /// <summary>Interprets a random number range input by a user, if the input is a number range.</summary>
     public static bool TryInterpretNumberRange(string inputVal, out string number)
@@ -279,7 +279,7 @@ public class T2IParamInput
             }
             return result.Trim();
         };
-        PromptTagLengthEstimators["random"] = (data) =>
+        PromptTagLengthEstimators["random"] = (data, context) =>
         {
             string[] rawVals = SplitSmart(data);
             int longest = 0;
@@ -368,7 +368,7 @@ public class T2IParamInput
             return result.Trim();
         };
         PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
-        PromptTagLengthEstimators["wildcard"] = (data) =>
+        PromptTagLengthEstimators["wildcard"] = (data, context) =>
         {
             string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
             if (card is null)
@@ -392,7 +392,16 @@ public class T2IParamInput
         PromptTagLengthEstimators["wc"] = PromptTagLengthEstimators["wildcard"];
         PromptTagProcessors["repeat"] = (data, context) =>
         {
-            (string count, string value) = data.BeforeAndAfter(',');
+            string count, value;
+            if (!string.IsNullOrWhiteSpace(context.PreData))
+            {
+                count = context.PreData;
+                value = data;
+            }
+            else
+            {
+                (count, value) = data.BeforeAndAfter(',');
+            }
             double? countVal = InterpretNumber(count);
             if (!countVal.HasValue)
             {
@@ -406,9 +415,18 @@ public class T2IParamInput
             }
             return result.Trim();
         };
-        PromptTagLengthEstimators["repeat"] = (data) =>
+        PromptTagLengthEstimators["repeat"] = (data, context) =>
         {
-            (string count, string value) = data.BeforeAndAfter(',');
+            string count, value;
+            if (!string.IsNullOrWhiteSpace(context.PreData))
+            {
+                count = context.PreData;
+                value = data;
+            }
+            else
+            {
+                (count, value) = data.BeforeAndAfter(',');
+            }
             double? countVal = InterpretNumber(count);
             if (!countVal.HasValue)
             {
@@ -440,7 +458,7 @@ public class T2IParamInput
             return "";
         };
         PromptTagProcessors["p"] = PromptTagProcessors["preset"];
-        static string estimateEmpty(string data)
+        static string estimateEmpty(string data, PromptTagContext context)
         {
             return "";
         }
@@ -539,7 +557,7 @@ public class T2IParamInput
         {
             return "<break>";
         };
-        PromptTagLengthEstimators["break"] = (data) =>
+        PromptTagLengthEstimators["break"] = (data, context) =>
         {
             return "<break>";
         };
@@ -558,7 +576,7 @@ public class T2IParamInput
             context.Variables[name] = data;
             return data;
         };
-        PromptTagLengthEstimators["setvar"] = (data) =>
+        PromptTagLengthEstimators["setvar"] = (data, context) =>
         {
             return ProcessPromptLikeForLength(data);
         };
@@ -1011,7 +1029,8 @@ public class T2IParamInput
         {
             return null;
         }
-        void processSet(Dictionary<string, Func<string, string>> set)
+        PromptTagContext context = new();
+        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set)
         {
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
@@ -1021,9 +1040,10 @@ public class T2IParamInput
                 {
                     (prefix, preData) = prefix.BeforeLast(']').BeforeAndAfter('[');
                 }
-                if (set.TryGetValue(prefix, out Func<string, string> proc))
+                context.PreData = preData;
+                if (set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
                 {
-                    string result = proc(data);
+                    string result = proc(data, context);
                     if (result is not null)
                     {
                         return result;
