@@ -1,6 +1,6 @@
 # Advanced Prompt Syntax
 
-### Weighting
+## Weighting
 
 ![img](/docs/images/prompt-weight.jpg)
 
@@ -9,7 +9,7 @@
     - Note: this presumes a default Comfy backend.
     - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, but T5 based models (eg Flux) do not.
 
-### Alternating
+## Alternating
 
 ![img](/docs/images/alternate-cat-dog.jpg)
 
@@ -17,7 +17,7 @@
     - Similar to `random` you can instead use `|` or `||` to separate entries, eg `<alternate:cat || dog>`. You can have as many unique words as you want, eg `<alternate:cat, dog, horse, wolf, taco>` has 5 words so it will cycle through them every 5 steps.
     - You can shorthand this as `<alt:cat,dog>`
 
-### From-To
+## From-To
 
 ![img](/docs/images/fromto-cat-dog.jpg)
 
@@ -26,7 +26,7 @@
     - Similar to `random` you can instead use `|` or `||` to separate entries. Must have exactly two entries.
     - For example, `<fromto[0.5]:cat, dog>` swaps from `cat` to `dog` halfway through a generation.
 
-### Random
+## Random
 
 ![img](/docs/images/random-cats.jpg)
 
@@ -38,7 +38,7 @@
         - You can use a comma at the end like `random[1-3,]` to specify the output should have a comma eg `red, blue`.
         - This will avoid repetition, unless you have a large count than number of options.
 
-### Wildcards
+## Wildcards
 
 ![img](/docs/images/wildcards-cats.jpg)
 
@@ -48,7 +48,7 @@
     - This supports the same syntax as `random` to get multiple, for example `<wildcard[1-3]:animals>` might return `cat dog` or `elephant leopard dog`.
     - You can shorthand this as `<wc:my/wildcard/name>`
 
-### Variables
+## Variables
 
 ![img](/docs/images/setvar-cat.jpg)
 
@@ -60,7 +60,7 @@
     - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
         - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
 
-### Trigger Phrase
+## Trigger Phrase
 
 ![img](/docs/images/trigger-arcane-cat.jpg)
 
@@ -69,20 +69,20 @@
     - Note this is just a simple autofill, especially for usage in grids or other bulk generations, and not meant to robustly handle all cases. If you require specific formatting, you'll want to just copy the trigger phrase in directly yourself.
     - Fills empty when there's no data to fill.
 
-### Repeat
+## Repeat
 
 ![img](/docs/images/repeat-random.jpg)
 
 - You can use the syntax `<repeat[3]:cat>` to get the word "cat" 3 times in a row (`cat cat cat`).
     - You can use for example like `<repeat[1-3]: <random:cat, dog>>` to get between 1 and 3 copies of either `cat` or `dog`, for example it might return `cat dog cat`.
 
-### Textual Inversion Embeddings
+## Textual Inversion Embeddings
 
 - You can use `<embed:filename>` to use a Textual Inversion embedding in the prompt or negative prompt.
     - Store embedding files in `(SwarmUI)/Models/Embeddings`.
     - Embedding files were popular in the SDv1 era, but are less common for newer models.
 
-### LoRAs
+## LoRAs
 
 ![img](/docs/images/lora-arcane-cat.jpg)
 
@@ -91,7 +91,7 @@
     - Note that usually position within the prompt doesn't matter, loras are not actually a prompt feature, this is just a convenience option for users used to Auto WebUI.
     - The one time it does matter, is when you use `<segment:...>` or `<object:...>`: a LoRA inside one of these will apply *only* to that segment or object.
 
-### Presets
+## Presets
 
 ![img](/docs/images/style-preset-cats.jpg)
 
@@ -99,7 +99,7 @@
     - GUI is generally preferred for LoRAs, this is available to allow dynamically messing with presets (eg `<preset:<random:a, b>>`)
     - You can shorthand this as `<p:presetname>`
 
-### Automatic Segmentation and Refining
+## Automatic Segmentation and Refining
 
 ![img](/docs/images/segment-ref.jpg)
 
@@ -120,7 +120,7 @@
     - There's an advanced parameter under `Regional Prompting` named `Segment Model` to customize the base model used for segment processing
     - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask
 
-### Clear (Transparency)
+## Clear (Transparency)
 
 ![img](/docs/images/clear-cat.png)
 
@@ -128,7 +128,7 @@
     - For example, `<clear:background>` to clear the background.
     - The `Remove Background` dedicated parameter is generally better than autosegment clearing.
 
-### Break Keyword
+## Break Keyword
 
 - You can use `<break>` to specify a manual CLIP section break (eg in Auto WebUI this is `BREAK`).
     - If this is confusing, you this a bit of an internal hacky thing, so don't worry about. But if you want to know, here's the explanation:
