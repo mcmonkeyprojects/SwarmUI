@@ -738,12 +738,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             triggerChangeFor(togglerRefine);
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
-    if (metadata) {
-        includeButton('Copy Raw Metadata', () => {
-            navigator.clipboard.writeText(metadata);
-            doNoticePopover('Copied!', 'notice-pop-green');
-        }, '', `Copies the raw form of the image's metadata to your clipboard (usually JSON text).`);
-    }
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {
@@ -770,15 +764,15 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             imageHistoryBrowser.navigate(folder);
         }, '', 'Jumps the Image History browser to where this image is at.');
     }
-    for (let added of buttonsForImage(imagePathClean, src)) {
+    for (let added of buttonsForImage(imagePathClean, src, metadata)) {
         if (added.label == 'Star') {
             continue;
         }
         if (added.href) {
-            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download });
+            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
         else {
-            includeButton(added.label, added.onclick, '', '');
+            includeButton(added.label, added.onclick, '', added.title);
         }
     }
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
@@ -1123,20 +1117,32 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     });
 }
 
-function buttonsForImage(fullsrc, src) {
+function buttonsForImage(fullsrc, src, metadata) {
     let isDataImage = src.startsWith('data:');
     buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
             label: 'Star',
+            title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
+            }
+        });
+    }
+    if (metadata) {
+        buttons.push({
+            label: 'Copy Raw Metadata',
+            title: `Copies the raw form of the image's metadata to your clipboard (usually JSON text).`,
+            onclick: (e) => {
+                navigator.clipboard.writeText(metadata);
+                doNoticePopover('Copied!', 'notice-pop-green');
             }
         });
     }
     if (permissions.hasPermission('local_image_folder') && !isDataImage) {
         buttons.push({
             label: 'Open In Folder',
+            title: 'Opens the folder containing this image in your local PC file explorer.',
             onclick: (e) => {
                 genericRequest('OpenImageFolder', {'path': fullsrc}, data => {});
             }
@@ -1144,12 +1150,14 @@ function buttonsForImage(fullsrc, src) {
     }
     buttons.push({
         label: 'Download',
+        title: 'Downloads this image to your PC.',
         href: src,
         is_download: true
     });
     if (permissions.hasPermission('user_delete_image') && !isDataImage) {
         buttons.push({
             label: 'Delete',
+            title: 'Deletes this image from the server.',
             onclick: (e) => {
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
                     if (e) {
@@ -1178,7 +1186,7 @@ function buttonsForImage(fullsrc, src) {
 }
 
 function describeImage(image) {
-    let buttons = buttonsForImage(image.data.fullsrc, image.data.src);
+    let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
     let parsedMeta = { is_starred: false };
     if (image.data.metadata) {
         let metadata = image.data.metadata;
