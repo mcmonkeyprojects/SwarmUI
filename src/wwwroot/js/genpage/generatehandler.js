@@ -226,6 +226,18 @@ class GenerateHandler {
             };
             let handleError = e => {
                 console.log(`Error in GenerateText2ImageWS: ${e}, ${this.interrupted}, ${batch_id}`);
+                setTimeout(() => {
+                    for (let imgHolder of Object.values(images)) {
+                        let spinner = imgHolder.div.querySelector('.loading-spinner-parent');
+                        if (spinner) {
+                            spinner.remove();
+                        }
+                        let progress_bars = imgHolder.div.querySelector('.image-preview-progress-wrapper');
+                        if (progress_bars) {
+                            progress_bars.remove();
+                        }
+                    }
+                }, 1);
                 if (this.interrupted >= batch_id) {
                     return;
                 }
