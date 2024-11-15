@@ -2,11 +2,16 @@
 
 ### Weighting
 
+![img](/docs/images/prompt-weight.jpg)
+
 - Prompt weighting, eg `an (orange) cat` or `an (orange:1.5) cat`. Anything in `(parens)` has its weighting modified - meaning, the model will pay more attention to that part of the prompt. Values above `1` are more important, values below `1` (eg `0.5`) are less important.
     - You can also hold Control and press the up/down arrow keys to change the weight of selected text.
-    - Note: the way prompt weights are understood is different depending on backend.
+    - Note: this presumes a default Comfy backend.
+    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, but T5 based models (eg Flux) do not.
 
 ### Alternating
+
+![img](/docs/images/alternate-cat-dog.jpg)
 
 - You can use `<alternate:cat, dog>` to alternate every step between `cat` and `dog`, creating a merge/mixture of the two concepts.
     - Similar to `random` you can instead use `|` or `||` to separate entries, eg `<alternate:cat || dog>`. You can have as many unique words as you want, eg `<alternate:cat, dog, horse, wolf, taco>` has 5 words so it will cycle through them every 5 steps.
@@ -14,12 +19,16 @@
 
 ### From-To
 
+![img](/docs/images/fromto-cat-dog.jpg)
+
 - You can use `<fromto[#]:before, after>` to swap between two phrases after a certain timestep.
     - The timestep can be like `10` for step 10, or like `0.5` for halfway-through.
     - Similar to `random` you can instead use `|` or `||` to separate entries. Must have exactly two entries.
     - For example, `<fromto[0.5]:cat, dog>` swaps from `cat` to `dog` halfway through a generation.
 
 ### Random
+
+![img](/docs/images/random-cats.jpg)
 
 - You can use the syntax `<random:red, blue, purple>` to randomly select from a list for each gen
     - This random is seeded by the main seed - so if you have a static seed, this won't change.
@@ -31,6 +40,8 @@
 
 ### Wildcards
 
+![img](/docs/images/wildcards-cats.jpg)
+
 - You can use the syntax `<wildcard:my/wildcard/name>` to randomly select from a wildcard file, which is basically a pre-saved text file of random options, 1 per line.
     - Edit these in the UI at the bottom in the "Wildcards" tab.
     - You can also import wildcard files from other UIs (ie text file collections) by just adding them into `Data/Wildcards` folder.
@@ -38,6 +49,8 @@
     - You can shorthand this as `<wc:my/wildcard/name>`
 
 ### Variables
+
+![img](/docs/images/setvar-cat.jpg)
 
 - You can store and reuse variables within a prompt. This is primarily intended for repeating randoms & wildcards.
     - Store with the syntax: `<setvar[var_name]:data>`
@@ -49,6 +62,8 @@
 
 ### Trigger Phrase
 
+![img](/docs/images/trigger-arcane-cat.jpg)
+
 - If your model or current LoRA's have a trigger phrase in their metadata, you can use `<trigger>` to automatically apply those within a prompt.
     - If you have multiple models with trigger phrases, they will be combined into a comma-separated list. For example `cat` and `dog` will be inserted as `cat, dog`.
     - Note this is just a simple autofill, especially for usage in grids or other bulk generations, and not meant to robustly handle all cases. If you require specific formatting, you'll want to just copy the trigger phrase in directly yourself.
@@ -56,14 +71,20 @@
 
 ### Repeat
 
+![img](/docs/images/repeat-random.jpg)
+
 - You can use the syntax `<repeat[3]:cat>` to get the word "cat" 3 times in a row (`cat cat cat`).
     - You can use for example like `<repeat[1-3]: <random:cat, dog>>` to get between 1 and 3 copies of either `cat` or `dog`, for example it might return `cat dog cat`.
 
 ### Textual Inversion Embeddings
 
-- You can use `<embed:filename>` to use a Textual Inversion embedding anywhere.
+- You can use `<embed:filename>` to use a Textual Inversion embedding in the prompt or negative prompt.
+    - Store embedding files in `(SwarmUI)/Models/Embeddings`.
+    - Embedding files were popular in the SDv1 era, but are less common for newer models.
 
 ### LoRAs
+
+![img](/docs/images/lora-arcane-cat.jpg)
 
 - You may use `<lora:filename:weight>` to enable a LoRA
     - Note that it's generally preferred to use the GUI at the bottom of the page to select loras
@@ -72,11 +93,15 @@
 
 ### Presets
 
+![img](/docs/images/style-preset-cats.jpg)
+
 - You can use `<preset:presetname>` to inject a preset.
     - GUI is generally preferred for LoRAs, this is available to allow dynamically messing with presets (eg `<preset:<random:a, b>>`)
     - You can shorthand this as `<p:presetname>`
 
 ### Automatic Segmentation and Refining
+
+![img](/docs/images/segment-ref.jpg)
 
 - You can use `<segment:texthere>` to automatically refine part of the image using CLIP Segmentation.
     - This is like a "restore faces" feature but much more versatile, you can refine anything and control what it does.
@@ -97,8 +122,11 @@
 
 ### Clear (Transparency)
 
+![img](/docs/images/clear-cat.png)
+
 - You can use `<clear:texthere>` to automatically clear parts of an image to transparent. This uses the same input format as `segment` (above) (for obvious reasons, this requires PNG not JPG).
     - For example, `<clear:background>` to clear the background.
+    - The `Remove Background` dedicated parameter is generally better than autosegment clearing.
 
 ### Break Keyword
 
