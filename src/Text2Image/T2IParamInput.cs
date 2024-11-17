@@ -189,17 +189,17 @@ public class T2IParamInput
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagLengthEstimators = [];
 
     /// <summary>Interprets a random number range input by a user, if the input is a number range.</summary>
-    public static bool TryInterpretNumberRange(string inputVal, out string number)
+    public static bool TryInterpretNumberRange(string inputVal, PromptTagContext context, out string number)
     {
         (string preDash, string postDash) = inputVal.BeforeAndAfter('-');
         if (long.TryParse(preDash.Trim(), out long int1) && long.TryParse(postDash.Trim(), out long int2))
         {
-            number = $"{Random.Shared.NextInt64(int1, int2 + 1)}";
+            number = $"{context.Input.GetWildcardRandom().NextInt64(int1, int2 + 1)}";
             return true;
         }
         if (double.TryParse(preDash.Trim(), out double num1) && double.TryParse(postDash.Trim(), out double num2))
         {
-            number = $"{Random.Shared.NextDouble() * (num2 - num1) + num1}";
+            number = $"{context.Input.GetWildcardRandom().NextDouble() * (num2 - num1) + num1}";
             return true;
         }
         number = null;
@@ -207,9 +207,9 @@ public class T2IParamInput
     }
 
     /// <summary>Interprets a number input by a user, or returns null if unable to.</summary>
-    public static double? InterpretNumber(string inputVal)
+    public static double? InterpretNumber(string inputVal, PromptTagContext context)
     {
-        if (TryInterpretNumberRange(inputVal, out string number))
+        if (TryInterpretNumberRange(inputVal, context, out string number))
         {
             inputVal = number;
         }
@@ -220,7 +220,7 @@ public class T2IParamInput
         return null;
     }
 
-    public static (int, string) InterpretPredataForRandom(string prefix, string preData, string data)
+    public static (int, string) InterpretPredataForRandom(string prefix, string preData, string data, PromptTagContext context)
     {
         int count = 1;
         string separator = " ";
@@ -231,7 +231,7 @@ public class T2IParamInput
                 separator = ", ";
                 preData = preData[0..^1];
             }
-            double? countVal = InterpretNumber(preData);
+            double? countVal = InterpretNumber(preData, context);
             if (!countVal.HasValue)
             {
                 Logs.Warning($"Random input '{prefix}[{preData}]:{data}' has invalid predata count (not a number) and will be ignored.");
@@ -246,7 +246,7 @@ public class T2IParamInput
     {
         PromptTagProcessors["random"] = (data, context) =>
         {
-            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
+            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data, context);
             if (partSeparator is null)
             {
                 return null;
@@ -263,7 +263,7 @@ public class T2IParamInput
             {
                 int index = context.Input.GetWildcardRandom().Next(vals.Count);
                 string choice = vals[index];
-                if (TryInterpretNumberRange(choice, out string number))
+                if (TryInterpretNumberRange(choice, context, out string number))
                 {
                     return number;
                 }
@@ -314,7 +314,7 @@ public class T2IParamInput
         PromptTagLengthEstimators["alt"] = PromptTagLengthEstimators["alternate"];
         PromptTagProcessors["fromto"] = (data, context) =>
         {
-            double? stepIndex = InterpretNumber(context.PreData);
+            double? stepIndex = InterpretNumber(context.PreData, context);
             if (!stepIndex.HasValue)
             {
                 context.TrackWarning($"FromTo input 'fromto[{context.PreData}]:{data}' has invalid predata step-index (not a number) and will be ignored.");
@@ -335,7 +335,7 @@ public class T2IParamInput
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["wildcard"] = (data, context) =>
         {
-            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data);
+            (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data, context);
             if (partSeparator is null)
             {
                 return null;
@@ -402,7 +402,7 @@ public class T2IParamInput
             {
                 (count, value) = data.BeforeAndAfter(',');
             }
-            double? countVal = InterpretNumber(count);
+            double? countVal = InterpretNumber(count, context);
             if (!countVal.HasValue)
             {
                 context.TrackWarning($"Repeat input '{data}' has invalid count (not a number) and will be ignored.");
@@ -427,7 +427,7 @@ public class T2IParamInput
             {
                 (count, value) = data.BeforeAndAfter(',');
             }
-            double? countVal = InterpretNumber(count);
+            double? countVal = InterpretNumber(count, context);
             if (!countVal.HasValue)
             {
                 return "";
