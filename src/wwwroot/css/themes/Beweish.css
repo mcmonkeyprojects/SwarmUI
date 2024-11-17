@@ -1,11 +1,14 @@
 :root {
-    /* Core colors */
+    /* Base colors */
     --background: #0e0e2c;
-    --background-soft: #16213e;
-    --background-gray: #0f3460;
+    --background-soft: color-mix(in srgb, var(--background) 80%, white);
+    --background-gray: color-mix(in srgb, var(--background) 70%, #0f3460);
     --background-gray-danger: #361f1f;
     --background-danger: #200b0b;
-    --shadow: #2a4170;
+    --shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.3),  /* sm */
+        0 4px 6px rgba(0, 0, 0, 0.4),  /* md */
+        0 10px 15px rgba(0, 0, 0, 0.5); /* lg */
     --light-border: #2a4170;
     
     /* Text colors */
@@ -58,11 +61,6 @@
     /* Standard colors */
     --red: #f44336;
     --green: #4caf50;
-    
-    /* Shadow variables */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
 }
 
 /* Button styling */
@@ -200,15 +198,6 @@ a:hover {
     color: var(--background);
 }
 
-/* Splitter styling */
-.splitter-bar {
-    background-color: var(--border-color) !important;
-}
-
-.splitter-bar:hover {
-    background-color: var(--emphasis) !important;
-}
-
 #t2i-top-split-bar,
 #t2i-top-2nd-split-bar {
     width: var(--panel-gap, 7px) !important;
@@ -259,20 +248,6 @@ a:hover {
 .input-group .header-label {
     font-size: 15px;
     color: var(--text);
-}
-
-.input-group .input-group-header {
-    position: unset;
-    margin: 0;
-    height: auto;
-    min-height: 32px;
-    color: var(--text);
-    user-select: none;
-    background-color: var(--background-panel);
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
 }
 
 /* Add this to ensure proper spacing in the input group */
@@ -332,10 +307,6 @@ a:hover {
     width: 100% !important;
 }
 
-.input-group .header-label {
-    font-size: 15px;
-}
-
 .input-group .input-group-header-shrinkable:hover {
     color: var(--button-foreground-hover);
 }
@@ -388,4 +359,14 @@ a:hover {
     color: var(--text);
     padding: 0.5rem;
     border-bottom: 1px solid var(--border-color);
+}
+
+.element {
+    box-shadow: var(--shadow, 0); /* First value */
+}
+.element-md {
+    box-shadow: var(--shadow, 1); /* Second value */
+}
+.element-lg {
+    box-shadow: var(--shadow, 2); /* Third value */
 }
