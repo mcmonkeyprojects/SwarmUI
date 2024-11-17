@@ -94,3 +94,11 @@ OllamaVision:
     license: GPLv3
     tags:
     - tabs
+
+AdaptiveProjectedGuidance:
+    author: Quaggles
+    description: Adds support for Adaptive Projected Guidance, retain the quality-boosting advantages of CFG while enabling the use of higher guidance scales without oversaturation.
+    url: https://github.com/Quaggles/SwarmUI-AdaptiveProjectedGuidance
+    license: MIT
+    tags:
+    - parameters
