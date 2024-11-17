@@ -1,9 +1,7 @@
-/*** Neon Theme ***/
-
 :root {
     /* Core colors */
     --background: #0a0a1f;
-    --background-soft: #12125e;
+    --background-soft: color-mix(in srgb, var(--background) 70%, #0000ff);
     --background-gray: #1a1a3a;
     --background-gray-danger: #361f1f;
     --background-danger: #200b0b;
@@ -19,7 +17,7 @@
     --emphasis: #ff00ff;
     --emphasis-soft: #cc00cc;
     --emphasis-text: #00ff9d;
-    --border-color: #00ff9d40;
+    --border-color: color-mix(in srgb, var(--text) 25%, transparent);
     
     /* Buttons */
     --button-text: #00ff9d;
@@ -60,6 +58,11 @@
     /* Standard colors */
     --red: #ff0000;
     --green: #00ff00;
+    
+    /* Add these shadow variables */
+    --text-glow: 0 0 5px var(--text);
+    --emphasis-glow: 0 0 10px var(--emphasis);
+    --emphasis-glow-strong: 0 0 20px var(--emphasis);
 }
 
 /* Navigation and Menu Fixes */
@@ -72,14 +75,14 @@
 .nav-link {
     color: var(--text) !important;
     border: 1px solid transparent;
-    text-shadow: 0 0 5px var(--text);
+    text-shadow: var(--text-glow);
 }
 
 .nav-link:hover, .nav-link.active {
     color: var(--emphasis) !important;
     border-color: var(--border-color);
     background-color: var(--background-soft);
-    text-shadow: 0 0 10px var(--emphasis);
+    text-shadow: var(--emphasis-glow);
 }
 
 /* Dropdown Menu Fixes */
@@ -101,16 +104,17 @@
 .dropdown-item:hover {
     background-color: var(--background-soft) !important;
     color: var(--emphasis) !important;
-    text-shadow: 0 0 5px var(--emphasis);
+    text-shadow: var(--emphasis-glow);
 }
 
 /* Menu Headers */
-.input-group-header {
+.input-group-header,
+.input-group .input-group-header {
     background-color: var(--background-gray);
     color: var(--text);
-    padding: 0.5rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--border-color);
-    text-shadow: 0 0 5px var(--text);
+    text-shadow: var(--text-glow);
 }
 
 /* Neon glow effects */
@@ -143,7 +147,7 @@
     border-bottom: 1px solid var(--border-color);
     padding: 0.5rem;
     color: var(--text);
-    text-shadow: 0 0 5px var(--text);
+    text-shadow: var(--text-glow);
 }
 
 /* Custom scrollbar */
@@ -159,12 +163,12 @@
 ::-webkit-scrollbar-thumb {
     background: var(--emphasis);
     border-radius: 4px;
-    box-shadow: 0 0 5px var(--emphasis);
+    box-shadow: var(--emphasis-glow);
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--emphasis-soft);
-    box-shadow: 0 0 10px var(--emphasis-soft);
+    box-shadow: var(--emphasis-glow-strong);
 }
 
 /* Card styling */
@@ -245,17 +249,6 @@ a:hover {
     color: var(--background);
 }
 
-/* Splitter styling */
-.splitter-bar {
-    background-color: var(--border-color) !important;
-    box-shadow: 0 0 5px var(--emphasis);
-}
-
-.splitter-bar:hover {
-    background-color: var(--emphasis) !important;
-    box-shadow: 0 0 10px var(--emphasis);
-}
-
 #t2i-top-split-bar,
 #t2i-top-2nd-split-bar {
     width: var(--panel-gap, 7px) !important;
@@ -301,27 +294,6 @@ a:hover {
     top: 1.5px;
     transition: all 0.3s ease;
     color: var(--text) !important;
-}
-
-.input-group .header-label {
-    font-size: 15px;
-    color: var(--text);
-    text-shadow: 0 0 5px var(--text);
-}
-
-.input-group .input-group-header {
-    position: unset;
-    margin: 0;
-    height: auto;
-    min-height: 32px;
-    color: var(--text);
-    user-select: none;
-    background-color: var(--background-panel);
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    text-shadow: 0 0 5px var(--text);
 }
 
 /* Add this to ensure proper spacing in the input group */
@@ -372,7 +344,7 @@ a:hover {
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    text-shadow: 0 0 5px var(--text);
+    text-shadow: var(--text-glow);
 }
 
 .input-group .header-label-wrap {
@@ -385,6 +357,8 @@ a:hover {
 
 .input-group .header-label {
     font-size: 15px;
+    color: var(--text);
+    text-shadow: var(--text-glow);
 }
 
 .input-group .input-group-header-shrinkable:hover {
@@ -394,4 +368,3 @@ a:hover {
 .input-group .input-group-header-activated {
     background: transparent !important;
 }
-  
