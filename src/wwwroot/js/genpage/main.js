@@ -67,6 +67,14 @@ function toggleAutoLoadImages() {
     localStorage.setItem('autoLoadImages', `${autoLoadImagesElem.checked}`);
 }
 
+/** Reference to the auto-clear-batch toggle checkbox. */
+let showLoadSpinnersElem = getRequiredElementById('show_load_spinners_checkbox');
+showLoadSpinnersElem.checked = localStorage.getItem('showLoadSpinners') != 'false';
+/** Called when the user changes show-load-spinners toggle to update local storage. */
+function toggleShowLoadSpinners() {
+    localStorage.setItem('showLoadSpinners', `${showLoadSpinnersElem.checked}`);
+}
+
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
@@ -891,9 +899,11 @@ function gotImagePreview(image, metadata, batchId) {
     let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
-    batch_div.appendChild(spinnerDiv);
-    runLoadSpinner(spinnerDiv);
+    if (showLoadSpinnersElem.checked) {
+        let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
+        batch_div.appendChild(spinnerDiv);
+        runLoadSpinner(spinnerDiv);
+    }
     if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && !image.startsWith('DOPLACEHOLDER:'))) {
         setCurrentImage(src, metadata, batchId, true);
     }

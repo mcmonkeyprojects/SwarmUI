@@ -117,17 +117,22 @@
                             </div>
                             <div class="batchgear-toggler translate" title="If enabled, automatically clears out the image batch when generating a new one. If disabled, leaves history to grow until you refresh the page.">
                                 <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="auto_clear_batch_checkbox" onchange="toggleAutoClearBatch()"> <label class="form-check-label" for="auto_clear_batch_checkbox translate">Auto Clear Batch</label>
+                                    <input type="checkbox" class="form-check-input" id="auto_clear_batch_checkbox" onchange="toggleAutoClearBatch()"> <label class="form-check-label" for="auto_clear_batch_checkbox">Auto Clear Batch</label>
                                 </span>
                             </div>
                             <div class="batchgear-toggler translate" title="If enabled, automatically swaps to previews of new images the moment they're available, before the image itself is done generating.">
                                 <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="auto_load_previews_checkbox" onchange="toggleAutoLoadPreviews()" checked=""> <label class="form-check-label translate" for="auto_load_previews_checkbox translate">Auto Swap To Previews</label>
+                                    <input type="checkbox" class="form-check-input" id="auto_load_previews_checkbox" onchange="toggleAutoLoadPreviews()" checked=""> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Previews</label>
                                 </span>
                             </div>
                             <div class="batchgear-toggler translate" title="If enabled, automatically swaps to new images the moment they're done generating.">
                                 <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="auto_load_images_checkbox" onchange="toggleAutoLoadImages()" checked="true"> <label class="form-check-label translate" for="auto_load_previews_checkbox translate">Auto Swap To Images</label>
+                                    <input type="checkbox" class="form-check-input" id="auto_load_images_checkbox" onchange="toggleAutoLoadImages()" checked="true"> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Images</label>
+                                </span>
+                            </div>
+                            <div class="batchgear-toggler translate" title="If enabled, display loading spinners and failed generation crosses.">
+                                <span class="form-check form-switch display-inline-block">
+                                    <input type="checkbox" class="form-check-input" id="show_load_spinners_checkbox" onchange="toggleShowLoadSpinners()" checked="true"> <label class="form-check-label translate" for="show_load_spinners_checkbox">Show Load Spinners</label>
                                 </span>
                             </div>
                         </div>
