@@ -893,6 +893,7 @@ function gotImagePreview(image, metadata, batchId) {
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
     batch_div.appendChild(spinnerDiv);
+    runLoadSpinner(spinnerDiv);
     if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && !image.startsWith('DOPLACEHOLDER:'))) {
         setCurrentImage(src, metadata, batchId, true);
     }

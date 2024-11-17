@@ -667,7 +667,7 @@ textarea, input, select {
     margin: 16px;
     border: 16px solid var(--emphasis);
     border-radius: 50%;
-    animation: loading-spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    /* animation: loading-spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; */
     border-color: var(--emphasis) transparent transparent transparent;
 }
 .loading-spinner .loadspin1 {

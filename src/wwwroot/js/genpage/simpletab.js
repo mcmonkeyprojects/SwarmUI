@@ -98,6 +98,7 @@ class SimpleTab {
     markLoading() {
         this.loadingSpinner.style.display = '';
         this.imageElem.style.filter = 'blur(5px)';
+        runLoadSpinner(this.loadingSpinner);
     }
 
     markDoneLoading() {
