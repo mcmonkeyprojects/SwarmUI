@@ -29,7 +29,7 @@ public class ScorersExtension : Extension
     {
         T2IEngine.PostGenerateEvent += PostGenEvent;
         T2IEngine.PostBatchEvent += PostBatchEvent;
-        T2IParamGroup scoreGroup = new("Scoring", Toggles: true, IsAdvanced: true, Open: false);
+        T2IParamGroup scoreGroup = new("Scoring", Toggles: true, IsAdvanced: true, Open: false, Description: "The Scorers extension implements automatic image scoring, useful for eg Grid Generator usage to automatically rate the grid.\nThis is a legacy implementation pending a rewrite. Most users should not use this.");
         AutomaticScorer = T2IParamTypes.Register<List<string>>(new("Automatic Scorer", "Scoring engine(s) to use when scoring this image. Multiple scorers can be used and will be averaged together. Scores are saved in image metadata.",
                        "schuhmann_clip_plus_mlp", Group: scoreGroup, GetValues: (_) => [.. ScoringEngines]
                        ));
