@@ -471,7 +471,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
         return;
     }
     let batch_area = getRequiredElementById('current_image_batch');
-    let imgs = [...batch_area.getElementsByTagName('img')];
+    let imgs = [...batch_area.getElementsByTagName('img')].filter(i => findParentOfClass(i, 'image-block-placeholder') == null);
     let index = imgs.findIndex(img => img.src == curImgElem.src);
     if (index == -1) {
         let cleanSrc = (img) => img.src.length > 100 ? img.src.substring(0, 100) + '...' : img.src;
