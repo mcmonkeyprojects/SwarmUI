@@ -489,7 +489,17 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             {
                 if (msg[0].ToString() == "execution_error" && (msg[1] as JObject).TryGetValue("exception_message", out JToken actualMessage))
                 {
-                    throw new SwarmReadableErrorException($"ComfyUI execution error: {actualMessage}");
+                    string note = "";
+                    string cleanCheckMessage = $"{actualMessage}".ToLowerFast().Replace('\\', '/').Trim();
+                    while (cleanCheckMessage.Contains("//"))
+                    {
+                        cleanCheckMessage = cleanCheckMessage.Replace("//", "/");
+                    }
+                    if (cleanCheckMessage.StartsWith("[errno 2] no such file or directory") && cleanCheckMessage.After(':').Trim().Length > 250)
+                    {
+                        note = $"\n\n-- This looks like a Windows path length error (with a path of length {cleanCheckMessage.After(':').Trim().Length}). If it is, see https://superuser.com/questions/1807770/how-to-enable-long-paths-on-windows-11-home for info on how to enable Long Paths in Windows to fix this bug.";
+                    }
+                    throw new SwarmReadableErrorException($"ComfyUI execution error: {actualMessage}{note}");
                 }
             }
         }
