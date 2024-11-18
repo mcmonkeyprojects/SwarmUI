@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Html;
 using SwarmUI.Core;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace SwarmUI.Utils;
@@ -160,5 +161,15 @@ public static class WebUtil
             Logs.Debug($"Failed to check python version: {ex}");
             return "Failure to check python version. You must install Python 3.11 before installing SwarmUI.";
         }
+    }
+
+    /// <summary>Returns true if the user downloaded a source zip or something bad like that.</summary>
+    public static bool NeedGitInstallWarn()
+    {
+        if (!Directory.Exists(".git"))
+        {
+            return true;
+        }
+        return false;
     }
 }

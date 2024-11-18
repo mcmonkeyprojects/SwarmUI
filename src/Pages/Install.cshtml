@@ -60,6 +60,18 @@
                 </div>
                 <br><br>
             }
+            if (WebUtil.NeedGitInstallWarn())
+            {
+                <br><br><br>
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading">Improper Download Warning</h4>
+                    <p class="mb-0">You seem to have downloaded SwarmUI from a source zip or similar method.
+                        <br>This is improper and will cause issues.
+                        <br>Please close this installer, delete your SwarmUI folder, and follow the <a href="https://github.com/mcmonkeyprojects/SwarmUI#installing-on-windows">install instructions here</a>.
+                    </p>
+                </div>
+                <br><br>
+            }
         }
     </div>
 
