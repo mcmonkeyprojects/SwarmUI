@@ -89,9 +89,9 @@ SkimmedCFG:
 
 OllamaVision:
     author: Urabewe
-    description: Provides a frontend to connect to an Ollama server to allow image analysis and prompt generation.
+    description: Provides a frontend to connect to Ollama or OpenAI for image analysis using vision LLM models.
     url: https://github.com/Urabewe/OllamaVision
-    license: GPLv3
+    license: MIT
     tags:
     - tabs
 
