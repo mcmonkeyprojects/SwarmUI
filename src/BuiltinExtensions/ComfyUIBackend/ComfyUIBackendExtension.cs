@@ -175,7 +175,21 @@ public class ComfyUIBackendExtension : Extension
                 JObject paramMetadata = ParameterMetadataCacheHelper.GetValue((string)paramMetadataObj);
                 if (paramMetadata.TryGetValue(name, out JToken paramTok))
                 {
-                    return T2IParamType.FromNet((JObject)paramTok);
+                    T2IParamType type = T2IParamType.FromNet((JObject)paramTok);
+                    if (type.Type == T2IParamDataType.INTEGER && type.ViewType == ParamViewType.SEED)
+                    {
+                        string seedClean(string prior, string newVal)
+                        {
+                            int parsed = int.Parse(newVal);
+                            if (parsed == -1)
+                            {
+                                parsed = Random.Shared.Next(0, (int)type.Max);
+                            }
+                            return parsed.ToString();
+                        }
+                        type = type with { Clean = seedClean };
+                    }
+                    return type;
                 }
                 //Logs.Verbose($"Failed to find param metadata for {name} in {paramMetadata.Properties().Select(p => p.Name).JoinString(", ")}");
             }
@@ -184,11 +198,22 @@ public class ComfyUIBackendExtension : Extension
                 string nameNoPrefix = name.After("comfyrawworkflowinput");
                 T2IParamDataType type = FakeRawInputType.Type;
                 ParamViewType numberType = ParamViewType.BIG;
+                Func<string, string, string> cleaner = null;
                 if (nameNoPrefix.StartsWith("seed"))
                 {
                     type = T2IParamDataType.INTEGER;
                     numberType = ParamViewType.SEED;
                     nameNoPrefix = nameNoPrefix.After("seed");
+                    string seedClean(string prior, string newVal)
+                    {
+                        int parsed = int.Parse(newVal);
+                        if (parsed == -1)
+                        {
+                            parsed = Random.Shared.Next(0, int.MaxValue);
+                        }
+                        return parsed.ToString();
+                    }
+                    cleaner = seedClean;
                 }
                 else
                 {
@@ -203,7 +228,7 @@ public class ComfyUIBackendExtension : Extension
                         }
                     }
                 }
-                T2IParamType resType = FakeRawInputType with { Name = nameNoPrefix, ID = name, HideFromMetadata = false, Type = type, ViewType = numberType };
+                T2IParamType resType = FakeRawInputType with { Name = nameNoPrefix, ID = name, HideFromMetadata = false, Type = type, ViewType = numberType, Clean = cleaner };
                 if (type == T2IParamDataType.MODEL)
                 {
                     static string cleanup(string _, string val)
