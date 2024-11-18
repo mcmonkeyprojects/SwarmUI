@@ -628,7 +628,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     }
                     if (type.Type == T2IParamDataType.INTEGER && type.ViewType == ParamViewType.SEED && long.Parse(val.ToString()) == -1)
                     {
-                        return $"{Random.Shared.Next(0, type.Max <= 0 ? int.MaxValue : type.Max)}";
+                        return $"{Random.Shared.Next(0, type.Max <= 0 ? int.MaxValue : (int)type.Max)}";
                     }
                     if (val is T2IModel model)
                     {
