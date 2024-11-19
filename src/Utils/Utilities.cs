@@ -536,49 +536,61 @@ public static class Utilities
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
         Task loadData = Task.Run(async () =>
         {
-            byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
-            int nextOffset = 0;
-            while (true)
+            try
             {
-                Task<int> readTask = Task.Run(async () => await dlStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token));
-                Task waiting = Task.Delay(TimeSpan.FromMinutes(2));
-                Task reading = Task.Run(async () => await readTask);
-                Task first = await Task.WhenAny(waiting, reading);
-                if (first == waiting)
+                byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
+                int nextOffset = 0;
+                while (true)
                 {
-                    Logs.Warning($"Download from '{url}' has had no update for 2 minutes. Download may be failing. Will wait 3 more minutes and consider failed if it exceeds 5 total minutes.");
-                    Task waiting2 = Task.Delay(TimeSpan.FromMinutes(3));
-                    Task second = await Task.WhenAny(waiting2, reading);
-                    if (second == waiting2)
+                    using CancellationTokenSource delayCleanup = new();
+                    Task<int> readTask = Task.Run(async () => await dlStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token));
+                    Task waiting = Task.Delay(TimeSpan.FromMinutes(2), delayCleanup.Token);
+                    Task reading = Task.Run(async () => await readTask);
+                    Task first = await Task.WhenAny(waiting, reading);
+                    if (first == waiting)
+                    {
+                        Logs.Warning($"Download from '{altUrl}' has had no update for 2 minutes. Download may be failing. Will wait 3 more minutes and consider failed if it exceeds 5 total minutes.");
+                        Task waiting2 = Task.Delay(TimeSpan.FromMinutes(3), delayCleanup.Token);
+                        Task second = await Task.WhenAny(waiting2, reading);
+                        if (second == waiting2)
+                        {
+                            chunks.Enqueue(null);
+                            throw new SwarmReadableErrorException("Download timed out, 5 minutes with no new data over stream.");
+                        }
+                        Logs.Info($"Download progressed before timeout, continuing as normal (received {new MemoryNum(await readTask)}).");
+                    }
+                    delayCleanup.Cancel();
+                    int read = await readTask;
+                    if (read <= 0)
+                    {
+                        if (nextOffset > 0)
+                        {
+                            chunks.Enqueue(buffer[..nextOffset]);
+                        }
+                        chunks.Enqueue(null);
+                        break;
+                    }
+                    if (nextOffset + read < 1024 * 1024 * 5)
+                    {
+                        nextOffset += read;
+                    }
+                    else
+                    {
+                        chunks.Enqueue(buffer[..(nextOffset + read)]);
+                        nextOffset = 0;
+                    }
+                    if (cancel is not null && cancel.IsCancellationRequested)
                     {
                         chunks.Enqueue(null);
-                        throw new SwarmReadableErrorException("Download timed out, 5 minutes with no new data over stream.");
+                        break;
                     }
                 }
-                int read = await readTask;
-                if (read <= 0)
-                {
-                    if (nextOffset > 0)
-                    {
-                        chunks.Enqueue(buffer[..nextOffset]);
-                    }
-                    chunks.Enqueue(null);
-                    break;
-                }
-                if (nextOffset + read < 1024 * 1024 * 5)
-                {
-                    nextOffset += read;
-                }
-                else
-                {
-                    chunks.Enqueue(buffer[..(nextOffset + read)]);
-                    nextOffset = 0;
-                }
-                if (cancel is not null && cancel.IsCancellationRequested)
-                {
-                    chunks.Enqueue(null);
-                    break;
-                }
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Download from '{altUrl}' failed in loadData with internal exception: {ex.ReadableString()}");
+                chunks.Enqueue(null);
+                throw;
             }
         });
         void removeFile()
@@ -588,77 +600,94 @@ public static class Utilities
         }
         Task saveChunks = Task.Run(async () =>
         {
-            long progress = 0;
-            long startTime = Environment.TickCount64;
-            long lastUpdate = startTime;
-            SHA256 sha256 = SHA256.Create();
-            while (true)
+            try
             {
-                if (chunks.TryDequeue(out byte[] chunk))
+                long progress = 0;
+                long startTime = Environment.TickCount64;
+                long lastUpdate = startTime;
+                SHA256 sha256 = SHA256.Create();
+                while (true)
                 {
-                    if (chunk is null)
+                    if (chunks.TryDequeue(out byte[] chunk))
                     {
-                        Logs.Verbose($"Download {altUrl} completed with {progress} bytes.");
-                        progUpdates.Enqueue((progress, length, 0, true));
-                        if (length != 0 && progress != length)
+                        if (chunk is null)
                         {
-                            removeFile();
-                            if (cancel is not null && cancel.IsCancellationRequested)
+                            Logs.Verbose($"Download {altUrl} completed with {progress} bytes.");
+                            progUpdates.Enqueue((progress, length, 0, true));
+                            if (length != 0 && progress != length)
                             {
-                                throw new TaskCanceledException($"Download {altUrl} was cancelled.");
+                                removeFile();
+                                if (cancel is not null && cancel.IsCancellationRequested)
+                                {
+                                    throw new TaskCanceledException($"Download {altUrl} was cancelled.");
+                                }
+                                throw new SwarmReadableErrorException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
                             }
-                            throw new SwarmReadableErrorException($"Download {altUrl} failed: expected {length} bytes but got {progress} bytes.");
+                            sha256.TransformFinalBlock([], 0, 0);
+                            byte[] hash = sha256.Hash;
+                            string hashStr = Convert.ToHexString(hash).ToLowerFast();
+                            Logs.Verbose($"Raw file hash for {altUrl} is {hashStr}");
+                            if (verifyHash is not null && hashStr != verifyHash.ToLowerFast())
+                            {
+                                removeFile();
+                                throw new SwarmReadableErrorException($"Download {altUrl} failed: expected SHA256 hash {verifyHash} but got {hashStr}.");
+                            }
+                            break;
                         }
-                        sha256.TransformFinalBlock([], 0, 0);
-                        byte[] hash = sha256.Hash;
-                        string hashStr = Convert.ToHexString(hash).ToLowerFast();
-                        Logs.Verbose($"Raw file hash for {altUrl} is {hashStr}");
-                        if (verifyHash is not null && hashStr != verifyHash.ToLowerFast())
+                        progress += chunk.Length;
+                        long timeNow = Environment.TickCount64;
+                        if (timeNow - lastUpdate > 1000 && chunks.Count < 3)
                         {
-                            removeFile();
-                            throw new SwarmReadableErrorException($"Download {altUrl} failed: expected SHA256 hash {verifyHash} but got {hashStr}.");
+                            long bytesPerSecond = progress * 1000 / (timeNow - startTime);
+                            Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
+                            progUpdates.Enqueue((progress, length, bytesPerSecond, false));
+                            lastUpdate = timeNow;
                         }
-                        break;
+                        sha256.TransformBlock(chunk, 0, chunk.Length, null, 0);
+                        await writer.WriteAsync(chunk, combinedCancel.Token);
                     }
-                    progress += chunk.Length;
-                    long timeNow = Environment.TickCount64;
-                    if (timeNow - lastUpdate > 1000 && chunks.Count < 3)
+                    else
                     {
-                        long bytesPerSecond = progress * 1000 / (timeNow - startTime);
-                        Logs.Verbose($"Download {altUrl} now at {new MemoryNum(progress)} / {new MemoryNum(length)}... {(progress / (double)length) * 100:00.0}% ({new MemoryNum(bytesPerSecond)} per sec)");
-                        progUpdates.Enqueue((progress, length, bytesPerSecond, false));
-                        lastUpdate = timeNow;
+                        await Task.Delay(TimeSpan.FromSeconds(0.1), combinedCancel.Token);
                     }
-                    sha256.TransformBlock(chunk, 0, chunk.Length, null, 0);
-                    await writer.WriteAsync(chunk, combinedCancel.Token);
                 }
-                else
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(0.1), combinedCancel.Token);
-                }
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Download from '{altUrl}' failed in saveChunks with internal exception: {ex.ReadableString()}");
+                removeFile();
+                throw;
             }
         });
         Task sendUpdates = Task.Run(async () =>
         {
-            if (progressUpdate is null)
+            try
             {
-                return;
-            }
-            progressUpdate(0, length, 0);
-            while (true)
-            {
-                if (progUpdates.TryDequeue(out (long, long, long, bool) update))
+                if (progressUpdate is null)
                 {
-                    progressUpdate(update.Item1, update.Item2, update.Item3);
-                    if (update.Item4)
+                    return;
+                }
+                progressUpdate(0, length, 0);
+                while (true)
+                {
+                    if (progUpdates.TryDequeue(out (long, long, long, bool) update))
                     {
-                        break;
+                        progressUpdate(update.Item1, update.Item2, update.Item3);
+                        if (update.Item4)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(0.1), combinedCancel.Token);
                     }
                 }
-                else
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(0.1), combinedCancel.Token);
-                }
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Download from '{altUrl}' failed in sendUpdates with internal exception: {ex.ReadableString()}");
+                throw;
             }
         });
         await Task.WhenAll(loadData, saveChunks, sendUpdates);
