@@ -34,7 +34,7 @@
 
 # Image Models
 
-- Image demos included below are mini-grids of seeds `1, 2, 3` of the prompt `wide shot, photo of a cat with mixed black and white fur, sitting in the middle of an open roadway, holding a sign that says "Meow I'm a Cat". In the distance behind is a blurry road sign that says "Model Testing Street".` ran on each model.
+- Image demos included below are mini-grids of seeds `1, 2, 3` of the prompt `wide shot, photo of a cat with mixed black and white fur, sitting in the middle of an open roadway, holding a cardboard sign that says "Meow I'm a Cat". In the distance behind is a green road sign that says "Model Testing Street".` ran on each model.
 - For all models, "standard parameters" are used.
     - Steps is set to 20 except for Turbo models. Turbo models are ran at their standard fast steps (usually 4).
     - CFG is set appropriate to the model.
