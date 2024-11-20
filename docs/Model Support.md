@@ -1,7 +1,5 @@
 # Model Type Support In SwarmUI
 
-Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata and can import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
-
 - [Image Models](#image-models)
 
 | Model | Architecture | Year | Author | Scale | Quality/Status |
@@ -28,6 +26,11 @@ Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) m
     - [BnB NF4](#bits-and-bytes-nf4-format-models)
     - [GGUF](#gguf-quantized-models)
     - [TensorRT](#tensorrt)
+
+# General Info
+
+- Swarm natively supports `.safetensors` format models with [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata
+    - can also import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
 
 # Image Models
 
