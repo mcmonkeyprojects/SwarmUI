@@ -3,19 +3,24 @@
 Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata and can import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
 
 - [Image Models](#image-models)
-    - [Stable Diffusion v1 and v2](#stable-diffusion-v1-and-v2)
-    - [Stable Diffusion v1 Inpainting Models](#stable-diffusion-v1-inpainting-models)
-    - [Stable Diffusion XL](#stable-diffusion-xl)
-    - [Stable Diffusion 3](#stable-diffusion-3)
-    - [Stable Diffusion 3.5 Large](#stable-diffusion-35-large)
-    - [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium)
-    - [SDXL Turbo and SD Turbo](#sdxl-turbo-and-sd-turbo)
-    - [Lightning Models](#lightning-models)
-    - [Segmind SSD 1B](#segmind-ssd-1b)
-    - [Stable Cascade](#stable-cascade)
-    - [PixArt Sigma](#pixart-sigma)
-    - [AuraFlow v0.1 and v0.2](#auraflow-v01)
-    - [Black Forest Labs' Flux.1](#black-forest-labs-flux1-models)
+
+| Model | Architecture | Year | Author | Scale | Quality/Status |
+| ----  | ---- | ---- | ---- | ---- | ---- |
+[Stable Diffusion v1 and v2](#stable-diffusion-v1-and-v2) | unet | 2022 | Stability AI | 1B | Outdated |
+[Stable Diffusion v1 Inpainting Models](#stable-diffusion-v1-inpainting-models) | unet | 2022 | RunwayML | 1B | Outdated |
+[Stable Diffusion XL](#stable-diffusion-xl) | unet | 2023 | Stability AI | 2B | Older but some finetunes are worth using |
+[Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Outdated, prefer .5 |
+[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Modern, High Quality |
+[Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Modern, High Quality |
+[SDXL Turbo and SD Turbo](#sdxl-turbo-and-sd-turbo) | unet | 2023 | Stability AI | 2B | Outdated |
+[Latent Consistency Models](#latency-consistency-models) | unet | 2023 | Tsinghua University | 1B/2B | Outdated |
+[Lightning Models](#lightning-models) | unet | 2024 | ByteDance | 1B/2B | Outdated |
+[Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Outdated |
+[Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Outdated |
+[PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | Outdated |
+[AuraFlow v0.1 and v0.2](#auraflow-v01) | MMDiT | 2024 | Fal.AI | 6B | Outdated |
+[Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
+
 - [Video Models](#video-models)
     - [Genmo Mochi 1](#genmo-mochi-1-text2video)
     - [Stable Video Diffusion](#stable-video-diffusion)
@@ -26,7 +31,22 @@ Swarm natively supports [ModelSpec](https://github.com/Stability-AI/ModelSpec) m
 
 # Image Models
 
+- Image demos included below are mini-grids of seeds `1, 2, 3` of the prompt `wide shot, photo of a cat with mixed black and white fur, sitting in the middle of an open roadway, holding a sign that says "Meow I'm a Cat". In the distance behind is a blurry road sign that says "Model Testing Street".` ran on each model.
+- For all models, "standard parameters" are used.
+    - Steps is set to 20 except for Turbo models. Turbo models are ran at their standard fast steps (usually 4).
+    - CFG is set appropriate to the model.
+    - Resolution is model default.
+- This prompt is designed to require (1) multiple complex components (2) photorealism (3) text (4) impossible actions (cat holding a sign - Most models get very confused how to do this).
+- All generations are done on the base model of the relevant class, not on any finetune/lora/etc. Finetunes are likely to significantly change the qualitative capabilities, but unlikely to significantly change general ability to understand and follow prompts.
+- This is not a magic perfect test prompt, just a decent coverage of range to showcase approximately what you can expect from the model in terms of understanding and handling challenges.
+    - You could make a point that maybe I should have set CFG different or used a sigma value or changed up prompt phrasing or etc. and get better quality - this test intentionally uses very bland parameters to maximize identical comparison. Keep in mind that you can get better results out of a model by fiddling parameters.
+- You'll note models started being able to do decently well on this test in late 2024. Older models noticeable fail at the basic requirements of this test.
+
+
 ## Stable Diffusion v1 and v2
+
+![img](/docs/images/models/sd15.jpg)
+*(Above image is SDv1.5)*
 
 SDv1/SDv2 models work exactly as normal. Even legacy (pre-[ModelSpec](https://github.com/Stability-AI/ModelSpec) models are supported).
 
@@ -34,13 +54,19 @@ SDv1/SDv2 models work exactly as normal. Even legacy (pre-[ModelSpec](https://gi
 
 SDv1 inpaint models (RunwayML) are supported, but will work best if you manually edit the Architecture ID to be `stable-diffusion-v1/inpaint`.
 
+Under `Init Image` param group, checkmark `Use Inpainting Encode`.
+
 ## Stable Diffusion XL
+
+![img](/docs/images/models/sdxl.jpg)
 
 SDXL models work as normal, with the bonus that by default enhanced inference settings will be used (eg scaled up rescond).
 
 Additional, SDXL-Refiner architecture models can be inferenced, both as refiner or even as a base (you must manually set res to 512x512 and it will generate weird results).
 
 ## Stable Diffusion 3
+
+![img](/docs/images/models/sd3m.jpg)
 
 Stable Diffusion 3 Medium is supported and works as normal.
 
@@ -54,6 +80,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 ### Stable Diffusion 3.5 Large
 
+![img](/docs/images/models/sd35l.jpg)
+
 Stable Diffusion 3.5 Large is supported and works as normal, including both normal and Turbo variants.
 
 They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
@@ -62,9 +90,11 @@ You can also use [GGUF Versions](#gguf-quantized-models) of the models.
 
 ### Stable Diffusion 3.5 Medium
 
-Stable Diffusion 3.5 Large is supported and works as normal.
+![img](/docs/images/models/sd35m.jpg)
 
-They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
+Stable Diffusion 3.5 Medium is supported and works as normal.
+
+They behave approximately the same as the SD3 Medium models, including same settings and all.
 
 You can also use [GGUF Versions](#gguf-quantized-models) of the models.
 
@@ -88,6 +118,8 @@ SegMind SSD-1B models work the same as SD models.
 
 ## Stable Cascade
 
+![img](/docs/images/models/cascade.jpg)
+
 Stable Cascade is supported if you use the "ComfyUI Format" models (aka "All In One") https://huggingface.co/stabilityai/stable-cascade/tree/main/comfyui_checkpoints that come as a pair of `stage_b` and `stage_c` models.
 
 You must keep the two in the same folder, named the same with the only difference being `stage_b` vs `stage_c` in the filename.
@@ -95,6 +127,9 @@ You must keep the two in the same folder, named the same with the only differenc
 Either model can be selected in the UI to use them, it will automatically use both.
 
 # PixArt Sigma
+
+![img](/docs/images/models/pixart-sigma-xl-2.jpg)
+*(above image is PixArt Sigma XL 2 1024 MS)*
 
 The [PixArt Sigma MS models](https://huggingface.co/PixArt-alpha/PixArt-Sigma/tree/main) are supported in Swarm with a few setup steps.
 
@@ -112,11 +147,24 @@ These steps are not friendly to beginners (if PixArt gains popularity, likely mo
 
 # AuraFlow v0.1
 
-[Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) and [v0.2](https://huggingface.co/fal/AuraFlow-v0.2) is supported in Swarm, but you must manually select architecture to use it. (The AuraFlow team intend to add modelspec metadata in the near future).
+![img](/docs/images/models/auraflow-02.jpg)
+*(above image is AuraFlow v0.2)*
+
+[Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) and [v0.2](https://huggingface.co/fal/AuraFlow-v0.2) is supported in Swarm, but you must manually select architecture to use it. (The AuraFlow team said they intend to add modelspec metadata in the future).
 
 Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlow` as the architecture, and set resolution to `1024x1024`.
 
 # Black Forest Labs' Flux.1 Models
+
+### Flux Dev
+
+![img](/docs/images/models/flux-dev.jpg)
+
+### Flux Schnell
+
+![img](/docs/images/models/flux-schnell.jpg)
+
+### Info
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
     - **Recommended:** use the [NF4 Format Files](#bits-and-bytes-nf4-format-models)
