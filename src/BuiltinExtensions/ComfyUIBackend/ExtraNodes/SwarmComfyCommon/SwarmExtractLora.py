@@ -43,8 +43,8 @@ def do_lora_handle(base_data, other_data, rank, prefix, require, do_bias, callba
         callback()
         if key not in other_data:
             continue
-        base_tensor = base_data[key]
-        other_tensor = other_data[key]
+        base_tensor = base_data[key].float()
+        other_tensor = other_data[key].float()
         if key.startswith("clip_g"):
             key = "1." + key[len("clip_g."):]
         elif key.startswith("clip_l"):

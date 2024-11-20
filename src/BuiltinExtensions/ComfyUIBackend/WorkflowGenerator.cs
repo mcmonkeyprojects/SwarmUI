@@ -634,7 +634,7 @@ public class WorkflowGenerator
             }
             LoadingVAE = CreateVAELoader(xlVae);
         }
-        else if (model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet") || model.OriginatingFolderPath.Replace('\\', '/').EndsWith("/diffusion_models")) // Hacky but it works for now
+        else if (model.IsDiffusionModelsFormat)
         {
             if (model.Metadata?.SpecialFormat == "gguf")
             {

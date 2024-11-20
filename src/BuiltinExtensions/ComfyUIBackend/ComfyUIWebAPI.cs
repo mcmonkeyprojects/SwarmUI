@@ -434,39 +434,68 @@ public static class ComfyUIWebAPI
         {
             metadata["modelspec.thumbnail"] = otherModelData.Metadata.PreviewImage;
         }
-        JObject workflow = new()
+        JObject workflow = [];
+        if (baseModelData.IsDiffusionModelsFormat)
         {
-            ["4"] = new JObject()
+            workflow["4"] = new JObject()
+            {
+                ["class_type"] = "UNETLoader",
+                ["inputs"] = new JObject()
+                {
+                    ["unet_name"] = baseModelData.ToString(format),
+                    ["weight_dtype"] = "fp8_e4m3fn"
+                }
+            };
+        }
+        else
+        {
+            workflow["4"] = new JObject()
             {
                 ["class_type"] = "CheckpointLoaderSimple",
                 ["inputs"] = new JObject()
                 {
                     ["ckpt_name"] = baseModelData.ToString(format)
                 }
-            },
-            ["5"] = new JObject()
+            };
+        }
+        if (otherModelData.IsDiffusionModelsFormat)
+        {
+            workflow["5"] = new JObject()
+            {
+                ["class_type"] = "UNETLoader",
+                ["inputs"] = new JObject()
+                {
+                    ["unet_name"] = otherModelData.ToString(format),
+                    ["weight_dtype"] = "fp8_e4m3fn"
+                }
+            };
+        }
+        else
+        {
+            workflow["5"] = new JObject()
             {
                 ["class_type"] = "CheckpointLoaderSimple",
                 ["inputs"] = new JObject()
                 {
                     ["ckpt_name"] = otherModelData.ToString(format)
                 }
-            },
-            ["6"] = new JObject()
+            };
+        }
+        bool doClip = !baseModelData.IsDiffusionModelsFormat && !otherModelData.IsDiffusionModelsFormat;
+        workflow["6"] = new JObject()
+        {
+            ["class_type"] = "SwarmExtractLora",
+            ["inputs"] = new JObject()
             {
-                ["class_type"] = "SwarmExtractLora",
-                ["inputs"] = new JObject()
-                {
-                    ["base_model"] = new JArray() { "4", 0 },
-                    ["base_model_clip"] = new JArray() { "4", 1 },
-                    ["other_model"] = new JArray() { "5", 0 },
-                    ["other_model_clip"] = new JArray() { "5", 1 },
-                    ["rank"] = rank,
-                    ["save_rawpath"] = Program.T2IModelSets["LoRA"].FolderPaths[0] + "/",
-                    ["save_filename"] = outName.Replace('\\', '/').Replace("/", format ?? $"{Path.DirectorySeparatorChar}"),
-                    ["save_clip"] = "true",
-                    ["metadata"] = metadata.ToString()
-                }
+                ["base_model"] = new JArray() { "4", 0 },
+                ["base_model_clip"] = doClip ? new JArray() { "4", 1 } : null,
+                ["other_model"] = new JArray() { "5", 0 },
+                ["other_model_clip"] = doClip ? new JArray() { "5", 1 } : null,
+                ["rank"] = rank,
+                ["save_rawpath"] = Program.T2IModelSets["LoRA"].FolderPaths[0] + "/",
+                ["save_filename"] = outName.Replace('\\', '/').Replace("/", format ?? $"{Path.DirectorySeparatorChar}"),
+                ["save_clip"] = doClip,
+                ["metadata"] = metadata.ToString()
             }
         };
         Logs.Info($"Starting LoRA extraction (for user {session.User.UserID}) for base '{baseModel}', other '{otherModel}', rank {rank}, output to '{outName}'...");
