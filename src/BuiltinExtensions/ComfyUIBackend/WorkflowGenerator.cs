@@ -955,7 +955,32 @@ public class WorkflowGenerator
         {
             defscheduler ??= "simple";
         }
-        if (FinalLoadedModel?.ModelClass ?.ID == "stable-diffusion-xl-v1-edit")
+        string classId = FinalLoadedModel?.ModelClass?.ID ?? "";
+        static bool isSpecial(T2IModel model)
+        {
+            string modelId = model?.ModelClass?.ID ?? "";
+            return modelId.EndsWith("/lora-depth") || modelId.EndsWith("/lora-canny");
+        }
+        if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial))
+        {
+            if (FinalInputImage is null)
+            {
+                // TODO: Get the correct image (eg if canny/depth is used as a refiner or something silly it should still work)
+                string decoded = CreateVAEDecode(FinalVae, latent);
+                FinalInputImage = [decoded, 0];
+            }
+            string ip2p2condNode = CreateNode("InstructPixToPixConditioning", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["vae"] = FinalVae,
+                ["pixels"] = FinalInputImage
+            });
+            pos = [ip2p2condNode, 0];
+            neg = [ip2p2condNode, 1];
+            latent = [ip2p2condNode, 2];
+        }
+        if (classId == "stable-diffusion-xl-v1-edit")
         {
             // TODO: SamplerCustomAdvanced logic should be used for *all* models, not just ip2p
             if (FinalInputImage is null)

@@ -202,6 +202,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Drag an image to the prompt area
     - On the top left, find the ReVision parameter group
     - Select the `Use Style Model` parameter to the Redux model
+- For "Canny" / "Depth" models, they work like regular models (or LoRAs), but require an Init Image to function.
 
 # Video Models
 
