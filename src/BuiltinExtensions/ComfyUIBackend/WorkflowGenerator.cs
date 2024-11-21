@@ -88,6 +88,9 @@ public class WorkflowGenerator
     /// <summary>What model currently matches <see cref="FinalModel"/>.</summary>
     public T2IModel FinalLoadedModel;
 
+    /// <summary>What models currently match <see cref="FinalModel"/> (including eg loras).</summary>
+    public List<T2IModel> FinalLoadedModelList = [];
+
     /// <summary>Mapping of any extra nodes to keep track of, Name->ID, eg "MyNode" -> "15".</summary>
     public Dictionary<string, string> NodeHelpers = [];
 
@@ -285,6 +288,7 @@ public class WorkflowGenerator
                     throw new SwarmUserErrorException($"LoRA Model '{loras[i]}' not found in the model set.");
                 }
             }
+            FinalLoadedModelList.Add(lora);
             if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
             {
                 lora.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early

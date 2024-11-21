@@ -52,6 +52,7 @@ public class WorkflowGeneratorSteps
         AddStep(g =>
         {
             g.FinalLoadedModel = g.UserInput.Get(T2IParamTypes.Model);
+            g.FinalLoadedModelList = [g.FinalLoadedModel];
             (g.FinalLoadedModel, g.FinalModel, g.FinalClip, g.FinalVae) = g.CreateStandardModelLoader(g.FinalLoadedModel, "Base", "4");
         }, -15);
         AddModelGenStep(g =>
@@ -937,6 +938,7 @@ public class WorkflowGeneratorSteps
                     modelMustReencode = refineModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1-refiner" || baseModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1";
                     g.NoVAEOverride = refineModel.ModelClass?.CompatClass != baseModel.ModelClass?.CompatClass;
                     g.FinalLoadedModel = refineModel;
+                    g.FinalLoadedModelList = [refineModel];
                     (g.FinalLoadedModel, g.FinalModel, g.FinalClip, g.FinalVae) = g.CreateStandardModelLoader(refineModel, "Refiner", "20");
                     prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, refineModel, true);
                     negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.FinalClip, refineModel, false);
