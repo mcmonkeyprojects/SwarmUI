@@ -231,18 +231,12 @@ public class WorkflowGeneratorSteps
                     }
                     else
                     {
-                        g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: currentMask);
-                        string appliedNode = g.CreateNode("SetLatentNoiseMask", new JObject()
-                        {
-                            ["samples"] = g.FinalLatentImage,
-                            ["mask"] = currentMask
-                        });
-                        g.FinalLatentImage = [appliedNode, 0];
+                        g.FinalLatentImage = g.DoMaskedVAEEncode(g.FinalVae, ["15", 0], currentMask, "5");
                     }
                 }
                 else
                 {
-                    g.CreateVAEEncode(g.FinalVae, ["15", 0], "5", mask: currentMask);
+                    g.CreateVAEEncode(g.FinalVae, ["15", 0], "5");
                 }
                 if (g.UserInput.TryGet(T2IParamTypes.UnsamplerPrompt, out string unprompt))
                 {

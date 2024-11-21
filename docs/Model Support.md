@@ -208,6 +208,11 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
             - (TODO: Native interface to make that easier instead of janking controlnet)
     - Make sure to set Creativity to `1`.
     - This is similar in operation to Edit models.
+- For "Fill" (inpaint model), it works like other inpaint models.
+    - "Edit Image" interface encouraged.
+    - Mask a region and go.
+    - Creativity `1` works well.
+    - Larger masks recommended. Small ones may not replace content.
 
 # Video Models
 

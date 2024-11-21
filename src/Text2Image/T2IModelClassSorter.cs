@@ -269,6 +269,10 @@ public class T2IModelClassSorter
         {
             return false;
         }});
+        Register(new() { ID = "Flux.1-dev/inpaint", CompatClass = "flux-1", Name = "Flux.1 Fill/Inpaint", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "Flux.1-dev/lora-depth", CompatClass = "flux-1", Name = "Flux.1 Depth LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return false;
@@ -292,6 +296,7 @@ public class T2IModelClassSorter
         Remaps["Flux.1-canny-dev-lora"] = "Flux.1-dev/lora-canny";
         Remaps["Flux.1-depth-dev"] = "Flux.1-dev/depth";
         Remaps["Flux.1-canny-dev"] = "Flux.1-dev/canny";
+        Remaps["Flux.1-fill-dev"] = "Flux.1-dev/inpaint";
         Remaps["flux-1-schnell"] = "Flux.1-schnell";
         Remaps["flux-1-schnell/lora"] = "Flux.1-dev/lora";
         Remaps["flux-1-schnell/controlnet"] = "Flux.1-dev/controlnet";

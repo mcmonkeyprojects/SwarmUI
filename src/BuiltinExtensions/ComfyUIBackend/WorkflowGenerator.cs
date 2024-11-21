@@ -394,13 +394,8 @@ public class WorkflowGenerator
             ["height"] = model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
             ["can_shrink"] = true
         });
-        string vaeEncoded = CreateVAEEncode(vae, [scaledImage, 0], null, true);
-        string masked = CreateNode("SetLatentNoiseMask", new JObject()
-        {
-            ["samples"] = new JArray() { vaeEncoded, 0 },
-            ["mask"] = new JArray() { croppedMask, 0 }
-        });
-        return new(boundsNode, croppedMask, masked, scaledImage);
+        JArray encoded = DoMaskedVAEEncode(vae, [scaledImage, 0], [croppedMask, 0], null);
+        return new(boundsNode, croppedMask, $"{encoded[0]}", scaledImage);
     }
 
     /// <summary>Returns a masked image composite with mask thresholding.</summary>
@@ -961,6 +956,22 @@ public class WorkflowGenerator
             string modelId = model?.ModelClass?.ID ?? "";
             return modelId.EndsWith("/lora-depth") || modelId.EndsWith("/lora-canny");
         }
+        if (classId == "Flux.1-dev/inpaint")
+        {
+            // Not sure why, but InpaintModelConditioning is required here.
+            string inpaintNode = CreateNode("InpaintModelConditioning", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["vae"] = FinalVae,
+                ["pixels"] = FinalInputImage,
+                ["mask"] = FinalMask,
+                ["noise_mask"] = true
+            });
+            pos = [inpaintNode, 0];
+            neg = [inpaintNode, 1];
+            latent = [inpaintNode, 2];
+        }
         if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial))
         {
             if (FinalInputImage is null)
@@ -1126,6 +1137,18 @@ public class WorkflowGenerator
             created = CreateKSampler(cascadeModel, [stageBCond, 0], neg, [latent[0], 1], 1.1, steps, startStep, endStep, seed + 27, returnWithLeftoverNoise, addNoise, sigmin, sigmax, previews ?? previews, defsampler, defscheduler, id, true);
         }
         return created;
+    }
+
+    /// <summary>Creates a VAE Encode node and applies mask..</summary>
+    public JArray DoMaskedVAEEncode(JArray vae, JArray image, JArray mask, string id)
+    {
+        string encoded = CreateVAEEncode(vae, image, id, mask: mask);
+        string appliedNode = CreateNode("SetLatentNoiseMask", new JObject()
+        {
+            ["samples"] = new JArray() { encoded, 0 },
+            ["mask"] = mask
+        });
+        return [appliedNode, 0];
     }
 
     /// <summary>Creates a VAE Encode node.</summary>
