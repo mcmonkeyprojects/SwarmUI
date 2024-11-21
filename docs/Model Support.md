@@ -170,7 +170,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 ### Info
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
-    - **Recommended:** use the [NF4 Format Files](#bits-and-bytes-nf4-format-models)
+    - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models)
     - **Alternate:** the simplified fp8 file:
         - Dev <https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors>
         - Schnell <https://huggingface.co/Comfy-Org/flux1-schnell/blob/main/flux1-schnell-fp8.safetensors>
