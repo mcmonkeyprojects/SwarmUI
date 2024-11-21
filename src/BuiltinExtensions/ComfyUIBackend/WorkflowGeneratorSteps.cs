@@ -339,19 +339,56 @@ public class WorkflowGeneratorSteps
         {
             if (g.UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Any())
             {
-                string visModelName = "clip_vision_g.safetensors";
-                if (g.UserInput.TryGet(T2IParamTypes.ReVisionModel, out T2IModel visionModel))
+                if (g.UserInput.TryGet(ComfyUIBackendExtension.StyleModelForRevision, out string styleModelName))
                 {
-                    visModelName = visionModel.ToString(g.ModelFolderFormat);
+                    requireVisionModel(g, "sigclip_vision_patch14_384.safetensors", "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "1fee501deabac72f0ed17610307d7131e3e9d1e838d0363aa3c2b97a6e03fb33");
+                    string styleModelClipLoader = g.CreateNode("CLIPVisionLoader", new JObject()
+                    {
+                        ["clip_name"] = "sigclip_vision_patch14_384.safetensors"
+                    });
+                    string styleModelLoader = g.CreateNode("StyleModelLoader", new JObject()
+                    {
+                        ["style_model_name"] = styleModelName
+                    });
+                    for (int i = 0; i < images.Count; i++)
+                    {
+                        string imageLoader = g.CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
+                        string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
+                        {
+                            ["clip_vision"] = new JArray() { $"{styleModelClipLoader}", 0 },
+                            ["image"] = new JArray() { $"{imageLoader}", 0 }
+                        });
+                        string styled = g.CreateNode("StyleModelApply", new JObject()
+                        {
+                            ["conditioning"] = g.FinalPrompt,
+                            ["clip_vision_output"] = new JArray() { $"{encoded}", 0 },
+                            ["style_model"] = new JArray() { $"{styleModelLoader}", 0 }
+                        });
+                        g.FinalPrompt = [styled, 0];
+                    }
                 }
-                else
+                string visionLoaderId = null;
+                string getVisionLoader()
                 {
-                    requireVisionModel(g, visModelName, "https://huggingface.co/stabilityai/control-lora/resolve/main/revision/clip_vision_g.safetensors", "9908329b3ead722a693ea400fab1d7c9ec91d6736fd194a94d20d793457f9c2e");
+                    if (visionLoaderId is not null)
+                    {
+                        return visionLoaderId;
+                    }
+                    string visModelName = "clip_vision_g.safetensors";
+                    if (g.UserInput.TryGet(T2IParamTypes.ReVisionModel, out T2IModel visionModel))
+                    {
+                        visModelName = visionModel.ToString(g.ModelFolderFormat);
+                    }
+                    else
+                    {
+                        requireVisionModel(g, visModelName, "https://huggingface.co/stabilityai/control-lora/resolve/main/revision/clip_vision_g.safetensors", "9908329b3ead722a693ea400fab1d7c9ec91d6736fd194a94d20d793457f9c2e");
+                    }
+                    visionLoaderId = g.CreateNode("CLIPVisionLoader", new JObject()
+                    {
+                        ["clip_name"] = visModelName
+                    });
+                    return visionLoaderId;
                 }
-                string visionLoader = g.CreateNode("CLIPVisionLoader", new JObject()
-                {
-                    ["clip_name"] = visModelName
-                });
                 double revisionStrength = g.UserInput.Get(T2IParamTypes.ReVisionStrength, 1);
                 if (revisionStrength > 0)
                 {
@@ -382,7 +419,7 @@ public class WorkflowGeneratorSteps
                         string imageLoader = g.CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
                         string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
                         {
-                            ["clip_vision"] = new JArray() { $"{visionLoader}", 0 },
+                            ["clip_vision"] = new JArray() { $"{getVisionLoader()}", 0 },
                             ["image"] = new JArray() { $"{imageLoader}", 0 }
                         });
                         string unclipped = g.CreateNode("unCLIPConditioning", new JObject()
@@ -421,7 +458,7 @@ public class WorkflowGeneratorSteps
                 }
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.UseIPAdapterForRevision, out string ipAdapter) && ipAdapter != "None")
                 {
-                    string ipAdapterVisionLoader = visionLoader;
+                    string ipAdapterVisionLoader = getVisionLoader();
                     if (g.Features.Contains("cubiqipadapterunified"))
                     {
                         requireVisionModel(g, "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors", "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030");

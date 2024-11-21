@@ -25,3 +25,8 @@
     - Whenever you select a model category you haven't tried before, Swarm will automatically download the model files for it.
         - Depending on your network speed, this may take a moment. Check the server logs to see a progress report of the download.
         - After being downloaded once, the models are stored in `(Swarm)/Models/ipadapter` (or wherever your models dir is), and won't need to be downloaded again.
+
+# Style Models
+
+- Style models, such as Flux Redux, can be used through the same interface.
+    - See [the model support doc for Flux Redux specifics](/docs/Model%20Support.md#flux1-tools)

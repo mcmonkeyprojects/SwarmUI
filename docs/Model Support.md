@@ -193,6 +193,16 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - You _can_ do a refiner upscale 2x and it will work but take a long time and might not have excellent quality. Refiner tiling may be better.
     - You can also use [GGUF Versions](#gguf-quantized-models) of the models.
 
+### Flux.1 Tools
+
+- The Flux.1 Tools announced [here by BFL](https://blackforestlabs.ai/flux-1-tools/) are supported in SwarmUI
+- For "Redux", a Flux form of image prompting:
+    - Download [the Redux model](https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev/blob/main/flux1-redux-dev.safetensors) to `(SwarmUI)/Models/style_models`
+    - (Don't worry about sigclip, it is automanaged)
+    - Drag an image to the prompt area
+    - On the top left, find the ReVision parameter group
+    - Select the `Use Style Model` parameter to the Redux model
+
 # Video Models
 
 ## Stable Video Diffusion
