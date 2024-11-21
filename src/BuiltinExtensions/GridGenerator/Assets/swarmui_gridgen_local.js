@@ -39,9 +39,9 @@ function formatMetadata(metadata) {
             }
         }
     };
-    appendObject(data.sui_image_params);
-    if ('sui_extra_data' in data) {
-        appendObject(data.sui_extra_data);
+    appendObject(metadata.sui_image_params);
+    if ('sui_extra_data' in metadata) {
+        appendObject(metadata.sui_extra_data);
     }
     return result;
 }
