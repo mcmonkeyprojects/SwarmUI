@@ -202,6 +202,9 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Drag an image to the prompt area
     - On the top left, find the ReVision parameter group
     - Select the `Use Style Model` parameter to the Redux model
+    - There's an advanced `Style Model Apply Start` param to allow better structural control from your text prompt
+        - set to 0.1 or 0.2 or so to have the text prompt guide structure before redux takes over styling
+        - at 0, text prompt is nearly ignored
 - For "Canny" / "Depth" models, they work like regular models (or LoRAs), but require an Init Image to function.
     - You must input an appropriate image. So eg for the depth model, input a Depth Map.
         - You can use the controlnet parameter group to generate depth maps or canny images from regular images.

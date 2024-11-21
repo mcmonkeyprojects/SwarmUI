@@ -359,7 +359,31 @@ public class WorkflowGeneratorSteps
                             ["clip_vision_output"] = new JArray() { $"{encoded}", 0 },
                             ["style_model"] = new JArray() { $"{styleModelLoader}", 0 }
                         });
-                        g.FinalPrompt = [styled, 0];
+                        if (g.UserInput.TryGet(ComfyUIBackendExtension.StyleModelApplyStart, out double applyAt) && applyAt > 0)
+                        {
+                            string cond1 = g.CreateNode("ConditioningSetTimestepRange", new JObject()
+                            {
+                                ["conditioning"] = g.FinalPrompt,
+                                ["start"] = 0,
+                                ["end"] = applyAt
+                            });
+                            string cond2 = g.CreateNode("ConditioningSetTimestepRange", new JObject()
+                            {
+                                ["conditioning"] = new JArray() { styled, 0 },
+                                ["start"] = applyAt,
+                                ["end"] = 1
+                            });
+                            string combined = g.CreateNode("ConditioningCombine", new JObject()
+                            {
+                                ["conditioning_1"] = new JArray() { cond1, 0 },
+                                ["conditioning_2"] = new JArray() { cond2, 0 },
+                            });
+                            g.FinalPrompt = [combined, 0];
+                        }
+                        else
+                        {
+                            g.FinalPrompt = [styled, 0];
+                        }
                     }
                 }
                 string visionLoaderId = null;
