@@ -770,49 +770,8 @@ public class WorkflowGeneratorSteps
                     }
                     if (preprocessor.ToLowerFast() != "none")
                     {
-                        JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new SwarmUserErrorException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
-                        JArray preprocActual;
-                        if (objectData is JObject objObj && objObj.TryGetValue("swarm_custom", out JToken swarmCustomTok) && swarmCustomTok.Value<bool>())
-                        {
-                            preprocActual = g.CreateNodesFromSpecialSyntax(objObj, [imageNodeActual]);
-                        }
-                        else
-                        {
-                            string preProcNode = g.CreateNode(preprocessor, (_, n) =>
-                            {
-                                n["inputs"] = new JObject()
-                                {
-                                    ["image"] = imageNodeActual
-                                };
-                                foreach (string type in new[] { "required", "optional" })
-                                {
-                                    if (((JObject)objectData["input"]).TryGetValue(type, out JToken set))
-                                    {
-                                        foreach ((string key, JToken data) in (JObject)set)
-                                        {
-                                            if (key == "mask")
-                                            {
-                                                if (g.FinalMask is null)
-                                                {
-                                                    throw new SwarmUserErrorException($"ControlNet Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
-                                                }
-                                                n["inputs"]["mask"] = g.FinalMask;
-                                            }
-                                            else if (key == "resolution")
-                                            {
-                                                n["inputs"]["resolution"] = (int)Math.Round(Math.Sqrt(g.UserInput.GetImageWidth() * g.UserInput.GetImageHeight()) / 64) * 64;
-                                            }
-                                            else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
-                                            {
-                                                n["inputs"][key] = defaultValue;
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                            g.NodeHelpers["controlnet_preprocessor"] = $"{preProcNode}";
-                            preprocActual = [preProcNode, 0];
-                        }
+                        JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual);
+                        g.NodeHelpers["controlnet_preprocessor"] = $"{preprocActual[0]}";
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
                             g.FinalImageOut = preprocActual;

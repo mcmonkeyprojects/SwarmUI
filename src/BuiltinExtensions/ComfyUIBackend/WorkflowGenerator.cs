@@ -1219,6 +1219,49 @@ public class WorkflowGenerator
         FinalModel = [diffNode, 0];
     }
 
+    /// <summary>Creates an image preprocessor node.</summary>
+    public JArray CreatePreprocessor(string preprocessor, JArray imageNode)
+    {
+        JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new SwarmUserErrorException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
+        if (objectData is JObject objObj && objObj.TryGetValue("swarm_custom", out JToken swarmCustomTok) && swarmCustomTok.Value<bool>())
+        {
+            return  CreateNodesFromSpecialSyntax(objObj, [imageNode]);
+        }
+        string preProcNode = CreateNode(preprocessor, (_, n) =>
+        {
+            n["inputs"] = new JObject()
+            {
+                ["image"] = imageNode
+            };
+            foreach (string type in new[] { "required", "optional" })
+            {
+                if (((JObject)objectData["input"]).TryGetValue(type, out JToken set))
+                {
+                    foreach ((string key, JToken data) in (JObject)set)
+                    {
+                        if (key == "mask")
+                        {
+                            if (FinalMask is null)
+                            {
+                                throw new SwarmUserErrorException($"Preprocessor '{preprocessor}' requires a mask. Please set a mask under the Init Image parameter group.");
+                            }
+                            n["inputs"]["mask"] = FinalMask;
+                        }
+                        else if (key == "resolution")
+                        {
+                            n["inputs"]["resolution"] = (int)Math.Round(Math.Sqrt(UserInput.GetImageWidth() * UserInput.GetImageHeight()) / 64) * 64;
+                        }
+                        else if (data.Count() == 2 && data[1] is JObject settings && settings.TryGetValue("default", out JToken defaultValue))
+                        {
+                            n["inputs"][key] = defaultValue;
+                        }
+                    }
+                }
+            }
+        });
+        return [preProcNode, 0];
+    }
+
     /// <summary>Create nodes from a special prebuilt node structure data definition.</summary>
     public JArray CreateNodesFromSpecialSyntax(JObject data, JArray[] inputs)
     {
