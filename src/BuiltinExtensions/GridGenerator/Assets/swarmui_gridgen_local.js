@@ -39,13 +39,13 @@ function formatMetadata(metadata) {
             }
         }
     };
-	if (metadata) {
-		if ('sui_image_params' in metadata) {
-			appendObject(metadata.sui_image_params);
-		}
-		if ('sui_extra_data' in metadata) {
-			appendObject(metadata.sui_extra_data);
-		}
-	}
+    if (metadata) {
+        if ('sui_image_params' in metadata) {
+            appendObject(metadata.sui_image_params);
+        }
+        if ('sui_extra_data' in metadata) {
+            appendObject(metadata.sui_extra_data);
+        }
+    }
     return result;
 }
