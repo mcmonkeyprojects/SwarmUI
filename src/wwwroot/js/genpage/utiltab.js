@@ -271,9 +271,10 @@ class ModelDownloaderUtil {
                 return;
             }
             if (rawData.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
-            if (rawData.type == 'LORA') { modelType = 'LoRA'; }
+            if (['LORA', 'LoCon', 'LyCORIS'].includes(rawData.type)) { modelType = 'LoRA'; }
             if (rawData.type == 'TextualInversion') { modelType = 'Embedding'; }
             if (rawData.type == 'ControlNet') { modelType = 'ControlNet'; }
+            if (rawData.type == 'VAE') { modelType = 'VAE'; }
             let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
             let applyMetadata = (img) => {
                 let url = `${this.civitPrefix}models/${id}?modelVersionId=${versId}`;
