@@ -203,6 +203,11 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - On the top left, find the ReVision parameter group
     - Select the `Use Style Model` parameter to the Redux model
 - For "Canny" / "Depth" models, they work like regular models (or LoRAs), but require an Init Image to function.
+    - You must input an appropriate image. So eg for the depth model, input a Depth Map.
+        - You can use the controlnet parameter group to generate depth maps or canny images from regular images.
+            - (TODO: Native interface to make that easier instead of janking controlnet)
+    - Make sure to set Creativity to `1`.
+    - This is similar in operation to Edit models.
 
 # Video Models
 
