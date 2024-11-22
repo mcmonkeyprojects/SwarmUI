@@ -591,8 +591,8 @@ public class ComfyUIBackendExtension : Extension
         StyleModelForRevision = T2IParamTypes.Register<string>(new("Use Style Model", $"Select a Style model to use it for image-prompt input handling.\nFlux.1 Redux is an example of a style model.\nPlace these models in `(Swarm)/Models/style_models`.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", GetValues: _ => StyleModels, Group: T2IParamTypes.GroupRevision, OrderPriority: 14, ChangeWeight: 1
             ));
-        StyleModelApplyStart = T2IParamTypes.Register<double>(new("Style Model Apply Start", "When to start applying the Style Model, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through.",
-            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
+        StyleModelApplyStart = T2IParamTypes.Register<double>(new("Style Model Apply Start", "When to start applying the Style Model, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through.\nThis is probably off-scale due to scheduler behavior in ComfyUI internals. Very low values are recommend for practical usage.",
+            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
             ));
         ComfyGroup = new("ComfyUI", Toggles: false, Open: false);
         ComfyAdvancedGroup = new("ComfyUI Advanced", Toggles: false, IsAdvanced: true, Open: false);
