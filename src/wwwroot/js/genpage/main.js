@@ -1366,10 +1366,19 @@ function reviseBackendFeatureSet() {
             removeMe.push(featureFlag);
         }
     }
+    function doAnyCompatFeature(compatClasses, featureFlag) {
+        for (let compatClass of compatClasses) {
+            if (curModelCompatClass && curModelCompatClass.startsWith(compatClass)) {
+                addMe.push(featureFlag);
+                return;
+            }
+        }
+        removeMe.push(featureFlag);
+    }
     doCompatFeature('stable-diffusion-v3', 'sd3');
     doCompatFeature('stable-cascade-v1', 'cascade');
     doArchFeature('Flux.1-dev', 'flux-dev');
-    doArchFeature('genmo-mochi-1', 'text2video');
+    doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video'], 'text2video');
     let anyChanged = false;
     for (let add of addMe) {
         if (!currentBackendFeatureSet.includes(add)) {

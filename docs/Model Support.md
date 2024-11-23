@@ -241,6 +241,17 @@ You can do text2video by just checking Video as normal, or image2video by using 
     - To reduce VRAM impact and fit on most normal GPUs, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. There will be a slightly noticeable tiling pattern on the output, but not too bad at 160 and 96.
     - If you have a lot of VRAM (eg 4090) and want to max quality but can't quite fit the VAE without tiling, Tile Size 480 Overlap 32 will tile the VAE in just two chunks to cut the VAE VRAM usage significantly while retaining near perfect quality.
 
+## Lightricks LTX Video
+
+- Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video model.
+- Download <https://huggingface.co/Lightricks/LTX-Video/blob/main/ltx-video-2b-v0.9.safetensors>
+    - save to `Stable-Diffusion` folder
+- The text encoder (T5-XXL) and VAE will be automatically downloaded
+    - You can also set these manually if preferred
+- When selected, the `Text To Video` parameter group will become visible
+- The model is trained for 24 fps but supports custom fps values, and frame counts dynamic anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required due to the 8x temporal compression in the LTXV VAE. The input parameter will automatically round if you enter an invalid value.
+- Recommended CFG=3, and very very long descriptive prompts.
+
 # Alternative Model Formats
 
 ## Bits-and-Bytes NF4 Format Models

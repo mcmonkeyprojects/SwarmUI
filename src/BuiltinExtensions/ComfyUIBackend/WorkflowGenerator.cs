@@ -160,6 +160,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "genmo-mochi-1";
     }
 
+    /// <summary>Returns true if the current model is Lightricks LTX Video.</summary>
+    public bool IsLTXV()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "lightricks-ltx-video";
+    }
+
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
     public bool IsFlux()
     {
@@ -478,7 +485,7 @@ public class WorkflowGenerator
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
-        if (IsMochi())
+        if (IsMochi() || IsLTXV())
         {
             if (UserInput.Get(T2IParamTypes.Text2VideoBoomerang, false))
             {
@@ -837,6 +844,20 @@ public class WorkflowGenerator
             }
             LoadingVAE = CreateVAELoader(mochiVae, nodeId);
         }
+        else if (IsLTXV())
+        {
+            string loaderType = "CLIPLoader";
+            if (getT5XXLModel().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getT5XXLModel(),
+                ["type"] = "ltxv"
+            });
+            LoadingClip = [clipLoader, 0];
+        }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
             string auraNode = CreateNode("ModelSamplingAuraFlow", new JObject()
@@ -928,9 +949,21 @@ public class WorkflowGenerator
     /// <summary>Creates a KSampler and returns its node ID.</summary>
     public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false)
     {
-        if (IsMochi())
+        if (IsMochi() || IsLTXV())
         {
             previews ??= UserInput.Get(ComfyUIBackendExtension.Text2VideoPreviewType, "animate");
+        }
+        if (IsLTXV())
+        {
+            string ltxvcond = CreateNode("LTXVConditioning", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["frame_rate"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 25)
+            });
+            pos = [ltxvcond, 0];
+            neg = [ltxvcond, 1];
+            defscheduler ??= "ltxv";
         }
         bool willCascadeFix = false;
         JArray cascadeModel = null;
@@ -1211,6 +1244,16 @@ public class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 25),
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
+        else if (IsLTXV())
+        {
+            return CreateNode("EmptyLTXVLatentVideo", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
                 ["height"] = height,
                 ["width"] = width
             }, id);

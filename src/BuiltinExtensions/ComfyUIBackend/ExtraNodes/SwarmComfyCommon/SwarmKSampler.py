@@ -208,7 +208,7 @@ class SwarmKSampler:
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step": 0.5, "round": 0.001}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
-                "scheduler": (["turbo", "align_your_steps"] + comfy.samplers.KSampler.SCHEDULERS, ),
+                "scheduler": (["turbo", "align_your_steps", "ltxv"] + comfy.samplers.KSampler.SCHEDULERS, ),
                 "positive": ("CONDITIONING", ),
                 "negative": ("CONDITIONING", ),
                 "latent_image": ("LATENT", ),
@@ -252,6 +252,9 @@ class SwarmKSampler:
             timesteps = torch.flip(torch.arange(1, 11) * 100 - 1, (0,))[:steps]
             sigmas = model.model.model_sampling.sigma(timesteps)
             sigmas = torch.cat([sigmas, sigmas.new_zeros([1])])
+        elif scheduler == "ltx":
+            from comfy_extras.nodes_lt import LTXVScheduler
+            sigmas = LTXVScheduler.get_sigmas(steps, 2.05, 0.95, True, 0.1)
         elif scheduler == "align_your_steps":
             if isinstance(model.model, SDXL):
                 model_type = "SDXL"
