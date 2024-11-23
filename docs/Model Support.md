@@ -244,6 +244,7 @@ You can do text2video by just checking Video as normal, or image2video by using 
 ## Lightricks LTX Video
 
 - Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video model.
+    - Image-To-Video is not yet fully supported, work-in-progress
 - Download <https://huggingface.co/Lightricks/LTX-Video/blob/main/ltx-video-2b-v0.9.safetensors>
     - save to `Stable-Diffusion` folder
 - The text encoder (T5-XXL) and VAE will be automatically downloaded

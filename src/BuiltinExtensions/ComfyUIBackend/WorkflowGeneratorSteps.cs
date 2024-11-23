@@ -1246,54 +1246,9 @@ public class WorkflowGeneratorSteps
         {
             if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out T2IModel vidModel))
             {
-                JArray model, clipVision, vae;
-                if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
-                {
-                    string trtloader = g.CreateNode("TensorRTLoader", new JObject()
-                    {
-                        ["unet_name"] = vidModel.ToString(g.ModelFolderFormat),
-                        ["model_type"] = "svd"
-                    });
-                    model = [trtloader, 0];
-                    string fname = "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors";
-                    requireVisionModel(g, fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030");
-                    string cliploader = g.CreateNode("CLIPVisionLoader", new JObject()
-                    {
-                        ["clip_name"] = fname
-                    });
-                    clipVision = [cliploader, 0];
-                    string svdVae = g.UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSVDVAE;
-                    if (string.IsNullOrWhiteSpace(svdVae))
-                    {
-                        svdVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
-                    }
-                    if (string.IsNullOrWhiteSpace(svdVae))
-                    {
-                        throw new SwarmUserErrorException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
-                    }
-                    vae = g.CreateVAELoader(svdVae, g.HasNode("11") ? null : "11");
-                }
-                else
-                {
-                    string loader = g.CreateNode("ImageOnlyCheckpointLoader", new JObject()
-                    {
-                        ["ckpt_name"] = vidModel.ToString()
-                    });
-                    model = [loader, 0];
-                    clipVision = [loader, 1];
-                    vae = [loader, 2];
-                }
-                double minCfg = g.UserInput.Get(T2IParamTypes.VideoMinCFG, 1);
-                if (minCfg >= 0)
-                {
-                    string cfgGuided = g.CreateNode("VideoLinearCFGGuidance", new JObject()
-                    {
-                        ["model"] = model,
-                        ["min_cfg"] = minCfg
-                    });
-                    model = [cfgGuided, 0];
-                }
-                int frames = g.UserInput.Get(T2IParamTypes.VideoFrames, 25);
+                bool hadSpecialCond = false;
+                string defSampler = "dpmpp_2m_sde_gpu", defScheduler = "karras";
+                int? frames = g.UserInput.TryGet(T2IParamTypes.VideoFrames, out int framesRaw) ? framesRaw : null;
                 int fps = g.UserInput.Get(T2IParamTypes.VideoFPS, 6);
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 int width = vidModel.StandardWidth <= 0 ? 1024 : vidModel.StandardWidth;
@@ -1317,25 +1272,109 @@ public class WorkflowGeneratorSteps
                     width = imageWidth;
                     height = imageHeight;
                 }
-                string conditioning = g.CreateNode("SVD_img2vid_Conditioning", new JObject()
+                JArray posCond, negCond, latent, model, vae;
+                if (vidModel.ModelClass?.CompatClass == "lightricks-ltx-video")
                 {
-                    ["clip_vision"] = clipVision,
-                    ["init_image"] = g.FinalImageOut,
-                    ["vae"] = vae,
-                    ["width"] = width,
-                    ["height"] = height,
-                    ["video_frames"] = frames,
-                    ["motion_bucket_id"] = g.UserInput.Get(T2IParamTypes.VideoMotionBucket, 127),
-                    ["fps"] = fps,
-                    ["augmentation_level"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0)
-                });
-                JArray posCond = [conditioning, 0];
-                JArray negCond = [conditioning, 1];
-                JArray latent = [conditioning, 2];
+                    g.FinalLoadedModel = vidModel;
+                    (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
+                    posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
+                    negCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), clip, vidModel, false);
+                    // g.FinalImageOut
+                    string condNode = g.CreateNode("LTXVImgToVideo", new JObject()
+                    {
+                        ["positive"] = posCond,
+                        ["negative"] = negCond,
+                        ["vae"] = vae,
+                        ["image"] = g.FinalImageOut,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["length"] = frames ?? 97,
+                        ["batch_size"] = 1
+                    });
+                    posCond = [condNode, 0];
+                    negCond = [condNode, 1];
+                    latent = [condNode, 2];
+                    string ltxvcond = g.CreateNode("LTXVConditioning", new JObject()
+                    {
+                        ["positive"] = posCond,
+                        ["negative"] = negCond,
+                        ["frame_rate"] = g.UserInput.Get(T2IParamTypes.VideoFPS, 25)
+                    });
+                    posCond = [ltxvcond, 0];
+                    negCond = [ltxvcond, 1];
+                    hadSpecialCond = true;
+                    defSampler = "euler";
+                    defScheduler = "ltxv-image";
+                }
+                else
+                {
+                    JArray clipVision;
+                    if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
+                    {
+                        string trtloader = g.CreateNode("TensorRTLoader", new JObject()
+                        {
+                            ["unet_name"] = vidModel.ToString(g.ModelFolderFormat),
+                            ["model_type"] = "svd"
+                        });
+                        model = [trtloader, 0];
+                        string fname = "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors";
+                        requireVisionModel(g, fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030");
+                        string cliploader = g.CreateNode("CLIPVisionLoader", new JObject()
+                        {
+                            ["clip_name"] = fname
+                        });
+                        clipVision = [cliploader, 0];
+                        string svdVae = g.UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSVDVAE;
+                        if (string.IsNullOrWhiteSpace(svdVae))
+                        {
+                            svdVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
+                        }
+                        if (string.IsNullOrWhiteSpace(svdVae))
+                        {
+                            throw new SwarmUserErrorException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
+                        }
+                        vae = g.CreateVAELoader(svdVae, g.HasNode("11") ? null : "11");
+                    }
+                    else
+                    {
+                        string loader = g.CreateNode("ImageOnlyCheckpointLoader", new JObject()
+                        {
+                            ["ckpt_name"] = vidModel.ToString()
+                        });
+                        model = [loader, 0];
+                        clipVision = [loader, 1];
+                        vae = [loader, 2];
+                    }
+                    double minCfg = g.UserInput.Get(T2IParamTypes.VideoMinCFG, 1);
+                    if (minCfg >= 0)
+                    {
+                        string cfgGuided = g.CreateNode("VideoLinearCFGGuidance", new JObject()
+                        {
+                            ["model"] = model,
+                            ["min_cfg"] = minCfg
+                        });
+                        model = [cfgGuided, 0];
+                    }
+                    string conditioning = g.CreateNode("SVD_img2vid_Conditioning", new JObject()
+                    {
+                        ["clip_vision"] = clipVision,
+                        ["init_image"] = g.FinalImageOut,
+                        ["vae"] = vae,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["video_frames"] = frames ?? 25,
+                        ["motion_bucket_id"] = g.UserInput.Get(T2IParamTypes.VideoMotionBucket, 127),
+                        ["fps"] = fps,
+                        ["augmentation_level"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0)
+                    });
+                    posCond = [conditioning, 0];
+                    negCond = [conditioning, 1];
+                    latent = [conditioning, 2];
+                }
                 int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
                 double cfg = g.UserInput.Get(T2IParamTypes.VideoCFG, 2.5);
                 string previewType = g.UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
-                string samplered = g.CreateKSampler(model, posCond, negCond, latent, cfg, steps, 0, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 42, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: "dpmpp_2m_sde_gpu", defscheduler: "karras");
+                string samplered = g.CreateKSampler(model, posCond, negCond, latent, cfg, steps, 0, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 42, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: defSampler, defscheduler: defScheduler, hadSpecialCond: hadSpecialCond);
                 g.FinalLatentImage = [samplered, 0];
                 string decoded = g.CreateVAEDecode(vae, g.FinalLatentImage);
                 g.FinalImageOut = [decoded, 0];
