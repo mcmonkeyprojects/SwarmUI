@@ -757,6 +757,10 @@ public class WorkflowGenerator
                     LoadingClip = [tripleClipLoader, 0];
                 }
             }
+            else if (LoadingClip is null)
+            {
+                throw new SwarmUserErrorException($"Model '{model.Name}' is a full checkpoint format model, but was placed in the diffusion_models backbone folder. Please move it to the standard Stable Diffusion models folder.");
+            }
             if (LoadingVAE is null)
             {
                 string sd3Vae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
