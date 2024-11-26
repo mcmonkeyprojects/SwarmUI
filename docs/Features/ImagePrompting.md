@@ -1,4 +1,4 @@
-# SwarmUI Image Prompt - IP-Adapter and Revision
+# SwarmUI Image Prompting - IP-Adapter, Revision, Etc.
 
 - To use image-prompting features in Swarm, simply drag an image into the prompt box, or copy an image and while in the prompt box press CTRL+V to paste.
 - When you do this, the ReVision control panel will open on the left at the top of the parameters listing.

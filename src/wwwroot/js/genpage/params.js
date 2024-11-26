@@ -437,7 +437,7 @@ function genInputs(delay_final = false) {
                 controlnetGroup.append(createDiv(`controlnet_install_preprocessors`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('controlnet_preprocessors', 'controlnet_install_preprocessors')">Install Controlnet Preprocessors</button>`));
             }
         }
-        let revisionGroup = document.getElementById('input_group_content_revision');
+        let revisionGroup = document.getElementById('input_group_content_imageprompting');
         if (revisionGroup && !currentBackendFeatureSet.includes('ipadapter')) {
             revisionGroup.append(createDiv(`revision_install_ipadapter`, null, `<button class="basic-button" onclick="installFeatureById('ipadapter', 'revision_install_ipadapter')">Install IP Adapter</button>`));
         }

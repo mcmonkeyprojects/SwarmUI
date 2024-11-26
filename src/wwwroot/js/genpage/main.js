@@ -1378,6 +1378,7 @@ function reviseBackendFeatureSet() {
     doCompatFeature('stable-diffusion-v3', 'sd3');
     doCompatFeature('stable-cascade-v1', 'cascade');
     doArchFeature('Flux.1-dev', 'flux-dev');
+    doCompatFeature('stable-diffusion-xl-v1', 'sdxl');
     doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video'], 'text2video');
     let anyChanged = false;
     for (let add of addMe) {
@@ -1989,8 +1990,8 @@ function hideRevisionInputs() {
     promptImageArea.innerHTML = '';
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     clearButton.style.display = 'none';
-    let revisionGroup = document.getElementById('input_group_revision');
-    let revisionToggler = document.getElementById('input_group_content_revision_toggle');
+    let revisionGroup = document.getElementById('input_group_imageprompting');
+    let revisionToggler = document.getElementById('input_group_content_imageprompting_toggle');
     if (revisionGroup) {
         revisionToggler.checked = false;
         triggerChangeFor(revisionToggler);
@@ -2001,8 +2002,8 @@ function hideRevisionInputs() {
 }
 
 function showRevisionInputs(toggleOn = false) {
-    let revisionGroup = document.getElementById('input_group_revision');
-    let revisionToggler = document.getElementById('input_group_content_revision_toggle');
+    let revisionGroup = document.getElementById('input_group_imageprompting');
+    let revisionToggler = document.getElementById('input_group_content_imageprompting_toggle');
     if (revisionGroup) {
         toggleGroupOpen(revisionGroup, true);
         if (toggleOn) {

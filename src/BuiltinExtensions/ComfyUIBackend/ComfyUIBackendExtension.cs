@@ -577,28 +577,28 @@ public class ComfyUIBackendExtension : Extension
     public override void OnInit()
     {
         UseIPAdapterForRevision = T2IParamTypes.Register<string>(new("Use IP-Adapter", $"Select an IP-Adapter model to use IP-Adapter for image-prompt input handling.\nModels will automatically be downloaded when you first use them.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/IPAdapter-ReVision.md\">See more docs here.</a>",
-            "None", IgnoreIf: "None", FeatureFlag: "ipadapter", GetValues: _ => IPAdapterModels, Group: T2IParamTypes.GroupRevision, OrderPriority: 15, ChangeWeight: 1
+            "None", IgnoreIf: "None", FeatureFlag: "ipadapter", GetValues: _ => IPAdapterModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 15, ChangeWeight: 1
             ));
         IPAdapterWeight = T2IParamTypes.Register<double>(new("IP-Adapter Weight", "Weight to use with IP-Adapter (if enabled).",
-            "1", Min: -1, Max: 3, Step: 0.05, IgnoreIf: "1", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 16
+            "1", Min: -1, Max: 3, Step: 0.05, IgnoreIf: "1", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 16
             ));
         IPAdapterStart = T2IParamTypes.Register<double>(new("IP-Adapter Start", "When to start applying IP-Adapter, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through. Must be less than IP-Adapter End.",
-            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 17, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
+            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 17, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
             ));
         IPAdapterEnd = T2IParamTypes.Register<double>(new("IP-Adapter End", "When to stop applying IP-Adapter, as a fraction of steps (if enabled).\nFor example, 0.5 stops applying halfway (50%) through. Must be greater than IP-Adapter Start.",
-            "1", IgnoreIf: "1",  Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"]
+            "1", IgnoreIf: "1",  Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"]
             ));
         IPAdapterWeightType = T2IParamTypes.Register<string>(new("IP-Adapter Weight Type", "How to shift the weighting of the IP-Adapter.\nThis can produce subtle but useful different effects.",
-            "standard", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 19, IsAdvanced: true, GetValues: _ => IPAdapterWeightTypes
+            "standard", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 19, IsAdvanced: true, GetValues: _ => IPAdapterWeightTypes
             ));
         StyleModelForRevision = T2IParamTypes.Register<string>(new("Use Style Model", $"Select a Style model to use it for image-prompt input handling.\nFlux.1 Redux is an example of a style model.\nPlace these models in `(Swarm)/Models/style_models`.",
-            "None", IgnoreIf: "None", FeatureFlag: "comfyui", GetValues: _ => StyleModels, Group: T2IParamTypes.GroupRevision, OrderPriority: 14, ChangeWeight: 1
+            "None", IgnoreIf: "None", FeatureFlag: "comfyui", GetValues: _ => StyleModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 14, ChangeWeight: 1
             ));
         StyleModelMergeStrength = T2IParamTypes.Register<double>(new("Style Model Merge Strength", "How strongly to merge in the effects of the style model.\nAt 1, the style model is fully used.\nAt 0, the style model is ignored.\nFor Flux Redux, very low values (eg 0.1) are recommended.",
-            "1", IgnoreIf: "1", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1"]
+            "1", IgnoreIf: "1", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1"]
             ));
         StyleModelApplyStart = T2IParamTypes.Register<double>(new("Style Model Apply Start", "When to start applying the Style Model, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through.\nThis is probably off-scale due to scheduler behavior in ComfyUI internals. Very low values are recommend for practical usage.",
-            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRevision, ViewType: ParamViewType.SLIDER, OrderPriority: 14.7, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
+            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.7, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
             ));
         ComfyGroup = new("ComfyUI", Toggles: false, Open: false);
         ComfyAdvancedGroup = new("ComfyUI Advanced", Toggles: false, IsAdvanced: true, Open: false);

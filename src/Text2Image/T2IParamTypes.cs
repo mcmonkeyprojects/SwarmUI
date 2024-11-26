@@ -290,7 +290,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<List<Image>> PromptImages;
     public static T2IRegisteredParam<bool> SaveIntermediateImages, DoNotSave, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang;
 
-    public static T2IParamGroup GroupRevision, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners,
+    public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners,
         GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupAdvancedSampling, GroupVideo, GroupText2Video;
 
     public class ControlNetParamHolder
@@ -330,18 +330,18 @@ public class T2IParamTypes
         NegativePrompt = Register<string>(new("Negative Prompt", "Like the input prompt text, but describe what NOT to generate.\nTell the AI things you don't want to see.",
             "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -90, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
             ));
-        GroupRevision = new("ReVision", Open: false, Toggles: true, OrderPriority: -70, Description: $"Image prompting with ReVision, IP-Adapter, etc.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/IPAdapter-ReVision.md\">See more docs here.</a>");
+        GroupImagePrompting = new("Image Prompting", Open: false, Toggles: true, OrderPriority: -70, Description: $"Image prompting with ReVision, IP-Adapter, etc.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>");
         ReVisionStrength = Register<double>(new("ReVision Strength", $"How strong to apply ReVision image inputs.\nSet to 0 to disable ReVision processing.",
-            "0", OrderPriority: -70, Min: 0, Max: 10, Step: 0.1, ViewType: ParamViewType.SLIDER, Group: GroupRevision
+            "0", IgnoreIf: "0", OrderPriority: -70, Min: 0, Max: 10, Step: 0.1, ViewType: ParamViewType.SLIDER, Group: GroupImagePrompting, FeatureFlag: "sdxl"
             ));
         RevisionZeroPrompt = Register<bool>(new("ReVision Zero Prompt", "Zeroes the prompt and negative prompt for ReVision inputs.\nApplies only to the base, the refiner will still get prompts.\nIf you want zeros on both, just delete your prompt text.\nIf not checked, empty prompts will be zeroed regardless.",
-            "false", IgnoreIf: "false", Group: GroupRevision
+            "false", IgnoreIf: "false", Group: GroupImagePrompting, FeatureFlag: "sdxl"
             ));
         UseReferenceOnly = Register<bool>(new("Use Reference Only", "Use the 'Reference-Only' technique to guide the generation towards the input image.\nThis currently has side effects that notably prevent Batch from being used properly.",
-            "false", IgnoreIf: "false", Group: GroupRevision
+            "false", IgnoreIf: "false", Group: GroupImagePrompting, IsAdvanced: true
             ));
         ReVisionModel = Register<T2IModel>(new("ReVision Model", "The CLIP Vision model to use for ReVision inputs.\nThis will also override IPAdapter (if IPAdapter-G is in use).",
-            "", Subtype: "ClipVision", IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons
+            "", Subtype: "ClipVision", IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, FeatureFlag: "sdxl"
             ));
         GroupCore = new("Core Parameters", Toggles: false, Open: true, OrderPriority: -50);
         Images = Register<int>(new("Images", "How many images to generate at once.",

@@ -216,6 +216,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Mask a region and go.
     - Creativity `1` works well.
     - Larger masks recommended. Small ones may not replace content.
+    - Boosting the `Flux Guidance Scale` way up to eg `30` may improve quality
 
 # Video Models
 

@@ -417,7 +417,7 @@ public class WorkflowGeneratorSteps
                     });
                     return visionLoaderId;
                 }
-                double revisionStrength = g.UserInput.Get(T2IParamTypes.ReVisionStrength, 1);
+                double revisionStrength = g.UserInput.Get(T2IParamTypes.ReVisionStrength, 0);
                 if (revisionStrength > 0)
                 {
                     bool autoZero = g.UserInput.Get(T2IParamTypes.RevisionZeroPrompt, false);
