@@ -42,6 +42,7 @@ public class T2IModelClassSorter
         bool isDitControlnet(JObject h) => h.ContainsKey("controlnet_blocks.0.bias") && h.ContainsKey("transformer_blocks.0.ff.net.0.proj.bias");
         bool isFluxControlnet(JObject h) => isDitControlnet(h) && h.ContainsKey("transformer_blocks.0.attn.norm_added_k.weight");
         bool isSD3Controlnet(JObject h) => isDitControlnet(h) && !isFluxControlnet(h);
+        bool isSd35LargeControlnet(JObject h) => h.ContainsKey("controlnet_blocks.0.bias") && h.ContainsKey("transformer_blocks.0.adaLN_modulation.1.bias");
         bool isCascadeA(JObject h) => h.ContainsKey("vquantizer.codebook.weight");
         bool isCascadeB(JObject h) => h.ContainsKey("model.diffusion_model.clf.1.weight") && h.ContainsKey("model.diffusion_model.clip_mapper.weight");
         bool isCascadeC(JObject h) => h.ContainsKey("model.diffusion_model.clf.1.weight") && h.ContainsKey("model.diffusion_model.clip_txt_mapper.weight");
@@ -238,7 +239,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "stable-diffusion-v3.5-large/controlnet", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return false;
+            return isSd35LargeControlnet(h);
         }});
         Register(new() { ID = "stable-diffusion-v3.5-medium/controlnet", CompatClass = "stable-diffusion-v3.5-medium", Name = "Stable Diffusion 3.5 Medium ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
