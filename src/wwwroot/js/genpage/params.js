@@ -921,6 +921,9 @@ function controlnetShowPreview() {
 
 /** Gets the parameter with a given ID, from either the current param set, or the raw set from server. If unavailable, returns null. */
 function getParamById(id) {
+    if (!gen_param_types) {
+        return null;
+    }
     let param = gen_param_types.find(p => p.id == id);
     if (!param) {
         param = rawGenParamTypesFromServer.find(p => p.id == id);
