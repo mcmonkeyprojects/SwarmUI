@@ -254,7 +254,7 @@ class SwarmKSampler:
             sigmas = torch.cat([sigmas, sigmas.new_zeros([1])])
         elif scheduler == "ltx" or scheduler == "ltxv-image":
             from comfy_extras.nodes_lt import LTXVScheduler
-            sigmas = LTXVScheduler().get_sigmas(steps, 2.05, 0.95, True, 0.1, latent_image if scheduler == "ltxv-image" else None)
+            sigmas = LTXVScheduler().get_sigmas(steps, 2.05, 0.95, True, 0.1, latent_image if scheduler == "ltxv-image" else None)[0]
         elif scheduler == "align_your_steps":
             if isinstance(model.model, SDXL):
                 model_type = "SDXL"
