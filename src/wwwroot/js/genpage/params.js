@@ -508,10 +508,12 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         if (type.id == 'prompt') {
             let container = findParentOfClass(elem, 'auto-input');
             let addedImageArea = container.querySelector('.added-image-area');
-            addedImageArea.style.display = '';
-            let imgs = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
-            if (imgs.length > 0) {
-                input["promptimages"] = imgs.map(img => img.dataset.filedata).join('|');
+            if (addedImageArea) {
+                addedImageArea.style.display = '';
+                let imgs = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
+                if (imgs.length > 0) {
+                    input["promptimages"] = imgs.map(img => img.dataset.filedata).join('|');
+                }
             }
         }
     }
