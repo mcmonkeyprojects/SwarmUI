@@ -416,11 +416,16 @@ class ImageFullViewHelper {
     }
 
     showImage(src, metadata) {
+        let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
+        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">`;
+        if (isVideo) {
+            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${src}" type="video/${src.substring(src.lastIndexOf('.') + 1)}"></video>`;
+        }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
         <div class="imageview_modal_inner_div">
             <div class="imageview_modal_imagewrap" id="imageview_modal_imagewrap" style="text-align:center;">
-                <img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">
+                ${imgHtml}
             </div>
             <div class="imageview_popup_modal_undertext">
             ${formatMetadata(metadata)}
@@ -584,9 +589,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         metadata = interpretMetadata(metadata);
     }
     currentMetadataVal = metadata;
-    if ((smoothAdd || !metadata) && canReparse) {
+    let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
+    if ((smoothAdd || !metadata) && canReparse && !isVideo) {
         let image = new Image();
-        image.src = src;
         image.onload = () => {
             if (!metadata) {
                 parseMetadata(image, (data, parsedMetadata) => {
@@ -597,6 +602,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 setCurrentImage(src, metadata, batchId, previewGrow, false, false);
             }
         };
+        image.src = src;
         return;
     }
     let curImg = getRequiredElementById('current_image');
@@ -606,7 +612,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     else {
         curImg.classList.remove('current_image_placeholder');
     }
-    let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
     let img;
     let isReuse = false;
     let srcTarget;
