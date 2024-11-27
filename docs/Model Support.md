@@ -251,12 +251,15 @@ You can do text2video by just checking Video as normal, or image2video by using 
         - You can also set these manually if preferred
 - When selected in the Models list, the `Text To Video` parameter group will become visible
 - The model is trained for 24 fps but supports custom fps values, and frame counts dynamic anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required due to the 8x temporal compression in the LTXV VAE. The input parameter will automatically round if you enter an invalid value.
-- Recommended CFG=3, and **very very long descriptive prompts**.
-    - Seriously this model will make a mess if you don't go overkill on the prompt.
+- Recommended CFG=3, and very very long descriptive prompts.
+    - Seriously this model will make a mess with short prompts.
+    - Example prompt (from ComfyUI's reference workflow):
+        - Prompt: `best quality, 4k, HDR, a tracking shot of a beautiful scene of the sea waves on the beach`
+        - Negative Prompt: `low quality, worst quality, deformed, distorted, disfigured, motion smear, motion artifacts, fused fingers, bad anatomy, weird hand, ugly`
 - You can use it as an Image-To-Video model
     - Select an image model and configure usual generation parameters
     - Select the LTXV model under the `Image To Video` group's `Video Model` parameter
-    - Set `Video FPS` to `24` and `Video CFG` to `3`
+    - Set `Video FPS` to `24` and `Video CFG` to `3`, set `Video Frames` to a higher value eg `97`
     - Pay attention that your prompt is used for both the image, and video stages
         - You may wish to generate the image once, then do the video separately
         - To do that, set the image as an `Init Image`, and set `Creativity` to `0`

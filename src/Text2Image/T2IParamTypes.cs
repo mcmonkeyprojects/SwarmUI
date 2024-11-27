@@ -509,7 +509,7 @@ public class T2IParamTypes
             OrderPriority: 1, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
             ));
         VideoFrames = Register<int>(new("Video Frames", "How many frames to generate within the video.\nSVD-XT prefers 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.",
-            "25", Min: 1, Max: 100, OrderPriority: 2, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
+            "25", Min: 1, Max: 1000, OrderPriority: 2, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         VideoFPS = Register<int>(new("Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video will try to generate for.\nLTXV prefers 24.",
             "6", Min: 1, Max: 1024, ViewMax: 30, ViewType: ParamViewType.SLIDER, OrderPriority: 2.5, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
