@@ -1003,12 +1003,17 @@ public class WorkflowGenerator
         if (classId == "Flux.1-dev/inpaint")
         {
             // Not sure why, but InpaintModelConditioning is required here.
+            JArray img = FinalInputImage;
+            if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
+            {
+                img = [MaskShrunkInfo.ScaledImage, 0];
+            }
             string inpaintNode = CreateNode("InpaintModelConditioning", new JObject()
             {
                 ["positive"] = pos,
                 ["negative"] = neg,
                 ["vae"] = FinalVae,
-                ["pixels"] = FinalInputImage,
+                ["pixels"] = img,
                 ["mask"] = FinalMask,
                 ["noise_mask"] = true
             });
