@@ -1004,9 +1004,11 @@ public class WorkflowGenerator
         {
             // Not sure why, but InpaintModelConditioning is required here.
             JArray img = FinalInputImage;
+            JArray mask = FinalMask;
             if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
             {
                 img = [MaskShrunkInfo.ScaledImage, 0];
+                mask = [MaskShrunkInfo.CroppedMask, 0];
             }
             string inpaintNode = CreateNode("InpaintModelConditioning", new JObject()
             {
@@ -1014,7 +1016,7 @@ public class WorkflowGenerator
                 ["negative"] = neg,
                 ["vae"] = FinalVae,
                 ["pixels"] = img,
-                ["mask"] = FinalMask,
+                ["mask"] = mask,
                 ["noise_mask"] = true
             });
             pos = [inpaintNode, 0];
