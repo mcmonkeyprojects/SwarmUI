@@ -5,6 +5,7 @@ using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -657,10 +658,21 @@ public class WorkflowGenerator
             else
             {
                 string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
+                if (dtype == "automatic")
+                {
+                    if (IsFlux() && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    {
+                        dtype = "fp8_e4m3fn";
+                    }
+                    else
+                    {
+                        dtype = "default";
+                    }
+                }
                 string modelNode = CreateNode("UNETLoader", new JObject()
                 {
                     ["unet_name"] = model.ToString(ModelFolderFormat),
-                    ["weight_dtype"] = dtype == "automatic" ? (IsFlux() ? "fp8_e4m3fn" : "default") : dtype
+                    ["weight_dtype"] = dtype
                 }, id);
                 LoadingModel = [modelNode, 0];
             }
