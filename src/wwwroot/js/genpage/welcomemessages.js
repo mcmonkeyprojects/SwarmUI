@@ -40,25 +40,14 @@ function automaticWelcomeMessage(override = null) {
         `Type your prompt below and hit Generate!`,
         `Join the SwarmUI <a target="_blank" href="https://discord.gg/q2y38cqjNw">official Discord!</a>`,
         /* "Did you know" facts - interesting things you can do in swarm */
-        `Did you know:\nyou can drag and drop images onto the prompt box to use them as an image-prompt.`,
+        `Did you know:\nyou can drag and drop images onto the prompt box to use them as an Image Prompt (eg Flux Redux, IP-Adapter, ReVision, ...).`,
         `Did you know:\nyou can create multiple variations of one image by locking in your seed, then enabling the <b>Variation Seed</b> parameter.`,
-        `Did you know:\nWant to have live-previews of your generation while you edit the details?\nLock in a seed, then right click the <b>Generate</b> button and select 'Generate Previews'.\nIf you add a <b>Preset</b> and name it exactly <b>Preview</b>, that preset will automatically be used for previews (LCM or Turbo recommended in the preset for speed).`,
+        `Did you know:\nWant to have live-previews of your generation while you edit the details?\nLock in a seed, then right click the <b>Generate</b> button and select 'Generate Previews'.\nIf you add a <b>Preset</b> and name it exactly <b>Preview</b>, that preset will automatically be used for previews (Turbo models, eg LCM, Schnell, etc. recommended in the preset for speed).`,
         `Did you know:\nWant to compare how different values of a parameter affect your generations?\nHead to the <b>Tools</b> tab below and select the <b>Grid Generator</b> tool.`,
         `Did you know:\nYou can create a <b>Preset</b> and name it exactly <b>Default</b>\nand that preset will automatically be used to load your default params when you launch Swarm.`,
         `Did you know:\nSomething going wrong?\nCheck the <b>Server</b> tab for debug logs, system resource usage, etc.`,
         `Did you know:\nWant to try some fancy prompting?\nJust type a '&lt;' symbol and watch the suggestions for prompt-syntax tools appear! Give the syntax features a try! <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md">(Documentation Here)</a>`,
-        /* Recent feature updates */
-        `New feature (2024-03-10): Comfy Workflow Browser\nAn easy browser for Comfy workflows in the Comfy tab. <a target="_blank" href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-8736304">(Feature Announcement Link)</a>`,
-        `New feature (2024-04-18): Modern Dark and Light themes!\nBuilt by an actual designer this time! <a target="_blank" href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-9153506">(Feature Announcement Link)</a>\n<button class="btn btn-secondary" onclick="aggressivelySetTheme('modern_dark')">Click here to try Modern Dark</button>\n(go to User Settings to change back)`,
-        `New feature (2024-04-23): Prompt editing!\nThere's now convenient prompt syntax to do things like swapping back and forth between prompts or changing between steps! <a target="_blank" href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-9206140">(Feature Announcement Link)</a>`,
-        `New feature (2024-05-28): YOLOv8 Segmentation\nAre you really into multi-face matching + detailing? 'segment' prompt syntax now supports YOLOv8 models! <a target="_blank" href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-9586318">(Feature Announcement Link)</a>`,
-        `New feature (2024-06-02): TensorRT Support!\nFor making things go fasterer! <a target="_blank" href="https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-9641683">(Feature Announcement Link)</a>`,
-        `New feature (2024-06-12): SD3-Medium!\nCool new model architecture! <a target="_blank" href="https://new.reddit.com/r/StableDiffusion/comments/1de65iz">(Reddit Post Link)</a>`,
-        `New feature (2024-07-31): Better dropdown text!\nNo more letter-spam samplers, now you can actually see what they're about! <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/discussions/1#discussioncomment-10199321">(Feature Announcement Link)</a>`,
-        `New feature (2024-07-31): Support for Black Forest Labs' new Flux.1 models!\nRequires very high-end GPUs, but is the new best foundation model in the world. <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/discussions/1#discussioncomment-10216583">(Feature Announcement Link)</a>`,
-        `New feature (2024-08-10): Image Editor SAM2 Autosegment\nWant the AI to help you mask even in manual mask painting? Now it can! <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/discussions/1#discussioncomment-10296989">(Feature Announcement Link)</a>`,
         /* Version release notes */
-        `Release notes (2024-08-10): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.2-Beta">Release Notes for version 0.9.2 (Beta)</a>`,
         `Release notes (2024-10-13): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.3-Beta">Release Notes for version 0.9.3 (Beta)</a>`
     ];
     let dotnetNotice = document.getElementById('dotnet_missing_message');
