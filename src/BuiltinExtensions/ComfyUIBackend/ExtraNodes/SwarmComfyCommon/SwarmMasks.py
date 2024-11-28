@@ -268,7 +268,7 @@ class SwarmMaskScaleForMP:
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "scale"
-    DESCRIPTION = "Scales an mask to a target width and height, while keeping the aspect ratio."
+    DESCRIPTION = "Scales a mask to a target width and height, while keeping the aspect ratio."
 
     def scale(self, mask, width, height, can_shrink):
         mpTarget = width * height
@@ -280,8 +280,9 @@ class SwarmMaskScaleForMP:
             return (mask,)
         newWid = int(round(oldWidth * scale / 64) * 64)
         newHei = int(round(oldHeight * scale / 64) * 64)
-        mask = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))
-        s = comfy.utils.common_upscale(mask, newWid, newHei, "bilinear", "disabled")
+        # This is SwarmImageScaleForMP except we insert/remove C instead of moving it.
+        samples = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))
+        s = comfy.utils.common_upscale(samples, newWid, newHei, "bilinear", "disabled")
         s = s.reshape((-1, s.shape[-2], s.shape[-1]))
         return (s,)
 
