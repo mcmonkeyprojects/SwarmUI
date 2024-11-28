@@ -382,6 +382,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("spandrel", "spandrel"),
         // Other added dependencies
         ("rembg", "rembg"),
+        ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
         ("matplotlib", "matplotlib==3.9"), // Old version due to "mesonpy" curse
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
