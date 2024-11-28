@@ -98,6 +98,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("Can be enabled to cache certain backend data.\nFor example, with ComfyUI backends this will add an extended cache on the object_info data.\nDefaults to false.")]
         public bool DoBackendDataCache = false;
+
+        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nIf you encounter error that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
+        public bool AllowGpuSpecificOptimizations = true;
     }
 
     /// <summary>Settings related to backends.</summary>

@@ -663,6 +663,10 @@ public class WorkflowGenerator
                     if (IsFlux() && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
                         dtype = "fp8_e4m3fn";
+                        if (Utilities.PresumeNVidia40xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
+                        {
+                            dtype = "fp8_e4m3fn_fast";
+                        }
                     }
                     else
                     {

@@ -268,6 +268,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 pathRaw = $"\"{pathRaw}\"";
             }
             addedArgs += $" --extra-model-paths-config {pathRaw}";
+            if (Utilities.PresumeNVidia40xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
+            {
+                addedArgs += " --fast";
+            }
             if (settings.EnablePreviews)
             {
                 addedArgs += " --preview-method latent2rgb";
