@@ -1,4 +1,6 @@
 import torch
+import comfy
+import math
 
 class SwarmSquareMaskFromPercent:
     @classmethod
@@ -251,6 +253,39 @@ class SwarmMaskThreshold:
         return (mask,)
 
 
+class SwarmMaskScaleForMP:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "mask": ("MASK",),
+                "width": ("INT", {"default": 0, "min": 0, "max": 8192, "tooltip": "The target width of the mask."}),
+                "height": ("INT", {"default": 0, "min": 0, "max": 8192, "tooltip": "The target height of the mask."}),
+                "can_shrink": ("BOOLEAN", {"default": True, "tooltip": "If true, the mask can be shrunk to fit the target size, otherwise it will only be scaled up or left the same."}),
+            }
+        }
+
+    CATEGORY = "SwarmUI/masks"
+    RETURN_TYPES = ("MASK",)
+    FUNCTION = "scale"
+    DESCRIPTION = "Scales an mask to a target width and height, while keeping the aspect ratio."
+
+    def scale(self, mask, width, height, can_shrink):
+        mpTarget = width * height
+        oldWidth = mask.shape[2]
+        oldHeight = mask.shape[1]
+
+        scale = math.sqrt(mpTarget / (oldWidth * oldHeight))
+        if not can_shrink and scale < 1:
+            return (mask,)
+        newWid = int(round(oldWidth * scale / 64) * 64)
+        newHei = int(round(oldHeight * scale / 64) * 64)
+        mask = mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1]))
+        s = comfy.utils.common_upscale(mask, newWid, newHei, "bilinear", "disabled")
+        s = s.reshape((-1, s.shape[-2], s.shape[-1]))
+        return (s,)
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmSquareMaskFromPercent": SwarmSquareMaskFromPercent,
     "SwarmCleanOverlapMasks": SwarmCleanOverlapMasks,
@@ -261,4 +296,5 @@ NODE_CLASS_MAPPINGS = {
     "SwarmMaskGrow": SwarmMaskGrow,
     "SwarmMaskBlur": SwarmMaskBlur,
     "SwarmMaskThreshold": SwarmMaskThreshold,
+    "SwarmMaskScaleForMP": SwarmMaskScaleForMP,
 }

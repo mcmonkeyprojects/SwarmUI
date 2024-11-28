@@ -116,7 +116,7 @@ public class WorkflowGenerator
     public bool IsDifferentialDiffusion = false;
 
     /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/> if used for the main image.</summary>
-    public ImageMaskCropData MaskShrunkInfo = new(null, null, null, null);
+    public ImageMaskCropData MaskShrunkInfo = new(null, null, null, null, null);
 
     /// <summary>Gets the current loaded model class.</summary>
     public T2IModelClass CurrentModelClass()
@@ -350,7 +350,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>For <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/>.</summary>
-    public record class ImageMaskCropData(string BoundsNode, string CroppedMask, string MaskedLatent, string ScaledImage);
+    public record class ImageMaskCropData(string BoundsNode, string CroppedMask, string MaskedLatent, string ScaledImage, string ScaledMask);
 
     /// <summary>Creates an automatic image mask-crop before sampling, to be followed by <see cref="RecompositeCropped(string, string, JArray, JArray)"/> after sampling.</summary>
     /// <param name="mask">The mask node input.</param>
@@ -360,7 +360,7 @@ public class WorkflowGenerator
     /// <param name="model">The model in use, for determining resolution.</param>
     /// <param name="threshold">Optional minimum value threshold.</param>
     /// <param name="thresholdMax">Optional maximum value of the threshold.</param>
-    /// <returns>(boundsNode, croppedMask, maskedLatent, scaledImage).</returns>
+    /// <returns>(boundsNode, croppedMask, maskedLatent, scaledImage, scaledMask).</returns>
     public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1)
     {
         if (threshold > 0)
@@ -401,8 +401,16 @@ public class WorkflowGenerator
             ["height"] = model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
             ["can_shrink"] = true
         });
+        string scaledMask = CreateNode("SwarmMaskScaleForMP", new JObject()
+        {
+            ["mask"] = new JArray() { croppedMask, 0 },
+            ["width"] = model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth,
+            ["height"] = model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
+            ["can_shrink"] = true
+        });
+
         JArray encoded = DoMaskedVAEEncode(vae, [scaledImage, 0], [croppedMask, 0], null);
-        return new(boundsNode, croppedMask, $"{encoded[0]}", scaledImage);
+        return new(boundsNode, croppedMask, $"{encoded[0]}", scaledImage, scaledMask);
     }
 
     /// <summary>Returns a masked image composite with mask thresholding.</summary>
@@ -1008,13 +1016,19 @@ public class WorkflowGenerator
             {
                 img = [MaskShrunkInfo.ScaledImage, 0];
             }
+            JArray mask = FinalMask;
+            if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledMask is not null)
+            {
+                mask = [MaskShrunkInfo.ScaledMask, 0];
+            }
+
             string inpaintNode = CreateNode("InpaintModelConditioning", new JObject()
             {
                 ["positive"] = pos,
                 ["negative"] = neg,
                 ["vae"] = FinalVae,
                 ["pixels"] = img,
-                ["mask"] = FinalMask,
+                ["mask"] = mask,
                 ["noise_mask"] = true
             });
             pos = [inpaintNode, 0];

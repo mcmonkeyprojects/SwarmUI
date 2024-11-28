@@ -935,8 +935,8 @@ public class WorkflowGeneratorSteps
         }, -5);
         JArray doMaskShrinkApply(WorkflowGenerator g, JArray imgIn)
         {
-            (string boundsNode, string croppedMask, string masked, string scaledImage) = g.MaskShrunkInfo;
-            g.MaskShrunkInfo = new(null, null, null, null);
+            (string boundsNode, string croppedMask, string masked, string scaledImage, string scaledMask) = g.MaskShrunkInfo;
+            g.MaskShrunkInfo = new(null, null, null, null, null);
             if (boundsNode is not null)
             {
                 imgIn = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalInputImage, imgIn);
@@ -1160,7 +1160,7 @@ public class WorkflowGeneratorSteps
                         });
                         g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                     }
-                    (string boundsNode, string croppedMask, string masked, string scaledImage) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
+                    (string boundsNode, string croppedMask, string masked, string scaledImage, string scaledMask) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, 8, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
                     g.EnableDifferential();
                     (model, clip) = g.LoadLorasForConfinement(part.ContextID, model, clip);
                     JArray prompt = g.CreateConditioning(part.Prompt, clip, t2iModel, true);
