@@ -200,7 +200,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Download [the Redux model](https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev/blob/main/flux1-redux-dev.safetensors) to `(SwarmUI)/Models/style_models`
     - (Don't worry about sigclip, it is automanaged)
     - Drag an image to the prompt area
-    - On the top left, find the ReVision parameter group
+    - On the top left, find the `Image Prompting` parameter group
     - Select the `Use Style Model` parameter to the Redux model
     - There's an advanced `Style Model Apply Start` param to allow better structural control from your text prompt
         - set to 0.1 or 0.2 or so to have the text prompt guide structure before redux takes over styling
