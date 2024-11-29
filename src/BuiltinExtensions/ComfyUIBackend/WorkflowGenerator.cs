@@ -203,38 +203,6 @@ public class WorkflowGenerator
         return CreateNode(classType, (_, n) => n["inputs"] = input, id);
     }
 
-    public void DownloadCommonModel(string id)
-    {
-        CommonModels.ModelInfo info = CommonModels.Known[id];
-        string path = $"{Program.T2IModelSets[info.FolderType].FolderPaths[0]}/{info.FileName}";
-        if (File.Exists(path))
-        {
-            return;
-        }
-        Logs.Info($"Downloading {info.DisplayName} to {path}...");
-        double nextPerc = 0.05;
-        try
-        {
-            info.DownloadNow((bytes, total, perSec) =>
-            {
-                double perc = bytes / (double)total;
-                if (perc >= nextPerc)
-                {
-                    Logs.Info($"{info.DisplayName} download at {perc * 100:0.0}%...");
-                    // TODO: Send a signal back so a progress bar can be displayed on a UI
-                    nextPerc = Math.Round(perc / 0.05) * 0.05 + 0.05;
-                }
-            }).Wait();
-        }
-        catch (Exception ex)
-        {
-            Logs.Error($"Failed to download {info.DisplayName} from {info.URL}: {ex.Message}");
-            File.Delete(path);
-            throw new SwarmReadableErrorException("Required model download failed.");
-        }
-        Logs.Info($"Downloading complete, continuing.");
-    }
-
     /// <summary>Helper to download a core model file required by the workflow.</summary>
     public void DownloadModel(string name, string filePath, string url, string hash)
     {
@@ -250,9 +218,14 @@ public class WorkflowGenerator
             }
             Logs.Info($"Downloading {name} to {filePath}...");
             double nextPerc = 0.05;
+            string tmpPath = $"{filePath}.tmp";
             try
             {
-                Utilities.DownloadFile(url, filePath, (bytes, total, perSec) =>
+                if (File.Exists(tmpPath))
+                {
+                    File.Delete(tmpPath);
+                }
+                Utilities.DownloadFile(url, tmpPath, (bytes, total, perSec) =>
                 {
                     double perc = bytes / (double)total;
                     if (perc >= nextPerc)
@@ -262,11 +235,12 @@ public class WorkflowGenerator
                         nextPerc = Math.Round(perc / 0.05) * 0.05 + 0.05;
                     }
                 }, verifyHash: hash).Wait();
+                File.Move(tmpPath, filePath);
             }
             catch (Exception ex)
             {
                 Logs.Error($"Failed to download {name} from {url}: {ex.Message}");
-                File.Delete(filePath);
+                File.Delete(tmpPath);
                 throw new SwarmReadableErrorException("Required model download failed.");
             }
             Logs.Info($"Downloading complete, continuing.");
