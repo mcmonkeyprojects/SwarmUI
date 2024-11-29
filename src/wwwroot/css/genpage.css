@@ -831,6 +831,7 @@ body {
     border-top: 1px solid var(--light-border);
     width: fit-content;
     padding-top: 0.5rem;
+    padding-bottom: 5px;
 }
 .alt_prompt_main_line {
     display: flex;

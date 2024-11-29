@@ -372,6 +372,63 @@ class UIImprovementHandler {
                 lastY = 0;
             }
         }, true);
+        let isDoingADrag = false;
+        document.addEventListener('dragenter', (e) => {
+            if (isDoingADrag) {
+                return;
+            }
+            isDoingADrag = true;
+            let files = this.getFileList(e.dataTransfer, e);
+            console.log('dragenter', files, e);
+            if (files.length > 0 && files.filter(f => f.type.startsWith('image/')).length > 0) {
+                let targets = document.getElementsByClassName('drag_image_target');
+                for (let target of targets) {
+                    target.classList.add('drag_image_target_highlight');
+                }
+            }
+        }, true);
+        function clearDrag() {
+            setTimeout(() => {
+                isDoingADrag = false;
+                let targets = document.getElementsByClassName('drag_image_target'); // intentionally don't search "_highlight" due to browse misbehavior
+                for (let target of targets) {
+                    target.classList.remove('drag_image_target_highlight');
+                }
+            }, 1);
+        }
+        document.addEventListener('drop', (e) => {
+            clearDrag();
+        }, true);
+        document.addEventListener('dragleave', (e) => {
+            if (e.clientY <= 0 || e.clientX <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+                clearDrag();
+            }
+        }, true);
+    }
+
+    /** Returns a list of files from the given dataTransfer object, auto-correcting for browsers inconsistently handling certain drag types. */
+    getFileList(dataTransfer, e) {
+        if (!dataTransfer) {
+            return [];
+        }
+        let files = dataTransfer.files;
+        if (!files || !files.length) {
+            files = [...dataTransfer.items || []].filter(item => item.kind == "file");
+        }
+        if (!files.length) {
+            let uris = dataTransfer.getData('text/uri-list');
+            if (uris) {
+                files = uris.split('\n');
+            }
+            files = files.map(f => new File([f], f, {type: guessMimeTypeForExtension(f)}));
+        }
+        if (!files.length && e && e.srcElement) {
+            let img = e.srcElement;
+            if (img.tagName == 'IMG') {
+                files = [new File([img.src], img.src, {type: guessMimeTypeForExtension(img.src)})];
+            }
+        }
+        return files;
     }
 
     getLastSelectedTextbox() {

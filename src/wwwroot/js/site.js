@@ -707,7 +707,7 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
             <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onImageInputPaste(arguments[0])">
         </label>
-        <label for="${id}" class="auto-file-label">
+        <label for="${id}" class="auto-file-label drag_image_target">
             <input class="auto-file" type="file" accept="image/png, image/jpeg" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="false">
             <div class="auto-file-input">
                 <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
@@ -786,19 +786,7 @@ window.addEventListener('drop', e => {
 }, { capture: true, passive: false });
 
 function updateFileDragging(e, out) {
-    let files = [];
-    if (e.dataTransfer && !out) {
-        files = e.dataTransfer.files;
-        if (!files || !files.length) {
-            files = [...e.dataTransfer.items || []].filter(item => item.kind == "file");
-        }
-        if (!files.length) {
-            let uris = e.dataTransfer.getData('text/uri-list');
-            if (uris) {
-                files = uris.split('\n');
-            }
-        }
-    }
+    let files = out ? [] : uiImprover.getFileList(e.dataTransfer);
     const el = e.target.nextElementSibling;
     const mode = files.length ? "add" : "remove";
     el.classList[mode]("auto-file-input-file-drag");
