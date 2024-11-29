@@ -196,7 +196,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 ### Flux.1 Tools
 
 - The Flux.1 Tools announced [here by BFL](https://blackforestlabs.ai/flux-1-tools/) are supported in SwarmUI
-- For "Redux", a Flux form of image prompting:
+- For "**Redux**", a Flux form of image prompting:
     - Download [the Redux model](https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev/blob/main/flux1-redux-dev.safetensors) to `(SwarmUI)/Models/style_models`
     - (Don't worry about sigclip, it is automanaged)
     - Drag an image to the prompt area
@@ -205,13 +205,13 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - There's an advanced `Style Model Apply Start` param to allow better structural control from your text prompt
         - set to 0.1 or 0.2 or so to have the text prompt guide structure before redux takes over styling
         - at 0, text prompt is nearly ignored
-- For "Canny" / "Depth" models, they work like regular models (or LoRAs), but require an Init Image to function.
+- For "**Canny**" / "**Depth**" models, they work like regular models (or LoRAs), but require an Init Image to function.
     - You must input an appropriate image. So eg for the depth model, input a Depth Map.
         - You can use the controlnet parameter group to generate depth maps or canny images from regular images.
             - (TODO: Native interface to make that easier instead of janking controlnet)
     - Make sure to set Creativity to `1`.
     - This is similar in operation to Edit models.
-- For "Fill" (inpaint model), it works like other inpaint models.
+- For "**Fill**" (inpaint model), it works like other inpaint models.
     - "Edit Image" interface encouraged.
     - Mask a region and go.
     - Creativity `1` works well.
