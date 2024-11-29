@@ -351,7 +351,8 @@ public class WorkflowGeneratorSteps
                         string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
                         {
                             ["clip_vision"] = new JArray() { $"{styleModelClipLoader}", 0 },
-                            ["image"] = new JArray() { $"{imageLoader}", 0 }
+                            ["image"] = new JArray() { $"{imageLoader}", 0 },
+                            ["crop"] = "none"
                         });
                         string styled = g.CreateNode("StyleModelApply", new JObject()
                         {
@@ -448,7 +449,8 @@ public class WorkflowGeneratorSteps
                         string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
                         {
                             ["clip_vision"] = new JArray() { $"{getVisionLoader()}", 0 },
-                            ["image"] = new JArray() { $"{imageLoader}", 0 }
+                            ["image"] = new JArray() { $"{imageLoader}", 0 },
+                            ["crop"] = "none"
                         });
                         string unclipped = g.CreateNode("unCLIPConditioning", new JObject()
                         {
