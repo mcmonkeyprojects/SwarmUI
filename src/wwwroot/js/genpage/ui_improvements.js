@@ -408,6 +408,28 @@ class UIImprovementHandler {
         e.stopPropagation();
         return false;
     }
+
+    /** This used to be a CSS Animation, but browsers try so hard to make those pretty and smooth that it makes a noticeable GPU perf impact. Ow. */
+    runLoadSpinner(div) {
+        setTimeout(() => {
+            let s1 = div.querySelector('.loadspin1');
+            let s2 = div.querySelector('.loadspin2');
+            let s3 = div.querySelector('.loadspin3');
+            let interval;
+            let time = 0;
+            let step = 0.05;
+            interval = setInterval(() => {
+                if (!div.isConnected || div.style.display == 'none') {
+                    clearInterval(interval);
+                    return;
+                }
+                time += step;
+                s1.style.transform = `rotate(${((time - 0.45) / 1.2) * 360}deg)`;
+                s2.style.transform = `rotate(${((time - 0.3) / 1.2) * 360}deg)`;
+                s3.style.transform = `rotate(${((time - 0.15) / 1.2) * 360}deg)`;
+            }, step * 1000);
+        }, 100);
+    }
 }
 
 uiImprover = new UIImprovementHandler();
@@ -517,26 +539,4 @@ function doNoticePopover(text, className, targetX = mouseX, targetY = mouseY) {
             pop.remove();
         }, 1500);
     }, 1000);
-}
-
-/** This used to be a CSS Animation, but browsers try so hard to make those pretty and smooth that it makes a noticeable GPU perf impact. Ow. */
-function runLoadSpinner(div) {
-    setTimeout(() => {
-        let s1 = div.querySelector('.loadspin1');
-        let s2 = div.querySelector('.loadspin2');
-        let s3 = div.querySelector('.loadspin3');
-        let interval;
-        let time = 0;
-        let step = 0.05;
-        interval = setInterval(() => {
-            if (!div.isConnected || div.style.display == 'none') {
-                clearInterval(interval);
-                return;
-            }
-            time += step;
-            s1.style.transform = `rotate(${((time - 0.45) / 1.2) * 360}deg)`;
-            s2.style.transform = `rotate(${((time - 0.3) / 1.2) * 360}deg)`;
-            s3.style.transform = `rotate(${((time - 0.15) / 1.2) * 360}deg)`;
-        }, step * 1000);
-    }, 100);
 }
