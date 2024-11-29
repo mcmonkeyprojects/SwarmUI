@@ -730,6 +730,28 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             tmpImg.src = img.src;
         }
     }, '', 'Sets this image as the Init Image parameter input');
+    includeButton('Use As Image Prompt', () => {
+        let altPromptRegion = document.getElementById('alt_prompt_region');
+        if (!altPromptRegion) {
+            return;
+        }
+        let tmpImg = new Image();
+        tmpImg.crossOrigin = 'Anonymous';
+        tmpImg.onload = () => {
+            let canvas = document.createElement('canvas');
+            canvas.width = tmpImg.naturalWidth;
+            canvas.height = tmpImg.naturalHeight;
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(tmpImg, 0, 0);
+            canvas.toBlob(blob => {
+                let type = img.src.substring(img.src.lastIndexOf('.') + 1);
+                let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
+                imagePromptAddImage(file);
+            });
+        };
+        tmpImg.src = img.src;
+
+    }, '', 'Uses this image as an Image Prompt input');
     includeButton('Edit Image', () => {
         let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
         if (initImageGroupToggle) {
@@ -2029,7 +2051,7 @@ function autoRevealRevision() {
     }
 }
 
-function revisionAddImage(file) {
+function imagePromptAddImage(file) {
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     let reader = new FileReader();
@@ -2058,7 +2080,7 @@ function revisionAddImage(file) {
     reader.readAsDataURL(file);
 }
 
-function revisionInputHandler() {
+function imagePromptInputHandler() {
     let dragArea = getRequiredElementById('alt_prompt_region');
     dragArea.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -2074,21 +2096,21 @@ function revisionInputHandler() {
             e.stopPropagation();
             for (let file of e.dataTransfer.files) {
                 if (file.type.startsWith('image/')) {
-                    revisionAddImage(file);
+                    imagePromptAddImage(file);
                 }
             }
         }
     });
 }
-revisionInputHandler();
+imagePromptInputHandler();
 
-function revisionImagePaste(e) {
+function imagePromptImagePaste(e) {
     let items = (e.clipboardData || e.originalEvent.clipboardData).items;
     for (let item of items) {
         if (item.kind === 'file') {
             let file = item.getAsFile();
             if (file.type.startsWith('image/')) {
-                revisionAddImage(file);
+                imagePromptAddImage(file);
             }
         }
     }
