@@ -51,7 +51,14 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     public static HashSet<string> LegacyModelExtensions = ["ckpt", "pt", "pth", "bin"];
 
     /// <summary>Returns true if this is a 'diffusion_models' model instead of a regular checkpoint model.</summary>
-    public bool IsDiffusionModelsFormat => OriginatingFolderPath.Replace('\\', '/').EndsWith("/unet") || OriginatingFolderPath.Replace('\\', '/').EndsWith("/diffusion_models"); // Hacky but it works for now
+    public bool IsDiffusionModelsFormat
+    {
+        get
+        {
+            string cleaned = OriginatingFolderPath.Replace('\\', '/').TrimEnd('/').ToLowerFast();
+            return cleaned.EndsWithFast("/unet") || cleaned.EndsWithFast("/diffusion_models"); // Hacky but it works for now
+        }
+    }
 
     /// <summary>Returns the model's SHA-256 Tensor Hash - either from metadata, or by generating it from the file.
     /// Returns null if hashing is impossible (no handler, no metadata construct, no source file).
