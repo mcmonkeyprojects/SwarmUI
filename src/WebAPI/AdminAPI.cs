@@ -296,7 +296,7 @@ public static class AdminAPI
         HttpResponseMessage response = await Utilities.UtilWebClient.PostAsync("https://paste.denizenscript.com/New/Swarm", content, Program.GlobalProgramCancel);
         string responseString = await response.Content.ReadAsStringAsync();
         responseString = responseString.Trim();
-        if (responseString.StartsWith("<!DOCTYPE html"))
+        if (responseString.StartsWith("<!DOCTYPE html") || responseString.StartsWith("System."))
         {
             responseString = responseString.Before('\n');
             if (responseString.Length > 100)
