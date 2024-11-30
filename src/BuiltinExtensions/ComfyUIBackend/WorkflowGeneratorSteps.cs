@@ -358,7 +358,9 @@ public class WorkflowGeneratorSteps
                         {
                             ["conditioning"] = g.FinalPrompt,
                             ["clip_vision_output"] = new JArray() { $"{encoded}", 0 },
-                            ["style_model"] = new JArray() { $"{styleModelLoader}", 0 }
+                            ["style_model"] = new JArray() { $"{styleModelLoader}", 0 },
+                            ["strength_type"] = "multiply",
+                            ["strength"] = g.UserInput.Get(ComfyUIBackendExtension.StyleModelMultiplyStrength, 1)
                         });
                         if (g.UserInput.TryGet(ComfyUIBackendExtension.StyleModelMergeStrength, out double mergeStrength) && mergeStrength < 1)
                         {
