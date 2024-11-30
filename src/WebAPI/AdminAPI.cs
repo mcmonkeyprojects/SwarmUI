@@ -276,7 +276,7 @@ public static class AdminAPI
         {
             rawLogText.Append($"{message.Time:yyyy-MM-dd HH:mm:ss.fff} [{mLevel}] {message.Message}\n");
         }
-        string logText = rawLogText.ToString();
+        string logText = rawLogText.ToString().Replace('\0', ' ');
         if (logText.Length > 3 * 1024 * 1024)
         {
             logText = logText[0..(100 * 1024)] + "\n\n\n... (log too long, truncated) ..." + logText[^(2500 * 1024)..];
