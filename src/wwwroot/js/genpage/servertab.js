@@ -12,7 +12,7 @@ class ExtensionsManager {
             button.parentElement.innerHTML = 'Installed, restart to load';
             this.newInstallsCard.style.display = 'block';
         }, 0, e => {
-            infoDiv.remove();
+            infoDiv.innerText = 'Failed to install: ' + e;
             button.disabled = false;
         });
     }
@@ -39,8 +39,22 @@ class ExtensionsManager {
                 infoDiv.innerText = 'No update available';
             }
         }, 0, e => {
-            infoDiv.remove();
-            button.disabled = false
+            infoDiv.innerText = 'Failed to update: ' + e;
+            button.disabled = false;
+        });
+    }
+
+    uninstallExtension(name, button) {
+        button.disabled = true;
+        button.parentElement.querySelectorAll('.installing_info').forEach(e => e.remove());
+        let infoDiv = createDiv(null, 'installing_info', 'Uninstalling (check server logs for details)...');
+        button.parentElement.appendChild(infoDiv);
+        genericRequest('UninstallExtension', {'extensionName': name}, data => {
+            button.parentElement.innerHTML = 'Uninstalled, restart to apply';
+            this.newInstallsCard.style.display = 'block';
+        }, 0, e => {
+            infoDiv.innerText = 'Failed to uninstall: ' + e;
+            button.disabled = false;
         });
     }
 }

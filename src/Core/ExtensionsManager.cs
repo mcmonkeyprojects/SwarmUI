@@ -46,6 +46,17 @@ public class ExtensionsManager
     {
         string[] builtins = Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => s.Replace('\\', '/').AfterLast("/src/")).ToArray();
         string[] extras = Directory.Exists("./src/Extensions") ? Directory.EnumerateDirectories("./src/Extensions/").Select(s => s.Replace('\\', '/').AfterLast("/src/")).ToArray() : [];
+        foreach (string deletable in extras.Where(e => e.TrimEnd('/').EndsWith(".delete")))
+        {
+            try
+            {
+                Directory.Delete($"./src/{deletable}", true);
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Failed to delete extension folder SwarmUI/src/{deletable}: {ex.ReadableString()}, you will need to remove it manually");
+            }
+        }
         foreach (Type extType in AppDomain.CurrentDomain.GetAssemblies().ToList().SelectMany(x => x.GetTypes()).Where(t => typeof(Extension).IsAssignableFrom(t) && !t.IsAbstract))
         {
             try

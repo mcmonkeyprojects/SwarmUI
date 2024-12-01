@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Hardware.Info;
+using Microsoft.VisualBasic.FileIO;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
@@ -31,6 +32,7 @@ public static class AdminAPI
         API.RegisterAPICall(UpdateAndRestart, true, Permissions.Restart);
         API.RegisterAPICall(InstallExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(UpdateExtension, true, Permissions.ManageExtensions);
+        API.RegisterAPICall(UninstallExtension, true, Permissions.ManageExtensions);
     }
 
     public static JObject AutoConfigToParamData(AutoConfiguration config)
@@ -507,6 +509,65 @@ public static class AdminAPI
             return new JObject() { ["success"] = false };
         }
         File.WriteAllText("src/bin/must_rebuild", "yes");
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Triggers an extension uninstallation for an installed extension. Does not trigger a restart. Does signal required rebuild.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> UninstallExtension(Session session,
+        [API.APIParameter("The name of the extension to uninstall.")] string extensionName)
+    {
+        Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
+        if (ext is null)
+        {
+            return new JObject() { ["error"] = "Unknown extension." };
+        }
+        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
+        Logs.Debug($"Will clear out Extension path: {path}");
+        if (!Directory.Exists(path))
+        {
+            return new JObject() { ["error"] = "Extension has invalid path, cannot delete." };
+        }
+        File.WriteAllText("src/bin/must_rebuild", "yes");
+        try
+        {
+            FileSystem.DeleteDirectory(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
+            return new JObject() { ["success"] = true };
+        }
+        catch (Exception ex)
+        {
+            Logs.Debug($"Failed to send extension folder to recycle, will try to delete permanently -- error was {ex.ReadableString()}");
+        }
+        try
+        {
+            Directory.Move(path, path + ".delete");
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Failed to move extension folder to delete folder: {ex.ReadableString()}");
+            return new JObject() { ["error"] = "Extension deletion failed, you will need to manually delete the extension folder from inside SwarmUI/src/Extensions" };
+        }
+        path = $"{path}.delete";
+        try
+        {
+            Directory.Delete(path, true);
+        }
+        catch (Exception)
+        {
+            Logs.Debug($"Delete failed, will wait a minute then try again...");
+            await Task.Delay(TimeSpan.FromMinutes(1));
+            try
+            {
+                Directory.Delete(path, true);
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Failed to delete extension folder: {ex.ReadableString()}");
+                return new JObject() { ["error"] = "Extension deletion failed, will retry deleting it after SwarmUI restarts" };
+            }
+        }
         return new JObject() { ["success"] = true };
     }
 }
