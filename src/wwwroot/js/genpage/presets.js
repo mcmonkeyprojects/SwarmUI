@@ -191,11 +191,21 @@ function updatePresetList() {
             }
         }
     }
+    localStorage.setItem('current_presets', currentPresets.map(p => p.title).join('|||'));
     getRequiredElementById('current_presets_wrapper').style.display = currentPresets.length > 0 ? 'inline-block' : 'none';
     getRequiredElementById('preset_info_slot').innerText = ` (${currentPresets.length}, overriding ${overrideCount} params)`;
     setTimeout(() => {
         setPageBarsFunc();
     }, 1);
+}
+
+function selectInitialPresetList() {
+    let presetList = localStorage.getItem('current_presets');
+    if (presetList) {
+        currentPresets = presetList.split('|||').map(p => getPresetByTitle(p)).filter(p => p);
+        updatePresetList();
+        presetBrowser.rerender();
+    }
 }
 
 function applyOnePreset(preset) {

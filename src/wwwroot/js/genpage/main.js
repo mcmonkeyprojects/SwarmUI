@@ -2476,7 +2476,9 @@ function genpageLoad() {
             getRequiredElementById('advanced_options_checkbox').checked = localStorage.getItem('display_advanced') == 'true';
             toggle_advanced();
             setCurrentModel();
-            loadUserData();
+            loadUserData(() => {
+                selectInitialPresetList();
+            });
             for (let callback of sessionReadyCallbacks) {
                 callback();
             }
