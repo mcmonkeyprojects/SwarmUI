@@ -10,7 +10,7 @@ Second, feel free to open [issues here on GitHub](https://github.com/mcmonkeypro
 
 If you see an error message mentioning a failed connection to `https://api.nuget.org/v3/index.json`, such as `Unable to load the service index for source https://api.nuget.org/v3/index.json`
 
-That is the build dependency service, connections to it are required for the first launch. To fix this:
+That is the build dependency service, connections to it are required for the first launch and when updating. To fix this:
 - **A:** Ensure your network is enabled, not blocked by firewalls, VPNs, whatever. If you have anything like that running, disable it and try again. (Usually these aren't a problem but sometimes they can do weird things to your network)
 - **B:** Sometimes temporary internet outages are at fault. So just waiting a few hours or until tomorrow and trying again might be all you need.
 - **C:** It might also help to restart your computer.
