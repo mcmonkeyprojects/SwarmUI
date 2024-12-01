@@ -205,6 +205,8 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - There's an advanced `Style Model Apply Start` param to allow better structural control from your text prompt
         - set to 0.1 or 0.2 or so to have the text prompt guide structure before redux takes over styling
         - at 0, text prompt is nearly ignored
+    - The advanced `Style Model Merge Strength` param lets you partial merge the style model against the nonstyled input, similar to Multiply Strength
+    - The advanced `Style Model Multiply Strength` param directly multiplies the style model output, similar to Merge Strength
 - For "**Canny**" / "**Depth**" models, they work like regular models (or LoRAs), but require an Init Image to function.
     - You must input an appropriate image. So eg for the depth model, input a Depth Map.
         - You can use the controlnet parameter group to generate depth maps or canny images from regular images.
