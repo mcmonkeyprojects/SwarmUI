@@ -2398,6 +2398,17 @@ function storeImageToHistoryWithCurrentParams(img) {
     });
 }
 
+function clearParamFilterInput() {
+    let filter = getRequiredElementById('main_inputs_filter');
+    let filterClearer = getRequiredElementById('clear_input_icon');
+    if (filter.value.length > 0) {
+        filter.value = '';
+        filter.focus();
+        hideUnsupportableParams();
+    }
+    filterClearer.style.display = 'none';
+}
+
 function genpageLoad() {
     console.log('Load page...');
     $('#toptablist').on('shown.bs.tab', function (e) {

@@ -93,7 +93,10 @@
                 <div class="input-sidebar" id="input_sidebar">
                     <span class="interrupt_line"></span>
                     <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
-                        <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
+                        <div class="input_filter_container">
+                            <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
+                            <span class="clear_input_icon" id="clear_input_icon" onclick="clearParamFilterInput()">&#x2715;</span>
+                        </div>
                         <div id="main_inputs_area"></div>
                         <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
                         <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
