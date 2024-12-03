@@ -313,7 +313,10 @@ public class Program
         try
         {
             string modelRoot = ServerSettings.Paths.ActualModelRoot;
-            Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(modelRoot, ServerSettings.Paths.SDModelFolder));
+            foreach (string path in ServerSettings.Paths.SDModelFolder.Split(';'))
+            {
+                Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(modelRoot, path));
+            }
             Directory.CreateDirectory($"{modelRoot}/upscale_models");
             Directory.CreateDirectory($"{modelRoot}/clip");
         }
