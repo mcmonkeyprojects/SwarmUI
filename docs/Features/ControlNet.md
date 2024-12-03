@@ -3,7 +3,7 @@
 - ControlNets are a form of guidance for Stable Diffusion that take in a reference image, and copy some feature set from it
     - For example, "Canny" controlnets copy the linework for images. This is useful for image to easily turn a sketch into a photo, while keeping the same structure.
     - Or, "Depth" controlnets copy the 3D structure of an image. This is useful to convert between image content while keeping otherwise the same, such as replacing one person for another, or a cat for a dog, while keeping them in the same pose/situation/etc.
-    - ControlNets are similar to but not the same as [IP-Adapter](/docs/Features/IPAdapter-ReVision.md), which copy more vague concepts from images, such as overall concepts in an image, or the facial structure of a person.
+    - ControlNets are similar to but not the same as [IP-Adapter](/docs/Features/ImagePrompting.md), which copy more vague concepts from images, such as overall concepts in an image, or the facial structure of a person.
     - ControlNets were originally developed by [Lvmin Zhang](https://arxiv.org/abs/2302.05543), and have since been adopted by and used throughout the Stable Diffusion community.
     - ControlNet support in Swarm is provided natively by the ComfyUI backend, with help from [ControlNet Auxiliary Preprocessors developed by Fannovel16](https://github.com/Fannovel16/comfyui_controlnet_aux).
 - ControlNets can be used through the "ControlNet" parameter grouping.
