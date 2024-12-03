@@ -38,6 +38,32 @@ public static class ImageMetadataTracker
 
     public record class ImageDatabase(string Folder, LockObject Lock, LiteDatabase Database, ILiteCollection<ImageMetadataEntry> Metadata, ILiteCollection<ImagePreviewEntry> Previews)
     {
+        public volatile int Errors = 0;
+
+        public void HadNewError()
+        {
+            int newCount = Interlocked.Increment(ref Errors);
+            if (newCount < 10)
+            {
+                return;
+            }
+            lock (Lock)
+            {
+                try
+                {
+                    Database.Dispose();
+                    Errors = -1000;
+                }
+                catch (Exception) { }
+                try
+                {
+                    File.Delete($"{Folder}/image_metadata.ldb");
+                }
+                catch (Exception) { }
+                Databases.TryRemove(Folder, out _);
+            }
+        }
+
         public void Dispose()
         {
             try
@@ -153,12 +179,14 @@ public static class ImageMetadataTracker
         catch (Exception ex)
         {
             Console.WriteLine($"Error reading image metadata for file '{file}' from database: {ex.ReadableString()}");
+            metadata.HadNewError();
         }
         if (!File.Exists(file))
         {
             return null;
         }
         long fileTime = ((DateTimeOffset)File.GetLastWriteTimeUtc(file)).ToUnixTimeSeconds();
+        byte[] fileData;
         try
         {
             byte[] data = File.ReadAllBytes(file);
@@ -166,7 +194,15 @@ public static class ImageMetadataTracker
             {
                 return null;
             }
-            byte[] fileData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+            fileData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading image preview for file '{file}': {ex.ReadableString()}");
+            return null;
+        }
+        try
+        {
             ImagePreviewEntry entry = new() { FileName = filename, PreviewData = fileData, LastVerified = timeNow, FileTime = fileTime };
             lock (metadata.Lock)
             {
@@ -176,7 +212,8 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading image preview for file '{file}': {ex.ReadableString()}");
+            Console.WriteLine($"Error saving image preview for file '{file}' to database: {ex.ReadableString()}");
+            metadata.HadNewError();
             return null;
         }
     }
@@ -231,6 +268,7 @@ public static class ImageMetadataTracker
         catch (Exception ex)
         {
             Console.WriteLine($"Error reading image metadata for file '{file}' from database: {ex.ReadableString()}");
+            metadata.HadNewError();
         }
         if (!File.Exists(file))
         {
@@ -288,6 +326,7 @@ public static class ImageMetadataTracker
         catch (Exception ex)
         {
             Console.WriteLine($"Error writing image metadata for file '{file}' to database: {ex.ReadableString()}");
+            metadata.HadNewError();
         }
         return entry;
     }
