@@ -274,11 +274,21 @@ function genInputs(delay_final = false) {
             let inputHeightParent = findParentOfClass(inputHeight, 'auto-slider-box');
             let inputHeightSlider = getRequiredElementById('input_height_rangeslider');
             let resGroupLabel = findParentOfClass(inputWidth, 'input-group').querySelector('.header-label');
+            let inputAspectRatioParent = findParentOfClass(inputAspectRatio, 'auto-dropdown-box');
+            let switchAspectRatioButton = document.createElement("button");
+            switchAspectRatioButton.style.display = inputAspectRatio.value == "Custom" ? 'block' : 'none';
+            switchAspectRatioButton.style.marginLeft = '0';
+            switchAspectRatioButton.style.marginTop = '0.5rem';
+            switchAspectRatioButton.className = 'basic-button';
+            switchAspectRatioButton.title = 'Switch the width and the height';
+            switchAspectRatioButton.textContent = 'Switch Width and Height';
+            inputAspectRatioParent.appendChild(switchAspectRatioButton);
             let resTrick = () => {
                 let aspect;
                 if (inputAspectRatio.value == "Custom") {
                     inputWidthParent.style.display = 'block';
                     inputHeightParent.style.display = 'block';
+                    switchAspectRatioButton.style.display = 'block';
                     delete inputWidthParent.dataset.visible_controlled;
                     delete inputHeightParent.dataset.visible_controlled;
                     aspect = describeAspectRatio(inputWidth.value, inputHeight.value);
@@ -286,6 +296,7 @@ function genInputs(delay_final = false) {
                 else {
                     inputWidthParent.style.display = 'none';
                     inputHeightParent.style.display = 'none';
+                    switchAspectRatioButton.style.display = 'none';
                     inputWidthParent.dataset.visible_controlled = 'true';
                     inputHeightParent.dataset.visible_controlled = 'true';
                     aspect = inputAspectRatio.value;
@@ -316,6 +327,18 @@ function genInputs(delay_final = false) {
                     triggerChangeFor(inputHeight);
                 }
                 resTrick();
+            });
+            switchAspectRatioButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (inputWidth.value && inputHeight.value) {
+                    let tmpWidth = inputWidth.value;
+                    inputWidth.value = inputHeight.value;
+                    inputHeight.value = tmpWidth;
+                    triggerChangeFor(inputWidth);
+                    triggerChangeFor(inputHeight);
+                } else {
+                    showError('The width and height cannot be empty.');
+                }
             });
             resTrick();
         }
