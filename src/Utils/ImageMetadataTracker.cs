@@ -313,7 +313,11 @@ public static class ImageMetadataTracker
         {
             lock (db.Lock)
             {
-                db.Dispose();
+                try
+                {
+                    db.Dispose();
+                }
+                catch (Exception) { }
                 try
                 {
                     File.Delete($"{name}/image_metadata.ldb");
