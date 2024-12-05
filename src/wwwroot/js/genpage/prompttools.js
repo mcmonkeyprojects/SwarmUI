@@ -322,6 +322,7 @@ class PromptPlusButton {
         this.addButton = getRequiredElementById('alt_text_add_button');
         this.addButton.addEventListener('click', () => this.showMenu());
         this.popover = null;
+        this.noOverlap = false;
         this.segmentModalOther = getRequiredElementById('text_prompt_segment_other_inputs');
         this.segmentModalOther.innerHTML =
             makeGenericPopover('text_prompt_segment_model', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
@@ -345,6 +346,47 @@ class PromptPlusButton {
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
+        this.regionModalOther = getRequiredElementById('text_prompt_region_other_inputs');
+        this.regionModalOther.innerHTML =
+            makeGenericPopover('text_prompt_region_x', 'Prompt Syntax: Region Left X', 'Left X', "The left X coordinate of the region's box.", '')
+            + makeSliderInput(null, 'text_prompt_region_x', '', 'Left X', '', 0.25, 0, 1, 0, 1, 0.01, false, false, true)
+            + makeGenericPopover('text_prompt_region_y', 'Prompt Syntax: Region Top Y', 'Top Y', "The top Y coordinate of the region's box.", '')
+            + makeSliderInput(null, 'text_prompt_region_y', '', 'Top Y', '', 0.25, 0, 1, 0, 1, 0.01, false, false, true)
+            + makeGenericPopover('text_prompt_region_width', 'Prompt Syntax: Region Width', 'Width', "The width of the region's box.", '')
+            + makeSliderInput(null, 'text_prompt_region_width', '', 'Width', '', 0.5, 0, 1, 0, 1, 0.01, false, false, true)
+            + makeGenericPopover('text_prompt_region_height', 'Prompt Syntax: Region Height', 'Height', "The height of the region's box.", '')
+            + makeSliderInput(null, 'text_prompt_region_height', '', 'Height', '', 0.5, 0, 1, 0, 1, 0.01, false, false, true)
+            + makeGenericPopover('text_prompt_region_strength', 'Prompt Syntax: Region Strength', 'Strength', "How strongly to apply the prompt to the region (vs global prompt).\n0 is no effect, 1 is full effect.", '')
+            + makeSliderInput(null, 'text_prompt_region_strength', '', 'Strength', '', 0.5, 0, 1, 0, 1, 0.01, false, false, true)
+            + makeGenericPopover('text_prompt_region_inpaint', 'Prompt Syntax: Region Do Inpaint', 'Checkbox', 'Whether to inpaint the region.\nIf checked, the prompt will be used to inpaint the region.', '')
+            + makeCheckboxInput(null, 'text_prompt_region_inpaint', '', 'Do Inpaint', '', false, false, false, true)
+            + makeGenericPopover('text_prompt_region_inpaintstrength', 'Prompt Syntax: Region Inpaint Strength', 'Strength', "How strongly to inpaint the region (ie InitImageCreativity).\n0 is no inpainting, 1 is full inpainting.\nOnly applies if 'Do Inpaint' is checked above.", '')
+            + makeSliderInput(null, 'text_prompt_region_inpaintstrength', '', 'Inpaint Strength', '', 0.5, 0, 1, 0, 1, 0.01, false, false, true)
+            + makeGenericPopover('text_prompt_region_gentext', 'Prompt Syntax: Region Generation Prompt', 'text', 'The prompt to use when regenerating the matched area.\nShould be a full text on its own, can use a subset of general prompting syntax.', '')
+            + makeTextInput(null, 'text_prompt_region_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
+        this.regionModalX = getRequiredElementById('text_prompt_region_x');
+        this.regionModalY = getRequiredElementById('text_prompt_region_y');
+        this.regionModalWidth = getRequiredElementById('text_prompt_region_width');
+        this.regionModalHeight = getRequiredElementById('text_prompt_region_height');
+        this.regionModalStrength = getRequiredElementById('text_prompt_region_strength');
+        this.regionModalInpaint = getRequiredElementById('text_prompt_region_inpaint');
+        this.regionModalInpaintStrength = getRequiredElementById('text_prompt_region_inpaintstrength');
+        this.regionModalInpaintStrengthSlider = getRequiredElementById('text_prompt_region_inpaintstrength_rangeslider');
+        for (let elem of [this.regionModalX, this.regionModalY, this.regionModalWidth, this.regionModalHeight, this.regionModalInpaint]) {
+            elem.addEventListener('change', () => this.regionModalProcessChanges());
+        }
+        this.regionModalMainText = getRequiredElementById('text_prompt_region_gentext');
+        this.regionModalCanvasHolder = getRequiredElementById('text_prompt_region_canvasholder');
+        this.regionModalCanvas = null;
+        this.regionModalCanvasCtx = null;
+        this.regionModalMain = getRequiredElementById('text_prompt_region_modal');
+        this.regionModalMain.addEventListener('mousemove', (e) => this.regionModalMouseMove(e));
+        document.addEventListener('mouseup', (e) => {
+            this.regionModalCanvasMouseDown = false;
+            this.regionModalCanvasMouseClick = null;
+        });
+        textPromptAddKeydownHandler(this.regionModalMainText);
+        enableSlidersIn(this.regionModalOther);
     }
 
     autoHideMenu() {
@@ -362,6 +404,12 @@ class PromptPlusButton {
             this.segmentModalClear();
             this.segmentModalProcessChanges();
             $('#text_prompt_segment_modal').modal('show');
+        }});
+        buttons.push({ key: 'region', key_html: 'Regional Prompt', title: "Supply a different prompt for a sub-region of an image", action: () => {
+            this.autoHideMenu();
+            this.regionModalClear();
+            this.regionModalProcessChanges();
+            $('#text_prompt_region_modal').modal('show');
         }});
         buttons.push({ key: 'other', key_html: 'Other...', title: "Add some other prompt syntax (that doesn't have its own menu)", action: () => {
             let text = this.altTextBox.value.trim();
@@ -394,6 +442,8 @@ class PromptPlusButton {
         this.segmentModalThreshold.value = 0.5;
         this.segmentModalTextMatch.value = '';
         this.segmentModalInvertMask.checked = false;
+        triggerChangeFor(this.segmentModalCreativity);
+        triggerChangeFor(this.segmentModalThreshold);
     }
 
     segmentModalProcessChanges() {
@@ -417,7 +467,167 @@ class PromptPlusButton {
             modelText = this.segmentModalTextMatch.value.trim();
         }
         $('#text_prompt_segment_modal').modal('hide');
+        // TODO: Yolo input for match ID
         this.applyNewSyntax(`\n<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+    }
+
+    regionModalClear() {
+        this.regionModalX.value = 0.25;
+        this.regionModalY.value = 0.25;
+        this.regionModalWidth.value = 0.5;
+        this.regionModalHeight.value = 0.5;
+        this.regionModalStrength.value = 0.5;
+        this.regionModalInpaint.checked = false;
+        this.regionModalInpaintStrength.value = 0.5;
+        this.regionModalMainText.value = '';
+        this.noOverlap = true;
+        triggerChangeFor(this.regionModalX);
+        triggerChangeFor(this.regionModalY);
+        triggerChangeFor(this.regionModalWidth);
+        triggerChangeFor(this.regionModalHeight);
+        triggerChangeFor(this.regionModalStrength);
+        triggerChangeFor(this.regionModalInpaintStrength);
+        this.noOverlap = false;
+        let width = document.getElementById('input_width');
+        width = width ? width.value : 1024;
+        let height = document.getElementById('input_height');
+        height = height ? height.value : 1024;
+        while (width >= 512 || height >= 512) {
+            width /= 2;
+            height /= 2;
+        }
+        this.regionModalCanvasHolder.innerHTML = `<canvas id="text_prompt_region_canvas" width="${width}" height="${height}" style="margin-left:calc(50% - ${width / 2}px)"></canvas>`;
+        this.regionModalCanvas = getRequiredElementById('text_prompt_region_canvas');
+        this.regionModalCanvasMouseX = 0;
+        this.regionModalCanvasMouseY = 0;
+        this.regionModalCanvasMouseDown = false;
+        this.regionModalCanvasMouseClick = null;
+        this.regionModalCanvas.addEventListener('mousedown', (e) => {
+            this.regionModalCanvasMouseDown = true;
+            this.regionModalCanvasMouseClick = null;
+            for (let circle of this.regionModalCircles()) {
+                if (circle.contains(e.offsetX, e.offsetY)) {
+                    this.regionModalCanvasMouseClick = circle.id;
+                    break;
+                }
+            }
+        });
+        this.regionModalCanvasCtx = this.regionModalCanvas.getContext('2d');
+        this.regionModalRedrawCanvas();
+    }
+
+    regionModalMouseMove(e) {
+        let canvasRect = this.regionModalCanvas.getBoundingClientRect();
+        this.regionModalCanvasMouseX = e.pageX - canvasRect.left;
+        this.regionModalCanvasMouseY = e.pageY - canvasRect.top;
+        let realX = roundTo(this.regionModalCanvasMouseX / this.regionModalCanvas.width, 0.01);
+        let realY = roundTo(this.regionModalCanvasMouseY / this.regionModalCanvas.height, 0.01);
+        realX = Math.max(0, Math.min(1, realX));
+        realY = Math.max(0, Math.min(1, realY));
+        let clickId = this.regionModalCanvasMouseClick;
+        if (clickId === null) {
+            if (realX > 0 && realX < 1 && realY > 0 && realY < 1) {
+                this.regionModalRedrawCanvas();
+            }
+            return;
+        }
+        let curX = parseFloat(this.regionModalX.value), curY = parseFloat(this.regionModalY.value), curWidth = parseFloat(this.regionModalWidth.value), curHeight = parseFloat(this.regionModalHeight.value);
+        let x1 = curX, y1 = curY, x2 = curX + curWidth, y2 = curY + curHeight;
+        if (Math.abs(realX - curX) < 0.01) {
+            realX = curX;
+        }
+        if (Math.abs(realY - curY) < 0.01) {
+            realY = curY;
+        }
+        if (clickId == 0) {
+            x1 = realX;
+            y1 = realY;
+        }
+        else if (clickId == 1) {
+            x2 = realX;
+            y1 = realY;
+        }
+        else if (clickId == 2) {
+            x1 = realX;
+            y2 = realY;
+        }
+        else if (clickId == 3) {
+            x2 = realX;
+            y2 = realY;
+        }
+        if (x1 < x2) {
+            this.regionModalX.value = roundToAuto(x1, 0.01);
+            this.regionModalWidth.value = roundToAuto(x2 - x1, 0.01);
+        }
+        if (y1 < y2) {
+            this.regionModalY.value = roundToAuto(y1, 0.01);
+            this.regionModalHeight.value = roundToAuto(y2 - y1, 0.01);
+        }
+        this.noOverlap = true;
+        triggerChangeFor(this.regionModalX);
+        triggerChangeFor(this.regionModalY);
+        triggerChangeFor(this.regionModalWidth);
+        triggerChangeFor(this.regionModalHeight);
+        this.noOverlap = false;
+        this.regionModalRedrawCanvas();
+    }
+
+    regionModalCircles() {
+        let x = this.regionModalX.value * this.regionModalCanvas.width;
+        let y = this.regionModalY.value * this.regionModalCanvas.height;
+        let w = this.regionModalWidth.value * this.regionModalCanvas.width;
+        let h = this.regionModalHeight.value * this.regionModalCanvas.height;
+        return [new RegionModalCircle(x, y, 0), new RegionModalCircle(x + w, y, 1), new RegionModalCircle(x, y + h, 2), new RegionModalCircle(x + w, y + h, 3)];
+    }
+
+    regionModalRedrawCanvas() {
+        let circles = this.regionModalCircles();
+        let mouseX = this.regionModalCanvasMouseX;
+        let mouseY = this.regionModalCanvasMouseY;
+        let ctx = this.regionModalCanvasCtx;
+        ctx.fillStyle = 'rgb(128, 128, 128)';
+        ctx.clearRect(0, 0, this.regionModalCanvas.width, this.regionModalCanvas.height);
+        ctx.strokeStyle = 'rgb(0, 0, 0)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, this.regionModalCanvas.width - 1, this.regionModalCanvas.height - 1);
+        ctx.strokeStyle = 'rgb(200, 0, 0)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(circles[0].x, circles[0].y, circles[3].x - circles[0].x, circles[3].y - circles[0].y);
+        ctx.fillStyle = 'rgb(150, 120, 120)';
+        ctx.fillRect(circles[0].x, circles[0].y, circles[3].x - circles[0].x, circles[3].y - circles[0].y);
+        for (let circle of circles) {
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, 5, 0, 2 * Math.PI, false);
+            ctx.fillStyle = circle.contains(mouseX, mouseY) ? 'rgb(0, 180, 0)' : 'rgb(0, 50, 0)';
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgb(0, 200, 0)';
+            ctx.stroke();
+        }
+    }
+
+    regionModalProcessChanges() {
+        if (this.noOverlap) {
+            return;
+        }
+        this.noOverlap = true;
+        if (this.regionModalInpaint.checked) {
+            this.regionModalInpaintStrength.disabled = false;
+            this.regionModalInpaintStrengthSlider.disabled = false;
+        }
+        else {
+            this.regionModalInpaintStrength.disabled = true;
+            this.regionModalInpaintStrengthSlider.disabled = true;
+        }
+        this.regionModalRedrawCanvas();
+        this.noOverlap = false;
+    }
+
+    regionModalSubmit() {
+        $('#text_prompt_region_modal').modal('hide');
+        let key = this.regionModalInpaint.checked ? 'object' : 'region';
+        let inpaint = this.regionModalInpaint.checked ? `,${this.regionModalInpaintStrength.value}` : '';
+        this.applyNewSyntax(`\n<${key}:${this.regionModalX.value},${this.regionModalY.value},${this.regionModalWidth.value},${this.regionModalHeight.value},${this.regionModalStrength.value}${inpaint}> ${this.regionModalMainText.value.trim()}`);
     }
 
     applyNewSyntax(text) {
@@ -426,6 +636,18 @@ class PromptPlusButton {
         this.altTextBox.selectionStart = this.altTextBox.value.length;
         this.altTextBox.selectionEnd = this.altTextBox.value.length;
         this.altTextBox.focus();
+    }
+}
+
+class RegionModalCircle {
+    constructor(x, y, id) {
+        this.x = x;
+        this.y = y;
+        this.id = id;
+    }
+
+    contains(mouseX, mouseY) {
+        return mouseX >= this.x - 5 && mouseX <= this.x + 5 && mouseY >= this.y - 5 && mouseY <= this.y + 5;
     }
 }
 

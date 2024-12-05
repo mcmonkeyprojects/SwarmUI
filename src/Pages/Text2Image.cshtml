@@ -185,6 +185,28 @@
                             <button type="button" class="btn btn-secondary basic-button translate" onclick="promptPlusButton.segmentModalSubmit()">Add</button>
                         </div>
                     @WebUtil.ModalFooter()
+                    @WebUtil.ModalHeader("text_prompt_region_modal", "Add Prompt Syntax: Regional Prompt")
+                        <div class="modal-body">
+                            <span class="translate">
+                                This Prompt-Syntax feature lets you define simple regions of an image that will receive a different prompt from the rest of the image while generation.
+                                <br>Optionally, you can also auto-inpaint the region after to refine it further.
+                                <br>Note that you may add a syntax feature of <code>&lt;region:background&gt;</code> to your prompt to also set a prompt for the background only to use.
+                                <br>Learn more about this feature here:
+                            </span>
+                            <a href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md#regional-prompting" target="_blank" rel="noreferrer noopener" class="translate">[Swarm Docs: Prompt Syntax - Regional Prompting]</a>
+                            <span class="translate">
+                                <br>Note that there are also advanced options in the parameters menu, under Display Advanced -&gt; Regional Prompting.
+                            </span>
+                            <hr>
+                            <div id="text_prompt_region_canvasholder">
+                            </div>
+                            <div id="text_prompt_region_other_inputs"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary basic-button translate" onclick="$('#text_prompt_region_modal').modal('hide')">Cancel</button>
+                            <button type="button" class="btn btn-secondary basic-button translate" onclick="promptPlusButton.regionModalSubmit()">Add</button>
+                        </div>
+                    @WebUtil.ModalFooter()
                     <div class="sui-popover sui_popover_model" id="popover_generate_center">
                         <div class="sui_popover_model_button translate" onclick="mainGenHandler.doGenerate()">Generate</div>
                         <div class="sui_popover_model_button translate" id="generate_forever_button" onclick="toggleGenerateForever()">Generate Forever</div>

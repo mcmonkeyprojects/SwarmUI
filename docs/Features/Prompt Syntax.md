@@ -140,6 +140,7 @@
 ## Regional Prompting
 
 ![img](/docs/images/sdxl_catdog.jpg)
+
 *(The above is `a photo of a cat/dog mix <region:0,0,1,0.5,1> a photo of a cat <region:0,0.5,1,0.5,1> a photo of a dog` on SDXL)*
 
 - You can use `<region:x,y,width,height,strength> prompt here` to use an alternate prompt for a given region.
@@ -156,6 +157,7 @@
 ## Regional Object Prompting
 
 ![img](/docs/images/sdxl_object_catdog.jpg)
+
 *(The above is `a photo of a cat/dog mix <object:0,0,1,0.5,0.1,0.5> a photo of a cat <object:0,0.5,1,0.5,0.1,0.5> a photo of a dog` on SDXL)*
 
 - You can use `<object:x,y,width,height,strength,strength2> prompt here` to use an alternate prompt for a given region, and also inpaint back over it.

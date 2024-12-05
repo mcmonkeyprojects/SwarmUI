@@ -388,6 +388,11 @@ function roundTo(val, step) {
     return Math.round(val / step) * step;
 }
 
+/** Returns the given value rounded to the nearest multiple of the given step, and fixed to have a reasonable number of digits after the decimal, then reparsed. */
+function roundToAuto(val, step) {
+    return parseFloat(roundToStrAuto(val, step));
+}
+
 /** Returns a string of the given value rounded to the nearest multiple of the given step, and fixed to have a reasonable number of digits after the decimal. */
 function roundToStrAuto(val, step) {
     let stepStr = `${step}`;
