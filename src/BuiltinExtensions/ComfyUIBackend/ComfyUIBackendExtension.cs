@@ -187,7 +187,8 @@ public class ComfyUIBackendExtension : Extension
                             int parsed = int.Parse(newVal);
                             if (parsed == -1)
                             {
-                                parsed = Random.Shared.Next(0, (int)type.Max);
+                                int max = (int)type.Max;
+                                parsed = Random.Shared.Next(0, max <= 0 ? int.MaxValue : max);
                             }
                             return parsed.ToString();
                         }
