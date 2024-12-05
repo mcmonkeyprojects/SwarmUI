@@ -282,6 +282,7 @@ class ModelDownloaderUtil {
                     'modelspec.title': `${rawData.name} - ${rawVersion.name}`,
                     'modelspec.description': `From <a href="${url}">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
                     'modelspec.date': rawVersion.createdAt,
+                    'modelspec.baseModel': rawVersion.baseModel,
                 };
                 if (rawData.creator) {
                     metadata['modelspec.author'] = rawData.creator.username;
