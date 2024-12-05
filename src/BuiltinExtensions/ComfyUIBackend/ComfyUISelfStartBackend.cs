@@ -391,7 +391,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
-        ("ultralytics", "ultralytics")
+        ("ultralytics", "ultralytics==8.3.40")
     ];
 
     public override async Task Shutdown()
