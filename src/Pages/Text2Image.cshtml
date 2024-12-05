@@ -855,6 +855,9 @@
             <li class="nav-item" role="presentation" data-requiredpermission="view_logs">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Logs" id="logtabbutton" aria-selected="false" tabindex="-1" role="tab">Logs</a>
             </li>
+            <li class="nav-item secretexperimental" role="presentation" data-requiredpermission="manage_users">
+                <a class="nav-link translate" data-bs-toggle="tab" href="#Server-ManageUsers" id="manageusersbutton" aria-selected="false" tabindex="-1" role="tab">Users</a>
+            </li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane show active" id="Server-Info" role="tabpanel">
@@ -1096,6 +1099,31 @@
                         }
                     </table>
                 </center>
+            </div>
+            <div class="tab-pane" id="Server-ManageUsers" role="tabpanel">
+                @WebUtil.ModalHeader("server_add_user_menu", "Add New User Account")
+                    <div class="modal-body">
+                        <p class="translate">This will add a new user account to your SwarmUI server.</p>
+                        <p class="translate">Please configure carefully, the account will be active immediately upon click 'Add' below.</p>
+                        <p class="translate">Click 'Cancel' if you're not ready to add a user.</p>
+                        <div id="add_user_menu_inputs"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.addUserMenuSubmit()">Add</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#server_add_user_menu').modal('hide')">Cancel</button>
+                    </div>
+                @WebUtil.ModalFooter()
+                <div class="manage-users-left" id="manage_users_leftbox">
+                    <div class="manage-users-left-header">
+                        <span class="manage-users-left-title translate">Users</span>
+                        <button class="basic-button translate" onclick="userAdminManager.showAddUserMenu()" title="Add a new user...">Add User</button>
+                    </div>
+                    <div id="manage_users_leftbox_content"></div>
+                </div>
+                <div class="splitter-bar" id="manage_users_splitbar"></div>
+                <div class="manage-users-right" id="manage_users_rightbox">
+                    <div id="manage_users_rightbox_content"></div>
+                </div>
             </div>
         </div>
     </div>

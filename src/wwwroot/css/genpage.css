@@ -1224,6 +1224,41 @@ body {
 .lora_extractor_special .image-preview-progress-current {
     top: 3px;
 }
+.manage-users-left {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.5rem;
+    width: 20rem;
+    vertical-align: top;
+}
+.manage-users-right {
+    display: inline-block;
+    width: calc(100vw - 22rem - 6px);
+    padding: 0.5rem;
+    vertical-align: top;
+}
+.admin-user-manage-name {
+    border-radius: 1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+    margin: 0.5rem;
+    display: block;
+    background-color: var(--background-soft);
+    cursor: pointer;
+    transition: background-color 0.5s ease-out;
+}
+.admin-user-manage-name:hover {
+    background-color: var(--emphasis);
+}
+.manage-users-left-header {
+    display: flex;
+}
+.manage-users-left-title {
+    font-size: 1.5rem;
+    flex-grow: 1;
+}
 .welcome_message {
     margin: auto;
     width: fit-content;

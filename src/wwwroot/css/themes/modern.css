@@ -533,3 +533,7 @@
 .simple-vertical-divider {
     background-color: var(--background) !important;
 }
+.manage-users-right, .manage-users-left {
+    background: var(--background-panel);
+    min-height: calc(100vh - 8rem);
+}

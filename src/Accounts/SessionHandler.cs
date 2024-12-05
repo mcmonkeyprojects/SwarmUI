@@ -250,7 +250,7 @@ public class SessionHandler
     }
 
     /// <summary>Gets or creates the user for the given ID.</summary>
-    public User GetUser(string userId)
+    public User GetUser(string userId, bool makeNew = true)
     {
         userId = Utilities.StrictFilenameClean(userId).Replace("/", "");
         if (userId.Length == 0)
@@ -263,6 +263,15 @@ public class SessionHandler
         }
         lock (DBLock)
         {
+            if (!makeNew)
+            {
+                User.DatabaseEntry userData = UserDatabase.FindById(userId);
+                if (userData is null)
+                {
+                    return null;
+                }
+                return Users.GetOrAdd(userId, _ => new(this, userData));
+            }
             return Users.GetOrAdd(userId, _ => // Intentional GetOrAdd due to special locking requirements (DBLock)
             {
                 User.DatabaseEntry userData = UserDatabase.FindById(userId);
