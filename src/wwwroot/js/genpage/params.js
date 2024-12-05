@@ -281,7 +281,6 @@ function genInputs(delay_final = false) {
             swapAspectRatioButton.style.display = inputAspectRatio.value == "Custom" ? 'block' : 'none';
             swapAspectRatioButton.style.right = inputAspectRatioParentStyles.paddingRight;
             swapAspectRatioButton.style.top = inputAspectRatioParentStyles.paddingTop;
-            // Needed to override the padding of basic-button class
             swapAspectRatioButton.className = 'basic-button swap_aspectratio_button';
             swapAspectRatioButton.title = 'Swap the width and the height';
             swapAspectRatioButton.innerHTML = '&#x21C6;';
@@ -333,15 +332,11 @@ function genInputs(delay_final = false) {
             });
             swapAspectRatioButton.addEventListener('click', (event) => {
                 event.preventDefault();
-                if (inputWidth.value && inputHeight.value) {
-                    let tmpWidth = inputWidth.value;
-                    inputWidth.value = inputHeight.value;
-                    inputHeight.value = tmpWidth;
-                    triggerChangeFor(inputWidth);
-                    triggerChangeFor(inputHeight);
-                } else {
-                    showError('The width and height cannot be empty.');
-                }
+                let tmpWidth = inputWidth.value;
+                inputWidth.value = inputHeight.value;
+                inputHeight.value = tmpWidth;
+                triggerChangeFor(inputWidth);
+                triggerChangeFor(inputHeight);
             });
             resTrick();
         }
