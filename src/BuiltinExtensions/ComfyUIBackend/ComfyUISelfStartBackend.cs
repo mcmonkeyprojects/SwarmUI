@@ -336,7 +336,24 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         if (lib is not null)
         {
             AddLoadStatus($"Will validate required libs...");
-            HashSet<string> libs = Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/').Before('-')).ToHashSet();
+            string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
+            HashSet<string> libs = dirs.Select(d => d.Before('-')).ToHashSet();
+            if (dirs.Contains("ultralytics-8.3.41.dist-info"))
+            {
+                AddLoadStatus($"DETECTED MALICIOUS PACKAGE, WILL REMOVE...");
+                Logs.Error($"!!! WARNING !!! Malicious Python Package (ultralytics 8.3.41, Crypto miner attack) detected!");
+                Process p = DoPythonCall($"-s -m pip uninstall ultralytics");
+                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (uninstall ultralytics)", "");
+                await p.WaitForExitAsync(Program.GlobalProgramCancel);
+                _ = Utilities.RunCheckedTask(async () =>
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Logs.Error($"!!! WARNING !!! Malicious Python Package (ultralytics 8.3.41, Crypto miner attack) detected! It has been automatically uninstalled. See https://github.com/ultralytics/ultralytics/issues/18027 for details.");
+                        await Task.Delay(TimeSpan.FromSeconds(5));
+                    }
+                });
+            }
             async Task install(string libFolder, string pipName)
             {
                 if (libs.Contains(libFolder))
