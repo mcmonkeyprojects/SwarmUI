@@ -1520,7 +1520,6 @@ class PromptPlusButton {
         this.addButton = getRequiredElementById('alt_text_add_button');
         this.addButton.addEventListener('click', () => this.showMenu());
         this.popover = null;
-        this.segmentModalMainText = getRequiredElementById('text_prompt_segment_textarea');
         this.segmentModalOther = getRequiredElementById('text_prompt_segment_other_inputs');
         this.segmentModalOther.innerHTML =
             makeGenericPopover('text_prompt_segment_model', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
@@ -1530,12 +1529,19 @@ class PromptPlusButton {
             + makeGenericPopover('text_prompt_segment_creativity', 'Prompt Syntax: Segment Creativity', 'Number', 'How creative the model should be when rebuilding this segment.\nAlso known as denoising strength.\n0 makes no changes, 1 completely replaces the area.', '')
             + makeSliderInput(null, 'text_prompt_segment_creativity', '', 'Creativity', '', 0.6, 0, 1, 0, 1, 0.05, false, false, true)
             + makeGenericPopover('text_prompt_segment_threshold', 'Prompt Syntax: Segment Threshold', 'Number', 'The limit that defines that "minimum match quality" for the model to consider this segment matched.\nAt 0 this will include too much, at 1 this will include too little or nothing.', '')
-            + makeSliderInput(null, 'text_prompt_segment_threshold', '', 'Threshold', '', 0.5, 0, 1, 0, 1, 0.05, false, false, true);
+            + makeSliderInput(null, 'text_prompt_segment_threshold', '', 'Threshold', '', 0.5, 0, 1, 0, 1, 0.05, false, false, true)
+            + makeGenericPopover('text_prompt_segment_invert_mask', 'Prompt Syntax: Segment Invert Mask', 'Checkbox', 'Whether to invert the mask.\nIf checked, select everything except what was matched by the model.', '')
+            + makeCheckboxInput(null, 'text_prompt_segment_invert_mask', '', 'Invert Mask', '', false, false, false, true)
+            + makeGenericPopover('text_prompt_segment_gentext', 'Prompt Syntax: Segment Generation Prompt', 'text', 'The prompt to use when regenerating the matched area.\nShould be a full text on its own, can use a subset of general prompting syntax.', '')
+            + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
         this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
         this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
         this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
         this.segmentModalCreativity = getRequiredElementById('text_prompt_segment_creativity');
         this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
+        this.segmentModalInvertMask = getRequiredElementById('text_prompt_segment_invert_mask');
+        this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
+        textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
     }
 
@@ -1585,6 +1591,7 @@ class PromptPlusButton {
         this.segmentModalCreativity.value = 0.6;
         this.segmentModalThreshold.value = 0.5;
         this.segmentModalTextMatch.value = '';
+        this.segmentModalInvertMask.checked = false;
     }
 
     segmentModalProcessChanges() {
@@ -1605,10 +1612,10 @@ class PromptPlusButton {
     segmentModalSubmit() {
         let modelText = this.segmentModalModelSelect.value;
         if (modelText == "CLIP-Seg") {
-            modelText = this.segmentModalTextMatch.value;
+            modelText = this.segmentModalTextMatch.value.trim();
         }
         $('#text_prompt_segment_modal').modal('hide');
-        this.applyNewSyntax(`\n<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value}`);
+        this.applyNewSyntax(`\n<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
     }
 
     applyNewSyntax(text) {
