@@ -387,11 +387,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
-        ("matplotlib", "matplotlib==3.9"), // Old version due to "mesonpy" curse
+        ("matplotlib", "matplotlib"),
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
-        ("ultralytics", "ultralytics==8.1.47") // Old version due to "mesonpy" curse
+        ("ultralytics", "ultralytics")
     ];
 
     public override async Task Shutdown()
