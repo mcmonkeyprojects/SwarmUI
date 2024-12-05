@@ -282,7 +282,6 @@ function genInputs(delay_final = false) {
             swapAspectRatioButton.style.right = inputAspectRatioParentStyles.paddingRight;
             swapAspectRatioButton.style.top = inputAspectRatioParentStyles.paddingTop;
             // Needed to override the padding of basic-button class
-            swapAspectRatioButton.style.setProperty('padding', '0 5px', 'important');
             swapAspectRatioButton.className = 'basic-button swap_aspectratio_button';
             swapAspectRatioButton.title = 'Swap the width and the height';
             swapAspectRatioButton.innerHTML = '&#x21C6;';

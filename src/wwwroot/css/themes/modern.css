@@ -409,7 +409,7 @@
     padding: 0 2px;
 }
 
-#Text2Image .seed-button.basic-button {
+#Text2Image .seed-button .basic-button {
     width: 28px;
     height: 28px;
     font-size: 0px;
