@@ -338,7 +338,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             AddLoadStatus($"Will validate required libs...");
             string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
             HashSet<string> libs = dirs.Select(d => d.Before('-')).ToHashSet();
-            if (dirs.Contains("ultralytics-8.3.41.dist-info"))
+            if (dirs.Contains("ultralytics-8.3.41.dist-info") || dirs.Contains("ultralytics-8.3.42.dist-info"))
             {
                 AddLoadStatus($"DETECTED MALICIOUS PACKAGE, WILL REMOVE...");
                 Logs.Error($"!!! WARNING !!! Malicious Python Package (ultralytics 8.3.41, Crypto miner attack) detected!");
