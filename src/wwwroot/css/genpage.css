@@ -1487,3 +1487,7 @@ body {
     cursor: pointer;
     display: none;
 }
+.swap_aspectratio_button {
+    position: absolute;
+    font-size: 18px;
+}

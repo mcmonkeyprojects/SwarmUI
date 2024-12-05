@@ -274,11 +274,25 @@ function genInputs(delay_final = false) {
             let inputHeightParent = findParentOfClass(inputHeight, 'auto-slider-box');
             let inputHeightSlider = getRequiredElementById('input_height_rangeslider');
             let resGroupLabel = findParentOfClass(inputWidth, 'input-group').querySelector('.header-label');
+            let inputAspectRatioParent = findParentOfClass(inputAspectRatio, 'auto-dropdown-box');
+            let inputAspectRatioParentStyles = window.getComputedStyle(inputAspectRatioParent);
+            let swapAspectRatioButton = document.createElement("button");
+            inputAspectRatioParent.style.position = 'relative';
+            swapAspectRatioButton.style.display = inputAspectRatio.value == "Custom" ? 'block' : 'none';
+            swapAspectRatioButton.style.right = inputAspectRatioParentStyles.paddingRight;
+            swapAspectRatioButton.style.top = inputAspectRatioParentStyles.paddingTop;
+            // Needed to override the padding of basic-button class
+            swapAspectRatioButton.style.setProperty('padding', '0 5px', 'important');
+            swapAspectRatioButton.className = 'basic-button swap_aspectratio_button';
+            swapAspectRatioButton.title = 'Swap the width and the height';
+            swapAspectRatioButton.innerHTML = '&#x21C6;';
+            inputAspectRatioParent.appendChild(swapAspectRatioButton);
             let resTrick = () => {
                 let aspect;
                 if (inputAspectRatio.value == "Custom") {
                     inputWidthParent.style.display = 'block';
                     inputHeightParent.style.display = 'block';
+                    swapAspectRatioButton.style.display = 'block';
                     delete inputWidthParent.dataset.visible_controlled;
                     delete inputHeightParent.dataset.visible_controlled;
                     aspect = describeAspectRatio(inputWidth.value, inputHeight.value);
@@ -286,6 +300,7 @@ function genInputs(delay_final = false) {
                 else {
                     inputWidthParent.style.display = 'none';
                     inputHeightParent.style.display = 'none';
+                    swapAspectRatioButton.style.display = 'none';
                     inputWidthParent.dataset.visible_controlled = 'true';
                     inputHeightParent.dataset.visible_controlled = 'true';
                     aspect = inputAspectRatio.value;
@@ -316,6 +331,18 @@ function genInputs(delay_final = false) {
                     triggerChangeFor(inputHeight);
                 }
                 resTrick();
+            });
+            swapAspectRatioButton.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (inputWidth.value && inputHeight.value) {
+                    let tmpWidth = inputWidth.value;
+                    inputWidth.value = inputHeight.value;
+                    inputHeight.value = tmpWidth;
+                    triggerChangeFor(inputWidth);
+                    triggerChangeFor(inputHeight);
+                } else {
+                    showError('The width and height cannot be empty.');
+                }
             });
             resTrick();
         }
