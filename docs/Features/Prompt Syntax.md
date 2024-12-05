@@ -136,3 +136,30 @@
         - By default, if you write a prompt that's longer than 75 tokens, what it will do is split 75/75, the first 75 tokens go in and become one CLIP result chunk, and then the next tokens get passed for a second CLIP chunk, and then the multiple CLIP results are parsed by SD in a batch and mixed as it goes.
         - The problem with this, is it's basically random - you might have eg `a photo of a big fluffy dog`, and it gets split into `a photo of a big fluffy` and then `dog` (in practice 75 tokens is a much longer prompt but just an example of how the split might go wrong)
         - Using `<break>` lets you manually specify where it splits, so you might do eg `a photo <break> big fluffy dog` (to intentionally put the style in one chunk and the subject in the next)
+
+## Regional Prompting
+
+![img](/docs/images/sdxl_catdog.jpg)
+*(The above is `a photo of a cat/dog mix <region:0,0,1,0.5,1> a photo of a cat <region:0,0.5,1,0.5,1> a photo of a dog` on SDXL)*
+
+- You can use `<region:x,y,width,height,strength> prompt here` to use an alternate prompt for a given region.
+    - The X,Y,Width,Height values are all given as fractions of image area. For example `0.5` is half the width or height of the image.
+    - For example, `<region:0,0,0.5,1> a cat` specifies to include a cat in the full-height left half of the image.
+    - Strength is how strongly to apply the regional prompt vs the global prompt.
+    - You can do `<region:background>` to build a special region for only background areas (those that don't have their own region).
+    - Note that small regions are likely to be ignored. The regional logic is applied fairly weakly to the model.
+    - Note that different models behave very differently around this functionality.
+        - Notably MM-DiT models (SD3/Flux) are likely to only process regions in early steps then entirely ignore them in latter steps (as they process the input image and try to retain it, ie devaluing your actual prompt text, so unusual combinations will make the model unhappy).
+        - SDXL and models like it responds very strongly to regional prompts.
+    - Regional prompts cannot currently use loras or other global feature changes. This is likely to change in the future.
+
+## Regional Object Prompting
+
+![img](/docs/images/sdxl_object_catdog.jpg)
+*(The above is `a photo of a cat/dog mix <object:0,0,1,0.5,0.1,0.5> a photo of a cat <object:0,0.5,1,0.5,0.1,0.5> a photo of a dog` on SDXL)*
+
+- You can use `<object:x,y,width,height,strength,strength2> prompt here` to use an alternate prompt for a given region, and also inpaint back over it.
+    - Strength (1) is regional prompt strength (see [Regional Prompting](#regional-prompting))
+    - Strength2 is Creativity of the automatic inpaint.
+    - The automatic inpaint can be helpful for improving quality of objects, especially for small regions, but also might produce unexpected results.
+    - Objects may use global feature changes, such as `<lora:` syntax input to apply a lora to the object in the inpaint phase.

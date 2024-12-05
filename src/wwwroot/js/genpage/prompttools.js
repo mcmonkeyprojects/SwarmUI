@@ -1,4 +1,5 @@
 
+/** Handler for tab-completes in prompt boxes. */
 class PromptTabCompleteClass {
     constructor() {
         this.prefixes = {
@@ -314,6 +315,7 @@ class PromptTabCompleteClass {
 
 let promptTabComplete = new PromptTabCompleteClass();
 
+/** Handler for the plus button next to the prompt box and the connected features. */
 class PromptPlusButton {
     constructor() {
         this.altTextBox = getRequiredElementById('alt_prompt_textbox');
