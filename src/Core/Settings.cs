@@ -17,9 +17,6 @@ public class Settings : AutoConfiguration
     [ConfigComment("Settings related to networking and the webserver.")]
     public NetworkData Network = new();
 
-    [ConfigComment("Restrictions to apply to default users.")]
-    public UserRestriction DefaultUserRestriction = new();
-
     [ConfigComment("Default settings for users (unless the user modifies them, if so permitted).\n(NOTE: Usually, don't edit this. Go to the 'User' tab to edit your User-Settings).")]
     public User DefaultUser = new();
 
@@ -239,28 +236,6 @@ public class Settings : AutoConfiguration
         public bool ImageMetadataIncludeModelHash = false;
     }
 
-    /// <summary>Settings to control restrictions on users.</summary>
-    public class UserRestriction : AutoConfiguration
-    {
-        [ConfigComment("How many directories deep a user's custom OutPath can be.\nDefault is 5.")]
-        public int MaxOutPathDepth = 5;
-
-        [ConfigComment("What models are allowed, as a path regex.\nDirectory-separator is always '/'. Can be '.*' for all, 'MyFolder/.*' for only within that folder, etc.\nDefault is all.")]
-        public string AllowedModels = ".*";
-
-        [ConfigComment("Generic permission flags. '*' means all.\nDefault is all.")]
-        public List<string> PermissionFlags = ["*"];
-
-        [ConfigComment("How many images can try to be generating at the same time on this user.")]
-        public int MaxT2ISimultaneous = 32;
-
-        /// <summary>Returns the maximum simultaneous text-2-image requests appropriate to this user's restrictions and the available backends.</summary>
-        public int CalcMaxT2ISimultaneous => Math.Max(1, Math.Min(MaxT2ISimultaneous, Program.Backends.RunningBackendsOfType<AbstractT2IBackend>().Sum(b => b.MaxUsages) * 2));
-
-        [ConfigComment("Whether the '.' symbol can be used in OutPath - if enabled, users may cause file system issues or perform folder escapes.")]
-        public bool AllowUnsafeOutpaths = false;
-    }
-
     /// <summary>Settings per-user.</summary>
     public class User : AutoConfiguration
     {
@@ -304,6 +279,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, folders will be discarded from starred image paths.")]
         public bool StarNoFolders = false;
+
+        [ConfigComment("List of role IDs applied to this user. Defaults to owner (for local/accountless usage).")]
+        public List<string> Roles = ["owner"];
 
         public class ThemesImpl : SettingsOptionsAttribute.AbstractImpl
         {

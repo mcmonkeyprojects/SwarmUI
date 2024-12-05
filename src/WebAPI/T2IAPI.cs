@@ -277,7 +277,7 @@ public static class T2IAPI
                 }
             }
         }
-        int max_degrees = session.User.Restrictions.CalcMaxT2ISimultaneous;
+        int max_degrees = session.User.CalcMaxT2ISimultaneous;
         List<int> discard = [];
         int batchSizeExpected = user_input.Get(T2IParamTypes.BatchSize, 1);
         void saveImage(T2IEngine.ImageOutput image, int actualIndex, T2IParamInput thisParams, string metadata)

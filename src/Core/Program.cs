@@ -217,6 +217,7 @@ public class Program
         Web.PreInit();
         timer.Check("Web PreInit");
         Extensions.RunOnAllExtensions(e => e.OnInit());
+        Sessions.ApplyDefaultPermissions();
         timer.Check("Extensions Init");
         Utilities.PrepUtils();
         timer.Check("Prep Utils");
@@ -466,6 +467,21 @@ public class Program
         if (autoCompleteSuffix is not null)
         {
             section.Set("DefaultUser.AutoComplete.Suffix", autoCompleteSuffix);
+        }
+        bool? allowUnsafeOutpath = section.GetBool("DefaultUserRestriction.AllowUnsafeOutpaths", null);
+        if (allowUnsafeOutpath.HasValue)
+        {
+            SessionHandler.PatchOwnerAllowUnsafe = allowUnsafeOutpath.Value;
+        }
+        int? maxT2i = section.GetInt("DefaultUserRestriction.MaxT2ISimultaneous", null);
+        if (maxT2i.HasValue)
+        {
+            SessionHandler.PatchOwnerMaxT2I = maxT2i.Value;
+        }
+        int? maxDepth = section.GetInt("DefaultUserRestriction.MaxOutPathDepth", null);
+        if (maxDepth.HasValue)
+        {
+            SessionHandler.PatchOwnerMaxDepth = maxDepth.Value;
         }
         ServerSettings.Load(section);
     }

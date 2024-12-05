@@ -109,7 +109,7 @@ public class ImageBatchToolExtension : Extension
                 }
             }
         }
-        int max_degrees = session.User.Restrictions.CalcMaxT2ISimultaneous;
+        int max_degrees = session.User.CalcMaxT2ISimultaneous;
         int batchId = 0;
         foreach (string file in imageFiles)
         {

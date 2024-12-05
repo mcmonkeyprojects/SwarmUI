@@ -82,6 +82,12 @@ public static class Permissions
     public static PermInfo ManagePresets = Register(new("manage_presets", "Manage Presets", "Allows this user to manage (add, edit, delete) their own presets.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
 
     public static PermInfoGroup GroupExtensionTabs = new("Extension Tabs", "Permissions related to extension tabs.");
+
+    /// <summary>If true, this permission default access level is equal or higher ranked to the other perm (ie, if you have this default level, then the other level is included in your rights).</summary>
+    public static bool IsAtLeast(this PermissionDefault perm, PermissionDefault other)
+    {
+        return (int)perm <= (int)other;
+    }
 }
 
 /// <summary>Enumeration of default modes for permissions.</summary>

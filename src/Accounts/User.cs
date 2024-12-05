@@ -7,6 +7,7 @@ using SwarmUI.Utils;
 using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticExtensions;
 using System.Security.Cryptography;
+using SwarmUI.Backends;
 
 namespace SwarmUI.Accounts;
 
@@ -29,6 +30,19 @@ public class User
         public string RawParamEdits { get; set; } = "";
     }
 
+    public void BuildRoles()
+    {
+        List<Role> roles = [];
+        foreach (string roleName in Settings.Roles)
+        {
+            if (SessionHandlerSource.Roles.TryGetValue(roleName, out Role role))
+            {
+                roles.Add(role);
+            }
+        }
+        CalculatedRole = Role.Stack(roles);
+    }
+
     public User(SessionHandler sessions, DatabaseEntry data)
     {
         SessionHandlerSource = sessions;
@@ -37,11 +51,6 @@ public class User
         foreach (string field in Settings.InternalData.SharedData.Fields.Keys)
         {
             Settings.TrySetFieldModified(field, false);
-        }
-        Restrictions.Load(Program.ServerSettings.DefaultUserRestriction.Save(false));
-        foreach (string field in Restrictions.InternalData.SharedData.Fields.Keys)
-        {
-            Restrictions.TrySetFieldModified(field, false);
         }
         FDSSection settingsRaw = new(data.RawSettings);
         // TODO: Legacy format patch from beta 0.9.2!
@@ -61,6 +70,7 @@ public class User
             settingsRaw.Set("AutoComplete.Suffix", autoCompleteSuffix);
         }
         Settings.Load(settingsRaw);
+        BuildRoles();
     }
 
     /// <summary>Save this user's data to the internal user database.</summary>
@@ -204,13 +214,16 @@ public class User
     public string UserID => Data.ID;
 
     /// <summary>What restrictions apply to this user.</summary>
-    public Settings.UserRestriction Restrictions = new();
+    public Role CalculatedRole = new("failed_to_load");
 
     /// <summary>This user's settings.</summary>
     public Settings.User Settings = new();
 
     /// <summary>Path to the output directory appropriate to this session.</summary>
     public string OutputDirectory => Program.ServerSettings.Paths.AppendUserNameToOutputPath ? $"{Program.ServerSettings.Paths.OutputPath}/{UserID}" : Program.ServerSettings.Paths.OutputPath;
+
+    /// <summary>Returns the maximum simultaneous text-2-image requests appropriate to this user's restrictions and the available backends.</summary>
+    public int CalcMaxT2ISimultaneous => Math.Max(1, Math.Min(CalculatedRole.Data.MaxT2ISimultaneous, Program.Backends.RunningBackendsOfType<AbstractT2IBackend>().Sum(b => b.MaxUsages) * 2));
 
     /// <summary>Lock object for this user's data.</summary>
     public LockObject UserLock = new();
@@ -242,13 +255,13 @@ public class User
     /// <summary>Returns whether this user has the given permission.</summary>
     public bool HasPermission(PermInfo permission)
     {
-        return Restrictions.PermissionFlags.Contains(permission.ID) || Restrictions.PermissionFlags.Contains("*");
+        return CalculatedRole.Data.PermissionFlags.Contains(permission.ID) || CalculatedRole.Data.PermissionFlags.Contains("*");
     }
 
     /// <summary>Gets the underlying list of permission flags for this user.</summary>
     public string[] GetPermissions()
     {
-        return [.. Restrictions.PermissionFlags];
+        return [.. CalculatedRole.Data.PermissionFlags];
     }
 
     /// <summary>Simplified keynames for things commonly used in ExtraMeta, to allow for OutputPath builder to treat these cases as empty and not errors.</summary>
@@ -374,10 +387,41 @@ public class User
         }
         string path = Settings.OutPathBuilder.Format;
         path = StringConversionHelper.QuickSimpleTagFiller(path, "[", "]", buildPathPart, false);
-        if (Restrictions.AllowUnsafeOutpaths)
+        if (CalculatedRole.Data.AllowUnsafeOutpaths)
         {
             return path;
         }
         return Utilities.StrictFilenameClean(path);
+    }
+
+    /// <summary>Returns true if the user is allowed to view all models, or false if there are restrictions that apply.</summary>
+    public bool IsAllowedAllModels => CalculatedRole.Data.ModelWhitelist.IsEmpty() && CalculatedRole.Data.ModelBlacklist.IsEmpty();
+
+    /// <summary>Returns true if the user is allowed to view a model with a given name, or false if it is restricted.</summary>
+    public bool IsAllowedModel(string name)
+    {
+        if (name.ToLowerFast() == "(none)")
+        {
+            return true;
+        }
+        foreach (string prefix in CalculatedRole.Data.ModelBlacklist)
+        {
+            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+        if (CalculatedRole.Data.ModelWhitelist.IsEmpty())
+        {
+            return true;
+        }
+        foreach (string prefix in CalculatedRole.Data.ModelWhitelist)
+        {
+            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

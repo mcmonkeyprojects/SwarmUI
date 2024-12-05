@@ -420,7 +420,7 @@ public class GridGeneratorExtension : Extension
         {
             Session = session,
             Claim = claim,
-            MaxSimul = session.User.Restrictions.CalcMaxT2ISimultaneous,
+            MaxSimul = session.User.CalcMaxT2ISimultaneous,
             ContinueOnError = continueOnError,
             ShowOutputs = showOutputs,
             SaveConfig = raw.TryGetValue("saveConfig", out JToken saveConfig) ? saveConfig as JObject : null

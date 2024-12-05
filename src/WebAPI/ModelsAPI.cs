@@ -85,9 +85,8 @@ public static class ModelsAPI
         {
             modelName = modelName.Replace("//", "/");
         }
-        string allowedStr = session.User.Restrictions.AllowedModels;
-        Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        if (allowed is null || allowed.IsMatch(modelName))
+        modelName = modelName.TrimStart('/');
+        if (session.User.IsAllowedModel(modelName))
         {
             if (subtype == "Wildcards")
             {
@@ -164,14 +163,13 @@ public static class ModelsAPI
         {
             path = path.Replace("//", "/");
         }
-        string allowedStr = session.User.Restrictions.AllowedModels;
-        Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        path = path.TrimStart('/');
         HashSet<string> folders = [];
         List<ModelListEntry> files = [];
         HashSet<string> dedup = [];
         bool tryMatch(string name)
         {
-            if (!name.StartsWith(path) || name.Length <= path.Length || (allowed is not null && !allowed.IsMatch(name)))
+            if (!name.StartsWith(path) || name.Length <= path.Length || !session.User.IsAllowedModel(name))
             {
                 return false;
             }
@@ -259,9 +257,7 @@ public static class ModelsAPI
         )]
     public static async Task<JObject> ListLoadedModels(Session session)
     {
-        string allowedStr = session.User.Restrictions.AllowedModels;
-        Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        List<T2IModel> matches = Program.MainSDModels.Models.Values.Where(m => m.AnyBackendsHaveLoaded && (allowed is null || allowed.IsMatch(m.Name))).ToList();
+        List<T2IModel> matches = Program.MainSDModels.Models.Values.Where(m => m.AnyBackendsHaveLoaded && session.User.IsAllowedModel(m.Name)).ToList();
         return new JObject()
         {
             ["models"] = JArray.FromObject(matches.Select(m => m.ToNetObject()).ToList())
@@ -286,10 +282,7 @@ public static class ModelsAPI
 
     public static bool TryGetRefusalForModel(Session session, string name, out JObject refusal)
     {
-        // TODO: model-metadata-edit permission check
-        string allowedStr = session.User.Restrictions.AllowedModels;
-        Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        if ((allowed != null && !allowed.IsMatch(name)) || string.IsNullOrWhiteSpace(name))
+        if (!session.User.IsAllowedModel(name))
         {
             Logs.Warning($"Rejected model access for model '{name}' from user {session.User.UserID}");
             refusal = new JObject() { ["error"] = "Model not found." };
@@ -588,15 +581,8 @@ public static class ModelsAPI
         {
             return new JObject() { ["error"] = "Invalid sub-type." };
         }
-        modelName = modelName.Replace('\\', '/');
-        while (modelName.Contains("//"))
-        {
-            modelName = modelName.Replace("//", "/");
-        }
-        string allowedStr = session.User.Restrictions.AllowedModels;
-        Regex allowed = allowedStr == ".*" ? null : new Regex(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
         T2IModel match = null;
-        if (allowed is null || allowed.IsMatch(modelName))
+        if (session.User.IsAllowedModel(modelName))
         {
             if (handler.Models.TryGetValue(modelName + ".safetensors", out T2IModel model))
             {

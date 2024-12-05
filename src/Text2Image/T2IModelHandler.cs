@@ -165,13 +165,11 @@ public class T2IModelHandler
         {
             return [];
         }
-        string allowedStr = session is null ? ".*" : session.User.Restrictions.AllowedModels;
-        if (allowedStr == ".*")
+        if (session is null || session.User.IsAllowedAllModels)
         {
             return [.. Models.Values];
         }
-        Regex allowed = new(allowedStr, RegexOptions.Compiled | RegexOptions.IgnoreCase);
-        return Models.Values.Where(m => allowed.IsMatch(m.Name)).ToList();
+        return Models.Values.Where(m => session.User.IsAllowedModel(m.Name)).ToList();
     }
 
     public List<string> ListModelNamesFor(Session session)
