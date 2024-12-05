@@ -329,6 +329,8 @@ class PromptPlusButton {
             + makeDropdownInput(null, 'text_prompt_segment_model', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
             + makeGenericPopover('text_prompt_segment_textmatch', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
             + makeTextInput(null, 'text_prompt_segment_textmatch', '', 'Text Match', '', '', 'normal', '', false, false, true)
+            + makeGenericPopover('text_prompt_segment_yoloid', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
+            + makeNumberInput(null, 'text_prompt_segment_yoloid', '', 'YOLO ID', '', 0, 0, 100, 1, 'big', false, true)
             + makeGenericPopover('text_prompt_segment_creativity', 'Prompt Syntax: Segment Creativity', 'Number', 'How creative the model should be when rebuilding this segment.\nAlso known as denoising strength.\n0 makes no changes, 1 completely replaces the area.', '')
             + makeSliderInput(null, 'text_prompt_segment_creativity', '', 'Creativity', '', 0.6, 0, 1, 0, 1, 0.05, false, false, true)
             + makeGenericPopover('text_prompt_segment_threshold', 'Prompt Syntax: Segment Threshold', 'Number', 'The limit that defines that "minimum match quality" for the model to consider this segment matched.\nAt 0 this will include too much, at 1 this will include too little or nothing.', '')
@@ -340,6 +342,7 @@ class PromptPlusButton {
         this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
         this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
         this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
+        this.segmentModalYoloId = getRequiredElementById('text_prompt_segment_yoloid');
         this.segmentModalCreativity = getRequiredElementById('text_prompt_segment_creativity');
         this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
         this.segmentModalInvertMask = getRequiredElementById('text_prompt_segment_invert_mask');
@@ -448,16 +451,15 @@ class PromptPlusButton {
 
     segmentModalProcessChanges() {
         if (this.segmentModalModelSelect.value == 'CLIP-Seg') {
-            this.segmentModalTextMatch.disabled = false;
+            findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = '';
+            findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = 'none';
             let text = translate("Text to match against in the image");
             this.segmentModalTextMatch.placeholder = text;
             this.segmentModalTextMatch.title = text;
         }
         else {
-            this.segmentModalTextMatch.disabled = true;
-            let text = translate("Text match is disabled because you are not using CLIP-Seg");
-            this.segmentModalTextMatch.placeholder = text;
-            this.segmentModalTextMatch.title = text;
+            findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = 'none';
+            findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = '';
         }
     }
 
@@ -465,6 +467,9 @@ class PromptPlusButton {
         let modelText = this.segmentModalModelSelect.value;
         if (modelText == "CLIP-Seg") {
             modelText = this.segmentModalTextMatch.value.trim();
+        }
+        else if (parseInt(this.segmentModalYoloId.value) > 0) {
+            modelText += `-${this.segmentModalYoloId.value}`;
         }
         $('#text_prompt_segment_modal').modal('hide');
         // TODO: Yolo input for match ID
@@ -618,12 +623,10 @@ class PromptPlusButton {
         }
         this.noOverlap = true;
         if (this.regionModalInpaint.checked) {
-            this.regionModalInpaintStrength.disabled = false;
-            this.regionModalInpaintStrengthSlider.disabled = false;
+            findParentOfClass(this.regionModalInpaintStrength, 'auto-input').style.display = '';
         }
         else {
-            this.regionModalInpaintStrength.disabled = true;
-            this.regionModalInpaintStrengthSlider.disabled = true;
+            findParentOfClass(this.regionModalInpaintStrength, 'auto-input').style.display = 'none';
         }
         this.regionModalRedrawCanvas();
         this.noOverlap = false;
