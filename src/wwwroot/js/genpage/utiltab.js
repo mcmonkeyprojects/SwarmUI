@@ -537,6 +537,11 @@ class ActiveModelDownload {
         this.name = name;
         this.url = url;
         this.image = image;
+        if (image && metadata) {
+            metadata = JSON.parse(metadata);
+            metadata['modelspec.thumbnail'] = image;
+            metadata = JSON.stringify(metadata);
+        }
         this.type = type;
         this.metadata = metadata;
         let cardHtml = `
