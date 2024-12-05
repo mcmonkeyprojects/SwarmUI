@@ -32,10 +32,10 @@ function getHtmlForParam(param, prefix) {
                         return {html: makeNumberInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, min, max, step, 'seed', param.toggleable, !param.no_popover) + pop};
                     case 'slider':
                         return {html: makeSliderInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, min, max, param.view_min || min, param.view_max || max, step, false, param.toggleable, !param.no_popover) + pop,
-                            runnable: () => enableSliderForBox(findParentOfClass(getRequiredElementById(`${prefix}${param.id}`), 'auto-slider-box'))};
+                            runnable: () => enableSliderAbove(getRequiredElementById(`${prefix}${param.id}`))};
                     case 'pot_slider':
                         return {html: makeSliderInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, min, max, param.view_min || min, param.view_max || max, step, true, param.toggleable, !param.no_popover) + pop,
-                            runnable: () => enableSliderForBox(findParentOfClass(getRequiredElementById(`${prefix}${param.id}`), 'auto-slider-box'))};
+                            runnable: () => enableSliderAbove(getRequiredElementById(`${prefix}${param.id}`))};
                 }
                 break;
             case 'boolean':
@@ -1513,3 +1513,111 @@ class PromptTabCompleteClass {
 }
 
 let promptTabComplete = new PromptTabCompleteClass();
+
+class PromptPlusButton {
+    constructor() {
+        this.altTextBox = getRequiredElementById('alt_prompt_textbox');
+        this.addButton = getRequiredElementById('alt_text_add_button');
+        this.addButton.addEventListener('click', () => this.showMenu());
+        this.popover = null;
+        this.segmentModalMainText = getRequiredElementById('text_prompt_segment_textarea');
+        this.segmentModalOther = getRequiredElementById('text_prompt_segment_other_inputs');
+        this.segmentModalOther.innerHTML =
+            makeGenericPopover('text_prompt_segment_model', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
+            + makeDropdownInput(null, 'text_prompt_segment_model', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
+            + makeGenericPopover('text_prompt_segment_textmatch', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
+            + makeTextInput(null, 'text_prompt_segment_textmatch', '', 'Text Match', '', '', 'normal', '', false, false, true)
+            + makeGenericPopover('text_prompt_segment_creativity', 'Prompt Syntax: Segment Creativity', 'Number', 'How creative the model should be when rebuilding this segment.\nAlso known as denoising strength.\n0 makes no changes, 1 completely replaces the area.', '')
+            + makeSliderInput(null, 'text_prompt_segment_creativity', '', 'Creativity', '', 0.6, 0, 1, 0, 1, 0.05, false, false, true)
+            + makeGenericPopover('text_prompt_segment_threshold', 'Prompt Syntax: Segment Threshold', 'Number', 'The limit that defines that "minimum match quality" for the model to consider this segment matched.\nAt 0 this will include too much, at 1 this will include too little or nothing.', '')
+            + makeSliderInput(null, 'text_prompt_segment_threshold', '', 'Threshold', '', 0.5, 0, 1, 0, 1, 0.05, false, false, true);
+        this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
+        this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
+        this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
+        this.segmentModalCreativity = getRequiredElementById('text_prompt_segment_creativity');
+        this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
+        enableSlidersIn(this.segmentModalOther);
+    }
+
+    autoHideMenu() {
+        if (this.popover) {
+            this.popover.remove();
+            this.popover = null;
+        }
+    }
+
+    showMenu() {
+        this.autoHideMenu();
+        let buttons = [];
+        buttons.push({ key: 'segment', key_html: 'Auto Segment Refinement', title: "Automatically segment and refine part of an image (eg clean up a face)", action: () => {
+            this.autoHideMenu();
+            this.segmentModalClear();
+            this.segmentModalProcessChanges();
+            $('#text_prompt_segment_modal').modal('show');
+        }});
+        buttons.push({ key: 'other', key_html: 'Other...', title: "Add some other prompt syntax (that doesn't have its own menu)", action: () => {
+            let text = this.altTextBox.value.trim();
+            if (!text.endsWith('<')) {
+                text += ' <';
+            }
+            this.altTextBox.value = text;
+            this.altTextBox.selectionStart = this.altTextBox.value.length;
+            this.altTextBox.selectionEnd = this.altTextBox.value.length;
+            this.altTextBox.focus();
+            triggerChangeFor(this.altTextBox);
+        }});
+        let rect = this.addButton.getBoundingClientRect();
+        this.popover = new AdvancedPopover('prompt_plus_menu', buttons, true, rect.x, rect.y + this.addButton.offsetHeight + 6, this.addButton.parentElement, null, this.addButton.offsetHeight + 6, 250);
+    }
+
+    segmentModalClear() {
+        let html = '<option value="CLIP-Seg">CLIP-Seg (Match by prompting)</option>\n';
+        let modelList = rawGenParamTypesFromServer.filter(p => p.id == 'yolomodelinternal');
+        if (modelList && modelList.length > 0) {
+            let yolomodels = modelList[0].values;
+            for (let model of yolomodels) {
+                html += `<option value="yolo-${model}">${model} (YOLOv8)</option>\n`;
+            }
+        }
+        this.segmentModalModelSelect.innerHTML = html;
+        this.segmentModalModelSelect.value = 'CLIP-Seg';
+        this.segmentModalMainText.value = '';
+        this.segmentModalCreativity.value = 0.6;
+        this.segmentModalThreshold.value = 0.5;
+        this.segmentModalTextMatch.value = '';
+    }
+
+    segmentModalProcessChanges() {
+        if (this.segmentModalModelSelect.value == 'CLIP-Seg') {
+            this.segmentModalTextMatch.disabled = false;
+            let text = translate("Text to match against in the image");
+            this.segmentModalTextMatch.placeholder = text;
+            this.segmentModalTextMatch.title = text;
+        }
+        else {
+            this.segmentModalTextMatch.disabled = true;
+            let text = translate("Text match is disabled because you are not using CLIP-Seg");
+            this.segmentModalTextMatch.placeholder = text;
+            this.segmentModalTextMatch.title = text;
+        }
+    }
+
+    segmentModalSubmit() {
+        let modelText = this.segmentModalModelSelect.value;
+        if (modelText == "CLIP-Seg") {
+            modelText = this.segmentModalTextMatch.value;
+        }
+        $('#text_prompt_segment_modal').modal('hide');
+        this.applyNewSyntax(`\n<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value}`);
+    }
+
+    applyNewSyntax(text) {
+        this.altTextBox.value = (this.altTextBox.value.trim() + text.trim()).trim();
+        triggerChangeFor(this.altTextBox);
+        this.altTextBox.selectionStart = this.altTextBox.value.length;
+        this.altTextBox.selectionEnd = this.altTextBox.value.length;
+        this.altTextBox.focus();
+    }
+}
+
+let promptPlusButton = new PromptPlusButton();

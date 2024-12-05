@@ -730,6 +730,10 @@ textarea, input, select {
 .drag_image_target_highlight {
     box-shadow: inset 0 0 8px 2px var(--emphasis);
 }
+.modal-dialog {
+    max-width: calc(max(500px, 50vw));
+}
+
 
 
 

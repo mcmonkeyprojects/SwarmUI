@@ -13,6 +13,10 @@ function enableSlidersIn(elem) {
     }
 }
 
+function enableSliderAbove(div) {
+    enableSliderForBox(findParentOfClass(div, 'auto-slider-box'));
+}
+
 function enableSliderForBox(div) {
     let range = div.querySelector('input[type="range"]');
     let number = div.querySelector('input[type="number"]');

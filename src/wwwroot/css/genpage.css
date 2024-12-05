@@ -866,6 +866,20 @@ body {
     top: -1.5rem;
     left: 0;
 }
+.alt-text-add-button-wrapper {
+    position: relative;
+    width: 0;
+    height: 0;
+    left: 0;
+    top: 0;
+}
+.alt-text-add-button {
+    position: relative;
+    top: 0;
+    left: -8px;
+    padding: 0px 4px !important;
+    border-radius: 1rem !important;
+}
 .alt-prompt-buttons {
     vertical-align: top;
     padding-top: 0.1rem;
