@@ -10,6 +10,7 @@ using System.Net.WebSockets;
 using SwarmUI.Backends;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Primitives;
+using System.Reflection;
 
 namespace SwarmUI.WebAPI;
 
@@ -226,7 +227,7 @@ public static class BasicAPIFeatures
                 ["css_paths"] = JArray.FromObject(theme.CSSPaths)
             };
         }
-        return new JObject() { ["themes"] = themes, ["settings"] = AdminAPI.AutoConfigToParamData(session.User.Settings) };
+        return new JObject() { ["themes"] = themes, ["settings"] = AdminAPI.AutoConfigToParamData(session.User.Settings, true) };
     }
 
     public static async Task<JObject> ChangeUserSettings(Session session, JObject rawData)
@@ -238,6 +239,11 @@ public static class BasicAPIFeatures
             if (field is null)
             {
                 Logs.Error($"User '{session.User.UserID}' tried to set unknown setting '{key}' to '{val}'.");
+                continue;
+            }
+            if (field.Field.GetCustomAttribute<ValueIsRestrictedAttribute>() is not null)
+            {
+                Logs.Error($"User '{session.User.UserID}' tried to set restricted setting '{key}' to '{val}'.");
                 continue;
             }
             object obj = AdminAPI.DataToType(val, field.Field.FieldType);

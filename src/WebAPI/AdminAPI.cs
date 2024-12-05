@@ -35,7 +35,7 @@ public static class AdminAPI
         API.RegisterAPICall(UninstallExtension, true, Permissions.ManageExtensions);
     }
 
-    public static JObject AutoConfigToParamData(AutoConfiguration config)
+    public static JObject AutoConfigToParamData(AutoConfiguration config, bool hideRestricted = false)
     {
         JObject output = [];
         foreach ((string key, AutoConfiguration.Internal.SingleFieldData data) in config.InternalData.SharedData.Fields)
@@ -50,6 +50,10 @@ public static class AdminAPI
             if (val is AutoConfiguration subConf)
             {
                 val = AutoConfigToParamData(subConf);
+            }
+            if (hideRestricted && data.Field.GetCustomAttribute<ValueIsRestrictedAttribute>() is not null)
+            {
+                continue;
             }
             string[] vals = data.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Options ?? null;
             string[] val_names = null;

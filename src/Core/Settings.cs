@@ -281,6 +281,7 @@ public class Settings : AutoConfiguration
         public bool StarNoFolders = false;
 
         [ConfigComment("List of role IDs applied to this user. Defaults to owner (for local/accountless usage).")]
+        [ValueIsRestricted]
         public List<string> Roles = ["owner"];
 
         public class ThemesImpl : SettingsOptionsAttribute.AbstractImpl
@@ -497,6 +498,12 @@ public class ManualSettingsOptionsAttribute : SettingsOptionsAttribute
 /// <summary>Attribute that marks that the value should be treated as a secret, and not transmitted to remote clients.</summary>
 [AttributeUsage(AttributeTargets.Field)]
 public class ValueIsSecretAttribute : Attribute
+{
+}
+
+/// <summary>Attribute that marks that the value should be restricted from non-admin user access.</summary>
+[AttributeUsage(AttributeTargets.Field)]
+public class ValueIsRestrictedAttribute : Attribute
 {
 }
 

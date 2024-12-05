@@ -34,7 +34,7 @@ public class Role(string name)
     }
 
     /// <summary>Savable data for this role.</summary>
-    public RoleData Data;
+    public RoleData Data = new();
 
     /// <summary>Clean/simple ID for this role.</summary>
     public string ID = Utilities.StrictFilenameClean(name).Replace('/', '_');
