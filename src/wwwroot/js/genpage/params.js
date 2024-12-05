@@ -279,12 +279,11 @@ function genInputs(delay_final = false) {
             let swapAspectRatioButton = document.createElement("button");
             inputAspectRatioParent.style.position = 'relative';
             swapAspectRatioButton.style.display = inputAspectRatio.value == "Custom" ? 'block' : 'none';
-            swapAspectRatioButton.style.position = 'absolute';
             swapAspectRatioButton.style.right = inputAspectRatioParentStyles.paddingRight;
             swapAspectRatioButton.style.top = inputAspectRatioParentStyles.paddingTop;
-            swapAspectRatioButton.style.fontSize = '18px';
+            // Needed to override the padding of basic-button class
             swapAspectRatioButton.style.setProperty('padding', '0 5px', 'important');
-            swapAspectRatioButton.className = 'basic-button';
+            swapAspectRatioButton.className = 'basic-button swap_aspectratio_button';
             swapAspectRatioButton.title = 'Swap the width and the height';
             swapAspectRatioButton.innerHTML = '&#x21C6;';
             inputAspectRatioParent.appendChild(swapAspectRatioButton);
