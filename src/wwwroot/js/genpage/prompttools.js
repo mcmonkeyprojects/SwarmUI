@@ -472,7 +472,6 @@ class PromptPlusButton {
             modelText += `-${this.segmentModalYoloId.value}`;
         }
         $('#text_prompt_segment_modal').modal('hide');
-        // TODO: Yolo input for match ID
         this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
     }
 

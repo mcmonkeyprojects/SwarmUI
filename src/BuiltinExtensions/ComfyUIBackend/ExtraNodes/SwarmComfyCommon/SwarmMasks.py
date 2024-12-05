@@ -22,7 +22,7 @@ class SwarmSquareMaskFromPercent:
         SCALE = 256
         mask = torch.zeros((SCALE, SCALE), dtype=torch.float32, device="cpu")
         mask[int(y*SCALE):int((y+height)*SCALE), int(x*SCALE):int((x+width)*SCALE)] = strength
-        return (mask,)
+        return (mask.unsqueeze(0),)
 
 
 def mask_size_match(mask_a, mask_b):
