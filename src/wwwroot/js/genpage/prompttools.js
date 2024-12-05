@@ -468,7 +468,7 @@ class PromptPlusButton {
         }
         $('#text_prompt_segment_modal').modal('hide');
         // TODO: Yolo input for match ID
-        this.applyNewSyntax(`\n<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
     }
 
     regionModalClear() {
@@ -555,6 +555,12 @@ class PromptPlusButton {
             x2 = realX;
             y2 = realY;
         }
+        else if (clickId == 4) {
+            x1 = realX - curWidth / 2;
+            x2 = realX + curWidth / 2;
+            y1 = realY - curHeight / 2;
+            y2 = realY + curHeight / 2;
+        }
         if (x1 < x2) {
             this.regionModalX.value = roundToAuto(x1, 0.01);
             this.regionModalWidth.value = roundToAuto(x2 - x1, 0.01);
@@ -573,11 +579,11 @@ class PromptPlusButton {
     }
 
     regionModalCircles() {
-        let x = this.regionModalX.value * this.regionModalCanvas.width;
-        let y = this.regionModalY.value * this.regionModalCanvas.height;
-        let w = this.regionModalWidth.value * this.regionModalCanvas.width;
-        let h = this.regionModalHeight.value * this.regionModalCanvas.height;
-        return [new RegionModalCircle(x, y, 0), new RegionModalCircle(x + w, y, 1), new RegionModalCircle(x, y + h, 2), new RegionModalCircle(x + w, y + h, 3)];
+        let x = parseFloat(this.regionModalX.value) * this.regionModalCanvas.width;
+        let y = parseFloat(this.regionModalY.value) * this.regionModalCanvas.height;
+        let w = parseFloat(this.regionModalWidth.value) * this.regionModalCanvas.width;
+        let h = parseFloat(this.regionModalHeight.value) * this.regionModalCanvas.height;
+        return [new RegionModalCircle(x, y, 0), new RegionModalCircle(x + w, y, 1), new RegionModalCircle(x, y + h, 2), new RegionModalCircle(x + w, y + h, 3), new RegionModalCircle(x + w / 2, y + h / 2, 4)];
     }
 
     regionModalRedrawCanvas() {
@@ -627,11 +633,16 @@ class PromptPlusButton {
         $('#text_prompt_region_modal').modal('hide');
         let key = this.regionModalInpaint.checked ? 'object' : 'region';
         let inpaint = this.regionModalInpaint.checked ? `,${this.regionModalInpaintStrength.value}` : '';
-        this.applyNewSyntax(`\n<${key}:${this.regionModalX.value},${this.regionModalY.value},${this.regionModalWidth.value},${this.regionModalHeight.value},${this.regionModalStrength.value}${inpaint}> ${this.regionModalMainText.value.trim()}`);
+        let x = parseFloat(this.regionModalX.value), y = parseFloat(this.regionModalY.value), w = parseFloat(this.regionModalWidth.value), h = parseFloat(this.regionModalHeight.value);
+        x = Math.max(0, Math.min(1, x));
+        y = Math.max(0, Math.min(1, y));
+        w = Math.max(0, Math.min(1, w + x)) - x;
+        h = Math.max(0, Math.min(1, h + y)) - y;
+        this.applyNewSyntax(`<${key}:${roundToStrAuto(x, 0.01)},${roundToStrAuto(y, 0.01)},${roundToStrAuto(w, 0.01)},${roundToStrAuto(y, 0.01)},${this.regionModalStrength.value}${inpaint}> ${this.regionModalMainText.value.trim()}`);
     }
 
     applyNewSyntax(text) {
-        this.altTextBox.value = (this.altTextBox.value.trim() + text.trim()).trim();
+        this.altTextBox.value = (this.altTextBox.value.trim() + '\n' + text.trim()).trim();
         triggerChangeFor(this.altTextBox);
         this.altTextBox.selectionStart = this.altTextBox.value.length;
         this.altTextBox.selectionEnd = this.altTextBox.value.length;

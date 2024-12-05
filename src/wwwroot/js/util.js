@@ -385,6 +385,9 @@ function toDataURL(url, callback) {
 
 /** Returns the given value rounded to the nearest multiple of the given step. */
 function roundTo(val, step) {
+    if (step == 0) {
+        return val;
+    }
     return Math.round(val / step) * step;
 }
 
