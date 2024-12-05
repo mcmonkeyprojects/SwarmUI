@@ -284,6 +284,10 @@ public class Settings : AutoConfiguration
         [ValueIsRestricted]
         public List<string> Roles = ["owner"];
 
+        [ConfigComment("The user's password.\nThis is not stored in user-readable format.\nReplace the value to set a new password.")]
+        [ValueIsSecret]
+        public string Password = "";
+
         public class ThemesImpl : SettingsOptionsAttribute.AbstractImpl
         {
             public override string[] GetOptions => [.. Program.Web.RegisteredThemes.Keys];

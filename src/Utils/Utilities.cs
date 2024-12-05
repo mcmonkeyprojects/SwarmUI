@@ -18,6 +18,7 @@ using System.Diagnostics;
 using SwarmUI.Text2Image;
 using System.Net.Sockets;
 using Microsoft.VisualBasic.FileIO;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace SwarmUI.Utils;
 
@@ -1038,5 +1039,25 @@ public static class Utilities
             return inner.Message;
         }
         return $"{ex}";
+    }
+
+    /// <summary>Hashes a password for storage.</summary>
+    public static string HashPassword(string username, string password)
+    {
+        byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
+        string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
+        byte[] hashed = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 100_000, numBytesRequested: 256 / 8);
+        return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hashed);
+    }
+
+    /// <summary>Returns whether the given password matches the stored hash.</summary>
+    public static bool CompareHashedPassword(string username, string password, string hashed)
+    {
+        string saltRaw = hashed.BeforeAndAfter(':', out string hashRaw);
+        byte[] salt = Convert.FromBase64String(saltRaw);
+        byte[] hash = Convert.FromBase64String(hashRaw);
+        string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
+        byte[] hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 100_000, numBytesRequested: 256 / 8);
+        return hashedAttempt.SequenceEqual(hash);
     }
 }

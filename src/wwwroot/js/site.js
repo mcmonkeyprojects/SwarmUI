@@ -597,6 +597,9 @@ function makeSecretInput(featureid, id, paramid, name, description, value, place
 }
 
 function makeTextInput(featureid, id, paramid, name, description, value, format, placeholder, toggles = false, genPopover = false, popover_button = true) {
+    if (format == 'secret') {
+        return makeSecretInput(featureid, id, paramid, name, description, value, placeholder, toggles, genPopover, popover_button);
+    }
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
     let onInp = format == "prompt" ? ' oninput="textPromptInputHandle(this)"' : '';

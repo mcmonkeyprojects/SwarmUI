@@ -252,6 +252,14 @@ public static class BasicAPIFeatures
                 Logs.Error($"User '{session.User.UserID}' tried to set setting '{key}' of type '{field.Field.FieldType.Name}' to '{val}', but type-conversion failed.");
                 continue;
             }
+            if (key.ToLowerFast() == "password")
+            {
+                if ($"{val}".Length < 8)
+                {
+                    return new JObject() { ["error"] = "Password must be at least 8 characters long." };
+                }
+                obj = Utilities.HashPassword(session.User.UserID, $"{val}");
+            }
             session.User.Settings.TrySetFieldValue(key, obj);
         }
         session.User.Save();
