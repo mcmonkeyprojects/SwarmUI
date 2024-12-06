@@ -89,6 +89,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
     - `git clone https://github.com/mcmonkeyprojects/SwarmUI`
     - cd `SwarmUI`
     - `./launch-linux.sh`
+    - or if running on a headless server, `./launch-linux.sh --launch_mode none --host 0.0.0.0` and/or swap host for [cloudflared](/docs/Advanced%20Usage.md)
 - open `http://localhost:7801/Install` (if it doesn't launch itself)
 - Follow the install instructions on-page.
 
