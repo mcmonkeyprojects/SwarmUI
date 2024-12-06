@@ -681,7 +681,7 @@ public class BackendHandler
             }
             catch (Exception ex)
             {
-                Logs.Error($"Error loading model '{model.RawFilePath}' on backend {backend.ID} ({backend.Backend.HandlerTypeData.Name}): {ex.ReadableString()}");
+                Logs.Error($"Error loading model '{model.RawFilePath}' (arch={model.Metadata?.ModelClassType}) on backend {backend.ID} ({backend.Backend.HandlerTypeData.Name}): {ex.ReadableString()}");
             }
             backend.ReserveModelLoad = false;
         }
