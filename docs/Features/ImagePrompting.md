@@ -25,6 +25,7 @@
     - Whenever you select a model category you haven't tried before, Swarm will automatically download the model files for it.
         - Depending on your network speed, this may take a moment. Check the server logs to see a progress report of the download.
         - After being downloaded once, the models are stored in `(Swarm)/Models/ipadapter` (or wherever your models dir is), and won't need to be downloaded again.
+- You can use non-standard IPAdapter models by saving them to `(Swarm)/Models/ipadapter`. If they don't use CLIPVision G, you will need to select the correct vision model under `Advanced Model Addons` -> `ReVision Model`.
 
 # Style Models
 

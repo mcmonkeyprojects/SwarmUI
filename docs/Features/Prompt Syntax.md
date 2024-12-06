@@ -32,6 +32,8 @@
 
 - You can use the syntax `<random:red, blue, purple>` to randomly select from a list for each gen
     - This random is seeded by the main seed - so if you have a static seed, this won't change.
+        - You can override this with the `Wildcard Seed` parameter
+        - If your randoms won't change but your seed is changing, check if you've accidentally enabled the `Wildcard Seed` parameter. Some users have done this by accident.
     - You can use `,` to separate the entries, or `|`, or `||`. Whichever is most unique gets used - so if you want random options with `,` in them, just use `|` as a separator, and `,` will be ignored (eg `<random:red|blue|purple>`).
     - An entry can contain the syntax of eg `1-5` to automatically select a number from 1 to 5. For example, `<random:1-3, blue>` will give back any of: `1`, `2`, `3`, or `blue`.
     - You can repeat random choices via `<random[1-3]:red, blue, purple>` which might return for example `red blue` or `red blue purple` or `blue`.
@@ -47,6 +49,9 @@
     - You can also import wildcard files from other UIs (ie text file collections) by just adding them into `Data/Wildcards` folder.
     - This supports the same syntax as `random` to get multiple, for example `<wildcard[1-3]:animals>` might return `cat dog` or `elephant leopard dog`.
     - You can shorthand this as `<wc:my/wildcard/name>`
+    - This random is seeded by the main seed - so if you have a static seed, this won't change.
+        - You can override this with the `Wildcard Seed` parameter
+        - If your wildcards won't change but your seed is changing, check if you've accidentally enabled the `Wildcard Seed` parameter. Some users have done this by accident.
 
 ## Variables
 
