@@ -121,6 +121,7 @@ The installation starts now and downloads the Stable Diffusion models from the i
     - cd `SwarmUI`
     - `./launch-docker.sh`
     - Open your browser to `localhost:7801`
+    - Note: the docker script is an example. You may wish to modify it and make your own copy. Do not edit `launch-docker.sh`, instead, duplicate the file and edit that copy.
 - Note that it will forward the `Models` and `Output` directory, and will mount `Data` and `dlbackend` as independent persistent volumes.
 
 # Documentation

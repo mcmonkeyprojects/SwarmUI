@@ -19,6 +19,7 @@ tmp/
 /src/Extensions
 /dlbackend
 *.debug
+custom-launch-docker.sh
 
 # Python
 __pycache__/
