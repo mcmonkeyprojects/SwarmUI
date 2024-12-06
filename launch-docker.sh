@@ -3,7 +3,7 @@
 docker build -t swarmui .
 
 # add "--network=host" if you want to access other services on the host network (eg a separated comfy instance)
-docker run -it \    
+docker run -it \
     --rm \
     --name swarmui \
     --mount source=swarmdata,target=/Data \
