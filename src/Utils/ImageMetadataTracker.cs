@@ -348,33 +348,33 @@ public static class ImageMetadataTracker
     public static void MassRemoveMetadata()
     {
         KeyValuePair<string, ImageDatabase>[] dbs = [.. Databases];
+        static void remove(string name)
+        {
+            try
+            {
+                if (File.Exists($"{name}/image_metadata.ldb"))
+                {
+                    File.Delete($"{name}/image_metadata.ldb");
+                }
+                if (File.Exists($"{name}/image_metadata-log.ldb"))
+                {
+                    File.Delete($"{name}/image_metadata-log.ldb");
+                }
+            }
+            catch (IOException) { }
+        }
         foreach ((string name, ImageDatabase db) in dbs)
         {
             lock (db.Lock)
             {
-                try
-                {
-                    db.Dispose();
-                }
-                catch (Exception) { }
-                try
-                {
-                    File.Delete($"{name}/image_metadata.ldb");
-                }
-                catch (IOException) { }
+                db.Dispose();
+                remove(name);
                 Databases.TryRemove(name, out _);
             }
         }
         static void ClearFolder(string folder)
         {
-            if (File.Exists($"{folder}/image_metadata.ldb"))
-            {
-                try
-                {
-                    File.Delete($"{folder}/image_metadata.ldb");
-                }
-                catch (IOException) { }
-            }
+            remove(folder);
             foreach (string subFolder in Directory.GetDirectories(folder))
             {
                 ClearFolder(subFolder);

@@ -140,6 +140,10 @@ public class T2IModelHandler
                     {
                         File.Delete($"{folder}/model_metadata.ldb");
                     }
+                    if (File.Exists($"{folder}/model_metadata-log.ldb"))
+                    {
+                        File.Delete($"{folder}/model_metadata-log.ldb");
+                    }
                 }
                 catch (Exception) { }
                 try
