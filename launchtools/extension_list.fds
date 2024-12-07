@@ -102,3 +102,11 @@ AdaptiveProjectedGuidance:
     license: MIT
     tags:
     - parameters
+
+KohyaDeepShrink:
+    author: derrian-distro
+    description: A simple SwarmUI extension that adds parameters for the Kohya Deep Shrink / PatchModelAddDownscale node to the generate tab.
+    url: https://github.com/derrian-distro/SwarmUI-KohyaDeepShrink
+    license: MIT
+    tags:
+    - parameters
