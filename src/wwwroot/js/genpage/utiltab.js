@@ -729,7 +729,7 @@ class ModelMetadataScanner {
                             }
                         }
                         else if (replace == 'only_missing') {
-                            if (img && !model.preview_image) {
+                            if (img && (!model.preview_image || model.preview_image == 'imgs/model_placeholder.jpg')) {
                                 model.preview_image = img;
                             }
                             model.title = model.title || metadata['modelspec.title'];
