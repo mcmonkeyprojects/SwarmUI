@@ -1332,7 +1332,8 @@ public class WorkflowGeneratorSteps
                         ["width"] = width,
                         ["height"] = height,
                         ["length"] = frames ?? 97,
-                        ["batch_size"] = 1
+                        ["batch_size"] = 1,
+                        ["image_noise_scale"] = 0.15
                     });
                     posCond = [condNode, 0];
                     negCond = [condNode, 1];
