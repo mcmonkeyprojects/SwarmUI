@@ -341,6 +341,7 @@ public static class NetworkBackendUtils
             PythonLaunchHelper.CleanEnvironmentOfPythonMess(start, $"({nameSimple} launch) ");
             start.Environment["CUDA_VISIBLE_DEVICES"] = $"{gpuId}";
             start.Environment["HIP_VISIBLE_DEVICES"] = $"{gpuId}";
+            start.Environment["ROCR_VISIBLE_DEVICES"] = $"{gpuId}";
             string preArgs = "";
             string postArgs = extraArgs.Replace("{PORT}", $"{port}").Trim();
             if (path.EndsWith(".py"))
