@@ -640,7 +640,7 @@ class PromptPlusButton {
         y = Math.max(0, Math.min(1, y));
         w = Math.max(0, Math.min(1, w + x)) - x;
         h = Math.max(0, Math.min(1, h + y)) - y;
-        this.applyNewSyntax(`<${key}:${roundToStrAuto(x, 0.01)},${roundToStrAuto(y, 0.01)},${roundToStrAuto(w, 0.01)},${roundToStrAuto(y, 0.01)},${this.regionModalStrength.value}${inpaint}> ${this.regionModalMainText.value.trim()}`);
+        this.applyNewSyntax(`<${key}:${roundToStrAuto(x, 0.01)},${roundToStrAuto(y, 0.01)},${roundToStrAuto(w, 0.01)},${roundToStrAuto(h, 0.01)},${this.regionModalStrength.value}${inpaint}> ${this.regionModalMainText.value.trim()}`);
     }
 
     applyNewSyntax(text) {
