@@ -104,6 +104,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Verify your `brew` installation with `brew doctor`. You should not see any error in the command output.
 - Install .NET for macOS: `brew install dotnet`.
 - If you don't have Python, install it: `brew install python@3.10` and `brew install virtualenv`
+    - Python 3.11, 3.10, 3.12 are all fine. 3.13 is not, do not use 3.13.
 - Change the directory (`cd`) to the folder where you want to install SwarmUI.
 - Clone the SwarmUI GitHub repository: `git clone https://github.com/mcmonkeyprojects/SwarmUI`.
 - `cd SwarmUI` and run the installation script: `./launch-macos.sh`.
