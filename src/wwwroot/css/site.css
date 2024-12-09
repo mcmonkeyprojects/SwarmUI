@@ -732,6 +732,10 @@ textarea, input, select {
 }
 .modal-dialog {
     max-width: calc(max(500px, 50vw));
+    width: fit-content;
+}
+.modal-content {
+    width: fit-content;
 }
 
 
