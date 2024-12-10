@@ -134,6 +134,10 @@ public class Program
             PrintCommandLineHelp();
             return;
         }
+        if (ServerSettings.ShowExperimentalFeatures)
+        {
+            Logs.Warning($"Experimental Features are enabled. Issue reports will not be accepted until you turn them off in Server Configuration.");
+        }
         Logs.StartLogSaving();
         timer.Check("Initial settings load");
         if (ServerSettings.CheckForUpdates)

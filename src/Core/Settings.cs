@@ -36,7 +36,7 @@ public class Settings : AutoConfiguration
     [ConfigComment("If set true, some additional debugging data will be attached where relevant, such as in image metadata.")]
     public bool AddDebugData = false;
 
-    [ConfigComment("If set true, new/upcoming/experimental features will be visible.")]
+    [ConfigComment("If set true, new/upcoming/experimental features will be visible.\nEnabling this will cause issues, do not expect a stable server.\nDo not report any bugs while this is enabled, and do not request new features related to experimental features.")]
     public bool ShowExperimentalFeatures = false;
 
     [ConfigComment("If true, Swarm will check if there's any updates available during startup. If false, it will not check for updates.\nUpdate check only downloads a simple JSON from GitHub to get the current version info, it does not transmit any telemetry nor does it download any files or apply the update.\nDefaults to true.")]
