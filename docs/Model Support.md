@@ -16,6 +16,7 @@
 [Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Outdated |
 [Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Outdated |
 [PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | Outdated |
+[Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | Modern, Low Quality |
 [AuraFlow v0.1 and v0.2](#auraflow-v01) | MMDiT | 2024 | Fal.AI | 6B | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
 
