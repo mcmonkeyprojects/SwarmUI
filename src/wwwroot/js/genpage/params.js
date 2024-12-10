@@ -640,7 +640,7 @@ function refreshParameterValues(strong = true, callback = null) {
     });
 }
 
-function setDirectParamValue(param, value, paramElem = null, forceDropdowns = false) {
+function setDirectParamValue(param, value, paramElem = null, forceDropdowns = false, doTrigger = true) {
     if (!paramElem) {
         paramElem = getRequiredElementById(`input_${param.id}`);
     }
@@ -672,7 +672,9 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
     else {
         paramElem.value = value;
     }
-    triggerChangeFor(paramElem);
+    if (doTrigger) {
+        triggerChangeFor(paramElem);
+    }
 }
 
 function resetParamsToDefault(exclude = []) {
@@ -686,24 +688,38 @@ function resetParamsToDefault(exclude = []) {
         triggerChangeFor(elem);
     }
     for (let param of gen_param_types) {
+        if (param.id != 'model' && !exclude.includes(param.id)) {
+            let id = `input_${param.id}`;
+            let elem = document.getElementById(id);
+            if (elem != null) {
+                setDirectParamValue(param, param.default, elem, false, false);
+                if (param.toggleable) {
+                    let toggler = getRequiredElementById(`${id}_toggle`);
+                    if (!toggler.checked) {
+                        continue;
+                    }
+                    toggler.checked = false;
+                    triggerChangeFor(toggler);
+                    continue;
+                }
+                if (param.group && param.group.toggles) {
+                    let toggler = document.getElementById(`input_group_content_${param.group.id}_toggle`);
+                    if (toggler) {
+                        if (!toggler.checked) {
+                            continue;
+                        }
+                        toggler.checked = false;
+                        doToggleGroup(`input_group_content_${param.group.id}`);
+                        continue;
+                    }
+                }
+                triggerChangeFor(elem);
+            }
+        }
+    }
+    for (let param of gen_param_types) {
         let id = `input_${param.id}`;
         if (param.id != 'model' && !exclude.includes(param.id) && document.getElementById(id) != null) {
-            setDirectParamValue(param, param.default);
-            if (param.id == 'prompt' || param.id == 'negativeprompt') {
-                triggerChangeFor(getRequiredElementById(id));
-            }
-            if (param.toggleable) {
-                let toggler = getRequiredElementById(`${id}_toggle`);
-                toggler.checked = false;
-                triggerChangeFor(toggler);
-            }
-            if (param.group && param.group.toggles) {
-                let toggler = document.getElementById(`input_group_content_${param.group.id}_toggle`);
-                if (toggler && toggler.checked) {
-                    toggler.checked = false;
-                    doToggleGroup(`input_group_content_${param.group.id}`);
-                }
-            }
         }
     }
     let aspect = document.getElementById('input_aspectratio');

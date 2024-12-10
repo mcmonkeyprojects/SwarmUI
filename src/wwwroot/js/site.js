@@ -854,3 +854,11 @@ function modalHeader(id, title) {
 function modalFooter() {
     return `</div></div></div>`;
 }
+
+let specialDebugTime = Date.now();
+function specialDebug(message) {
+    let now = Date.now();
+    let diff = now - specialDebugTime;
+    specialDebugTime = now;
+    console.log(`${message} (${diff}ms since last debug)`);
+}
