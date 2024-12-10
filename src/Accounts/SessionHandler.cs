@@ -231,6 +231,10 @@ public class SessionHandler
         }
         userId ??= LocalUserID;
         User user = GetUser(userId);
+        if (!user.MayCreateSessions)
+        {
+            throw new SwarmReadableErrorException($"User '{user.UserID}' may not create new sessions currently.");
+        }
         Logs.Info($"Creating new admin session '{userId}' for {source}");
         for (int i = 0; i < 1000; i++)
         {
@@ -251,6 +255,22 @@ public class SessionHandler
             }
         }
         throw new SwarmReadableErrorException("Something is critically wrong in the session handler, cannot generate unique IDs!");
+    }
+
+    /// <summary>Cancel, remove, and destroy a session entirely.</summary>
+    public void RemoveSession(Session session)
+    {
+        try
+        {
+            session.SessInterrupt.Cancel();
+        }
+        catch (Exception) { }
+        Sessions.TryRemove(session.ID, out _);
+        session.User.CurrentSessions.TryRemove(session.ID, out _);
+        lock (DBLock)
+        {
+            SessionDatabase.Delete(session.ID);
+        }
     }
 
     /// <summary>Gets or creates the user for the given ID.</summary>
@@ -318,6 +338,24 @@ public class SessionHandler
         }
         session = null;
         return false;
+    }
+
+    /// <summary>Remove all data associated with a given user from the user databases. Does not remove output history or anything they did outside of their personal user data.</summary>
+    public void RemoveUser(User user)
+    {
+        lock (DBLock)
+        {
+            string prefix = $"{user.UserID}///";
+            user.MayCreateSessions = false;
+            foreach (Session userSess in user.CurrentSessions.Values.ToArray())
+            {
+                RemoveSession(userSess);
+            }
+            T2IPresets.DeleteMany(b => b.ID.StartsWith(prefix));
+            GenericData.DeleteMany(b => b.ID.StartsWith(prefix));
+            UserDatabase.Delete(user.UserID);
+            Users.TryRemove(user.UserID, out _);
+        }
     }
 
     private volatile bool HasShutdown;

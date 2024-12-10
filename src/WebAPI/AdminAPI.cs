@@ -34,8 +34,9 @@ public static class AdminAPI
         API.RegisterAPICall(UpdateExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(UninstallExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(AdminListUsers, false, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminAddUser, true, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminDeleteUser, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminListRoles, false, Permissions.ConfigureRoles);
-        API.RegisterAPICall(AdminAddUser, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminAddRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminDeleteRole, true, Permissions.ConfigureRoles);
     }
@@ -594,6 +595,56 @@ public static class AdminAPI
         return new JObject() { ["users"] = JArray.FromObject(users) };
     }
 
+    [API.APIDescription("Admin route to create a new user account.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> AdminAddUser(Session session,
+        [API.APIParameter("The name of the new user.")] string name,
+        [API.APIParameter("Initial password for the new user.")] string password,
+        [API.APIParameter("Initial role for the new user.")] string role)
+    {
+        string cleaned = Utilities.StrictFilenameClean(name).ToLowerFast().Replace('/', '_');
+        lock (Program.Sessions.DBLock)
+        {
+            User existing = Program.Sessions.GetUser(cleaned, false);
+            if (existing is not null)
+            {
+                return new JObject() { ["error"] = "A user by that name already exists." };
+            }
+            User.DatabaseEntry userData = new() { ID = cleaned, RawSettings = "\n" };
+            User user = new(Program.Sessions, userData);
+            user.Settings.Roles = [role];
+            user.Settings.Password = Utilities.HashPassword(cleaned, password);
+            Program.Sessions.Users.TryAdd(cleaned, user);
+            user.Save();
+        }
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Admin route to delete an existing user account.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> AdminDeleteUser(Session session,
+        [API.APIParameter("The name of the user to delete.")] string name)
+    {
+        lock (Program.Sessions.DBLock)
+        {
+            User user = Program.Sessions.GetUser(name, false);
+            if (user is null)
+            {
+                return new JObject() { ["error"] = "No user by that name exists." };
+            }
+            if (session.User.UserID == user.UserID)
+            {
+                return new JObject() { ["error"] = "You may not delete yourself." };
+            }
+            Program.Sessions.RemoveUser(user);
+        }
+        return new JObject() { ["success"] = true };
+    }
+
     [API.APIDescription("Admin route to get a list of all available roles.",
         """
             "roles": [
@@ -629,33 +680,6 @@ public static class AdminAPI
             };
         }
         return new JObject() { ["roles"] = roles };
-    }
-
-    [API.APIDescription("Admin route to create a new user account.",
-        """
-            "success": true
-        """)]
-    public static async Task<JObject> AdminAddUser(Session session,
-        [API.APIParameter("The name of the new user.")] string name,
-        [API.APIParameter("Initial password for the new user.")] string password,
-        [API.APIParameter("Initial role for the new user.")] string role)
-    {
-        string cleaned = Utilities.StrictFilenameClean(name).ToLowerFast().Replace('/', '_');
-        lock (Program.Sessions.DBLock)
-        {
-            User existing = Program.Sessions.GetUser(cleaned, false);
-            if (existing is not null)
-            {
-                return new JObject() { ["error"] = "A user by that name already exists." };
-            }
-            User.DatabaseEntry userData = new() { ID = cleaned, RawSettings = "\n" };
-            User user = new(Program.Sessions, userData);
-            user.Settings.Roles = [role];
-            user.Settings.Password = Utilities.HashPassword(cleaned, password);
-            Program.Sessions.Users.TryAdd(cleaned, user);
-            user.Save();
-        }
-        return new JObject() { ["success"] = true };
     }
 
     [API.APIDescription("Admin route to create a new user permission role.",

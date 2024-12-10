@@ -79,6 +79,10 @@ public class User
         Data.RawSettings = Settings.Save(false).ToString();
         lock (SessionHandlerSource.DBLock)
         {
+            if (!MayCreateSessions)
+            {
+                return;
+            }
             SessionHandlerSource.UserDatabase.Upsert(Data);
         }
     }
@@ -121,6 +125,10 @@ public class User
     {
         lock (SessionHandlerSource.DBLock)
         {
+            if (!MayCreateSessions)
+            {
+                return;
+            }
             SessionHandler.GenericDataStore dataStore = new() { ID = $"{UserID}///${dataname}///{name.ToLowerFast()}", Data = data };
             SessionHandlerSource.GenericData.Upsert(dataStore.ID, dataStore);
         }
@@ -175,6 +183,10 @@ public class User
     {
         lock (SessionHandlerSource.DBLock)
         {
+            if (!MayCreateSessions)
+            {
+                return;
+            }
             preset.ID = $"{UserID}///{preset.Title.ToLowerFast()}";
             SessionHandlerSource.T2IPresets.Upsert(preset.ID, preset);
             if (!Data.Presets.Contains(preset.ID))
@@ -209,6 +221,9 @@ public class User
 
     /// <summary>Core data for this user in the backend database.</summary>
     public DatabaseEntry Data;
+
+    /// <summary>If false, this user may not create new sessions currently.</summary>
+    public volatile bool MayCreateSessions = true;
 
     /// <summary>The short static User-ID for this user.</summary>
     public string UserID => Data.ID;

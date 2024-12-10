@@ -260,4 +260,8 @@ public class Session : IEquatable<Session>
         SessInterrupt.Cancel();
         SessInterrupt = new();
     }
+
+    public void Remove()
+    {
+    }
 }

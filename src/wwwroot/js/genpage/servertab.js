@@ -122,11 +122,26 @@ class UserAdminManager {
     clickUser(name) {
         this.setRightboxLoading();
         // TODO
+        this.setNothingDisplayed();
+        // TODO: Load user settings n wotnot
+        this.displayedUser = name;
+        this.rightBox.innerHTML = `<div class="admin-user-right-titlebar">User: <span class="admin-user-right-titlebar-name">${escapeHtml(name)}</span></div>`
+            + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser('${escapeHtml(name)}')">Delete User</button>`)
+            + `<br><br>`;
+    }
+
+    deleteUser(name) {
+        if (!confirm(`Are you sure you want to delete the user '${name}'?\nThis action cannot be undone.\nMost user data will be lost. Image outputs will remain on drive. Changes outside of user personal data will remain.`)) {
+            return;
+        }
+        genericRequest('AdminDeleteUser', {'name': name}, data => {
+            this.onTabButtonClick();
+            this.setStaticRightBox(`<span class="translate">User deleted successfully</span>`);
+        });
     }
 
     clickRole(roleId) {
         this.setRightboxLoading();
-        // TODO
         genericRequest('AdminListRoles', {}, data => {
             if (!(roleId in data.roles)) {
                 this.setStaticRightBox(`<span class="translate">Role not found, something went wrong</span>`);
@@ -170,7 +185,7 @@ class UserAdminManager {
             return;
         }
         genericRequest('AdminDeleteRole', {'name': roleId}, data => {
-            this.rebuildRoleList();
+            this.onTabButtonClick();
             this.setStaticRightBox(`<span class="translate">Role deleted successfully</span>`);
         });
     }
