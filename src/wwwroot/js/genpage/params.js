@@ -754,11 +754,7 @@ function hideUnsupportableParams() {
         filter = filter.replaceAll('<unaltered>', '');
     }
     let filterClearer = getRequiredElementById('clear_input_icon');
-    if (filter.length > 0) {
-        filterClearer.style.display = 'block';
-    } else {
-        filterClearer.style.display = 'none';
-    }
+    filterClearer.style.display = filter.length > 0 ? 'block' : 'none';
     let groups = {};
     let advancedCount = 0;
     let advancedToggler = getRequiredElementById('advanced_options_checkbox');

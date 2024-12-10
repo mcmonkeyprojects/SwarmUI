@@ -65,6 +65,8 @@ class UserAdminManager {
     constructor() {
         this.tabButton = getRequiredElementById('manageusersbutton');
         this.tabButton.addEventListener('click', () => this.onTabButtonClick());
+        this.filterBox = getRequiredElementById('admin_user_filter');
+        this.filterClear = getRequiredElementById('admin_user_clear_input_icon');
         this.leftBoxRoleList = getRequiredElementById('manage_users_leftbox_content_rolelist');
         this.leftBoxUserList = getRequiredElementById('manage_users_leftbox_content_userlist');
         this.rightBox = getRequiredElementById('manage_users_rightbox_content');
@@ -86,18 +88,39 @@ class UserAdminManager {
         this.addRoleNameInput = getRequiredElementById('addrolemenu_name');
         this.displayedRole = null;
         this.displayedUser = null;
+        this.roles = {};
+        this.userNames = [];
+    }
+
+    updateFilter() {
+        this.buildRoleList();
+        this.buildUserList();
+        this.filterClear.style.display = this.filterBox.value.length > 0 ? 'block' : 'none';
+    }
+
+    clearFilter() {
+        this.filterBox.value = '';
+        this.filterBox.focus();
+        this.updateFilter();
     }
 
     onTabButtonClick() {
         this.rebuildRoleList();
         this.setRightboxDefault();
         genericRequest('AdminListUsers', {}, data => {
-            let html = '';
-            for (let user of data.users) {
+            this.userNames = data.users;
+            this.buildUserList();
+        });
+    }
+
+    buildUserList() {
+        let html = '';
+        for (let user of this.userNames) {
+            if (!this.filterBox.value || user.includes(this.filterBox.value)) {
                 html += `<div class="admin-user-manage-name" onclick="userAdminManager.clickUser('${escapeHtml(user)}')" title="Click to manage user '${escapeHtml(user)}'">${escapeHtml(user)}</div>`;
             }
-            this.leftBoxUserList.innerHTML = html;
-        });
+        }
+        this.leftBoxUserList.innerHTML = html;
     }
 
     setNothingDisplayed() {
@@ -195,18 +218,28 @@ class UserAdminManager {
             return;
         }
         genericRequest('AdminListRoles', {}, data => {
+            this.roles = data.roles;
             let selected = this.addUserRoleInput.value;
-            let roleListHtml = '';
             let optionListHtml = '';
             for (let roleId of Object.keys(data.roles)) {
                 let role = data.roles[roleId];
-                roleListHtml += `<div class="admin-user-manage-name" onclick="userAdminManager.clickRole('${escapeHtml(roleId)}')" title="${escapeHtml(role.description)}">${escapeHtml(role.name)}</div>`;
                 optionListHtml += `<option value="${escapeHtml(roleId)}" title="${escapeHtml(role.description)}">${escapeHtml(role.name)}</option>`;
             }
-            this.leftBoxRoleList.innerHTML = roleListHtml;
             this.addUserRoleInput.innerHTML = optionListHtml;
             this.addUserRoleInput.value = selected;
+            this.buildRoleList();
         });
+    }
+
+    buildRoleList() {
+        let roleListHtml = '';
+        for (let roleId of Object.keys(this.roles)) {
+            let role = this.roles[roleId];
+            if (!this.filterBox.value || role.name.includes(this.filterBox.value) || roleId.includes(this.filterBox.value)) {
+                roleListHtml += `<div class="admin-user-manage-name" onclick="userAdminManager.clickRole('${escapeHtml(roleId)}')" title="${escapeHtml(role.description)}">${escapeHtml(role.name)}</div>`;
+            }
+        }
+        this.leftBoxRoleList.innerHTML = roleListHtml;
     }
 
     showAddUserMenu() {
