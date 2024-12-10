@@ -632,6 +632,8 @@ public static class T2IAPI
             Logs.Warning($"User {session.User.UserID} tried to delete image path '{origPath}' which maps to '{path}', but cannot as the image does not exist.");
             return new JObject() { ["error"] = "That file does not exist, cannot delete." };
         }
+        string standardizedPath = Path.GetFullPath(path);
+        Session.RecentlyDeletedFilenames[standardizedPath] = standardizedPath;
         Action<string> deleteFile = Program.ServerSettings.Paths.RecycleDeletedImages ? Utilities.SendFileToRecycle : File.Delete;
         deleteFile(path);
         string txtFile = path.BeforeLast('.') + ".txt";

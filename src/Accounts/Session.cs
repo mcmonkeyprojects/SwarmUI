@@ -171,6 +171,9 @@ public class Session : IEquatable<Session>
         return image.AsDataString();
     }
 
+    /// <summary>Special cache of recently deleted images, to prevent generating new images with exact same filenames.</summary>
+    public static ConcurrentDictionary<string, string> RecentlyDeletedFilenames = [];
+
     /// <summary>Save an image as this user, and returns the new URL. If user has disabled saving, returns a data URL.</summary>
     /// <returns>(User-Visible-WebPath, Local-FilePath)</returns>
     public (string, string) SaveImage(Image image, int batchIndex, T2IParamInput user_input, string metadata)
@@ -196,17 +199,17 @@ public class Session : IEquatable<Session>
             Logs.Verbose($"Image is type {image.Type} and will save with extension '{image.Extension}'.");
             extension = image.Extension;
         }
-        string fullPath = $"{User.OutputDirectory}/{imagePath}.{extension}";
+        string fullPath = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}.{extension}");
         lock (User.UserLock)
         {
             try
             {
                 int num = 0;
-                while (File.Exists(fullPath))
+                while (RecentlyDeletedFilenames.ContainsKey(fullPath) || File.Exists(fullPath))
                 {
                     num++;
                     imagePath = rawImagePath.Contains("[number]") ? rawImagePath.Replace("[number]", $"{num}") : $"{rawImagePath}-{num}";
-                    fullPath = $"{User.OutputDirectory}/{imagePath}.{extension}";
+                    fullPath = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}.{extension}");
                 }
                 Directory.CreateDirectory(Directory.GetParent(fullPath).FullName);
                 File.WriteAllBytes(fullPath, image.ImageData);

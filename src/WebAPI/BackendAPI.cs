@@ -291,6 +291,10 @@ public class BackendAPI
         [API.APIParameter("If true, system RAM should be cleared too. If false, only VRAM should be cleared.")] bool system_ram = false,
         [API.APIParameter("What backend ID to restart, or `all` for all.")] string backend = "all")
     {
+        if (system_ram)
+        {
+            Session.RecentlyDeletedFilenames.Clear();
+        }
         List<Task> tasks = [];
         foreach (AbstractT2IBackend target in Program.Backends.RunningBackendsOfType<AbstractT2IBackend>())
         {
