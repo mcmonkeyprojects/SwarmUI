@@ -1,5 +1,6 @@
 import comfy, folder_paths, execution
 from comfy import samplers
+import functools
 
 # This is purely a hack to provide a list of embeds in the object_info report.
 # Code referenced from Comfy VAE impl. Probably does nothing useful in an actual workflow.
@@ -75,3 +76,19 @@ def validate_inputs(prompt, item, validated):
     return (did_succeed, errors, unique_id)
 
 execution.validate_inputs = validate_inputs
+
+# Comfy's app logger has broken terminal compat, so violently force it to auto-flush
+try:
+    from app import logger
+    def patch_interceptor(interceptor):
+        if interceptor:
+            orig = interceptor.write
+            def write(self, data):
+                orig(data)
+                self.flush()
+            interceptor.write = functools.partial(write, interceptor)
+    patch_interceptor(logger.stdout_interceptor)
+    patch_interceptor(logger.stderr_interceptor)
+except Exception as e:
+    import traceback
+    traceback.print_exc()
