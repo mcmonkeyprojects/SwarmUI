@@ -212,7 +212,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 yaml += $"""
                 swarmui{(id == 1 ? "" : $"{id}")}:
                     base_path: {rootFixed}
-                    is_default: true
+                    {(id == 1 ? "is_default: true" : "")}
                     checkpoints: {buildSection(rootFixed, Program.ServerSettings.Paths.SDModelFolder)}
                     vae: {buildSection(rootFixed, Program.ServerSettings.Paths.SDVAEFolder + ";VAE")}
                     loras: {buildSection(rootFixed, Program.ServerSettings.Paths.SDLoraFolder + ";Lora;LyCORIS")}
@@ -222,14 +222,20 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     controlnet: {buildSection(rootFixed, Program.ServerSettings.Paths.SDControlNetsFolder + ";ControlNet")}
                     clip: {buildSection(rootFixed, Program.ServerSettings.Paths.SDClipFolder + ";clip;CLIP")}
                     clip_vision: {buildSection(rootFixed, Program.ServerSettings.Paths.SDClipVisionFolder + ";clip_vision")}
-                    custom_nodes: {buildSection(rootFixed, $"{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")};{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")};{CustomNodePaths.Select(Path.GetFullPath).JoinString(";")}")}
 
                 """;
                 foreach (string folder in FoldersToForwardInComfyPath)
                 {
                     yaml += $"    {folder}: {buildSection(rootFixed, folder)}\n";
                 }
+                yaml += "\n";
             }
+            yaml += $"""
+            # Explicitly separate the _nodes list to prevent it from being is_default
+            swarmui_nodes:
+                custom_nodes: {buildSection(ComfyUIBackendExtension.Folder, $"{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes")};{Path.GetFullPath(ComfyUIBackendExtension.Folder + "/ExtraNodes")};{CustomNodePaths.Select(Path.GetFullPath).JoinString(";")}")}
+
+            """;
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0]));
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipFolder.Split(';')[0]));
             Directory.CreateDirectory($"{roots[0]}/upscale_models");
