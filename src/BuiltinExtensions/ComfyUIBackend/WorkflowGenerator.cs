@@ -561,6 +561,31 @@ public class WorkflowGenerator
         {
             model = altCascadeModel;
         }
+        void doVaeLoader(string defaultVal, string compatClass, string knownName)
+        {
+            string vaeFile = defaultVal;
+            string nodeId = null;
+            if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
+            {
+                vaeFile = vaeModel.Name;
+                nodeId = "11";
+            }
+            if (string.IsNullOrWhiteSpace(vaeFile) || vaeFile == "None")
+            {
+                vaeFile = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == compatClass)?.Name;
+            }
+            if (string.IsNullOrWhiteSpace(vaeFile))
+            {
+                if (knownName is null)
+                {
+                    throw new SwarmUserErrorException("No default VAE for this model found, please download its VAE and set it as default in User Settings");
+                }
+                CommonModels.Known[knownName].DownloadNow().Wait();
+                Program.RefreshAllModelSets();
+                vaeFile = CommonModels.Known[knownName].FileName;
+            }
+            LoadingVAE = CreateVAELoader(vaeFile, nodeId);
+        }
         if (model.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
         {
             string baseArch = model.ModelClass?.ID?.Before('/');
@@ -604,16 +629,7 @@ public class WorkflowGenerator
                 ["type"] = "sd3"
             });
             LoadingClip = [singleClipLoader, 0];
-            string xlVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE;
-            if (string.IsNullOrWhiteSpace(xlVae) || xlVae == "None")
-            {
-                xlVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
-            }
-            if (string.IsNullOrWhiteSpace(xlVae))
-            {
-                throw new SwarmUserErrorException("No default SDXL VAE found, please download an SDXL VAE and set it as default in User Settings");
-            }
-            LoadingVAE = CreateVAELoader(xlVae);
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE, "stable-diffusion-xl-v1", "sdxl-vae");
         }
         else if (model.IsDiffusionModelsFormat)
         {
@@ -753,24 +769,7 @@ public class WorkflowGenerator
             }
             if (LoadingVAE is null)
             {
-                string sd3Vae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
-                string nodeId = null;
-                if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
-                {
-                    sd3Vae = vaeModel.Name;
-                    nodeId = "11";
-                }
-                if (string.IsNullOrWhiteSpace(sd3Vae) || sd3Vae == "None")
-                {
-                    sd3Vae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "stable-diffusion-v3")?.Name;
-                }
-                if (string.IsNullOrWhiteSpace(sd3Vae))
-                {
-                    CommonModels.Known["sd35-vae"].DownloadNow().Wait();
-                    Program.RefreshAllModelSets();
-                    sd3Vae = CommonModels.Known["sd35-vae"].FileName;
-                }
-                LoadingVAE = CreateVAELoader(sd3Vae, nodeId);
+                doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
             }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null || UserInput.Get(ComfyUIBackendExtension.ClipLModel) is not null))
@@ -787,24 +786,7 @@ public class WorkflowGenerator
                 ["type"] = "flux"
             });
             LoadingClip = [dualClipLoader, 0];
-            string fluxVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE;
-            string nodeId = null;
-            if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
-            {
-                fluxVae = vaeModel.Name;
-                nodeId = "11";
-            }
-            if (string.IsNullOrWhiteSpace(fluxVae) || fluxVae == "None")
-            {
-                fluxVae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "flux-1")?.Name;
-            }
-            if (string.IsNullOrWhiteSpace(fluxVae))
-            {
-                CommonModels.Known["flux-ae"].DownloadNow().Wait();
-                Program.RefreshAllModelSets();
-                fluxVae = CommonModels.Known["flux-ae"].FileName;
-            }
-            LoadingVAE = CreateVAELoader(fluxVae, nodeId);
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
         else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null))
         {
@@ -819,24 +801,7 @@ public class WorkflowGenerator
                 ["type"] = "mochi"
             });
             LoadingClip = [clipLoader, 0];
-            string mochiVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultMochiVAE;
-            string nodeId = null;
-            if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
-            {
-                mochiVae = vaeModel.Name;
-                nodeId = "11";
-            }
-            if (string.IsNullOrWhiteSpace(mochiVae) || mochiVae == "None")
-            {
-                mochiVae = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == "genmo-mochi-1")?.Name;
-            }
-            if (string.IsNullOrWhiteSpace(mochiVae))
-            {
-                CommonModels.Known["mochi-vae"].DownloadNow().Wait();
-                Program.RefreshAllModelSets();
-                mochiVae = CommonModels.Known["mochi-vae"].FileName;
-            }
-            LoadingVAE = CreateVAELoader(mochiVae, nodeId);
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultMochiVAE, "genmo-mochi-1", "mochi-vae");
         }
         else if (IsLTXV())
         {

@@ -32,6 +32,7 @@ public static class InstallableFeatures
         RegisterInstallableFeature(new("Segment Anything 2", "sam2", "https://github.com/kijai/ComfyUI-segment-anything-2", "kijai"));
         RegisterInstallableFeature(new("Bits-n-Bytes NF4", "bnb_nf4", "https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4", "comfyanonymous", "This will install BnB NF4 support developed by Comfy and lllyasviel (AGPL License).\nDo you wish to install?"));
         RegisterInstallableFeature(new("GGUF", "gguf", "https://github.com/city96/ComfyUI-GGUF", "city96", "This will install GGUF support developed by city96.\nDo you wish to install?"));
+        RegisterInstallableFeature(new("ExtraModels", "extramodels", "https://github.com/city96/ComfyUI_ExtraModels", "city96", "This will install ExtraModels support developed by city96.\nDo you wish to install?"));
         RegisterInstallableFeature(new("Stability API", "sai_api", "https://github.com/Stability-AI/ComfyUI-SAI_API", "Stability AI", AutoInstall: true));
     }
 }

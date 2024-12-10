@@ -1029,6 +1029,10 @@ function doModelInstallRequiredCheck() {
         $('#gguf_installer').modal('show');
         return true;
     }
+    if (curModelCompatClass == 'pixart-ms-sigma-xl-2' && !currentBackendFeatureSet.includes('extramodelspixart') && !localStorage.getItem('hide_extramodels_check')) {
+        $('#extramodels_installer').modal('show');
+        return true;
+    }
     return false;
 }
 
