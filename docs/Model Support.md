@@ -148,6 +148,25 @@ These steps are not friendly to beginners (if PixArt gains popularity, likely mo
 - Swarm will autodownload T5XXL-EncoderOnly for you on first run (same as SD3-Medium T5-Only mode)
 - You can now use the model as easily as any other model. Some feature compatibility features might arise.
 
+# NVIDIA Sana
+
+![img](/docs/images/models/sana-1600m.jpg)
+*(above image is Nvidia Sana 1600M 1024)*
+
+The [Nvidia Sana models](https://huggingface.co/Efficient-Large-Model/Sana_1600M_1024px) are supported in Swarm with a few setup steps.
+
+These steps are not friendly to beginners (if Sana gains popularity, likely more direct/automated/native support will be added), but advanced users can follow:
+
+- Recommended: use the [preconverted Sana model](https://huggingface.co/mcmonkey/sana-models/blob/main/Sana_1600M_1024px.safetensors)
+- Otherwise, if you use the original 'pth' version, after downloading the model, run Swarm's **Utilities** -> **Pickle To Safetensors** -> `Convert Models`. You need a safetensors models for Swarm to accurately identify model type.
+- The first time you run a Sana model, it will prompt you to install [Extra Models by City96](https://github.com/city96/ComfyUI_ExtraModels). You must accept this for Sana models to work.
+- You may need to manually install pip packages: `python -s -m pip install -U transformers`, possibly also `bitsandbytes`
+- Swarm will autodownload the Sana DCAE VAE for you on the first run.
+- The text encoder, Gemma 2B, will also be autodownloaded (in this case by the backing comfy nodes)
+- You can now use the model as easily as any other model. Some feature compatibility features might arise.
+- Only Sana 1600M 1024 has been validated currently
+- use a CFG around 4
+
 # AuraFlow v0.1
 
 ![img](/docs/images/models/auraflow-02.jpg)

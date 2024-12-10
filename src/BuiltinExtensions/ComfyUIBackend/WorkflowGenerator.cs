@@ -175,6 +175,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is NVIDIA Sana.</summary>
+    public bool IsSana()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "nvidia-sana-1600";
+    }
+
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
     public string GetStableDynamicID(int index, int offset)
     {
@@ -687,6 +694,23 @@ public class WorkflowGenerator
             LoadingClip = [modelNode, 1];
             LoadingVAE = [modelNode, 2];
         }
+        else if (IsSana())
+        {
+            string sanaNode = CreateNode("SanaCheckpointLoader", new JObject()
+            {
+                ["ckpt_name"] = model.ToString(ModelFolderFormat),
+                ["model"] = "SanaMS_1600M_P1_D20"
+            }, id);
+            LoadingModel = [sanaNode, 0];
+            string clipLoader = CreateNode("GemmaLoader", new JObject()
+            {
+                ["model_name"] = "unsloth/gemma-2-2b-it-bnb-4bit",
+                ["device"] = "cpu",
+                ["dtype"] = "default"
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "nvidia-sana-1600", "sana-dcae");
+        }
         else
         {
             string modelNode = CreateNode("CheckpointLoaderSimple", new JObject()
@@ -872,10 +896,23 @@ public class WorkflowGenerator
         {
             return [helper, 0];
         }
-        string vaeLoader = CreateNode("VAELoader", new JObject()
+        string vaeLoader;
+        if (IsSana())
         {
-            ["vae_name"] = vaeFixed
-        }, id);
+            vaeLoader = CreateNode("ExtraVAELoader", new JObject()
+            {
+                ["vae_name"] = vaeFixed,
+                ["vae_type"] = "dcae-f32c32-sana-1.0",
+                ["dtype"] = "FP16"
+            }, id);
+        }
+        else
+        {
+            vaeLoader = CreateNode("VAELoader", new JObject()
+            {
+                ["vae_name"] = vaeFixed
+            }, id);
+        }
         NodeHelpers[$"vaeloader-{vae}"] = vaeLoader;
         return [vaeLoader, 0];
     }
@@ -1211,6 +1248,15 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
+        else if (IsSana())
+        {
+            return CreateNode("EmptySanaLatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
         else if (IsMochi())
         {
             return CreateNode("EmptyMochiLatentVideo", new JObject()
@@ -1433,7 +1479,15 @@ public class WorkflowGenerator
         int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
         bool needsAdvancedEncode = (prompt.Contains('[') && prompt.Contains(']')) || prompt.Contains("<break>");
-        if (Features.Contains("variation_seed") && needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && IsFlux()))
+        if (IsSana())
+        {
+            node = CreateNode("SanaTextEncode", new JObject()
+            {
+                ["GEMMA"] = clip,
+                ["text"] = prompt
+            }, id);
+        }
+        else if (Features.Contains("variation_seed") && needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && IsFlux()))
         {
             node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
             {

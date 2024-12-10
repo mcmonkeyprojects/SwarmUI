@@ -30,7 +30,7 @@ class SwarmJustLoadTheModelPlease:
         return {
             "required": {
                 "model": ("MODEL",),
-                "clip": ("CLIP",),
+                "clip": ("CLIP,GEMMA",),
                 "vae": ("VAE",),
             }
         }
