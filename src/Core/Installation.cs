@@ -148,9 +148,10 @@ public class Installation
             // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
             File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
         }
+        await Output("Prepping ComfyUI's git repo...");
         string fetchResp = await Utilities.RunGitProcess($"fetch", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git fetch response: {fetchResp}");
-        string checkoutResp = await Utilities.RunGitProcess($"checkout master", $"{comfyFolderPath}/ComfyUI");
+        string checkoutResp = await Utilities.RunGitProcess($"checkout master --force", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git checkout master response: {checkoutResp}");
         string response = await Utilities.RunGitProcess($"pull", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git pull response: {response}");
