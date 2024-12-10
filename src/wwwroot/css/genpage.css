@@ -1224,18 +1224,24 @@ body {
 .lora_extractor_special .image-preview-progress-current {
     top: 3px;
 }
-.manage-users-left {
+.manage-users-left, .manage-users-right {
     display: inline-block;
-    margin-left: 0.5rem;
+    height: calc(100vh - 6rem);
     padding: 0.5rem;
-    width: 20rem;
     vertical-align: top;
+    overflow-y: auto;
+}
+.manage-users-left {
+    margin-left: 0.5rem;
+    width: 20rem;
 }
 .manage-users-right {
-    display: inline-block;
     width: calc(100vw - 22rem - 6px);
-    padding: 0.5rem;
-    vertical-align: top;
+}
+.manage_user_leftbox_content {
+    min-width: 1rem;
+    min-height: 3rem;
+    margin-bottom: 2rem;
 }
 .admin-user-manage-name {
     border-radius: 1rem;
@@ -1258,6 +1264,19 @@ body {
 .manage-users-left-title {
     font-size: 1.5rem;
     flex-grow: 1;
+}
+.admin-user-right-titlebar {
+    display: inline;
+    font-size: 1.5rem;
+    margin: 1rem;
+}
+.admin-user-right-titlebar-name {
+    border: 1px dashed var(--light-border);
+    padding-left: 0.2rem;
+    padding-right: 0.2rem;
+}
+.admin-user-manage-notice {
+    display: inline;
 }
 .welcome_message {
     margin: auto;

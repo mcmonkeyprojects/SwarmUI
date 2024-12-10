@@ -1587,11 +1587,8 @@ function pageSizer() {
     function setPageBars() {
         tweakNegativePromptBox();
         if (altRegion.style.display != 'none') {
-            let maxHeight = parseInt(getUserSetting('maxpromptlines', '10'));
-            altText.style.height = 'auto';
-            altText.style.height = `calc(min(${maxHeight}rem, ${Math.max(altText.scrollHeight, 15) + 5}px))`;
-            altNegText.style.height = 'auto';
-            altNegText.style.height = `calc(min(${maxHeight}rem, ${Math.max(altNegText.scrollHeight, 15) + 5}px))`;
+            dynamicSizeTextBox(altText);
+            dynamicSizeTextBox(altNegText);
             altRegion.style.top = `calc(-${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px - 2rem)`;
         }
         setCookie('barspot_pageBarTop', pageBarTop, 365);

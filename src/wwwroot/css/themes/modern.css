@@ -535,5 +535,4 @@
 }
 .manage-users-right, .manage-users-left {
     background: var(--background-panel);
-    min-height: calc(100vh - 8rem);
 }

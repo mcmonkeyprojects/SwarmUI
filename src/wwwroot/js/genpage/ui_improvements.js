@@ -470,13 +470,16 @@ class UIImprovementHandler {
     runLoadSpinner(div) {
         setTimeout(() => {
             let s1 = div.querySelector('.loadspin1');
+            if (!s1) {
+                return;
+            }
             let s2 = div.querySelector('.loadspin2');
             let s3 = div.querySelector('.loadspin3');
             let interval;
             let time = 0;
             let step = 0.05;
             interval = setInterval(() => {
-                if (!div.isConnected || div.style.display == 'none') {
+                if (!div.isConnected || div.style.display == 'none' || !s1) {
                     clearInterval(interval);
                     return;
                 }

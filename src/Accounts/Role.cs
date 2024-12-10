@@ -8,19 +8,19 @@ public class Role(string name)
 {
     public class RoleData : AutoConfiguration
     {
-        [ConfigComment("How many directories deep a user's custom OutPath can be.\nDefault is 5.")]
+        [ConfigComment("How many directories deep a user's custom OutPath can be.\nDefault is 5.\nThis is just a minor protection to avoid filesystem corruption. Higher values are perfectly fine in most cases.\nThe actual limit applied to a user is whatever the highest value of all their roles is.")]
         public int MaxOutPathDepth = 5;
 
-        [ConfigComment("What models are allowed, as a list of prefixes.\nFor example 'sdxl/' allows only models in the SDXL folder.\nOr, 'sdxl/,flux/' allows models in the SDXL or Flux folders.\nIf empty, no whitelist logic is applied.")]
+        [ConfigComment("What models are allowed, as a list of prefixes.\nFor example 'sdxl/' allows only models in the SDXL folder.\nOr, 'sdxl/,flux/' allows models in the SDXL or Flux folders.\nIf empty, no whitelist logic is applied.\nNote that blacklist is 'more powerful' than whitelist and overrides it.\nThis stacks between roles, roles can add whitelist entries together.")]
         public HashSet<string> ModelWhitelist = [];
 
-        [ConfigComment("What models are forbidden, as a list of prefixes.\nFor example 'sdxl/' forbids models in the SDXL folder.\nOr, 'sdxl/,flux/' forbids models in the SDXL or Flux folders.\nIf empty, no blacklist logic is applied.")]
+        [ConfigComment("What models are forbidden, as a list of prefixes.\nFor example 'sdxl/' forbids models in the SDXL folder.\nOr, 'sdxl/,flux/' forbids models in the SDXL or Flux folders.\nIf empty, no blacklist logic is applied.\nNote that blacklist is 'more powerful' than whitelist and overrides it.\nThis stacks between roles, roles can add blacklist entries together.")]
         public HashSet<string> ModelBlacklist = [];
 
         [ConfigComment("Generic permission flags. '*' means all (admin).\nDefault is all.")]
         public HashSet<string> PermissionFlags = ["*"];
 
-        [ConfigComment("How many images can try to be generating at the same time on this user.")]
+        [ConfigComment("How many images this user can have actively generating at once.\nDefault is 32.\nThis is naturally sub-limited by the number of available backends.\nThis is a protection for many-backend servers, to guarantee one user cannot steal all backends at once.\nYou can set this to a very low value if you have few backends but many users.\nSet this to a very high value if you have many backends and no concern for their distribution.\nThe actual limit applied to a user is whatever the highest value of all their roles is.")]
         public int MaxT2ISimultaneous = 32;
 
         [ConfigComment("Whether the '.' symbol can be used in OutPath - if enabled, users may cause file system issues or perform folder escapes.")]
@@ -29,7 +29,7 @@ public class Role(string name)
         [ConfigComment("Human readable display name for this role.")]
         public string Name = "";
 
-        [ConfigComment("Human readable description text about this role.")]
+        [ConfigComment("Human-readable description text about this role.\nThis is for admin reference when picking roles.\nProbably describe here when/why a user should receive this role, and a short bit about what it unlocks.")]
         public string Description = "";
     }
 

@@ -1114,12 +1114,30 @@
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#server_add_user_menu').modal('hide')">Cancel</button>
                     </div>
                 @WebUtil.ModalFooter()
+                @WebUtil.ModalHeader("server_add_role_menu", "Add New User Permission Role")
+                    <div class="modal-body">
+                        <p class="translate">This will add a new user permission role to your SwarmUI server.</p>
+                        <p class="translate">This should be used when you need to define unique contexts in which certain users get a certain subset of permissions.</p>
+                        <p class="translate">For the most part, you should just configure the base set of roles rather than adding new ones..</p>
+                        <p class="translate">Click 'Cancel' if you're not ready to add a user.</p>
+                        <div id="add_role_menu_inputs"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.addRoleMenuSubmit()">Add</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#server_add_role_menu').modal('hide')">Cancel</button>
+                    </div>
+                @WebUtil.ModalFooter()
                 <div class="manage-users-left" id="manage_users_leftbox">
+                    <div class="manage-users-left-header">
+                        <span class="manage-users-left-title translate">Roles</span>
+                        <button class="basic-button translate" onclick="userAdminManager.showAddRoleMenu()" title="Add a new role...">Add Role</button>
+                    </div>
+                    <div class="manage_user_leftbox_content" id="manage_users_leftbox_content_rolelist"></div>
                     <div class="manage-users-left-header">
                         <span class="manage-users-left-title translate">Users</span>
                         <button class="basic-button translate" onclick="userAdminManager.showAddUserMenu()" title="Add a new user...">Add User</button>
                     </div>
-                    <div id="manage_users_leftbox_content"></div>
+                    <div class="manage_user_leftbox_content" id="manage_users_leftbox_content_userlist"></div>
                 </div>
                 <div class="splitter-bar" id="manage_users_splitbar"></div>
                 <div class="manage-users-right" id="manage_users_rightbox">
