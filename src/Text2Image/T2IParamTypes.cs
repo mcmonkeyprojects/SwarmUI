@@ -526,7 +526,7 @@ public class T2IParamTypes
             "127", Min: 1, Max: 1023, OrderPriority: 10, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true
             ));
         VideoAugmentationLevel = Register<double>(new("Video Augmentation Level", "How much noise to add to the init image.\nHigher values yield more motion.\nFor SVD, default is 0.\nFor LTX, default is 0.15.",
-            "0.0", Min: 0, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Toggleable: true, IsAdvanced: true, DoNotPreview: true
+            "0.0", Min: 0, ViewMax: 1, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Toggleable: true, IsAdvanced: true, DoNotPreview: true
             ));
         VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
             "false", IgnoreIf: "false", OrderPriority: 18, Group: GroupVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true
