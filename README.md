@@ -82,6 +82,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 - Install `git`, `python3` via your OS package manager if they are not already installed (make sure to include `pip` and `venv` on distros that do not include them in python directly)
     - For example, on recent Ubuntu versions, `sudo apt install git python3-pip python3-venv`
+    - You'll want Python 3.11. Things should also work fine with 3.10 or 3.12. Do not use 3.13.
 - Install DotNET 8 using the instructions at https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (you need `dotnet-sdk-8.0`, as that includes all relevant sub-packages)
     - Some users [have said](https://github.com/Stability-AI/StableSwarmUI/pull/6) that certain Linux distros expect `aspnet-runtime` to be installed separately
 - Open a shell terminal and `cd` to a directory you want to install into

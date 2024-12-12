@@ -22,14 +22,22 @@ git clone https://github.com/comfyanonymous/ComfyUI
 
 cd ComfyUI
 
-python=`which python3`
+# Try to find a good python executable, and dodge unsupported python versions
+for pyvers in python3.11 python3.10 python3.12 python3 python
+do
+    python=`which $pyvers`
+    if [ "$python" != "" ]; then
+        break
+    fi
+done
 if [ "$python" == "" ]; then
     >&2 echo ERROR: cannot find python3
     >&2 echo Please follow the install instructions in the readme!
     exit 1
 fi
 
-venv=`python3 -m venv 2>&1`
+# Validate venv
+venv=`$python -m venv 2>&1`
 case $venv in
     *usage*)
         :
@@ -42,18 +50,20 @@ case $venv in
     ;;
 esac
 
+# Make and activate the venv. "python3" in the venv is now the python executable.
 if [ -z "${SWARM_NO_VENV}" ]; then
-    python3 -s -m venv venv
-    . venv/bin/activate
+    $python -s -m venv venv
+    source venv/bin/activate
+    python=python3
 fi
 
 # Install PyTorch based on GPU type
 if [ "$GPU_TYPE" == "nv" ]; then
-    python3 -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
+    $python -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu124
 elif [ "$GPU_TYPE" == "amd" ]; then
-    python3 -s -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
+    $python -s -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
 fi
 
-python3 -s -m pip install -r requirements.txt
+$python -s -m pip install -r requirements.txt
 
 echo "Installation completed for $GPU_TYPE GPU."
