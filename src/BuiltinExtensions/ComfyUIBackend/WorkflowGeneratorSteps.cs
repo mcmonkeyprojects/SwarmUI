@@ -1333,7 +1333,7 @@ public class WorkflowGeneratorSteps
                         ["height"] = height,
                         ["length"] = frames ?? 97,
                         ["batch_size"] = 1,
-                        ["image_noise_scale"] = 0.15
+                        ["image_noise_scale"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
                     });
                     posCond = [condNode, 0];
                     negCond = [condNode, 1];
