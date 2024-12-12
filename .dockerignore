@@ -12,10 +12,10 @@ Output/
 Data/
 Models/
 tmp/
-Extensions/
 dlbackend/
 
 # Python
 __pycache__/
 venv/
 *.pth
+*.safetensors

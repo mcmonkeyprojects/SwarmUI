@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check if GPU type is provided
 if [ $# -eq 0 ]; then
