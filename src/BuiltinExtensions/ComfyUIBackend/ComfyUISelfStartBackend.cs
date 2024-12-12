@@ -322,6 +322,14 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         // Backup because multiple users have wound up off master branch sometimes, aggressive should push back to master so it's repaired by next startup
                         string checkoutResponse = await Utilities.RunGitProcess("checkout master --force", path);
                         AddLoadStatus($"Comfy git checkout master response: {checkoutResponse.Trim()}");
+                        // Overly specific check, no idea how this happens
+                        if (response.Contains("There is no tracking information for the current branch") && checkoutResponse.Contains("Already on 'master'"))
+                        {
+                            string fixStatus = await Utilities.RunGitProcess("branch --set-upstream-to=origin/master master", path);
+                            AddLoadStatus($"Comfy git fix response: {fixStatus.Trim()}");
+                            string repullResponse = await Utilities.RunGitProcess("pull --autostash", path);
+                            AddLoadStatus($"Comfy git re-pull response: {repullResponse.Trim()}");
+                        }
                     }
                     if (response.Contains("error: Your local changes to the following files"))
                     {
