@@ -99,7 +99,7 @@ public partial class CliplikeTokenizer
         if (best is null)
         {
             Logs.Debug($"[CliplikeTokenizer] Error: Cannot encode word '{word}', will emit empty");
-            return [];
+            best = [];
         }
         if (Cache is not null)
         {
