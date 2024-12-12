@@ -10,6 +10,9 @@ RUN apt install -y libglib2.0-0 libgl1
 # Copy swarm's files into the docker container
 COPY . .
 
+# Stupidproofing on git calls from inside docker
+RUN git config --global --add safe.directory '*'
+
 # Send the port forward
 EXPOSE 7801
 
