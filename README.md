@@ -98,7 +98,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 # Installing on Mac
 
-> **Note**: You can only run SwarmUI on Mac computers with M1 or M2 (Mx) Apple silicon processors.
+> **Note**: You can only run SwarmUI on Mac computers with M-Series Apple silicon processors (eg M1, M2, ...).
 
 - Open Terminal.
 - Ensure your `brew` packages are updated with `brew update`.
@@ -114,17 +114,9 @@ The installation starts now and downloads the Stable Diffusion models from the i
 
 > During the SwarmUI installation, you are prompted for the type of backend you want to use. For Mac computers with M1 or M2, you can safely choose the ComfyUI backend and choose the Stable Diffusion XL Base and Refiner models in the Download Models screen.
 
-# Running with Docker
+# Installing With Docker
 
-- To forward an Nvidia GPU, you must have the Nvidia Container Toolkit installed: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-- Open a shell terminal and `cd` to a directory you want to install into
-- Run shell commands:
-    - `git clone https://github.com/mcmonkeyprojects/SwarmUI`
-    - cd `SwarmUI`
-    - `./launch-docker.sh`
-    - Open your browser to `localhost:7801`
-    - Note: the docker script is an example. You may wish to modify it and make your own copy. Do not edit `launch-docker.sh`, instead, duplicate the file and edit that copy.
-- Note that it will forward the `Models` and `Output` directory, and will mount `Data` and `dlbackend` as independent persistent volumes.
+See [Docs/Docker.md](/docs/Docker.md) for detailed instructions on using SwarmUI in Docker.
 
 # Documentation
 
