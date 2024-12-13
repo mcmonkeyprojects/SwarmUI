@@ -276,7 +276,7 @@ function edit_model_load_civitai() {
             enableImage.disabled = false;
         }
         info.innerText = 'Loaded.';
-    });
+    }, curModelMenuModel.name, false);
 }
 
 function save_edit_model() {

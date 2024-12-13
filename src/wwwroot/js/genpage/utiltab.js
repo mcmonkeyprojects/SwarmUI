@@ -239,7 +239,7 @@ class ModelDownloaderUtil {
         });
     }
 
-    getCivitaiMetadata(id, versId, callback, identifier = '') {
+    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true) {
         let doError = (msg = null) => {
             callback(null, null, null, null, null, null, null, msg);
         }
@@ -265,7 +265,7 @@ class ModelDownloaderUtil {
                     }
                 }
             }
-            if (!file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
+            if (validateSafe && !file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
                 console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${file.name} / ${identifier}`);
                 doError(`Cannot download model from that URL because it is not a safetensors file. Filename is '${file.name}'`);
                 return;
@@ -789,7 +789,7 @@ class ModelMetadataScanner {
                             failed++;
                             removeOne();
                         });
-                    }, model.name);
+                    }, model.name, false);
                 };
                 if (civitUrl) {
                     doApply();
