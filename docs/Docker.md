@@ -108,7 +108,7 @@ Mac information is currently untested, but presumed to work fairly similar to Li
 
 If you're a "docker compose" fan, there is an included docker compose file you can use as usual, which is equivalent to the "standard" option above.
 
-If you're an active "docker compose" fan that needs it for some reason, I do not recommend it.
+If you're not an active "docker compose" fan that needs it for some reason, I do not recommend it.
 
 # Advanced Usage, Notes, Troubleshooting
 
