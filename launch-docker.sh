@@ -3,7 +3,7 @@
 # Note: This is an example file, do not edit `launch-docker.sh`. Instead, duplicate the file and edit your duplicate.
 # `custom-launch-docker.sh` is reserved in gitignore for if you want to use that.
 
-docker build -t swarmui .
+docker build -f launchtools/StandardDockerfile.docker -t swarmui .
 
 # add "--network=host" if you want to access other services on the host network (eg a separated comfy instance)
 docker run -it \

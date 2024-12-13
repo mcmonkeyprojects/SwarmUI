@@ -13,6 +13,7 @@ Data/
 Models/
 tmp/
 dlbackend/
+*.docker
 
 # Python
 __pycache__/
