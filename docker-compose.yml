@@ -1,7 +1,9 @@
 services:
   swarmui:
     image: swarmui
-    build: .
+    build:
+      context: .
+      dockerfile: launchtools/StandardDockerfile.docker
     container_name: swarmui
     # uncomment `network_mode: host` if you want to access other services on the host network (eg a separated comfy instance)
     # network_mode: host

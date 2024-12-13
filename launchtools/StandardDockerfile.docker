@@ -17,4 +17,4 @@ RUN git config --global --add safe.directory '*'
 EXPOSE 7801
 
 # Set the run file to the launch script
-ENTRYPOINT ["bash", "launchtools/docker-standard-inner.sh"]
+ENTRYPOINT ["bash", "/launchtools/docker-standard-inner.sh"]
