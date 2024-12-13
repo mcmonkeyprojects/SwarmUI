@@ -240,8 +240,8 @@ class ModelDownloaderUtil {
     }
 
     getCivitaiMetadata(id, versId, callback, identifier = '') {
-        let doError = () => {
-            callback(null, null, null, null, null, null, null);
+        let doError = (msg = null) => {
+            callback(null, null, null, null, null, null, null, msg);
         }
         genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
             rawData = rawData.response;
@@ -266,8 +266,8 @@ class ModelDownloaderUtil {
                 }
             }
             if (!file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
-                console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${identifier}`);
-                doError();
+                console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${file.name} / ${identifier}`);
+                doError(`Cannot download model from that URL because it is not a safetensors file. Filename is '${file.name}'`);
                 return;
             }
             if (rawData.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
@@ -295,7 +295,7 @@ class ModelDownloaderUtil {
                 if (img) {
                     metadata['modelspec.thumbnail'] = img;
                 }
-                callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url));
+                callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url), null);
             }
             if (imgs.length > 0) {
                 imageToData(imgs[0].url, img => applyMetadata(img));
@@ -391,9 +391,9 @@ class ModelDownloaderUtil {
                 parts = ['models', parts[1], ''];
             }
             let loadMetadata = (id, versId) => {
-                this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs) => {
+                this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs, errMsg) => {
                     if (!rawData) {
-                        this.urlStatusArea.innerText = "URL appears to be a CivitAI link, but seems to not be valid. Please double-check the link.";
+                        this.urlStatusArea.innerText = `URL appears to be a CivitAI link, but seems to not be valid. Please double-check the link. ${(errMsg ?? '')}`;
                         this.nameInput();
                         return;
                     }
@@ -710,7 +710,7 @@ class ModelMetadataScanner {
                 }
                 let doApply = () => {
                     let [id, versId] = modelDownloader.parseCivitaiUrl(civitUrl);
-                    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs) => {
+                    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs, errMsg) => {
                         if (!rawData) {
                             failed++;
                             removeOne();

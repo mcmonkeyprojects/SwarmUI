@@ -247,9 +247,9 @@ function edit_model_load_civitai() {
         return;
     }
     info.innerText = 'Loading...';
-    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img) => {
+    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, errMsg) => {
         if (!rawData) {
-            info.innerText = 'Failed to load metadata.';
+            info.innerText = `Failed to load metadata. ${(errMsg ?? '')}`;
             return;
         }
         getRequiredElementById('edit_model_name').value = metadata['modelspec.title'];
