@@ -7,9 +7,6 @@ RUN apt install -y git wget build-essential python3.11 python3.11-venv python3.1
 # Install dependencies for controlnet preprocessors
 RUN apt install -y libglib2.0-0 libgl1
 
-# Copy swarm's files into the docker container
-COPY . .
-
 # Stupidproofing on git calls from inside docker
 RUN git config --global --add safe.directory '*'
 
@@ -17,4 +14,4 @@ RUN git config --global --add safe.directory '*'
 EXPOSE 7801
 
 # Set the run file to the launch script
-ENTRYPOINT ["bash", "launchtools/docker-standard-inner.sh"]
+ENTRYPOINT ["bash", "launchtools/docker-open-inner.sh"]
