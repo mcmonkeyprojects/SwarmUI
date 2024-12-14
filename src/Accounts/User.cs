@@ -238,7 +238,7 @@ public class User
     public string OutputDirectory => Program.ServerSettings.Paths.AppendUserNameToOutputPath ? $"{Program.ServerSettings.Paths.OutputPath}/{UserID}" : Program.ServerSettings.Paths.OutputPath;
 
     /// <summary>Returns the maximum simultaneous text-2-image requests appropriate to this user's restrictions and the available backends.</summary>
-    public int CalcMaxT2ISimultaneous => Math.Max(1, Math.Min(CalculatedRole.Data.MaxT2ISimultaneous, Program.Backends.RunningBackendsOfType<AbstractT2IBackend>().Sum(b => b.MaxUsages) * 2));
+    public int CalcMaxT2ISimultaneous => Math.Max(1, Math.Min(CalculatedRole.Data.MaxT2ISimultaneous, Program.ServerSettings.Backends.UnrestrictedMaxT2iSimultaneous ? int.MaxValue : Program.Backends.RunningBackendsOfType<AbstractT2IBackend>().Sum(b => b.MaxUsages) * 2));
 
     /// <summary>Lock object for this user's data.</summary>
     public LockObject UserLock = new();

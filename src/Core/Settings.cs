@@ -117,6 +117,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("The maximum number of pending requests to continue forcing orderly processing of.\nOver this limit, requests may start going out of order.")]
         public int MaxRequestsForcedOrder = 20;
 
+        [ConfigComment("If true, max t2i simultaneous value is not limited by backend count.\nIe, users may queue as many gens as they want directly to backends, with no overload prevention.\nThis may be preferable on personal instances of Swarm to enforce stricter queue ordering.\nUser role max t2i simultaneous value is still applied.")]
+        public bool UnrestrictedMaxT2iSimultaneous = false;
+
         [ConfigComment("How many minutes to wait after the last generation before automatically freeing up VRAM (to prevent issues with other programs).\nThis has the downside of a small added bit of time to load back onto VRAM at next usage.\nUse a decimal number to free after seconds.\nDefaults to 10 minutes.")]
         public double ClearVRAMAfterMinutes = 10;
 

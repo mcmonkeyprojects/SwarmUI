@@ -76,6 +76,7 @@ In all cases you don't need to be an expert, but will need a bit of familiarity 
 - Install Docker Engine for Linux: https://docs.docker.com/engine/install/
     - You don't need Docker Desktop, just the Engine
 - Follow the Docker Linux post-install steps to ensure you can operate Docker from a user account instead of root: https://docs.docker.com/engine/install/linux-postinstall/
+    - (Optional) if you want to further refine your security, you can also enable Docker rootless mode: https://docs.docker.com/engine/security/rootless/
 - I think you also need NVIDIA Container toolkit installed: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
 - Install `git`
 - Download Swarm via git: `git clone https://github.com/mcmonkeyprojects/SwarmUI`
