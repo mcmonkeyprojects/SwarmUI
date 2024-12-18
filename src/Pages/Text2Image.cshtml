@@ -1102,8 +1102,8 @@
                                 <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
                                 <td>@ext.Author</td>
                                 <td>@ext.Description</td>
-                                <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                                 <td><a href="@ext.URL">Here</a></td>
+                                <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                                 <td>
                                     <button class="basic-button" onclick="extensionsManager.installExtension('@ext.Name', this)">Install</button>
                                 </td>
