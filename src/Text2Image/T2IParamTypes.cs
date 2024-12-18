@@ -353,14 +353,14 @@ public class T2IParamTypes
             "20", Min: 0, Max: 500, ViewMax: 100, Step: 1, Examples: ["10", "15", "20", "30", "40"], OrderPriority: -20, Group: GroupCore, ViewType: ParamViewType.SLIDER
             ));
         CFGScale = Register<double>(new("CFG Scale", "How strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
-            + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Flux or any Turbo model, expect CFG around 1.",
+            + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Flux, Hunyuan Video, or any Turbo model, expect CFG to be set to 1.",
             "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: -18, ViewType: ParamViewType.SLIDER, Group: GroupCore, ChangeWeight: -3
             ));
         GroupText2Video = new("Text To Video", Open: false, OrderPriority: -30, Toggles: true, Description: $"Support for Text2Video models.");
-        Text2VideoFrames = Register<int>(new("Text2Video Frames", "How many frames to generate within the video.\nGenmo Mochi 1 can support any frame count up to 200, multiples of 6 plus 1 (7, 13, 19, 25, ...) are required and will automatically round if you enter an invalid value. Defaults to 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.",
+        Text2VideoFrames = Register<int>(new("Text2Video Frames", "How many frames to generate within the video.\nGenmo Mochi 1 can support any frame count up to 200, multiples of 6 plus 1 (7, 13, 19, 25, ...) are required and will automatically round if you enter an invalid value. Defaults to 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.\nHunyuan Video supports dynamic frame counts. Multiples of 4 plus 1 (5, 9, 13, 17, ...) are required and will automatically round if you enter an invalid value. Defaults to 73.",
             "25", Min: 1, Max: 1000, OrderPriority: 1, Group: GroupText2Video, FeatureFlag: "text2video"
             ));
-        Text2VideoFPS = Register<int>(new("Text2Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video is expecting to work at.\nFor Mochi, this is 24.\nFor LTXV, 24 fps is native, but other values may work.",
+        Text2VideoFPS = Register<int>(new("Text2Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video is expecting to work at.\nFor Mochi or Hunyuan Video, this is 24.\nFor LTXV, 24 fps is native, but other values may work.",
             "24", Min: 1, Max: 1024, ViewType: ParamViewType.BIG, OrderPriority: 2, Group: GroupText2Video, FeatureFlag: "text2video", IsAdvanced: true
             ));
         Text2VideoBoomerang = Register<bool>(new("Text2Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
@@ -393,7 +393,7 @@ public class T2IParamTypes
         SD3TextEncs = Register<string>(new("SD3 TextEncs", "Which text encoders to use for Stable Diffusion 3 (SD3) models.\nCan use CLIP pairs, or T5, or both.\nBoth is the standard way to run SD3, but CLIP only uses fewer system resources.",
             "CLIP + T5", GetValues: _ => ["CLIP Only", "T5 Only", "CLIP + T5"], Toggleable: true, Group: GroupSampling, FeatureFlag: "sd3", OrderPriority: 5, ChangeWeight: 9
             ));
-        FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux-Dev models.\nDoes not apply to Flux-Schnell.\nThis is a distilled embedded value the model was trained on, this is based on an alternative guidance methodology, and is not CFG.\n3.5 is default, but closer to 2.0 may allow for more stylistic flexibility.",
+        FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux-Dev or related models.\nDoes not apply to Flux-Schnell.\nFor Flux-Dev, this is a distilled embedded value the model was trained on, this is based on an alternative guidance methodology, and is not CFG.\n3.5 is default, but closer to 2.0 may allow for more stylistic flexibility.\nFor Hunyuan Video, this is distilled from CFG Scale, and prefers values closer to 6.",
             "3.5", Min: 0, Max: 100, ViewMax: 10, Step: 0.1, Toggleable: true, Group: GroupSampling, ViewType: ParamViewType.SLIDER, FeatureFlag: "flux-dev"
             ));
         ZeroNegative = Register<bool>(new("Zero Negative", "Zeroes the negative prompt if it's empty.\nDoes nothing if the negative prompt is not empty.\nThis may yield better quality on SD3.",

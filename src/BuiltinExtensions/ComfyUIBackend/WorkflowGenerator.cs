@@ -175,11 +175,24 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model supports Flux Guidance.</summary>
+    public bool HasFluxGuidance()
+    {
+        return IsFlux() || IsHunyuanVideo();
+    }
+
     /// <summary>Returns true if the current model is NVIDIA Sana.</summary>
     public bool IsSana()
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz == "nvidia-sana-1600";
+    }
+
+    /// <summary>Returns true if the current model is Hunyuan Video.</summary>
+    public bool IsHunyuanVideo()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "hunyuan-video";
     }
 
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
@@ -467,7 +480,7 @@ public class WorkflowGenerator
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
-        if (IsMochi() || IsLTXV())
+        if (IsMochi() || IsLTXV() || IsHunyuanVideo())
         {
             if (UserInput.Get(T2IParamTypes.Text2VideoBoomerang, false))
             {
@@ -561,6 +574,12 @@ public class WorkflowGenerator
             }
             requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors", "ec310df2af79c318e24d20511b601a591ca8cd4f1fce1d8dff822a356bcdb1f4");
             return "clip_g.safetensors";
+        }
+        string getLlava3Model()
+        {
+            // TODO: is a selector param needed?
+            requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250");
+            return "llava_llama3_fp8_scaled.safetensors";
         }
         IsDifferentialDiffusion = false;
         LoadingModelType = type;
@@ -841,6 +860,17 @@ public class WorkflowGenerator
             });
             LoadingClip = [clipLoader, 0];
         }
+        else if (IsHunyuanVideo())
+        {
+            string dualClipLoader = CreateNode("DualCLIPLoader", new JObject()
+            {
+                ["clip_name1"] = getClipLModel(),
+                ["clip_name2"] = getLlava3Model(),
+                ["type"] = "hunyuan_video"
+            });
+            LoadingClip = [dualClipLoader, 0];
+            doVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
+        }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
             string auraNode = CreateNode("ModelSamplingAuraFlow", new JObject()
@@ -928,6 +958,16 @@ public class WorkflowGenerator
                 ["samples"] = latent,
                 ["tile_size"] = tileSize,
                 ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64)
+            }, id);
+        }
+        else if (IsHunyuanVideo()) // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
+        {
+            return CreateNode("VAEDecodeTiled", new JObject()
+            {
+                ["vae"] = vae,
+                ["samples"] = latent,
+                ["tile_size"] = 256,
+                ["overlap"] = 64
             }, id);
         }
         return CreateNode("VAEDecode", new JObject()
@@ -1277,6 +1317,17 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
+        else if (IsHunyuanVideo())
+        {
+
+            return CreateNode("EmptyHunyuanLatentVideo", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 73),
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
         else if (UserInput.Get(ComfyUIBackendExtension.ShiftedLatentAverageInit, false))
         {
             double offA = 0, offB = 0, offC = 0, offD = 0;
@@ -1487,7 +1538,7 @@ public class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (Features.Contains("variation_seed") && needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && IsFlux()))
+        else if (Features.Contains("variation_seed") && needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()))
         {
             node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
             {

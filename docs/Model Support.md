@@ -21,8 +21,10 @@
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
 
 - [Video Models](#video-models)
+    - [Hunyuan Video](#hunyuan-video)
     - [Genmo Mochi 1](#genmo-mochi-1-text2video)
     - [Stable Video Diffusion](#stable-video-diffusion)
+    - [Lightricks LTX Videoo](#lightricks-ltx-video)
 - [Alternative Model Formats](#alternative-model-formats)
     - [BnB NF4](#bits-and-bytes-nf4-format-models)
     - [GGUF](#gguf-quantized-models)
@@ -248,6 +250,24 @@ SVD models are supported via the `Image To Video` parameter group. Like XL, vide
 
 You can do text2video by just checking Video as normal, or image2video by using an Init Image and setting Creativity to 0.
 
+## Hunyuan Video
+
+- Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model.
+- Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
+    - Save to the `diffusion_models` folder
+- The text encoders (T5-XXL, and LLaVA-LLaMA3) and VAE will be automatically downloaded.
+- When selected, the `Text To Video` parameter group will become visible
+- The model is trained for 1280x720 or 960x544 resolutions or other aspect ratios of the same total pixel count, but can work at other scales (with some quality loss). Swarm will default to a scale of 848x480, which is stable and reduces VRAM impact for normal home GPUs.
+- The model is trained for 24 fps, and dynamic frame counts (eg 73 or 129 is solid). Multiples of 4 plus 1 (4, 9, 13, 17, ...) are required due to the 4x temporal compression in the Hunyuan VAE. The input parameter will automatically round if you enter an invalid value.
+- Hunyuan Video is very GPU and memory intensive, especially the VAE
+    - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (GGUF model coming soon may help?)
+- The VAE has a harsh memory requirement that may limit you from high duration videos.
+    - To reduce VRAM impact and fit on most normal GPUs, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. The tiling pattern is not particularly noticeable.
+    - If you do not manually enable VAE Tiling, Swarm will automatically enable it at 256 with 64 overlap. (Because the memory requirements without tiling are basically impossible. You can set the tiling values very very high if you want to make the tile artifacts invisible and have enough memory to handle it).
+- Hunyuan Video is based on the Flux Dev architecture, and has similar requirements.
+    - Set CFG Scale to 1.
+    - You can use Flux Guidance parameter on this model (for Hunyuan Video, unlike Flux Dev, this value is embedded from CFG scale, and so prefers values around 6).
+
 ## Genmo Mochi 1 (Text2Video)
 
 - Genmo Mochi 1 is supported natively in SwarmUI as a Text-To-Video model.
@@ -317,12 +337,8 @@ You can do text2video by just checking Video as normal, or image2video by using 
 
 ## TensorRT
 
-TensorRT support (`.engine`) is available for SDv1, SDv2-768-v, SDXL Base, SDXL Refiner, SVD, SD3-Medium
-
-TensorRT is an nvidia-specific accelerator library that provides faster SD image generation at the cost of reduced flexibility. Generally this is best for heavy usages, especially for API/Bots/etc. and less useful for regular individual usage.
-
-You can generate TensorRT engines from the model menu. This includes a button on-page to autoinstall TRT support your first time using it, and configuration of graph size limits and optimal scales. (TensorRT works fastest when you generate at the selected optimal resolution, and slightly less fast at any dynamic resolution outside the optimal setting.)
-
-Note that TensorRT is not compatible with LoRAs, ControlNets, etc.
-
-Note that you need to make a fresh TRT engine for any different model you want to use.
+- TensorRT support (`.engine`) is available for SDv1, SDv2-768-v, SDXL Base, SDXL Refiner, SVD, SD3-Medium
+- TensorRT is an nvidia-specific accelerator library that provides faster SD image generation at the cost of reduced flexibility. Generally this is best for heavy usages, especially for API/Bots/etc. and less useful for regular individual usage.
+- You can generate TensorRT engines from the model menu. This includes a button on-page to autoinstall TRT support your first time using it, and configuration of graph size limits and optimal scales. (TensorRT works fastest when you generate at the selected optimal resolution, and slightly less fast at any dynamic resolution outside the optimal setting.)
+- Note that TensorRT is not compatible with LoRAs, ControlNets, etc.
+- Note that you need to make a fresh TRT engine for any different model you want to use.

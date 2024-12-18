@@ -1385,8 +1385,8 @@ function reviseBackendFeatureSet() {
             removeMe.push(featureFlag);
         }
     }
-    function doArchFeature(compatClass, featureFlag) {
-        if (curModelArch && curModelArch.startsWith(compatClass)) {
+    function doArchFeature(archId, featureFlag) {
+        if (curModelArch && curModelArch.startsWith(archId)) {
             addMe.push(featureFlag);
         }
         else {
@@ -1402,11 +1402,20 @@ function reviseBackendFeatureSet() {
         }
         removeMe.push(featureFlag);
     }
+    function doAnyArchFeature(archIds, featureFlag) {
+        for (let archId of archIds) {
+            if (curModelCompatClass && curModelCompatClass.startsWith(archId)) {
+                addMe.push(featureFlag);
+                return;
+            }
+        }
+        removeMe.push(featureFlag);
+    }
     doCompatFeature('stable-diffusion-v3', 'sd3');
     doCompatFeature('stable-cascade-v1', 'cascade');
-    doArchFeature('Flux.1-dev', 'flux-dev');
+    doAnyArchFeature(['Flux.1-dev', 'hunyuan-video'], 'flux-dev');
     doCompatFeature('stable-diffusion-xl-v1', 'sdxl');
-    doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video'], 'text2video');
+    doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video', 'hunyuan-video'], 'text2video');
     let anyChanged = false;
     for (let add of addMe) {
         if (!currentBackendFeatureSet.includes(add)) {

@@ -80,5 +80,6 @@ public static class CommonModels
         Register(new("flux-ae", "Flux.1-AE", "The AE for Flux.1", "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors", "afc8e28272cd15db3919bacdb6918ce9c1ed22e96cb12c4d5ed0fba823529e38", "VAE", "Flux/ae.safetensors"));
         Register(new("mochi-vae", "Genmo Mochi 1 VAE", "The VAE for Genmo Mochi 1", "https://huggingface.co/Comfy-Org/mochi_preview_repackaged/resolve/main/split_files/vae/mochi_vae.safetensors", "1be451cec94b911980406169286babc5269e7cf6a94bbbbdf45e8d3f2c961083", "VAE", "Mochi/mochi_vae.safetensors"));
         Register(new("sana-dcae", "NVIDIA Sana DC-AE", "The DC-AE VAE for NVIDIA Sana", "https://huggingface.co/Efficient-Large-Model/Sana_1600M_1024px_diffusers/resolve/main/vae/diffusion_pytorch_model.safetensors", "25a1d9ac3b3422160ce8a4b5454ed917f103bb18e30fc1b307dec66375167bb8", "VAE", "Sana/sana_dcae_vae.safetensors"));
+        Register(new("hunyuan-video-vae", "Hunyuan Video VAE", "The VAE for Hunyuan Video", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors", "e8f8553275406d84ccf22e7a47601650d8f98bdb8aa9ccfdd6506b57a9701aed", "VAE", "HunyuanVideo/hunyuan_video_vae_bf16.safetensors"));
     }
 }
