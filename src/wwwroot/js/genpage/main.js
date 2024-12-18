@@ -1385,14 +1385,6 @@ function reviseBackendFeatureSet() {
             removeMe.push(featureFlag);
         }
     }
-    function doArchFeature(archId, featureFlag) {
-        if (curModelArch && curModelArch.startsWith(archId)) {
-            addMe.push(featureFlag);
-        }
-        else {
-            removeMe.push(featureFlag);
-        }
-    }
     function doAnyCompatFeature(compatClasses, featureFlag) {
         for (let compatClass of compatClasses) {
             if (curModelCompatClass && curModelCompatClass.startsWith(compatClass)) {
@@ -1404,7 +1396,7 @@ function reviseBackendFeatureSet() {
     }
     function doAnyArchFeature(archIds, featureFlag) {
         for (let archId of archIds) {
-            if (curModelCompatClass && curModelCompatClass.startsWith(archId)) {
+            if (curModelArch && curModelArch.startsWith(archId)) {
                 addMe.push(featureFlag);
                 return;
             }
