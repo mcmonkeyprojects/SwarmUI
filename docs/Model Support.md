@@ -253,8 +253,11 @@ You can do text2video by just checking Video as normal, or image2video by using 
 ## Hunyuan Video
 
 - Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model.
-- Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
+- Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors> or the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
     - Save to the `diffusion_models` folder
+    - For FastVideo, you can use step counts as low as 6. Use the `Sigma Shift` param at a high value around 17, and the Flux Guidance at a higher than normal value as well
+- Or use the gguf models from city96 <https://huggingface.co/city96/HunyuanVideo-gguf/tree/main>
+    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video`
 - The text encoders (T5-XXL, and LLaVA-LLaMA3) and VAE will be automatically downloaded.
 - When selected, the `Text To Video` parameter group will become visible
 - The model is trained for 1280x720 or 960x544 resolutions or other aspect ratios of the same total pixel count, but can work at other scales (with some quality loss). Swarm will default to a scale of 848x480, which is stable and reduces VRAM impact for normal home GPUs.
