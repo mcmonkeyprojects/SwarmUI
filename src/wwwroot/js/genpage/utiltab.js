@@ -277,7 +277,7 @@ class ModelDownloaderUtil {
             if (rawData.type == 'VAE') { modelType = 'VAE'; }
             let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
             let applyMetadata = (img) => {
-                let url = `${this.civitPrefix}models/${id}?modelVersionId=${versId}`;
+                let url = versId ? `${this.civitPrefix}models/${id}?modelVersionId=${versId}` : `${this.civitPrefix}models/${id}`;
                 metadata = {
                     'modelspec.title': `${rawData.name} - ${rawVersion.name}`,
                     'modelspec.description': `From <a href="${url}">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
