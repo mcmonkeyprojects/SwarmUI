@@ -156,7 +156,7 @@ function getCivitUrlGuessFor(model) {
         let end = model.description.indexOf('"', civitUrlStartIndex + '<a href="'.length);
         if (end != -1) {
             civitUrl = model.description.substring(civitUrlStartIndex + '<a href="'.length, end);
-            if (!civitUrl.includes("?modelVersionId=") || civitUrl.length > 200) {
+            if (!civitUrl.includes("?modelVersionId=") || civitUrl.length > 200 || civitUrl.includes("?modelVersionId=null")) {
                 console.log(`Invalid CivitAI URL (failed sanity check): ${civitUrl}`);
                 civitUrl = '';
             }
