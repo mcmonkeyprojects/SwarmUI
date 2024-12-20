@@ -143,6 +143,7 @@ This project:
 - can automatically install [insightface](https://github.com/deepinsight/insightface) (MIT) for `IP Adapter - Face` support
 - uses [JSON.NET](https://github.com/JamesNK/Newtonsoft.Json) (MIT), [FreneticUtilities](https://github.com/FreneticLLC/FreneticUtilities) (MIT), [LiteDB](https://github.com/mbdavid/LiteDB) (MIT), [ImageSharp](https://github.com/SixLabors/ImageSharp/) (Apache2 under open-source Split License)
 - embeds copies of web assets from [BootStrap](https://getbootstrap.com/) (MIT), [Select2](https://select2.org/) (MIT), [JQuery](https://jquery.com/) (MIT), [exifr](https://github.com/MikeKovarik/exifr) (MIT).
+- contains some icons from [Cristian Munoz](https://www.figma.com/community/file/1311159026125960259/7000-free-ui-icons) (CC-BY-4.0), the font [inter by rsms](https://github.com/rsms/inter) (OFL), [Unifont by GNU](https://unifoundry.com/unifont/) (OFL), [Material Symbols Outlined by Google](https://fonts.google.com/icons) (Apache2).
 - can be used to install some custom node packs, which have individual license notices for any non-pure-FOSS licenses before install.
 - supports user-built extensions which may have their own licenses or legal conditions.
 
