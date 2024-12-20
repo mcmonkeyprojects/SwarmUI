@@ -1,10 +1,7 @@
 The icon files:
-- dotdotdot
 - eraser
 - mouse
-- move
 - paintbrush
 - paintbucket
-- select
 
 were created by Cristian Munoz and released under CC-BY-4.0 at https://www.figma.com/community/file/1311159026125960259/7000-free-ui-icons
