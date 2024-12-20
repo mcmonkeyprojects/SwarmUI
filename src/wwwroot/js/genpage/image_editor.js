@@ -166,9 +166,9 @@ class ImageEditorToolGeneral extends ImageEditorTool {
         super(editor, 'general', 'mouse', 'General', 'General tool. Lets you move around the canvas, or adjust size of current layer.\nWhile resizing an object, hold CTRL to snap-to-grid, or hold SHIFT to disable aspect preservation.\nThe general tool can be activated at any time with the Alt key.\nHotKey: G', 'g');
         this.currentDragCircle = null;
         this.rotateIcon = new Image();
-        this.rotateIcon.src = '/imgs/rotate.png';
+        this.rotateIcon.src = '/imgs/canvas_rotate.png';
         this.moveIcon = new Image();
-        this.moveIcon.src = '/imgs/move.png';
+        this.moveIcon.src = '/imgs/canvas_move.png';
     }
 
     fixCursor() {
