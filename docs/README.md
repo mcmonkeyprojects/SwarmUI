@@ -21,4 +21,5 @@
         - [Dynamic Thresholding](/src/BuiltinExtensions/DynamicThresholding/README.md)
 - [API](/docs/API.md) for details about the HTTP&WebSocket network API, to use swarm externally.
 - [Image Metadata Format](/docs/Image%20Metadata%20Format.md) for details about the format of metadata Swarm adds to generated images by default.
+- [Privacy](/docs/Privacy.md) contains notes for privacy-concerned Swarm users.
 - [Troubleshooting](/docs/Troubleshooting.md) for information about how to solve common problems.
