@@ -51,5 +51,5 @@ ASPNETCORE_URLS="http://*:7801"
 
 # Exit code 42 means restart, anything else = don't.
 if [ $? == 42 ]; then
-    . ./launch-linux.sh $@
+    . ./launch-macos.sh $@
 fi
