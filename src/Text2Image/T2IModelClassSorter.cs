@@ -297,6 +297,7 @@ public class T2IModelClassSorter
         Remaps["flux-1-dev"] = "Flux.1-dev";
         Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
         Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
+        Remaps["flux-dev/lora"] = "Flux.1-dev/lora";
         Remaps["Flux.1-depth-dev-lora"] = "Flux.1-dev/lora-depth";
         Remaps["Flux.1-canny-dev-lora"] = "Flux.1-dev/lora-canny";
         Remaps["Flux.1-depth-dev"] = "Flux.1-dev/depth";
