@@ -377,6 +377,7 @@ public class ComfyUIBackendExtension : Extension
 
     public void OnModelPathsChanged()
     {
+        ComfyUISelfStartBackend.IsComfyModelFileEmitted = false;
         foreach (ComfyUISelfStartBackend backend in Program.Backends.RunningBackendsOfType<ComfyUISelfStartBackend>())
         {
             if (backend.IsEnabled)
