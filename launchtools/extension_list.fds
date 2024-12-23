@@ -87,6 +87,14 @@ SkimmedCFG:
     tags:
     - parameters
 
+SkipLayerGuidance:
+    author: mcmonkey
+    description: Adds support for SLG (SD3.5M trick) and STG (LTX-Video trick) as a parameter group.
+    url: https://github.com/mcmonkey4eva/SwarmSkipLayerGuidanceExtension
+    license: MIT
+    tags:
+    - parameters
+
 OllamaVision:
     author: Urabewe
     description: Provides a frontend to connect to Ollama or OpenAI for image analysis using vision LLM models.
