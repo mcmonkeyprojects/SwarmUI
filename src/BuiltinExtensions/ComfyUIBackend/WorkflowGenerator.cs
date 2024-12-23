@@ -896,7 +896,7 @@ public class WorkflowGenerator
             });
             LoadingModel = [discreteNode, 0];
         }
-        if (IsFlux() && UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
+        if (HasFluxGuidance() && UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
         {
             string fluxNode = CreateNode("ModelSamplingFlux", new JObject()
             {
