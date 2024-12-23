@@ -228,7 +228,7 @@ body {
     display: inline-block;
     cursor: pointer;
 }
-.image-block img {
+.image-block img, .img-block video {
     display: block;
     margin: auto;
 }

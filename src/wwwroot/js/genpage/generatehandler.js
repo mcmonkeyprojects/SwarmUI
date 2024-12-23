@@ -75,12 +75,34 @@ class GenerateHandler {
     }
 
     setImageFor(imgHolder, src) {
-        let imgElem = imgHolder.div.querySelector('img');
         if (imgHolder.div.dataset.is_placeholder) {
             delete imgHolder.div.dataset.is_placeholder;
             imgHolder.div.classList.remove('image-block-placeholder');
         }
-        imgElem.src = src;
+        let imgElem = imgHolder.div.querySelector('img');
+        let vid = imgHolder.div.querySelector('video');
+        if (vid) {
+            vid.remove();
+        }
+        console.log(`set image to ${isVideoExt(src)}`)
+        if (isVideoExt(src)) {
+            if (imgElem) {
+                imgElem.remove();
+            }
+            vid = document.createElement('video');
+            vid.loop = true;
+            vid.autoplay = true;
+            vid.muted = true;
+            vid.width = 16 * 10;
+            let sourceObj = document.createElement('source');
+            sourceObj.src = src;
+            sourceObj.type = `video/${src.substring(src.lastIndexOf('.') + 1)}`;
+            vid.appendChild(sourceObj);
+            imgHolder.div.appendChild(vid);
+        }
+        else {
+            imgElem.src = src;
+        }
         imgHolder.image = src;
         imgHolder.div.dataset.src = src;
     }

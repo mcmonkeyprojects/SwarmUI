@@ -921,3 +921,9 @@ function guessMimeTypeForExtension(filename) {
     let ext = filename.split('.').pop();
     return mimeTypeForExtension[ext] || '';
 }
+
+/** Returns true if the given filename is for a video file based on the extension, or false if it is not. */
+function isVideoExt(filename) {
+    let ext = filename.split('.').pop();
+    return ['mp4', 'mpeg', 'mov', 'webm'].includes(ext);
+}

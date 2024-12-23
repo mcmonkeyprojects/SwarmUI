@@ -81,7 +81,7 @@ function clickImageInBatch(div) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata);
         return;
     }
-    setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
+    setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
 /** "Reuse Parameters" button impl. */
@@ -416,7 +416,7 @@ class ImageFullViewHelper {
     }
 
     showImage(src, metadata) {
-        let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
+        let isVideo = isVideoExt(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">`;
         if (isVideo) {
             imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${src}" type="video/${src.substring(src.lastIndexOf('.') + 1)}"></video>`;
@@ -589,7 +589,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         metadata = interpretMetadata(metadata);
     }
     currentMetadataVal = metadata;
-    let isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov");
+    let isVideo = isVideoExt(src);
     if ((smoothAdd || !metadata) && canReparse && !isVideo) {
         let image = new Image();
         image.onload = () => {
@@ -881,14 +881,30 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     }
     div.dataset.src = imageSrc;
     div.dataset.metadata = metadata;
-    let img = document.createElement('img');
+    let isVideo = isVideoExt(imageSrc);
+    let img, srcTarget;
+    if (isVideo) {
+        img = document.createElement('video');
+        img.loop = true;
+        img.autoplay = true;
+        img.muted = true;
+        img.width = 16 * 10;
+        let sourceObj = document.createElement('source');
+        srcTarget = sourceObj;
+        sourceObj.type = `video/${src.substring(src.lastIndexOf('.') + 1)}`;
+        img.appendChild(sourceObj);
+    }
+    else {
+        img = document.createElement('img');
+        srcTarget = img;
+    }
     img.addEventListener('load', () => {
         if (batchId != "folder") {
             let ratio = img.naturalWidth / img.naturalHeight;
             div.style.width = `calc(${roundToStr(ratio * 10, 2)}rem + 2px)`;
         }
     });
-    img.src = imageSrc;
+    srcTarget.src = imageSrc;
     div.appendChild(img);
     if (type == 'legacy') {
         let textBlock = createDiv(null, 'image-preview-text');
