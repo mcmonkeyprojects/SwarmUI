@@ -303,6 +303,8 @@ public class Installation
         UpdateProgress(0, 0, 0);
         await Backend(backend, install_amd);
         Program.ServerSettings.IsInstalled = true;
+        Program.ServerSettings.InstallDate = $"{DateTimeOffset.Now:yyyy-MM-dd}";
+        Program.ServerSettings.InstallVersion = Utilities.Version;
         if (Program.ServerSettings.LaunchMode == "webinstall")
         {
             Program.ServerSettings.LaunchMode = "web";

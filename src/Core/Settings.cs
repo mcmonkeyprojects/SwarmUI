@@ -27,6 +27,14 @@ public class Settings : AutoConfiguration
     [SettingHidden]
     public bool IsInstalled = false;
 
+    [ConfigComment("The date that this instance was installed.")]
+    [SettingHidden]
+    public string InstallDate = "";
+
+    [ConfigComment("The SwarmUI version that this instance was installed as.")]
+    [SettingHidden]
+    public string InstallVersion = "";
+
     [ConfigComment("Ratelimit, in milliseconds, between Nvidia GPU status queries. Default is 1000 ms (1 second).")]
     public long NvidiaQueryRateLimitMS = 1000;
 

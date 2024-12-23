@@ -120,6 +120,12 @@ public class Program
             {
                 ServerSettings.DefaultUser.FileFormat.ImageFormat = "JPG";
             }
+            // TODO: Legacy patch from Beta 0.9.4.
+            if (ServerSettings.IsInstalled && string.IsNullOrWhiteSpace(ServerSettings.InstallDate))
+            {
+                ServerSettings.InstallDate = "2024-12-01"; // (Technically earlier, but, well... who knows lol)
+                ServerSettings.InstallVersion = "Beta";
+            }
             if (!LockSettings)
             {
                 Logs.Init("Re-saving settings file...");
@@ -133,6 +139,13 @@ public class Program
             Logs.Error($"Command line arguments given are invalid: {ex.Message}");
             PrintCommandLineHelp();
             return;
+        }
+        if (ServerSettings.IsInstalled && ServerSettings.InstallDate != "2024-12-01")
+        {
+            DateTimeOffset date = DateTimeOffset.Parse(ServerSettings.InstallDate);
+            TimeSpan offset = DateTimeOffset.Now - date;
+            string timeAgo = offset.TotalDays < 60 ? $"{(int)offset.TotalDays} days" : $"{(int)(offset.TotalDays / 30)} months";
+            Logs.Init($"SwarmUI was installed {ServerSettings.InstallDate} ({timeAgo} ago) with version {ServerSettings.InstallVersion}");
         }
         if (ServerSettings.ShowExperimentalFeatures)
         {
