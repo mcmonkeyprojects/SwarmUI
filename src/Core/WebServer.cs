@@ -458,11 +458,16 @@ public class WebServer
             return;
         }
         byte[] data = null;
+        string contentType = Utilities.GuessContentType(path);
         try
         {
             if (context.Request.Query.TryGetValue("preview", out StringValues previewToken) && $"{previewToken}" == "true" && user.Settings.ImageHistoryUsePreviews)
             {
                 data = ImageMetadataTracker.GetOrCreatePreviewFor(path);
+                if (data is not null)
+                {
+                    contentType = "image/jpg";
+                }
             }
             data ??= await File.ReadAllBytesAsync(path);
         }
@@ -480,7 +485,7 @@ public class WebServer
             }
             return;
         }
-        context.Response.ContentType = Utilities.GuessContentType(path);
+        context.Response.ContentType = contentType;
         context.Response.StatusCode = 200;
         context.Response.ContentLength = data.Length;
         await context.Response.Body.WriteAsync(data, Program.GlobalProgramCancel);

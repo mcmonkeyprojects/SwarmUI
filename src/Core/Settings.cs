@@ -443,6 +443,9 @@ public class Settings : AutoConfiguration
     {
         [ConfigComment("Optionally specify a (raw HTML) welcome message here. If specified, will override the automatic welcome messages.")]
         public string OverrideWelcomeMessage = "";
+
+        [ConfigComment("Animated previews make the image history nicer when you've generated videos, but may negatively impact performance.\nIf having image history loaded with videos generated is negatively affecting your experience, disable this checkbox.\nAfter editing this setting, use the Reset All Metadata button in the Utilities tab.")]
+        public bool AllowAnimatedPreviews = true;
     }
 
     /// <summary>Webhook settings.</summary>

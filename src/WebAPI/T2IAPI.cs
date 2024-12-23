@@ -542,7 +542,7 @@ public static class T2IAPI
                 }
                 string prefix = folder == "" ? "" : folder + "/";
                 List<string> subFiles = Directory.EnumerateFiles($"{path}/{prefix}").Take(localLimit).ToList();
-                IEnumerable<string> newFileNames = subFiles.Where(isAllowed).Where(f => extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg")).Select(f => f.Replace('\\', '/'));
+                IEnumerable<string> newFileNames = subFiles.Where(isAllowed).Where(f => extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg") && !f.EndsWith(".swarmpreview.webp")).Select(f => f.Replace('\\', '/'));
                 List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), ImageMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null)];
                 int leftOver = Interlocked.Add(ref remaining, -localFiles.Count);
                 sortList(localFiles);

@@ -224,6 +224,7 @@ public class Session : IEquatable<Session>
                 if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension) && !string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
                 {
                     Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPath.BeforeLast('.') + ".swarmpreview.jpg"]).Wait();
+                    Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPath.BeforeLast('.') + ".swarmpreview.webp"]).Wait();
                 }
             }
             catch (Exception e1)

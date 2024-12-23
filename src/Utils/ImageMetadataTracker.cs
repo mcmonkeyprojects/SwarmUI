@@ -188,8 +188,17 @@ public static class ImageMetadataTracker
         byte[] fileData;
         try
         {
-            string altPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
-            bool altExists = File.Exists(altPreview);
+            string altPreview = $"{file.BeforeLast('.')}.swarmpreview.webp";
+            bool altExists = false;
+            if (ExtensionsForFfmpegables.Contains(ext))
+            {
+                altExists = Program.ServerSettings.UI.AllowAnimatedPreviews && File.Exists(altPreview);
+                if (!altExists)
+                {
+                    altPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
+                    altExists = File.Exists(altPreview);
+                }
+            }
             if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
                 return null;
@@ -199,7 +208,7 @@ public static class ImageMetadataTracker
             {
                 return null;
             }
-            fileData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+            fileData = altExists && altPreview.EndsWith(".webp") ? data : new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
         }
         catch (Exception ex)
         {
