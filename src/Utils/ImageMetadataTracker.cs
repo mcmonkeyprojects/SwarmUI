@@ -278,6 +278,7 @@ public static class ImageMetadataTracker
         string fileData = null;
         try
         {
+            string altMetaPath = $"{file.BeforeLast('.')}.swarm.json";
             if (ExtensionsWithMetadata.Contains(ext))
             {
                 byte[] data = File.ReadAllBytes(file);
@@ -286,6 +287,10 @@ public static class ImageMetadataTracker
                     return null;
                 }
                 fileData = new Image(data, Image.ImageType.IMAGE, ext).GetMetadata();
+            }
+            else if (File.Exists(altMetaPath))
+            {
+                fileData = File.ReadAllText(altMetaPath);
             }
             string subPath = file.StartsWith(root) ? file[root.Length..] : Path.GetRelativePath(root, file);
             subPath = subPath.Replace('\\', '/').Trim('/');

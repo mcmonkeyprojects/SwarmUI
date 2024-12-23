@@ -217,6 +217,10 @@ public class Session : IEquatable<Session>
                 {
                     File.WriteAllBytes(fullPath.BeforeLast('.') + ".txt", metadata.EncodeUTF8());
                 }
+                if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension))
+                {
+                    File.WriteAllBytes(fullPath.BeforeLast('.') + ".swarm.json", metadata.EncodeUTF8());
+                }
             }
             catch (Exception e1)
             {
