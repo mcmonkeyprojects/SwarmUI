@@ -910,11 +910,38 @@ public static class Utilities
         });
     }
 
+    /// <summary>Helper to locate a valid Ffmpeg executable.</summary>
+    public static Lazy<string> FfmegLocation = new(() =>
+    {
+        try
+        {
+            string result = QuickRunProcess("ffmpeg", ["-version"]).Result;
+            if (!string.IsNullOrWhiteSpace(result) && result.Contains("ffmpeg version"))
+            {
+                Logs.Debug($"Will use global 'ffmpeg' install");
+                return "ffmpeg";
+            }
+        }
+        catch (Exception) { }
+        string comfyCopyPath = "dlbackend/comfy/python_embeded/Lib/site-packages/imageio_ffmpeg/binaries";
+        if (Directory.Exists(comfyCopyPath))
+        {
+            string exe = Directory.EnumerateFiles(comfyCopyPath, "*.exe").Where(c => c.Contains("ffmpeg-win")).FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(exe))
+            {
+                Logs.Debug($"Will use comfy copy of ffmpeg at '{exe}'");
+                return exe;
+            }
+        }
+        Logs.Warning($"No ffmpeg available, some video-related features will not work. Install ffmpeg and ensure it is in your PATH to enable these features.");
+        return null;
+    }, true);
+
     /// <summary>MultiSemaphoreSet to prevent git calls in the same directory from overlapping.</summary>
     public static MultiSemaphoreSet<string> GitOverlapLocks = new(32);
 
     /// <summary>Quick and simple run a process async and get the result.</summary>
-    public static async Task<string> QuickRunProcess(string process, string args, string workingDirectory = null)
+    public static async Task<string> QuickRunProcess(string process, string[] args, string workingDirectory = null)
     {
         ProcessStartInfo start = new(process, args)
         {

@@ -108,6 +108,9 @@ public static class ImageMetadataTracker
     /// <summary>File format extensions that even can have metadata on them.</summary>
     public static HashSet<string> ExtensionsWithMetadata = ["png", "jpg", "webp"];
 
+    /// <summary>File format extensions that require ffmpeg to process image data.</summary>
+    public static HashSet<string> ExtensionsForFfmpegables = ["webm", "mp4", "mov"];
+
     /// <summary>Deletes any tracked metadata for the given filepath.</summary>
     public static void RemoveMetadataFor(string file)
     {
@@ -129,10 +132,6 @@ public static class ImageMetadataTracker
     public static byte[] GetOrCreatePreviewFor(string file)
     {
         string ext = file.AfterLast('.');
-        if (!ExtensionsWithMetadata.Contains(ext))
-        {
-            return null;
-        }
         string folder = file.BeforeAndAfterLast('/', out string filename);
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
@@ -189,7 +188,13 @@ public static class ImageMetadataTracker
         byte[] fileData;
         try
         {
-            byte[] data = File.ReadAllBytes(file);
+            string altPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
+            bool altExists = File.Exists(altPreview);
+            if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
+            {
+                return null;
+            }
+            byte[] data = File.ReadAllBytes(altExists ? altPreview : file);
             if (data.Length == 0)
             {
                 return null;

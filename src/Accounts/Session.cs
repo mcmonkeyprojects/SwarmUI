@@ -217,9 +217,13 @@ public class Session : IEquatable<Session>
                 {
                     File.WriteAllBytes(fullPath.BeforeLast('.') + ".txt", metadata.EncodeUTF8());
                 }
-                if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension))
+                if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension) && !string.IsNullOrWhiteSpace(metadata))
                 {
                     File.WriteAllBytes(fullPath.BeforeLast('.') + ".swarm.json", metadata.EncodeUTF8());
+                }
+                if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension) && !string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
+                {
+                    Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPath.BeforeLast('.') + ".swarmpreview.jpg"]).Wait();
                 }
             }
             catch (Exception e1)

@@ -142,8 +142,8 @@ public static class WebUtil
         {
             try
             {
-                string result = await Utilities.QuickRunProcess(name, "--version");
-                string venvInfo = await Utilities.QuickRunProcess(name, "-m venv");
+                string result = await Utilities.QuickRunProcess(name, ["--version"]);
+                string venvInfo = await Utilities.QuickRunProcess(name, ["-m", "venv"]);
                 return $"{result.Before('\n').Trim()}\n{venvInfo.Trim()}";
             }
             catch (Exception ex)
