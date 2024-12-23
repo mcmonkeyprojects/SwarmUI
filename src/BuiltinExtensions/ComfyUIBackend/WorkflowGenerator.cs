@@ -676,7 +676,7 @@ public class WorkflowGenerator
                 string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
                 if (dtype == "automatic")
                 {
-                    if (IsFlux() && !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
                         dtype = "fp8_e4m3fn";
                         if (Utilities.PresumeNVidia40xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
