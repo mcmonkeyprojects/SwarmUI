@@ -195,6 +195,12 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "hunyuan-video";
     }
 
+    /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
+    public bool IsVideoModel()
+    {
+        return IsLTXV() || IsMochi() || IsHunyuanVideo();
+    }
+
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
     public string GetStableDynamicID(int index, int offset)
     {
@@ -480,7 +486,7 @@ public class WorkflowGenerator
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
-        if (IsMochi() || IsLTXV() || IsHunyuanVideo())
+        if (IsVideoModel())
         {
             if (UserInput.Get(T2IParamTypes.Text2VideoBoomerang, false))
             {
@@ -989,7 +995,7 @@ public class WorkflowGenerator
     /// <summary>Creates a KSampler and returns its node ID.</summary>
     public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false)
     {
-        if (IsMochi() || IsLTXV())
+        if (IsVideoModel())
         {
             previews ??= UserInput.Get(ComfyUIBackendExtension.Text2VideoPreviewType, "animate");
         }
