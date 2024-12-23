@@ -13,6 +13,7 @@
     <Description>SwarmUI, an AI Image Generation User-Interface</Description>
     <OutputType>exe</OutputType>
     <ApplicationIcon>wwwroot/favicon.ico</ApplicationIcon>
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
