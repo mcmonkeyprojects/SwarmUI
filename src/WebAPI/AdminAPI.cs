@@ -57,6 +57,10 @@ public static class AdminAPI
             {
                 val = AutoConfigToParamData(subConf);
             }
+            if (data.Field.GetCustomAttribute<SettingHiddenAttribute>() is not null)
+            {
+                continue;
+            }
             if (hideRestricted && data.Field.GetCustomAttribute<ValueIsRestrictedAttribute>() is not null)
             {
                 continue;
@@ -124,6 +128,11 @@ public static class AdminAPI
             if (field is null)
             {
                 Logs.Error($"User '{session.User.UserID}' tried to set unknown server setting '{key}' to '{val}'.");
+                continue;
+            }
+            if (field.Field.GetCustomAttribute<SettingHiddenAttribute>() is not null)
+            {
+                Logs.Error($"User '{session.User.UserID}' tried to set server setting '{key}' of type '{field.Field.FieldType.Name}' to '{val}', but that setting is marked as hidden from the normal interface.");
                 continue;
             }
             bool isSecret = field.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null;

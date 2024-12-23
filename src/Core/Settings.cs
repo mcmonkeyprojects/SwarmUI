@@ -24,6 +24,7 @@ public class Settings : AutoConfiguration
     public BackendData Backends = new();
 
     [ConfigComment("If this is set to 'true', hides the installer page. If 'false', the installer page will be shown.")]
+    [SettingHidden]
     public bool IsInstalled = false;
 
     [ConfigComment("Ratelimit, in milliseconds, between Nvidia GPU status queries. Default is 1000 ms (1 second).")]
@@ -511,6 +512,12 @@ public class ValueIsSecretAttribute : Attribute
 /// <summary>Attribute that marks that the value should be restricted from non-admin user access.</summary>
 [AttributeUsage(AttributeTargets.Field)]
 public class ValueIsRestrictedAttribute : Attribute
+{
+}
+
+/// <summary>Attribute that marks that the setting is hidden from the normal interface.</summary>
+[AttributeUsage(AttributeTargets.Field)]
+public class SettingHiddenAttribute : Attribute
 {
 }
 
