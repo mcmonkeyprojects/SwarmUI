@@ -127,8 +127,11 @@ public static class UtilAPI
         {
             return new JObject() { ["error"] = $"Invalid type '{type}'." };
         }
-        Process p = PythonLaunchHelper.LaunchGeneric("launchtools/pickle-to-safetensors.py", true, [models.FolderPaths[0], fp16 ? "true" : "false"]);
-        await p.WaitForExitAsync(Program.GlobalProgramCancel);
+        foreach (string path in models.FolderPaths)
+        {
+            Process p = PythonLaunchHelper.LaunchGeneric("launchtools/pickle-to-safetensors.py", true, [path, fp16 ? "true" : "false"]);
+            await p.WaitForExitAsync(Program.GlobalProgramCancel);
+        }
         return new JObject() { ["success"] = true };
     }
 

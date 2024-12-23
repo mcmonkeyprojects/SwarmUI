@@ -270,6 +270,7 @@ You can do text2video by just checking Video as normal, or image2video by using 
 - Hunyuan Video is based on the Flux Dev architecture, and has similar requirements.
     - Set CFG Scale to 1.
     - You can use Flux Guidance parameter on this model (for Hunyuan Video, unlike Flux Dev, this value is embedded from CFG scale, and so prefers values around 6).
+- By default the BF16 version of the model will be loaded in FP8 model. To change this, use the `Preferred DType` advanced parameter. FP8 noticeably changes results compared to BF16, but lets it run much much faster. The GGUF versions of the model are highly recommended, as they get much closer to original and very close performance to fp8. GGUF Q6_K is nearly identical to BF16.
 
 ## Genmo Mochi 1 (Text2Video)
 
