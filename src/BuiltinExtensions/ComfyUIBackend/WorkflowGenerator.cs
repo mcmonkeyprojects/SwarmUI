@@ -896,17 +896,29 @@ public class WorkflowGenerator
             });
             LoadingModel = [discreteNode, 0];
         }
-        if (HasFluxGuidance() && UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
+        if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
         {
-            string fluxNode = CreateNode("ModelSamplingFlux", new JObject()
+            if (IsFlux())
             {
-                ["model"] = LoadingModel,
-                ["width"] = UserInput.GetImageWidth(),
-                ["height"] = UserInput.GetImageHeight(),
-                ["max_shift"] = shiftVal,
-                ["base_shift"] = 0.5 // TODO: Does this need an input?
-            });
-            LoadingModel = [fluxNode, 0];
+                string fluxNode = CreateNode("ModelSamplingFlux", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["width"] = UserInput.GetImageWidth(),
+                    ["height"] = UserInput.GetImageHeight(),
+                    ["max_shift"] = shiftVal,
+                    ["base_shift"] = 0.5 // TODO: Does this need an input?
+                });
+                LoadingModel = [fluxNode, 0];
+            }
+            else if (IsHunyuanVideo())
+            {
+                string fluxNode = CreateNode("ModelSamplingSD3", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shiftVal
+                });
+                LoadingModel = [fluxNode, 0];
+            }
         }
         foreach (WorkflowGenStep step in ModelGenSteps)
         {
