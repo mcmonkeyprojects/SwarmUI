@@ -3,6 +3,30 @@ let postParamBuildSteps = [];
 
 let refreshParamsExtra = [];
 
+class AspectRatio {
+    constructor(id, width, height) {
+        this.id = id;
+        this.width = width;
+        this.height = height;
+        this.ratio = width / height;
+    }
+}
+
+let aspectRatios = [
+    new AspectRatio("1:1", 512, 512),
+    new AspectRatio("4:3", 576, 448),
+    new AspectRatio("3:2", 608, 416),
+    new AspectRatio("8:5", 608, 384),
+    new AspectRatio("16:9", 672, 384),
+    new AspectRatio("21:9", 768, 320),
+    new AspectRatio("3:4", 448, 576),
+    new AspectRatio("2:3", 416, 608),
+    new AspectRatio("5:8", 384, 608),
+    new AspectRatio("9:16", 384, 672),
+    new AspectRatio("9:21", 320, 768)
+];
+
+
 function getHtmlForParam(param, prefix) {
     try {
         let example = param.examples ? `<br><span class="translate">Examples</span>: <code>${param.examples.map(escapeHtmlNoBr).join(`</code>,&emsp;<code>`)}</code>` : '';
@@ -312,17 +336,13 @@ function genInputs(delay_final = false) {
                 if (inputAspectRatio.value != "Custom") {
                     let aspectRatio = inputAspectRatio.value;
                     let width, height;
-                    if (aspectRatio == "1:1") { width = 512; height = 512; }
-                    else if (aspectRatio == "4:3") { width = 576; height = 448; }
-                    else if (aspectRatio == "3:2") { width = 608; height = 416; }
-                    else if (aspectRatio == "8:5") { width = 608; height = 384; }
-                    else if (aspectRatio == "16:9") { width = 672; height = 384; }
-                    else if (aspectRatio == "21:9") { width = 768; height = 320; }
-                    else if (aspectRatio == "3:4") { width = 448; height = 576; }
-                    else if (aspectRatio == "2:3") { width = 416; height = 608; }
-                    else if (aspectRatio == "5:8") { width = 384; height = 608; }
-                    else if (aspectRatio == "9:16") { width = 384; height = 672; }
-                    else if (aspectRatio == "9:21") { width = 320; height = 768; }
+                    for (let ratio of aspectRatios) {
+                        if (ratio.id == aspectRatio) {
+                            width = ratio.width;
+                            height = ratio.height;
+                            break;
+                        }
+                    }
                     inputWidth.value = width * (curModelWidth == 0 ? 512 : curModelWidth) / 512;
                     inputHeight.value = height * (curModelHeight == 0 ? 512 : curModelHeight) / 512;
                     triggerChangeFor(inputWidth);
@@ -391,6 +411,84 @@ function genInputs(delay_final = false) {
         if (inputBatchSize && shouldResetBatch) {
             inputBatchSize.value = 1;
             triggerChangeFor(inputBatchSize);
+        }
+        let inputInitImage = document.getElementById('input_initimage');
+        if (inputInitImage && inputAspectRatio && inputWidth && inputHeight) {
+            let targetDiv = findParentOfClass(inputInitImage, 'auto-input').querySelector('.auto-image-input-label');
+            if (targetDiv) {
+                let button = document.createElement('button');
+                button.className = 'basic-button';
+                button.innerText = 'Res';
+                button.style.display = 'none';
+                button.title = "Click for options to reuse the init image resolution for your main generation resolution";
+                targetDiv.appendChild(button);
+                inputInitImage.addEventListener('change', () => {
+                    button.style.display = inputInitImage.dataset.filedata ? '' : 'none';
+                });
+                button.addEventListener('click', () => {
+                    let rect = button.getBoundingClientRect();
+                    let imageWidth = inputInitImage.dataset.width || 512;
+                    let imageHeight = inputInitImage.dataset.height || 512;
+                    new AdvancedPopover('initimage_res', [
+                        {
+                            key: 'Use Closest Aspect Ratio',
+                            title: "Sets the Aspect Ratio parameter to whatever's closest, avoiding 'Custom'",
+                            action: () => {
+                                let closest = "1:1";
+                                let closestDiff = 999999;
+                                for (let ratio of aspectRatios) {
+                                    let diff = Math.abs(ratio.ratio - (imageWidth / imageHeight));
+                                    if (diff < closestDiff) {
+                                        closest = ratio.id;
+                                        closestDiff = diff;
+                                    }
+                                }
+                                inputAspectRatio.value = closest;
+                                triggerChangeFor(inputAspectRatio);
+                            }
+                        },
+                        {
+                            key: 'Use Exact Aspect Ratio',
+                            title: "Sets the Aspect Ratio to Custom, and resolution to a perfectly matched aspect ratio for this image (rounded to x32 pixels)",
+                            action: () => {
+                                inputAspectRatio.value = "Custom";
+                                triggerChangeFor(inputAspectRatio);
+                                let ratio = imageWidth / imageHeight;
+                                let width = Math.round(Math.sqrt(512 * 512 * ratio));
+                                let height = Math.round(512 * 512 / width);
+                                inputWidth.value = roundTo(width * (curModelWidth == 0 ? 512 : curModelWidth) / 512, 32);
+                                inputHeight.value = roundTo(height * (curModelHeight == 0 ? 512 : curModelHeight) / 512, 32);
+                                triggerChangeFor(inputWidth);
+                                triggerChangeFor(inputHeight);
+                            }
+                        },
+                        {
+                            key: 'Use Resolution',
+                            title: "Sets the Aspect Ratio to Custom, and resolution to exactly this image's resolution, with rounding to x32 pixels to avoid errors",
+                            action: () => {
+                                inputAspectRatio.value = "Custom";
+                                inputWidth.value = roundTo(imageWidth, 32);
+                                inputHeight.value = roundTo(imageHeight, 32);
+                                triggerChangeFor(inputAspectRatio);
+                                triggerChangeFor(inputWidth);
+                                triggerChangeFor(inputHeight);
+                            }
+                        },
+                        {
+                            key: 'Use Exact Aspect Resolution',
+                            title: "Sets the Aspect Ratio to Custom, and resolution to exactly this image's resolution, without any rounding",
+                            action: () => {
+                                inputAspectRatio.value = "Custom";
+                                inputWidth.value = imageWidth;
+                                inputHeight.value = imageHeight;
+                                triggerChangeFor(inputAspectRatio);
+                                triggerChangeFor(inputWidth);
+                                triggerChangeFor(inputHeight);
+                            }
+                        }
+                    ], false, rect.x, rect.y + rect.height, document.body);
+                });
+            }
         }
         shouldApplyDefault = true;
         for (let param of gen_param_types) {

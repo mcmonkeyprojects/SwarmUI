@@ -5,7 +5,7 @@ let lastPopoverTime = 0, lastPopover = null;
 
 class AdvancedPopover {
     /**
-     * eg: new AdvancedPopover('my_popover', [ { key: 'Button 1', action: () => console.log("Clicked!") } ], true, mouseX, mouseY, document.body, null);
+     * eg: new AdvancedPopover('my_popover_name', [ { key: 'Button 1', action: () => console.log("Clicked!") } ], true, mouseX, mouseY, document.body, null);
      * Buttons can optionally exclude action to make unclickable.
      */
     constructor(id, buttons, canSearch, x, y, root, preSelect = null, flipYHeight = null, heightLimit = 999999, canSelect = true) {

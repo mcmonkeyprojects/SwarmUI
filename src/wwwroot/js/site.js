@@ -402,10 +402,15 @@ function getToggleHtml(toggles, id, name, extraClass = '', func = 'doToggleEnabl
     return toggles ? `<span class="form-check form-switch toggle-switch display-inline-block${extraClass}"><input class="auto-slider-toggle form-check-input" type="checkbox" id="${id}_toggle" title="Enable/disable ${name}" onclick="${func}('${id}')" onchange="${func}('${id}')" autocomplete="false"><div class="auto-slider-toggle-content"></div></span>` : '';
 }
 
-function load_image_file(e) {
-    updateFileDragging({ target: e }, true);
-    let file = e.files[0];
-    let parent = e.closest('.auto-input');
+let loadImageFileDedup = false;
+
+function load_image_file(elem) {
+    if (loadImageFileDedup) {
+        return;
+    }
+    updateFileDragging({ target: elem }, true);
+    let file = elem.files[0];
+    let parent = elem.closest('.auto-input');
     let preview = parent.querySelector('.auto-input-image-preview');
     let label = parent.querySelector('.auto-file-input-filename');
     if (file) {
@@ -416,24 +421,30 @@ function load_image_file(e) {
         label.textContent = name;
         let reader = new FileReader();
         reader.addEventListener("load", () => {
-            e.dataset.filedata = reader.result;
+            elem.dataset.filedata = reader.result;
             preview.innerHTML = `<button class="interrupt-button auto-input-image-remove-button" title="Remove image">&times;</button><img alt="Image preview" />`;
             let img = preview.querySelector('img');
             img.onload = () => {
                 label.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight}, ${describeAspectRatio(img.naturalWidth, img.naturalHeight)})`;
+                elem.dataset.width = img.naturalWidth;
+                elem.dataset.height = img.naturalHeight;
+                loadImageFileDedup = true;
+                triggerChangeFor(elem);
+                loadImageFileDedup = false;
             };
             img.src = reader.result;
             preview.firstChild.addEventListener('click', () => {
-                delete e.dataset.filedata;
+                delete elem.dataset.filedata;
                 label.textContent = "";
                 preview.innerHTML = '';
-                e.value = '';
+                elem.value = '';
+                triggerChangeFor(elem);
             });
         }, false);
         reader.readAsDataURL(file);
     }
     else {
-        delete e.dataset.filedata;
+        delete elem.dataset.filedata;
         label.textContent = "";
         preview.innerHTML = '';
     }
@@ -716,7 +727,7 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
     featureid += featureid2;
     let html = `
     <div class="auto-input auto-file-box"${featureid}>
-        <label>
+        <label class="auto-image-input-label">
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
             <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onImageInputPaste(arguments[0])">
         </label>
