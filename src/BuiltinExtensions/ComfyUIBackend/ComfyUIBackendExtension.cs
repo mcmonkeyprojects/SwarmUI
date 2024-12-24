@@ -558,7 +558,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit;
 
-    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength;
+    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier;
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
@@ -638,6 +638,9 @@ public class ComfyUIBackendExtension : Extension
             ));
         PerturbedAttentionGuidanceScale = T2IParamTypes.Register<double>(new("Perturbed-Attention Guidance Scale", "Scale for Perturbed-Attention Guidance (PAG).\n''PAG is designed to progressively enhance the structure of synthesized samples throughout the denoising process by considering the self-attention mechanisms' ability to capture structural information.\nIt involves generating intermediate samples with degraded structure by substituting selected self-attention maps in diffusion U-Net with an identity matrix, and guiding the denoising process away from these degraded samples.''\nDefaults to 3.",
             "3", Min: 0, Max: 100, Step: 0.1, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, Toggleable: true, ViewType: ParamViewType.SLIDER, OrderPriority: 13
+            ));
+        RescaleCFGMultiplier = T2IParamTypes.Register<double>(new("Rescale CFG Multiplier", "If enabled, use Comfy's native version of RescaleCFG.\nThis is only expected to work on certain vpred models.\nThis is, generally, pointless.\nThe value specified is the multiplier rate.",
+            "0.7", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, Toggleable: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14
             ));
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,

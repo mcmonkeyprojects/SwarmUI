@@ -137,6 +137,15 @@ public class WorkflowGeneratorSteps
                 });
                 g.LoadingModel = [guided, 0];
             }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.RescaleCFGMultiplier, out double rescaleCfg))
+            {
+                string guided = g.CreateNode("RescaleCFG", new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["multiplier"] = rescaleCfg
+                });
+                g.LoadingModel = [guided, 0];
+            }
         }, -7);
         AddModelGenStep(g =>
         {
