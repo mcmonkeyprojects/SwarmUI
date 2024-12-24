@@ -615,6 +615,8 @@ public static class T2IAPI
         return new JObject() { ["success"] = true };
     }
 
+    public static string[] DeletableFileExtensions = [".txt", ".metadata.js", ".swarm.json", ".swarmpreview.jpg", ".swarmpreview.webp"];
+
     [API.APIDescription("Delete an image from history.", "\"success\": true")]
     public static async Task<JObject> DeleteImage(Session session,
         [API.APIParameter("The path to the image to delete.")] string path)
@@ -636,15 +638,14 @@ public static class T2IAPI
         Session.RecentlyDeletedFilenames[standardizedPath] = standardizedPath;
         Action<string> deleteFile = Program.ServerSettings.Paths.RecycleDeletedImages ? Utilities.SendFileToRecycle : File.Delete;
         deleteFile(path);
-        string txtFile = path.BeforeLast('.') + ".txt";
-        if (File.Exists(txtFile))
+        string fileBase = path.BeforeLast('.');
+        foreach (string str in DeletableFileExtensions)
         {
-            deleteFile(txtFile);
-        }
-        string metaFile = path.BeforeLast('.') + ".metadata.js";
-        if (File.Exists(metaFile))
-        {
-            deleteFile(metaFile);
+            string altFile = $"{fileBase}{str}";
+            if (File.Exists(altFile))
+            {
+                deleteFile(altFile);
+            }
         }
         ImageMetadataTracker.RemoveMetadataFor(path);
         return new JObject() { ["success"] = true };
