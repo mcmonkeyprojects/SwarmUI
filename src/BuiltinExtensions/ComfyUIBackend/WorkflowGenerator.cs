@@ -669,7 +669,7 @@ public class WorkflowGenerator
             {
                 if (!Features.Contains("gguf"))
                 {
-                    throw new SwarmUserErrorException("This model is in GGUF format, but the server does not have GGUF support installed. Cannot run.");
+                    throw new SwarmUserErrorException($"Model '{model.Name}' is in GGUF format, but the server does not have GGUF support installed. Cannot run.");
                 }
                 string modelNode = CreateNode("UnetLoaderGGUF", new JObject()
                 {
@@ -679,6 +679,10 @@ public class WorkflowGenerator
             }
             else
             {
+                if (model.RawFilePath.EndsWith(".gguf"))
+                {
+                    Logs.Error($"Model '{model.Name}' likely has corrupt/invalid metadata, and needs to be reset.");
+                }
                 string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
                 if (dtype == "automatic")
                 {
@@ -709,7 +713,7 @@ public class WorkflowGenerator
         {
             if (!Features.Contains("bnb_nf4"))
             {
-                throw new SwarmUserErrorException("This model is in BitsAndBytes-NF4 format, but the server does not have BNB_NF4 support installed. Cannot run.");
+                throw new SwarmUserErrorException($"Model '{model.Name}' is in BitsAndBytes-NF4 format, but the server does not have BNB_NF4 support installed. Cannot run.");
             }
             string modelNode = CreateNode("CheckpointLoaderNF4", new JObject()
             {
@@ -738,6 +742,10 @@ public class WorkflowGenerator
         }
         else
         {
+            if (model.Metadata?.SpecialFormat == "gguf")
+            {
+                throw new SwarmUserErrorException($"Model '{model.Name}' is in GGUF format, but it's in your main Stable-Diffusion models folder. GGUF files are weird, and need to go in the special 'diffusion_models' folder.");
+            }
             string modelNode = CreateNode("CheckpointLoaderSimple", new JObject()
             {
                 ["ckpt_name"] = model.ToString(ModelFolderFormat)
