@@ -265,6 +265,17 @@ class ModelDownloaderUtil {
                     }
                 }
             }
+            else {
+                for (let vers of rawData.modelVersions) {
+                    for (let vFile of vers.files) {
+                        if (vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`)) {
+                            rawVersion = vers;
+                            file = vFile;
+                            break;
+                        }
+                    }
+                }
+            }
             if (validateSafe && !file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
                 console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${file.name} / ${identifier}`);
                 doError(`Cannot download model from that URL because it is not a safetensors file. Filename is '${file.name}'`);
