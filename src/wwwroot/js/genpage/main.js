@@ -1301,12 +1301,14 @@ function describeImage(image) {
             console.log(`Failed to parse image metadata: ${e}, metadata was ${metadata}`);
         }
     }
-    let description = image.data.name + "\n" + formatMetadata(image.data.metadata);
+    let formattedMetadata = formatMetadata(image.data.metadata);
+    let description = image.data.name + "\n" + formattedMetadata;
     let name = image.data.name;
     let dragImage = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}`;
     let imageSrc = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}?preview=true`;
     let searchable = description;
-    return { name, description, buttons, 'image': imageSrc, 'dragimage': dragImage, className: parsedMeta.is_starred ? 'image-block-starred' : '', searchable, display: name };
+    let detail_list = [escapeHtml(image.data.name), formattedMetadata.replaceAll('<br>', '&emsp;')];
+    return { name, description, buttons, 'image': imageSrc, 'dragimage': dragImage, className: parsedMeta.is_starred ? 'image-block-starred' : '', searchable, display: name, detail_list };
 }
 
 function selectImageInHistory(image, div) {

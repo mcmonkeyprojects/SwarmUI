@@ -787,6 +787,37 @@ body {
     left: -16px;
     width: 0;
 }
+.browser-details-list-entry {
+    display: block;
+    width: 98%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin: auto;
+    position: relative;
+    cursor: pointer;
+}
+.browser-details-list-entry:hover {
+    color: var(--emphasis);
+    text-decoration: underline;
+}
+.browser-details-list-entry-text {
+    display: inline-block;
+    width: 48%;
+    height: 1.3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    vertical-align: top;
+}
+.browser-details-list-entry img {
+    max-height: 1.25rem;
+    max-width: 1.25rem;
+    display: inline-block;
+    vertical-align: top;
+    margin-right: 0.2rem;
+}
 .browser-list-entry {
     display: inline-block;
     max-width: 20rem;
@@ -795,6 +826,7 @@ body {
     overflow: hidden;
     margin: 0.3rem;
     position: relative;
+    cursor: pointer;
 }
 .browser-list-entry-text {
     display: inline-block;

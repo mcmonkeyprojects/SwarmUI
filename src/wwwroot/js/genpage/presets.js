@@ -337,7 +337,9 @@ function describePreset(preset) {
             }
         } }
     ];
-    let description = `${preset.data.title}:\n${preset.data.description}\n\n${Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`).join('\n')}`;
+    let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
+    let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
+    let detail_list = [escapeHtml(preset.data.title), escapeHtml(preset.data.description), escapeHtmlNoBr(paramText.join('\n').replaceAll('\n', '&emsp;'))];
     let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
     let name = preset.data.title;
     let index = name.lastIndexOf('/');
@@ -345,7 +347,7 @@ function describePreset(preset) {
         name = name.substring(index + 1);
     }
     let searchable = description;
-    return { name, description: escapeHtml(description), buttons, 'image': preset.data.preview_image, className, searchable };
+    return { name, description: escapeHtml(description), buttons, 'image': preset.data.preview_image, className, searchable, detail_list };
 }
 
 function selectPreset(preset) {

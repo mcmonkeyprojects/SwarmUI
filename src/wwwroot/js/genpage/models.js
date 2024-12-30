@@ -474,6 +474,7 @@ class ModelBrowserWrapper {
     describeModel(model) {
         let description = '';
         let buttons = [];
+        let detail_list = [escapeHtml(model.data.name)];
         if (this.subType == 'Stable-Diffusion') {
             modelIconUrlCache[model.name] = model.data.preview_image;
         }
@@ -533,12 +534,13 @@ class ModelBrowserWrapper {
             if (raw.length > 512) {
                 raw = raw.substring(0, 512) + '...';
             }
+            detail_list.push(escapeHtml(raw).replaceAll('\n', '').replaceAll('<br>', ', '));
             description = `<span class="wildcard_title">${escapeHtml(name)}</span><br>${escapeHtml(raw)}`;
             let match = matchWildcard(this.promptBox.value, model.data.name);
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
             let searchable = `${model.data.name}, ${description}`;
-            return { name, description, buttons, className, searchable, 'image': model.data.image, display };
+            return { name, description, buttons, className, searchable, 'image': model.data.image, display, detail_list };
         }
         let isCorrect = this.subType == 'Stable-Diffusion' || isModelArchCorrect(model.data);
         let interject = '';
@@ -555,6 +557,8 @@ class ModelBrowserWrapper {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
             }
             description = `<span class="model_filename">${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}`;
+            let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
+            detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
             if (model.data.local && permissions.hasPermission('edit_model_metadata')) {
                 buttons.push({ label: 'Edit Metadata', onclick: () => editModel(model.data, this) });
             }
@@ -564,10 +568,11 @@ class ModelBrowserWrapper {
         }
         else {
             description = `${escapeHtml(name)}<br>(Metadata only available for 'safetensors' models.)<br><b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.<br>`;
+            detail_list.push(`(Metadata only available for 'safetensors' models.)`, `<b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.`);
         }
         let className = this.getClassFor(model, isCorrect);
         let searchable = `${model.data.name}, ${description}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
-        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display };
+        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display, detail_list };
     }
 
     isSelected(name) {
