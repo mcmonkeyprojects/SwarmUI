@@ -947,7 +947,7 @@ function gotImagePreview(image, metadata, batchId) {
         batch_div.appendChild(spinnerDiv);
         uiImprover.runLoadSpinner(spinnerDiv);
     }
-    if (!document.getElementById('current_image_img') || (autoLoadPreviewsElem.checked && !image.startsWith('DOPLACEHOLDER:'))) {
+    if ((!document.getElementById('current_image_img') || autoLoadPreviewsElem.checked) && !image.startsWith('DOPLACEHOLDER:')) {
         setCurrentImage(src, metadata, batchId, true);
     }
     return batch_div;

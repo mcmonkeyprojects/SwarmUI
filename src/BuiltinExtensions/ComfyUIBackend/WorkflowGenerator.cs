@@ -983,7 +983,9 @@ public class WorkflowGenerator
                 ["vae"] = vae,
                 ["samples"] = latent,
                 ["tile_size"] = tileSize,
-                ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64)
+                ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64),
+                ["temporal_size"] = 64, // TODO: Params for temporal values
+                ["temporal_overlap"] = 8
             }, id);
         }
         else if (IsHunyuanVideo()) // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
@@ -993,7 +995,9 @@ public class WorkflowGenerator
                 ["vae"] = vae,
                 ["samples"] = latent,
                 ["tile_size"] = 256,
-                ["overlap"] = 64
+                ["overlap"] = 64,
+                ["temporal_size"] = 32,
+                ["temporal_overlap"] = 4
             }, id);
         }
         return CreateNode("VAEDecode", new JObject()
