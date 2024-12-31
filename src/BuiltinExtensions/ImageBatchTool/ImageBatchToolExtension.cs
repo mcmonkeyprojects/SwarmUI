@@ -176,6 +176,7 @@ public class ImageBatchToolExtension : Extension
                     param.Set(controlnetParams.Image, image);
                 }
             }
+            int genId = 0;
             tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, (image, metadata) =>
             {
                 (string preExt, string ext) = fname.BeforeAndAfterLast('.');
@@ -196,7 +197,9 @@ public class ImageBatchToolExtension : Extension
                 {
                     ext = properExt;
                 }
-                File.WriteAllBytes($"{output_folder}/{preExt}.{ext}", image.Img.ImageData);
+                int curGen = Interlocked.Increment(ref genId);
+                string diffCode = curGen == 1 ? "" : $"-{curGen}";
+                File.WriteAllBytes($"{output_folder}/{preExt}{diffCode}.{ext}", image.Img.ImageData);
                 string img = session.GetImageB64(image.Img);
                 output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                 WebhookManager.SendEveryGenWebhook(param, img);
