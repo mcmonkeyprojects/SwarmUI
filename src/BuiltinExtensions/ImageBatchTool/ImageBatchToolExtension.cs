@@ -115,10 +115,6 @@ public class ImageBatchToolExtension : Extension
         {
             string fname = file.Replace('\\', '/').AfterLast('/');
             int imageIndex = batchId++;
-            // the following two variables are used to handle when one input file
-            // produces multiple output images.In that case the first image is output
-            // as normal "output_dir/preExt.ext" but any images after that will be of the
-            // form "output_dir/preExt_lastFileCount.ext" 
             string lastFilePreExt = "";
             int outputCountForInput = 0;
             removeDoneTasks();
@@ -203,7 +199,6 @@ public class ImageBatchToolExtension : Extension
                     ext = properExt;
                 }
                 string outputFilePrefix = $"{preExt}";
-                // if this is the first output image for an input image initialize
                 if (outputFilePrefix != lastFilePreExt)
                 {
                   lastFilePreExt = $"{preExt}";
