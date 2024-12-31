@@ -18,18 +18,6 @@ public class ImageBatchToolExtension : Extension
 {
     public static PermInfo PermUseImageBatchTool = Permissions.Register(new("imagebatcher_use_image_batcher", "[Image Batch Tool] Use Image Batcher", "If true, the user may use the Image Batcher tool. Only makes sense for localhost users.", PermissionDefault.ADMINS, Permissions.GroupUser));
 
-    //   the following two statics are used to handle when one input file
-    //   produces multiple output images.In that case the first image is output
-    //   as normal "output_dir/preExt.ext" but any images after that will be of the
-    //   form "output_dir/preExt_lastFileCount.ext" 
-
-    // the preext of the last file written out
-    public static string lastFilePreExt;
-
-    // the count of how many files have been written, set after the first output file
-    // for a given input file incremented for all after that for a given input file
-    public static int lastFileCount;
-
     public override void OnPreInit()
     {
         ScriptFiles.Add("Assets/image_batcher.js");
@@ -72,7 +60,6 @@ public class ImageBatchToolExtension : Extension
             await socket.SendJson(new JObject() { ["error"] = "Image batch needs to supply the images to at least one parameter." }, API.WebsocketTimeout);
             return null;
         }
-        lastFilePreExt = ""; // initialize to empty when starting a batch
         Directory.CreateDirectory(output_folder);
         await API.RunWebsocketHandlerCallWS(GenBatchRun_Internal, session, (rawInput, input_folder, output_folder, init_image, revision, controlnet, imageFiles, resMode), socket);
         Logs.Info("Image Batcher completed successfully");
@@ -128,6 +115,12 @@ public class ImageBatchToolExtension : Extension
         {
             string fname = file.Replace('\\', '/').AfterLast('/');
             int imageIndex = batchId++;
+            // the following two variables are used to handle when one input file
+            // produces multiple output images.In that case the first image is output
+            // as normal "output_dir/preExt.ext" but any images after that will be of the
+            // form "output_dir/preExt_lastFileCount.ext" 
+            string lastFilePreExt = "";
+            int outputCountForInput = 0;
             removeDoneTasks();
             while (tasks.Count > max_degrees)
             {
@@ -209,18 +202,17 @@ public class ImageBatchToolExtension : Extension
                 {
                     ext = properExt;
                 }
-                // if this is the first output image for an input image initialize
                 string outputFilePrefix = $"{preExt}";
+                // if this is the first output image for an input image initialize
                 if (outputFilePrefix != lastFilePreExt)
                 {
-                  lastFileCount = 1;
                   lastFilePreExt = $"{preExt}";
                 }
-                else // second or later output image so increment
+                else
                 {
-                  outputFilePrefix = $"{preExt}_{lastFileCount}";
-                  lastFileCount++;
+                  outputFilePrefix = $"{preExt}_{outputCountForInput}";
                 }
+                outputCountForInput++;
                 File.WriteAllBytes($"{output_folder}/{outputFilePrefix}.{ext}", image.Img.ImageData);
                 string img = session.GetImageB64(image.Img);
                 output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
