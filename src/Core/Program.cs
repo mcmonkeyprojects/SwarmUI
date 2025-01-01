@@ -262,6 +262,7 @@ public class Program
         Extensions.RunOnAllExtensions(e => e.OnPreLaunch());
         timer.Check("Extensions pre-launch");
         Logs.Init("Launching server...");
+        Permissions.FixOrdered();
         Web.Launch();
         timer.Check("Web launch");
         try

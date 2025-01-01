@@ -90,6 +90,8 @@ class UserAdminManager {
         this.displayedUser = null;
         this.roles = {};
         this.userNames = [];
+        this.permissions_info = null;
+        this.permissions_ordered = null;
     }
 
     updateFilter() {
@@ -186,7 +188,36 @@ class UserAdminManager {
                 + makeTextInput(null, 'adminrolemenu_modelwhitelist', '', 'Model Whitelist', '', '', 'normal', "Model Whitelist...", false, false, true)
                 + makeGenericPopover('adminrolemenu_modelblacklist', 'Model Blacklist', 'text', "What models are forbidden, as a list of prefixes.\nFor example 'sdxl/' forbids models in the SDXL folder.\nOr, 'sdxl/,flux/' forbids models in the SDXL or Flux folders.\nIf empty, no blacklist logic is applied.\nNote that blacklist is 'more powerful' than whitelist and overrides it.\nThis stacks between roles, roles can add blacklist entries together.", '')
                 + makeTextInput(null, 'adminrolemenu_modelblacklist', '', 'Model Blacklist', '', '', 'normal', "Model Blacklist...", false, false, true)
-                + '<br><br>';
+                + '\n<br><hr><br>\n<h4 class="translate">Permissions</h4><br>\n<table>';
+            let lastGroupName = null;
+            for (let perm of this.permissions_ordered) {
+                let permInfo = this.permissions_info[perm];
+                if (lastGroupName != permInfo.group.name) {
+                    lastGroupName = permInfo.group.name;
+                    let groupId = `adminrolemenu_permgroup_${lastGroupName}`;
+                    let [groupPopover, _] = getPopoverElemsFor(groupId, true);
+                    html += `</table>
+                            <br><br>
+                            ${makeGenericPopover(groupId, permInfo.group.name, 'checkbox', permInfo.group.description, '')}
+                            <h5 class="translate">
+                                ${translateableHtml(permInfo.group.name)}${groupPopover}
+                            </h5>
+                        <table>`;
+                }
+                let id = `adminrolemenu_perm_${perm}`;
+                let [popover, _] = getPopoverElemsFor(id, true);
+                html +=
+                    `<tr>
+                        <td>
+                        ${makeGenericPopover(id, permInfo.name, 'checkbox', permInfo.description, '')}
+                        <span class="translate" title="${perm}">${translateableHtml(permInfo.name)}</span>${popover}
+                        </td>
+                        <td>
+                            <span class="form-check form-switch toggle-switch display-inline-block"><input class="auto-slider-toggle form-check-input" type="checkbox" id="${id}_toggle" title="Enable/disable ${perm}" autocomplete="false"${(role.permissions.includes(perm) ? ' checked' : '')}><div class="auto-slider-toggle-content"></div></span>
+                        </td>
+                    </tr>`;
+            }
+            html += '</table>';
             this.setNothingDisplayed();
             this.displayedRole = roleId;
             this.rightBox.innerHTML = html;
@@ -198,7 +229,6 @@ class UserAdminManager {
             getRequiredElementById('adminrolemenu_allowunsafeoutpaths').checked = role.allow_unsafe_outpaths;
             getRequiredElementById('adminrolemenu_modelwhitelist').value = role.model_whitelist.join(', ');
             getRequiredElementById('adminrolemenu_modelblacklist').value = role.model_blacklist.join(', ');
-            // TODO: Permissions list
             // TODO: cancel/save changes
         });
     }
@@ -215,6 +245,14 @@ class UserAdminManager {
 
     rebuildRoleList() {
         if (!permissions.hasPermission('configure_roles')) {
+            return;
+        }
+        if (!this.permissions_info) {
+            genericRequest('AdminListPermissions', {}, data => {
+                this.permissions_info = data.permissions;
+                this.permissions_ordered = data.ordered;
+                this.rebuildRoleList();
+            });
             return;
         }
         genericRequest('AdminListRoles', {}, data => {

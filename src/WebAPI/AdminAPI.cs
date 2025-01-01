@@ -39,6 +39,7 @@ public static class AdminAPI
         API.RegisterAPICall(AdminListRoles, false, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminAddRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminDeleteRole, true, Permissions.ConfigureRoles);
+        API.RegisterAPICall(AdminListPermissions, false, Permissions.ConfigureRoles);
     }
 
     public static JObject AutoConfigToParamData(AutoConfiguration config, bool hideRestricted = false)
@@ -736,5 +737,43 @@ public static class AdminAPI
             Program.Sessions.Save();
         }
         return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Admin route to get a list of all available permissions.",
+        """
+            "permissions": [
+                "perm_name": {
+                    "name": "Perm Name",
+                    "description": "Description text for the perm",
+                    "default": "USER",
+                    "group": {
+                        "name": "My Group",
+                        "description": "Some group description"
+                    },
+                    "safety_level": "UNTESTED",
+                    "alt_safety_text": "some text here or null"
+                }
+            ]
+        """)]
+    public static async Task<JObject> AdminListPermissions(Session session)
+    {
+        JObject permissions = [];
+        foreach (PermInfo perm in Permissions.Registered.Values)
+        {
+            permissions[perm.ID] = new JObject()
+            {
+                ["name"] = perm.DisplayName,
+                ["description"] = perm.Description,
+                ["default"] = $"{perm.Default}",
+                ["group"] = new JObject()
+                {
+                    ["name"] = perm.Group.DisplayName,
+                    ["description"] = perm.Group.Description
+                },
+                ["safety_level"] = $"{perm.SafetyLevel}",
+                ["alt_safety_text"] = perm.AltSafetyText
+            };
+        }
+        return new JObject() { ["permissions"] = permissions, ["ordered"] = JArray.FromObject(Permissions.OrderedKeys) };
     }
 }

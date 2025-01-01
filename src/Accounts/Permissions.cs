@@ -1,10 +1,15 @@
-﻿namespace SwarmUI.Accounts;
+﻿using FreneticUtilities.FreneticExtensions;
+
+namespace SwarmUI.Accounts;
 
 /// <summary>General handler for the available permissions list.</summary>
 public static class Permissions
 {
     /// <summary>Map of all known registered permissions from their IDs.</summary>
     public static ConcurrentDictionary<string, PermInfo> Registered = [];
+
+    /// <summary>Ordered list of the registered keys.</summary>
+    public static List<string> OrderedKeys = [];
 
     /// <summary>Registers the permission info to the global list, and returns a copy of it.</summary>
     public static PermInfo Register(PermInfo perm)
@@ -13,7 +18,17 @@ public static class Permissions
         {
             throw new InvalidOperationException($"Permission key '{perm.ID}' is already registered.");
         }
+        lock (OrderedKeys)
+        {
+            OrderedKeys.Add(perm.ID);
+        }
         return perm;
+    }
+
+    /// <summary>Fix the ordering of <see cref="OrderedKeys"/> to put groups together.</summary>
+    public static void FixOrdered()
+    {
+        OrderedKeys = [.. OrderedKeys.GroupBy(k => Registered[k].Group.DisplayName).Flatten()];
     }
 
     public static PermInfoGroup GroupSpecial = new("Admin", "Special permissions that don't make sense to give out.");
