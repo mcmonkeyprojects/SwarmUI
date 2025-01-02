@@ -264,6 +264,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 ## Stable Video Diffusion
 
 ![svd11_out](https://github.com/user-attachments/assets/ebeb3419-2c96-4746-863c-85ae4bc250d6)
+
 *(SVD XT 1.1, Generated using SDXL 1.0 Base as the Text2Image model)*
 
 - SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
@@ -319,6 +320,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 ## Lightricks LTX Video
 
 ![ltxv](https://github.com/user-attachments/assets/23e51754-79c6-47cd-9840-e65ec24fac1f)
+
 *(LTX-Video 0.9.1, Text2Video, CFG=7 because 3 was really bad)*
 
 - Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video and also as an Image-To-Video model.
