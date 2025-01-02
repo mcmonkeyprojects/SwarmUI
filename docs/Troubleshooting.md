@@ -16,11 +16,18 @@ That is the build dependency service, connections to it are required for the fir
 - **C:** It might also help to restart your computer.
 - **D:** You can also try emptying your NuGet cache, see below
 
-If you see errors like: `The type or namespace name 'Hardware' could not be found (are you missing a using directive or an assembly reference?) [src/SwarmUI.csproj]`, noting the mention of `Hardware` specifically (this is a NuGet package), that might mean your NuGet cache is corrupt. This is rare, but can happen. In that case, you must reset your NuGet cache.
+If you see errors like:
+- `The type or namespace name 'Hardware' could not be found (are you missing a using directive or an assembly reference?) [src/SwarmUI.csproj]`, noting the mention of `Hardware` specifically (this is a NuGet package)
+- `The type or namespace name 'Image<>' does not exist in the namespace 'SixLabors.ImageSharp'`
+
+that might mean your NuGet cache is corrupt. This is rare, but can happen. In that case, you must reset your NuGet cache.
 
 #### Reset NuGet Cache
 
-If on Windows, open File Explorer to `%appdata%/NuGet` and delete the entire folder, and then also `%localappdata%/NuGet` and delete that as well.
+If on Windows:
+- open File Explorer to `%appdata%/NuGet` and delete the entire folder
+- open `%localappdata%/NuGet` and delete that all
+- open `%userprofile%/.nuget` and delete the `packages` folder
 
 If on Linux/Mac, `rm -rf ~/.nuget`
 
