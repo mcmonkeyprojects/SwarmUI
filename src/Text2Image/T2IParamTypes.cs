@@ -279,7 +279,7 @@ public class T2IParamTypes
     }
 
     public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, VAETileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, FluxGuidanceScale;
@@ -689,6 +689,12 @@ public class T2IParamTypes
             ));
         VAETileOverlap = Register<int>(new("VAE Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between tiles there should be.\nHigher overlap improves quality but takes longer.",
             "64", Min: 0, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.8
+            ));
+        VAETemporalTileSize = Register<int>(new("VAE Temporal Tile Size", "If VAE Tile Size is enabled, decodes videos through the VAE using video frame tiles of this size.\nVAE Tiling reduces VRAM consumption, but takes longer and may impact quality.",
+            "64", Min: 8, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.6
+            ));
+        VAETemporalTileOverlap = Register<int>(new("VAE Temporal Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between video frames there should be.\nHigher overlap improves quality but takes longer.",
+            "8", Min: 4, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.4
             ));
         RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis internally uses RemBG.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -2

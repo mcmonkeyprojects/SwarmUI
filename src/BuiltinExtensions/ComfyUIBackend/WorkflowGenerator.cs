@@ -976,16 +976,16 @@ public class WorkflowGenerator
     /// <summary>Creates a VAEDecode node and returns its node ID.</summary>
     public string CreateVAEDecode(JArray vae, JArray latent, string id = null)
     {
-        if (UserInput.TryGet(T2IParamTypes.VAETileSize, out int tileSize))
+        if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
         {
             return CreateNode("VAEDecodeTiled", new JObject()
             {
                 ["vae"] = vae,
                 ["samples"] = latent,
-                ["tile_size"] = tileSize,
+                ["tile_size"] = UserInput.Get(T2IParamTypes.VAETileSize, 256),
                 ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64),
-                ["temporal_size"] = 64, // TODO: Params for temporal values
-                ["temporal_overlap"] = 8
+                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, 32),
+                ["temporal_overlap"] = UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 4)
             }, id);
         }
         else if (IsHunyuanVideo()) // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
