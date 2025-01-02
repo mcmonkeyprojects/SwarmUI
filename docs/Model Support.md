@@ -248,14 +248,33 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 # Video Models
 
+- Video demos included below are seed `1` of the prompt `wide shot, video of a cat with mixed black and white fur, walking in the middle of an open roadway, carrying a cardboard sign that says "Meow I'm a Cat". In the distance behind is a green road sign that says "Model Testing Street"` ran on each model.
+- For all models, "standard parameters" are used.
+    - Steps is set to 20 for all models.
+    - Frame count is set as model default.
+    - CFG is set appropriate to the model.
+    - Resolution is model default.
+    - Note that outputs are converted and shrunk to avoid wasting too much space / processor power on the docs page.
+- For image2video models, an era-appropriate text2image model is used and noted.
+- This is just the image test prompt but I swapped 'photo' to 'video', 'sitting' to 'walking', and 'holding' to 'carrying'. Goal is to achieve the same test as the image prompt does, but with a request for motion.
+- All generations are done on the base model of the relevant class, not on any finetune/lora/etc. Finetunes are likely to significantly change the qualitative capabilities, but unlikely to significantly change general ability to understand and follow prompts.
+- At time of writing, Hunyuan Video is the only properly good model. LTXV is really fast though.
+
+
 ## Stable Video Diffusion
+
+![svd11_out](https://github.com/user-attachments/assets/ebeb3419-2c96-4746-863c-85ae4bc250d6)
+*(SVD XT 1.1, Generated using SDXL 1.0 Base as the Text2Image model)*
 
 - SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
 - The model has no native text2video, so do not select it as your main model.
 - You can do image2video by using an Init Image and setting Creativity to 0.
 - You can replicate text2video by just using a normal image model (eg SDXL) as the first-frame generator.
+- This model was released after SDXL, but was built based on SDv2.
 
 ## Hunyuan Video
+
+![hunyuan-video](https://github.com/user-attachments/assets/12d898c4-d9c8-447e-99b3-42ad0f0eb16d)
 
 - Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model.
 - Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors> or the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
@@ -280,6 +299,8 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 ## Genmo Mochi 1 (Text2Video)
 
+![mochi](https://github.com/user-attachments/assets/4d64443e-c46f-415d-8203-17f6aa0f4cc5)
+
 - Genmo Mochi 1 is supported natively in SwarmUI as a Text-To-Video model.
 - You can get either the all-in-one checkpoint <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/all_in_one>
     - save to `Stable-Diffusion` folder
@@ -289,12 +310,16 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - You can also set these manually if preferred
 - When selected, the `Text To Video` parameter group will become visible
 - Mochi is very GPU and memory intensive, especially the VAE
+- Standard CFG values, eg `7`.
 - The model is trained for 24 fps, and frame counts dynamic anywhere up to 200. Multiples of 6 plus 1 (7, 13, 19, 25, ...) are required due to the 6x temporal compression in the Mochi VAE. The input parameter will automatically round if you enter an invalid value.
 - The VAE has a harsh memory requirement that may limit you from high duration videos.
     - To reduce VRAM impact and fit on most normal GPUs, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. There will be a slightly noticeable tiling pattern on the output, but not too bad at 160 and 96.
     - If you have a lot of VRAM (eg 4090) and want to max quality but can't quite fit the VAE without tiling, Tile Size 480 Overlap 32 will tile the VAE in just two chunks to cut the VAE VRAM usage significantly while retaining near perfect quality.
 
 ## Lightricks LTX Video
+
+![ltxv](https://github.com/user-attachments/assets/23e51754-79c6-47cd-9840-e65ec24fac1f)
+*(LTX-Video 0.9.1, Text2Video, CFG=7 because 3 was really bad)*
 
 - Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video and also as an Image-To-Video model.
 - Download <https://huggingface.co/Lightricks/LTX-Video/blob/main/ltx-video-2b-v0.9.safetensors>
