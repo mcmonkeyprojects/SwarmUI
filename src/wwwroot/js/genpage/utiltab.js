@@ -312,7 +312,23 @@ class ModelDownloaderUtil {
                 imageToData(imgs[0].url, img => applyMetadata(img));
             }
             else {
-                applyMetadata('');
+                let videos = rawVersion.images ? rawVersion.images.filter(img => img.type == 'video') : [];
+                if (videos) {
+                    let url = videos[0].url;
+                    let video = document.createElement('video');
+                    video.crossOrigin = 'Anonymous';
+                    video.onloadeddata = () => {
+                        let canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                        applyMetadata(canvas.toDataURL());
+                    };
+                    video.src = url;
+                }
+                else {
+                    applyMetadata('');
+                }
             }
         }, 0, (status, data) => {
             doError();
