@@ -287,7 +287,8 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 - When selected, the `Text To Video` parameter group will become visible
 - The model is trained for 1280x720 (960x960) or 960x544 (720x720) resolutions or other aspect ratios of the same total pixel count
     - Using a lower resolution, like 848x480, can work with only some quality loss, and much lower mem/gen time.
-- The model is trained for 24 fps, and dynamic frame counts (eg 73 or 129 is solid). Multiples of 4 plus 1 (4, 9, 13, 17, ...) are required due to the 4x temporal compression in the Hunyuan VAE. The input parameter will automatically round if you enter an invalid value.
+- The model is trained for 24 fps (cannot change), and dynamic frame counts (eg 73 or 129 is solid). Multiples of 4 plus 1 (4, 9, 13, 17, ...) are required due to the 4x temporal compression in the Hunyuan VAE. The input parameter will automatically round if you enter an invalid value.
+    - For quick generates, `25` is a good short frame count that creates about 1 second of video.
 - Hunyuan Video is very GPU and memory intensive, especially the VAE
     - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (GGUF model coming soon may help?)
 - The VAE has a harsh memory requirement that may limit you from high duration videos.

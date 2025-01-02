@@ -548,7 +548,7 @@ public static class ModelsAPI
             File.Move(tempPath, outPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
-                File.WriteAllText($"{handler.FolderPaths[0]}/{name}.json", metadata);
+                File.WriteAllText($"{handler.FolderPaths[0]}/{name}.swarm.json", metadata);
             }
             await ws.SendJson(new JObject() { ["success"] = true }, API.WebsocketTimeout);
         }
