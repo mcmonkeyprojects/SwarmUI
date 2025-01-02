@@ -320,15 +320,15 @@ public class T2IModelClassSorter
         {
             return isLtxv(h);
         }});
-        Register(new() { ID = "hunyuan-video", CompatClass = "hunyuan-video", Name = "Hunyuan Video", StandardWidth = 848, StandardHeight = 480, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "hunyuan-video", CompatClass = "hunyuan-video", Name = "Hunyuan Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideo(h);
         }});
-        Register(new() { ID = "hunyuan-video/vae", CompatClass = "hunyuan-video", Name = "Hunyuan Video VAE", StandardWidth = 848, StandardHeight = 480, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "hunyuan-video/vae", CompatClass = "hunyuan-video", Name = "Hunyuan Video VAE", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoVae(h);
         }});
-        Register(new() { ID = "hunyuan-video/lora", CompatClass = "hunyuan-video", Name = "Hunyuan Video LoRA", StandardWidth = 848, StandardHeight = 480, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "hunyuan-video/lora", CompatClass = "hunyuan-video", Name = "Hunyuan Video LoRA", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoLora(h);
         }});

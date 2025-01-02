@@ -260,13 +260,14 @@ You can do text2video by just checking Video as normal, or image2video by using 
     - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video`
 - The text encoders (T5-XXL, and LLaVA-LLaMA3) and VAE will be automatically downloaded.
 - When selected, the `Text To Video` parameter group will become visible
-- The model is trained for 1280x720 or 960x544 resolutions or other aspect ratios of the same total pixel count, but can work at other scales (with some quality loss). Swarm will default to a scale of 848x480, which is stable and reduces VRAM impact for normal home GPUs.
+- The model is trained for 1280x720 (960x960) or 960x544 (720x720) resolutions or other aspect ratios of the same total pixel count
+    - Using a lower resolution, like 848x480, can work with only some quality loss, and much lower mem/gen time.
 - The model is trained for 24 fps, and dynamic frame counts (eg 73 or 129 is solid). Multiples of 4 plus 1 (4, 9, 13, 17, ...) are required due to the 4x temporal compression in the Hunyuan VAE. The input parameter will automatically round if you enter an invalid value.
 - Hunyuan Video is very GPU and memory intensive, especially the VAE
     - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (GGUF model coming soon may help?)
 - The VAE has a harsh memory requirement that may limit you from high duration videos.
     - To reduce VRAM impact and fit on most normal GPUs, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. The tiling pattern is not particularly noticeable.
-    - If you do not manually enable VAE Tiling, Swarm will automatically enable it at 256 with 64 overlap. (Because the memory requirements without tiling are basically impossible. You can set the tiling values very very high if you want to make the tile artifacts invisible and have enough memory to handle it).
+    - If you do not manually enable VAE Tiling, Swarm will automatically enable it at 256 with 64 overlap, and temporal 32 frames with 4 overlap. (Because the memory requirements without tiling are basically impossible. You can set the tiling values very very high if you want to make the tile artifacts invisible and you have enough memory to handle it).
 - Hunyuan Video is based on the Flux Dev architecture, and has similar requirements.
     - Set CFG Scale to 1.
     - You can use Flux Guidance parameter on this model (for Hunyuan Video, unlike Flux Dev, this value is embedded from CFG scale, and so prefers values around 6).
