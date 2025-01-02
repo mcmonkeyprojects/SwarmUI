@@ -901,11 +901,7 @@ public class T2IParamTypes
     public static T2IParamType GetType(string name, T2IParamInput context)
     {
         name = CleanTypeName(name);
-        T2IParamType result = Types.GetValueOrDefault(name);
-        if (result is not null)
-        {
-            return result;
-        }
+        T2IParamType result;
         foreach (Func<string, T2IParamInput, T2IParamType> provider in FakeTypeProviders)
         {
             result = provider(name, context);
@@ -913,6 +909,11 @@ public class T2IParamTypes
             {
                 return result;
             }
+        }
+        result = Types.GetValueOrDefault(name);
+        if (result is not null)
+        {
+            return result;
         }
         return null;
     }
