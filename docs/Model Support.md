@@ -21,10 +21,14 @@
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
 
 - [Video Models](#video-models)
-    - [Hunyuan Video](#hunyuan-video)
-    - [Genmo Mochi 1](#genmo-mochi-1-text2video)
-    - [Stable Video Diffusion](#stable-video-diffusion)
-    - [Lightricks LTX Videoo](#lightricks-ltx-video)
+
+| Model | Year | Author | Scale | Type | Quality/Status |
+| ----  | ---- | ---- | ---- | ---- | ---- |
+[Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Outdated |
+[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video | Modern, High Quality |
+[Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | Modern, Decent |
+[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
+
 - [Alternative Model Formats](#alternative-model-formats)
     - [BnB NF4](#bits-and-bytes-nf4-format-models)
     - [GGUF](#gguf-quantized-models)
@@ -246,9 +250,10 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 ## Stable Video Diffusion
 
-SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
-
-You can do text2video by just checking Video as normal, or image2video by using an Init Image and setting Creativity to 0.
+- SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
+- The model has no native text2video, so do not select it as your main model.
+- You can do image2video by using an Init Image and setting Creativity to 0.
+- You can replicate text2video by just using a normal image model (eg SDXL) as the first-frame generator.
 
 ## Hunyuan Video
 
