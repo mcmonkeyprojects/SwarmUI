@@ -266,7 +266,7 @@ You can do text2video by just checking Video as normal, or image2video by using 
 - Hunyuan Video is very GPU and memory intensive, especially the VAE
     - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (GGUF model coming soon may help?)
 - The VAE has a harsh memory requirement that may limit you from high duration videos.
-    - To reduce VRAM impact and fit on most normal GPUs, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. The tiling pattern is not particularly noticeable.
+    - VAE Tiling is basically mandatory for consumer GPUs. You can configure both image space tiling, and video frame tiling, with the parameters under `Advanced Sampling`.
     - If you do not manually enable VAE Tiling, Swarm will automatically enable it at 256 with 64 overlap, and temporal 32 frames with 4 overlap. (Because the memory requirements without tiling are basically impossible. You can set the tiling values very very high if you want to make the tile artifacts invisible and you have enough memory to handle it).
 - Hunyuan Video is based on the Flux Dev architecture, and has similar requirements.
     - Set CFG Scale to 1.
