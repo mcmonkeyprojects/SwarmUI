@@ -76,6 +76,7 @@ public class T2IModelClassSorter
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
         bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight");
         bool isHunyuanVideoVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias");
+        bool isHunyuanVideoLora(JObject h) => h.ContainsKey("transformer.single_blocks.9.modulation.linear.lora_B.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -326,6 +327,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "hunyuan-video/vae", CompatClass = "hunyuan-video", Name = "Hunyuan Video VAE", StandardWidth = 848, StandardHeight = 480, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoVae(h);
+        }});
+        Register(new() { ID = "hunyuan-video/lora", CompatClass = "hunyuan-video", Name = "Hunyuan Video LoRA", StandardWidth = 848, StandardHeight = 480, IsThisModelOfClass = (m, h) =>
+        {
+            return isHunyuanVideoLora(h);
         }});
         Register(new() { ID = "nvidia-sana-1600", CompatClass = "nvidia-sana-1600", Name = "NVIDIA Sana 1600M", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
