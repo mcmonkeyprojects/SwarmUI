@@ -343,8 +343,8 @@ function genInputs(delay_final = false) {
                             break;
                         }
                     }
-                    inputWidth.value = roundTo(width * (curModelWidth == 0 ? 512 : curModelWidth) / 512, 32);
-                    inputHeight.value = roundTo(height * (curModelHeight == 0 ? 512 : curModelHeight) / 512, 32);
+                    inputWidth.value = roundTo(width * (curModelWidth == 0 ? 512 : curModelWidth) / 512, 16);
+                    inputHeight.value = roundTo(height * (curModelHeight == 0 ? 512 : curModelHeight) / 512, 16);
                     triggerChangeFor(inputWidth);
                     triggerChangeFor(inputHeight);
                 }
