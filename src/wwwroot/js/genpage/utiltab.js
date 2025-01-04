@@ -652,7 +652,10 @@ class ActiveModelDownload {
             else {
                 this.setBorderColor('#aa0000');
             }
-            this.statusText.innerHTML = `Error: ${escapeHtml(e)}\n<br>${hintInfo}`;
+            this.statusText.innerHTML = `Error: ${escapeHtml(e)}\n<br>${hintInfo}<br><br><button class="basic-button" title="Restart the download" style="width:98%">Retry</button><br><br>`;
+            this.statusText.querySelector('button').onclick = () => {
+                this.download();
+            };
             this.isDone();
         }, socket => {
             this.cancelButton.onclick = () => {
