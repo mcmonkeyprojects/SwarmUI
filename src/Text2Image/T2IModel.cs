@@ -23,6 +23,9 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     /// <summary>Full raw system filepath to this model.</summary>
     public string RawFilePath = filePath;
 
+    /// <summary>If multiple copies of this model exist, these are other paths to that model.</summary>
+    public List<string> OtherPaths = [];
+
     /// <summary>Proper title of the model, if identified.</summary>
     public string Title;
 
@@ -114,28 +117,46 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             {
                 return;
             }
-            string filePrefix = RawFilePath.BeforeLast('.');
-            string swarmjspath = $"{filePrefix}.swarm.json";
-            if (File.Exists(swarmjspath))
+            string rawFilePrefix = RawFilePath.BeforeLast('.');
+            string rawSwarmJsPath = $"{rawFilePrefix}.swarm.json";
+            bool earlyEnd = (!RawFilePath.EndsWith(".safetensors") && !RawFilePath.EndsWith(".sft")) || Program.ServerSettings.Metadata.EditMetadataWriteJSON;
+            void DoClear(string path)
             {
-                File.Delete(swarmjspath);
-            }
-            if (Program.ServerSettings.Paths.ClearStrayModelData)
-            {
-                foreach (string altPath in T2IModelHandler.AllModelAttachedExtensions)
+                string filePrefix = path.BeforeLast('.');
+                string swarmjspath = $"{filePrefix}.swarm.json";
+                if (File.Exists(swarmjspath))
                 {
-                    if (File.Exists($"{filePrefix}{altPath}"))
+                    File.Delete(swarmjspath);
+                }
+                if (Program.ServerSettings.Paths.ClearStrayModelData)
+                {
+                    foreach (string altPath in T2IModelHandler.AllModelAttachedExtensions)
                     {
-                        File.Delete($"{filePrefix}{altPath}");
+                        if (File.Exists($"{filePrefix}{altPath}"))
+                        {
+                            File.Delete($"{filePrefix}{altPath}");
+                        }
                     }
                 }
+                if (earlyEnd)
+                {
+                    File.WriteAllText(swarmjspath, ToNetObject("modelspec.").ToString());
+                }
             }
-            if ((!RawFilePath.EndsWith(".safetensors") && !RawFilePath.EndsWith(".sft")) || Program.ServerSettings.Metadata.EditMetadataWriteJSON)
+            DoClear(RawFilePath);
+            if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
             {
-                File.WriteAllText(swarmjspath, ToNetObject("modelspec.").ToString());
+                foreach (string altPath in OtherPaths)
+                {
+                    DoClear(altPath);
+                }
+            }
+            if (earlyEnd)
+            {
+                Logs.Debug($"Intentionally not reapplying metadata for model '{RawFilePath}', stored as json instead");
                 return;
             }
-            Logs.Debug($"Will reapply metadata for model {RawFilePath}");
+            Logs.Debug($"Will reapply metadata for model '{RawFilePath}'");
             bool wasNull = reader is null;
             reader ??= File.OpenRead(RawFilePath);
             try
@@ -146,8 +167,8 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                 long len = BitConverter.ToInt64(headerLen, 0);
                 if (len < 0 || len > 100 * 1024 * 1024)
                 {
-                    Logs.Warning($"Model {Name} has invalid metadata length {len}.");
-                    File.WriteAllText(swarmjspath, ToNetObject("modelspec.").ToString());
+                    Logs.Warning($"Model {Name} has invalid metadata length {len}, failing to store metadata, will place json copy in main folder.");
+                    File.WriteAllText(rawSwarmJsPath, ToNetObject("modelspec.").ToString());
                     return;
                 }
                 byte[] header = new byte[len];
@@ -193,28 +214,48 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                     specSet("is_negative_embedding", "true");
                 }
                 json["__metadata__"] = metaHeader;
+                void HandleResave(string path)
                 {
-                    using FileStream writer = File.OpenWrite(RawFilePath + ".tmp");
-                    byte[] headerBytes = Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None));
-                    writer.Write(BitConverter.GetBytes(headerBytes.LongLength));
-                    writer.Write(headerBytes);
-                    reader.Seek(8 + len, SeekOrigin.Begin);
-                    reader.CopyTo(writer);
-                    reader.Dispose();
+                    if (reader is null)
+                    {
+                        reader = File.OpenRead(path);
+                        reader.Seek(0, SeekOrigin.Begin);
+                        byte[] headerLen = new byte[8];
+                        reader.ReadExactly(headerLen, 0, 8);
+                        len = BitConverter.ToInt64(headerLen, 0);
+                    }
+                    {
+                        using FileStream writer = File.OpenWrite(path + ".tmp");
+                        byte[] headerBytes = Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None));
+                        writer.Write(BitConverter.GetBytes(headerBytes.LongLength));
+                        writer.Write(headerBytes);
+                        reader.Seek(8 + len, SeekOrigin.Begin);
+                        reader.CopyTo(writer);
+                        reader.Dispose();
+                        reader = null;
+                    }
+                    // Journalling replace to prevent data loss in event of a crash.
+                    DateTime createTime = File.GetCreationTimeUtc(path);
+                    File.Move(path, path + ".tmp2");
+                    File.Move(path + ".tmp", path);
+                    File.Delete(path + ".tmp2");
+                    File.SetCreationTimeUtc(path, createTime);
+                    Logs.Debug($"Completed metadata update for {path}");
                 }
-                // Journalling replace to prevent data loss in event of a crash.
-                DateTime createTime = File.GetCreationTimeUtc(RawFilePath);
-                File.Move(RawFilePath, RawFilePath + ".tmp2");
-                File.Move(RawFilePath + ".tmp", RawFilePath);
-                File.Delete(RawFilePath + ".tmp2");
-                File.SetCreationTimeUtc(RawFilePath, createTime);
-                Logs.Debug($"Completed metadata update for {RawFilePath}");
+                HandleResave(RawFilePath);
+                if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
+                {
+                    foreach (string altPath in OtherPaths)
+                    {
+                        HandleResave(altPath);
+                    }
+                }
             }
             finally
             {
                 if (wasNull)
                 {
-                    reader.Dispose();
+                    reader?.Dispose();
                 }
             }
         }

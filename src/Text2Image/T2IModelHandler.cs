@@ -220,6 +220,11 @@ public class T2IModelHandler
                 AddAllFromFolder(path, "");
             }
             Logs.Debug($"Have {Models.Count} {ModelType} models.");
+            T2IModel[] dupped = [.. Models.Values.Where(m => m.OtherPaths.Count > 0)];
+            if (dupped.Length > 0)
+            {
+                Logs.Debug($"There are {dupped.Length} {ModelType} models that have exactly matched filenames across different folders: '{dupped[0].RawFilePath}' is also stored in '{dupped[0].OtherPaths.JoinString("', '")}'");
+            }
             if (UnathorizedAccessSet.Any())
             {
                 Logs.Warning($"Got UnauthorizedAccessException while loading {ModelType} model paths: {UnathorizedAccessSet.Select(m => $"'{m}'").JoinString(", ")}");
@@ -610,7 +615,14 @@ public class T2IModelHandler
         {
             string fn = file.Replace('\\', '/').AfterLast('/');
             string fullFilename = $"{prefix}{fn}";
-            if (T2IModel.NativelySupportedModelExtensions.Contains(fn.AfterLast('.')))
+            if (Models.TryGetValue(fullFilename, out T2IModel existingModel))
+            {
+                lock (existingModel.OtherPaths)
+                {
+                    existingModel.OtherPaths.Add(file);
+                }
+            }
+            else if (T2IModel.NativelySupportedModelExtensions.Contains(fn.AfterLast('.')))
             {
                 T2IModel model = new(this, pathBase, file, fullFilename)
                 {

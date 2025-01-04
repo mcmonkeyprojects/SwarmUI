@@ -230,6 +230,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, when a user edits a model's metadata, clear all stray data (eg old images, jsons, etc.) even from other UIs.\nIf false, only files controlled by Swarm will be altered.\nDefaults to false.")]
         public bool ClearStrayModelData = false;
+
+        [ConfigComment("If true, when a user edits a model's metadata, if there are multiple copies of that model in different folders, edit all copies.\nBe warned that if the models with the same name are different, the unique data maybe lost.\nThis is only a relevant option for users with redundant storage (eg a local drive and a NAS).\nIf false, only the file in the first folder will be edited.\nDefaults to false.")]
+        public bool EditMetadataAcrossAllDups = false;
     }
 
     /// <summary>Settings related to image/model metadata.</summary>
