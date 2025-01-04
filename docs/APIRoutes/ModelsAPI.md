@@ -6,6 +6,7 @@ API routes related to handling models (including loras, wildcards, etc).
 
 #### Table of Contents:
 
+- HTTP Route [DeleteModel](#http-route-apideletemodel)
 - HTTP Route [DeleteWildcard](#http-route-apideletewildcard)
 - HTTP Route [DescribeModel](#http-route-apidescribemodel)
 - WebSocket Route [DoModelDownloadWS](#websocket-route-apidomodeldownloadws)
@@ -15,9 +16,33 @@ API routes related to handling models (including loras, wildcards, etc).
 - HTTP Route [GetModelHash](#http-route-apigetmodelhash)
 - HTTP Route [ListLoadedModels](#http-route-apilistloadedmodels)
 - HTTP Route [ListModels](#http-route-apilistmodels)
+- HTTP Route [RenameModel](#http-route-apirenamemodel)
 - HTTP Route [SelectModel](#http-route-apiselectmodel)
 - WebSocket Route [SelectModelWS](#websocket-route-apiselectmodelws)
 - HTTP Route [TestPromptFill](#http-route-apitestpromptfill)
+
+## HTTP Route /API/DeleteModel
+
+#### Description
+
+Delete a model from storage.
+
+#### Permission Flag
+
+`delete_models` - `Delete Models` in group `Control`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| modelName | String | Full filepath name of the model being deleted. | **(REQUIRED)** |
+| subtype | String | What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc. | `Stable-Diffusion` |
+
+#### Return Format
+
+```js
+"success": "true"
+```
 
 ## HTTP Route /API/DeleteWildcard
 
@@ -278,6 +303,30 @@ Returns a list of models available on the server within a given folder, with the
             // etc., see `DescribeModel` for the full model description
         }
     ]
+```
+
+## HTTP Route /API/RenameModel
+
+#### Description
+
+Delete a model from storage.
+
+#### Permission Flag
+
+`delete_models` - `Delete Models` in group `Control`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| oldName | String | Full filepath name of the model being renamed. | **(REQUIRED)** |
+| newName | String | New full filepath name for the model. | **(REQUIRED)** |
+| subtype | String | What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc. | `Stable-Diffusion` |
+
+#### Return Format
+
+```js
+"success": "true"
 ```
 
 ## HTTP Route /API/SelectModel
