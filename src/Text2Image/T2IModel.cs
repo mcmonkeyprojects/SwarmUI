@@ -114,10 +114,21 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             {
                 return;
             }
-            string swarmjspath = $"{RawFilePath.BeforeLast('.')}.swarm.json";
+            string filePrefix = RawFilePath.BeforeLast('.');
+            string swarmjspath = $"{filePrefix}.swarm.json";
             if (File.Exists(swarmjspath))
             {
                 File.Delete(swarmjspath);
+            }
+            if (Program.ServerSettings.Paths.ClearStrayModelData)
+            {
+                foreach (string altPath in T2IModelHandler.AllModelAttachedExtensions)
+                {
+                    if (File.Exists($"{filePrefix}{altPath}"))
+                    {
+                        File.Delete($"{filePrefix}{altPath}");
+                    }
+                }
             }
             if ((!RawFilePath.EndsWith(".safetensors") && !RawFilePath.EndsWith(".sft")) || Program.ServerSettings.Metadata.EditMetadataWriteJSON)
             {

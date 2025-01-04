@@ -227,6 +227,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, when a user deletes an image, send it to the OS Recycle Bin instead of permanently deleting it.\nIf false, image files are permanently deleted.\nDefaults to false.")]
         public bool RecycleDeletedImages = false;
+
+        [ConfigComment("If true, when a user edits a model's metadata, clear all stray data (eg old images, jsons, etc.) even from other UIs.\nIf false, only files controlled by Swarm will be altered.\nDefaults to false.")]
+        public bool ClearStrayModelData = false;
     }
 
     /// <summary>Settings related to image/model metadata.</summary>

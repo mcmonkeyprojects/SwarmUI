@@ -291,6 +291,8 @@ public class T2IModelHandler
 
     public static readonly string[] AltModelMetadataJsonFileSuffixes = [".swarm.json", ".json", ".cm-info.json", ".civitai.info"];
 
+    public static readonly string[] AllModelAttachedExtensions = [.. AutoImageFormatSuffixes.Concat(AltModelMetadataJsonFileSuffixes)];
+
     public static readonly string[] AltMetadataDescriptionKeys = ["VersionName", "VersionDescription", "ModelDescription", "description"];
 
     public static readonly string[] AltMetadataTriggerWordsKeys = ["TrainedWords", "trainedWords"];
