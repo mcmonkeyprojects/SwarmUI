@@ -144,22 +144,22 @@ public static class UtilAPI
         {
             Interlocked.Add(ref backend.Usages, backend.Backend.MaxUsages);
         }
-        int ticks = 0;
-        while (Program.Backends.T2IBackends.Values.Any(b => b.Usages > b.Backend.MaxUsages))
-        {
-            if (Program.GlobalProgramCancel.IsCancellationRequested)
-            {
-                return null;
-            }
-            await Task.Delay(TimeSpan.FromSeconds(0.5));
-            if (ticks > 240)
-            {
-                Logs.Info($"Reset All Metadata: stuck waiting for backends to be clear too long, will just do it anyway.");
-                break;
-            }
-        }
         try
         {
+            int ticks = 0;
+            while (Program.Backends.T2IBackends.Values.Any(b => b.Usages > b.Backend.MaxUsages))
+            {
+                if (Program.GlobalProgramCancel.IsCancellationRequested)
+                {
+                    return null;
+                }
+                await Task.Delay(TimeSpan.FromSeconds(0.5));
+                if (ticks > 240)
+                {
+                    Logs.Info($"Reset All Metadata: stuck waiting for backends to be clear too long, will just do it anyway.");
+                    break;
+                }
+            }
             foreach (T2IModelHandler handler in Program.T2IModelSets.Values)
             {
                 handler.MassRemoveMetadata();
