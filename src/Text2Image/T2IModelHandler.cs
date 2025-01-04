@@ -613,18 +613,19 @@ public class T2IModelHandler
         });
         Parallel.ForEach(Directory.EnumerateFiles(actualFolder), file =>
         {
-            string fn = file.Replace('\\', '/').AfterLast('/');
+            string fixedFileName = file.Replace('\\', '/');
+            string fn = fixedFileName.AfterLast('/');
             string fullFilename = $"{prefix}{fn}";
             if (Models.TryGetValue(fullFilename, out T2IModel existingModel))
             {
                 lock (existingModel.OtherPaths)
                 {
-                    existingModel.OtherPaths.Add(file);
+                    existingModel.OtherPaths.Add(fixedFileName);
                 }
             }
             else if (T2IModel.NativelySupportedModelExtensions.Contains(fn.AfterLast('.')))
             {
-                T2IModel model = new(this, pathBase, file, fullFilename)
+                T2IModel model = new(this, pathBase, fixedFileName, fullFilename)
                 {
                     Title = fullFilename.AfterLast('/'),
                     Description = "(Metadata not yet loaded.)",
@@ -651,7 +652,7 @@ public class T2IModelHandler
             }
             else if (T2IModel.LegacyModelExtensions.Contains(fn.AfterLast('.')))
             {
-                T2IModel model = new(this, pathBase, file, fullFilename)
+                T2IModel model = new(this, pathBase, fixedFileName, fullFilename)
                 {
                     Description = "(None, use '.safetensors' to enable metadata descriptions)",
                     PreviewImage = "imgs/legacy_ckpt.jpg",

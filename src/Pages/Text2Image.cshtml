@@ -512,6 +512,20 @@
                     <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#delete_model_modal').modal('hide')">Cancel</button>
                 </div>
             @WebUtil.ModalFooter()
+            @WebUtil.ModalHeader("rename_model_modal", """Rename Model: <span id="rename_model_name"></span>""")
+                <div class="modal-body">
+                    <span class="translate">Rename the model:</span>
+                    <br><i class="translate">This will move the model file and any attached files to a different sub-folder, within the same models path.</i>
+                    <br>@WebUtil.TextPopoverButton("modelrenamedownloaderfolder", "What folder to put the model in.\nTo create new folders, simply type paths with '/' in them into the 'Save as:' name box below.") <b>Folder</b>: <select class="auto-dropdown" id="model_rename_downloader_folder" autocomplete="off"></select>
+                    <br>
+                    <br>@WebUtil.TextPopoverButton("modelrenamedownloadersaveas", "File name to save as. Don't include the '.safetensors' file extension, just the name.\nYou can use a folder path with the '/' symbol.") <b>New name</b>: <input type="text" id="model_rename_downloader_name" class="auto-text auto-text-wide" placeholder="Model Name" autocomplete="off" oninput="modelRenameNameInput()" />
+                    <br>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary basic-button translate" onclick="doRenameModelNow()">Rename Now</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#rename_model_modal').modal('hide')">Cancel</button>
+                </div>
+            @WebUtil.ModalFooter()
             @WebUtil.ModalHeader("create_tensorrt_modal", """Create TensorRT Engine""")
                 <div id="tensorrt_mustinstall" style="display:none;">
                     <div class="modal-body">

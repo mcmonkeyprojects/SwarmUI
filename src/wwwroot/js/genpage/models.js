@@ -178,6 +178,52 @@ function doDeleteModelNow() {
     $('#delete_model_modal').modal('hide');
 }
 
+function renameModel(model, browser) {
+    if (model == null) {
+        return;
+    }
+    curModelMenuModel = model;
+    curModelMenuBrowser = browser;
+    let lastSlash = model.name.lastIndexOf('/');
+    let name = lastSlash != -1 ? model.name.substring(lastSlash + 1) : model.name;
+    let selector = getRequiredElementById('model_rename_downloader_folder');
+    modelDownloader.buildFolderSelector(selector);
+    selector.value = lastSlash != -1 ? model.name.substring(0, lastSlash) : '(None)';
+    getRequiredElementById('rename_model_name').innerText = model.name;
+    getRequiredElementById('model_rename_downloader_name').value = name;
+    $('#rename_model_modal').modal('show');
+}
+
+function doRenameModelNow() {
+    let model = curModelMenuModel;
+    if (model == null) {
+        return;
+    }
+    let name = getRequiredElementById('model_rename_downloader_name').value.trim();
+    if (name == '') {
+        return;
+    }
+    let folder = getRequiredElementById('model_rename_downloader_folder').value;
+    let newName = folder == '(None)' ? name : `${folder}/${name}`;
+    genericRequest('RenameModel', { 'oldName': model.name, 'newName': newName, 'subtype': curModelMenuBrowser.subType }, data => {
+        curModelMenuBrowser.browser.refresh();
+    });
+    $('#rename_model_modal').modal('hide');
+}
+
+function modelRenameNameInput() {
+    let name = getRequiredElementById('model_rename_downloader_name');
+    if (name.value.trim() == '') {
+        name.style.borderColor = 'red';
+    }
+    else {
+        name.style.borderColor = '';
+    }
+    if (name.value.includes(' ')) {
+        name.value = name.value.replaceAll(' ', '_');
+    }
+}
+
 function editModel(model, browser) {
     if (model == null) {
         return;
@@ -573,6 +619,9 @@ class ModelBrowserWrapper {
             }
             if (model.data.local && permissions.hasPermission('delete_models')) {
                 buttons.push({ label: 'Delete Model', onclick: () => deleteModel(model.data, this) });
+            }
+            if (model.data.local && permissions.hasPermission('delete_models')) {
+                buttons.push({ label: 'Rename Model', onclick: () => renameModel(model.data, this) });
             }
             if (model.data.local && this.subType == 'Stable-Diffusion' && !model.data.name.endsWith('.engine') && permissions.hasPermission('create_tensorrt')) {
                 buttons.push({ label: 'Create TensorRT Engine', onclick: () => showTrtMenu(model.data) });

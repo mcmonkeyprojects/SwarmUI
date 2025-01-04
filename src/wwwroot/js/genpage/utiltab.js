@@ -191,11 +191,10 @@ class ModelDownloaderUtil {
         this.civitGreenPrefix = 'https://civitai.green/';
     }
 
-    reloadFolders() {
+    buildFolderSelector(selector) {
         if (!coreModelMap) {
             return;
         }
-        let selected = this.folders.value;
         let html = '<option>(None)</option>';
         let folderList = [];
         for (let submap of Object.values(coreModelMap)) {
@@ -219,7 +218,15 @@ class ModelDownloaderUtil {
         for (let folder of folderList) {
             html += `<option>${folder}</option>\n`;
         }
-        this.folders.innerHTML = html;
+        selector.innerHTML = html;
+    }
+
+    reloadFolders() {
+        if (!coreModelMap) {
+            return;
+        }
+        let selected = this.folders.value;
+        this.buildFolderSelector(this.folders);
         this.folders.value = selected || '(None)';
     }
 
