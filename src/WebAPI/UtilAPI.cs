@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
+using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
@@ -138,9 +139,38 @@ public static class UtilAPI
     [API.APIDescription("Trigger a mass metadata reset.", "\"success\": true")]
     public static async Task<JObject> WipeMetadata()
     {
-        foreach (T2IModelHandler handler in Program.T2IModelSets.Values)
+        BackendHandler.T2IBackendData[] backends = [.. Program.Backends.T2IBackends.Values];
+        foreach (BackendHandler.T2IBackendData backend in backends)
         {
-            handler.MassRemoveMetadata();
+            Interlocked.Add(ref backend.Usages, backend.Backend.MaxUsages);
+        }
+        int ticks = 0;
+        while (Program.Backends.T2IBackends.Values.Any(b => b.Usages > b.Backend.MaxUsages))
+        {
+            if (Program.GlobalProgramCancel.IsCancellationRequested)
+            {
+                return null;
+            }
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            if (ticks > 240)
+            {
+                Logs.Info($"Reset All Metadata: stuck waiting for backends to be clear too long, will just do it anyway.");
+                break;
+            }
+        }
+        try
+        {
+            foreach (T2IModelHandler handler in Program.T2IModelSets.Values)
+            {
+                handler.MassRemoveMetadata();
+            }
+        }
+        finally
+        {
+            foreach (BackendHandler.T2IBackendData backend in backends)
+            {
+                Interlocked.Add(ref backend.Usages, -backend.Backend.MaxUsages);
+            }
         }
         ImageMetadataTracker.MassRemoveMetadata();
         return new JObject() { ["success"] = true };

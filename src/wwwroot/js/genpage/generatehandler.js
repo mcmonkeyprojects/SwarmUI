@@ -84,7 +84,6 @@ class GenerateHandler {
         if (vid) {
             vid.remove();
         }
-        console.log(`set image to ${isVideoExt(src)}`)
         if (isVideoExt(src)) {
             if (imgElem) {
                 imgElem.remove();
