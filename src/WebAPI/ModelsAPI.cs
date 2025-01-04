@@ -550,6 +550,18 @@ public static class ModelsAPI
             {
                 File.WriteAllText($"{handler.FolderPaths[0]}/{name}.swarm.json", metadata);
             }
+            if (Program.ServerSettings.Paths.DownloaderAlwaysResave)
+            {
+                handler.Refresh();
+                if (handler.Models.TryGetValue($"{name}.safetensors", out T2IModel model))
+                {
+                    model.ResaveModel();
+                }
+                else
+                {
+                    Logs.Warning($"Could not resave model '{name}.safetensors' as it has not shown up in the backing handler. Something may have gone wrong.");
+                }
+            }
             await ws.SendJson(new JObject() { ["success"] = true }, API.WebsocketTimeout);
         }
         catch (SwarmReadableErrorException userErr)

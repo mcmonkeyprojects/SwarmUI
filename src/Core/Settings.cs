@@ -228,11 +228,17 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, when a user deletes an image, send it to the OS Recycle Bin instead of permanently deleting it.\nIf false, image files are permanently deleted.\nDefaults to false.")]
         public bool RecycleDeletedImages = false;
 
+        [ConfigComment("If true, when a user deletes a model, send it to the OS Recycle Bin instead of permanently deleting it.\nIf false, model files are permanently deleted.\nDefaults to false.")]
+        public bool RecycleDeletedModels = false;
+
         [ConfigComment("If true, when a user edits a model's metadata, clear all stray data (eg old images, jsons, etc.) even from other UIs.\nIf false, only files controlled by Swarm will be altered.\nDefaults to false.")]
         public bool ClearStrayModelData = false;
 
         [ConfigComment("If true, when a user edits a model's metadata, if there are multiple copies of that model in different folders, edit all copies.\nBe warned that if the models with the same name are different, the unique data maybe lost.\nThis is only a relevant option for users with redundant storage (eg a local drive and a NAS).\nIf false, only the file in the first folder will be edited.\nDefaults to false.")]
         public bool EditMetadataAcrossAllDups = false;
+
+        [ConfigComment("If true, always resave models after the downloader utility grabs them.\nThis ensures metadata is fully properly set, but wastes some extra time on file processing.\nIf false, the downloader will leave a stray json next to the model.\nDefaults to false.")]
+        public bool DownloaderAlwaysResave = false;
     }
 
     /// <summary>Settings related to image/model metadata.</summary>
