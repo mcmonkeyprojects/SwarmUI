@@ -306,6 +306,9 @@ class ModelDownloaderUtil {
                 if (img) {
                     metadata['modelspec.thumbnail'] = img;
                 }
+                if (['Illustrious', 'Pony'].includes(rawVersion.baseModel)) {
+                    metadata['modelspec.usage_hint'] = rawVersion.baseModel;
+                }
                 callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url), null);
             }
             if (imgs.length > 0) {

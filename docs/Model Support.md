@@ -325,6 +325,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 *(LTX-Video 0.9.1, Text2Video, CFG=7 because 3 was really bad)*
 
 - Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video and also as an Image-To-Video model.
+    - The text2video is not great quality compared to other models, but the image2video functionality is popular.
 - Download <https://huggingface.co/Lightricks/LTX-Video/blob/main/ltx-video-2b-v0.9.safetensors>
     - save to `Stable-Diffusion` folder
     - The text encoder (T5-XXL) and VAE will be automatically downloaded
