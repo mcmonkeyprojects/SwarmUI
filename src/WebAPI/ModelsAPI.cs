@@ -29,6 +29,7 @@ public static class ModelsAPI
         API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
+        API.RegisterAPICall(DeleteModel, false, Permissions.DeleteModels);
     }
 
     public static Dictionary<string, JObject> InternalExtraModels(string subtype)
@@ -640,5 +641,45 @@ public static class ModelsAPI
             Logs.Warning($"While parsing JSON response from '{url}', got exception: {ex.ReadableString()}");
             return new JObject() { ["error"] = $"{ex.GetType().Name}: {ex.Message}" };
         }
+    }
+
+    [API.APIDescription("Delete a model from storage.", "\"success\": \"true\"")]
+    public static async Task<JObject> DeleteModel(Session session,
+        [API.APIParameter("Full filepath name of the model being deleted.")] string modelName,
+        [API.APIParameter("What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc.")] string subtype = "Stable-Diffusion")
+    {
+        if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
+        {
+            return new JObject() { ["error"] = "Invalid sub-type." };
+        }
+        T2IModel match = null;
+        if (session.User.IsAllowedModel(modelName))
+        {
+            if (handler.Models.TryGetValue(modelName + ".safetensors", out T2IModel model))
+            {
+                match = model;
+            }
+            else if (handler.Models.TryGetValue(modelName, out model))
+            {
+                match = model;
+            }
+        }
+        if (match is null)
+        {
+            return new JObject() { ["error"] = "Model not found." };
+        }
+        Action<string> deleteFile = Program.ServerSettings.Paths.RecycleDeletedImages ? Utilities.SendFileToRecycle : File.Delete;
+        deleteFile(match.RawFilePath);
+        string fileBase = Path.GetFullPath(match.RawFilePath).BeforeLast('.');
+        foreach (string str in T2IModelHandler.AllModelAttachedExtensions)
+        {
+            string altFile = $"{fileBase}{str}";
+            if (File.Exists(altFile))
+            {
+                deleteFile(altFile);
+            }
+        }
+        handler.Models.Remove(match.Name, out _);
+        return new JObject() { ["success"] = true };
     }
 }

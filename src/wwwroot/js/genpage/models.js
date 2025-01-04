@@ -46,10 +46,6 @@ function testWildcard(card) {
     }
 }
 
-function close_test_wildcard() {
-    $('#test_wildcard_modal').modal('hide');
-}
-
 function create_new_wildcard_button() {
     let card = {
         name: '',
@@ -116,10 +112,6 @@ function save_edit_wildcard() {
     }
 }
 
-function close_edit_wildcard() {
-    $('#edit_wildcard_modal').modal('hide');
-}
-
 function editModelGetHashNow() {
     if (curModelMenuModel == null) {
         return;
@@ -163,6 +155,27 @@ function getCivitUrlGuessFor(model) {
         }
     }
     return civitUrl;
+}
+
+function deleteModel(model, browser) {
+    if (model == null) {
+        return;
+    }
+    curModelMenuModel = model;
+    curModelMenuBrowser = browser;
+    getRequiredElementById('delete_model_name').innerText = model.name;
+    $('#delete_model_modal').modal('show');
+}
+
+function doDeleteModelNow() {
+    let model = curModelMenuModel;
+    if (model == null) {
+        return;
+    }
+    genericRequest('DeleteModel', { 'modelName': model.name, 'subtype': curModelMenuBrowser.subType }, data => {
+        curModelMenuBrowser.browser.update();
+    });
+    $('#delete_model_modal').modal('hide');
 }
 
 function editModel(model, browser) {
@@ -314,10 +327,6 @@ function save_edit_model() {
     else {
         complete();
     }
-}
-
-function close_edit_model() {
-    $('#edit_model_modal').modal('hide');
 }
 
 function cleanModelName(name) {
@@ -561,6 +570,9 @@ class ModelBrowserWrapper {
             detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
             if (model.data.local && permissions.hasPermission('edit_model_metadata')) {
                 buttons.push({ label: 'Edit Metadata', onclick: () => editModel(model.data, this) });
+            }
+            if (model.data.local && permissions.hasPermission('delete_models')) {
+                buttons.push({ label: 'Delete Model', onclick: () => deleteModel(model.data, this) });
             }
             if (model.data.local && this.subType == 'Stable-Diffusion' && !model.data.name.endsWith('.engine') && permissions.hasPermission('create_tensorrt')) {
                 buttons.push({ label: 'Create TensorRT Engine', onclick: () => showTrtMenu(model.data) });
@@ -971,10 +983,6 @@ function showTrtMenu(model) {
     }
     modelSelect.value = cleanModelName(model.name);
     $('#create_tensorrt_modal').modal('show');
-}
-
-function close_trt_modal() {
-    $('#create_tensorrt_modal').modal('hide');
 }
 
 function trt_modal_create() {

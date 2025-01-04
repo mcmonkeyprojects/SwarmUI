@@ -74,6 +74,7 @@ public static class Permissions
     public static PermInfo DownloadModels = Register(new("download_models", "Download Models", "Allows this user to download models.", PermissionDefault.POWERUSERS, GroupControl, PermSafetyLevel.UNTESTED));
     public static PermInfo ResetMetadata = Register(new("reset_metadata", "Reset Metadata", "Allows this user to use the special utility to reset all metadata.", PermissionDefault.POWERUSERS, GroupControl, PermSafetyLevel.SAFE));
     public static PermInfo Pickle2Safetensors = Register(new("pickle2safetensors", "Pickle2SafeTensors", "Allows this user to use the special utility to convert pickle models to safetensors.", PermissionDefault.POWERUSERS, GroupControl, PermSafetyLevel.RISKY));
+    public static PermInfo DeleteModels = Register(new("delete_models", "Delete Models", "Allows this user to delete or rename models.", PermissionDefault.POWERUSERS, GroupControl, PermSafetyLevel.UNTESTED));
 
     public static PermInfoGroup GroupParams = new("Parameters", "Permissions for basic parameter access.");
 

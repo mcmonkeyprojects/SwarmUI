@@ -475,7 +475,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary basic-button translate" onclick="save_edit_model()">Save</button>
-                    <button type="button" class="btn btn-secondary basic-button translate" onclick="close_edit_model()">Cancel</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#edit_model_modal').modal('hide')">Cancel</button>
                 </div>
             @WebUtil.ModalFooter()
             @WebUtil.ModalHeader("edit_wildcard_modal", """Edit Wildcard: <input type="text" class="modal_text_extra" id="edit_wildcard_name" placeholder="Wildcard Name" />""")
@@ -490,7 +490,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary basic-button translate" onclick="save_edit_wildcard()">Save</button>
-                    <button type="button" class="btn btn-secondary basic-button translate" onclick="close_edit_wildcard()">Cancel</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#edit_wildcard_modal').modal('hide')">Cancel</button>
                 </div>
             @WebUtil.ModalFooter()
             @WebUtil.ModalHeader("test_wildcard_modal", """Test Wildcard: <span id="test_wildcard_name"></span>""")
@@ -499,7 +499,17 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="test_wildcard_again_button" class="btn btn-primary basic-button translate" onclick="test_wildcard_again()">Test Again</button>
-                    <button type="button" class="btn btn-secondary basic-button translate" onclick="close_test_wildcard()">Cancel</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#test_wildcard_modal').modal('hide')">Cancel</button>
+                </div>
+            @WebUtil.ModalFooter()
+            @WebUtil.ModalHeader("delete_model_modal", """Delete Model: <span id="delete_model_name"></span>""")
+                <div class="modal-body">
+                    <span class="translate">Are you sure you want to delete this model?</span>
+                    <br><i class="translate">This cannot be undone. The whole model will be gone until you re-download it.</i>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary basic-button translate" onclick="doDeleteModelNow()">Delete Now</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#delete_model_modal').modal('hide')">Cancel</button>
                 </div>
             @WebUtil.ModalFooter()
             @WebUtil.ModalHeader("create_tensorrt_modal", """Create TensorRT Engine""")
@@ -535,7 +545,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" id="trt_create_button" class="btn btn-primary basic-button translate" onclick="trt_modal_create()">Create</button>
-                        <button type="button" class="btn btn-secondary basic-button translate" onclick="close_trt_modal()">Cancel</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#create_tensorrt_modal').modal('hide')">Cancel</button>
                     </div>
                 </div>
             @WebUtil.ModalFooter()
