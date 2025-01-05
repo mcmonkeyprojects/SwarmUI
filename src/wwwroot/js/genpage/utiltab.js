@@ -696,18 +696,23 @@ class ModelMetadataScanner {
         let scanned = 0;
         let updated = 0;
         let failed = 0;
+        let skipped = 0;
         let invalidDescriptions = ['', '(None)', '(Unset)'];
+        let relisted = [];
+        for (let key of list) {
+            if (key.name != '(None)' && nameMatcher(key.name)) {
+                relisted.push(key);
+            }
+        }
+        list = relisted;
         let update = () => {
-            this.resultArea.innerText = `${running} scans currently running, already scanned ${scanned} models, ${failed} couldn't be found on civitai, ${updated} models updated with new metadata.`;
+            this.resultArea.innerText = `${running} scans currently running, already scanned ${scanned} models, ${failed} couldn't be found on civitai, ${skipped} skipped, ${updated} models updated with new metadata. Remaining: ${list.length - scanned - failed - skipped} / ${list.length}`;
         };
         let removeOne = () => {
             running--;
             update();
         }
         for (let key of list) {
-            if (key.name == '(None)' || !nameMatcher(key.name)) {
-                continue;
-            }
             while (running >= this.maxSimulLoads) {
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
@@ -725,6 +730,7 @@ class ModelMetadataScanner {
                         limit *= 31;
                     }
                     if (timeNow - createTime > limit) {
+                        skipped++;
                         removeOne();
                         return;
                     }
@@ -745,6 +751,7 @@ class ModelMetadataScanner {
                         allowed = false;
                     }
                     if (!allowed) {
+                        skipped++;
                         removeOne();
                         return;
                     }
@@ -862,8 +869,7 @@ class ModelMetadataScanner {
                         }, 0, e => { failed++; removeOne(); });
                     }
                 }
-
-            }, 0, e => { removeOne(); });
+            }, 0, e => {  failed++; removeOne(); });
         }
         while (running > 0) {
             await new Promise(resolve => setTimeout(resolve, 200));
