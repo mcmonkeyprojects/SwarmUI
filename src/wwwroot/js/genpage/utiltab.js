@@ -765,6 +765,7 @@ class ModelMetadataScanner {
                             model.author = metadata['modelspec.author'] || model.author;
                             model.date = metadata['modelspec.date'] || model.date;
                             model.trigger_phrase = metadata['modelspec.trigger_phrase'] || model.trigger_phrase;
+                            model.usage_hint = metadata['modelspec.usage_hint'] || model.usage_hint;
                             if (metadata['modelspec.tags']) {
                                 model.tags = metadata['modelspec.tags'].split(',').map(x => x.trim());
                             }
@@ -778,6 +779,7 @@ class ModelMetadataScanner {
                             model.author = model.author || metadata['modelspec.author'];
                             model.date = model.date || metadata['modelspec.date'];
                             model.trigger_phrase = model.trigger_phrase || metadata['modelspec.trigger_phrase'];
+                            model.usage_hint = model.usage_hint || metadata['modelspec.usage_hint'];
                             if (metadata['modelspec.tags'] && !model.tags) {
                                 model.tags = metadata['modelspec.tags'].split(',').map(x => x.trim());
                             }
