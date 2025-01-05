@@ -791,6 +791,7 @@ class ModelMetadataScanner {
                             model.author = metadata['modelspec.author'] || model.author;
                             model.date = metadata['modelspec.date'] || model.date;
                             model.trigger_phrase = metadata['modelspec.trigger_phrase'] || model.trigger_phrase;
+                            model.usage_hint = metadata['modelspec.usage_hint'] || model.usage_hint;
                             if (metadata['modelspec.tags']) {
                                 model.tags = metadata['modelspec.tags'].split(',').map(x => x.trim());
                             }
@@ -798,12 +799,12 @@ class ModelMetadataScanner {
                         scanned++;
                         update();
                         let tagsMatch = (!model.tags == !backup.tags) && (!model.tags || backup.tags.join(', ') == model.tags.join(', '));
-                        let anyChanged = backup.preview_image != model.preview_image || backup.title != model.title || backup.description != model.description || backup.author != model.author || backup.date != model.date || backup.trigger_phrase != model.trigger_phrase || !tagsMatch;
+                        let anyChanged = backup.preview_image != model.preview_image || backup.title != model.title || backup.description != model.description || backup.author != model.author || backup.date != model.date || backup.trigger_phrase != model.trigger_phrase || backup.usage_hint != model.usage_hint || !tagsMatch;
                         if (!anyChanged) {
                             removeOne();
                             return;
                         }
-                        console.log(`Model ${key.name} (${key.type}) - change report: image: ${backup.preview_image != model.preview_image}, title: ${backup.title != model.title}, description: ${backup.description != model.description}, author: ${backup.author != model.author}, date: ${backup.date != model.date}, trigger: ${backup.trigger_phrase != model.trigger_phrase}, tags: ${!tagsMatch}`);
+                        console.log(`Model ${key.name} (${key.type}) - change report: image: ${backup.preview_image != model.preview_image}, title: ${backup.title != model.title}, description: ${backup.description != model.description}, author: ${backup.author != model.author}, date: ${backup.date != model.date}, trigger: ${backup.trigger_phrase != model.trigger_phrase}, usage_hint: ${backup.usage_hint != model.usage_hint}, tags: ${!tagsMatch}`);
                         let newMetadata = {
                             'model': key.name,
                             'subtype': key.type,
@@ -817,6 +818,7 @@ class ModelMetadataScanner {
                             'date': model.date || '',
                             'license': model.license || '',
                             'trigger_phrase': model.trigger_phrase || '',
+                            'usage_hint': model.usage_hint || '',
                             'prediction_type': model.prediction_type || '',
                             'tags': model.tags ? model.tags.join(', ') : null,
                             'preview_image': model.preview_image == "imgs/model_placeholder.jpg" ? null : model.preview_image,

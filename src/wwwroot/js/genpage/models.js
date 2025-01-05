@@ -312,14 +312,10 @@ function edit_model_load_civitai() {
             return;
         }
         getRequiredElementById('edit_model_name').value = metadata['modelspec.title'];
-        getRequiredElementById('edit_model_author').value = metadata['modelspec.author'];
-        getRequiredElementById('edit_model_description').value = metadata['modelspec.description'];
-        getRequiredElementById('edit_model_date').value = metadata['modelspec.date'];
-        if (metadata['modelspec.trigger_phrase']) {
-            getRequiredElementById('edit_model_trigger_phrase').value = metadata['modelspec.trigger_phrase'];
-        }
-        if (metadata['modelspec.tags']) {
-            getRequiredElementById('edit_model_tags').value = metadata['modelspec.tags'];
+        for (let key of ['author', 'description', 'date', 'trigger_phrase', 'usage_hint', 'tags']) {
+            if (metadata[`modelspec.${key}`]) {
+                getRequiredElementById(`edit_model_${key}`).value = metadata[`modelspec.${key}`];
+            }
         }
         if (img) {
             let imageInput = getRequiredElementById('edit_model_image');
