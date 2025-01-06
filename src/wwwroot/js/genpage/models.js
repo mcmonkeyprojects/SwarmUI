@@ -1,4 +1,4 @@
-
+﻿
 let models = {};
 let cur_model = null;
 let curModelWidth = 0, curModelHeight = 0;
@@ -175,7 +175,33 @@ function doDeleteModelNow() {
     genericRequest('DeleteModel', { 'modelName': model.name, 'subtype': curModelMenuBrowser.subType }, data => {
         curModelMenuBrowser.browser.update();
     });
+    toggleSelectLora(model.name);
+    updateDeleteButtonState();
     $('#delete_model_modal').modal('hide');
+}
+
+function doDeleteModelSelectedNow() {
+    let view = getRequiredElementById('current_lora_list_view');
+    let loraElem = document.getElementById('input_loras');
+    if (!loraElem) {
+        return;
+    }
+    let currentLoras = [...loraElem.selectedOptions].map(option => option.value);
+    for (var i = 0; i < currentLoras.length; i++)
+    {
+        let model = currentLoras[i];
+        if (model != null) {
+
+            genericRequest('DeleteModel', { 'modelName': model, 'subtype': 'LoRA' }, data => {
+                //curModelMenuBrowser.browser.update();
+            });
+            toggleSelectLora(model);
+        }
+    }
+    updateDeleteButtonState();
+
+    let refreshButton = document.getElementById('sdlorabrowser_refresh_button');
+    refreshButton.click();
 }
 
 function renameModel(model, browser) {
@@ -914,6 +940,20 @@ function updateLoraList() {
     setTimeout(() => {
         setPageBarsFunc();
     }, 1);
+    updateDeleteButtonState();
+}
+
+function updateDeleteButtonState() {
+    let loraListView = document.getElementById('current_lora_list_view');
+    let deleteButton = document.getElementById('deleteSelectedLorasButton');
+
+    if (loraListView && deleteButton) {
+        if (loraListView.innerHTML.trim() === "") {
+            deleteButton.disabled = true; 
+        } else {
+            deleteButton.disabled = false; 
+        }
+    }
 }
 
 function toggleSelectLora(lora) {
@@ -936,6 +976,7 @@ function toggleSelectLora(lora) {
     doToggleEnable('input_loras');
     updateLoraWeights();
     updateLoraList();
+    updateDeleteButtonState();
 }
 
 function directSetVae(vae) {
