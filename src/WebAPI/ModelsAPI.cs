@@ -645,15 +645,20 @@ public static class ModelsAPI
     }
 
     /// <summary>Internal call for model/image delete to clean up folders recursively.</summary>
-    static void AutoFolderRemove(string path)
+    static void AutoFolderRemove(T2IModelHandler handler, string path)
     {
         if (Directory.EnumerateFileSystemEntries(path).Any())
         {
             return;
         }
+        string proper = Path.GetFullPath(path);
+        if (handler.FolderPaths.Any(preserve => Path.GetFullPath(preserve) == proper))
+        {
+            return;
+        }
         string parent = Path.GetDirectoryName(path);
         Directory.Delete(path);
-        AutoFolderRemove(parent);
+        AutoFolderRemove(handler, parent);
     }
 
     [API.APIDescription("Deletes a model from storage.", "\"success\": \"true\"")]
@@ -694,7 +699,7 @@ public static class ModelsAPI
                     deleteFile(altFile);
                 }
             }
-            AutoFolderRemove(Path.GetDirectoryName(path));
+            AutoFolderRemove(handler, Path.GetDirectoryName(path));
         }
         doDelete(match.RawFilePath);
         if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
@@ -764,7 +769,7 @@ public static class ModelsAPI
                     File.Move(altFile, $"{relevantRoot}/{newName}{str}");
                 }
             }
-            AutoFolderRemove(Path.GetDirectoryName(oldPath));
+            AutoFolderRemove(handler, Path.GetDirectoryName(oldPath));
         }
         doMoveNow(match.RawFilePath);
         if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
