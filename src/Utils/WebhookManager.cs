@@ -51,16 +51,8 @@ public static class WebhookManager
             }
             TimeStoppedGenerating = 0;
             Logs.Verbose("[Webhooks] Marking server as starting generations, sending Queue Start webhook.");
-            JObject toSend = [];
-            if (!string.IsNullOrWhiteSpace(HookSettings.QueueStartWebhookData))
-            {
-                toSend = HookSettings.QueueStartWebhookData.ParseToJson();
-            }
-            HttpResponseMessage msg = await Client.PostAsync(HookSettings.QueueStartWebhook, Utilities.JSONContent(toSend));
-            string response = await msg.Content.ReadAsStringAsync();
-            Logs.Verbose($"[Webhooks] Queue Start webhook response: {msg.StatusCode}: {response}");
+            await SendWebhook("Queue Start", HookSettings.QueueStartWebhook, HookSettings.QueueStartWebhookData);
             IsServerGenerating = true;
-            return;
         }
         catch (Exception ex)
         {
@@ -96,15 +88,7 @@ public static class WebhookManager
             TimeStoppedGenerating = 0;
             IsServerGenerating = false;
             Logs.Verbose("[Webhooks] Marking server as done generating, sending Queue End webhook.");
-            JObject toSend = [];
-            if (!string.IsNullOrWhiteSpace(HookSettings.QueueStartWebhookData))
-            {
-                toSend = HookSettings.QueueStartWebhookData.ParseToJson();
-            }
-            HttpResponseMessage msg = await Client.PostAsync(HookSettings.QueueEndWebhook, Utilities.JSONContent(toSend));
-            string response = await msg.Content.ReadAsStringAsync();
-            Logs.Verbose($"[Webhooks] Queue End webhook response: {msg.StatusCode}: {response}");
-            return;
+            await SendWebhook("Queue End", HookSettings.QueueEndWebhook, HookSettings.QueueEndWebhookData);
         }
         catch (Exception ex)
         {
@@ -137,7 +121,7 @@ public static class WebhookManager
     /// <summary>Helper to parse user-custom json data associated with an image gen.</summary>
     public static JObject ParseJsonForHook(string json, T2IParamInput input, string imageData)
     {
-        if (!json.Contains('%'))
+        if (!json.Contains('%') || input is null)
         {
             return json.ParseToJson();
         }
@@ -179,7 +163,7 @@ public static class WebhookManager
             }
             if (data is not null)
             {
-                output.Append(json[last..start]).Append(data);
+                output.Append(json[last..start]).Append(Utilities.EscapeJsonString(data));
             }
             else
             {
@@ -192,67 +176,57 @@ public static class WebhookManager
         return output.ToString().ParseToJson();
     }
 
-    /// <summary>Sends the every-gen webhook.</summary>
+    /// <summary>Sends the every-gen webhook and manual gen webhook.</summary>
     public static void SendEveryGenWebhook(T2IParamInput input, string imageData)
     {
-        if (string.IsNullOrWhiteSpace(HookSettings.EveryGenWebhook))
-        {
-            return;
-        }
         string webhookPreference = input.Get(T2IParamTypes.Webhooks, "Normal");
         if (webhookPreference == "None")
         {
             return;
         }
-        JObject data = [];
-        if (!string.IsNullOrWhiteSpace(HookSettings.EveryGenWebhookData))
+        SendWebhook("Every Gen", HookSettings.EveryGenWebhook, HookSettings.EveryGenWebhookData, input, imageData);
+        if (webhookPreference == "Manual")
         {
-            data = ParseJsonForHook(HookSettings.EveryGenWebhookData, input, imageData);
-        }
-        Utilities.RunCheckedTask(async () =>
-        {
-            HttpResponseMessage msg = await Client.PostAsync(HookSettings.EveryGenWebhook, Utilities.JSONContent(data));
-            string response = await msg.Content.ReadAsStringAsync();
-            Logs.Verbose($"[Webhooks] Every Gen webhook response: {msg.StatusCode}: {response}");
-        });
-        if (webhookPreference == "Manual" && !string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhook))
-        {
-            JObject manualData = [];
-            if (!string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhookData))
-            {
-                manualData = ParseJsonForHook(HookSettings.ManualGenWebhookData, input, imageData);
-            }
-            Utilities.RunCheckedTask(async () =>
-            {
-                HttpResponseMessage msg = await Client.PostAsync(HookSettings.ManualGenWebhook, Utilities.JSONContent(manualData));
-                string response = await msg.Content.ReadAsStringAsync();
-                Logs.Verbose($"[Webhooks] Manual Gen webhook response: {msg.StatusCode}: {response}");
-            });
+            SendWebhook("Manual Gen", HookSettings.ManualGenWebhook, HookSettings.ManualGenWebhookData, input, imageData);
         }
     }
 
-    /// <summary>Sends the every-gen webhook.</summary>
+    /// <summary>Sends the manual-at-end every-gen webhook.</summary>
     public static void SendManualAtEndWebhook(T2IParamInput input)
     {
-        if (string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhook))
-        {
-            return;
-        }
         string webhookPreference = input.Get(T2IParamTypes.Webhooks, "Normal");
         if (webhookPreference != "Manual At End")
         {
             return;
         }
-        JObject data = [];
-        if (!string.IsNullOrWhiteSpace(HookSettings.ManualGenWebhookData))
+        SendWebhook("Manual (at end)", HookSettings.ManualGenWebhook, HookSettings.ManualGenWebhookData, input, null);
+    }
+
+    /// <summary>Run a generic webhook directly.</summary>
+    public static Task SendWebhook(string id, string path, string dataStr, T2IParamInput input = null, string imageData = null)
+    {
+        try
         {
-            data = ParseJsonForHook(HookSettings.ManualGenWebhookData, input, null);
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return Task.CompletedTask;
+            }
+            JObject data = [];
+            if (!string.IsNullOrWhiteSpace(dataStr))
+            {
+                data = ParseJsonForHook(dataStr, input, imageData);
+            }
+            return Utilities.RunCheckedTask(async () =>
+            {
+                HttpResponseMessage msg = await Client.PostAsync(path, Utilities.JSONContent(data));
+                string response = await msg.Content.ReadAsStringAsync();
+                Logs.Verbose($"[Webhooks] {id} webhook response: {msg.StatusCode}: {response}");
+            });
         }
-        Utilities.RunCheckedTask(async () =>
+        catch (Exception ex)
         {
-            HttpResponseMessage msg = await Client.PostAsync(HookSettings.ManualGenWebhook, Utilities.JSONContent(data));
-            string response = await msg.Content.ReadAsStringAsync();
-            Logs.Verbose($"[Webhooks] Manual (at end) Gen webhook response: {msg.StatusCode}: {response}");
-        });
+            Logs.Error($"Error sending webhook: {ex}");
+            return Task.CompletedTask;
+        }
     }
 }

@@ -320,6 +320,7 @@ public class Program
             }
         });
         Logs.Init("Program is running.");
+        WebhookManager.SendWebhook("Startup", ServerSettings.WebHooks.ServerStartWebhook, ServerSettings.WebHooks.ServerShutdownWebhook);
         WebServer.WebApp.WaitForShutdown();
         Shutdown();
     }
@@ -403,6 +404,8 @@ public class Program
             return;
         }
         HasShutdown = true;
+        Task waitShutdown = WebhookManager.SendWebhook("Shutdown", ServerSettings.WebHooks.ServerShutdownWebhook, ServerSettings.WebHooks.ServerShutdownWebhookData);
+        Task.WaitAny(waitShutdown, Task.Delay(TimeSpan.FromMinutes(2)));
         Environment.ExitCode = code;
         Logs.Info("Shutting down...");
         GlobalCancelSource.Cancel();

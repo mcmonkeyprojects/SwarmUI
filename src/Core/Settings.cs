@@ -503,6 +503,18 @@ public class Settings : AutoConfiguration
         [ConfigComment("If you want to send additional data with the 'manual gen' webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used." + $"\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/Webhooks.md\">docs Features/Webhooks</a> for info about special tags you can include in the JSON.")]
         public string ManualGenWebhookData = "";
 
+        [ConfigComment("Webhook to call (JSON POST) when the server is has started.\nLeave empty to disable any webhook.")]
+        public string ServerStartWebhook = "";
+
+        [ConfigComment("If you want to send additional data with the 'server start' webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used.")]
+        public string ServerStartWebhookData = "";
+
+        [ConfigComment("Webhook to call (JSON POST) when the server is about to shutdown.\nLeave empty to disable any webhook.\nShutdown does not happen until the webhook completes.")]
+        public string ServerShutdownWebhook = "";
+
+        [ConfigComment("If you want to send additional data with the 'server shutdown' webhook, you can specify it here.\nThis should be a JSON object, eg '{\"key\": \"value\"}'.\nIf left blank, an empty JSON post (ie '{}') will be used.")]
+        public string ServerShutdownWebhookData = "";
+
         [ConfigComment("How long to wait (in seconds) after all queues are done before sending the queue end webhook.\nThis is useful to prevent rapid start+end calls.")]
         public double QueueEndDelay = 1;
     }
