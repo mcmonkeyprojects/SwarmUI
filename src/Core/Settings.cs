@@ -74,6 +74,15 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, Swarm will automatically download and apply any development version updates as soon as they're available.\nDefaults to false.")]
         public bool AutoPullDevUpdates = false;
+
+        [ConfigComment("If the server has been running more than this many hours, automatically restart.\nIf set to 0, no automatic restart.\nOnly restarts when the server is not processing any generation requests.\nCan use decimal values, but sub-hour durations are likely too fast and will cause issues.\nA value of eg 24 is reasonable, with AutoPullDevUpdates enabled, to keep an updated persistent server.")]
+        public double RestartAfterHours = 0;
+
+        [ConfigComment("Comma-separated list of numeric 24-hour time hours in which auto-restarting is allowed.\nIf empty, hours are unrestricted.\nFor example, '0,1,2,3' only allows auto-restarting from midnight up until before 4 am.\nOr, '22,23,0,1' allows 10pm-2am.")]
+        public string RestartHoursAllowed = "";
+
+        [ConfigComment("Comma-separated list of numeric days-of-week in which auto-restarting is allowed. Sunday is 0, Saturday is 6.\nIf empty, days are unrestricted.\nFor example, '6,0' only allows auto-restarting from Sunday/Saturday.")]
+        public string RestartDayAllowed = "";
     }
 
     /// <summary>Settings related to authorization.</summary>

@@ -34,12 +34,54 @@ public static class Utilities
         Program.TickIsGeneratingEvent += MemCleaner.TickIsGenerating;
         Program.TickNoGenerationsEvent += MemCleaner.TickNoGenerations;
         Program.TickEvent += SystemStatusMonitor.Tick;
+        Program.SlowTickEvent += AutoRestartCheck;
         new Thread(TickLoop).Start();
+    }
+
+    /// <summary>The <see cref="Environment.TickCount64"/> value when the server started.</summary>
+    public static long ServerStartTime = Environment.TickCount64;
+
+    /// <summary>Check if the server wants an auto-restart.</summary>
+    public static void AutoRestartCheck()
+    {
+        if (Program.ServerSettings.Maintenance.RestartAfterHours < 0.1)
+        {
+            return;
+        }
+        double hoursPassed = TimeSpan.FromMilliseconds(Environment.TickCount64 - ServerStartTime).TotalHours;
+        if (hoursPassed < Program.ServerSettings.Maintenance.RestartAfterHours)
+        {
+            return;
+        }
+        string limitHours = Program.ServerSettings.Maintenance.RestartHoursAllowed, limitDays = Program.ServerSettings.Maintenance.RestartDayAllowed;
+        DateTimeOffset now = DateTimeOffset.Now;
+        if (!string.IsNullOrWhiteSpace(limitHours))
+        {
+            string[] hours = [.. limitHours.SplitFast(',').Select(h => h.Trim())];
+            if (hours.Length > 0 && !hours.Contains($"{now.Hour}") && !hours.Contains($"0{now.Hour}"))
+            {
+                return;
+            }
+        }
+        if (!string.IsNullOrWhiteSpace(limitDays))
+        {
+            string[] days = [.. limitDays.SplitFast(',').Select(d => d.Trim().ToLowerFast())];
+            if (days.Length > 0 && !days.Contains($"{(int)now.DayOfWeek}") && !days.Contains($"{now.DayOfWeek.ToString().ToLowerFast()}"))
+            {
+                return;
+            }
+        }
+        if (Program.Backends.T2IBackendRequests.Any() || Program.Backends.QueuedRequests > 0 || Program.Backends.T2IBackends.Values.Any(b => b.CheckIsInUseAtAll))
+        {
+            return;
+        }
+        Program.Shutdown(42);
     }
 
     /// <summary>Internal tick loop thread main method.</summary>
     public static void TickLoop()
     {
+        int ticks = 0;
         while (!Program.GlobalProgramCancel.IsCancellationRequested)
         {
             try
@@ -52,7 +94,12 @@ public static class Utilities
             }
             try
             {
+                ticks++;
                 Program.TickEvent?.Invoke();
+                if (ticks % 60 == 0)
+                {
+                    Program.SlowTickEvent?.Invoke();
+                }
             }
             catch (Exception ex)
             {

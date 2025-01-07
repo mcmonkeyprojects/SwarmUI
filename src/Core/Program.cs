@@ -73,6 +73,9 @@ public class Program
     /// <summary>Event-action fired once per second (approximately) all the time.</summary>
     public static Action TickEvent;
 
+    /// <summary>Event-action fired once per minute (approximately) all the time.</summary>
+    public static Action SlowTickEvent;
+
     /// <summary>Event-action fired when the model paths have changed (eg via settings change).</summary>
     public static Action ModelPathsChangedEvent;
 
