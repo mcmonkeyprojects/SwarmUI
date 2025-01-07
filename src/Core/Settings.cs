@@ -17,6 +17,9 @@ public class Settings : AutoConfiguration
     [ConfigComment("Settings related to networking and the webserver.")]
     public NetworkData Network = new();
 
+    [ConfigComment("Settings related to Swarm server maintenance.")]
+    public ServerMaintenanceData Maintenance = new();
+
     [ConfigComment("Default settings for users (unless the user modifies them, if so permitted).\n(NOTE: Usually, don't edit this. Go to the 'User' tab to edit your User-Settings).")]
     public User DefaultUser = new();
 
@@ -48,9 +51,6 @@ public class Settings : AutoConfiguration
     [ConfigComment("If set true, new/upcoming/experimental features will be visible.\nEnabling this will cause issues, do not expect a stable server.\nDo not report any bugs while this is enabled, and do not request new features related to experimental features.")]
     public bool ShowExperimentalFeatures = false;
 
-    [ConfigComment("Settings related to Swarm server maintenance.")]
-    public ServerMaintenanceData Maintenance = new();
-
     [ConfigComment("Settings related to authorization.")]
     public AuthorizationData Authorization = new();
 
@@ -69,7 +69,7 @@ public class Settings : AutoConfiguration
     /// <summary>Settings related to Swarm server maintenance..</summary>
     public class ServerMaintenanceData : AutoConfiguration
     {
-        [ConfigComment("If true, Swarm will check if there's any updates available during startup. If false, it will not check for updates.\nUpdate check only downloads a simple JSON from GitHub to get the current version info, it does not transmit any telemetry nor does it download any files or apply the update.\nDefaults to true.")]
+        [ConfigComment("If true, Swarm will check if there's any updates available during startup. If false, it will not check for updates.\nUpdate check only runs a 'git fetch' from GitHub to get the list of git version tags, it does not transmit any telemetry nor does it actually apply the update.\nDefaults to true.")]
         public bool CheckForUpdates = true;
 
         [ConfigComment("If true, Swarm will automatically download and apply any development version updates as soon as they're available.\nDefaults to false.")]
