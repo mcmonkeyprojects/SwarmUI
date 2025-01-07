@@ -475,7 +475,7 @@ class ModelDownloaderUtil {
                                 else {
                                     imageToData(url, (img) => {
                                         imgs[ind] = img;
-                                        this.metadataZone.dataset.image = url;
+                                        this.metadataZone.dataset.image = img;
                                         imgElem.src = img;
                                     });
                                 }
