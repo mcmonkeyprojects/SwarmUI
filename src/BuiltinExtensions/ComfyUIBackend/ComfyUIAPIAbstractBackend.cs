@@ -815,7 +815,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     }
 
     /// <inheritdoc/>
-    public override async Task<bool> LoadModel(T2IModel model)
+    public override async Task<bool> LoadModel(T2IModel model, T2IParamInput upstreamInput)
     {
         T2IParamInput input = new(null);
         input.Set(T2IParamTypes.Model, model);
@@ -835,6 +835,20 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         input.Set(T2IParamTypes.Images, 1);
         input.Set(T2IParamTypes.CFGScale, 7);
         input.Set(T2IParamTypes.Seed, 1);
+        if (upstreamInput is not null)
+        {
+            void copyParam<T>(T2IRegisteredParam<T> param)
+            {
+                if (upstreamInput.TryGet(param, out T val))
+                {
+                    input.Set(param, val);
+                }
+            }
+            copyParam(T2IParamTypes.VAE);
+            copyParam(T2IParamTypes.ClipGModel);
+            copyParam(T2IParamTypes.ClipLModel);
+            copyParam(T2IParamTypes.T5XXLModel);
+        }
         WorkflowGenerator wg = new() { UserInput = input, ModelFolderFormat = ModelFolderFormat, Features = [.. SupportedFeatures] };
         JObject workflow = wg.Generate();
         await AwaitJobLive(workflow.ToString(), "0", _ => { }, new(null), Program.GlobalProgramCancel);

@@ -409,7 +409,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     }
 
     /// <inheritdoc/>
-    public override async Task<bool> LoadModel(T2IModel model)
+    public override async Task<bool> LoadModel(T2IModel model, T2IParamInput input)
     {
         if (IsReal)
         {

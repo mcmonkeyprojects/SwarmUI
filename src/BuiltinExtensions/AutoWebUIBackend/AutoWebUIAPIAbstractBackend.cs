@@ -131,7 +131,7 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
     }
 
     /// <inheritdoc/>
-    public override async Task<bool> LoadModel(T2IModel model)
+    public override async Task<bool> LoadModel(T2IModel model, T2IParamInput input)
     {
         string targetClean = model.Name.ToLowerInvariant().Trim('/');
         string targetBackup = targetClean.BeforeLast('.').AfterLast('/');

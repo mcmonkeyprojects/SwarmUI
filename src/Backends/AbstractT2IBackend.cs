@@ -89,8 +89,15 @@ public abstract class AbstractT2IBackend
     /// <summary>The backing <see cref="BackendHandler"/> instance.</summary>
     public BackendHandler Handler;
 
-    /// <summary>Tell the backend to load a specific model. Return true if loaded, false if failed.</summary>
-    public abstract Task<bool> LoadModel(T2IModel model);
+    /// <summary>Deprecated, use <see cref="LoadModel(T2IModel, T2IParamInput)"/>.</summary>
+    [Obsolete("Use the T2IParamInput version")]
+    public virtual Task<bool> LoadModel(T2IModel model)
+    {
+        return LoadModel(model, null);
+    }
+
+    /// <summary>Tell the backend to load a specific model. Return true if loaded, false if failed. Contains a copy of the first input seen, which may contain alternate side-models the user prefers. Input may be null.</summary>
+    public abstract Task<bool> LoadModel(T2IModel model, T2IParamInput input);
 
     /// <summary>A set of feature-IDs this backend supports.</summary>
     public abstract IEnumerable<string> SupportedFeatures { get; }
