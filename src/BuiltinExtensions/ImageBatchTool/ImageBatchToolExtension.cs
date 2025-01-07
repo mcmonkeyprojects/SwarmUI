@@ -202,7 +202,7 @@ public class ImageBatchToolExtension : Extension
                 File.WriteAllBytes($"{output_folder}/{preExt}{diffCode}.{ext}", image.Img.ImageData);
                 string img = session.GetImageB64(image.Img);
                 output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
-                WebhookManager.SendEveryGenWebhook(param, img);
+                WebhookManager.SendEveryGenWebhook(param, img, image.Img);
             }));
         }
         while (tasks.Any())

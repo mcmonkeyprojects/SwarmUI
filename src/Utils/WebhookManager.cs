@@ -7,6 +7,7 @@ using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 
 namespace SwarmUI.Utils;
 
@@ -177,17 +178,17 @@ public static class WebhookManager
     }
 
     /// <summary>Sends the every-gen webhook and manual gen webhook.</summary>
-    public static void SendEveryGenWebhook(T2IParamInput input, string imageData)
+    public static void SendEveryGenWebhook(T2IParamInput input, string imageData, Image imageRaw)
     {
         string webhookPreference = input.Get(T2IParamTypes.Webhooks, "Normal");
         if (webhookPreference == "None")
         {
             return;
         }
-        SendWebhook("Every Gen", HookSettings.EveryGenWebhook, HookSettings.EveryGenWebhookData, input, imageData);
+        SendWebhook("Every Gen", HookSettings.EveryGenWebhook, HookSettings.EveryGenWebhookData, input, imageData, imageRaw);
         if (webhookPreference == "Manual")
         {
-            SendWebhook("Manual Gen", HookSettings.ManualGenWebhook, HookSettings.ManualGenWebhookData, input, imageData);
+            SendWebhook("Manual Gen", HookSettings.ManualGenWebhook, HookSettings.ManualGenWebhookData, input, imageData, imageRaw);
         }
     }
 
@@ -203,7 +204,7 @@ public static class WebhookManager
     }
 
     /// <summary>Run a generic webhook directly.</summary>
-    public static Task SendWebhook(string id, string path, string dataStr, T2IParamInput input = null, string imageData = null)
+    public static Task SendWebhook(string id, string path, string dataStr, T2IParamInput input = null, string imageData = null, Image imageRaw = null)
     {
         try
         {
@@ -211,14 +212,32 @@ public static class WebhookManager
             {
                 return Task.CompletedTask;
             }
-            JObject data = [];
+            HttpContent content;
             if (!string.IsNullOrWhiteSpace(dataStr))
             {
-                data = ParseJsonForHook(dataStr, input, imageData);
+                dataStr = dataStr.Trim();
+                bool doDiscordImage = dataStr.StartsWith("[discord_image]");
+                if (doDiscordImage)
+                {
+                    dataStr = dataStr["[discord_image]".Length..];
+                }
+                JObject data = ParseJsonForHook(dataStr, input, imageData);
+                if (doDiscordImage && imageRaw is not null)
+                {
+                    content = Utilities.MultiPartFormContentDiscordImage(imageRaw, data);
+                }
+                else
+                {
+                    content = Utilities.JSONContent(data);
+                }
+            }
+            else
+            {
+                content = Utilities.JSONContent([]);
             }
             return Utilities.RunCheckedTask(async () =>
             {
-                HttpResponseMessage msg = await Client.PostAsync(path, Utilities.JSONContent(data));
+                HttpResponseMessage msg = await Client.PostAsync(path, content);
                 string response = await msg.Content.ReadAsStringAsync();
                 Logs.Verbose($"[Webhooks] {id} webhook response: {msg.StatusCode}: {response}");
             });

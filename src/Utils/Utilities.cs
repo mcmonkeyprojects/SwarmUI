@@ -404,6 +404,16 @@ public static class Utilities
         return content;
     }
 
+    public static MultipartFormDataContent MultiPartFormContentDiscordImage(Image image, JObject jobj)
+    {
+        MultipartFormDataContent content = [];
+        ByteArrayContent imageContent = new(image.ImageData);
+        imageContent.Headers.ContentType = new MediaTypeHeaderValue(image.MimeType());
+        content.Add(imageContent, "file", $"image.{image.Extension}");
+        content.Add(JSONContent(jobj), "payload_json");
+        return content;
+    }
+
     /// <summary>Takes an escaped JSON string, and returns the plaintext unescaped form of it.</summary>
     public static string UnescapeJsonString(string input)
     {

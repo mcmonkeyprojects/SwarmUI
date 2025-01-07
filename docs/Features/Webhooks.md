@@ -28,6 +28,23 @@ For example, if you wanted to send a message on Discord after every generation, 
 
 Note that the values will be JSON-Escaped for strings, ie you cannot write raw JSON data in the prompt and pass that through a webhook.
 
+### Direct Image On Discord
+
+If you want to upload an image directly to Discord, for webhooks that support it (eg `Every Gen`), you can prefix the data value with `[discord_image]`, before the JSON part itself.
+
+Note that this is a very special case that only makes sense for Discord.
+
+For example, if you wanted to send a message on Discord after every generation with the image directly included, you would set the Every Gen Webhook URL to `https://discord.com/api/webhooks/(whatever your generated url is here)`, and set the JSON data to something like:
+```json
+[discord_image]
+{
+  "username": "SwarmUI",
+  "content": "Generated your image! Prompt was `%prompt%`, image attached:"
+}
+```
+
+For special info related to images on Discord, see [Discord's docs here](https://discord.com/developers/docs/reference#uploading-files).
+
 ## Available Hooks
 
 ### Queue Start Webhook

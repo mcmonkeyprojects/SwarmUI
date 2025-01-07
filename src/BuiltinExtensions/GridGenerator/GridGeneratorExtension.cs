@@ -191,7 +191,7 @@ public class GridGeneratorExtension : Extension
                         {
                             data.AddOutput(new JObject() { ["image"] = output, ["metadata"] = metadata });
                         }
-                        WebhookManager.SendEveryGenWebhook(thisParams, output);
+                        WebhookManager.SendEveryGenWebhook(thisParams, output, image.Img);
                     }
                     else
                     {
@@ -205,7 +205,7 @@ public class GridGeneratorExtension : Extension
                         {
                             data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                         }
-                        WebhookManager.SendEveryGenWebhook(thisParams, url);
+                        WebhookManager.SendEveryGenWebhook(thisParams, url, image.Img);
                         if (set.Grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE)
                         {
                             data.GeneratedOutputs.TryAdd(set.BaseFilepath, image.Img);

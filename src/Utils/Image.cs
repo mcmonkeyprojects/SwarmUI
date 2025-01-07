@@ -104,17 +104,24 @@ public class Image
         return stream.ToArray();
     }
 
+    /// <summary>Gets a valid web data string for this image, eg 'data:image/png;base64,abc123'.</summary>
     public string AsDataString()
+    {
+        return $"data:{MimeType};base64,{AsBase64}";
+    }
+
+    /// <summary>Gets the correct mime type for this image, eg 'image/png'.</summary>
+    public string MimeType()
     {
         if (Type == ImageType.ANIMATION)
         {
-            return "data:image/gif;base64," + AsBase64;
+            return "image/gif";
         }
         else if (Type == ImageType.VIDEO)
         {
-            return $"data:video/{Extension};base64," + AsBase64;
+            return $"video/{Extension}";
         }
-        return $"data:image/{(Extension == "jpg" ? "jpeg" : Extension)};base64," + AsBase64;
+        return $"image/{(Extension == "jpg" ? "jpeg" : Extension)}";
     }
 
     /// <summary>Returns a metadata-format of the image.</summary>
