@@ -548,20 +548,20 @@ public class WorkflowGenerator
         }
         string getT5XXLModel()
         {
-            if (UserInput.TryGet(ComfyUIBackendExtension.T5XXLModel, out string model))
+            if (UserInput.TryGet(T2IParamTypes.T5XXLModel, out T2IModel model))
             {
-                return model;
+                return model.Name;
             }
             requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors", "7d330da4816157540d6bb7838bf63a0f02f573fc48ca4d8de34bb0cbfd514f09");
             return "t5xxl_enconly.safetensors";
         }
         string getClipLModel()
         {
-            if (UserInput.TryGet(ComfyUIBackendExtension.ClipLModel, out string model))
+            if (UserInput.TryGet(T2IParamTypes.ClipLModel, out T2IModel model))
             {
-                return model;
+                return model.Name;
             }
-            if (ComfyUIBackendExtension.ClipModels.Contains("clip_l_sdxl_base.safetensors"))
+            if (Program.T2IModelSets["Clip"].Models.ContainsKey("clip_l_sdxl_base.safetensors"))
             {
                 return "clip_l_sdxl_base.safetensors";
             }
@@ -570,11 +570,11 @@ public class WorkflowGenerator
         }
         string getClipGModel()
         {
-            if (UserInput.TryGet(ComfyUIBackendExtension.ClipGModel, out string model))
+            if (UserInput.TryGet(T2IParamTypes.ClipGModel, out T2IModel model))
             {
-                return model;
+                return model.Name;
             }
-            if (ComfyUIBackendExtension.ClipModels.Contains("clip_g_sdxl_base.safetensors"))
+            if (Program.T2IModelSets["Clip"].Models.ContainsKey("clip_g_sdxl_base.safetensors"))
             {
                 return "clip_g_sdxl_base.safetensors";
             }
@@ -829,7 +829,7 @@ public class WorkflowGenerator
                 doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
             }
         }
-        else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null || UserInput.Get(ComfyUIBackendExtension.ClipLModel) is not null))
+        else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
             string loaderType = "DualCLIPLoader";
             if (getT5XXLModel().EndsWith(".gguf"))
@@ -845,7 +845,7 @@ public class WorkflowGenerator
             LoadingClip = [dualClipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
-        else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(ComfyUIBackendExtension.T5XXLModel) is not null))
+        else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
         {
             string loaderType = "CLIPLoader";
             if (getT5XXLModel().EndsWith(".gguf"))

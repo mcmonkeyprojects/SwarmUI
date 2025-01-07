@@ -375,6 +375,7 @@ public class Program
         T2IModelSets["LoRA"] = new() { ModelType = "LoRA", FolderPaths = buildPathList(ServerSettings.Paths.SDLoraFolder) };
         T2IModelSets["Embedding"] = new() { ModelType = "Embedding", FolderPaths = buildPathList(ServerSettings.Paths.SDEmbeddingFolder) };
         T2IModelSets["ControlNet"] = new() { ModelType = "ControlNet", FolderPaths = buildPathList(ServerSettings.Paths.SDControlNetsFolder) };
+        T2IModelSets["Clip"] = new() { ModelType = "Clip", FolderPaths = buildPathList(ServerSettings.Paths.SDClipFolder) };
         T2IModelSets["ClipVision"] = new() { ModelType = "ClipVision", FolderPaths = buildPathList(ServerSettings.Paths.SDClipVisionFolder) };
     }
 

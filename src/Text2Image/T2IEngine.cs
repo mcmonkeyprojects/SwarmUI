@@ -102,6 +102,10 @@ namespace SwarmUI.Text2Image
                     {
                         return false;
                     }
+                    if (!requireModel(T2IParamTypes.ClipGModel, "Clip") || !requireModel(T2IParamTypes.ClipLModel, "Clip") || !requireModel(T2IParamTypes.T5XXLModel, "Clip"))
+                    {
+                        return false;
+                    }
                     foreach (T2IParamTypes.ControlNetParamHolder controlnet in T2IParamTypes.Controlnets)
                     {
                         if (!requireModel(controlnet.Model, "ControlNet"))
