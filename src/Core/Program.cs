@@ -153,7 +153,7 @@ public class Program
         }
         Logs.StartLogSaving();
         timer.Check("Initial settings load");
-        if (ServerSettings.CheckForUpdates)
+        if (ServerSettings.Maintenance.CheckForUpdates)
         {
             waitFor.Add(Utilities.RunCheckedTask(async () =>
             {
@@ -501,6 +501,17 @@ public class Program
         {
             SessionHandler.PatchOwnerMaxDepth = maxDepth.Value;
         }
+        // TODO: Legacy format patch from beta 0.9.4!
+        bool? checkForUpdates = section.GetBool("CheckForUpdates", null);
+        if (checkForUpdates.HasValue)
+        {
+            section.Set("Maintenance.CheckForUpdates", checkForUpdates.Value);
+        }
+        bool? autoPullDevUpdates = section.GetBool("AutoPullDevUpdates", null);
+        if (autoPullDevUpdates.HasValue)
+        {
+            section.Set("Maintenance.AutoPullDevUpdates", autoPullDevUpdates.Value);
+        }
         ServerSettings.Load(section);
     }
 
@@ -515,11 +526,11 @@ public class Program
         {
             FDSUtility.SaveToFile(ServerSettings.Save(true), SettingsFilePath);
             bool hasAlwaysPullFile = File.Exists("./src/bin/always_pull");
-            if (ServerSettings.AutoPullDevUpdates && !hasAlwaysPullFile)
+            if (ServerSettings.Maintenance.AutoPullDevUpdates && !hasAlwaysPullFile)
             {
                 File.WriteAllText("./src/bin/always_pull", "true");
             }
-            else if (!ServerSettings.AutoPullDevUpdates && hasAlwaysPullFile)
+            else if (!ServerSettings.Maintenance.AutoPullDevUpdates && hasAlwaysPullFile)
             {
                 File.Delete("./src/bin/always_pull");
             }

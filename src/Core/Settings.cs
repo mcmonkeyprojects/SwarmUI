@@ -48,11 +48,8 @@ public class Settings : AutoConfiguration
     [ConfigComment("If set true, new/upcoming/experimental features will be visible.\nEnabling this will cause issues, do not expect a stable server.\nDo not report any bugs while this is enabled, and do not request new features related to experimental features.")]
     public bool ShowExperimentalFeatures = false;
 
-    [ConfigComment("If true, Swarm will check if there's any updates available during startup. If false, it will not check for updates.\nUpdate check only downloads a simple JSON from GitHub to get the current version info, it does not transmit any telemetry nor does it download any files or apply the update.\nDefaults to true.")]
-    public bool CheckForUpdates = true;
-
-    [ConfigComment("If true, Swarm will automatically download and apply any development version updates as soon as they're available.\nDefaults to false.")]
-    public bool AutoPullDevUpdates = false;
+    [ConfigComment("Settings related to Swarm server maintenance.")]
+    public ServerMaintenanceData Maintenance = new();
 
     [ConfigComment("Settings related to authorization.")]
     public AuthorizationData Authorization = new();
@@ -68,6 +65,16 @@ public class Settings : AutoConfiguration
 
     [ConfigComment("Settings related to server performance.")]
     public PerformanceData Performance = new();
+
+    /// <summary>Settings related to Swarm server maintenance..</summary>
+    public class ServerMaintenanceData : AutoConfiguration
+    {
+        [ConfigComment("If true, Swarm will check if there's any updates available during startup. If false, it will not check for updates.\nUpdate check only downloads a simple JSON from GitHub to get the current version info, it does not transmit any telemetry nor does it download any files or apply the update.\nDefaults to true.")]
+        public bool CheckForUpdates = true;
+
+        [ConfigComment("If true, Swarm will automatically download and apply any development version updates as soon as they're available.\nDefaults to false.")]
+        public bool AutoPullDevUpdates = false;
+    }
 
     /// <summary>Settings related to authorization.</summary>
     public class AuthorizationData : AutoConfiguration
