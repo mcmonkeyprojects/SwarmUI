@@ -97,7 +97,13 @@ public abstract class AbstractT2IBackend
     }
 
     /// <summary>Tell the backend to load a specific model. Return true if loaded, false if failed. Contains a copy of the first input seen, which may contain alternate side-models the user prefers. Input may be null.</summary>
-    public abstract Task<bool> LoadModel(T2IModel model, T2IParamInput input);
+    public virtual Task<bool> LoadModel(T2IModel model, T2IParamInput input)
+    {
+        Logs.Warning($"Backend {BackendData.BackType.Name} is outdated, please update it");
+#pragma warning disable CS0618 // Type or member is obsolete
+        return LoadModel(model);
+#pragma warning restore CS0618 // Type or member is obsolete
+    }
 
     /// <summary>A set of feature-IDs this backend supports.</summary>
     public abstract IEnumerable<string> SupportedFeatures { get; }
