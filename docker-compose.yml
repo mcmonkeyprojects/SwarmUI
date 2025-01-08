@@ -10,6 +10,7 @@ services:
     volumes:
       - swarmdata:/Data
       - swarmbackend:/dlbackend
+      - swarmdlnodes:/src/BuiltinExtensions/ComfyUIBackend/DLNodes
       - ./Models:/Models
       - ./Output:/Output
       - ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows

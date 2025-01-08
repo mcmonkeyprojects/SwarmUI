@@ -15,6 +15,7 @@ docker run -it \
     --name swarmui \
     --mount source=swarmdata,target=/Data \
     --mount source=swarmbackend,target=/dlbackend \
+    --mount source=swarmdlnodes,target=/src/BuiltinExtensions/ComfyUIBackend/DLNodes \
     -v ./Models:/Models \
     -v ./Output:/Output \
     -v ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows \
