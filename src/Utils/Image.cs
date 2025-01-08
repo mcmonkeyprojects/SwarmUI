@@ -107,7 +107,7 @@ public class Image
     /// <summary>Gets a valid web data string for this image, eg 'data:image/png;base64,abc123'.</summary>
     public string AsDataString()
     {
-        return $"data:{MimeType};base64,{AsBase64}";
+        return $"data:{MimeType()};base64,{AsBase64}";
     }
 
     /// <summary>Gets the correct mime type for this image, eg 'image/png'.</summary>
