@@ -415,7 +415,33 @@ function importPresetsToData(text) {
     }
     if (text.startsWith('name,prompt,negative_prompt')) {
         data = {};
-        let lines = text.split('\n');
+        let lines = [];
+        let isQuoted = false;
+        let piece = '';
+        let skipNext = false;
+        for (let char of text) {
+            if (char == '\\') {
+                piece += char;
+                skipNext = true;
+                continue;
+            }
+            if (skipNext) {
+                piece += char;
+                skipNext = false;
+                continue;
+            }
+            if (char == '"') {
+                isQuoted = !isQuoted;
+            }
+            if (char == '\n' && !isQuoted) {
+                lines.push(piece);
+                piece = '';
+            }
+            else {
+                piece += char;
+            }
+        }
+        lines.push(piece);
         for (let line of lines.slice(1)) {
             if (line.trim() == '') {
                 continue;
