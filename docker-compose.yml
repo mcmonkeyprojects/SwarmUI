@@ -27,3 +27,4 @@ services:
 volumes:
   swarmdata:
   swarmbackend:
+  swarmdlnodes:
