@@ -25,7 +25,7 @@ API routes related to handling models (including loras, wildcards, etc).
 
 #### Description
 
-Delete a model from storage.
+Deletes a model from storage.
 
 #### Permission Flag
 
@@ -309,7 +309,7 @@ Returns a list of models available on the server within a given folder, with the
 
 #### Description
 
-Delete a model from storage.
+Renames a model file, moving it within the model folder (allowing change of subfolders).
 
 #### Permission Flag
 

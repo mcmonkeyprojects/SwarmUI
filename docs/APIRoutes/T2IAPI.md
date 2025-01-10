@@ -91,11 +91,7 @@ Generate images from text prompts, directly as an HTTP route. See the examples i
 ```js
     "images":
     [
-        {
-            "image": "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content
-            "batch_index": "0", // which image index within the batch this is
-            "metadata": "{ ... }" // image metadata string, usually a JSON blob stringified. Not guaranteed to be.
-        }
+        "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content. In some cases can be a 'data:...' encoded image.
     ]
 ```
 
@@ -148,7 +144,7 @@ Generate images from text prompts, with WebSocket updates. This is the most impo
     // An image generation result
     "image":
     {
-        "image": "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content
+        "image": "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content. In some cases can be a 'data:...' encoded image.
         "batch_index": "0", // which image index within the batch this is
         "metadata": "{ ... }" // image metadata string, usually a JSON blob stringified. Not guaranteed to be.
     }

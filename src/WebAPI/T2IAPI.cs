@@ -67,7 +67,7 @@ public static class T2IAPI
             // An image generation result
             "image":
             {
-                "image": "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content
+                "image": "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content. In some cases can be a 'data:...' encoded image.
                 "batch_index": "0", // which image index within the batch this is
                 "metadata": "{ ... }" // image metadata string, usually a JSON blob stringified. Not guaranteed to be.
             }
@@ -149,11 +149,7 @@ public static class T2IAPI
         """
             "images":
             [
-                {
-                    "image": "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content
-                    "batch_index": "0", // which image index within the batch this is
-                    "metadata": "{ ... }" // image metadata string, usually a JSON blob stringified. Not guaranteed to be.
-                }
+                "View/local/raw/2024-01-02/0304-a photo of a cat-etc-1.png", // the image file path, GET this path to read the image content. In some cases can be a 'data:...' encoded image.
             ]
         """)]
     public static async Task<JObject> GenerateText2Image(Session session,
