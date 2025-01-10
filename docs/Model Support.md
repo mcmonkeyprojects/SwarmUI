@@ -28,6 +28,7 @@
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video | Modern, High Quality |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | Modern, Decent |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
+[Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, not-yet-tested |
 
 - [Alternative Model Formats](#alternative-model-formats)
     - [BnB NF4](#bits-and-bytes-nf4-format-models)
@@ -349,7 +350,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 - NVIDIA Cosmos Text2World has initial WIP support in SwarmUI. Will be updated soon.
 - Cosmos Video2World and Autoregressive (Image2World) are not yet supported.
-- 7B model is available at https://huggingface.co/mcmonkey/cosmos-1.0
+- 7B model is available at <https://huggingface.co/mcmonkey/cosmos-1.0/blob/main/Cosmos-1_0-Diffusion-7B-Text2World.safetensors>
     - Save to `diffusion_models`
 - 14B is not yet converted
     - raw borked pt file at https://huggingface.co/nvidia/Cosmos-1.0-Diffusion-14B-Text2World/blob/main/model.pt
