@@ -78,6 +78,7 @@ Before we begin, let's plan how we're going to set things up.
             - For ease if you have several models to use, you might consider copying all your models onto a USB Data Drive and copy/pasting exactly over to each machine. Alternately, you might use an FTP program to directly send files over.
         - If the machine has multiple GPUs, again set them up per [the instructions above](#more-gpus-in-your-machine).
         - At this stage I recommend again testing the Swarm on the machine locally to make sure everything is working.
+            - Make sure to run specific features. If you have GGUF models, run a GGUF model. If you're going to use IP-Adapter, run an IP-Adapter generation. This is to ensure required non-default backend features are installed and working.
     - Go to the tab `Server` -> `Server Info`, and look at the block labeled `Local Network`. Make note of the address it gives, this will be needed later.
         - It should look something like `http://192.168.50.17:7801`
         - ![img](/docs/images/local-network.png)
@@ -106,7 +107,7 @@ Before we begin, let's plan how we're going to set things up.
                 - Optionally check `AllowIdle` if that Other Machine will not always be turned on. This allows it to fail to connect without showing you any error. Leave it unchecked if you expect the machine will always be turned on.
                 - Then press `Save`, and wait for its borders to turn from Orange to Vibrant Green with the label `Running backend:`. Green indicates it is working properly.
                     - If it turned Red with the label `errored backend:`, something went wrong. Double-check your configuration, or see [Troubleshooting below](#troubleshooting). You can click the Pencil icon to edit the settings.
-                    - If it turned Gray (or soft green) with the label `idle backend:`, that means you enabled `AllowIdle` and it did not connect, which during setup essentially means it errored.
+                    - If it turned Gray (or soft green) with the label `idle backend:`, that means you enabled `AllowIdle` and it did not connect, which during setup essentially means it errored (turn off AllowIdle to debug this easier).
                     - If it remains Orange with the label `Disabled backend:` that means your configuration is invalid (eg your `Address` is not formatted like a real address)
 
 #### Step 5: Verify It's All Working
@@ -156,7 +157,7 @@ Before we begin, let's plan how we're going to set things up.
 - If you must use the comfy tab directly and need multiple GPUs:
     - At the top left click `MultiGPU` then `Use All`.
     - This will spread multiple queued requests to multiple backends.
-    - The outputs will replace one another rapidly, so you will likely need a way to browser image history separately in this case (eg an image history extension)
+    - The outputs will replace one another rapidly, so you will likely need to use the queue history browser to see the outputs
 - If you must queue one 1 request to several backends:
     - At the top left click `MultiGPU` then `Use All`.
     - make multiple output nodes (eg `Preview Image`)
