@@ -345,6 +345,22 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
         - You may wish to generate the image once, then do the video separately
         - To do that, set the image as an `Init Image`, and set `Creativity` to `0`
 
+## NVIDIA Cosmos
+
+- NVIDIA Cosmos Text2World has initial WIP support in SwarmUI. Will be updated soon.
+- Cosmos Video2World and Autoregressive (Image2World) are not yet supported.
+- 7B model is available at https://huggingface.co/mcmonkey/cosmos-1.0
+    - Save to `diffusion_models`
+- 14B is not yet converted
+    - raw borked pt file at https://huggingface.co/nvidia/Cosmos-1.0-Diffusion-14B-Text2World/blob/main/model.pt
+- The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
+    - It will be automatically downloaded.
+- The VAE will be automatically downloaded.
+- The model is trained for 24 FPS, but supports any value in a range from 12 to 40.
+- The model is trained for 1280x704 but works at other resolutions, including 960x960 as base square res.
+- The model is trained for 121 frames but seems to work happily at lower frame counts.
+- Nvidia default recommends CFG=7 and Steps=35
+
 # Alternative Model Formats
 
 ## Bits-and-Bytes NF4 Format Models
