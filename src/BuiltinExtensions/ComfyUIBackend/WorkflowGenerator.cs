@@ -206,11 +206,11 @@ public class WorkflowGenerator
     {
         int id = 1000 + index + offset;
         string result = $"{id}";
-        if (HasNode(result))
+        if (!HasNode(result))
         {
-            return GetStableDynamicID(index, offset + 1);
+            return result;
         }
-        return result;
+        return GetStableDynamicID(index, offset + 1);
     }
 
     /// <summary>Creates a new node with the given class type and configuration action, and optional manual ID.</summary>
