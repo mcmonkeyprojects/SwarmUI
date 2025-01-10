@@ -62,7 +62,8 @@ public class ComfyUIBackendExtension : Extension
         ["SanaCheckpointLoader"] = "extramodelssana",
         ["CheckpointLoaderNF4"] = "bnb_nf4",
         ["UnetLoaderGGUF"] = "gguf",
-        ["TensorRTLoader"] = "tensorrt"
+        ["TensorRTLoader"] = "tensorrt",
+        ["TeaCacheForImgGen"] = "teacache"
     };
 
     /// <inheritdoc/>
@@ -109,6 +110,11 @@ public class ComfyUIBackendExtension : Extension
         {
             FeaturesSupported.UnionWith(["gguf"]);
             FeaturesDiscardIfNotFound.UnionWith(["gguf"]);
+        }
+        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-TeaCache"))
+        {
+            FeaturesSupported.UnionWith(["teacache"]);
+            FeaturesDiscardIfNotFound.UnionWith(["teacache"]);
         }
         T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, InternalListModelsFor("upscale_models", true).Select(u => $"model-{u}///Model: {u}"));
         T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, InternalListModelsFor("yolov8", false));
@@ -542,11 +548,11 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, Text2VideoPreviewType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, StyleModelForRevision;
+    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, Text2VideoPreviewType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, StyleModelForRevision, TeaCacheMode;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit;
 
-    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier;
+    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold;
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
@@ -669,6 +675,12 @@ public class ComfyUIBackendExtension : Extension
             ));
         YoloModelInternal = T2IParamTypes.Register<string>(new("YOLO Model Internal", "Parameter for internally tracking YOLOv8 models.\nThis is not for real usage, it is just to expose the list to the UI handler.",
             "", IgnoreIf: "", FeatureFlag: "yolov8", Group: ComfyAdvancedGroup, GetValues: (_) => YoloModels, Toggleable: true, IsAdvanced: true, AlwaysRetain: true, VisibleNormally: false
+            ));
+        TeaCacheMode = T2IParamTypes.Register<string>(new("TeaCache Mode", "When to use TeaCache.\nTeaCache is a trick to accelerate diffusion models, especially video models.\nThat is: generation runs faster, but loses some quality.\nSee <a target=\"_blank\" href=\"https://liewfeng.github.io/TeaCache/\">here for more info</a>.\nYou can leave this disabled, enabled for all model sampling stages, or only enabled for certain model sampling stages.\n(This separation is so eg you can accelerate your video generation, without losing quality of an initial image).",
+            "disabled", IgnoreIf: "Disabled", FeatureFlag: "teacache", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, GetValues: (_) => ["disabled", "all", "base gen only///base gen only (no refiner or video)", "video only"], OrderPriority: 15
+            ));
+        TeaCacheThreshold = T2IParamTypes.Register<double>(new("TeaCache Threshold", "What threshold to use with TeaCache.\nSee 'TeaCache Mode' parameter above.\n0.4 might work well with Flux image generation, and 0.15 might work well with video generation.\n0.25 is a good stable default for most purposes - decent acceleration but little visual change.",
+            "0.25", IgnoreIf: "0.25", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "teacache", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 15.5
             ));
         Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
         Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);

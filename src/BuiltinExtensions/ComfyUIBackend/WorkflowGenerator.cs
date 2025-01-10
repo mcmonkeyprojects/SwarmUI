@@ -1019,6 +1019,45 @@ public class WorkflowGenerator
     /// <summary>Creates a KSampler and returns its node ID.</summary>
     public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false)
     {
+        if (UserInput.TryGet(ComfyUIBackendExtension.TeaCacheMode, out string teaCacheMode) && teaCacheMode != "disabled")
+        {
+            double teaCacheThreshold = UserInput.Get(ComfyUIBackendExtension.TeaCacheThreshold, 0.25);
+            if (teaCacheMode == "base gen only" && !isFirstSampler)
+            {
+                // wrong step, skip
+            }
+            else if (IsFlux())
+            {
+                if (teaCacheMode != "video only")
+                {
+                    string teaCacheNode = CreateNode("TeaCacheForImgGen", new JObject()
+                    {
+                        ["model"] = model,
+                        ["enable_teacache"] = true,
+                        ["model_type"] = "flux",
+                        ["rel_l1_thresh"] = teaCacheThreshold,
+                        ["steps"] = steps
+                    });
+                    model = [teaCacheNode, 0];
+                }
+            }
+            else if (IsHunyuanVideo() || IsLTXV())
+            {
+                string teaCacheNode = CreateNode("TeaCacheForVidGen", new JObject()
+                {
+                    ["model"] = model,
+                    ["enable_teacache"] = true,
+                    ["model_type"] = IsHunyuanVideo() ? "hunyuan_video" : "ltxv",
+                    ["rel_l1_thresh"] = teaCacheThreshold,
+                    ["steps"] = steps
+                });
+                model = [teaCacheNode, 0];
+            }
+            else
+            {
+                Logs.Debug($"Ignore TeaCache Mode parameter because the current model is '{CurrentModelClass()?.Name ?? "(none)"}' which does not support TeaCache.");
+            }
+        }
         if (IsVideoModel())
         {
             previews ??= UserInput.Get(ComfyUIBackendExtension.Text2VideoPreviewType, "animate");
