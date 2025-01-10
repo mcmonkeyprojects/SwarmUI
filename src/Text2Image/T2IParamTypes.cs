@@ -273,7 +273,14 @@ public class T2IParamTypes
     {
         if (update.Contains("{value}"))
         {
-            return update.Replace("{value}", prior ?? "");
+            prior ??= "";
+            string low = prior.ToLowerFast();
+            int end = new int[] { low.IndexOf("<segment:"), low.IndexOf("<object:"), low.IndexOf("<region:") }.Where(i => i != -1).Order().FirstOrDefault(-1);
+            if (end != -1)
+            {
+                return update.Replace("{value}", prior[..end].Trim()) + " " + prior[end..].Trim();
+            }
+            return update.Replace("{value}", prior);
         }
         return update;
     }
@@ -434,7 +441,7 @@ public class T2IParamTypes
             "false", IgnoreIf: "false", Group: GroupInitImage, OrderPriority: -3.2, IsAdvanced: true
             ));
         UnsamplerPrompt = Register<string>(new("Unsampler Prompt", "If enabled, feeds this prompt to an unsampler before resampling with your main prompt.\nThis is powerful for controlled image editing.\n\nFor example, use unsampler prompt 'a photo of a man wearing a black hat',\nand give main prompt 'a photo of a man wearing a sombrero', to change what type of hat a person is wearing.",
-            "", OrderPriority: -3, Toggleable: true, ViewType: ParamViewType.PROMPT, Group: GroupInitImage
+            "", OrderPriority: -3, Toggleable: true, Clean: ApplyStringEdit, ViewType: ParamViewType.PROMPT, Group: GroupInitImage
             ));
         GroupRefiners = new("Refine / Upscale", Toggles: true, Open: false, OrderPriority: -3, Description: "This group contains everything related to two-stage image generation.\nNotably this includes post-refinement, step-swap refinement, and upscaled refinement.\nUpscaling an image and refining with the same model has been referred to as 'hires fix' in other UIs.");
         static List<string> listRefinerModels(Session s)
@@ -610,7 +617,7 @@ public class T2IParamTypes
             }
             ));
         PersonalNote = Register<string>(new("Personal Note", "Optional field to type in any personal text note you want.\nThis will be stored in the image metadata.",
-            "", IgnoreIf: "", IsAdvanced: true, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0
+            "", IgnoreIf: "", IsAdvanced: true, Clean: ApplyStringEdit, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0
             ));
         ImageFormat = Register<string>(new("Image Format", "Optional override for the final image file format.",
             "PNG", GetValues: (_) => [.. Enum.GetNames(typeof(Image.ImageFormat))], IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, Toggleable: true, OrderPriority: 1

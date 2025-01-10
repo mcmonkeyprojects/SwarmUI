@@ -216,7 +216,14 @@ function applyOnePreset(preset) {
             let val = preset.param_map[key];
             let rawVal = getInputVal(elem);
             if (typeof val == "string" && val.includes("{value}")) {
-                val = val.replace("{value}", elem.value);
+                let low = elem.value.toLowerCase();
+                let end = [low.indexOf('<segment:'), low.indexOf('<object:'), low.indexOf('<region:')].filter(i => i != -1).sort()[0];
+                if (end !== undefined && end != -1) {
+                    val = val.replace("{value}", elem.value.substring(0, end).trim()) + ' ' + elem.value.substring(end).trim();
+                }
+                else {
+                    val = val.replace("{value}", elem.value);
+                }
             }
             else if (key == 'loras' && rawVal) {
                 val = rawVal + "," + val;
