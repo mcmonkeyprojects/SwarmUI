@@ -396,6 +396,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp312-cp312-win_amd64.whl");
                 }
+                else if (File.Exists($"{lib}/../python310.dll"))
+                {
+                    await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp310-cp310-win_amd64.whl");
+                }
                 else
                 {
                     await install("insightface", "insightface");
