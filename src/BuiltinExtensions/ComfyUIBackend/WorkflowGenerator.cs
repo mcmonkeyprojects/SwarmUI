@@ -1070,7 +1070,7 @@ public class WorkflowGenerator
                 {
                     ["positive"] = pos,
                     ["negative"] = neg,
-                    ["frame_rate"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 25)
+                    ["frame_rate"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 24)
                 });
                 pos = [ltxvcond, 0];
                 neg = [ltxvcond, 1];

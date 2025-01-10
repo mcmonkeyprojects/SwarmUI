@@ -1303,7 +1303,7 @@ public class WorkflowGeneratorSteps
                 bool hadSpecialCond = false;
                 string defSampler = "dpmpp_2m_sde_gpu", defScheduler = "karras";
                 int? frames = g.UserInput.TryGet(T2IParamTypes.VideoFrames, out int framesRaw) ? framesRaw : null;
-                int fps = g.UserInput.Get(T2IParamTypes.VideoFPS, 6);
+                int fps = g.UserInput.Get(T2IParamTypes.VideoFPS, -1);
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 int width = vidModel.StandardWidth <= 0 ? 1024 : vidModel.StandardWidth;
                 int height = vidModel.StandardHeight <= 0 ? 576 : vidModel.StandardHeight;
@@ -1329,6 +1329,10 @@ public class WorkflowGeneratorSteps
                 JArray posCond, negCond, latent, model, vae;
                 if (vidModel.ModelClass?.CompatClass == "lightricks-ltx-video")
                 {
+                    if (fps == -1)
+                    {
+                        fps = 24;
+                    }
                     g.FinalLoadedModel = vidModel;
                     (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
                     posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
@@ -1363,6 +1367,10 @@ public class WorkflowGeneratorSteps
                 }
                 else
                 {
+                    if (fps == -1)
+                    {
+                        fps = 6; // SVD
+                    }
                     JArray clipVision;
                     if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
                     {
