@@ -65,7 +65,7 @@ function editWildcard(card) {
     enableImage.checked = false;
     enableImage.disabled = true;
     let curImg = document.getElementById('current_image_img');
-    if (curImg) {
+    if (curImg && curImg.tagName == 'IMG') {
         let newImg = curImg.cloneNode(true);
         newImg.id = 'edit_wildcard_image_img';
         newImg.style.maxWidth = '100%';
@@ -236,7 +236,7 @@ function editModel(model, browser) {
     enableImage.checked = false;
     enableImage.disabled = true;
     let curImg = document.getElementById('current_image_img');
-    if (curImg) {
+    if (curImg && curImg.tagName == 'IMG') {
         let newImg = curImg.cloneNode(true);
         newImg.id = 'edit_model_image_img';
         newImg.style.maxWidth = '100%';
