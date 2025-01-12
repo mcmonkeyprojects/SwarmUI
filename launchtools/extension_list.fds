@@ -121,7 +121,7 @@ KohyaDeepShrink:
 
 Mahiro:
     author: yoinked
-    description: Extension to add MaHiRo directly into swarm.
+    description: Adds a parameter to enable the "MaHiRo" experimental sampling method.
     url: https://github.com/yoinked-h/MaHiRon-SwarmUI
     license: MIT
     tags:
