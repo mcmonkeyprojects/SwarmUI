@@ -118,3 +118,11 @@ KohyaDeepShrink:
     license: MIT
     tags:
     - parameters
+
+Mahiro:
+    author: yoinked
+    description: Extension to add MaHiRo directly into swarm.
+    url: https://github.com/yoinked-h/MaHiRon-SwarmUI
+    license: MIT
+    tags:
+    - parameters
