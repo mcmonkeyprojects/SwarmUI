@@ -34,6 +34,7 @@ class SwarmImageScaleForMP:
         s = s.movedim(1, -1)
         return (s,)
 
+
 class SwarmImageCrop:
     @classmethod
     def INPUT_TYPES(s):
@@ -60,6 +61,7 @@ class SwarmImageCrop:
         img = image[:, y:to_y, x:to_x, :]
         return (img,)
 
+
 class SwarmVideoBoomerang:
     @classmethod
     def INPUT_TYPES(s):
@@ -79,8 +81,34 @@ class SwarmVideoBoomerang:
         images = torch.cat((images, images.flip(0)), 0)
         return (images,)
 
+
+class SwarmImageNoise:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "amount": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 10.0, "step": 0.01, "round": False}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+            }
+        }
+
+    CATEGORY = "SwarmUI/images"
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "add_noise"
+    DESCRIPTION = "Adds random noise to an image."
+
+    def add_noise(self, image, amount, seed):
+        generator = torch.manual_seed(seed)
+        noise = torch.randn(image.size(), dtype=image.dtype, layout=image.layout, generator=generator, device="cpu") * amount
+        img = image + noise.to(image.device)
+        img = torch.clamp(img, 0, 1)
+        return (img,)
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmImageScaleForMP": SwarmImageScaleForMP,
     "SwarmImageCrop": SwarmImageCrop,
     "SwarmVideoBoomerang": SwarmVideoBoomerang,
+    "SwarmImageNoise": SwarmImageNoise,
 }

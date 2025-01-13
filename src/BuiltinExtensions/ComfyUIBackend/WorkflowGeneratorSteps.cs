@@ -229,6 +229,16 @@ public class WorkflowGeneratorSteps
                 }
                 g.CreateLoadImageNode(img, "${initimage}", true, "15");
                 g.FinalInputImage = ["15", 0];
+                if (g.UserInput.TryGet(T2IParamTypes.InitImageNoise, out double initNoise))
+                {
+                    string noised = g.CreateNode("SwarmImageNoise", new JObject()
+                    {
+                        ["image"] = g.FinalInputImage,
+                        ["amount"] = initNoise,
+                        ["seed"] = g.UserInput.Get(T2IParamTypes.Seed, 0) + 327
+                    });
+                    g.FinalInputImage = [noised, 0];
+                }
                 JArray currentMask = g.FinalMask;
                 if (currentMask is not null)
                 {
@@ -240,12 +250,12 @@ public class WorkflowGeneratorSteps
                     }
                     else
                     {
-                        g.FinalLatentImage = g.DoMaskedVAEEncode(g.FinalVae, ["15", 0], currentMask, "5");
+                        g.FinalLatentImage = g.DoMaskedVAEEncode(g.FinalVae, g.FinalInputImage, currentMask, "5");
                     }
                 }
                 else
                 {
-                    g.CreateVAEEncode(g.FinalVae, ["15", 0], "5");
+                    g.CreateVAEEncode(g.FinalVae, g.FinalInputImage, "5");
                 }
                 if (g.UserInput.TryGet(T2IParamTypes.UnsamplerPrompt, out string unprompt))
                 {

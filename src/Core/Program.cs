@@ -300,7 +300,7 @@ public class Program
             }
             catch (Exception ex)
             {
-                Logs.Error($"Failed to launch mode '{LaunchMode}' (If this is a headless/server install, change 'LaunchMode' to 'none' in settings): {ex.ReadableString()}");
+                Logs.Error($"Failed to launch mode '{LaunchMode}' (If this is a headless/server install, run with '--launch_mode none' as explained in the readme): {ex.ReadableString()}");
             }
         });
         Task.Run(async () =>
