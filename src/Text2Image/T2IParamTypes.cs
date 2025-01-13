@@ -578,6 +578,19 @@ public class T2IParamTypes
         AltResolutionHeightMult = Register<double>(new("Alt Resolution Height Multiplier", "When enabled, the normal width parameter is used, and this value is multiplied by the width to derive the image height.",
             "1", Min: 0, Max: 10, Step: 0.1, Examples: ["0.5", "1", "1.5"], IsAdvanced: true, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupSwarmInternal, OrderPriority: -19
             ));
+        RawResolution = Register<string>(new("Raw Resolution", "Optional advanced way to manually specify raw resolutions, useful for grids.\nWhen enabled, this overrides the default width/height params.",
+            "1024x1024", Examples: ["512x512", "1024x1024", "1344x768"], Toggleable: true, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: -18, Clean: (_, s) =>
+            {
+                (string widthText, string heightText) = s.BeforeAndAfter('x');
+                int width = int.Parse(widthText.Trim());
+                int height = int.Parse(heightText.Trim());
+                if (width < 64 || height < 64 || width > 16384 || height > 16384)
+                {
+                    throw new SwarmUserErrorException($"Invalid resolution: {width}x{height} (must be between 64x64 and 16384x16384)");
+                }
+                return s;
+            }
+            ));
         SaveIntermediateImages = Register<bool>(new("Save Intermediate Images", "If checked, intermediate images (eg before a refiner or segment stage) will be saved separately alongside the final image.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: -16
             ));
@@ -602,19 +615,6 @@ public class T2IParamTypes
             ));
         NoSeedIncrement = Register<bool>(new("No Seed Increment", "If checked, the seed will not be incremented when Images is above 1.\nUseful for example to test different wildcards for the same seed rapidly.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -4
-            ));
-        RawResolution = Register<string>(new("Raw Resolution", "Optional advanced way to manually specify raw resolutions, useful for grids.\nWhen enabled, this overrides the default width/height params.",
-            "1024x1024", Examples: ["512x512", "1024x1024", "1344x768"], Toggleable: true, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: -3, Clean: (_, s) =>
-            {
-                (string widthText, string heightText) = s.BeforeAndAfter('x');
-                int width = int.Parse(widthText.Trim());
-                int height = int.Parse(heightText.Trim());
-                if (width < 64 || height < 64 || width > 16384 || height > 16384)
-                {
-                    throw new SwarmUserErrorException($"Invalid resolution: {width}x{height} (must be between 64x64 and 16384x16384)");
-                }
-                return s;
-            }
             ));
         PersonalNote = Register<string>(new("Personal Note", "Optional field to type in any personal text note you want.\nThis will be stored in the image metadata.",
             "", IgnoreIf: "", IsAdvanced: true, Clean: ApplyStringEdit, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0
