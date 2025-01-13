@@ -12,6 +12,7 @@
     --toggle-thumb-active: color-mix(in srgb, var(--emphasis) 50%, white);
     --toggle-thumb-hover: var(--button-background-hover);
     --toggle-thumb-active-hover: color-mix(in srgb, var(--emphasis) 25%, white);
+    --font-monospace: 'Courier New', Courier, monospace;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -458,12 +459,30 @@ textarea, input, select {
     cursor: pointer;
 }
 .header-label-wrap {
-    width: calc(100% - 20px);
-    display: inline-block;
+    width: 100%;
+    display: flex;
+    align-items: center;
     position: absolute;
     top: -1.2em;
     left: -1em;
     margin: 4px;
+}
+.header-label-spacer {
+    flex-grow: 10;
+}
+.header-label-counter {
+    font-size: 90%;
+    color: var(--text-soft);
+    font-family: var(--font-monospace);
+}
+.header-label-counter-advancedshine {
+    color: var(--text);
+    box-shadow: 0 0 4px 1px var(--emphasis);
+    background-color: color-mix(in srgb, var(--emphasis) 50%, transparent);
+}
+.header-label-notoggle {
+    width: 35px;
+    margin-left: 1rem;
 }
 .form-check-input:checked {
     background-color: var(--emphasis);
@@ -873,10 +892,6 @@ input[type="range"]::-moz-range-track {
     --toggle-thumb-size: 12px;
     width: var(--toggle-width) !important;
     height: var(--toggle-height) !important;
-}
-.group-toggler-switch {
-    position: absolute;
-    right: 0;
 }
 .auto-slider-toggle {
     opacity: 0;

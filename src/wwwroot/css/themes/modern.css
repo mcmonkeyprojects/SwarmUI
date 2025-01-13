@@ -251,8 +251,6 @@
     box-shadow: var(--button-shadow);
     border-radius: 4px;
     margin-right: 10px;
-    position: relative;
-    top: -2px;
     transition: background .2s;
     color: var(--text) !important;
 

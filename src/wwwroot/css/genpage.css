@@ -344,7 +344,7 @@ body {
     font-size: 90%;
 }
 .image-preview-text {
-    font-family: 'Courier New', Courier, monospace;
+    font-family: var(--font-monospace);
 }
 .current_model_view {
     display: inline-block;
@@ -683,7 +683,7 @@ body {
     border-radius: 0.5rem;
 }
 .imageview_popup_modal_background {
-    font-family: monospace, monospace;
+    font-family: var(--font-monospace);
     background-color: rgb(50, 50, 50, 0.7);
 }
 .imageview_modal_imagewrap {
@@ -1232,7 +1232,7 @@ body {
     border-radius: 1rem;
     padding: 0.5rem;
     overflow: auto;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: var(--font-monospace);
     margin-left: auto;
     margin-right: auto;
 }

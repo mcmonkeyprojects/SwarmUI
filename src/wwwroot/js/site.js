@@ -396,6 +396,9 @@ function doToggleEnable(id) {
             elem2.classList.remove('disabled-input');
         }
     }
+    if (typeof scheduleParamUnsupportUpdate == 'function') {
+        scheduleParamUnsupportUpdate();
+    }
 }
 
 function getToggleHtml(toggles, id, name, extraClass = '', func = 'doToggleEnable') {

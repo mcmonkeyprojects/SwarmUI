@@ -105,6 +105,18 @@ function toggleGroupOpen(elem, shouldOpen = null) {
     doGroupOpenUpdate(group, parent, shouldOpen);
 }
 
+let isParamUnsupportableUpdateScheduled = false;
+
+function scheduleParamUnsupportUpdate() {
+    if (!isParamUnsupportableUpdateScheduled) {
+        isParamUnsupportableUpdateScheduled = true;
+        setTimeout(() => {
+            isParamUnsupportableUpdateScheduled = false;
+            hideUnsupportableParams();
+        }, 5);
+    }
+}
+
 function doGroupOpenUpdate(group, parent, isOpen) {
     let header = parent.querySelector('.input-group-header');
     parent.classList.remove('input-group-closed');
@@ -130,6 +142,7 @@ function doGroupOpenUpdate(group, parent, isOpen) {
             setCookie(`group_open_${parent.id}`, 'closed', 365);
         }
     }
+    scheduleParamUnsupportUpdate();
 }
 
 function doToggleGroup(id) {
@@ -216,7 +229,7 @@ function genInputs(delay_final = false) {
                     let openClass = shouldOpen == 'closed' ? 'input-group-closed' : 'input-group-open';
                     let extraContentInfo = shouldOpen == 'closed' ? ' style="display: none;"' : '';
                     let toggler = getToggleHtml(param.group.toggles, `input_group_content_${groupId}`, escapeHtml(param.group.name), ' group-toggler-switch', 'doToggleGroup');
-                    html += `<div class="input-group ${openClass}" id="auto-group-${groupId}"><span${extraSpanInfo} id="input_group_${groupId}" class="input-group-header ${shrinkClass}"><span class="header-label-wrap">${symbol}<span class="header-label">${translateableHtml(escapeHtml(param.group.name))}</span>${toggler}${infoButton}</span></span><div${extraContentInfo} class="input-group-content" id="input_group_content_${groupId}">`;
+                    html += `<div class="input-group ${openClass}" id="auto-group-${groupId}"><span${extraSpanInfo} id="input_group_${groupId}" class="input-group-header ${shrinkClass}"><span class="header-label-wrap">${symbol}<span class="header-label">${translateableHtml(escapeHtml(param.group.name))}</span>${infoButton}<span class="header-label-spacer"></span><span class="header-label-counter"></span>${toggler || '<span class="header-label-notoggle"></span>'}</span></span><div${extraContentInfo} class="input-group-content" id="input_group_content_${groupId}">`;
                     if (presetArea) {
                         presetHtml += `<div class="input-group ${openClass}"><span id="input_group_preset_${groupId}" class="input-group-header ${shrinkClass}">${symbol}${translateableHtml(escapeHtml(param.group.name))}</span><div class="input-group-content">`;
                     }
@@ -890,6 +903,9 @@ function hideUnsupportableParams() {
             if (param.group && param.group.toggles && !getRequiredElementById(`input_group_content_${param.group.id}_toggle`).checked) {
                 isAltered = false;
             }
+            if (box && box.style.display == 'none' && box.dataset.visible_controlled) {
+                isAltered = false;
+            }
             if (hideUnaltered && !isAltered) {
                 show = false;
             }
@@ -906,12 +922,18 @@ function hideUnsupportableParams() {
             if (!box.dataset.visible_controlled) {
                 box.style.display = show ? '' : 'none';
             }
+            if (param.id == 'wildcardseed') {
+                console.log(`Seed is ${show ? 'visible' : 'hidden'} with value ${getInputVal(elem)}, altered: ${isAltered}, supported: ${supported}, advanced: ${isAdvanced}, filter: ${filterShow}, hideUnaltered: ${hideUnaltered}, showAdvanced: ${showAdvanced}, group: ${param.group ? param.group.name : 'none'}, hasToggle: ${paramToggler ? 'yes' + (`, isToggled: ${paramToggler.checked}`) : 'no'}, boxDisplay: ${box.style.display}`);
+            }
             box.dataset.disabled = supported ? 'false' : 'true';
             if (param.group) {
-                let groupData = groups[param.group.id] || { visible: 0, data: param.group };
+                let groupData = groups[param.group.id] || { visible: 0, data: param.group, altered: 0 };
                 groups[param.group.id] = groupData;
                 if (show) {
                     groupData.visible++;
+                }
+                if (isAltered) {
+                    groupData.altered++;
                 }
             }
         }
@@ -934,6 +956,17 @@ function hideUnsupportableParams() {
         }
         else {
             groupElem.style.display = 'none';
+        }
+        let counter = groupElem.querySelector('.header-label-counter');
+        counter.dataset.count = groupData.altered;
+        counter.innerText = groupData.altered == 0 ? '' : ` ${groupData.altered}`;
+        if (visible && groupData.data.advanced && !showAdvanced) {
+            counter.classList.add('header-label-counter-advancedshine');
+            counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this hidden advanced group`;
+        }
+        else {
+            counter.classList.remove('header-label-counter-advancedshine');
+            counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this group`;
         }
     }
 }

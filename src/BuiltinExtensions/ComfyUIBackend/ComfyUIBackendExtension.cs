@@ -610,7 +610,7 @@ public class ComfyUIBackendExtension : Extension
             Clean: (_, val) => CustomWorkflows.ContainsKey(val) ? $"PARSED%{val}%{ComfyUIWebAPI.ReadCustomWorkflow(val)["prompt"]}" : val,
             MetadataFormat: v => v.StartsWith("PARSED%") ? v.After("%").Before("%") : v
             ));
-        SamplerParam = T2IParamTypes.Register<string>(new("Sampler", "Sampler type (for ComfyUI backends).\nGenerally, 'Euler' is fine, but for SD1 and SDXL 'DPM++ 2M' is popular when paired with the 'Karras' scheduler.\n'Ancestral' and 'SDE' samplers only work with non-rectified models (eg SD1/SDXL) and randomly move over time.",
+        SamplerParam = T2IParamTypes.Register<string>(new("Sampler", "Sampler type (for ComfyUI backends).\nGenerally, 'Euler' is fine, but for SD1 and SDXL 'DPM++ 2M' is popular when paired with the 'Karras' scheduler.\n'Ancestral' and 'SDE' samplers only work with non-rectified models (eg SD1/SDXL) and randomly move over time.\nSome special model variants require specific Samplers or Schedulers.\n'CFG++' samplers have a different CFG range than normal (between 0 to 2, depending).",
             "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -5,
             GetValues: (_) => Samplers
             ));
