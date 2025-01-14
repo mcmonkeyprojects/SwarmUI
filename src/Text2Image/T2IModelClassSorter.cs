@@ -345,11 +345,19 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "nvidia-cosmos-1-7b-text2world", CompatClass = "nvidia-cosmos-1", Name = "NVIDIA Cosmos 1.0 Diffusion (7B) Text2World", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isCosmos7b(h);
+            return isCosmos7b(h) && (int)h["net.x_embedder.proj.1.weight"]["shape"].ToArray()[^1].Value<long>() == 68;
         }});
         Register(new() { ID = "nvidia-cosmos-1-14b-text2world", CompatClass = "nvidia-cosmos-1", Name = "NVIDIA Cosmos 1.0 Diffusion (14B) Text2World", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isCosmos14b(h);
+            return isCosmos14b(h) && (int)h["net.x_embedder.proj.1.weight"]["shape"].ToArray()[^1].Value<long>() == 68;
+        }});
+        Register(new() { ID = "nvidia-cosmos-1-7b-video2world", CompatClass = "nvidia-cosmos-1", Name = "NVIDIA Cosmos 1.0 Diffusion (7B) Video2World", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isCosmos7b(h) && (int)h["net.x_embedder.proj.1.weight"]["shape"].ToArray()[^1].Value<long>() == 72;
+        }});
+        Register(new() { ID = "nvidia-cosmos-1-14b-video2world", CompatClass = "nvidia-cosmos-1", Name = "NVIDIA Cosmos 1.0 Diffusion (14B) Video2World", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isCosmos14b(h) && (int)h["net.x_embedder.proj.1.weight"]["shape"].ToArray()[^1].Value<long>() == 72;
         }});
         Register(new() { ID = "nvidia-cosmos-1/vae", CompatClass = "nvidia-cosmos-1", Name = "NVIDIA Cosmos 1.0 Diffusion VAE", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {

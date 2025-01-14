@@ -1066,6 +1066,7 @@ public class WorkflowGenerator
         }
         if (IsNvidiaCosmos())
         {
+            defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
         bool willCascadeFix = false;

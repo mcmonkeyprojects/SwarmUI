@@ -1343,7 +1343,7 @@ public class WorkflowGeneratorSteps
             }
         }, 10);
         #endregion
-        #region Video
+        #region Image To Video
         AddStep(g =>
         {
             if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out T2IModel vidModel))
@@ -1357,6 +1357,7 @@ public class WorkflowGeneratorSteps
                 int height = vidModel.StandardHeight <= 0 ? 576 : vidModel.StandardHeight;
                 int imageWidth = g.UserInput.GetImageWidth();
                 int imageHeight = g.UserInput.GetImageHeight();
+                double defCfg = 7;
                 if (resFormat == "Image Aspect, Model Res")
                 {
                     if (width == 1024 && height == 576 && imageWidth == 1344 && imageHeight == 768)
@@ -1385,7 +1386,6 @@ public class WorkflowGeneratorSteps
                     (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
                     posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
                     negCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), clip, vidModel, false);
-                    // g.FinalImageOut
                     string condNode = g.CreateNode("LTXVImgToVideo", new JObject()
                     {
                         ["positive"] = posCond,
@@ -1398,6 +1398,7 @@ public class WorkflowGeneratorSteps
                         ["batch_size"] = 1,
                         ["image_noise_scale"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
                     });
+                    defCfg = 3;
                     posCond = [condNode, 0];
                     negCond = [condNode, 1];
                     latent = [condNode, 2];
@@ -1413,12 +1414,45 @@ public class WorkflowGeneratorSteps
                     defSampler = "euler";
                     defScheduler = "ltxv-image";
                 }
+                else if (vidModel.ModelClass?.CompatClass == "nvidia-cosmos-1")
+                {
+                    if (fps == -1)
+                    {
+                        fps = 24;
+                    }
+                    g.FinalLoadedModel = vidModel;
+                    (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
+                    posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
+                    negCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), clip, vidModel, false);
+                    string latentNode = g.CreateNode("CosmosImageToVideoLatent", new JObject()
+                    {
+                        ["vae"] = vae,
+                        ["image"] = g.FinalImageOut,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["length"] = frames ?? 121,
+                        ["batch_size"] = 1
+                    });
+                    string ltxvcond = g.CreateNode("LTXVConditioning", new JObject() // (Despite the name, this is just setting the framerate)
+                    {
+                        ["positive"] = posCond,
+                        ["negative"] = negCond,
+                        ["frame_rate"] = g.UserInput.Get(T2IParamTypes.VideoFPS, 24)
+                    });
+                    posCond = [ltxvcond, 0];
+                    negCond = [ltxvcond, 1];
+                    defCfg = 7;
+                    latent = [latentNode, 0];
+                    defSampler = "res_multistep";
+                    defScheduler = "karras";
+                }
                 else
                 {
                     if (fps == -1)
                     {
                         fps = 6; // SVD
                     }
+                    defCfg = 2.5;
                     JArray clipVision;
                     if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
                     {
@@ -1483,7 +1517,7 @@ public class WorkflowGeneratorSteps
                     latent = [conditioning, 2];
                 }
                 int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
-                double cfg = g.UserInput.Get(T2IParamTypes.VideoCFG, 2.5);
+                double cfg = g.UserInput.Get(T2IParamTypes.VideoCFG, defCfg);
                 string previewType = g.UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
                 string samplered = g.CreateKSampler(model, posCond, negCond, latent, cfg, steps, 0, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 42, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: defSampler, defscheduler: defScheduler, hadSpecialCond: hadSpecialCond);
                 g.FinalLatentImage = [samplered, 0];

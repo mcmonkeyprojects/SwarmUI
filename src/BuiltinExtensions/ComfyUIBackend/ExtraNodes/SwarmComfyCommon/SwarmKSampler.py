@@ -268,12 +268,11 @@ class SwarmKSampler:
             sigmas[-1] = 0
             sigmas = torch.FloatTensor(sigmas)
         elif sigma_min >= 0 and sigma_max >= 0 and scheduler in ["karras", "exponential"]:
-            real_model, _, _, _, _ = comfy.sample.prepare_sampling(model, noise.shape, positive, negative, noise_mask)
             if sampler_name in ['dpm_2', 'dpm_2_ancestral']:
-                sigmas = calculate_sigmas_scheduler(real_model, scheduler, steps + 1, sigma_min, sigma_max, rho)
+                sigmas = calculate_sigmas_scheduler(model, scheduler, steps + 1, sigma_min, sigma_max, rho)
                 sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
             else:
-                sigmas = calculate_sigmas_scheduler(real_model, scheduler, steps, sigma_min, sigma_max, rho)
+                sigmas = calculate_sigmas_scheduler(model, scheduler, steps, sigma_min, sigma_max, rho)
             sigmas = sigmas.to(device)
         
         out = latent_image.copy()
