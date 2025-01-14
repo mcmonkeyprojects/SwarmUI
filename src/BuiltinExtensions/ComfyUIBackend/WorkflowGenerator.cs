@@ -1066,6 +1066,17 @@ public class WorkflowGenerator
         }
         if (IsNvidiaCosmos())
         {
+            if (!hadSpecialCond)
+            {
+                string ltxvcond = CreateNode("LTXVConditioning", new JObject() // (Despite the name, this is just setting the framerate)
+                {
+                    ["positive"] = pos,
+                    ["negative"] = neg,
+                    ["frame_rate"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 24)
+                });
+                pos = [ltxvcond, 0];
+                neg = [ltxvcond, 1];
+            }
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
