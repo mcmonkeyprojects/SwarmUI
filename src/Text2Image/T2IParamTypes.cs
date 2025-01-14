@@ -419,7 +419,7 @@ public class T2IParamTypes
         InitImageResetToNorm = Register<double>(new("Init Image Reset To Norm", "Merges the init image towards the latent norm.\nThis essentially lets you boost 'init image creativity' past 1.0.\nSet to 0 to disable.",
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, OrderPriority: -4.5, ViewType: ParamViewType.SLIDER, Group: GroupInitImage, Examples: ["0", "0.2", "0.5", "1"], IsAdvanced: true
             ));
-        InitImageNoise = Register<double>(new("Init Image Noise", "Adds non-latent image noise to the Init Image.\nThis is simple Gaussian noise directly on top of the image.\nThis tends to encourage more complex/creative generations from diffusion models.\nEspecially helpful when the init is a flat color reference.",
+        InitImageNoise = Register<double>(new("Init Image Noise", "Adds non-latent image noise to the Init Image.\nThis is simple Gaussian noise directly on top of the image.\nThis tends to encourage more complex/creative generations from diffusion models.\nEspecially helpful when the init is a flat color reference.\nAt 0, no noise is added. At 1, heavy noise is added. You can overload up to 10 to more fully hide the source image if needed.",
             "0", IgnoreIf: "0", Min: 0, Max: 10, ViewMax: 1, Step: 0.05, OrderPriority: -4.2, ViewType: ParamViewType.SLIDER, Group: GroupInitImage, Examples: ["0", "0.2", "0.5", "1"], IsAdvanced: true
             ));
         MaskImage = Register<Image>(new("Mask Image", "Mask-image, white pixels are changed, black pixels are not changed, gray pixels are half-changed.",

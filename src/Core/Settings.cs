@@ -429,7 +429,7 @@ public class Settings : AutoConfiguration
         public string Language = "en";
 
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
-        public string ReuseParamExcludeList = "";
+        public string ReuseParamExcludeList = "wildcardseed";
 
         [ConfigComment("Settings related to autocompletions.")]
         public AutoCompleteData AutoComplete = new();
