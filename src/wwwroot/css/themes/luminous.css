@@ -1,0 +1,191 @@
+/* Navi-Tab Styling*/
+.nav-tabs {
+    background-color: var(--background-panel) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    padding: 0.5rem 0.5rem 0 0.5rem;
+}
+
+.nav-link {
+    color: var(--text) !important;
+    border: 1px solid transparent;
+    text-shadow: 0 0 5px var(--text);
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--emphasis) !important;
+    border-color: var(--border-color);
+    background-color: var(--background-soft);
+    text-shadow: 0 0 10px var(--emphasis);
+}
+
+/*Card Glow Effect*/
+.card {
+    background: var(--background-panel);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 0 20px var(--emphasis-soft);
+}
+
+/* Menu Headers */
+.input-group-header {
+    background-color: var(--background-gray);
+    color: var(--text);
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    text-shadow: 0 0 5px var(--text);
+}
+
+/* Neon glow effects */
+.basic-button {
+    box-shadow: 0 0 10px var(--emphasis);
+    border: 1px solid var(--emphasis);
+    transition: all 0.3s ease;
+    background-color: var(--button-background);
+    color: var(--button-text);
+}
+
+.basic-button:hover {
+    box-shadow: 0 0 20px var(--emphasis);
+    text-shadow: 0 0 10px var(--text);
+    background-color: var(--button-background-hover);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--emphasis);
+    border-radius: 4px;
+    box-shadow: 0 0 5px var(--emphasis);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--emphasis-soft);
+    box-shadow: 0 0 10px var(--emphasis-soft);
+}
+
+/* Quick tools styling */
+.t2i-area-quicktools {
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-md) !important;
+    margin-top: -20px;
+    padding: 0.5rem;
+}
+
+/* Category Headers and Expand/Retract Buttons */
+.auto-symbol {
+    display: inline-block;
+    text-align: center;
+    font-size: 20px;
+    width: 20px;
+    height: 17px;
+    background: var(--background-panel);
+    margin-right: 10px;
+    position: relative;
+    top: 0px;
+    transition: all 0.3s ease;
+    color: var(--text) !important;
+}
+
+.input-group .header-label {
+    font-size: 15px;
+    color: var(--text);
+    text-shadow: 0 0 5px var(--text);
+}
+
+.input-group .input-group-header {
+    position: unset;
+    margin: 0;
+    height: auto;
+    min-height: 32px;
+    color: var(--text);
+    user-select: none;
+    background-color: var(--background-panel);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    text-shadow: 0 0 5px var(--text);
+}
+
+.input-group .input-group-header:hover {
+    color: var(--emphasis);
+    text-shadow: 0 0 10px var(--emphasis);
+}
+
+/* Add this to ensure proper spacing in the input group */
+.input-group .input-group-content {
+    --spacing: 30px;
+    padding: 0;
+    max-width: unset;
+    margin-top: 10px;
+}
+
+.input-group .input-group-content > div {
+    padding: 5px 10px;
+    align-items: center;
+}
+
+.input-group .auto-input-name {
+    margin-right: 10px;
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 5px;
+    text-align: left;
+}
+
+/* Add styling for the quick buttons */
+.auto-input-qbutton {
+    text-align: center;
+    border-color: var(--border-color) !important;
+    color: var(--text) !important;
+    align-self: center;
+    width: 20px;
+    height: 20px;
+    line-height: 18px;
+    margin-left: auto;
+    margin-right: 10px;
+    box-shadow: 0 0 5px var(--emphasis);
+}
+
+/* Input group header and expand/retract styling */
+.input-group .input-group-header {
+    position: unset;
+    margin: 0;
+    height: auto;
+    min-height: 32px;
+    color: var(--text);
+    user-select: none;
+    background-color: var(--background-panel);
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    text-shadow: 0 0 5px var(--text);
+}
+
+.input-group .header-label-wrap {
+    position: relative;
+    top: unset;
+    left: unset;
+    margin: unset;
+    width: 100% !important;
+}
+
+.input-group .header-label {
+    font-size: 15px;
+}
+
+.input-group .input-group-header-shrinkable:hover {
+    color: var(--button-foreground-hover);
+}
+
+.input-group .input-group-header-activated {
+    background: transparent !important;
+}

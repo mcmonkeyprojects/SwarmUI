@@ -1,0 +1,66 @@
+:root {
+    /* Core colors */
+    --background: #3c3c3c; /* Slightly brighter dark background */
+    --background-soft: #4a4a4a; /* Lighter dark background */
+    --background-gray: #555555; /* Lighter gray */
+    --background-gray-danger: #b22222; /* Dark red for danger */
+    --background-danger: #ff4c4c; /* Bright red for danger */
+    --shadow: rgba(0, 0, 0, 0.5); /* Dark shadow */
+    --light-border: #666666; /* Lighter border */
+    
+    /* Text colors */
+    --text: #e0e0e0; /* Light gray for text */
+    --text-soft: #b0b0b0; /* Softer gray for text */
+    --popup-front: #ffffff; /* White for popups */
+    
+    /* UI Elements */
+    --emphasis: #ff9f5e; /* Softened orange for emphasis */
+    --emphasis-soft: #ff8f6c; /* Softer peach for emphasis */
+    --emphasis-text: #ffffff; /* White for emphasis text */
+    --border-color: #7172b3; /* Soft blue for borders */
+    
+    /* Buttons */
+    --button-text: #ffffff; /* White for button text */
+    --button-background: #4db683; /* Soft green for button background */
+    --button-background-hover: #4db683; /* Soft green hover */
+    --button-foreground-hover: #ff9f5e; /* Softened orange for button hover */
+    --button-foreground-disabled: #d3d3d3; /* Disabled button text */
+    --button-background-disabled: #555555; /* Disabled button background */
+    --button-border: #666666; /* Lighter button border color */
+    
+    /* Danger buttons */
+    --danger-button-background-hover: color-mix(in srgb, #ff4c4c 70%, black);
+    --danger-button-foreground-hover: #ffffff; /* White for danger button hover */
+    --danger-button-border: #ff4c4c; /* Bright red for danger button border */
+    --danger-button-foreground: #ffffff; /* White for danger button */
+    --danger-button-background: #b22222; /* Dark red for danger button background */
+    
+    /* Panels and backgrounds */
+    --background-panel: #4a4a4a; /* Slightly brighter dark panel background */
+    --background-panel-subtle: rgba(255, 159, 94, 0.1); /* Subtle peach panel background */
+    
+    /* Input elements */
+    --range-track-color: #666666; /* Lighter range track color */
+    --range-thumb-color: #4db683; /* Soft green for range thumb color */
+    
+    /* Other UI elements */
+    --qbutton: var(--emphasis);
+    --batch-0: rgba(255, 159, 94, 0.3); /* Softened batch color */
+    --batch-1: rgba(77, 182, 131, 0.3); /* Softer batch color */
+    --popup-back: var(--background);
+    
+    /* Selection colors */
+    --box-selected-border: rgba(77, 182, 131, 0.8); /* Selected box border */
+    --box-selected-background: rgba(77, 182, 131, 0.2); /* Selected box background */
+    --box-selected-border-stronger: rgba(77, 182, 131, 1.0); /* Stronger selected box border */
+    --box-selected-background-stronger: rgba(77, 182, 131, 0.3); /* Stronger selected box background */
+    
+    /* Standard colors */
+    --red: #ff4c4c; /* Bright red for standard */
+    --green: #4db683; /* Soft green remains unchanged */
+    
+    /* Shadow variables */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+	
