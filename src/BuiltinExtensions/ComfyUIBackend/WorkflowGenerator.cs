@@ -1845,4 +1845,32 @@ public class WorkflowGenerator
         });
         return new(finalCond, 0);
     }
+
+    /// <summary>Runs an action against all nodes of a given class_type.</summary>
+    /// <param name="classType">The class_type to target.</param>
+    /// <param name="action">The action(NodeID, JObject Data) to run against the node.</param>
+    public void RunOnNodesOfClass(string classType, Action<string, JObject> action)
+    {
+        foreach (JProperty property in Workflow.Properties().Where(p => $"{p.Value["class_type"]}" == classType).ToArray())
+        {
+            action(property.Name, property.Value as JObject);
+        }
+    }
+
+    /// <summary>Replace all instances of <paramref name="oldNode"/> with <paramref name="newNode"/> in node input connections.</summary>
+    public void ReplaceNodeConnection(JArray oldNode, JArray newNode)
+    {
+        string target0 = $"{oldNode[0]}", target1 = $"{oldNode[1]}";
+        foreach (JObject node in Workflow.Values().Cast<JObject>())
+        {
+            JObject inputs = node["inputs"] as JObject;
+            foreach (JProperty property in inputs.Properties().ToArray())
+            {
+                if (property.Value is JArray jarr && jarr.Count == 2 && $"{jarr[0]}" == target0 && $"{jarr[1]}" == target1)
+                {
+                    inputs[property.Name] = newNode;
+                }
+            }
+        }
+    }
 }

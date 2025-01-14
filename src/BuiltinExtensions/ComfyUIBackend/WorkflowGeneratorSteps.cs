@@ -1585,5 +1585,36 @@ public class WorkflowGeneratorSteps
             }
         }, 11);
         #endregion
+        #region Post-Cleanup
+        AddStep(g =>
+        {
+            g.RunOnNodesOfClass("SwarmKSampler", (id, data) =>
+            {
+                if (data["inputs"]["start_at_step"].Value<int>() >= data["inputs"]["steps"].Value<int>())
+                {
+                    g.ReplaceNodeConnection([id, 0], data["inputs"]["latent_image"] as JArray);
+                    g.Workflow.Remove(id);
+                }
+            });
+            g.RunOnNodesOfClass("VAEDecode", (id, data) =>
+            {
+                JArray source = data["inputs"]["samples"] as JArray;
+                string sourceNode = $"{source[0]}";
+                JObject actualNode = g.Workflow[sourceNode] as JObject;
+                if ($"{actualNode["class_type"]}" == "VAEEncode")
+                {
+                    // (VAE is almost definitely the same but check to be safe)
+                    JArray myVae = data["inputs"]["vae"] as JArray;
+                    JArray srcVae = actualNode["inputs"]["vae"] as JArray;
+                    if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
+                    {
+                        JArray srcImage = actualNode["inputs"]["pixels"] as JArray;
+                        g.ReplaceNodeConnection([id, 0], srcImage);
+                        g.Workflow.Remove(id);
+                    }
+                }
+            });
+        }, 200);
+        #endregion
     }
 }
