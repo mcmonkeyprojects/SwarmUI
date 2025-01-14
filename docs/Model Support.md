@@ -348,17 +348,18 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 ## NVIDIA Cosmos
 
-- NVIDIA Cosmos Text2World has initial WIP support in SwarmUI. Will be updated soon.
-- Cosmos Video2World and Autoregressive (Image2World) are not yet supported.
-- You can download the 7B Text2World here: <https://huggingface.co/mcmonkey/cosmos-1.0/blob/main/Cosmos-1_0-Diffusion-7B-Text2World.safetensors>
-    - or the 14B text2World here: <https://huggingface.co/mcmonkey/cosmos-1.0/blob/main/Cosmos-1_0-Diffusion-14B-Text2World.safetensors>
+- NVIDIA Cosmos Text2World and Video2World (image2video) has initial support in SwarmUI.
+- Cosmos Autoregressive is not yet supported.
+- You can download the models from here: <https://huggingface.co/mcmonkey/cosmos-1.0/tree/main>
+    - pick 7B (small) or 14B (large) - 7B needs less memory/time, but has worse quality. 14B needs more but has better quality. Both will be very slow even on a 4090.
+    - Text2World takes a prompt and generates a video (as a base model in Swarm), Video2World takes text+an image and generates a video (via the Image To Video param group in Swarm).
     - Save to `diffusion_models`
 - The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
     - It will be automatically downloaded.
 - The VAE will be automatically downloaded.
 - The model is trained for 24 FPS, but supports any value in a range from 12 to 40.
 - The model is trained for 1280x704 but works at other resolutions, including 960x960 as base square res.
-- The model is trained for 121 frames but seems to work happily at lower frame counts.
+- The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss.
 - Nvidia default recommends CFG=7 and Steps=35
 
 # Alternative Model Formats
