@@ -577,6 +577,10 @@ function genInputs(delay_final = false) {
         if (videoGroup && !currentBackendFeatureSet.includes('frameinterps')) {
             videoGroup.append(createDiv(`video_install_frameinterps`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('frame_interpolation', 'video_install_frameinterps')">Install Frame Interpolation</button>`));
         }
+        let advancedSamplingGroup = document.getElementById('input_group_content_advancedsampling');
+        if (advancedSamplingGroup && !currentBackendFeatureSet.includes('teacache')) {
+            advancedSamplingGroup.append(createDiv(`advancedsampling_install_teacache`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('teacache', 'advancedsampling_install_teacache')">Install TeaCache</button>`));
+        }
         for (let runnable of postParamBuildSteps) {
             runnable();
         }
@@ -875,6 +879,10 @@ function hideUnsupportableParams() {
     if (videoFrameInterpInstallButton && currentBackendFeatureSet.includes('frameinterps')) {
         videoFrameInterpInstallButton.remove();
     }
+    let teaCacheInstallButton = document.getElementById('advancedsampling_install_teacache');
+    if (teaCacheInstallButton && currentBackendFeatureSet.includes('teacache')) {
+        teaCacheInstallButton.remove();
+    }
     let filter = getRequiredElementById('main_inputs_filter').value.toLowerCase();
     let hideUnaltered = filter.includes('<unaltered>');
     if (hideUnaltered) {
@@ -921,9 +929,6 @@ function hideUnsupportableParams() {
             }
             if (!box.dataset.visible_controlled) {
                 box.style.display = show ? '' : 'none';
-            }
-            if (param.id == 'wildcardseed') {
-                console.log(`Seed is ${show ? 'visible' : 'hidden'} with value ${getInputVal(elem)}, altered: ${isAltered}, supported: ${supported}, advanced: ${isAdvanced}, filter: ${filterShow}, hideUnaltered: ${hideUnaltered}, showAdvanced: ${showAdvanced}, group: ${param.group ? param.group.name : 'none'}, hasToggle: ${paramToggler ? 'yes' + (`, isToggled: ${paramToggler.checked}`) : 'no'}, boxDisplay: ${box.style.display}`);
             }
             box.dataset.disabled = supported ? 'false' : 'true';
             if (param.group) {

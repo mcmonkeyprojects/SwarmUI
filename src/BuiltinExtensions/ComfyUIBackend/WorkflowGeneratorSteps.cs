@@ -182,6 +182,44 @@ public class WorkflowGeneratorSteps
         }, -5);
         AddModelGenStep(g =>
         {
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.TeaCacheMode, out string teaCacheMode) && teaCacheMode != "disabled")
+            {
+                double teaCacheThreshold = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheThreshold, 0.25);
+                if (teaCacheMode == "base gen only" && g.LoadingModelType != "Base")
+                {
+                    // wrong step, skip
+                }
+                else if (g.IsFlux())
+                {
+                    if (teaCacheMode != "video only")
+                    {
+                        string teaCacheNode = g.CreateNode("TeaCacheForImgGen", new JObject()
+                        {
+                            ["model"] = g.LoadingModel,
+                            ["model_type"] = "flux",
+                            ["rel_l1_thresh"] = teaCacheThreshold
+                        });
+                        g.LoadingModel = [teaCacheNode, 0];
+                    }
+                }
+                else if (g.IsHunyuanVideo() || g.IsLTXV())
+                {
+                    string teaCacheNode = g.CreateNode("TeaCacheForVidGen", new JObject()
+                    {
+                        ["model"] = g.LoadingModel,
+                        ["model_type"] = g.IsHunyuanVideo() ? "hunyuan_video" : "ltxv",
+                        ["rel_l1_thresh"] = teaCacheThreshold
+                    });
+                    g.LoadingModel = [teaCacheNode, 0];
+                }
+                else
+                {
+                    Logs.Debug($"Ignore TeaCache Mode parameter because the current model is '{g.CurrentModelClass()?.Name ?? "(none)"}' which does not support TeaCache.");
+                }
+            }
+        }, -4);
+        AddModelGenStep(g =>
+        {
             if (ComfyUIBackendExtension.FeaturesSupported.Contains("aitemplate") && g.UserInput.Get(ComfyUIBackendExtension.AITemplateParam))
             {
                 string aitLoad = g.CreateNode("AITemplateLoader", new JObject()
