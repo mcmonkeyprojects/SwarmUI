@@ -1,7 +1,5 @@
 # Model Type Support In SwarmUI
 
-- [Image Models](#image-models)
-
 | Model | Architecture | Year | Author | Scale | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- |
 [Stable Diffusion v1 and v2](#stable-diffusion-v1-and-v2) | unet | 2022 | Stability AI | 1B | Outdated |
