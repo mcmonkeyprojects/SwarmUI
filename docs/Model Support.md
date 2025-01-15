@@ -279,27 +279,60 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 ![hunyuan-video](https://github.com/user-attachments/assets/12d898c4-d9c8-447e-99b3-42ad0f0eb16d)
 
+### Hunyuan Video Basic Install
+
 - Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model.
-- Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors> or the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
+- Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
     - Save to the `diffusion_models` folder
-    - For FastVideo, you can use step counts as low as 6. Use the `Sigma Shift` param at a high value around 17, and the Flux Guidance at a higher than normal value as well (eg 10). Not adjusting these values well will yield terrible distorted results.
 - Or use the gguf models from city96 <https://huggingface.co/city96/HunyuanVideo-gguf/tree/main>
     - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video`
 - The text encoders (T5-XXL, and LLaVA-LLaMA3) and VAE will be automatically downloaded.
 - When selected, the `Text To Video` parameter group will become visible
-- The model is trained for 1280x720 (960x960) or 960x544 (720x720) resolutions or other aspect ratios of the same total pixel count
+
+### FastVideo
+
+- FastVideo is a version of Hunyuan Video trained for lower step counts (as low as 6)
+- You can get the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
+    - Save to the `diffusion_models` folder
+- Or the gguf FastVideo from city96 <https://huggingface.co/city96/FastHunyuan-gguf/tree/main>
+    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video`
+- Set the advanced `Sigma Shift` param to a high value around 17
+- Set the Flux Guidance at a higher than normal value as well (eg 10).
+- Not adjusting these values well will yield terribly distorted results. Swarm does not automate these for FastVideo currently!
+
+### Hunyuan Video Parameters
+
+- **Resolution:** The model is trained for 1280x720 (960x960) or 960x544 (720x720) resolutions or other aspect ratios of the same total pixel count
     - Using a lower resolution, like 848x480, can work with only some quality loss, and much lower mem/gen time.
-- The model is trained for 24 fps (cannot change), and dynamic frame counts (eg 73 or 129 is solid). Multiples of 4 plus 1 (4, 9, 13, 17, ...) are required due to the 4x temporal compression in the Hunyuan VAE. The input parameter will automatically round if you enter an invalid value.
-    - For quick generates, `25` is a good short frame count that creates about 1 second of video.
+- **FPS:** The model is trained for 24 fps (cannot be changed, editing the FPS value will just give you 'slowmo' outputs)
+- **FrameCount (Length):** The model supports dynamic frame counts (eg 73 or 129 is solid), so you can pick the duration you want via the `Text2Video Frames` parameter.
+    - Multiples of 4 plus 1 (4, 9, 13, 17, ...) are required due to the 4x temporal compression in the Hunyuan VAE.
+    - The input parameter will automatically round if you enter an invalid value.
+    - For quick generations, `25` is a good short frame count that creates about 1 second of video.
+        - Use `49` for 2 seconds, `73` for 3 seconds, `97` for 4 seconds, `121` for 5 seconds, `145` for 6 seconds, 
+    - Supposedly, a frame count of 201 yields a perfect looping video (about 8.5 seconds long).
+- **Guidance Scale:** Hunyuan Video is based on the Flux Dev architecture, and has similar requirements.
+    - Set the core `CFG Scale` parameter to 1.
+    - You can use the `Flux Guidance Scale` parameter on this model (for Hunyuan Video, unlike Flux Dev, this value is embedded from CFG scale, and so prefers values around 6).
+        - For "FastVideo" raise it up to 10.
+- **Sigma Shift:** Leave `Sigma Shift` disabled for regular Hunyuan Video, but for "FastVideo" enable it and raise it to 17.
+
+### Hunyuan Video Performance / Optimization
+
 - Hunyuan Video is very GPU and memory intensive, especially the VAE
     - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (GGUF model coming soon may help?)
 - The VAE has a harsh memory requirement that may limit you from high duration videos.
     - VAE Tiling is basically mandatory for consumer GPUs. You can configure both image space tiling, and video frame tiling, with the parameters under `Advanced Sampling`.
     - If you do not manually enable VAE Tiling, Swarm will automatically enable it at 256 with 64 overlap, and temporal 32 frames with 4 overlap. (Because the memory requirements without tiling are basically impossible. You can set the tiling values very very high if you want to make the tile artifacts invisible and you have enough memory to handle it).
-- Hunyuan Video is based on the Flux Dev architecture, and has similar requirements.
-    - Set CFG Scale to 1.
-    - You can use Flux Guidance parameter on this model (for Hunyuan Video, unlike Flux Dev, this value is embedded from CFG scale, and so prefers values around 6).
-- By default the BF16 version of the model will be loaded in FP8 model. To change this, use the `Preferred DType` advanced parameter. FP8 noticeably changes results compared to BF16, but lets it run much much faster. The GGUF versions of the model are highly recommended, as they get much closer to original and very close performance to fp8. GGUF Q6_K is nearly identical to BF16.
+- By default the BF16 version of the model will be loaded in FP8. To change this, use the `Preferred DType` advanced parameter.
+    - FP8 noticeably changes results compared to BF16, but lets it run much much faster.
+    - The GGUF versions of the model are highly recommended, as they get much closer to original and very close performance to fp8.
+        - GGUF Q6_K is nearly identical to BF16.
+
+### Hunyuan Video Additional Notes
+
+- You can use Hunyuan Video as a Text2Image model by setting `Text2Video Frames` to `1`.
+    - The base model as an image generator performs like a slightly dumber version of Flux Dev.
 
 ## Genmo Mochi 1 (Text2Video)
 
