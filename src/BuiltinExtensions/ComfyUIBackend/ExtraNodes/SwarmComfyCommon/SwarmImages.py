@@ -89,7 +89,10 @@ class SwarmImageNoise:
             "required": {
                 "image": ("IMAGE",),
                 "amount": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 10.0, "step": 0.01, "round": False}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff})
+            },
+            "optional": {
+                "mask": ("MASK",)
             }
         }
 
@@ -98,9 +101,18 @@ class SwarmImageNoise:
     FUNCTION = "add_noise"
     DESCRIPTION = "Adds random noise to an image."
 
-    def add_noise(self, image, amount, seed):
+    def add_noise(self, image, amount, seed, mask=None):
         generator = torch.manual_seed(seed)
+        while image.dim() < 4:
+            image = image.unsqueeze(0)
         noise = torch.randn(image.size(), dtype=image.dtype, layout=image.layout, generator=generator, device="cpu") * amount
+        if mask is not None:
+            while mask.dim() < 4:
+                mask = mask.unsqueeze(0)
+            mask = torch.nn.functional.interpolate(mask.to(image.device), size=(image.shape[1], image.shape[2]), mode="bicubic")
+            if image.shape[3] == 3 and image.shape[1] > 3: # (channels-last)
+                mask = mask.movedim(1, -1)
+            noise = noise * mask
         img = image + noise.to(image.device)
         img = torch.clamp(img, 0, 1)
         return (img,)

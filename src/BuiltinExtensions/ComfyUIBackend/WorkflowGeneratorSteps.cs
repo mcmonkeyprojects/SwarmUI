@@ -267,17 +267,29 @@ public class WorkflowGeneratorSteps
                 }
                 g.CreateLoadImageNode(img, "${initimage}", true, "15");
                 g.FinalInputImage = ["15", 0];
+                JArray currentMask = g.FinalMask;
                 if (g.UserInput.TryGet(T2IParamTypes.InitImageNoise, out double initNoise))
                 {
-                    string noised = g.CreateNode("SwarmImageNoise", new JObject()
+                    JObject noiseInput = new()
                     {
                         ["image"] = g.FinalInputImage,
                         ["amount"] = initNoise,
                         ["seed"] = g.UserInput.Get(T2IParamTypes.Seed, 0) + 327
-                    });
+                    };
+                    if (currentMask is not null)
+                    {
+                        // cut the edges of a blurred mask back to make recompositing cleaner
+                        string thresholded = g.CreateNode("SwarmMaskThreshold", new JObject()
+                        {
+                            ["mask"] = currentMask,
+                            ["min"] = 0.5,
+                            ["max"] = 1.0
+                        });
+                        noiseInput["mask"] = new JArray() { thresholded, 0 };
+                    }
+                    string noised = g.CreateNode("SwarmImageNoise", noiseInput);
                     g.FinalInputImage = [noised, 0];
                 }
-                JArray currentMask = g.FinalMask;
                 if (currentMask is not null)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
