@@ -255,6 +255,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Frame count is set as model default.
     - CFG is set appropriate to the model.
     - Resolution is model default.
+    - FPS is model default.
     - Note that outputs are converted and shrunk to avoid wasting too much space / processor power on the docs page.
 - For image2video models, an era-appropriate text2image model is used and noted.
 - This is just the image test prompt but I swapped 'photo' to 'video', 'sitting' to 'walking', and 'holding' to 'carrying'. Goal is to achieve the same test as the image prompt does, but with a request for motion.
@@ -348,6 +349,10 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 ## NVIDIA Cosmos
 
+![cosmos-7b](https://github.com/user-attachments/assets/d4e4047e-1706-4f61-b560-3fe6f70783c6)
+
+*(Cosmos 7B Text2World)*
+
 - NVIDIA Cosmos Text2World and Video2World (image2video) has initial support in SwarmUI.
 - Cosmos Autoregressive is not yet supported.
 - You can download the models from here: <https://huggingface.co/mcmonkey/cosmos-1.0/tree/main>
@@ -356,6 +361,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Save to `diffusion_models`
 - The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
     - It will be automatically downloaded.
+- Cosmos responds poorly to standard prompts, as it was trained for very long LLM-generated prompts.
 - The VAE will be automatically downloaded.
 - The model is trained for 24 FPS, but supports any value in a range from 12 to 40.
 - The model is trained for 1280x704 but works at other resolutions, including 960x960 as base square res.
