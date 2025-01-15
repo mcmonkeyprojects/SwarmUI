@@ -5,7 +5,8 @@
 - [Advanced Usage](/docs/Advanced%20Usage.md) for various advanced usage topics (use from external device, comfy workflows, ...)
 - [Docker](/docs/Docker.md) for using SwarmUI inside a Docker container.
 - [Using more GPUs](/docs/Using%20More%20GPUs.md) for more info about splitting generations between multiple GPUs.
-- [Model Support](/docs/Model%20Support.md) for details about support of different model types.
+- [Model Support](/docs/Model%20Support.md) for details about support of different image model types.
+    - [Video Model Support](/docs/Video%20Model%20Support.md) for details about video model types.
 - TODO: Settings guide (server & user)
 - TODO: Account system
 - [Command line arguments](/docs/Command%20Line%20Arguments.md) describes the available command line arguments in detail.
