@@ -1034,7 +1034,9 @@ function doGenForeverOnce(minQueueSize) {
         return;
     }
     let allParams = getGenInput();
-    if (!('seed' in allParams) || allParams['seed'] != -1) {
+    const seed = 'seed' in allParams ? allParams['seed'] : -1;
+    const variation = 'variationseed' in allParams ? allParams['variationseed'] : null;
+    if (seed != -1 && variation != -1) {
         if (lastGenForeverParams && JSON.stringify(lastGenForeverParams) == JSON.stringify(allParams)) {
             return;
         }
