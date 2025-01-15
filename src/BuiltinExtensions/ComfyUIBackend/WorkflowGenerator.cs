@@ -599,6 +599,14 @@ public class WorkflowGenerator
         }
         string getLlava3Model()
         {
+            if (UserInput.TryGet(T2IParamTypes.LLaVAModel, out T2IModel model))
+            {
+                return model.Name;
+            }
+            if (Program.T2IModelSets["Clip"].Models.ContainsKey("llava_llama3_fp8_scaled.safetensors"))
+            {
+                return "llava_llama3_fp8_scaled.safetensors";
+            }
             // TODO: is a selector param needed?
             requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250");
             return "llava_llama3_fp8_scaled.safetensors";
@@ -892,7 +900,12 @@ public class WorkflowGenerator
         }
         else if (IsHunyuanVideo())
         {
-            string dualClipLoader = CreateNode("DualCLIPLoader", new JObject()
+            string loaderType = "DualCLIPLoader";
+            if (getClipLModel().EndsWith(".gguf") || getLlava3Model().EndsWith(".gguf"))
+            {
+                loaderType = "DualCLIPLoaderGGUF";
+            }
+            string dualClipLoader = CreateNode(loaderType, new JObject()
             {
                 ["clip_name1"] = getClipLModel(),
                 ["clip_name2"] = getLlava3Model(),
