@@ -350,6 +350,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         {
             AddLoadStatus($"Will validate required libs...");
             string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
+            string[] distinfos = [.. dirs.Where(d => d.EndsWith(".dist-info"))];
             HashSet<string> libs = dirs.Select(d => d.Before('-')).ToHashSet();
             if (dirs.Contains("ultralytics-8.3.41.dist-info") || dirs.Contains("ultralytics-8.3.42.dist-info"))
             {
@@ -379,9 +380,32 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await p.WaitForExitAsync(Program.GlobalProgramCancel);
                 AddLoadStatus($"Done installing '{pipName}' for ComfyUI.");
             }
+            async Task update(string name, string pip)
+            {
+                AddLoadStatus($"Updating '{name}' for ComfyUI...");
+                Process p = DoPythonCall($"-s -m pip install -U {pip}");
+                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Update {name})", "");
+                await p.WaitForExitAsync(Program.GlobalProgramCancel);
+                AddLoadStatus($"Done updating '{name}' for ComfyUI.");
+            }
+            string getVers(string package)
+            {
+                string prefix = $"{package}-";
+                string dir = distinfos.FirstOrDefault(d => d.StartsWith(prefix));
+                if (dir is null)
+                {
+                    return null;
+                }
+                return dir[prefix.Length..].Before(".dist-info");
+            }
             foreach ((string libFolder, string pipName) in RequiredPythonPackages)
             {
                 await install(libFolder, pipName);
+            }
+            string numpyVers = getVers("numpy");
+            if (numpyVers is not null && Version.Parse(numpyVers) < Version.Parse("1.25"))
+            {
+                await update("numpy", "numpy>=1.25.0");
             }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
             {
