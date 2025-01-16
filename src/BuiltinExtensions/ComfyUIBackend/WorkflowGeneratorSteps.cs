@@ -1097,13 +1097,19 @@ public class WorkflowGeneratorSteps
                     }
                     if (doPixelUpscale)
                     {
+                        int width = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale);
+                        int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
+                        width = (width / 16) * 16; // avoid unworkable output sizes
+                        height = (height / 16) * 16;
                         if (upscaleMethod.StartsWith("pixel-"))
                         {
-                            g.CreateNode("ImageScaleBy", new JObject()
+                            g.CreateNode("ImageScale", new JObject()
                             {
                                 ["image"] = pixelsNode,
+                                ["width"] = width,
+                                ["height"] = height,
                                 ["upscale_method"] = upscaleMethod.After("pixel-"),
-                                ["scale_by"] = refineUpscale
+                                ["crop"] = "disabled"
                             }, "26");
                         }
                         else
@@ -1120,8 +1126,8 @@ public class WorkflowGeneratorSteps
                             g.CreateNode("ImageScale", new JObject()
                             {
                                 ["image"] = new JArray() { "28", 0 },
-                                ["width"] = (int)Math.Round(g.UserInput.GetImageWidth() * refineUpscale),
-                                ["height"] = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale),
+                                ["width"] = width,
+                                ["height"] = height,
                                 ["upscale_method"] = "bilinear",
                                 ["crop"] = "disabled"
                             }, "26");
