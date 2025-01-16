@@ -1,8 +1,14 @@
 # Contributing to SwarmUI
 
-Please open an Issue or Discussion, or ask on Discord before opening a pull request, to make sure your work doesn't overlap with others.
+Please open an Issue or Discussion, or ask on [Discord](https://discord.gg/q2y38cqjNw) before opening a pull request, to make sure your work doesn't overlap with others.
 
 (TODO: More general contributing info)
+
+## Extensions
+
+Want to make something out of scope for Swarm's core systems? Make an extension! See the [Making Extensions Doc](/docs/Making%20Extensions.md)
+
+If your extension is ready to go, post it in the `#extensions` channel on Discord, and open a pull request adding it to the file `launchtools/extension_list.fds`
 
 ## Languages
 
