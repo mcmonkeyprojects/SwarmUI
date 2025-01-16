@@ -17,6 +17,15 @@ Here's some general info:
     - This has several different launch points (eg `OnInit`, `OnPreInit`, etc.) and some registration points (eg `ScriptFiles` and `StyleSheetFiles` to register custom web assets to the main page).
 - After making an extension, PR it to the [extension list file](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/launchtools/extension_list.fds)
 
+## Custom Themes
+
+Want to add custom UI themes (ie the Themes selectable in the User Settings tab) in a Swarm extension? Here's how:
+
+- You need a C# extension class as usual.
+- In `OnPreInit`, add the path to your stylesheet to `OtherAssets` (NOT StyleSheetFiles) in your Extension class.
+- In `OnInit`, call eg `WebServer.RegisterTheme(new("my_custom_dark", "My Custom Dark", ["/css/themes/modern.css", "/ExtensionFile/MyExtension/Assets/my_custom_dark.css"], true));`
+- Be careful to keep CSS edits minimal. Any format breakage from an extension CSS edit is on you to fix, only custom CSS in core themes are tested in core updates.
+
 # Extension Standards
 
 The following standards will be enforced for official listing of Swarm extensions. You won't be physically prevented from making extensions that violate these standards, you will just not be included on official listings if you violate them.
