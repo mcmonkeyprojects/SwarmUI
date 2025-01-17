@@ -1037,6 +1037,7 @@ public static class Utilities
             UseShellExecute = false,
             WorkingDirectory = dir
         };
+        start.Environment["GIT_TERMINAL_PROMPT"] = "0";
         SemaphoreSlim semaphore = GitOverlapLocks.GetLock(dir);
         await semaphore.WaitAsync();
         try
