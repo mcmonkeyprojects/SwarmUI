@@ -1839,6 +1839,7 @@ function pageSizer() {
         setCookie(`lastparam_input_prompt`, altText.value, 0.25);
         textPromptDoCount(altText, getRequiredElementById('alt_text_tokencount'));
         monitorPromptChangeForEmbed(altText.value, 'positive');
+        setGroupAdvancedOverride('regionalprompting', altText.value.includes('<segment:') || altText.value.includes('<region:'));
     });
     altText.addEventListener('input', () => {
         setCookie(`lastparam_input_prompt`, altText.value, 0.25);

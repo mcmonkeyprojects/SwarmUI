@@ -658,16 +658,16 @@ public class T2IParamTypes
             "0.5", Toggleable: true, IgnoreIf: "0.5", Min: 0, Max: 1, Step: 0.05, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: -5
             ));
         RegionalObjectCleanupFactor = Register<double>(new("Regional Object Cleanup Factor", "When using an 'object' prompt, how much to cleanup the end result by.\nThis is the 'init image creativity' of the final cleanup step.\nSet to 0 to disable.",
-            "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: -4
+            "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: -4, IsAdvanced: true
             ));
         RegionalObjectInpaintingModel = Register<T2IModel>(new("Regional Object Inpainting Model", "When using regionalized prompts with distinct 'object' values, this overrides the model used to inpaint those objects.",
-            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupRegionalPrompting, OrderPriority: -3
+            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupRegionalPrompting, OrderPriority: -3, IsAdvanced: true
             ));
         SegmentModel = Register<T2IModel>(new("Segment Model", "Optionally specify a distinct model to use for 'segment' values.",
-            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupRegionalPrompting, OrderPriority: 2
+            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupRegionalPrompting, OrderPriority: 2, IsAdvanced: true
             ));
         MaskCompositeUnthresholded = Register<bool>(new("Mask Composite Unthresholded", "If checked, when masks are recomposited (eg from a '<segment:>'), it will be recomposited with the exact raw mask.\nIf false, it will boolean threshold the mask first.\nThe boolean threshold is 'more correct' and leads to better content replacement, whereas disabling threshold (by checking this option) may lead to better looking refinements.",
-            "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 3
+            "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 3, IsAdvanced: true
             ));
         SaveSegmentMask = Register<bool>(new("Save Segment Mask", "If checked, any usage of '<segment:>' syntax in prompts will save the generated mask in output.",
             "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 3

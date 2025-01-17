@@ -3,6 +3,20 @@ let postParamBuildSteps = [];
 
 let refreshParamsExtra = [];
 
+/** Set 'id': true to indicate that advanced status should be overridden for a group, ie it should be visible even when Display Advanced is unchecked. */
+let groupAdvancedOverrides = {};
+
+function setGroupAdvancedOverride(groupId, enable) {
+    if (groupAdvancedOverrides[groupId] && !enable) {
+        delete groupAdvancedOverrides[groupId];
+        hideUnsupportableParams();
+    }
+    else if (enable && !groupAdvancedOverrides[groupId]) {
+        groupAdvancedOverrides[groupId] = true;
+        hideUnsupportableParams();
+    }
+}
+
 class AspectRatio {
     constructor(id, width, height) {
         this.id = id;
@@ -917,7 +931,7 @@ function hideUnsupportableParams() {
             if (hideUnaltered && !isAltered) {
                 show = false;
             }
-            let isAdvanced = param.advanced || (param.group && param.group.advanced);
+            let isAdvanced = param.advanced || (param.group && param.group.advanced && !groupAdvancedOverrides[param.group.id]);
             if (isAdvanced && !showAdvanced && !isAltered) {
                 show = false;
             }
@@ -966,12 +980,16 @@ function hideUnsupportableParams() {
         counter.dataset.count = groupData.altered;
         counter.innerText = groupData.altered == 0 ? '' : ` ${groupData.altered}`;
         if (visible && groupData.data.advanced && !showAdvanced) {
-            counter.classList.add('header-label-counter-advancedshine');
             counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this hidden advanced group`;
         }
         else {
-            counter.classList.remove('header-label-counter-advancedshine');
             counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this group`;
+        }
+        if (visible && groupData.data.advanced && !showAdvanced && groupData.altered > 0) {
+            counter.classList.add('header-label-counter-advancedshine');
+        }
+        else {
+            counter.classList.remove('header-label-counter-advancedshine');
         }
     }
 }
