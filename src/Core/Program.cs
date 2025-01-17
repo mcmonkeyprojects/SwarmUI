@@ -319,6 +319,10 @@ public class Program
                 }
             }
         });
+        if (Environment.CurrentDirectory.Contains(' '))
+        {
+            Logs.Warning($"Your folder path for SwarmUI contains a space. While Swarm itself can handle this fine, sometimes upstream dependencies misbehave around spaces. It is recommended you keep file paths very simple.");
+        }
         Logs.Init("Program is running.");
         WebhookManager.SendWebhook("Startup", ServerSettings.WebHooks.ServerStartWebhook, ServerSettings.WebHooks.ServerShutdownWebhook);
         WebServer.WebApp.WaitForShutdown();
