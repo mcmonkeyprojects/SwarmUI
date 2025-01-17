@@ -8,6 +8,10 @@
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, Very slow, mixed quality |
 
+**Unsupported:**
+- Below are some video models that are not natively supported in SwarmUI's `Generate` tab, but are available to use via the `Comfy Workflow` and `Simple` tabs:
+    - [CogVideoX](https://github.com/THUDM/CogVideo) (Tsinghua University, 2024, 2B & 5B DiT, Text/Image 2Video) is a decent video model, but unfortunately ComfyUI support is limited to [very hacky comfy nodes based on diffusers](https://github.com/kijai/ComfyUI-CogVideoXWrapper) which can not be easily integrated in SwarmUI's workflow generator.
+
 ## Demo Gifs
 
 - Video demos included below are seed `1` of the prompt `wide shot, video of a cat with mixed black and white fur, walking in the middle of an open roadway, carrying a cardboard sign that says "Meow I'm a Cat". In the distance behind is a green road sign that says "Model Testing Street"` ran on each model.
@@ -148,6 +152,8 @@
 
 *(Cosmos 7B Text2World)*
 
+### Nvidia Cosmos Basic Install
+
 - NVIDIA Cosmos Text2World and Video2World (image2video) has initial support in SwarmUI.
 - Cosmos Autoregressive is not yet supported.
 - You can download the models from here: <https://huggingface.co/mcmonkey/cosmos-1.0/tree/main>
@@ -156,9 +162,14 @@
     - Save to `diffusion_models`
 - The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
     - It will be automatically downloaded.
-- Cosmos responds poorly to standard prompts, as it was trained for very long LLM-generated prompts.
 - The VAE will be automatically downloaded.
-- The model is trained for 24 FPS, but supports any value in a range from 12 to 40.
-- The model is trained for 1280x704 but works at other resolutions, including 960x960 as base square res.
-- The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss.
-- Nvidia default recommends CFG=7 and Steps=35
+
+### Nvidia Cosmos Parameters
+
+- **Prompt:** Cosmos responds poorly to standard prompts, as it was trained for very long LLM-generated prompts.
+- **FPS:** The model is trained for 24 FPS, but supports any value in a range from 12 to 40.
+- **Resolution:** The model is trained for 1280x704 but works at other resolutions, including 960x960 as base square res.
+    - Cannot go below 704x704.
+- **Frame Count:** The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss, but generally you're stuck at exactly 121.
+- **CFG and Steps:** Nvidia default recommends CFG=7 and Steps=35
+- **Performance:** The models are extremely slow. Expect over 10 minutes for a single video even on a 4090.
