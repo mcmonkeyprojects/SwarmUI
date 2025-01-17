@@ -385,6 +385,20 @@ function genInputs(delay_final = false) {
                 triggerChangeFor(inputWidth);
                 triggerChangeFor(inputHeight);
             });
+            inputWidth.addEventListener('change', () => {
+                if (imageEditor.active) {
+                    imageEditor.realWidth = parseInt(inputWidth.value);
+                    imageEditor.redraw();
+                    imageEditor.markChanged();
+                }
+            });
+            inputHeight.addEventListener('change', () => {
+                if (imageEditor.active) {
+                    imageEditor.realHeight = parseInt(inputHeight.value);
+                    imageEditor.redraw();
+                    imageEditor.markChanged();
+                }
+            });
             resTrick();
         }
         autoRevealRevision();

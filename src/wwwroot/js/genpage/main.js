@@ -763,6 +763,19 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             showError('Cannot use "Edit Image": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.');
             return;
         }
+        let inputWidth = document.getElementById('input_width');
+        let inputHeight = document.getElementById('input_height');
+        let inputAspectRatio = document.getElementById('input_aspectratio');
+        if (inputWidth && inputHeight) {
+            inputWidth.value = img.naturalWidth;
+            inputHeight.value = img.naturalHeight;
+            triggerChangeFor(inputWidth);
+            triggerChangeFor(inputHeight);
+        }
+        if (inputAspectRatio) {
+            inputAspectRatio.value = 'Custom';
+            triggerChangeFor(inputAspectRatio);
+        }
         imageEditor.setBaseImage(img);
         imageEditor.activate();
     }, '', 'Opens an Image Editor for this image');
