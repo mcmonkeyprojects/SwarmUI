@@ -799,34 +799,28 @@
                 (TODO: info n stuff here)
                 <br>
                 <div class="card border-secondary mb-3 card-center-container">
-                    <div class="card-header translate">Stability API Key</div>
+                    <div class="card-header translate">API Keys</div>
                     <div class="card-body">
                         <p class="card-text translate">
-                            To use the Stability API in SwarmUI, you must set your key.
-                            <br>To get your key, <a href="https://platform.stability.ai/account/keys" target="_blank" rel="noreferrer noopener">go here</a>.
-                            <br>
-                            <br>Once you have your key, enter it below and click save:
-                            <br><input type="text" id="stability_api_key" placeholder="Stability API Key" autocomplete="off" oninput="stabilityAPIHelper.onKeyInput()" />
-                            <button class="basic-button translate" id="stability_key_submit" onclick="stabilityAPIHelper.onSaveButton()" disabled>Save</button>
-                            <button class="basic-button translate" id="stability_key_remove" onclick="stabilityAPIHelper.onRemoveButton()" disabled>Remove</button>
-                            <br>Your key: <span id="stability_key_status">(Unknown)</span>
+                            To use remote APIs in SwarmUI, you must set the key for it. If you have an API key for any of the below APIs, paste it into the corresponding box and click 'Save'.
                         </p>
-                    </div>
-                </div>
-                <div class="card border-secondary mb-3 card-center-container">
-                    <div class="card-header translate">Civitai API Key</div>
-                    <div class="card-body">
-                        <p class="card-text translate">
-                            If you plan to use the <a href="#" onclick="getRequiredElementById('utilitiestabbutton').click();getRequiredElementById('modeldownloadertabbutton').click();">Model Downloader</a> utility to download content from <a href="https://civitai.com/" target="_blank" rel="noreferrer noopener">Civitai</a>, you might want to set your Civitai API key below.
-                            <br>This will allow you to download gated or early-access content that your Civitai account has access to.
-                            <br>You can create an API key <a href="https://civitai.com/user/account" target="_blank" rel="noreferrer noopener">here</a>.
-                            <br>
-                            <br>Once you have your API key, enter it below and click save:
-                            <br><input type="text" id="civitai_api_key" placeholder="Civitai API Key" autocomplete="off" oninput="civitaiAPIHelper.onKeyInput()" />
-                            <button class="basic-button translate" id="civitai_key_submit" onclick="civitaiAPIHelper.onSaveButton()" disabled>Save</button>
-                            <button class="basic-button translate" id="civitai_key_remove" onclick="civitaiAPIHelper.onRemoveButton()" disabled>Remove</button>
-                            <br>Your key: <span id="civitai_key_status">(Unknown)</span>
-                        </p>
+                        <table class="simple-table" id="api_keys_table">
+                            <tr><th>API</th><th>Status</th><th>Actions</th><th>Link</th><th>Info</th></tr>
+                            @foreach (UserUpstreamApiKeys.ApiKeyInfo keyInfo in UserUpstreamApiKeys.KeysByType.Values)
+                            {
+                                <tr data-prefix="@keyInfo.JSPrefix" data-key="@keyInfo.KeyType">
+                                    <td><b>@keyInfo.Title</b></td>
+                                    <td><span id="@(keyInfo.JSPrefix)_key_status">(Unknown)</span></td>
+                                    <td>
+                                        <input type="text" id="@(keyInfo.JSPrefix)_api_key" placeholder="@keyInfo.Title API Key" autocomplete="off" oninput="apiHelpers['@keyInfo.KeyType'].onKeyInput()" />
+                                        <button class="basic-button translate" id="@(keyInfo.JSPrefix)_key_submit" onclick="apiHelpers['@keyInfo.KeyType'].onSaveButton()" disabled autocomplete="off">Save</button>
+                                        <button class="basic-button translate" id="@(keyInfo.JSPrefix)_key_remove" onclick="apiHelpers['@keyInfo.KeyType'].onRemoveButton()" disabled autocomplete="off">Remove</button>
+                                    </td>
+                                    <td><a href="@keyInfo.CreateLink" target="_blank" rel="noreferrer noopener">Go here to create a key</a></td>
+                                    <td>@keyInfo.InfoHtml</td>
+                                </tr>
+                            }
+                        </table>
                     </div>
                 </div>
             </div>

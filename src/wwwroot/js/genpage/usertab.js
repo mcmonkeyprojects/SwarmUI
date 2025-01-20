@@ -1,3 +1,5 @@
+apiHelpers = {};
+
 class APIKeyHelper {
     constructor(keyType, prefix) {
         this.keyType = keyType;
@@ -26,6 +28,7 @@ class APIKeyHelper {
         }
         this.keySubmit.disabled = true;
         genericRequest('SetAPIKey', { keyType: this.keyType, key: key }, data => {
+            this.keyInput.value = '';
             this.updateStatus();
         });
     }
@@ -40,16 +43,23 @@ class APIKeyHelper {
         genericRequest('GetAPIKeyStatus', { keyType: this.keyType }, data => {
             this.keyStatus.innerText = data.status;
             this.keyRemove.disabled = data.status == 'not set';
+            this.onKeyInput();
         });
     }
 }
 
-stabilityAPIHelper = new APIKeyHelper('stability_api', 'stability');
-civitaiAPIHelper = new APIKeyHelper('civitai_api', 'civitai');
+for (let keyRow of getRequiredElementById('api_keys_table').querySelectorAll('tr')) {
+    let keyType = keyRow.dataset.key;
+    let prefix = keyRow.dataset.prefix;
+    if (keyType && prefix) {
+        apiHelpers[keyType] = new APIKeyHelper(keyType, prefix);
+    }
+}
 
 getRequiredElementById('usersettingstabbutton').addEventListener('click', () => {
-    stabilityAPIHelper.updateStatus();
-    civitaiAPIHelper.updateStatus();
+    for (let key in apiHelpers) {
+        apiHelpers[key].updateStatus();
+    }
 });
 
 /** Central handler for user-edited parameters. */
