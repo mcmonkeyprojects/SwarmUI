@@ -365,15 +365,16 @@ public class WebServer
     /// <summary>Web route for scripts from extensions.</summary>
     public async Task ViewExtensionScript(HttpContext context)
     {
-        if (ExtensionSharedFiles.TryGetValue(context.Request.Path.Value, out string script))
+        string requested = context.Request.Path.Value[1..];
+        if (ExtensionSharedFiles.TryGetValue(requested, out string script))
         {
-            context.Response.ContentType = Utilities.GuessContentType(context.Request.Path.Value);
+            context.Response.ContentType = Utilities.GuessContentType(requested);
             context.Response.StatusCode = 200;
             await context.Response.WriteAsync(script);
         }
-        else if (ExtensionAssets.TryGetValue(context.Request.Path.Value, out Lazy<byte[]> data))
+        else if (ExtensionAssets.TryGetValue(requested, out Lazy<byte[]> data))
         {
-            context.Response.ContentType = Utilities.GuessContentType(context.Request.Path.Value);
+            context.Response.ContentType = Utilities.GuessContentType(requested);
             context.Response.StatusCode = 200;
             await context.Response.Body.WriteAsync(data.Value);
         }

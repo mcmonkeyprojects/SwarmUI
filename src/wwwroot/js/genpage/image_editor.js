@@ -9,7 +9,7 @@ class ImageEditorTool {
         this.id = id;
         this.icon = icon;
         this.iconImg = new Image();
-        this.iconImg.src = `/imgs/${icon}.png`;
+        this.iconImg.src = `imgs/${icon}.png`;
         this.name = name;
         this.description = description;
         this.active = false;
@@ -23,7 +23,7 @@ class ImageEditorTool {
         this.infoBubble.innerHTML = `<div class="image-editor-info-bubble-title">${escapeHtml(this.name)}</div><div class="image-editor-info-bubble-description">${escapeHtml(this.description)}</div>`;
         this.div = document.createElement('div');
         this.div.className = 'image-editor-tool';
-        this.div.style.backgroundImage = `url(/imgs/${this.icon}.png)`;
+        this.div.style.backgroundImage = `url(imgs/${this.icon}.png)`;
         this.div.addEventListener('click', () => this.onClick());
         this.div.addEventListener('mouseenter', () => {
             this.infoBubble.style.top = `${this.div.offsetTop}px`;
@@ -166,9 +166,9 @@ class ImageEditorToolGeneral extends ImageEditorTool {
         super(editor, 'general', 'mouse', 'General', 'General tool. Lets you move around the canvas, or adjust size of current layer.\nWhile resizing an object, hold CTRL to snap-to-grid, or hold SHIFT to disable aspect preservation.\nThe general tool can be activated at any time with the Alt key.\nHotKey: G', 'g');
         this.currentDragCircle = null;
         this.rotateIcon = new Image();
-        this.rotateIcon.src = '/imgs/canvas_rotate.png';
+        this.rotateIcon.src = 'imgs/canvas_rotate.png';
         this.moveIcon = new Image();
-        this.moveIcon.src = '/imgs/canvas_move.png';
+        this.moveIcon.src = 'imgs/canvas_move.png';
     }
 
     fixCursor() {
