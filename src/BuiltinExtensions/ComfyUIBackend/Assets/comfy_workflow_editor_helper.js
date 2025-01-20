@@ -24,7 +24,7 @@ function comfyTryToLoad() {
     hasComfyLoaded = true;
     comfyButtonsArea.style.display = 'block';
     let container = getRequiredElementById('comfy_workflow_frameholder');
-    container.innerHTML = `<iframe class="comfy_workflow_frame" id="comfy_workflow_frame" src="/ComfyBackendDirect/" onload="comfyOnLoadCallback()"></iframe>`;
+    container.innerHTML = `<iframe class="comfy_workflow_frame" id="comfy_workflow_frame" src="ComfyBackendDirect/" onload="comfyOnLoadCallback()"></iframe>`;
 }
 
 /**
@@ -85,7 +85,7 @@ function comfyOnLoadCallback() {
         getRequiredElementById('comfy_workflow_frameholder').innerHTML = `<h2>${comfyFailedToLoad.get()} <button onclick="comfyTryToLoad()">${comfyTryAgain.get()}</button></h2>`;
     }
     else {
-        getJsonDirect('/ComfyBackendDirect/object_info', (_, data) => {
+        getJsonDirect('ComfyBackendDirect/object_info', (_, data) => {
             comfyObjectData = data;
             for (let key of Object.keys(data)) {
                 if (data[key].output_node) {
@@ -177,7 +177,7 @@ function comfyOnLoadCallback() {
 function comfyReloadObjectInfo() {
     let resolve = undefined;
     let promise = new Promise(r => { resolve = r });
-    getJsonDirect('/ComfyBackendDirect/object_info', (_, data) => {
+    getJsonDirect('ComfyBackendDirect/object_info', (_, data) => {
         comfyObjectData = data;
         for (let param of gen_param_types) {
             if (param.revalueGetter) {
