@@ -268,19 +268,19 @@ public class WebServer
         {
             foreach (string script in e.ScriptFiles)
             {
-                string fname = $"/ExtensionFile/{e.ExtensionName}/{script}";
+                string fname = $"ExtensionFile/{e.ExtensionName}/{script}";
                 ExtensionSharedFiles.Add(fname, File.ReadAllText($"{e.FilePath}{script}"));
                 scripts.Append($"<script src=\"{fname}?vary={Utilities.VaryID}\"></script>\n");
             }
             foreach (string css in e.StyleSheetFiles)
             {
-                string fname = $"/ExtensionFile/{e.ExtensionName}/{css}";
+                string fname = $"ExtensionFile/{e.ExtensionName}/{css}";
                 ExtensionSharedFiles.Add(fname, File.ReadAllText($"{e.FilePath}{css}"));
                 stylesheets.Append($"<link rel=\"stylesheet\" href=\"{fname}?vary={Utilities.VaryID}\" />");
             }
             foreach (string file in e.OtherAssets)
             {
-                string fname = $"/ExtensionFile/{e.ExtensionName}/{file}";
+                string fname = $"ExtensionFile/{e.ExtensionName}/{file}";
                 string toRead = $"{e.FilePath}{file}";
                 ExtensionAssets.Add(fname, new(() => File.ReadAllBytes(toRead)));
             }
