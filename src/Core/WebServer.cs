@@ -82,23 +82,23 @@ public class WebServer
     /// <summary>Register a theme from an extension.</summary>
     public void RegisterTheme(string id, string name, string extFile, Extension extension, bool isDark)
     {
-        RegisterTheme(new(id, name, [$"/ExtensionFile/{extension.ExtensionName}/{extFile}"], isDark));
+        RegisterTheme(new(id, name, [$"ExtensionFile/{extension.ExtensionName}/{extFile}"], isDark));
     }
 
     /// <summary>Initial prep, called by <see cref="Program"/>, generally should not be touched externally.</summary>
     public void PreInit()
     {
         RegisteredThemes.Clear();
-        RegisterTheme(new("modern_dark", "Modern Dark", ["/css/themes/modern.css", "/css/themes/modern_dark.css"], true));
-        RegisterTheme(new("modern_light", "Modern Light", ["/css/themes/modern.css", "/css/themes/modern_light.css"], false));
-        RegisterTheme(new("solarized", "Solarized Light", ["/css/themes/modern.css", "/css/themes/solarized.css"], false));
-        RegisterTheme(new("dark_dreams", "Dark Dreams (Legacy)", ["/css/themes/dark_dreams.css"], true));
-        RegisterTheme(new("gravity_blue", "Gravity Blue (Legacy)", ["/css/themes/gravity_blue.css"], true));
-        RegisterTheme(new("cyber_swarm", "Cyber Swarm (Legacy)", ["/css/themes/cyber_swarm.css"], true));
-        RegisterTheme(new("punked", "Punked (Legacy)", ["/css/themes/punked.css"], true));
-        RegisterTheme(new("eyesear_white", "Eyesear White (Legacy)", ["/css/themes/eyesear_white.css"], false));
-        RegisterTheme(new("swarmpunk", "Swarm Punk", ["/css/themes/modern.css", "/css/themes/swarmpunk.css"], true));
-        RegisterTheme(new("beweish", "Beweish", ["/css/themes/modern.css", "/css/themes/beweish.css"], true));
+        RegisterTheme(new("modern_dark", "Modern Dark", ["css/themes/modern.css", "css/themes/modern_dark.css"], true));
+        RegisterTheme(new("modern_light", "Modern Light", ["css/themes/modern.css", "css/themes/modern_light.css"], false));
+        RegisterTheme(new("solarized", "Solarized Light", ["css/themes/modern.css", "css/themes/solarized.css"], false));
+        RegisterTheme(new("dark_dreams", "Dark Dreams (Legacy)", ["css/themes/dark_dreams.css"], true));
+        RegisterTheme(new("gravity_blue", "Gravity Blue (Legacy)", ["css/themes/gravity_blue.css"], true));
+        RegisterTheme(new("cyber_swarm", "Cyber Swarm (Legacy)", ["css/themes/cyber_swarm.css"], true));
+        RegisterTheme(new("punked", "Punked (Legacy)", ["css/themes/punked.css"], true));
+        RegisterTheme(new("eyesear_white", "Eyesear White (Legacy)", ["css/themes/eyesear_white.css"], false));
+        RegisterTheme(new("swarmpunk", "Swarm Punk", ["css/themes/modern.css", "css/themes/swarmpunk.css"], true));
+        RegisterTheme(new("beweish", "Beweish", ["css/themes/modern.css", "css/themes/beweish.css"], true));
     }
 
     /// <summary>Main prep, called by <see cref="Program"/>, generally should not be touched externally.</summary>

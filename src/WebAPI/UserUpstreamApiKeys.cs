@@ -30,6 +30,6 @@ public static class UserUpstreamApiKeys
     static UserUpstreamApiKeys()
     {
         Register(new("stability_api", "stability", "Stability AI", "https://platform.stability.ai/account/keys", new("To use the Stability AI API in SwarmUI (via the comfy nodes or simple tab), you must set your key.")));
-        Register(new("civitai_api", "civitai", "Civitai", "https://civitai.com/user/account", new("If you plan to use the <a href=\"#\" onclick=\"getRequiredElementById('utilitiestabbutton').click();getRequiredElementById('modeldownloadertabbutton').click();\">Model Downloader</a> utility to download content from <a href=\"https://civitai.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Civitai</a>, you might want to set your Civitai API key below.\n<br>This will allow you to download gated or early-access content that your Civitai account has access to.")));
+        Register(new("civitai_api", "civitai", "Civitai", "https://civitai.com/user/account", new("If you plan to use the <a href=\"#\" onclick=\"getRequiredElementById('utilitiestabbutton').click();getRequiredElementById('modeldownloadertabbutton').click();\">Model Downloader</a> utility to download content from <a href=\"https://civitai.com/\" target=\"_blank\" rel=\"noreferrer noopener\">Civitai</a>, you will want to set your Civitai API key below.\n<br>This will allow you to download gated or early-access content that your Civitai account has access to.")));
     }
 }
