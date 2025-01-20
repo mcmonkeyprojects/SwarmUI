@@ -1405,6 +1405,12 @@ function reviseStatusBar() {
     });
 }
 
+/** Array of functions called on key events (eg model selection change) to update displayed features.
+ * Return format [array addMe, array removeMe]. For example `[[], ['sd3']]` indicates that the 'sd3' feature flag is not currently supported (eg by current model).
+ * Can use 'curModelCompatClass', 'curModelArch' to check the current model architecture. Note these values may be null.
+ * */
+let featureSetChangers = [];
+
 function reviseBackendFeatureSet() {
     currentBackendFeatureSet = Array.from(currentBackendFeatureSet);
     let addMe = [], removeMe = [];
@@ -1439,6 +1445,11 @@ function reviseBackendFeatureSet() {
     doAnyArchFeature(['Flux.1-dev', 'hunyuan-video'], 'flux-dev');
     doCompatFeature('stable-diffusion-xl-v1', 'sdxl');
     doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video', 'hunyuan-video', 'nvidia-cosmos-1'], 'text2video');
+    for (let changer of featureSetChangers) {
+        let [add, remove] = changer();
+        addMe.push(...add);
+        removeMe.push(...remove);
+    }
     let anyChanged = false;
     for (let add of addMe) {
         if (!currentBackendFeatureSet.includes(add)) {
