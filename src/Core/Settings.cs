@@ -314,7 +314,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Settings related to saved file format.")]
         public FileFormatData FileFormat = new();
 
-        [ConfigComment("Whether your files save to server data drive or not.")]
+        [ConfigComment("Whether your image output files save to server data drive or not.\nDisabling this can make some systems misbehave, and makes the Image History do nothing.")]
         public bool SaveFiles = true;
 
         [ConfigComment("If true, folders will be discarded from starred image paths.")]
@@ -398,9 +398,6 @@ public class Settings : AutoConfiguration
         [ConfigComment("Options to override default VAEs with.")]
         public VAEsData VAEs = new();
 
-        [ConfigComment("When generating live previews, this is how many simultaneous generation requests can be waiting at one time.")]
-        public int MaxSimulPreviews = 1;
-
         [ConfigComment("Set to a number above 1 to allow generations of multiple images to automatically generate square mini-grids when they're done.")]
         public int MaxImagesInMiniGrid = 1;
 
@@ -412,6 +409,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, the Image History view will cache small preview thumbnails of images.\nThis should make things run faster. You can turn it off if you don't want that.")]
         public bool ImageHistoryUsePreviews = true;
+
+        [ConfigComment("When generating live previews (ie the turbo preview system, not normal generation previews after you've hit the Generate button),\nthis is how many simultaneous generation requests can be waiting at one time.")]
+        public int MaxSimulPreviews = 1;
 
         [ConfigComment("Delay, in seconds, between Generate Forever updates.\nIf the delay hits and a generation is still waiting, it will be skipped.\nDefault is 0.1 seconds.")]
         public double GenerateForeverDelay = 0.1;
@@ -456,7 +456,7 @@ public class Settings : AutoConfiguration
             [ManualSettingsOptions(Impl = null, Vals = ["Bucketed", "Contains", "StartsWith"])]
             public string MatchMode = "Bucketed";
 
-            [ConfigComment("How to sort the results.\n'Active' sorts shortest tags first, then alphabetically after.\n'Alphabetical' sorts results alphabetically.\n'Frequency' sorts results by how popular the tag is (for tag csvs).\n'None' uses whatever the source list's order is.")]
+            [ConfigComment("How to sort the results.\n'Active' sorts shortest tags first, then alphabetically after.\n'Alphabetical' sorts results alphabetically.\n'Frequency' sorts results by how popular the tag is (for tag CSVs).\n'None' uses whatever the source list's order is.")]
             [ManualSettingsOptions(Impl = null, Vals = ["Active", "Alphabetical", "Frequency", "None"])]
             public string SortMode = "Active";
 
