@@ -11,6 +11,22 @@ let serverSettingsData = {
     altered: {}
 };
 
+/** Checks for common mistakes in settings values. */
+function isSettingWrongLooking(id, value) {
+    if (['paths.sdmodelfolder', 'paths.sdlorafolder', 'paths.sdvaefolder', 'paths.sdembeddingfolder', 'paths.sdcontrolnetsfolder', 'paths.sdclipfolder', 'paths.sdclipvisionfolder'].includes(id)) {
+        if ((value.includes('/') || value.includes('\\')) && !value.includes(';')) {
+            let roots = document.getElementById('serversettings_paths.modelroot').value.split(';').map(x => x.trim());
+            if (roots.some(x => value.startsWith(x))) {
+                return true;
+            }
+        }
+    }
+    if (id == 'authorization.authorizationrequired' && value) {
+        return true;
+    }
+    return false;
+}
+
 function buildSettingsMenu(container, data, prefix, tracker) {
     let content = '';
     let runnables = [];
@@ -62,6 +78,14 @@ function buildSettingsMenu(container, data, prefix, tracker) {
             else {
                 value = elem.value;
             }
+            if (isSettingWrongLooking(key, value)) {
+                elem.classList.add('setting-looks-wrong');
+                elem.title = "This setting looks wrong. Double-check the docs in the '?' button.";
+            }
+            else {
+                elem.classList.remove('setting-looks-wrong');
+                elem.title = '';
+            }
             if (value == tracker.known[key].value) {
                 delete tracker.altered[key];
             }
@@ -72,6 +96,13 @@ function buildSettingsMenu(container, data, prefix, tracker) {
             getRequiredElementById(`${prefix}edit_count`).innerText = count;
             confirmer.style.display = count == 0 ? 'none' : 'block';
         });
+    }
+    for (let key of keys) {
+        let elem = getRequiredElementById(prefix + key);
+        if (isSettingWrongLooking(key, getInputVal(elem))) {
+            elem.classList.add('setting-looks-wrong');
+            elem.title = "This setting looks wrong. Double-check the docs in the '?' button.";
+        }
     }
 }
 

@@ -669,6 +669,10 @@ body {
     padding-bottom: 0.2rem;
     padding-left: 2rem;
 }
+.setting-looks-wrong {
+    border: 1px  solid red !important;
+    box-shadow: 0px 0px 1px 1px red !important;
+}
 .group-label {
     position: relative;
     left: -1rem;

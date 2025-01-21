@@ -520,7 +520,7 @@
 }
 
 .input-group .auto-text {
-    border: 1px solid var(--border-color) !important;
+    border: 1px solid var(--border-color);
     padding: 5px 10px !important;
     margin-top: 5px;
 }
