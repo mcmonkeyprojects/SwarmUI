@@ -388,7 +388,7 @@ public class ComfyUIRedirectHelper
                 return;
             }
             HttpContent content = null;
-            if (path == "prompt")
+            if (path == "prompt" || path == "api/prompt")
             {
                 try
                 {
@@ -464,7 +464,7 @@ public class ComfyUIRedirectHelper
                     Logs.Debug($"ComfyUI redirection failed - prompt json parse: {ex.ReadableString()}");
                 }
             }
-            else if (path == "queue" || path == "interrupt") // eg queue delete
+            else if (path == "queue" || path == "api/queue" || path == "interrupt" || path == "api/interrupt") // eg queue delete
             {
                 List<Task<HttpResponseMessage>> tasks = [];
                 MemoryStream inputCopy = new();
@@ -497,7 +497,7 @@ public class ComfyUIRedirectHelper
         }
         else
         {
-            if (path.StartsWith("view?filename="))
+            if (path.StartsWith("view?filename=") || path.StartsWith("api/view?filename="))
             {
                 List<Task<HttpResponseMessage>> requests = [];
                 foreach (ComfyUIBackendExtension.ComfyBackendData localBack in allBackends)
@@ -507,7 +507,7 @@ public class ComfyUIRedirectHelper
                 await Task.WhenAll(requests);
                 response = requests.Select(r => r.Result).FirstOrDefault(r => r.StatusCode == HttpStatusCode.OK) ?? requests.First().Result;
             }
-            else if ((path == "object_info" || path.StartsWith("object_info?")) && Program.ServerSettings.Performance.DoBackendDataCache)
+            else if ((path == "object_info" || path.StartsWith("object_info?") || path == "api/object_info" || path.StartsWith("api/object_info?")) && Program.ServerSettings.Performance.DoBackendDataCache)
             {
                 JObject data = ObjectInfoReadCacher.GetValue();
                 if (data is null)
@@ -516,9 +516,9 @@ public class ComfyUIRedirectHelper
                 }
                 response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(data.ToString(), Encoding.UTF8, "application/json") };
             }
-            else if (path == "user.css")
+            else if (path == "user.css" || path == "api/user.css")
             {
-                string remoteUserThemeText = await webClient.GetStringAsync($"{webAddress}/user.css");
+                string remoteUserThemeText = await webClient.GetStringAsync($"{webAddress}/{path}");
                 string theme = swarmUser.Settings.Theme ?? Program.ServerSettings.DefaultUser.Theme;
                 if (Program.Web.RegisteredThemes.ContainsKey(theme))
                 {
