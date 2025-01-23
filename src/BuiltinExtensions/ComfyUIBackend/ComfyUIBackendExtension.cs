@@ -700,7 +700,7 @@ public class ComfyUIBackendExtension : Extension
         {
             yield return new(ComfyUIAPIAbstractBackend.HttpClient, backend.APIAddress, backend.WebAddress, backend);
         }
-        foreach (SwarmSwarmBackend swarmBackend in Program.Backends.RunningBackendsOfType<SwarmSwarmBackend>().Where(b => b.RemoteBackendTypes.Any(b => b.StartsWith("comfyui_"))))
+        foreach (SwarmSwarmBackend swarmBackend in Program.Backends.RunningBackendsOfType<SwarmSwarmBackend>().Where(b => b.LinkedRemoteBackendType is not null && b.LinkedRemoteBackendType.StartsWith("comfyui_")))
         {
             string addr = $"{swarmBackend.Address}/ComfyBackendDirect";
             yield return new(SwarmSwarmBackend.HttpClient, addr, addr, swarmBackend);
