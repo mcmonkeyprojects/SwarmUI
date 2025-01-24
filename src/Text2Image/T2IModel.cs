@@ -23,6 +23,9 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     /// <summary>Full raw system filepath to this model.</summary>
     public string RawFilePath = filePath;
 
+    /// <summary>True if this model is a supported type (eg safetensors), false if it's an unsupportable type (eg legacy ckpt).</summary>
+    public bool IsSupportedModelType = NativelySupportedModelExtensions.Contains(filePath.AfterLast('.'));
+
     /// <summary>If multiple copies of this model exist, these are other paths to that model.</summary>
     public List<string> OtherPaths = [];
 
@@ -285,7 +288,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             [$"{prefix}trigger_phrase"] = Metadata?.TriggerPhrase,
             [$"{prefix}merged_from"] = Metadata?.MergedFrom,
             [$"{prefix}tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
-            [$"{prefix}is_supported_model_format"] = NativelySupportedModelExtensions.Contains(RawFilePath.AfterLast('.')),
+            [$"{prefix}is_supported_model_format"] = IsSupportedModelType,
             [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
             [$"{prefix}local"] = true,
             [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
