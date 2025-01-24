@@ -467,6 +467,10 @@ class UIImprovementHandler {
 
     /** This used to be a CSS Animation, but browsers try so hard to make those pretty and smooth that it makes a noticeable GPU perf impact. Ow. */
     runLoadSpinner(div) {
+        if (div.dataset.is_spinner_going) {
+            return;
+        }
+        div.dataset.is_spinner_going = 'true';
         setTimeout(() => {
             let s1 = div.querySelector('.loadspin1');
             if (!s1) {
@@ -480,6 +484,7 @@ class UIImprovementHandler {
             interval = setInterval(() => {
                 if (!div.isConnected || div.style.display == 'none' || !s1) {
                     clearInterval(interval);
+                    delete div.dataset.is_spinner_going;
                     return;
                 }
                 time += step;
