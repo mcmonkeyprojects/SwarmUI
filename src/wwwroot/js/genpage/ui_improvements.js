@@ -379,7 +379,6 @@ class UIImprovementHandler {
             }
             isDoingADrag = true;
             let files = this.getFileList(e.dataTransfer, e);
-            console.log('dragenter', files, e);
             if (files.length > 0 && files.filter(f => f.type.startsWith('image/')).length > 0) {
                 let targets = document.getElementsByClassName('drag_image_target');
                 for (let target of targets) {

@@ -207,9 +207,11 @@ class SimpleTab {
                 if (lastVal) {
                     setInputVal(elem, lastVal);
                 }
-                elem.addEventListener('change', () => {
-                    sessionStorage.setItem(`simpletablast_${workflow.name}_simpleinput_${param.id}`, getInputVal(elem));
-                });
+                if (elem.type != 'file') {
+                    elem.addEventListener('change', () => {
+                        sessionStorage.setItem(`simpletablast_${workflow.name}_simpleinput_${param.id}`, getInputVal(elem));
+                    });
+                }
             }
             for (let runnable of runnables) {
                 runnable();

@@ -309,7 +309,8 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             AnyBackendsHaveLoaded = (bool)data["loaded"],
             ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault($"{data["architecture"]}") ?? null,
             StandardWidth = (int)data["standard_width"],
-            StandardHeight = (int)data["standard_height"]
+            StandardHeight = (int)data["standard_height"],
+            IsSupportedModelType = (bool)(data?["is_supported_model_format"] ?? false)
         };
     }
 

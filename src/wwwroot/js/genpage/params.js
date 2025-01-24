@@ -991,19 +991,21 @@ function hideUnsupportableParams() {
             groupElem.style.display = 'none';
         }
         let counter = groupElem.querySelector('.header-label-counter');
-        counter.dataset.count = groupData.altered;
-        counter.innerText = groupData.altered == 0 ? '' : ` ${groupData.altered}`;
-        if (visible && groupData.data.advanced && !showAdvanced) {
-            counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this hidden advanced group`;
-        }
-        else {
-            counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this group`;
-        }
-        if (visible && groupData.data.advanced && !showAdvanced && groupData.altered > 0) {
-            counter.classList.add('header-label-counter-advancedshine');
-        }
-        else {
-            counter.classList.remove('header-label-counter-advancedshine');
+        if (counter) {
+            counter.dataset.count = groupData.altered;
+            counter.innerText = groupData.altered == 0 ? '' : ` ${groupData.altered}`;
+            if (visible && groupData.data.advanced && !showAdvanced) {
+                counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this hidden advanced group`;
+            }
+            else {
+                counter.title = groupData.altered == 0 ? '' : `${groupData.altered} altered parameters in this group`;
+            }
+            if (visible && groupData.data.advanced && !showAdvanced && groupData.altered > 0) {
+                counter.classList.add('header-label-counter-advancedshine');
+            }
+            else {
+                counter.classList.remove('header-label-counter-advancedshine');
+            }
         }
     }
 }
