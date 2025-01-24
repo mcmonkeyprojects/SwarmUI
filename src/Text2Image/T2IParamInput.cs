@@ -655,17 +655,17 @@ public class T2IParamInput
     }
 
     /// <summary>Gets the desired image width.</summary>
-    public int GetImageWidth()
+    public int GetImageWidth(int def = 512)
     {
         if (TryGet(T2IParamTypes.RawResolution, out string res))
         {
             return int.Parse(res.Before('x'));
         }
-        return Get(T2IParamTypes.Width, 512);
+        return Get(T2IParamTypes.Width, def);
     }
 
     /// <summary>Gets the desired image height, automatically using alt-res parameter if needed.</summary>
-    public int GetImageHeight()
+    public int GetImageHeight(int def = 512)
     {
         if (TryGet(T2IParamTypes.RawResolution, out string res))
         {
@@ -675,7 +675,7 @@ public class T2IParamInput
         {
             return (int)(val * width);
         }
-        return Get(T2IParamTypes.Height, 512);
+        return Get(T2IParamTypes.Height, def);
     }
 
     /// <summary>Returns a perfect duplicate of this parameter input, with new reference addresses.</summary>

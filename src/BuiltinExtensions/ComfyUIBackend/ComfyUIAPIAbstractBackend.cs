@@ -727,7 +727,12 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             void TryApply(string key, Image img, bool resize)
             {
-                Image fixedImage = resize ? img.Resize(user_input.GetImageWidth(), user_input.GetImageHeight()) : img;
+                int width = user_input.GetImageWidth(-1), height = user_input.GetImageHeight(-1);
+                if (width <= 0 || height <= 0)
+                {
+                    resize = false;
+                }
+                Image fixedImage = resize ? img.Resize(width, height) : img;
                 if (key.Contains("swarmloadimageb") || key.Contains("swarminputimage"))
                 {
                     user_input.ValuesInput[key] = fixedImage;
