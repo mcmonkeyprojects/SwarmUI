@@ -134,7 +134,6 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             TimesErrorIgnored++;
             if (!HasEverShownInternalError && TimesErrorIgnored == 15)
             {
-                HasEverShownInternalError = true;
                 Logs.Debug($"Comfy backend {BackendData.ID} has failed to load value set repeatedly. Ignoring errors of {e.GetType().Name}: {e.Message}");
             }
             if (!HasEverShownInternalError && TimesErrorIgnored > 40)

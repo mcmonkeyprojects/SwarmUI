@@ -432,7 +432,7 @@ public static class NetworkBackendUtils
                 }
                 catch (Exception ex)
                 {
-                    Logs.Error($"Self-Start {nameSimple} on port {port} failed to start: {ex.Message}");
+                    Logs.Error($"Self-Start {nameSimple} on port {port} failed to start: {ex.ReadableString()}");
                     status = BackendStatus.ERRORED;
                     reviseStatus(status);
                     return;
