@@ -48,7 +48,11 @@ public static class NetworkBackendUtils
         string content = await message.Content.ReadAsStringAsync();
         if (content.StartsWith("500 Internal Server Error"))
         {
-            throw new SwarmReadableErrorException($"Server turned 500 Internal Server Error, something went wrong: {content}");
+            throw new SwarmReadableErrorException($"Server returned 500 Internal Server Error, something went wrong: {content}");
+        }
+        else if (content.Length == 0)
+        {
+            throw new SwarmReadableErrorException($"Server returned entirely empty response, something went wrong.");
         }
         try
         {
