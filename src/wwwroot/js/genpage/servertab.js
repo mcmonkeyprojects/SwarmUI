@@ -213,7 +213,7 @@ class UserAdminManager {
                         <span class="translate" title="${perm}">${translateableHtml(permInfo.name)}</span>${popover}
                         </td>
                         <td>
-                            <span class="form-check form-switch toggle-switch display-inline-block"><input class="auto-slider-toggle form-check-input" type="checkbox" id="${id}_toggle" title="Enable/disable ${perm}" autocomplete="false"${(role.permissions.includes(perm) ? ' checked' : '')}><div class="auto-slider-toggle-content"></div></span>
+                            <span class="form-check form-switch toggle-switch display-inline-block"><input class="auto-slider-toggle form-check-input" type="checkbox" id="${id}_toggle" title="Enable/disable ${perm}" autocomplete="off"${(role.permissions.includes(perm) ? ' checked' : '')}><div class="auto-slider-toggle-content"></div></span>
                         </td>
                     </tr>`;
             }

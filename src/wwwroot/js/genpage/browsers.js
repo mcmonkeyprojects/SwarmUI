@@ -583,8 +583,8 @@ class GenPageBrowserClass {
             let buttons = createSpan(`${this.id}-button-container`, 'browser-header-buttons', 
                 `<button id="${this.id}_refresh_button" title="Refresh" class="refresh-button translate translate-no-text">&#x21BB;</button>\n`
                 + `<button id="${this.id}_up_button" class="refresh-button translate translate-no-text" disabled autocomplete="off" title="Go back up 1 folder">&#x21d1;</button>\n`
-                + `<span><span class="translate">Depth</span>: <input id="${this.id}_depth_input" class="depth-number-input translate translate-no-text" type="number" min="1" max="10" value="${this.depth}" title="Depth of subfolders to show" autocomplete="false"></span>\n`
-                + `<span><input id="${this.id}_filter_input" type="text" value="${this.filter}" title="Text filter, only show items that contain this text." rows="1" autocomplete="false" class="translate translate-no-text" placeholder="${translate('Filter...')}"></span>\n`
+                + `<span><span class="translate">Depth</span>: <input id="${this.id}_depth_input" class="depth-number-input translate translate-no-text" type="number" min="1" max="10" value="${this.depth}" title="Depth of subfolders to show" autocomplete="off"></span>\n`
+                + `<span><input id="${this.id}_filter_input" type="text" value="${this.filter}" title="Text filter, only show items that contain this text." rows="1" autocomplete="off" class="translate translate-no-text" placeholder="${translate('Filter...')}"></span>\n`
                 + this.extraHeader);
             let inputArr = buttons.getElementsByTagName('input');
             let depthInput = inputArr[0];
