@@ -19,7 +19,7 @@ fi
 # Check to see if a 'fixch' call is needed
 if [ "$EUID" -ne 0 ] && [ "$(stat -c '%U' "/SwarmUI/dlbackend")" = "root" ]
 then
-    echo "Detected folder ownership issue. Please run the docker script as './launch-standard-docker.sh fixch' to fix permissions."
+    echo "Detected folder ownership issue. Please run the docker script as './launchtools/launch-standard-docker.sh fixch' to fix permissions."
     echo "(This happens because the script used to run as root inside the docker, but it now runs as your local user)"
     exit
 fi
