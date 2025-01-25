@@ -276,7 +276,14 @@ class UIImprovementHandler {
         }, true);
         document.addEventListener('click', (e) => {
             if (e.target.tagName == 'SELECT' && !lastShift && this.shouldAlterSelect(e.target)) { // e.shiftKey doesn't work in click for some reason
-                return this.onSelectClicked(e.target, e);
+                // The tiny delay is to try to fight broken browser extensions that spazz out when elements are spawned from a click
+                // (eg 1Password, Eno Capital One, iCloud Passwords are known offenders)
+                setTimeout(() => {
+                    this.onSelectClicked(e.target, e);
+                }, 1);
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
             }
         }, true);
         document.addEventListener('mouseup', (e) => {
