@@ -10,7 +10,7 @@ cd "$SCRIPT_DIR/.."
 docker build --build-arg UID=$UID -f launchtools/StandardDockerfile.docker -t swarmui .
 
 # Run this script with 'fixch' to run as root in the container and chown to the correct user
-SETUSER="--user $UID"
+SETUSER="--user $UID --cap-drop=ALL"
 POSTARG="$0"
 if [[ "$1" == "fixch" ]]
 then

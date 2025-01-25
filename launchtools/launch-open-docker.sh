@@ -12,7 +12,7 @@ docker build -f launchtools/OpenDockerfile.docker -t swarmui .
 # add "--network=host" if you want to access other services on the host network (eg a separated comfy instance)
 docker run -it \
     --rm \
-    --user $UID \
+    --user $UID --cap-drop=ALL \
     --name swarmui \
     -v ./:/SwarmUI \
     --gpus=all -p 7801:7801 swarmui $0
