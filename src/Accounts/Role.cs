@@ -18,7 +18,7 @@ public class Role(string name)
         public HashSet<string> ModelBlacklist = [];
 
         [ConfigComment("Generic permission flags. '*' means all (admin).\nDefault is all.")]
-        public HashSet<string> PermissionFlags = ["*"];
+        public HashSet<string> PermissionFlags = [];
 
         [ConfigComment("How many images this user can have actively generating at once.\nDefault is 32.\nThis is naturally sub-limited by the number of available backends.\nThis is a protection for many-backend servers, to guarantee one user cannot steal all backends at once.\nYou can set this to a very low value if you have few backends but many users.\nSet this to a very high value if you have many backends and no concern for their distribution.\nThe actual limit applied to a user is whatever the highest value of all their roles is.")]
         public int MaxT2ISimultaneous = 32;

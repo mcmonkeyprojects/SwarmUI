@@ -15,3 +15,6 @@
 [assembly: SuppressMessage("Style", "IDE0130:Namespace does not match folder structure", Justification = "Extensions have intentional mismatch")]
 [assembly: SuppressMessage("Style", "IDE0019:Use pattern matching", Justification = "Often wants to change to pretty bad code")]
 [assembly: SuppressMessage("Performance", "CA1859:Use concrete types when possible for improved performance", Justification = "the description of this message has no relation to the random things it marks, and it seems to just be actively wrong in what it marks")]
+
+// Special
+[assembly: SuppressMessage("Performance", "CA1854:Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method", Justification = "Detection is bad here, but a good warning normally", Scope = "member", Target = "~M:SwarmUI.Accounts.SessionHandler.#ctor")]
