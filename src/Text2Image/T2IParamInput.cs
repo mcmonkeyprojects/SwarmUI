@@ -261,7 +261,15 @@ public class T2IParamInput
             List<string> vals = [.. rawVals];
             for (int i = 0; i < count; i++)
             {
-                int index = context.Input.GetWildcardRandom().Next(vals.Count);
+                int index;
+                if (context.Input.Get(T2IParamTypes.WildcardSeedBehavior, "Random") == "Index")
+                {
+                    index = context.Input.GetWildcardSeed() % vals.Count;
+                }
+                else
+                {
+                    index = context.Input.GetWildcardRandom().Next(vals.Count);
+                }
                 string choice = vals[index];
                 if (TryInterpretNumberRange(choice, context, out string number))
                 {
@@ -353,7 +361,15 @@ public class T2IParamInput
             List<string> vals = [.. wildcard.Options];
             for (int i = 0; i < count; i++)
             {
-                int index = context.Input.GetWildcardRandom().Next(vals.Count);
+                int index;
+                if (context.Input.Get(T2IParamTypes.WildcardSeedBehavior, "Random") == "Index")
+                {
+                    index = context.Input.GetWildcardSeed() % vals.Count;
+                }
+                else
+                {
+                    index = context.Input.GetWildcardRandom().Next(vals.Count);
+                }
                 string choice = vals[index];
                 result += context.Parse(choice).Trim() + partSeparator;
                 if (vals.Count == 1)
@@ -918,6 +934,33 @@ public class T2IParamInput
     /// <summary>Random instance for <see cref="T2IParamTypes.WildcardSeed"/>.</summary>
     public Random WildcardRandom = null;
 
+    /// <summary>Gets the user's set wildcard seed.</summary>
+    public int GetWildcardSeed()
+    {
+        long rawVal = -1;
+        if (TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
+        {
+            rawVal = wildcardSeed;
+        }
+        else
+        {
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + 17;
+        }
+        if (wildcardSeed > int.MaxValue)
+        {
+            wildcardSeed %= int.MaxValue;
+        }
+        if (wildcardSeed < 0)
+        {
+            wildcardSeed = Random.Shared.Next(int.MaxValue);
+        }
+        if (wildcardSeed != rawVal)
+        {
+            Set(T2IParamTypes.WildcardSeed, wildcardSeed);
+        }
+        return (int)wildcardSeed;
+    }
+
     /// <summary>Gets the random instance for <see cref="T2IParamTypes.WildcardSeed"/>, initializing it if needed.</summary>
     public Random GetWildcardRandom()
     {
@@ -925,21 +968,7 @@ public class T2IParamInput
         {
             return WildcardRandom;
         }
-        long backupSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + 17;
-        if (!TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
-        {
-            wildcardSeed = backupSeed;
-        }
-        if (wildcardSeed > int.MaxValue)
-        {
-            wildcardSeed %= int.MaxValue;
-        }
-        if (wildcardSeed == -1)
-        {
-            wildcardSeed = Random.Shared.Next(int.MaxValue);
-        }
-        Set(T2IParamTypes.WildcardSeed, wildcardSeed);
-        WildcardRandom = new((int)wildcardSeed);
+        WildcardRandom = new(GetWildcardSeed());
         return WildcardRandom;
     }
 
