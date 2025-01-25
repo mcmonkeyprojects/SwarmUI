@@ -41,6 +41,10 @@ body {
     50% {background-color: #880000;}
     100% {background-color: #bb2020;}
 }
+.password {
+    text-security: disc;
+    -webkit-text-security: disc;
+}
 .top-status-bar-wrapper {
     position: absolute;
     top: 0px;

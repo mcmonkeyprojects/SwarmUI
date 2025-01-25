@@ -606,7 +606,7 @@ function makeSecretInput(featureid, id, paramid, name, description, value, place
         <label>
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
         </label>
-        <input type="password" class="auto-text auto-text-block" translate translate-no-text" id="${id}" data-param_id="${paramid}" placeholder="${escapeHtmlNoBr(placeholder)}" data-name="${name}" autocomplete="off" value="${escapeHtmlNoBr(value)}" />
+        <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="${id}" data-param_id="${paramid}" placeholder="${escapeHtmlNoBr(placeholder)}" data-name="${name}" autocomplete="off" value="${escapeHtmlNoBr(value)}" />
     </div>`;
 }
 
