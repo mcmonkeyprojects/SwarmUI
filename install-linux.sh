@@ -30,5 +30,7 @@ cd ..
 ./launchtools/dotnet-install.sh --channel 8.0 --runtime aspnetcore
 ./launchtools/dotnet-install.sh --channel 8.0
 
+rm dotnet-install.sh
+
 # Launch
 ./launch-linux.sh $@
