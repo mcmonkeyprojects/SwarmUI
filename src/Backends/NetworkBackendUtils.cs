@@ -50,7 +50,7 @@ public static class NetworkBackendUtils
         {
             throw new SwarmReadableErrorException($"Server returned 500 Internal Server Error, something went wrong: {content}");
         }
-        else if (content.Length == 0)
+        else if (content.Length == 0 && typeof(JType) == typeof(JObject))
         {
             throw new SwarmReadableErrorException($"Server returned entirely empty response, something went wrong.");
         }
