@@ -587,6 +587,10 @@ public class Program
         }
         WebServer.SetHost(host, port);
         NetworkBackendUtils.NextPort = ServerSettings.Network.BackendStartingPort;
+        if (ServerSettings.Network.BackendPortRandomize)
+        {
+            NetworkBackendUtils.NextPort += Random.Shared.Next(2000);
+        }
         if (NetworkBackendUtils.NextPort < 1000)
         {
               Logs.Warning($"BackendStartingPort setting {NetworkBackendUtils.NextPort} is a low-range value (below 1000), which may cause it to conflict with the OS or other programs. You may want to change it.");
