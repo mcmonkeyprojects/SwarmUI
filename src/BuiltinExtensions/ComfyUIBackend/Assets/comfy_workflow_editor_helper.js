@@ -893,7 +893,7 @@ function sortAndFixComfyParameters(params, retained, applyValues = false, paramV
                         }, 100);
                     }
                     else {
-                        setCookie(`lastparam_input_${param.id}`, `${val}`, 0.5);
+                        setCookie(`lastparam_input_${param.id}`, `${val}`, getParamMemoryDays());
                     }
                 }
             }

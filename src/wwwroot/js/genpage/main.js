@@ -1860,13 +1860,13 @@ function pageSizer() {
         if (inputPrompt) {
             inputPrompt.value = altText.value;
         }
-        setCookie(`lastparam_input_prompt`, altText.value, 0.25);
+        setCookie(`lastparam_input_prompt`, altText.value, getParamMemoryDays());
         textPromptDoCount(altText, getRequiredElementById('alt_text_tokencount'));
         monitorPromptChangeForEmbed(altText.value, 'positive');
         setGroupAdvancedOverride('regionalprompting', altText.value.includes('<segment:') || altText.value.includes('<region:'));
     });
     altText.addEventListener('input', () => {
-        setCookie(`lastparam_input_prompt`, altText.value, 0.25);
+        setCookie(`lastparam_input_prompt`, altText.value, getParamMemoryDays());
         setPageBars();
     });
     altNegText.addEventListener('input', (e) => {
@@ -1874,7 +1874,7 @@ function pageSizer() {
         if (inputNegPrompt) {
             inputNegPrompt.value = altNegText.value;
         }
-        setCookie(`lastparam_input_negativeprompt`, altNegText.value, 0.25);
+        setCookie(`lastparam_input_negativeprompt`, altNegText.value, getParamMemoryDays());
         let negTokCount = getRequiredElementById('alt_negtext_tokencount');
         if (altNegText.value == '') {
             negTokCount.style.display = 'none';
@@ -1886,7 +1886,7 @@ function pageSizer() {
         monitorPromptChangeForEmbed(altNegText.value, 'negative');
     });
     altNegText.addEventListener('input', () => {
-        setCookie(`lastparam_input_negativeprompt`, altNegText.value, 0.25);
+        setCookie(`lastparam_input_negativeprompt`, altNegText.value, getParamMemoryDays());
         setPageBars();
     });
     function altPromptSizeHandle() {

@@ -422,6 +422,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("Number of generations that Generate Forever should always keep queued up when enabled.\nUseful when using multiple backends to keep them all busy.")]
         public int GenerateForeverQueueSize = 1;
 
+        [ConfigComment("How long to remember your last parameters for, in hours, inside browser cookies.\nDefault is 6 hours (long enough that you can close+reopen and get same params, but short enough that if you close for the day and come back you get a fresh UI).")]
+        public double ParameterMemoryDurationHours = 6;
+
         public class LanguagesImpl : SettingsOptionsAttribute.AbstractImpl
         {
             public override string[] GetOptions => LanguagesHelper.SortedList;

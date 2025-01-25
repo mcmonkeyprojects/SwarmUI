@@ -192,6 +192,10 @@ document.addEventListener('click', e => {
     }
 });
 
+function getParamMemoryDays() {
+    return parseFloat(getUserSetting('parametermemorydurationhours', '6')) / 24;
+}
+
 function genInputs(delay_final = false) {
     let runnables = [];
     let groupsClose = [];
@@ -544,14 +548,14 @@ function genInputs(delay_final = false) {
             if (!param.do_not_save) {
                 elem.addEventListener('change', () => {
                     if (param.type == "boolean") {
-                        setCookie(`lastparam_input_${param.id}`, elem.checked, 0.25);
+                        setCookie(`lastparam_input_${param.id}`, elem.checked, getParamMemoryDays());
                     }
                     else if (param.type == "list" && elem.tagName == "SELECT") {
                         let valSet = [...elem.selectedOptions].map(option => option.value);
-                        setCookie(`lastparam_input_${param.id}`, valSet.join(','), 0.25);
+                        setCookie(`lastparam_input_${param.id}`, valSet.join(','), getParamMemoryDays());
                     }
                     else if (param.type != "image") {
-                        setCookie(`lastparam_input_${param.id}`, elem.value, 0.25);
+                        setCookie(`lastparam_input_${param.id}`, elem.value, getParamMemoryDays());
                     }
                 });
             }
@@ -567,7 +571,7 @@ function genInputs(delay_final = false) {
                         if (!toggler.checked) {
                             deleteCookie(`lastparam_input_${param.id}`);
                         }
-                        setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, 0.25);
+                        setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
                     });
                 }
             }
