@@ -24,5 +24,8 @@ then
     exit
 fi
 
+# Add a fake home path, because docker defaults it to '/'
+HOME=/SwarmUI/dlbackend/linuxhome
+
 # Launch as normal, just ensure launch mode is off and host is global (to expose it out of the container)
 bash /SwarmUI/launch-linux.sh --launch_mode none --host 0.0.0.0
