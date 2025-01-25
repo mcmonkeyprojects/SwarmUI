@@ -45,7 +45,7 @@ public static class ModelsAPI
     }
 
     /// <summary>Placeholder model indicating the lack of a model.</summary>
-    public static T2IModel NoneModel = new(null, null, null, "(None)") { Description = "No model selected.", RawFilePath = "(ERROR_NONE_MODEL_USED_LITERALLY)" };
+    public static T2IModel NoneModel = new(null, null, "(ERROR_NONE_MODEL_USED_LITERALLY)", "(None)") { Description = "No model selected." };
 
     [API.APIDescription("Returns a full description for a single model.",
         """

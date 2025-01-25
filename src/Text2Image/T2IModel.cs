@@ -24,7 +24,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     public string RawFilePath = filePath;
 
     /// <summary>True if this model is a supported type (eg safetensors), false if it's an unsupportable type (eg legacy ckpt).</summary>
-    public bool IsSupportedModelType = NativelySupportedModelExtensions.Contains(filePath.AfterLast('.'));
+    public bool IsSupportedModelType = NativelySupportedModelExtensions.Contains((filePath ?? "").AfterLast('.'));
 
     /// <summary>If multiple copies of this model exist, these are other paths to that model.</summary>
     public List<string> OtherPaths = [];
