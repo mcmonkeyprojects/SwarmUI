@@ -1547,3 +1547,10 @@ body {
     font-size: 18px;
     padding: 0 5px !important;
 }
+.admin_perm_group {
+    display: inline-block;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--light-border);
+    margin: 1rem;
+}

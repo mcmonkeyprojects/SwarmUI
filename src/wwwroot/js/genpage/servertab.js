@@ -188,21 +188,25 @@ class UserAdminManager {
                 + makeTextInput(null, 'adminrolemenu_modelwhitelist', '', 'Model Whitelist', '', '', 'normal', "Model Whitelist...", false, false, true)
                 + makeGenericPopover('adminrolemenu_modelblacklist', 'Model Blacklist', 'text', "What models are forbidden, as a list of prefixes.\nFor example 'sdxl/' forbids models in the SDXL folder.\nOr, 'sdxl/,flux/' forbids models in the SDXL or Flux folders.\nIf empty, no blacklist logic is applied.\nNote that blacklist is 'more powerful' than whitelist and overrides it.\nThis stacks between roles, roles can add blacklist entries together.", '')
                 + makeTextInput(null, 'adminrolemenu_modelblacklist', '', 'Model Blacklist', '', '', 'normal', "Model Blacklist...", false, false, true)
-                + '\n<br><hr><br>\n<h4 class="translate">Permissions</h4><br>\n<table>';
+                + '\n<br><hr><br>\n<h4 class="translate">Permissions</h4><br>\n';
             let lastGroupName = null;
+            let isFirst = true;
             for (let perm of this.permissions_ordered) {
                 let permInfo = this.permissions_info[perm];
                 if (lastGroupName != permInfo.group.name) {
                     lastGroupName = permInfo.group.name;
                     let groupId = `adminrolemenu_permgroup_${lastGroupName}`;
                     let [groupPopover, _] = getPopoverElemsFor(groupId, true);
-                    html += `</table>
-                            <br><br>
+                    if (!isFirst) {
+                        html += '</table></div>';
+                    }
+                    isFirst = false;
+                    html += `<div class="admin_perm_group">
                             ${makeGenericPopover(groupId, permInfo.group.name, 'checkbox', permInfo.group.description, '')}
                             <h5 class="translate">
                                 ${translateableHtml(permInfo.group.name)}${groupPopover}
                             </h5>
-                        <table>`;
+                        <table class="simple-table">`;
                 }
                 let id = `adminrolemenu_perm_${perm}`;
                 let [popover, _] = getPopoverElemsFor(id, true);
@@ -217,7 +221,7 @@ class UserAdminManager {
                         </td>
                     </tr>`;
             }
-            html += '</table>';
+            html += '</table></div>';
             this.setNothingDisplayed();
             this.displayedRole = roleId;
             this.rightBox.innerHTML = html;
