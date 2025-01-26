@@ -353,13 +353,13 @@
                         <div class="modal-body">
                             <h5>Format:</h5>
                             <div class="btn-group" role="group">
-                                <input type="radio" class="btn-check" name="btnradio" id="export_preset_format_json" autocomplete="off" checked="" onchange="exportPresetsButton()">
+                                <input type="radio" class="btn-check" name="btnradio" id="export_preset_format_json" autocomplete="off" checked="" onchange="exportPresetsButton(true)">
                                 <label class="btn btn-outline-primary translate" for="export_preset_format_json">SwarmUI JSON</label>
-                                <input type="radio" class="btn-check" name="btnradio" id="export_preset_format_csv" autocomplete="off" onchange="exportPresetsButton()">
+                                <input type="radio" class="btn-check" name="btnradio" id="export_preset_format_csv" autocomplete="off" onchange="exportPresetsButton(true)">
                                 <label class="btn btn-outline-primary translate" for="export_preset_format_csv">Prompt only CSV</label>
                             </div>
                             <br><br>
-                            <textarea id="export_presets_textarea" style="width: 100%;" rows="10" disabled autocomplete="off"></textarea>
+                            <textarea id="export_presets_textarea" style="width: calc(max(500px, 50vw));" rows="10" disabled autocomplete="off"></textarea>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-primary basic-button translate" onclick="exportPresetsDownload()">Download</button>
@@ -370,7 +370,7 @@
                         <div class="modal-body">
                             <div id="import_preset_upload_container">
                                 <input type="file" id="import_preset_uploader" oninput="importPresetUpload()" /> &nbsp;<label for="import_preset_uploader" class="translate">Upload Preset File (JSON or CSV)</label>
-                                <textarea id="import_presets_textarea" style="width: 100%;" rows="10" oninput="importPresetsCheck()"></textarea>
+                                <textarea id="import_presets_textarea" style="width: calc(max(500px, 50vw));" rows="10" oninput="importPresetsCheck()"></textarea>
                             </div>
                             <span class="form-check form-switch display-inline-block">
                                 <input type="checkbox" class="form-check-input" id="import_presets_overwrite" onchange="importPresetsCheck()"> <label class="form-check-label translate" for="import_presets_overwrite">Overwrite existing presets</label>

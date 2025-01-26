@@ -336,6 +336,7 @@ function describePreset(preset) {
         { label: 'Direct Apply', onclick: () => applyOnePreset(preset.data) },
         { label: 'Edit Preset', onclick: () => editPreset(preset.data) },
         { label: 'Duplicate Preset', onclick: () => duplicatePreset(preset.data) },
+        { label: 'Export Preset', onclick: () => exportOnePresetButton(preset.data) },
         { label: 'Delete Preset', onclick: () => {
             if (confirm("Are you sure want to delete that preset?")) {
                 genericRequest('DeletePreset', { preset: preset.data.title }, data => {
@@ -627,18 +628,28 @@ function importPresetsActivate() {
     }
 }
 
-function exportPresetsButton() {
+exportingPresets = [];
+
+function exportOnePresetButton(preset) {
+    exportingPresets = [preset];
+    exportPresetsButton(true);
+}
+
+function exportPresetsButton(reuse = false) {
+    if (!reuse) {
+        exportingPresets = allPresets;
+    }
     let text = '';
     if (getRequiredElementById('export_preset_format_json').checked) {
         let data = {};
-        for (let preset of allPresets) {
+        for (let preset of exportingPresets) {
             data[preset.title] = preset;
         }
         text = JSON.stringify(data, null, 4);
     }
     else { // CSV
         text = 'name,prompt,negative_prompt,\n';
-        for (let preset of allPresets) {
+        for (let preset of exportingPresets) {
             if (preset.param_map.prompt || preset.param_map.negativeprompt) {
                 text += `"${preset.title.replace('"', '""')}","${(preset.param_map.prompt || '').replaceAll('"', '""')}","${(preset.param_map.negativeprompt || '').replaceAll('"', '""')}",\n`;
             }
