@@ -1,6 +1,9 @@
 services:
   swarmui:
     image: swarmui
+    user: ${UID}:${GID}
+    cap_drop:
+      - ALL
     build:
       context: .
       dockerfile: launchtools/StandardDockerfile.docker
@@ -8,12 +11,12 @@ services:
     # uncomment `network_mode: host` if you want to access other services on the host network (eg a separated comfy instance)
     # network_mode: host
     volumes:
-      - swarmdata:/Data
-      - swarmbackend:/dlbackend
-      - swarmdlnodes:/src/BuiltinExtensions/ComfyUIBackend/DLNodes
-      - ./Models:/Models
-      - ./Output:/Output
-      - ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows
+      - swarmdata:/SwarmUI/Data
+      - swarmbackend:/SwarmUI/dlbackend
+      - swarmdlnodes:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes
+      - ./Models:/SwarmUI/Models
+      - ./Output:/SwarmUI/Output
+      - ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows
     ports:
       - "7801:7801"
     deploy:
