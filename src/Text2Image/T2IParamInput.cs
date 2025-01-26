@@ -62,6 +62,16 @@ public class T2IParamInput
                     }
                     input.Set(T2IParamTypes.LoraWeights, weights);
                 }
+                if (input.TryGet(T2IParamTypes.LoraTencWeights, out List<string> tencWeights) && tencWeights.Count != weights.Count)
+                {
+                    Logs.Warning($"Input has {loras.Count} loras, but {tencWeights.Count} textenc weights - the two lists must match to work properly. Applying an automatic fix.");
+                    tencWeights = [.. tencWeights.Take(weights.Count)];
+                    while (tencWeights.Count < weights.Count)
+                    {
+                        tencWeights.Add(weights[tencWeights.Count]);
+                    }
+                    input.Set(T2IParamTypes.LoraTencWeights, tencWeights);
+                }
             }
         },
         input =>
@@ -520,9 +530,22 @@ public class T2IParamInput
             string lora = data.ToLowerFast().Replace('\\', '/');
             int colonIndex = lora.IndexOf(':');
             double strength = 1;
-            if (colonIndex != -1 && double.TryParse(lora[(colonIndex + 1)..], out strength))
+            double tencStrength = double.NaN;
+            if (colonIndex != -1)
             {
+                string after = lora[(colonIndex + 1)..];
                 lora = lora[..colonIndex];
+                colonIndex = after.IndexOf(':');
+                if (colonIndex != -1)
+                {
+                    strength = double.Parse(after[..colonIndex]);
+                    after = after[(colonIndex + 1)..];
+                    tencStrength = double.Parse(after);
+                }
+                else
+                {
+                    strength = double.Parse(after);
+                }
             }
             context.Loras ??= [.. Program.T2IModelSets["LoRA"].ListModelNamesFor(context.Input.SourceSession)];
             string matched = T2IParamTypes.GetBestModelInList(lora, context.Loras);
@@ -538,6 +561,7 @@ public class T2IParamInput
             }
             List<string> loraList = context.Input.Get(T2IParamTypes.Loras) ?? [];
             List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights) ?? [];
+            List<string> tencWeights = context.Input.Get(T2IParamTypes.LoraTencWeights) ?? [];
             List<string> confinements = context.Input.Get(T2IParamTypes.LoraSectionConfinement);
             if (confinements is not null && confinements.Count > loraList.Count)
             {
@@ -548,6 +572,15 @@ public class T2IParamInput
             weights.Add(strength.ToString());
             context.Input.Set(T2IParamTypes.Loras, loraList);
             context.Input.Set(T2IParamTypes.LoraWeights, weights);
+            if (!double.IsNaN(tencStrength) || tencWeights.Count > 0)
+            {
+                while (tencWeights.Count < weights.Count - 1)
+                {
+                    tencWeights.Add(weights[tencWeights.Count]);
+                }
+                tencWeights.Add((double.IsNaN(tencStrength) ? strength : tencStrength).ToString());
+                context.Input.Set(T2IParamTypes.LoraTencWeights, tencWeights);
+            }
             string trigger = loraModel?.Metadata?.TriggerPhrase;
             if (!string.IsNullOrWhiteSpace(trigger))
             {

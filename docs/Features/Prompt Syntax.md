@@ -91,10 +91,12 @@
 
 ![img](/docs/images/lora-arcane-cat.jpg)
 
-- You may use `<lora:filename:weight>` to enable a LoRA
+- You may use `<lora:filename>` to enable a LoRA, or `<lora:filename:weight>` to enable it and set a weight
     - Note that it's generally preferred to use the GUI at the bottom of the page to select loras
     - Note that usually position within the prompt doesn't matter, loras are not actually a prompt feature, this is just a convenience option for users used to Auto WebUI.
     - The one time it does matter, is when you use `<segment:...>` or `<object:...>`: a LoRA inside one of these will apply *only* to that segment or object.
+    - `weight` is a multiplier, where `1` is the default, `0.5` is weakened halfway, or `2` is twice as strong. Generally numbers larger than 2 will destroy image quality.
+    - You may also use `<lora:filename:backbone_weight:textenc_weight>` to enable a lora and set its backbone (unet/dit) weight separately from its text encoder weight.
 
 ## Presets
 
