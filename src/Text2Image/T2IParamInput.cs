@@ -676,6 +676,11 @@ public class T2IParamInput
             return phrases.JoinString(", ") + "\0triggerextra";
         };
         PromptTagLengthEstimators["trigger"] = estimateEmpty;
+        PromptTagBasicProcessors["comment"] = (data, context) =>
+        {
+            return "";
+        };
+        PromptTagLengthEstimators["comment"] = estimateEmpty;
     }
 
     /// <summary>The raw values in this input. Do not use this directly, instead prefer:

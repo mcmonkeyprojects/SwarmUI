@@ -172,3 +172,7 @@
     - Strength2 is Creativity of the automatic inpaint.
     - The automatic inpaint can be helpful for improving quality of objects, especially for small regions, but also might produce unexpected results.
     - Objects may use global feature changes, such as `<lora:` syntax input to apply a lora to the object in the inpaint phase.
+
+## Comment
+
+- You can use `<comment:stuff here>` to add a personal comment in the prompt box. It will be discarded from the real prompt.

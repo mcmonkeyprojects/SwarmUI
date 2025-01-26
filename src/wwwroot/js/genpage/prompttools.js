@@ -88,6 +88,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('trigger', "Automatically fills with the current model or LoRA's trigger phrase(s), if any.", (prefix) => {
             return [];
         }, true);
+        this.registerPrefix('comment', "Add a discarded personal comment. Will not be treated as part of the 'real prompt'.", (prefix) => {
+            return ['\nThis is a personal comment, write a note to yourself.'];
+        });
         this.lastWord = null;
         this.lastResults = null;
         this.blockInput = false;
