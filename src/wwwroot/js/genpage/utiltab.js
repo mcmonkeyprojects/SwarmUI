@@ -298,7 +298,7 @@ class ModelDownloaderUtil {
                 let url = versId ? `${this.civitPrefix}models/${id}?modelVersionId=${versId}` : `${this.civitPrefix}models/${id}`;
                 metadata = {
                     'modelspec.title': `${rawData.name} - ${rawVersion.name}`,
-                    'modelspec.description': `From <a href="${url}">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
+                    'modelspec.description': `From <a href="${url}" target="_blank">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
                     'modelspec.date': rawVersion.createdAt,
                 };
                 if (rawData.creator) {

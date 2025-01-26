@@ -959,7 +959,7 @@
                             <div class="card-body">
                                 <p id="dotnet_missing_message" class="card-text">
                                     You do not seem to have DotNET @Utilities.DotNetVersMissing installed - this will be required in a future version of SwarmUI.
-                                    <br>Please install DotNET SDK @(Utilities.DotNetVersMissing).0 from <a href="https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0">https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0</a>
+                                    <br>Please install DotNET SDK @(Utilities.DotNetVersMissing).0 from <a target="_blank" href="https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0">https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0</a>
                                 </p>
                             </div>
                         </div>
@@ -971,7 +971,7 @@
                             <div class="card-body">
                                 <p id="git_failed_message" class="card-text">
                                     You seem to have installed SwarmUI improperly. Many features, including auto-updating, will not work.
-                                    <br>Please install SwarmUI as explained in <a href="https://github.com/mcmonkeyprojects/SwarmUI?tab=readme-ov-file#installing-on-windows">The readme install instructions.</a>
+                                    <br>Please install SwarmUI as explained in <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI?tab=readme-ov-file#installing-on-windows">The readme install instructions.</a>
                                 </p>
                             </div>
                         </div>
@@ -1035,10 +1035,10 @@
             <div class="tab-pane" id="Server-Logs" role="tabpanel">
                 @WebUtil.ModalHeader("do_log_pastebin_modal", "Submit Logs To Pastebin")
                     <div class="modal-body">
-                        <p class="translate">This will submit the text of your server logs to a <a href="https://paste.denizenscript.com/New/Swarm">public pastebin service</a>. This is to make it easy to share debug logs when getting support on the <a href="https://discord.gg/q2y38cqjNw">SwarmUI discord</a>.</p>
+                        <p class="translate">This will submit the text of your server logs to a <a target="_blank" href="https://paste.denizenscript.com/New/Swarm">public pastebin service</a>. This is to make it easy to share debug logs when getting support on the <a target="_blank" href="https://discord.gg/q2y38cqjNw">SwarmUI discord</a>.</p>
                         <p class="translate">Once submitted, your server logs will be visible to the public and not easily deletable. Please ensure your logs do not contain private information (eg personal prompts) before autosubmitting.</p>
                         <p class="translate">(If your logs do have private information, please restart and replicate whatever you need to show, then pastebin the logs).</p>
-                        <p class="translate">(Alternately, you can manually submit and edit the content first via <a href="https://paste.denizenscript.com/New/Swarm">this link</a>, just be sure not to delete anything important).</p>
+                        <p class="translate">(Alternately, you can manually submit and edit the content first via <a target="_blank" href="https://paste.denizenscript.com/New/Swarm">this link</a>, just be sure not to delete anything important).</p>
                         <span class="translate">Which minimum log level would you like to submit?</span> <select id="log_pastebin_type" autocomplete="off"><option>verbose</option><option selected>debug</option><option>info</option></select>
                         <div id="log_pastebin_result_area"></div>
                     </div>
@@ -1120,7 +1120,7 @@
                                 <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
                                 <td>@ext.Author</td>
                                 <td>@ext.Description</td>
-                                <td><a href="@ext.URL">Here</a></td>
+                                <td><a target="_blank" href="@ext.URL">Here</a></td>
                                 <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                                 <td>
                                     <button class="basic-button" onclick="extensionsManager.installExtension('@ext.Name', this)">Install</button>
