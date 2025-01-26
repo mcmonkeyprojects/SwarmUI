@@ -84,8 +84,9 @@ Here's a full example of the metadata that you might find on an image:
     "swarm_version": "0.9.3.1"
   },
   "sui_extra_data": {
-    "date": "2024-11-13",
-    "generation_time": "6.11 (prep) and 4.84 (gen) seconds"
+    "date": "2025-01-25",
+    "prep_time": "6.11 sec",
+    "generation_time": "4.84 sec"
   },
   "sui_models": [
     {

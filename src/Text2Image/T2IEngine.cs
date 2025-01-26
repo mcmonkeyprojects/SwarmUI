@@ -175,9 +175,15 @@ namespace SwarmUI.Text2Image
                     img.GenTimeMS = Environment.TickCount64 - prepTime;
                 }
                 long fullTime = Environment.TickCount64 - timeStart;
-                genTimeReport = $"{(fullTime - img.GenTimeMS) / 1000.0:0.00} (prep) and {img.GenTimeMS / 1000.0:0.00} (gen) seconds";
+                string format(long t)
+                {
+                    double sec = t / 1000.0;
+                    return sec > 120 ? $"{sec / 60:0.00} min" : $"{sec:0.00} sec";
+                }
+                genTimeReport = $"{format(fullTime - img.GenTimeMS)} (prep) and {format(img.GenTimeMS)} (gen)".Trim();
                 T2IParamInput copyInput = user_input.Clone();
-                copyInput.ExtraMeta["generation_time"] = genTimeReport;
+                copyInput.ExtraMeta["prep_time"] = format(fullTime - img.GenTimeMS);
+                copyInput.ExtraMeta["generation_time"] = format(img.GenTimeMS);
                 if (!img.IsReal)
                 {
                     copyInput.ExtraMeta["intermediate"] = "intermediate output";
