@@ -287,7 +287,7 @@ body {
     background-color: var(--emphasis);
 }
 .image-block-starred {
-    box-shadow: 0 0 1px 1px yellow;
+    box-shadow: 0 0 1px 1px var(--star);
 }
 .image-block .loading-spinner-parent {
     width: 0;
@@ -454,6 +454,9 @@ body {
 }
 .model-remote {
     background-color: var(--background-gray);
+}
+.model-starred img {
+    box-shadow: 0 0 3px 1px color-mix(in srgb, var(--star) 50%, transparent);
 }
 .sui_popover_model {
     white-space: normal;
@@ -1330,9 +1333,9 @@ body {
     width: fit-content;
 }
 .button-starred-image {
-    background-color: yellow;
+    background-color: var(--star);
     color: black !important;
-    box-shadow: 0 0 1px 1px yellow;
+    box-shadow: 0 0 1px 1px var(--star);
     transition: all 0.5s ease-out;
     border: none;
 }

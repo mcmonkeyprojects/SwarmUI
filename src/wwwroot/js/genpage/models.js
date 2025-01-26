@@ -12,6 +12,7 @@ let loraWeightPref = {};
 let allWildcards = [];
 let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 let modelIconUrlCache = {};
+let starredModels = null;
 
 function test_wildcard_again() {
     let card = curWildcardMenuWildcard;
@@ -401,34 +402,6 @@ function cleanModelName(name) {
     return name.endsWith('.safetensors') ? name.substring(0, name.length - '.safetensors'.length) : name;
 }
 
-function sortModelLocal(a, b, files) {
-    let aCorrect = isModelArchCorrect(a);
-    let bCorrect = isModelArchCorrect(b);
-    if (aCorrect && !bCorrect) {
-        return -1;
-    }
-    if (!aCorrect && bCorrect) {
-        return 1;
-    }
-    let aName = a.name.toLowerCase();
-    let bName = b.name.toLowerCase();
-    if (aName.endsWith('.safetensors') && !bName.endsWith('.safetensors')) {
-        return -1;
-    }
-    if (!aName.endsWith('.safetensors') && bName.endsWith('.safetensors')) {
-        return 1;
-    }
-    if (aName.endsWith('.engine') && !bName.endsWith('.engine')) {
-        return -1;
-    }
-    if (!aName.endsWith('.engine') && bName.endsWith('.engine')) {
-        return 1;
-    }
-    let aIndex = files.indexOf(a);
-    let bIndex = files.indexOf(b);
-    return aIndex - bIndex;
-}
-
 class ModelBrowserWrapper {
     constructor(subType, subIds, container, id, selectOne, extraHeader = '') {
         this.subType = subType;
@@ -441,7 +414,49 @@ class ModelBrowserWrapper {
         this.models = {};
     }
 
+    sortModelLocal(a, b, files) {
+        let aCorrect = isModelArchCorrect(a);
+        let bCorrect = isModelArchCorrect(b);
+        if (aCorrect && !bCorrect) {
+            return -1;
+        }
+        if (!aCorrect && bCorrect) {
+            return 1;
+        }
+        let aStarred = this.isStarred(a.name);
+        let bStarred = this.isStarred(b.name);
+        if (aStarred && !bStarred) {
+            return -1;
+        }
+        if (!aStarred && bStarred) {
+            return 1;
+        }
+        let aName = a.name.toLowerCase();
+        let bName = b.name.toLowerCase();
+        if (aName.endsWith('.safetensors') && !bName.endsWith('.safetensors')) {
+            return -1;
+        }
+        if (!aName.endsWith('.safetensors') && bName.endsWith('.safetensors')) {
+            return 1;
+        }
+        if (aName.endsWith('.engine') && !bName.endsWith('.engine')) {
+            return -1;
+        }
+        if (!aName.endsWith('.engine') && bName.endsWith('.engine')) {
+            return 1;
+        }
+        let aIndex = files.indexOf(a);
+        let bIndex = files.indexOf(b);
+        return aIndex - bIndex;
+    }
+
     listModelFolderAndFiles(path, isRefresh, callback, depth) {
+        if (!starredModels) {
+            setTimeout(() => {
+                this.listModelFolderAndFiles(path, isRefresh, callback, depth);
+            }, 100);
+            return;
+        }
         let sortBy = localStorage.getItem(`models_${this.subType}_sort_by`) ?? 'Name';
         let reverse = localStorage.getItem(`models_${this.subType}_sort_reverse`) == 'true';
         let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
@@ -469,7 +484,7 @@ class ModelBrowserWrapper {
         }
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         genericRequest('ListModels', {'path': path, 'depth': Math.round(depth), 'subtype': this.subType, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
-            let files = data.files.sort((a,b) => sortModelLocal(a, b, data.files)).map(f => { return { 'name': f.name, 'data': f }; });
+            let files = data.files.sort((a,b) => this.sortModelLocal(a, b, data.files)).map(f => { return { 'name': f.name, 'data': f }; });
             for (let file of files) {
                 file.data.display = cleanModelName(file.data.name.substring(prefix.length));
                 this.models[file.name] = file;
@@ -522,6 +537,28 @@ class ModelBrowserWrapper {
         });
     }
 
+    isStarred(name) {
+        return name && starredModels[this.subType] && starredModels[this.subType].includes(name);
+    }
+
+    toggleStar(name) {
+        let starred = this.isStarred(name);
+        if (starred) {
+            starredModels[this.subType] = starredModels[this.subType].filter(n => n != name);
+            if (starredModels[this.subType].length == 0) {
+                delete starredModels[this.subType];
+            }
+        }
+        else {
+            if (!starredModels[this.subType]) {
+                starredModels[this.subType] = [];
+            }
+            starredModels[this.subType].push(name);
+        }
+        genericRequest('SetStarredModels', starredModels, data => { });
+        this.browser.update();
+    }
+
     describeModel(model) {
         let description = '';
         let buttons = [];
@@ -564,10 +601,13 @@ class ModelBrowserWrapper {
                 { label: 'Remove All Usages', onclick: () => { embedClearFromPrompt(model.data, 'alt_prompt_textbox'); embedClearFromPrompt(model.data, 'alt_negativeprompt_textbox'); } }
             ];
         }
+        let isStarred = this.isStarred(model.data.name);
+        let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); } };
+        buttons.push(starButton);
         let name = cleanModelName(model.data.name);
         let display = (model.data.display || name).replaceAll('/', ' / ');
         if (this.subType == 'Wildcards') {
-            buttons = [];
+            buttons = [starButton];
             if (permissions.hasPermission('edit_wildcards')) {
                 buttons.push({ label: 'Edit Wildcard', onclick: () => editWildcard(model.data) });
             }
@@ -607,7 +647,7 @@ class ModelBrowserWrapper {
             if (!model.data.local) {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
             }
-            description = `<span class="model_filename">${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}`;
+            description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
             let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
             detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
             if (model.data.local && permissions.hasPermission('edit_model_metadata')) {
@@ -675,6 +715,9 @@ class ModelBrowserWrapper {
         if (!model.data.local) {
             className += ' model-remote';
         }
+        if (this.isStarred(model.data.name)) {
+            className += ' model-starred';
+        }
         return className;
     }
 
@@ -691,6 +734,12 @@ class ModelBrowserWrapper {
                     let isSelected = this.isSelected(child.dataset.name);
                     if (hasSelectedClass == isSelected) {
                         continue;
+                    }
+                    if (this.isStarred(child.dataset.name)) {
+                        child.classList.add('model-starred');
+                    }
+                    else {
+                        child.classList.remove('model-starred');
                     }
                     if (isSelected) {
                         child.classList.add('model-selected');

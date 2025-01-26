@@ -13,6 +13,7 @@
     --toggle-thumb-hover: var(--button-background-hover);
     --toggle-thumb-active-hover: color-mix(in srgb, var(--emphasis) 25%, white);
     --font-monospace: 'Courier New', Courier, monospace;
+    --star: #ffff00;
 }
 .modal-content {
     background-color: var(--background) !important;

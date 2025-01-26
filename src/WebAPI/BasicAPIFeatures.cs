@@ -23,6 +23,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(GetNewSession); // GetNewSession is special
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
+        API.RegisterAPICall(SetStarredModels, true, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(AddNewPreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DuplicatePreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DeletePreset, true, Permissions.ManagePresets);
@@ -105,8 +106,17 @@ public static class BasicAPIFeatures
             ["presets"] = new JArray(session.User.GetAllPresets().Select(p => p.NetData()).ToArray()),
             ["language"] = session.User.Settings.Language,
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
+            ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
             ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
         };
+    }
+
+    /// <summary>API Route to update the user's starred models lists.</summary>
+    public static async Task<JObject> SetStarredModels(Session session, JObject data)
+    {
+        session.User.SaveGenericData("starred_models", "full", data.ToString(Formatting.None));
+        session.User.Save();
+        return new JObject() { ["success"] = true };
     }
 
     /// <summary>API Route to add a new user parameters preset.</summary>

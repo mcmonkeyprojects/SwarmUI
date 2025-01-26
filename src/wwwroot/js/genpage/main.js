@@ -1913,6 +1913,7 @@ function resetBatchIfNeeded() {
 function loadUserData(callback) {
     genericRequest('GetMyUserData', {}, data => {
         permissions.updateFrom(data.permissions);
+        starredModels = data.starred_models;
         autoCompletionsList = {};
         if (data.autocompletions) {
             let allSet = [];
