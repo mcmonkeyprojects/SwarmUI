@@ -31,5 +31,8 @@ services:
               capabilities: [gpu]
 volumes:
   swarmdata:
+    name: swarmdata
   swarmbackend:
+    name: swarmbackend
   swarmdlnodes:
+    name: swarmdlnodes
