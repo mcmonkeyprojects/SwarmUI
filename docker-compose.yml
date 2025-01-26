@@ -6,6 +6,8 @@ services:
       - ALL
     build:
       context: .
+      args:
+        UID: ${HOST_UID:-1000}
       dockerfile: launchtools/StandardDockerfile.docker
     container_name: swarmui
     # uncomment `network_mode: host` if you want to access other services on the host network (eg a separated comfy instance)
