@@ -136,6 +136,12 @@ public class T2IParamInput
         }
     }
 
+    /// <summary>Escapes text to for handling but the special text handler python script.</summary>
+    public static string EscapeForTextHandler(string input)
+    {
+        return input.Replace("\\", "\\\\").Replace(":", "\\:").Replace("|", "\\|").Replace("[", "\\[").Replace("]", "\\]");
+    }
+
     /// <summary>Splits the text within a tag input, in a way that avoids splitting inside subtags, and allows for double-pipe, pipe, or comma separation.</summary>
     public static string[] SplitSmart(string input)
     {
@@ -315,7 +321,7 @@ public class T2IParamInput
             {
                 rawVals[i] = context.Parse(rawVals[i]);
             }
-            return $"[{rawVals.JoinString("|")}]";
+            return $"[{rawVals.Select(EscapeForTextHandler).JoinString("|")}]";
         };
         PromptTagProcessors["alt"] = PromptTagProcessors["alternate"];
         PromptTagLengthEstimators["alternate"] = PromptTagLengthEstimators["random"];
@@ -338,7 +344,7 @@ public class T2IParamInput
             {
                 rawVals[i] = context.Parse(rawVals[i]);
             }
-            return $"[{rawVals.JoinString(":")}:{stepIndex}]";
+            return $"[{rawVals.Select(EscapeForTextHandler).JoinString(":")}:{stepIndex}]";
         };
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["wildcard"] = (data, context) =>

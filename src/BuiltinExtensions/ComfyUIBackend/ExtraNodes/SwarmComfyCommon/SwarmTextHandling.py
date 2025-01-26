@@ -55,10 +55,18 @@ class SwarmClipTextEncodeAdvanced:
 
         def append_chunk(text: str, applies_to: list[int], can_subprocess: bool, limit_to: list[int]):
             applies_to = [i for i in applies_to if i in limit_to]
-            if can_subprocess and '[' in text:
-                get_chunks(text, applies_to)
+            fixed_text = ""
+            do_skip = False
+            for i in range(len(text)):
+                if text[i] == "\\" and not do_skip:
+                    do_skip = True
+                else:
+                    do_skip = False
+                    fixed_text += text[i]
+            if can_subprocess and '[' in fixed_text:
+                get_chunks(fixed_text, applies_to)
             else:
-                chunks.append({'text': text, 'applies_to': applies_to})
+                chunks.append({'text': fixed_text, 'applies_to': applies_to})
 
         def get_chunks(remaining: str, limit_to: list[int] = [i for i in range(steps)]):
             while True:
@@ -66,27 +74,36 @@ class SwarmClipTextEncodeAdvanced:
                 if start == -1:
                     append_chunk(remaining, [i for i in range(steps)], False, limit_to)
                     break
+
                 end = -1
                 count = 0
+                do_skip = False
                 colon_indices = []
                 pipe_indices = []
                 for i in range(start + 1, len(remaining)):
-                    if remaining[i] == "[":
+                    char = remaining[i]
+                    if char == "\\":
+                        do_skip = True
+                    elif do_skip:
+                        do_skip = False
+                    elif char == "[":
                         count += 1
-                    elif remaining[i] == "]":
+                    elif char == "]":
                         if count == 0:
                             end = i
                             break
                         count -= 1
-                    elif remaining[i] == ":" and count == 0 and len(pipe_indices) == 0:
+                    elif char == ":" and count == 0 and len(pipe_indices) == 0:
                         colon_indices.append(i)
-                    elif remaining[i] == "|" and count == 0 and len(colon_indices) == 0:
+                    elif char == "|" and count == 0 and len(colon_indices) == 0:
                         pipe_indices.append(i)
+
                 if end == -1:
                     chunks[-1].text += remaining
                     break
                 append_chunk(remaining[:start], [i for i in range(steps)], False, limit_to)
                 control = remaining[start + 1:end]
+
                 if len(pipe_indices) > 0:
                     data = split_text_on(control, pipe_indices, start + 1)
                     for i in range(len(data)):
@@ -109,6 +126,7 @@ class SwarmClipTextEncodeAdvanced:
                     any[0] = True
                 else:
                     append_chunk(control, [i for i in range(steps)], False, limit_to)
+
                 remaining = remaining[end + 1:]
 
         get_chunks(prompt)
