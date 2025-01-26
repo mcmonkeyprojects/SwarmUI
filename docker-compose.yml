@@ -1,7 +1,7 @@
 services:
   swarmui:
     image: swarmui
-    user: ${UID}:${GID}
+    user: ${HOST_UID:-1000}:${HOST_GID:-1000}
     cap_drop:
       - ALL
     build:
