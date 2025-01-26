@@ -4,10 +4,6 @@
 
 cd /SwarmUI
 
-# Docker instance runs as root, so tell it to copy the group owner of folders to hopefully make it more accessible.
-# Unfortunately, "u+s" does not do the same thing for copying the user for some reason, so we're stuck with root owning files (maybe we could jankily direct port the host's uid? but, ew.)
-chmod g+s /SwarmUI /SwarmUI/**/
-
 # Add a fake home path, because docker defaults it to '/'
 HOME=/SwarmUI/dlbackend/linuxhome
 
