@@ -21,12 +21,13 @@ Basic general API routes, primarily for users and session handling.
 - HTTP Route [ServerDebugMessage](#http-route-apiserverdebugmessage)
 - HTTP Route [SetAPIKey](#http-route-apisetapikey)
 - HTTP Route [SetParamEdits](#http-route-apisetparamedits)
+- HTTP Route [SetStarredModels](#http-route-apisetstarredmodels)
 
 ## HTTP Route /API/AddNewPreset
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to add a new parameter preset.
 
 #### Permission Flag
 
@@ -36,24 +37,26 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| title | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| description | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| raw | JObject | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| preview_image | String | (PARAMETER DESCRIPTION NOT SET) | (null) |
-| is_edit | Boolean | (PARAMETER DESCRIPTION NOT SET) | `False` |
-| editing | String | (PARAMETER DESCRIPTION NOT SET) | (null) |
+| title | String | Name of the new preset. | **(REQUIRED)** |
+| description | String | User-facing description text. | **(REQUIRED)** |
+| raw | JObject | Use 'param_map' key to send the raw parameter mapping, equivalent to GenerateText2Image. | **(REQUIRED)** |
+| preview_image | String | Optional preview image data base64 string. | (null) |
+| is_edit | Boolean | If true, edit an existing preset. If false, do not override pre-existing presets of the same name. | `False` |
+| editing | String | If is_edit is set, include the original preset name here. | (null) |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
+    // or:
+    "preset_fail": "Some friendly error text here"
 ```
 
 ## HTTP Route /API/ChangeUserSettings
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to change user settings data.
 
 #### Permission Flag
 
@@ -63,19 +66,19 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| rawData | JObject | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| rawData | JObject | Simple object map of key as setting ID to new setting value to apply. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
 ```
 
 ## HTTP Route /API/DeletePreset
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to delete a preset.
 
 #### Permission Flag
 
@@ -85,19 +88,19 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| preset | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| preset | String | Name of the preset to delete. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
 ```
 
 ## HTTP Route /API/DuplicatePreset
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to duplicate an existing preset.
 
 #### Permission Flag
 
@@ -107,19 +110,19 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| preset | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| preset | String | Name of the preset to duplicate. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
 ```
 
 ## HTTP Route /API/GetAPIKeyStatus
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to get the current status of a given API key.
 
 #### Permission Flag
 
@@ -129,19 +132,19 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| keyType | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| keyType | String | The key type ID, eg 'stability_api'. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "status": "last updated 2025-01-01 01:01" // or "not set"
 ```
 
 ## HTTP Route /API/GetCurrentStatus
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Get current waiting generation count, model loading count, etc.
 
 #### Permission Flag
 
@@ -151,19 +154,31 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| do_debug | Boolean | (PARAMETER DESCRIPTION NOT SET) | `False` |
+| do_debug | Boolean | If true, verbose log data about the status report gathering (internal usage). | `False` |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "status": {
+        "waiting_gens": 0,
+        "loading_models": 0,
+        "waiting_backends": 0,
+        "live_gens": 0
+    },
+    "backend_status": {
+        "status": "running", // "idle", "unknown", "disabled", "loading", "running", "some_loading", "errored", "all_disabled", "empty"
+        "class": "", // "error", "warn", "soft", ""
+        "message": "", // User-facing English text
+        "any_loading": false
+    },
+    "supported_features": ["feature_id1", "feature_id2"]
 ```
 
 ## HTTP Route /API/GetLanguage
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Get the details of a given language file.
 
 #### Permission Flag
 
@@ -173,19 +188,26 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| language | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| language | String | The language ID, eg 'en'. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "language": {
+        "code": "en",
+        "name": "English",
+        "local_name": "English",
+        "keys": {
+            "key": "value"
+        }
+    }
 ```
 
 ## HTTP Route /API/GetMyUserData
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to get the user's own base data.
 
 #### Permission Flag
 
@@ -198,14 +220,31 @@ Basic general API routes, primarily for users and session handling.
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "user_name": "username",
+    "presets": [
+        {
+            "author": "username",
+            "title": "Preset Title",
+            "description": "Preset Description",
+            "param_map": {
+                "key": "value"
+            },
+            "preview_image": "data:base64 img"
+        }
+    ],
+    "language": "en",
+    "permissions": ["permission1", "permission2"],
+    "starred_models": {
+        "LoRA": ["one", "two"]
+    },
+    "autocompletions": ["Word\nword\ntag\n3"]
 ```
 
 ## HTTP Route /API/GetNewSession
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Special route to create a new session ID. Must be called before any other API route. Also returns other fundamental user and server data.
 
 #### Permission Flag
 
@@ -220,14 +259,19 @@ Basic general API routes, primarily for users and session handling.
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "session_id": "session_id",
+    "user_id": "username",
+    "output_append_user": true,
+    "version": "1.2.3",
+    "server_id": "abc123",
+    "permissions": ["permission1", "permission2"]
 ```
 
 ## HTTP Route /API/GetUserSettings
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Gets the user's current settings.
 
 #### Permission Flag
 
@@ -240,14 +284,23 @@ Basic general API routes, primarily for users and session handling.
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "themes": {
+        "theme_id": {
+            "name": "Theme Name",
+            "is_dark": true,
+            "css_paths": ["path1", "path2"]
+        }
+    },
+    "settings": {
+        "setting_id": "value"
+    }
 ```
 
 ## WebSocket Route /API/InstallConfirmWS
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Websocket route for the initial installation from the UI.
 
 #### Permission Flag
 
@@ -257,24 +310,24 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| theme | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| installed_for | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| backend | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| models | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| install_amd | Boolean | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| language | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| theme | String | Selected user theme. | **(REQUIRED)** |
+| installed_for | String | Selected install_for (network mode choice) value. | **(REQUIRED)** |
+| backend | String | Selected backend (comfy/none). | **(REQUIRED)** |
+| models | String | Selected models to predownload. | **(REQUIRED)** |
+| install_amd | Boolean | If true, install with AMD GPU compatibility. | **(REQUIRED)** |
+| language | String | Selected user language. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    // ... (do not automate calls to this)
 ```
 
 ## HTTP Route /API/InterruptAll
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Tell all waiting generations in this session or all sessions to interrupt.
 
 #### Permission Flag
 
@@ -284,19 +337,19 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| other_sessions | Boolean | (PARAMETER DESCRIPTION NOT SET) | `False` |
+| other_sessions | Boolean | If true, generations from all this user's sessions will be closed (ie even from other web page tabs or API usages). If false, only the current session is interrupted. | `False` |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
 ```
 
 ## HTTP Route /API/ServerDebugMessage
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+Send a debug message to server logs.
 
 #### Permission Flag
 
@@ -306,19 +359,19 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| message | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| message | String | The message to log. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
 ```
 
 ## HTTP Route /API/SetAPIKey
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+User route to set an API key.
 
 #### Permission Flag
 
@@ -328,20 +381,20 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| keyType | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
-| key | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| keyType | String | The key type ID, eg 'stability_api'. | **(REQUIRED)** |
+| key | String | The new value of the key, or 'none' to unset. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
 ```
 
 ## HTTP Route /API/SetParamEdits
 
 #### Description
 
-(ROUTE DESCRIPTION NOT SET)
+UI internal helper for user customization of parameters.
 
 #### Permission Flag
 
@@ -351,11 +404,33 @@ Basic general API routes, primarily for users and session handling.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| rawData | JObject | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| rawData | JObject | Blob of parameter edit data. | **(REQUIRED)** |
 
 #### Return Format
 
 ```js
-(RETURN INFO NOT SET)
+    "success": true
+```
+
+## HTTP Route /API/SetStarredModels
+
+#### Description
+
+User route to update the user's starred models lists.
+
+#### Permission Flag
+
+`fundamental_model_access` - `Fundamental Model Access` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| raw | JObject | Send the raw data as eg 'LoRA': ['one', 'two'], 'Stable-Diffusion': [ ... ] | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
 ```
 

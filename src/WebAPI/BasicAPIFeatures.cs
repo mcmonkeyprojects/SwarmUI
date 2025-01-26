@@ -43,7 +43,15 @@ public static class BasicAPIFeatures
         UtilAPI.Register();
     }
 
-    /// <summary>API Route to create a new session automatically.</summary>
+    [API.APIDescription("Special route to create a new session ID. Must be called before any other API route. Also returns other fundamental user and server data.",
+        """
+            "session_id": "session_id",
+            "user_id": "username",
+            "output_append_user": true,
+            "version": "1.2.3",
+            "server_id": "abc123",
+            "permissions": ["permission1", "permission2"]
+        """)]
     public static async Task<JObject> GetNewSession(HttpContext context)
     {
         string userId = WebServer.GetUserIdFor(context);
@@ -71,12 +79,21 @@ public static class BasicAPIFeatures
             ["output_append_user"] = Program.ServerSettings.Paths.AppendUserNameToOutputPath,
             ["version"] = Utilities.VaryID,
             ["server_id"] = Utilities.LoopPreventionID.ToString(),
-            ["count_running"] = Program.Backends.T2IBackends.Values.Count(b => b.Backend.Status == BackendStatus.RUNNING || b.Backend.Status == BackendStatus.LOADING),
             ["permissions"] = JArray.FromObject(session.User.GetPermissions())
         };
     }
 
-    public static async Task<JObject> InstallConfirmWS(Session session, WebSocket socket, string theme, string installed_for, string backend, string models, bool install_amd, string language)
+    [API.APIDescription("Websocket route for the initial installation from the UI.",
+        """
+            // ... (do not automate calls to this)
+        """)]
+    public static async Task<JObject> InstallConfirmWS(Session session, WebSocket socket,
+        [API.APIParameter("Selected user theme.")] string theme,
+        [API.APIParameter("Selected install_for (network mode choice) value.")] string installed_for,
+        [API.APIParameter("Selected backend (comfy/none).")] string backend,
+        [API.APIParameter("Selected models to predownload.")] string models,
+        [API.APIParameter("If true, install with AMD GPU compatibility.")] bool install_amd,
+        [API.APIParameter("Selected user language.")] string language)
     {
         if (Program.ServerSettings.IsInstalled)
         {
@@ -96,7 +113,27 @@ public static class BasicAPIFeatures
         return null;
     }
 
-    /// <summary>API Route to get the user's own base data.</summary>
+    [API.APIDescription("User route to get the user's own base data.",
+        """
+            "user_name": "username",
+            "presets": [
+                {
+                    "author": "username",
+                    "title": "Preset Title",
+                    "description": "Preset Description",
+                    "param_map": {
+                        "key": "value"
+                    },
+                    "preview_image": "data:base64 img"
+                }
+            ],
+            "language": "en",
+            "permissions": ["permission1", "permission2"],
+            "starred_models": {
+                "LoRA": ["one", "two"]
+            },
+            "autocompletions": ["Word\nword\ntag\n3"]
+        """)]
     public static async Task<JObject> GetMyUserData(Session session)
     {
         Settings.User.AutoCompleteData settings = session.User.Settings.AutoComplete;
@@ -111,16 +148,32 @@ public static class BasicAPIFeatures
         };
     }
 
-    /// <summary>API Route to update the user's starred models lists.</summary>
-    public static async Task<JObject> SetStarredModels(Session session, JObject data)
+    [API.APIDescription("User route to update the user's starred models lists.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> SetStarredModels(Session session,
+        [API.APIParameter("Send the raw data as eg 'LoRA': ['one', 'two'], 'Stable-Diffusion': [ ... ]")] JObject raw)
     {
-        session.User.SaveGenericData("starred_models", "full", data.ToString(Formatting.None));
+        raw.Remove("session_id");
+        session.User.SaveGenericData("starred_models", "full", raw.ToString(Formatting.None));
         session.User.Save();
         return new JObject() { ["success"] = true };
     }
 
-    /// <summary>API Route to add a new user parameters preset.</summary>
-    public static async Task<JObject> AddNewPreset(Session session, string title, string description, JObject raw, string preview_image = null, bool is_edit = false, string editing = null)
+    [API.APIDescription("User route to add a new parameter preset.",
+        """
+            "success": true
+            // or:
+            "preset_fail": "Some friendly error text here"
+        """)]
+    public static async Task<JObject> AddNewPreset(Session session,
+        [API.APIParameter("Name of the new preset.")] string title,
+        [API.APIParameter("User-facing description text.")] string description,
+        [API.APIParameter("Use 'param_map' key to send the raw parameter mapping, equivalent to GenerateText2Image.")] JObject raw,
+        [API.APIParameter("Optional preview image data base64 string.")] string preview_image = null,
+        [API.APIParameter("If true, edit an existing preset. If false, do not override pre-existing presets of the same name.")] bool is_edit = false,
+        [API.APIParameter("If is_edit is set, include the original preset name here.")] string editing = null)
     {
         JObject paramData = (JObject)raw["param_map"];
         T2IPreset existingPreset = session.User.GetPreset(is_edit ? editing : title);
@@ -149,8 +202,12 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = true };
     }
 
-    /// <summary>API Route to duplicate a user preset.</summary>
-    public static async Task<JObject> DuplicatePreset(Session session, string preset)
+    [API.APIDescription("User route to duplicate an existing preset.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> DuplicatePreset(Session session,
+        [API.APIParameter("Name of the preset to duplicate.")] string preset)
     {
         T2IPreset existingPreset = session.User.GetPreset(preset);
         if (existingPreset is null)
@@ -174,8 +231,12 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = true };
     }
 
-    /// <summary>API Route to delete a user preset.</summary>
-    public static async Task<JObject> DeletePreset(Session session, string preset)
+    [API.APIDescription("User route to delete a preset.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> DeletePreset(Session session,
+        [API.APIParameter("Name of the preset to delete.")] string preset)
     {
         return new JObject() { ["success"] = session.User.DeletePreset(preset) };
     }
@@ -205,14 +266,34 @@ public static class BasicAPIFeatures
         };
     }
 
-    /// <summary>API Route to get current waiting generation count, model loading count, etc.</summary>
-    public static async Task<JObject> GetCurrentStatus(Session session, bool do_debug = false)
+    [API.APIDescription("Get current waiting generation count, model loading count, etc.",
+        """
+            "status": {
+                "waiting_gens": 0,
+                "loading_models": 0,
+                "waiting_backends": 0,
+                "live_gens": 0
+            },
+            "backend_status": {
+                "status": "running", // "idle", "unknown", "disabled", "loading", "running", "some_loading", "errored", "all_disabled", "empty"
+                "class": "", // "error", "warn", "soft", ""
+                "message": "", // User-facing English text
+                "any_loading": false
+            },
+            "supported_features": ["feature_id1", "feature_id2"]
+        """)]
+    public static async Task<JObject> GetCurrentStatus(Session session,
+        [API.APIParameter("If true, verbose log data about the status report gathering (internal usage).")] bool do_debug = false)
     {
         return GetCurrentStatusRaw(session, do_debug);
     }
 
-    /// <summary>API Route to tell all waiting generations in this session to interrupt.</summary>
-    public static async Task<JObject> InterruptAll(Session session, bool other_sessions = false)
+    [API.APIDescription("Tell all waiting generations in this session or all sessions to interrupt.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> InterruptAll(Session session,
+        [API.APIParameter("If true, generations from all this user's sessions will be closed (ie even from other web page tabs or API usages). If false, only the current session is interrupted.")] bool other_sessions = false)
     {
         session.Interrupt();
         if (other_sessions)
@@ -225,6 +306,19 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = true };
     }
 
+    [API.APIDescription("Gets the user's current settings.",
+        """
+            "themes": {
+                "theme_id": {
+                    "name": "Theme Name",
+                    "is_dark": true,
+                    "css_paths": ["path1", "path2"]
+                }
+            },
+            "settings": {
+                "setting_id": "value"
+            }
+        """)]
     public static async Task<JObject> GetUserSettings(Session session)
     {
         JObject themes = [];
@@ -240,7 +334,12 @@ public static class BasicAPIFeatures
         return new JObject() { ["themes"] = themes, ["settings"] = AdminAPI.AutoConfigToParamData(session.User.Settings, true) };
     }
 
-    public static async Task<JObject> ChangeUserSettings(Session session, JObject rawData)
+    [API.APIDescription("User route to change user settings data.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> ChangeUserSettings(Session session,
+        [API.APIParameter("Simple object map of key as setting ID to new setting value to apply.")] JObject rawData)
     {
         JObject settings = (JObject)rawData["settings"];
         foreach ((string key, JToken val) in settings)
@@ -276,7 +375,12 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = true };
     }
 
-    public static async Task<JObject> SetParamEdits(Session session, JObject rawData)
+    [API.APIDescription("UI internal helper for user customization of parameters.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> SetParamEdits(Session session,
+        [API.APIParameter("Blob of parameter edit data.")] JObject rawData)
     {
         JObject edits = (JObject)rawData["edits"];
         session.User.Data.RawParamEdits = edits.ToString(Formatting.None);
@@ -284,7 +388,19 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = true };
     }
 
-    public static async Task<JObject> GetLanguage(Session session, string language)
+    [API.APIDescription("Get the details of a given language file.",
+        """
+            "language": {
+                "code": "en",
+                "name": "English",
+                "local_name": "English",
+                "keys": {
+                    "key": "value"
+                }
+            }
+        """)]
+    public static async Task<JObject> GetLanguage(Session session,
+        [API.APIParameter("The language ID, eg 'en'.")] string language)
     {
         if (!LanguagesHelper.Languages.TryGetValue(language, out LanguagesHelper.Language lang))
         {
@@ -293,7 +409,12 @@ public static class BasicAPIFeatures
         return new JObject() { ["language"] = lang.ToJSON() };
     }
 
-    public static async Task<JObject> ServerDebugMessage(Session session, string message)
+    [API.APIDescription("Send a debug message to server logs.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> ServerDebugMessage(Session session,
+        [API.APIParameter("The message to log.")] string message)
     {
         Logs.Info($"User '{session.User.UserID}' sent a debug message: {message}");
         return new JObject() { ["success"] = true };
@@ -301,7 +422,13 @@ public static class BasicAPIFeatures
 
     public static HashSet<string> AcceptedAPIKeyTypes = ["stability_api", "civitai_api"];
 
-    public static async Task<JObject> SetAPIKey(Session session, string keyType, string key)
+    [API.APIDescription("User route to set an API key.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> SetAPIKey(Session session,
+        [API.APIParameter("The key type ID, eg 'stability_api'.")] string keyType,
+        [API.APIParameter("The new value of the key, or 'none' to unset.")] string key)
     {
         if (!AcceptedAPIKeyTypes.Contains(keyType))
         {
@@ -321,7 +448,12 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = true };
     }
 
-    public static async Task<JObject> GetAPIKeyStatus(Session session, string keyType)
+    [API.APIDescription("User route to get the current status of a given API key.",
+        """
+            "status": "last updated 2025-01-01 01:01" // or "not set"
+        """)]
+    public static async Task<JObject> GetAPIKeyStatus(Session session,
+        [API.APIParameter("The key type ID, eg 'stability_api'.")] string keyType)
     {
         string updated = session.User.GetGenericData(keyType, "key_last_updated");
         if (string.IsNullOrWhiteSpace(updated))
