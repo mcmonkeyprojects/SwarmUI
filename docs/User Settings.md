@@ -14,6 +14,8 @@
 - `[hour]`: 2-digit hour, eg 12
 - `[minute]`: 2-digit minute, eg 04
 - `[second]`: 2-digit second, eg 30
+- `[millisecond]`: 3-digit millisecond, eg 057
+- `[request_time_inc]`: an arbitrary incrementing number of requests to force orderly names, pair as `[hour][minute][request_time_inc]` to get unique linear id prefixes.
 - `[prompt]`: the prompt (often cut off by `MaxLenPerPart`)
 - `[negative_prompt]`: the negative prompt (often cut off by `MaxLenPerPart`)
 - `[prompthash]`: a short (8 character) SHA256 hash prefix of the prompt

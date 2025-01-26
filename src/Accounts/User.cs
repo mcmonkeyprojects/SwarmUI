@@ -285,8 +285,6 @@ public class User
     /// <summary>Helper for filling output path data.</summary>
     public class OutpathFillHelper
     {
-        public DateTimeOffset Time = DateTimeOffset.Now;
-
         public T2IParamInput UserInput;
 
         public Dictionary<string, object> ExtraMetaSimplified;
@@ -331,14 +329,16 @@ public class User
         {
             string data = part switch
             {
-                "year" => $"{Time.Year:0000}",
-                "month" => $"{Time.Month:00}",
-                "month_name" => $"{Time:MMMM}",
-                "day" => $"{Time.Day:00}",
-                "day_name" => $"{Time:dddd}",
-                "hour" => $"{Time.Hour:00}",
-                "minute" => $"{Time.Minute:00}",
-                "second" => $"{Time.Second:00}",
+                "year" => $"{UserInput.RequestTime.Year:0000}",
+                "month" => $"{UserInput.RequestTime.Month:00}",
+                "month_name" => $"{UserInput.RequestTime:MMMM}",
+                "day" => $"{UserInput.RequestTime.Day:00}",
+                "day_name" => $"{UserInput.RequestTime:dddd}",
+                "hour" => $"{UserInput.RequestTime.Hour:00}",
+                "minute" => $"{UserInput.RequestTime.Minute:00}",
+                "second" => $"{UserInput.RequestTime.Second:00}",
+                "millisecond" => $"{UserInput.RequestTime.Millisecond:000}",
+                "request_time_inc" => $"{UserInput.RequestRefTime:000}",
                 "prompt" => UserInput.Get(T2IParamTypes.Prompt),
                 "prompthash" => QuickHash(UserInput.Get(T2IParamTypes.Prompt)),
                 "negative_prompt" => UserInput.Get(T2IParamTypes.NegativePrompt),

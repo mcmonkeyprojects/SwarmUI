@@ -665,15 +665,40 @@ public class T2IParamInput
     /// <summary>List of reasons this input did not match backend requests, if any.</summary>
     public HashSet<string> RefusalReasons = [];
 
+    /// <summary>Exact system time that the request was made at.</summary>
+    public DateTimeOffset RequestTime = DateTimeOffset.Now;
+
     /// <summary>Original seed the input had, before randomization handling.</summary>
     public long? RawOriginalSeed;
+
+    /// <summary>Dense local time with incrementer.</summary>
+    public int RequestRefTime;
+
+    /// <summary>Arbitrary incrementer for sub-minute unique IDs.</summary>
+    public static int UIDIncrementer = 0;
+
+    /// <summary>Last minute number that <see cref="UIDIncrementer"/> was reset at.</summary>
+    public static int UIDLast = -1;
+
+    /// <summary>Locker for editing <see cref="UIDIncrementer"/>.</summary>
+    public static LockObject UIDLock = new();
 
     /// <summary>Construct a new parameter input handler for a session.</summary>
     public T2IParamInput(Session session)
     {
         SourceSession = session;
         InterruptToken = session is null ? new CancellationTokenSource().Token : session.SessInterrupt.Token;
-        ExtraMeta["date"] = DateTime.Now.ToString("yyyy-MM-dd");
+        ExtraMeta["date"] = $"{RequestTime:yyyy-MM-dd}";
+        lock (UIDLock)
+        {
+            if (RequestTime.Minute != UIDLast || UIDIncrementer > 998)
+            {
+                UIDIncrementer = 0;
+                UIDLast = RequestTime.Minute;
+            }
+            UIDIncrementer++;
+            RequestRefTime = UIDIncrementer;
+        }
     }
 
     /// <summary>Gets the desired image width.</summary>
