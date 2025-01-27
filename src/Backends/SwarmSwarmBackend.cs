@@ -63,9 +63,6 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>If true, at least one remote sub-backend is still 'loading'.</summary>
     public volatile bool AnyLoading = true;
 
-    /// <summary>How many sub-backends are available.</summary>
-    public volatile int BackendCount = 0;
-
     /// <summary>The remote backend ID this specific instance is linked to (if any).</summary>
     public int LinkedRemoteBackendID;
 
@@ -110,8 +107,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         JObject sessData = await HttpClient.PostJson($"{Address}/API/GetNewSession", [], RequestAdapter());
         Session = sessData["session_id"].ToString();
         string id = sessData["server_id"]?.ToString();
-        BackendCount = sessData["count_running"].Value<int>();
-        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Connected to remote Swarm instance {Address} with server ID '{id}', and backend count '{BackendCount}'.");
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Connected to remote Swarm instance {Address} with server ID '{id}'.");
         if (id == Utilities.LoopPreventionID.ToString())
         {
             Logs.Error($"Swarm is connecting to itself as a backend. This is a bad idea. Check the address being used: {Address}");
