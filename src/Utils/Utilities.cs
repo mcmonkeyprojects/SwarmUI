@@ -475,7 +475,7 @@ public static class Utilities
             { "mpeg", "video/mpeg" },
             { "mov", "video/quicktime" },
             { "webm", "video/webm" },
-            { "acc", "audio/aac" },
+            { "aac", "audio/aac" },
             { "wave", "audio/x-wav" },
             { "flac", "audio/flac" }
         };

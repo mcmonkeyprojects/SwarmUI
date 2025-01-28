@@ -9,14 +9,16 @@ public class CompletionSoundHelper
     public static HashSet<string> FileNames = [];
 
     /// <summary>Gets the correct folder path to use.</summary>
-    public static string FolderPath => $"{Program.DataDir}/Audios";
+    public static string FolderPath => $"{Program.ServerSettings.Paths.DataPath}/Audios";
 
+    /// <summary>Initializes the helper.</summary>
     public static void Init()
     {
         Reload();
         Program.ModelRefreshEvent += Reload;
     }
 
+    /// <summary>Reloads the list of files.</summary>
     public static void Reload()
     {
         try

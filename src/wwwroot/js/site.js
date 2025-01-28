@@ -876,3 +876,11 @@ function specialDebug(message) {
     specialDebugTime = now;
     console.log(`${message} (${diff}ms since last debug)`);
 }
+
+function playCompletionAudio() {
+    let audioFile = getUserSetting("completionsound");
+    if (audioFile) {
+        let audio = new Audio(`/Audio/${audioFile}`);
+        audio.play();
+    }
+}

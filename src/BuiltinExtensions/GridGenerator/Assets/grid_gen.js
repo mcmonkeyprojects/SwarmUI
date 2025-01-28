@@ -406,6 +406,7 @@ class GridGenClass {
                 else {
                     this.outInfoBox.innerHTML = `<b>Completed!</b>`;
                 }
+                playCompletionAudio();
             }
         });
     }
