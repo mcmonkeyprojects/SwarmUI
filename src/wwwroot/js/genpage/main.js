@@ -583,6 +583,8 @@ function toggleStar(path, rawSrc) {
     });
 }
 
+defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
+
 function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
@@ -686,7 +688,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
     if (buttonsChoice == '')
     {
-        buttonsChoice = 'Use As Init,Edit Image,Star,Reuse Parameters';
+        buttonsChoice = defaultButtonChoices;
     }
     buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
     let subButtons = [];
