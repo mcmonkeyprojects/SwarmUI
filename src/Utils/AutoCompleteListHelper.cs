@@ -14,7 +14,7 @@ public class AutoCompleteListHelper
     public static ConcurrentDictionary<string, string[]> AutoCompletionLists = new();
 
     /// <summary>Gets the correct folder path to use.</summary>
-    public static string FolderPath => $"{Program.DataDir}/Autocompletions";
+    public static string FolderPath;
 
     /// <summary>Initializes the helper.</summary>
     public static void Init()
@@ -28,6 +28,7 @@ public class AutoCompleteListHelper
     {
         try
         {
+            FolderPath = $"{Program.DataDir}/Autocompletions";
             HashSet<string> files = [];
             Directory.CreateDirectory(FolderPath);
             foreach (string file in Directory.GetFiles(FolderPath, "*", SearchOption.AllDirectories))
