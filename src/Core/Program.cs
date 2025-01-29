@@ -386,6 +386,7 @@ public class Program
     /// <summary>Refreshes all model sets from file source.</summary>
     public static void RefreshAllModelSets()
     {
+        DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, GetCommandLineFlag("data_dir", ServerSettings.Paths.DataPath));
         foreach (T2IModelHandler handler in T2IModelSets.Values)
         {
             try
