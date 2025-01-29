@@ -206,7 +206,7 @@ class GenerateHandler {
                     if (data.gen_progress.batch_index in images) {
                         let imgHolder = images[data.gen_progress.batch_index];
                         let overall = imgHolder.div.querySelector('.image-preview-progress-overall');
-                        if (overall && data.gen_progress.overall_percent) { 
+                        if (overall && data.gen_progress.overall_percent) {
                             imgHolder.overall_percent = data.gen_progress.overall_percent;
                             imgHolder.current_percent = data.gen_progress.current_percent;
                             overall.style.width = `${imgHolder.overall_percent * 100}%`;

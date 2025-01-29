@@ -6,10 +6,10 @@ namespace SwarmUI.Utils;
 public class CompletionSoundHelper
 {
     /// <summary>Set of all filenames of audio files.</summary>
-    public static HashSet<string> FileNames = [];
+    public static HashSet<string> Filenames = [];
 
     /// <summary>Gets the correct folder path to use.</summary>
-    public static string FolderPath => $"{Program.ServerSettings.Paths.DataPath}/Audios";
+    public static string FolderPath => $"{Program.ServerSettings.Paths.DataPath}/Audio";
 
     /// <summary>Initializes the helper.</summary>
     public static void Init()
@@ -34,7 +34,7 @@ public class CompletionSoundHelper
                     files.Add(path);
                 }
             }
-            FileNames = files;
+            Filenames = files;
         }
         catch (Exception ex)
         {

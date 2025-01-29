@@ -390,18 +390,14 @@ public class WebServer
     /// <summary>Web route for audio files.</summary>
     public async Task ViewAudio(HttpContext context)
     {
-        string path = context.Request.Path.ToString();
-        if (path.StartsWith("/Audio/"))
+        string path = context.Request.Path.ToString().After("/Audio/");
+        path = Uri.UnescapeDataString(path).Replace('\\', '/');
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.DataPath, "Audio");
+        if (GetUserIdFor(context) is null)
         {
-            path = path.After("/Audio/");
-        }
-        else
-        {
-            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("view audio path prefix does not make sense", "bad_path"));
+            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
             return;
         }
-        path = Uri.UnescapeDataString(path).Replace('\\', '/');
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.DataPath, "Audios");
         (path, string consoleError, string userError) = CheckFilePath(root, path);
         if (consoleError is not null)
         {

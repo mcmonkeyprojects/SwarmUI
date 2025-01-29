@@ -439,7 +439,7 @@ public class Settings : AutoConfiguration
 
         public class AudioImpl : SettingsOptionsAttribute.AbstractImpl
         {
-            public override string[] GetOptions => ["", .. CompletionSoundHelper.FileNames];
+            public override string[] GetOptions => ["", .. CompletionSoundHelper.Filenames];
         }
 
         [ConfigComment("Optional audio file to play when a generation is completed.\nSupported file formats: .wav, .wave, .mp3, .aac, .ogg, .flac")]
