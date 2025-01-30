@@ -52,6 +52,10 @@ public class WorkflowGeneratorSteps
         AddStep(g =>
         {
             g.FinalLoadedModel = g.UserInput.Get(T2IParamTypes.Model);
+            if (g.FinalLoadedModel is null)
+            {
+                throw new SwarmUserErrorException($"No model input given. Did your UI load properly?");
+            }
             g.FinalLoadedModelList = [g.FinalLoadedModel];
             (g.FinalLoadedModel, g.FinalModel, g.FinalClip, g.FinalVae) = g.CreateStandardModelLoader(g.FinalLoadedModel, "Base", "4");
         }, -15);

@@ -148,7 +148,7 @@ body {
     padding: 0.5rem;
     padding-right: 1rem;
     width: calc(28rem - 5px);
-    height: 50vh;
+    height: 100%;
 }
 .main_inputs_area_hidden {
     display: none;
@@ -156,7 +156,7 @@ body {
 }
 .main-image-area {
     display: inline-block;
-    padding: 0.5rem;
+    padding: 0;
     overflow: hidden;
     width: calc(100vw - 28rem);
     height: 50vh;
@@ -171,12 +171,20 @@ body {
     height: 49vh;
     overflow-y: auto;
 }
+.current_image_wrapbox {
+    display: inline-block;
+    width: calc(100vw - (28rem - 5px) - 22rem);
+    height: 49vh;
+    vertical-align: top;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
 .current_image {
     display: inline-block;
     padding: 0.5rem;
     border: 1px solid var(--light-border);
-    width: calc(100vw - (28rem - 5px) - 22rem);
-    height: 49vh;
+    width: 100%;
+    height: 100%;
     vertical-align: top;
     overflow-x: hidden;
     overflow-y: auto;
@@ -860,10 +868,6 @@ body {
     margin-right: 0.5rem;
     border-radius: 0.2rem;
 }
-.genpage-bottom-tab {
-    height: calc(100% - 5rem);
-    overflow: auto;
-}
 .alt_prompt_region {
     position: relative;
     top: -3.5rem;
@@ -871,6 +875,7 @@ body {
     width: fit-content;
     padding-top: 0.5rem;
     padding-bottom: 5px;
+    padding-left: 0.5rem;
 }
 .alt_prompt_main_line {
     display: flex;

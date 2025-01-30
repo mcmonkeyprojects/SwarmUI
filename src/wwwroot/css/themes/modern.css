@@ -46,9 +46,7 @@
     transition: background .2s;
 }
 
-.nav-tabs,
-#t2i_top_bar,
-#t2i_bottom_bar {
+.nav-tabs, .current_image, #Input-Sidebar-Main-Tab, #Image-Batch-Tab, #t2i_bottom_bar {
     background-color: var(--background-panel);
     background-image: url(imgs/noise.png);
 }

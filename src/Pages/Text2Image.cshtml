@@ -91,55 +91,79 @@
         <div class="t2i-top-bar-container" style="line-height:1.5">
             <div class="t2i-top-bar" id="t2i_top_bar">
                 <div class="input-sidebar" id="input_sidebar">
-                    <span class="interrupt_line"></span>
-                    <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
-                        <div class="input_filter_container">
-                            <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
-                            <span class="clear_input_icon" id="clear_input_icon" onclick="clearParamFilterInput()">&#x2715;</span>
+                    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Left Sidebar" role="tablist" id="inputsidebartabcollection">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active translate" data-bs-toggle="tab" href="#Input-Sidebar-Main-Tab" aria-selected="true" role="tab">Inputs</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="inputsidebartab_content">
+                        <div class="tab-pane show active genpage-bottom-tab" id="Input-Sidebar-Main-Tab" role="tabpanel">
+                            <span class="interrupt_line"></span>
+                            <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
+                                <div class="input_filter_container">
+                                    <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
+                                    <span class="clear_input_icon" id="clear_input_icon" onclick="clearParamFilterInput()">&#x2715;</span>
+                                </div>
+                                <div id="main_inputs_area"></div>
+                                <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
+                                <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
+                                <div style="height: 10rem;"></div> <!-- Spacer -->
+                            </div>
+                            <div class="advanced_input_checkbox">
+                                <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
+                                <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
+                            </div>
                         </div>
-                        <div id="main_inputs_area"></div>
-                        <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
-                        <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
-                        <div style="height: 10rem;"></div> <!-- Spacer -->
                     </div>
-                    <div class="advanced_input_checkbox">
-                        <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
-                        <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
-                    </div>
-                </div>
-                <div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21DA;</div></div>
-                <div class="main-image-area" id="main_image_area">
-                    <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div>
-                    <div class="current_image_batch" id="current_image_batch_wrapper">
-                        <div style="position: relative; width: 0; height: 0;">
-                            <div class="batch-gear-button" onclick="doPopover('batchgear')">&#9881;</div>
+                </div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21DA;</div></div><div class="main-image-area" id="main_image_area"><div class="current_image_wrapbox" id="current_image_wrapbox">
+                    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" role="tablist" id="currentimagecollection">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Result-Tab" aria-selected="true" role="tab">Image</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="currentimagecontent">
+                        <div class="tab-pane show active genpage-bottom-tab" id="Image-Result-Tab" role="tabpanel">
+                            <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div>
                         </div>
-                        <div class="sui-popover sui_popover_model" id="popover_batchgear">
-                            <div class="batchgear-toggler" title="Clears the batch view.">
-                                <button class="interrupt-button translate" id="clear_batch_button" onclick="clearBatch()">Clear Batch</button>
-                            </div>
-                            <div class="batchgear-toggler translate" title="If enabled, automatically clears out the image batch when generating a new one. If disabled, leaves history to grow until you refresh the page.">
-                                <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="auto_clear_batch_checkbox" onchange="toggleAutoClearBatch()"> <label class="form-check-label" for="auto_clear_batch_checkbox">Auto Clear Batch</label>
-                                </span>
-                            </div>
-                            <div class="batchgear-toggler translate" title="If enabled, automatically swaps to previews of new images the moment they're available, before the image itself is done generating.">
-                                <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="auto_load_previews_checkbox" onchange="toggleAutoLoadPreviews()" checked=""> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Previews</label>
-                                </span>
-                            </div>
-                            <div class="batchgear-toggler translate" title="If enabled, automatically swaps to new images the moment they're done generating.">
-                                <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="auto_load_images_checkbox" onchange="toggleAutoLoadImages()" checked="true"> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Images</label>
-                                </span>
-                            </div>
-                            <div class="batchgear-toggler translate" title="If enabled, display loading spinners and failed generation crosses.">
-                                <span class="form-check form-switch display-inline-block">
-                                    <input type="checkbox" class="form-check-input" id="show_load_spinners_checkbox" onchange="toggleShowLoadSpinners()" checked="true"> <label class="form-check-label translate" for="show_load_spinners_checkbox">Show Load Spinners</label>
-                                </span>
+                    </div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div><div class="current_image_batch" id="current_image_batch_wrapper">
+                        <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" role="tablist" id="rightsidebarcollection">
+                            <li class="nav-item" role="presentation">
+                                <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Batch-Tab" aria-selected="true" role="tab">Batch</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content" id="rightsidebarcontent">
+                            <div class="tab-pane show active genpage-bottom-tab" id="Image-Batch-Tab" role="tabpanel">
+                                <div style="position: relative; width: 0; height: 0;">
+                                    <div class="batch-gear-button" onclick="doPopover('batchgear')">&#9881;</div>
+                                </div>
+                                <div class="sui-popover sui_popover_model" id="popover_batchgear">
+                                    <div class="batchgear-toggler" title="Clears the batch view.">
+                                        <button class="interrupt-button translate" id="clear_batch_button" onclick="clearBatch()">Clear Batch</button>
+                                    </div>
+                                    <div class="batchgear-toggler translate" title="If enabled, automatically clears out the image batch when generating a new one. If disabled, leaves history to grow until you refresh the page.">
+                                        <span class="form-check form-switch display-inline-block">
+                                            <input type="checkbox" class="form-check-input" id="auto_clear_batch_checkbox" onchange="toggleAutoClearBatch()"> <label class="form-check-label" for="auto_clear_batch_checkbox">Auto Clear Batch</label>
+                                        </span>
+                                    </div>
+                                    <div class="batchgear-toggler translate" title="If enabled, automatically swaps to previews of new images the moment they're available, before the image itself is done generating.">
+                                        <span class="form-check form-switch display-inline-block">
+                                            <input type="checkbox" class="form-check-input" id="auto_load_previews_checkbox" onchange="toggleAutoLoadPreviews()" checked=""> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Previews</label>
+                                        </span>
+                                    </div>
+                                    <div class="batchgear-toggler translate" title="If enabled, automatically swaps to new images the moment they're done generating.">
+                                        <span class="form-check form-switch display-inline-block">
+                                            <input type="checkbox" class="form-check-input" id="auto_load_images_checkbox" onchange="toggleAutoLoadImages()" checked="true"> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Images</label>
+                                        </span>
+                                    </div>
+                                    <div class="batchgear-toggler translate" title="If enabled, display loading spinners and failed generation crosses.">
+                                        <span class="form-check form-switch display-inline-block">
+                                            <input type="checkbox" class="form-check-input" id="show_load_spinners_checkbox" onchange="toggleShowLoadSpinners()" checked="true"> <label class="form-check-label translate" for="show_load_spinners_checkbox">Show Load Spinners</label>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="current_image_batch" class="current_image_batch_core"></div>
                             </div>
                         </div>
-                        <div id="current_image_batch" class="current_image_batch_core"></div>
                     </div>
                     <div class="alt_prompt_region drag_image_target" id="alt_prompt_region">
                         <div id="alt_prompt_extra_area" class="alt_prompt_extra_area">
@@ -309,7 +333,7 @@
                 <span class="bottom-info-bar-component" style="display:none;" id="current_loras_wrapper"><span class="translate"><b>Current LoRAs</b><span id="lora_info_slot"></span>: </span> <span id="current_lora_list_view"></span></span>
                 <span class="bottom-info-bar-component"><span class="num_jobs_span" id="num_jobs_span" style="min-height: 1rem"></span></span>
             </div>
-            <ul class="nav nav-tabs" role="tablist" id="bottombartabcollection">
+            <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Bottom Bar" role="tablist" id="bottombartabcollection">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link active translate" id="imagehistorytabclickable" data-bs-toggle="tab" href="#Image-History-Tab" aria-selected="true" role="tab">Image History</a>
                 </li>

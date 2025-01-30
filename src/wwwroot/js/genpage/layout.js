@@ -1,3 +1,14 @@
+/** Data about a tab within the Generate UI that can be moved to different containers. */
+class MovableGenTab {
+    constructor(navLink) {
+        this.navElem = navLink;
+        this.id = this.navElem.getAttribute('href').substring(1);
+        this.contentElem = getRequiredElementById(this.id);
+        this.title = this.navElem.innerText;
+        this.defaultGroup = findParentOfClass(this.navElem, 'swarm-gen-tab-subnav');
+        this.currentGroup = this.defaultGroup;
+    }
+}
 
 /** Central handler for generate main tab layout logic. */
 class GenTabLayout {
@@ -12,16 +23,16 @@ class GenTabLayout {
     bottomShut = localStorage.getItem('barspot_midForceToBottom') == 'true';
 
     /** Position of the image-editor alignment bar (the split between image editor and output area). -1 if unset. */
-    imageEditorBarPos = -1;
+    imageEditorBarPos = parseInt(getCookie('barspot_imageEditorSizeBar') || '-1');
     
     /** Position of the left section bar. -1 if unset. */
-    leftSectionBarPos = -1;
+    leftSectionBarPos = parseInt(getCookie('barspot_pageBarTop') || '-1');
 
     /** Position of the right section bar. -1 if unset. */
-    rightSectionBarPos = -1;
+    rightSectionBarPos = parseInt(getCookie('barspot_pageBarTop2') || '-1');
 
     /** Position of the bottom section bar. -1 if unset. */
-    bottomSectionBarPos = -1;
+    bottomSectionBarPos = parseInt(getCookie('barspot_pageBarMidPx') || '-1');
 
     constructor() {
         this.leftSplitBar = getRequiredElementById('t2i-top-split-bar');
@@ -31,11 +42,12 @@ class GenTabLayout {
         this.bottomSplitBarButton = getRequiredElementById('t2i-mid-split-quickbutton');
         this.topSection = getRequiredElementById('t2i_top_bar');
         this.bottomInfoBar = getRequiredElementById('bottom_info_bar');
-        this.bottomBarContent = getRequiredElementById('t2i_bottom_bar_content');
+        this.bottomBar = getRequiredElementById('t2i_bottom_bar');
         this.inputSidebar = getRequiredElementById('input_sidebar');
         this.mainInputsAreaWrapper = getRequiredElementById('main_inputs_area_wrapper');
         this.mainImageArea = getRequiredElementById('main_image_area');
         this.currentImage = getRequiredElementById('current_image');
+        this.currentImageWrapbox = getRequiredElementById('current_image_wrapbox');
         this.currentImageBatch = getRequiredElementById('current_image_batch_wrapper');
         this.currentImageBatchCore = getRequiredElementById('current_image_batch');
         this.altRegion = getRequiredElementById('alt_prompt_region');
@@ -43,9 +55,18 @@ class GenTabLayout {
         this.altNegText = getRequiredElementById('alt_negativeprompt_textbox');
         this.altImageRegion = getRequiredElementById('alt_prompt_extra_area');
         this.editorSizebar = getRequiredElementById('image_editor_sizebar');
-        this.topDrag = false;
-        this.topDrag2 = false;
-        this.midDrag = false;
+        this.tabCollections = document.querySelectorAll('.swarm-gen-tab-subnav');
+        this.managedTabs = [...this.tabCollections].flatMap(e => [...e.querySelectorAll('.nav-link')]).map(e => new MovableGenTab(e));
+        this.managedTabContainers = [];
+        for (let tab of this.managedTabs) {
+            tab.contentElem.style.height = '100%';
+            if (!this.managedTabContainers.includes(tab.contentElem.parentElement)) {
+                this.managedTabContainers.push(tab.contentElem.parentElement);
+            }
+        }
+        this.leftBarDrag = false;
+        this.rightBarDrag = false;
+        this.bottomBarDrag = false;
         this.imageEditorSizeBarDrag = false;
         this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
     }
@@ -81,7 +102,7 @@ class GenTabLayout {
     
     /** Signal a possible update to the size of the prompt box. */
     altPromptSizeHandle() {
-        this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 2rem)`;
+        this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
         this.reapplyPositions();
     }
     
@@ -91,7 +112,7 @@ class GenTabLayout {
         if (this.altRegion.style.display != 'none') {
             dynamicSizeTextBox(this.altText);
             dynamicSizeTextBox(this.altNegText);
-            this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 2rem)`;
+            this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
         }
         setCookie('barspot_pageBarTop', this.leftSectionBarPos, 365);
         setCookie('barspot_pageBarTop2', this.rightSectionBarPos, 365);
@@ -117,12 +138,12 @@ class GenTabLayout {
         if (imageEditor.active) {
             let imageEditorSizePercent = this.imageEditorBarPos < 0 ? 0.5 : (this.imageEditorBarPos / 100.0);
             imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent} - 3px)`;
-            this.currentImage.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 3px)`;
+            this.currentImageWrapbox.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 3px)`;
         }
         else {
-            this.currentImage.style.width = `calc(${curImgWidth})`;
+            this.currentImageWrapbox.style.width = `calc(${curImgWidth})`;
         }
-        this.currentImageBatch.style.width = `calc(${barTopRight} - 22px)`;
+        this.currentImageBatch.style.width = `calc(${barTopRight} - 6px)`;
         if (this.currentImageBatchCore.offsetWidth < 425) {
             this.currentImageBatchCore.classList.add('current_image_batch_core_small');
         }
@@ -131,73 +152,64 @@ class GenTabLayout {
         }
         this.leftSplitBarButton.innerHTML = this.leftShut ? '&#x21DB;' : '&#x21DA;';
         this.bottomSplitBarButton.innerHTML = this.bottomShut ? '&#x290A;' : '&#x290B;';
-        let altHeight = this.altRegion.style.display == 'none' ? '0px' : `(${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px + 2rem)`;
+        let altHeight = this.altRegion.style.display == 'none' ? '0px' : `${this.altRegion.offsetHeight}px`;
         if (this.bottomSectionBarPos != -1 || this.bottomShut) {
             let fixed = this.bottomShut ? `6.5rem` : `${this.bottomSectionBarPos}px`;
             this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
             this.rightSplitBar.style.height = `calc(100vh - ${fixed})`;
             this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
-            this.mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
             this.mainImageArea.style.height = `calc(100vh - ${fixed})`;
-            this.currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+            this.currentImageWrapbox.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             imageEditor.inputDiv.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
             this.topSection.style.height = `calc(100vh - ${fixed})`;
             let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            this.bottomBarContent.style.height = `calc(${fixed} - ${bottomBarHeight}px)`;
+            this.bottomBar.style.height = `calc(${fixed} - ${bottomBarHeight}px)`;
         }
         else {
             this.leftSplitBar.style.height = '';
             this.rightSplitBar.style.height = '';
             this.inputSidebar.style.height = '';
-            this.mainInputsAreaWrapper.style.height = '';
             this.mainImageArea.style.height = '';
-            this.currentImage.style.height = `calc(49vh - ${altHeight})`;
+            this.currentImageWrapbox.style.height = `calc(49vh - ${altHeight} + 1rem)`;
             imageEditor.inputDiv.style.height = `calc(49vh - ${altHeight})`;
             this.editorSizebar.style.height = `calc(49vh - ${altHeight})`;
             this.currentImageBatch.style.height = '';
             this.topSection.style.height = '';
-            this.bottomBarContent.style.height = '';
+            let bottomBarHeight = this.bottomInfoBar.offsetHeight;
+            this.bottomBar.style.height = `calc(49vh - ${bottomBarHeight}px)`;
         }
         imageEditor.resize();
         alignImageDataFormat();
         imageHistoryBrowser.makeVisible(getRequiredElementById('t2i_bottom_bar'));
+        for (let collection of this.tabCollections) {
+            collection.style.display = [...collection.querySelectorAll('.nav-link')].length > 1 ? '' : 'none';
+        }
+        for (let container of this.managedTabContainers) {
+            let parent = container.parentElement;
+            let offset = container.getBoundingClientRect().top - parent.getBoundingClientRect().top;
+            container.style.height = `calc(100% - ${offset}px)`;
+        }
     }
 
     /** Internal initialization of the generate tab. */
     init() {
-        let cookieA = getCookie('barspot_pageBarTop');
-        if (cookieA) {
-            this.leftSectionBarPos = parseInt(cookieA);
-        }
-        let cookieB = getCookie('barspot_pageBarTop2');
-        if (cookieB) {
-            this.rightSectionBarPos = parseInt(cookieB);
-        }
-        let cookieC = getCookie('barspot_pageBarMidPx');
-        if (cookieC) {
-            this.bottomSectionBarPos = parseInt(cookieC);
-        }
-        let cookieD = getCookie('barspot_imageEditorSizeBar');
-        if (cookieD) {
-            this.imageEditorBarPos = parseInt(cookieD);
-        }
         this.reapplyPositions();
         this.leftSplitBar.addEventListener('mousedown', (e) => {
-            this.topDrag = true;
+            this.leftBarDrag = true;
             e.preventDefault();
         }, true);
         this.rightSplitBar.addEventListener('mousedown', (e) => {
-            this.topDrag2 = true;
+            this.rightBarDrag = true;
             e.preventDefault();
         }, true);
         this.leftSplitBar.addEventListener('touchstart', (e) => {
-            this.topDrag = true;
+            this.leftBarDrag = true;
             e.preventDefault();
         }, true);
         this.rightSplitBar.addEventListener('touchstart', (e) => {
-            this.topDrag2 = true;
+            this.rightBarDrag = true;
             e.preventDefault();
         }, true);
         this.editorSizebar.addEventListener('mousedown', (e) => {
@@ -212,7 +224,7 @@ class GenTabLayout {
             if (e.target == this.bottomSplitBarButton) {
                 return;
             }
-            this.midDrag = true;
+            this.bottomBarDrag = true;
             this.setBottomShut(false);
             e.preventDefault();
         }, true);
@@ -220,19 +232,19 @@ class GenTabLayout {
             if (e.target == this.bottomSplitBarButton) {
                 return;
             }
-            this.midDrag = true;
+            this.bottomBarDrag = true;
             this.setBottomShut(false);
             e.preventDefault();
         }, true);
         this.bottomSplitBarButton.addEventListener('click', (e) => {
-            this.midDrag = false;
+            this.bottomBarDrag = false;
             this.setBottomShut(!this.bottomShut);
             this.bottomSectionBarPos = Math.max(this.bottomSectionBarPos, 400);
             this.reapplyPositions();
             e.preventDefault();
         }, true);
         this.leftSplitBarButton.addEventListener('click', (e) => {
-            this.topDrag = false;
+            this.leftBarDrag = false;
             this.setLeftShut(!this.leftShut);
             this.leftSectionBarPos = Math.max(this.leftSectionBarPos, 400);
             this.reapplyPositions();
@@ -243,13 +255,13 @@ class GenTabLayout {
         let moveEvt = (e, x, y) => {
             let offX = x;
             offX = Math.min(Math.max(offX, 100), window.innerWidth - 10);
-            if (this.topDrag) {
-                this.leftSectionBarPos = Math.min(offX - 5, 51 * 16);
+            if (this.leftBarDrag) {
+                this.leftSectionBarPos = Math.min(offX - 3, 51 * 16);
                 this.setLeftShut(this.leftSectionBarPos < 300);
                 this.reapplyPositions();
             }
-            if (this.topDrag2) {
-                this.rightSectionBarPos = window.innerWidth - offX + 15;
+            if (this.rightBarDrag) {
+                this.rightSectionBarPos = window.innerWidth - offX;
                 if (this.rightSectionBarPos < 100) {
                     this.rightSectionBarPos = 22;
                 }
@@ -262,7 +274,7 @@ class GenTabLayout {
                 this.imageEditorBarPos = Math.min(90, Math.max(10, val / maxAreaWidth * 100));
                 this.reapplyPositions();
             }
-            if (this.midDrag) {
+            if (this.bottomBarDrag) {
                 const MID_OFF = 85;
                 let refY = Math.min(Math.max(e.pageY, MID_OFF), window.innerHeight - MID_OFF);
                 this.setBottomShut(refY >= window.innerHeight - MID_OFF);
@@ -273,15 +285,15 @@ class GenTabLayout {
         document.addEventListener('mousemove', (e) => moveEvt(e, e.pageX, e.pageY));
         document.addEventListener('touchmove', (e) => moveEvt(e, e.touches.item(0).pageX, e.touches.item(0).pageY));
         document.addEventListener('mouseup', (e) => {
-            this.topDrag = false;
-            this.topDrag2 = false;
-            this.midDrag = false;
+            this.leftBarDrag = false;
+            this.rightBarDrag = false;
+            this.bottomBarDrag = false;
             this.imageEditorSizeBarDrag = false;
         });
         document.addEventListener('touchend', (e) => {
-            this.topDrag = false;
-            this.topDrag2 = false;
-            this.midDrag = false;
+            this.leftBarDrag = false;
+            this.rightBarDrag = false;
+            this.bottomBarDrag = false;
             this.imageEditorSizeBarDrag = false;
         });
         for (let tab of getRequiredElementById('bottombartabcollection').getElementsByTagName('a')) {
