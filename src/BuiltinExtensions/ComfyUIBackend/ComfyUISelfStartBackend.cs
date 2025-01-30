@@ -287,7 +287,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             else if (settings.FrontendVersion == "LatestSwarmValidated")
             {
-                addedArgs += " --front-end-version Comfy-Org/ComfyUI_frontend@v1.6.17";
+                addedArgs += " --front-end-version Comfy-Org/ComfyUI_frontend@v1.7.14";
             }
             else if (settings.FrontendVersion == "Legacy")
             {
