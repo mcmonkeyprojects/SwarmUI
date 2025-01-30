@@ -1543,6 +1543,7 @@ function genToolsList() {
                 oldGenerateButton.innerText = override.text;
             }
         }
+        div.dispatchEvent(new Event('tool-opened'));
     });
 }
 
@@ -1560,6 +1561,24 @@ function registerNewTool(id, name, genOverride = null, runOverride = null) {
     }
     return div;
 }
+
+let notePadTool = registerNewTool('note_pad', 'Text Notepad');
+notePadTool.appendChild(createDiv(`note_pad_tool_wrapper`, `note_pad_tool_wrapper`, `<span class="translate hoverable-minor-hint-text">This is an open text box where you can type any notes you need to keep track of. They will be temporarily persisted in browser session.</span><br><br><textarea id="note_pad_tool" class="auto-text" style="width:100%;height:100%;" placeholder="Type any notes here..."></textarea>`));
+let notePadToolElem = getRequiredElementById('note_pad_tool');
+notePadToolElem.value = localStorage.getItem('note_pad_tool') || '';
+let notePadToolSaveEvent = null;
+notePadToolElem.addEventListener('input', () => {
+    if (notePadToolSaveEvent) {
+        clearTimeout(notePadToolSaveEvent);
+    }
+    notePadToolSaveEvent = setTimeout(() => {
+        localStorage.setItem('note_pad_tool', notePadToolElem.value);
+    }, 1000);
+    textBoxSizeAdjust(notePadToolElem);
+});
+notePadTool.addEventListener('tool-opened', () => {
+    textBoxSizeAdjust(notePadToolElem);
+});
 
 function tweakNegativePromptBox() {
     let altNegText = getRequiredElementById('alt_negativeprompt_textbox');

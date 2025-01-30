@@ -127,6 +127,7 @@ class GenTabLayout {
         this.editorSizebar = getRequiredElementById('image_editor_sizebar');
         this.tabCollections = document.querySelectorAll('.swarm-gen-tab-subnav');
         this.layoutConfigArea = getRequiredElementById('layoutconfigarea');
+        this.toolContainer = getRequiredElementById('tool_container');
         this.managedTabs = [...this.tabCollections].flatMap(e => [...e.querySelectorAll('.nav-link')]).map(e => new MovableGenTab(e, this));
         this.managedTabContainers = [];
         this.leftBarDrag = false;
@@ -183,6 +184,7 @@ class GenTabLayout {
         setCookie('barspot_pageBarTop2', this.rightSectionBarPos, 365);
         setCookie('barspot_pageBarMidPx', this.bottomSectionBarPos, 365);
         setCookie('barspot_imageEditorSizeBar', this.imageEditorBarPos, 365);
+        this.toolContainer.style.minHeight = `calc(100% - ${this.toolContainer.getBoundingClientRect().top - this.toolContainer.parentElement.getBoundingClientRect().top}px - 1.5rem)`;
         let barTopLeft = this.leftShut ? `0px` : this.leftSectionBarPos == -1 ? (this.isSmallWindow ? `14rem` : `28rem`) : `${this.leftSectionBarPos}px`;
         let barTopRight = this.rightSectionBarPos == -1 ? (this.isSmallWindow ? `4rem` : `21rem`) : `${this.rightSectionBarPos}px`;
         let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
@@ -232,7 +234,7 @@ class GenTabLayout {
             this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
             this.topSection.style.height = `calc(100vh - ${fixed})`;
             let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            this.bottomBar.style.height = `calc(${fixed} - ${bottomBarHeight}px)`;
+            this.bottomBar.style.height = `calc(${fixed} - ${bottomBarHeight}px - 5px)`;
         }
         else {
             this.leftSplitBar.style.height = '';
@@ -247,7 +249,7 @@ class GenTabLayout {
             this.currentImageBatch.style.height = '';
             this.topSection.style.height = '';
             let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            this.bottomBar.style.height = `calc(49vh - ${bottomBarHeight}px)`;
+            this.bottomBar.style.height = `calc(49vh - ${bottomBarHeight}px - 5px)`;
         }
         if (imageEditor) {
             imageEditor.resize();

@@ -269,9 +269,13 @@ function textPromptDoCount(elem, countElem = null, prefix = '') {
     }
 }
 
-function textPromptInputHandle(elem) {
+function textBoxSizeAdjust(elem) {
     elem.style.height = '0px';
     elem.style.height = `max(3.4rem, min(15rem, ${elem.scrollHeight + 5}px))`;
+}
+
+function textPromptInputHandle(elem) {
+    textBoxSizeAdjust(elem);
     textPromptDoCount(elem);
 }
 
