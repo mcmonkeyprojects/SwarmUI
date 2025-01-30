@@ -85,7 +85,7 @@ public static class ImageMetadataTracker
     {
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
-            folder = Program.ServerSettings.Paths.DataPath;
+            folder = Program.DataDir;
         }
         return Databases.GetOrCreate(folder, () =>
         {
@@ -400,6 +400,6 @@ public static class ImageMetadataTracker
             }
         }
         ClearFolder(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath));
-        ClearFolder(Program.ServerSettings.Paths.DataPath);
+        ClearFolder(Program.DataDir);
     }
 }

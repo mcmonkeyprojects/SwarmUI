@@ -392,7 +392,7 @@ public class WebServer
     {
         string path = context.Request.Path.ToString().After("/Audio/");
         path = Uri.UnescapeDataString(path).Replace('\\', '/');
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.DataPath, "Audio");
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.DataDir, "Audio");
         if (GetUserIdFor(context) is null)
         {
             await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));

@@ -55,7 +55,7 @@ public static class Logs
                 _ => $"[{part}]"
             };
         }, false);
-        LogFilePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.DataPath, LogFilePath);
+        LogFilePath = Utilities.CombinePathWithAbsolute(Program.DataDir, LogFilePath);
         Directory.CreateDirectory(Path.GetDirectoryName(LogFilePath));
         LogSaveThread = new(LogSaveInternalLoop) { Name = "logsaver" };
         LogSaveThread.Start();

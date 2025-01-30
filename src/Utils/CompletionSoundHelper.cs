@@ -9,7 +9,7 @@ public class CompletionSoundHelper
     public static HashSet<string> Filenames = [];
 
     /// <summary>Gets the correct folder path to use.</summary>
-    public static string FolderPath => $"{Program.ServerSettings.Paths.DataPath}/Audio";
+    public static string FolderPath => $"{Program.DataDir}/Audio";
 
     /// <summary>Initializes the helper.</summary>
     public static void Init()

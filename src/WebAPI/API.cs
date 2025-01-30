@@ -223,7 +223,7 @@ public class API
     public static async Task GenerateAPIDocs()
     {
         Logs.Info("Generating API docs...");
-        string path = $"{Program.ServerSettings.Paths.DataPath}/DebugNewAPIDocs";
+        string path = $"{Program.DataDir}/DebugNewAPIDocs";
         Directory.CreateDirectory(path);
         Dictionary<string, (StringBuilder, StringBuilder)> docs = [];
         foreach (APICall call in APIHandlers.Values.OrderBy(v => v.Name))

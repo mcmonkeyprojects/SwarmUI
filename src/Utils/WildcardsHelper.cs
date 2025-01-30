@@ -38,7 +38,7 @@ public class WildcardsHelper
     /// <summary>Internal tracker of all currently known wildcard files. Values populate on first read.</summary>
     public static ConcurrentDictionary<string, Wildcard> WildcardFiles = new();
 
-    public static string Folder => Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.DataPath, Program.ServerSettings.Paths.WildcardsFolder);
+    public static string Folder => Utilities.CombinePathWithAbsolute(Program.DataDir, Program.ServerSettings.Paths.WildcardsFolder);
 
     /// <summary>Returns a list of all known wildcard files.</summary>
     public static string[] ListFiles => [.. WildcardFiles.Keys];
