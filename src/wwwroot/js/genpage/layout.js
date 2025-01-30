@@ -224,7 +224,7 @@ class GenTabLayout {
         if (this.bottomSectionBarPos != -1 || this.bottomShut) {
             let fixed = this.bottomShut ? `6.5rem` : `${this.bottomSectionBarPos}px`;
             this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
-            this.rightSplitBar.style.height = `calc(100vh - ${fixed})`;
+            this.rightSplitBar.style.height = `calc(100vh - ${fixed} - 5px)`;
             this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
             this.mainImageArea.style.height = `calc(100vh - ${fixed})`;
             this.currentImageWrapbox.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
@@ -238,8 +238,8 @@ class GenTabLayout {
             this.bottomBar.style.height = `calc(${fixed} - ${bottomBarHeight}px - 5px)`;
         }
         else {
-            this.leftSplitBar.style.height = '';
-            this.rightSplitBar.style.height = '';
+            this.leftSplitBar.style.height = 'calc(49vh)';
+            this.rightSplitBar.style.height = 'calc(49vh)';
             this.inputSidebar.style.height = '';
             this.mainImageArea.style.height = '';
             this.currentImageWrapbox.style.height = `calc(49vh - ${altHeight} + 1rem)`;
