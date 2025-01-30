@@ -24,7 +24,7 @@
     border: 1px solid var(--light-border);
 }
 .grid-gen-axis-input {
-    width: calc(max(60vw, 25rem));
+    width: calc(max(60%, 25rem));
     vertical-align: top;
     display: inline-block;
     border: 1px solid var(--light-border);

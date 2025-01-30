@@ -165,7 +165,6 @@
 }
 
 #t2i-top-2nd-split-bar {
-    margin-top: -8px;
     width: var(--panel-gap);
     position: relative;
     z-index: 1;

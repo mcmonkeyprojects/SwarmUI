@@ -1,12 +1,80 @@
 /** Data about a tab within the Generate UI that can be moved to different containers. */
 class MovableGenTab {
-    constructor(navLink) {
+    constructor(navLink, handler) {
+        this.handler = handler;
         this.navElem = navLink;
         this.id = this.navElem.getAttribute('href').substring(1);
         this.contentElem = getRequiredElementById(this.id);
         this.title = this.navElem.innerText;
         this.defaultGroup = findParentOfClass(this.navElem, 'swarm-gen-tab-subnav');
         this.currentGroup = this.defaultGroup;
+        this.targetGroupId = getCookie(`tabloc_${this.id}`) || this.defaultGroup.id;
+        this.visible = true;
+        this.navElem.removeAttribute('data-bs-toggle');
+        this.navElem.addEventListener('click', this.clickOn.bind(this));
+    }
+
+    /** Alternate click handler for tabs, as bootstrap click handler gets confused. */
+    clickOn(e) {
+        e.preventDefault();
+        this.setSelected();
+        for (let tab of this.handler.managedTabs.filter(t => t.currentGroup.id == this.currentGroup.id && t.id != this.id)) {
+            tab.setNotSelected();
+        }
+        setTimeout(() => {
+            this.handler.reapplyPositions();
+        }, 1);
+    }
+
+    /** Marks this tab as not selected, visually hiding it. */
+    setNotSelected() {
+        this.navElem.classList.remove('active');
+        this.contentElem.classList.remove('active');
+        this.contentElem.classList.remove('show');
+    }
+
+    /** Marks this tab as currently selected, visually hiding it. */
+    setSelected() {
+        this.navElem.classList.add('active');
+        this.contentElem.classList.add('active');
+        this.contentElem.classList.add('show');
+    }
+
+    /** Click a different entry in the current group, to deselect this. */
+    clickOther() {
+        let nextTab = this.navElem.parentElement.nextElementSibling || this.navElem.parentElement.previousElementSibling;
+        if (nextTab) {
+            nextTab.querySelector('.nav-link').click();
+        }
+    }
+
+    /** Triggers an update, moving this to where it's meant to be. */
+    update() {
+        if (this.targetGroupId != this.currentGroup.id) {
+            if (this.visible && this.navElem.classList.contains('active')) {
+                this.clickOther();
+                this.setNotSelected();
+            }
+            this.currentGroup = getRequiredElementById(this.targetGroupId);
+            this.currentGroup.appendChild(this.navElem.parentElement);
+            let newContentContainer = getRequiredElementById(this.currentGroup.dataset.content);
+            newContentContainer.appendChild(this.contentElem);
+            if (this.visible && [... this.currentGroup.querySelectorAll('.nav-link')].length == 1) {
+                this.navElem.click();
+            }
+        }
+        if (this.targetGroupId != this.defaultGroup.id) {
+            setCookie(`tabloc_${this.id}`, this.targetGroupId, 365);
+        }
+        else {
+            deleteCookie(`tabloc_${this.id}`);
+        }
+        if (!this.visible && this.navElem.classList.contains('active')) {
+            this.clickOther();
+            this.setNotSelected();
+        }
+        this.navElem.style.display = this.visible ? '' : 'none';
+        this.contentElem.style.display = this.visible ? '' : 'none';
     }
 }
 
@@ -34,6 +102,8 @@ class GenTabLayout {
     /** Position of the bottom section bar. -1 if unset. */
     bottomSectionBarPos = parseInt(getCookie('barspot_pageBarMidPx') || '-1');
 
+    hideTabs = (getCookie('layout_hidetabs') || '').split(',');
+
     constructor() {
         this.leftSplitBar = getRequiredElementById('t2i-top-split-bar');
         this.rightSplitBar = getRequiredElementById('t2i-top-2nd-split-bar');
@@ -56,14 +126,9 @@ class GenTabLayout {
         this.altImageRegion = getRequiredElementById('alt_prompt_extra_area');
         this.editorSizebar = getRequiredElementById('image_editor_sizebar');
         this.tabCollections = document.querySelectorAll('.swarm-gen-tab-subnav');
-        this.managedTabs = [...this.tabCollections].flatMap(e => [...e.querySelectorAll('.nav-link')]).map(e => new MovableGenTab(e));
+        this.layoutConfigArea = getRequiredElementById('layoutconfigarea');
+        this.managedTabs = [...this.tabCollections].flatMap(e => [...e.querySelectorAll('.nav-link')]).map(e => new MovableGenTab(e, this));
         this.managedTabContainers = [];
-        for (let tab of this.managedTabs) {
-            tab.contentElem.style.height = '100%';
-            if (!this.managedTabContainers.includes(tab.contentElem.parentElement)) {
-                this.managedTabContainers.push(tab.contentElem.parentElement);
-            }
-        }
         this.leftBarDrag = false;
         this.rightBarDrag = false;
         this.bottomBarDrag = false;
@@ -135,7 +200,7 @@ class GenTabLayout {
         this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
         this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
         this.mainImageArea.scrollTop = 0;
-        if (imageEditor.active) {
+        if (imageEditor && imageEditor.active) {
             let imageEditorSizePercent = this.imageEditorBarPos < 0 ? 0.5 : (this.imageEditorBarPos / 100.0);
             imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent} - 3px)`;
             this.currentImageWrapbox.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 3px)`;
@@ -160,7 +225,9 @@ class GenTabLayout {
             this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
             this.mainImageArea.style.height = `calc(100vh - ${fixed})`;
             this.currentImageWrapbox.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
-            imageEditor.inputDiv.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+            if (imageEditor) {
+                imageEditor.inputDiv.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+            }
             this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
             this.topSection.style.height = `calc(100vh - ${fixed})`;
@@ -173,16 +240,19 @@ class GenTabLayout {
             this.inputSidebar.style.height = '';
             this.mainImageArea.style.height = '';
             this.currentImageWrapbox.style.height = `calc(49vh - ${altHeight} + 1rem)`;
-            imageEditor.inputDiv.style.height = `calc(49vh - ${altHeight})`;
+            if (imageEditor) {
+                imageEditor.inputDiv.style.height = `calc(49vh - ${altHeight})`;
+            }
             this.editorSizebar.style.height = `calc(49vh - ${altHeight})`;
             this.currentImageBatch.style.height = '';
             this.topSection.style.height = '';
             let bottomBarHeight = this.bottomInfoBar.offsetHeight;
             this.bottomBar.style.height = `calc(49vh - ${bottomBarHeight}px)`;
         }
-        imageEditor.resize();
+        if (imageEditor) {
+            imageEditor.resize();
+        }
         alignImageDataFormat();
-        imageHistoryBrowser.makeVisible(getRequiredElementById('t2i_bottom_bar'));
         for (let collection of this.tabCollections) {
             collection.style.display = [...collection.querySelectorAll('.nav-link')].length > 1 ? '' : 'none';
         }
@@ -191,10 +261,25 @@ class GenTabLayout {
             let offset = container.getBoundingClientRect().top - parent.getBoundingClientRect().top;
             container.style.height = `calc(100% - ${offset}px)`;
         }
+        browserUtil.makeVisible(document);
     }
 
     /** Internal initialization of the generate tab. */
     init() {
+        for (let tab of this.managedTabs) {
+            tab.contentElem.style.height = '100%';
+            tab.contentElem.style.width = '100%';
+            if (!this.managedTabContainers.includes(tab.contentElem.parentElement)) {
+                this.managedTabContainers.push(tab.contentElem.parentElement);
+            }
+            if (this.hideTabs.includes(tab.id)) {
+                tab.visible = false;
+            }
+            tab.update();
+            tab.navElem.addEventListener('click', () => {
+                browserUtil.makeVisible(tab.contentElem);
+            });
+        }
         this.reapplyPositions();
         this.leftSplitBar.addEventListener('mousedown', (e) => {
             this.leftBarDrag = true;
@@ -361,6 +446,53 @@ class GenTabLayout {
         textPromptAddKeydownHandler(this.altNegText);
         addEventListener("resize", this.reapplyPositions.bind(this));
         textPromptAddKeydownHandler(getRequiredElementById('edit_wildcard_contents'));
+        this.buildConfigArea();
+    }
+
+    rebuildVisibleCookie() {
+        setCookie('layout_hidetabs', this.managedTabs.filter(t => !t.visible).map(t => t.id).join(','), 365);
+    }
+
+    updateConfigFor(id) {
+        let tab = this.managedTabs.find(t => t.id == id);
+        if (tab) {
+            tab.visible = getRequiredElementById(`tabconfig_${id}_visible`).checked;
+            tab.targetGroupId = getRequiredElementById(`tabconfig_${id}_group`).value;
+            tab.update();
+            this.buildConfigArea();
+        }
+    }
+
+    buildConfigArea() {
+        let html = '<table class="simple-table">\n<tr><th>Tab</th><th>Group</th><th>Visible</th></tr>\n';
+        let selectOptions = filterDistinctBy(this.managedTabs.map(t => t.defaultGroup), g => g.id).map(e => `<option value="${e.id}">${escapeHtml(e.dataset.title)}</option>`).join('\n');
+        for (let tab of this.managedTabs) {
+            html += `<tr>
+                    <td><b>${escapeHtml(tab.title)}</b></td>
+                    <td><select id="tabconfig_${tab.id}_group">${selectOptions}</select></td>
+                    <td><input type="checkbox" id="tabconfig_${tab.id}_visible" ${tab.visible ? 'checked' : ''}></td>
+                </tr>`;
+        }
+        html += '</table>';
+        this.layoutConfigArea.innerHTML = html;
+        for (let tab of this.managedTabs) {
+            getRequiredElementById(`tabconfig_${tab.id}_group`).value = tab.targetGroupId;
+            getRequiredElementById(`tabconfig_${tab.id}_visible`).addEventListener('change', () => this.updateConfigFor(tab.id));
+            getRequiredElementById(`tabconfig_${tab.id}_group`).addEventListener('change', () => this.updateConfigFor(tab.id));
+        }
+        this.rebuildVisibleCookie();
+    }
+
+    resetSubTabs() {
+        if (confirm('Are you sure you want to reset the layout of the subtabs?\nThis will make all sub-tabs visible, and put them in their default locations.')) {
+            for (let tab of this.managedTabs) {
+                tab.targetGroupId = tab.defaultGroup.id;
+                tab.visible = true;
+                tab.update();
+            }
+            this.reapplyPositions();
+            this.buildConfigArea();
+        }
     }
 }
 

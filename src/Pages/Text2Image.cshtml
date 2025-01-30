@@ -91,7 +91,7 @@
         <div class="t2i-top-bar-container" style="line-height:1.5">
             <div class="t2i-top-bar" id="t2i_top_bar">
                 <div class="input-sidebar" id="input_sidebar">
-                    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Left Sidebar" role="tablist" id="inputsidebartabcollection">
+                    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Left Sidebar" data-content="inputsidebartab_content" role="tablist" id="inputsidebartabcollection">
                         <li class="nav-item" role="presentation">
                             <a class="nav-link active translate" data-bs-toggle="tab" href="#Input-Sidebar-Main-Tab" aria-selected="true" role="tab">Inputs</a>
                         </li>
@@ -116,7 +116,7 @@
                         </div>
                     </div>
                 </div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21DA;</div></div><div class="main-image-area" id="main_image_area"><div class="current_image_wrapbox" id="current_image_wrapbox">
-                    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" role="tablist" id="currentimagecollection">
+                    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Center Area" data-content="currentimagecontent" role="tablist" id="currentimagecollection">
                         <li class="nav-item" role="presentation">
                             <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Result-Tab" aria-selected="true" role="tab">Image</a>
                         </li>
@@ -126,7 +126,7 @@
                             <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div>
                         </div>
                     </div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div><div class="current_image_batch" id="current_image_batch_wrapper">
-                        <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" role="tablist" id="rightsidebarcollection">
+                        <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" data-content="rightsidebarcontent" role="tablist" id="rightsidebarcollection">
                             <li class="nav-item" role="presentation">
                                 <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Batch-Tab" aria-selected="true" role="tab">Batch</a>
                             </li>
@@ -333,7 +333,7 @@
                 <span class="bottom-info-bar-component" style="display:none;" id="current_loras_wrapper"><span class="translate"><b>Current LoRAs</b><span id="lora_info_slot"></span>: </span> <span id="current_lora_list_view"></span></span>
                 <span class="bottom-info-bar-component"><span class="num_jobs_span" id="num_jobs_span" style="min-height: 1rem"></span></span>
             </div>
-            <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Bottom Bar" role="tablist" id="bottombartabcollection">
+            <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Bottom Bar" data-content="t2i_bottom_bar_content" role="tablist" id="bottombartabcollection">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link active translate" id="imagehistorytabclickable" data-bs-toggle="tab" href="#Image-History-Tab" aria-selected="true" role="tab">Image History</a>
                 </li>
@@ -817,6 +817,9 @@
             <li class="nav-item" role="presentation" data-requiredpermission="edit_params">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Param-Config-User" id="userparamconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Parameter Configuration</a>
             </li>
+            <li class="nav-item" role="presentation" data-requiredpermission="read_user_settings">
+                <a class="nav-link translate" data-bs-toggle="tab" href="#Layout-Config-User" id="userlayoutconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Generate Tab Layout</a>
+            </li>
         </ul>
         <div class="tab-content">
             <div class="tab-pane show active translate" id="user-info" role="tabpanel">
@@ -887,6 +890,23 @@
                     <span class="settings_submit_confirmer_text">Save <span id="user_param_config_edit_count">0</span> edited parameter setting(s)?</span>
                     <button type="button" class="btn btn-primary basic-button translate" onclick="paramConfig.saveEdits()">Save</button>
                     <button type="button" class="btn btn-secondary basic-button translate" onclick="paramConfig.cancelEdits()">Cancel</button>
+                </div>
+            </div>
+            <div class="tab-pane" id="Layout-Config-User" role="tabpanel">
+                <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card-header">Generate Tab Layout Configuration</div>
+                    <div class="card-body">
+                        <p class="card-text translate">
+                            The settings below let you reorganize the sub-tabs within the Generate tab.
+                            <br>Any sub-tab group that does not have any sub-tabs inside of it will be hidden automatically.
+                            <br>
+                            <br><button class="basic-button translate" onclick="genTabLayout.resetSubTabs()">Reset to Default</button>
+                            <br>
+                            <br>
+                            <div id="layoutconfigarea">
+                            </div>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

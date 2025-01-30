@@ -25,7 +25,6 @@ Those interested in helping push Swarm from Beta to a Full ready-for-anything pe
 Key feature targets not yet implemented:
 - Better mobile browser support
 - full detail "Current Model" display in UI, separate from the model selector (probably as a tab within the batch sidebar?)
-    - And a way to dynamically shift tabs around between spots for convenience / layout customization
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
 - convenient direct-distribution of Swarm as a program ([Tauri](https://tauri.app/), [Blazor Desktop](https://learn.microsoft.com/en-us/training/modules/build-blazor-hybrid/), or an Electron app?)
 

@@ -2048,8 +2048,9 @@ function updateHash() {
     let bottomTabList = getRequiredElementById('bottombartabcollection');
     let activeTopTab = tabList.querySelector('.active');
     let activeBottomTab = bottomTabList.querySelector('.active');
-    let activeTopTabHref = activeTopTab.href.split('#')[1];
-    let hash = `#${activeBottomTab.href.split('#')[1]},${activeTopTabHref}`;
+    let activeBottomTabHref = activeBottomTab ? activeBottomTab.href.split('#')[1] : '';
+    let activeTopTabHref = activeTopTab ? activeTopTab.href.split('#')[1] : '';
+    let hash = `#${activeBottomTabHref},${activeTopTabHref}`;
     let subMapping = hashSubTabMapping[activeTopTabHref];
     if (subMapping) {
         let subTabList = getRequiredElementById(subMapping);
@@ -2076,7 +2077,7 @@ function loadHashHelper() {
     if (location.hash) {
         let split = location.hash.substring(1).split(',');
         let bottomTarget = bottomTabList.querySelector(`a[href='#${split[0]}']`);
-        if (bottomTarget) {
+        if (bottomTarget && bottomTarget.style.display != 'none') {
             bottomTarget.click();
         }
         let target = tabList.querySelector(`a[href='#${split[1]}']`);

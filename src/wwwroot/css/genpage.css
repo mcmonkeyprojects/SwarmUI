@@ -119,6 +119,9 @@ body {
     overflow: hidden;
     white-space: nowrap;
 }
+.tab-content {
+    white-space: normal;
+}
 .input-sidebar {
     display: inline-block;
     width: calc(28rem - 5px);
