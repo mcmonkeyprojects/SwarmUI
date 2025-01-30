@@ -195,7 +195,7 @@ function updatePresetList() {
     getRequiredElementById('current_presets_wrapper').style.display = currentPresets.length > 0 ? 'inline-block' : 'none';
     getRequiredElementById('preset_info_slot').innerText = ` (${currentPresets.length}, overriding ${overrideCount} params)`;
     setTimeout(() => {
-        setPageBarsFunc();
+        genTabLayout.reapplyPositions();
     }, 1);
 }
 

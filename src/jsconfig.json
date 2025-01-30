@@ -1,0 +1,9 @@
+/* This file is here to allow enabling checks manually when mucking with JS. In the future this will be enabled properly, just not til the codebase is cleaned up more for it. */
+{
+    "compilerOptions": {
+        "checkJs": false,
+        "allowJs": true,
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "target": "esnext"
+    }
+}

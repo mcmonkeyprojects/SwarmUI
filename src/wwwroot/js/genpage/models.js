@@ -961,7 +961,7 @@ function updateLoraList() {
     getRequiredElementById('current_loras_wrapper').style.display = currentLoras.length > 0 ? 'inline-block' : 'none';
     getRequiredElementById('lora_info_slot').innerText = ` (${currentLoras.length})`;
     setTimeout(() => {
-        setPageBarsFunc();
+        genTabLayout.reapplyPositions();
     }, 1);
 }
 

@@ -1,5 +1,4 @@
 
-
 /**
  * Hack to attempt to prevent callback recursion.
  * In practice this seems to not work.
@@ -27,6 +26,7 @@ class BrowserTreePart {
         this.isOpen = isOpen;
         this.fileData = fileData;
         this.fullPath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
+        this.clickme = null;
     }
 }
 
@@ -107,7 +107,7 @@ class GenPageBrowserClass {
         let tree = this.tree;
         if (!tree.isOpen) {
             tree.clickme(() => {
-                this.clickPath(path, tree);
+                this.clickPath(path);
             });
             return;
         }
@@ -655,7 +655,7 @@ class GenPageBrowserClass {
             };
             document.addEventListener('mousemove', this.lastListen);
             document.addEventListener('mouseup', this.lastListenUp);
-            layoutResets.push(() => {
+            genTabLayout.layoutResets.push(() => {
                 localStorage.removeItem(`barspot_browser_${this.id}`);
                 this.lastReset();
             });

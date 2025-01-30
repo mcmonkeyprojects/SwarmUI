@@ -1,70 +1,104 @@
 
-let pageBarTop = -1;
-let pageBarTop2 = -1;
-let pageBarMid = -1;
-let imageEditorSizeBarVal = -1;
-let midForceToBottom = localStorage.getItem('barspot_midForceToBottom') == 'true';
-let leftShut = localStorage.getItem('barspot_leftShut') == 'true';
+/** Central handler for generate main tab layout logic. */
+class GenTabLayout {
 
-let setPageBarsFunc;
-let altPromptSizeHandleFunc;
+    /** List of functions to run when the layout is reset to default. This should remove any variables in browser storage related to layout. */
+    layoutResets = [];
+    
+    /** Whether the left section should be shut. */
+    leftShut = localStorage.getItem('barspot_leftShut') == 'true';
 
-let layoutResets = [];
+    /** Whether the bottom section should be shut. */
+    bottomShut = localStorage.getItem('barspot_midForceToBottom') == 'true';
 
-function resetPageSizer() {
-    for (let localStore of Object.keys(localStorage).filter(k => k.startsWith('barspot_'))) {
-        localStorage.removeItem(localStore);
+    /** Position of the image-editor alignment bar (the split between image editor and output area). -1 if unset. */
+    imageEditorBarPos = -1;
+    
+    /** Position of the left section bar. -1 if unset. */
+    leftSectionBarPos = -1;
+
+    /** Position of the right section bar. -1 if unset. */
+    rightSectionBarPos = -1;
+
+    /** Position of the bottom section bar. -1 if unset. */
+    bottomSectionBarPos = -1;
+
+    constructor() {
+        this.leftSplitBar = getRequiredElementById('t2i-top-split-bar');
+        this.rightSplitBar = getRequiredElementById('t2i-top-2nd-split-bar');
+        this.leftSplitBarButton = getRequiredElementById('t2i-top-split-quickbutton');
+        this.bottomSplitBar = getRequiredElementById('t2i-mid-split-bar');
+        this.bottomSplitBarButton = getRequiredElementById('t2i-mid-split-quickbutton');
+        this.topSection = getRequiredElementById('t2i_top_bar');
+        this.bottomInfoBar = getRequiredElementById('bottom_info_bar');
+        this.bottomBarContent = getRequiredElementById('t2i_bottom_bar_content');
+        this.inputSidebar = getRequiredElementById('input_sidebar');
+        this.mainInputsAreaWrapper = getRequiredElementById('main_inputs_area_wrapper');
+        this.mainImageArea = getRequiredElementById('main_image_area');
+        this.currentImage = getRequiredElementById('current_image');
+        this.currentImageBatch = getRequiredElementById('current_image_batch_wrapper');
+        this.currentImageBatchCore = getRequiredElementById('current_image_batch');
+        this.altRegion = getRequiredElementById('alt_prompt_region');
+        this.altText = getRequiredElementById('alt_prompt_textbox');
+        this.altNegText = getRequiredElementById('alt_negativeprompt_textbox');
+        this.altImageRegion = getRequiredElementById('alt_prompt_extra_area');
+        this.editorSizebar = getRequiredElementById('image_editor_sizebar');
+        this.topDrag = false;
+        this.topDrag2 = false;
+        this.midDrag = false;
+        this.imageEditorSizeBarDrag = false;
+        this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
     }
-    pageBarTop = -1;
-    pageBarTop2 = -1;
-    pageBarMid = -1;
-    imageEditorSizeBarVal = -1;
-    midForceToBottom = false;
-    leftShut = false;
-    setPageBarsFunc();
-    for (let runnable of layoutResets) {
-        runnable();
-    }
-}
 
-function pageSizer() {
-    let topSplit = getRequiredElementById('t2i-top-split-bar');
-    let topSplit2 = getRequiredElementById('t2i-top-2nd-split-bar');
-    let midSplit = getRequiredElementById('t2i-mid-split-bar');
-    let topBar = getRequiredElementById('t2i_top_bar');
-    let bottomInfoBar = getRequiredElementById('bottom_info_bar');
-    let bottomBarContent = getRequiredElementById('t2i_bottom_bar_content');
-    let inputSidebar = getRequiredElementById('input_sidebar');
-    let mainInputsAreaWrapper = getRequiredElementById('main_inputs_area_wrapper');
-    let mainImageArea = getRequiredElementById('main_image_area');
-    let currentImage = getRequiredElementById('current_image');
-    let currentImageBatch = getRequiredElementById('current_image_batch_wrapper');
-    let currentImageBatchCore = getRequiredElementById('current_image_batch');
-    let midSplitButton = getRequiredElementById('t2i-mid-split-quickbutton');
-    let topSplitButton = getRequiredElementById('t2i-top-split-quickbutton');
-    let altRegion = getRequiredElementById('alt_prompt_region');
-    let altText = getRequiredElementById('alt_prompt_textbox');
-    let altNegText = getRequiredElementById('alt_negativeprompt_textbox');
-    let altImageRegion = getRequiredElementById('alt_prompt_extra_area');
-    let editorSizebar = getRequiredElementById('image_editor_sizebar');
-    let topDrag = false;
-    let topDrag2 = false;
-    let midDrag = false;
-    let imageEditorSizeBarDrag = false;
-    let isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
-    function setPageBars() {
-        tweakNegativePromptBox();
-        if (altRegion.style.display != 'none') {
-            dynamicSizeTextBox(altText);
-            dynamicSizeTextBox(altNegText);
-            altRegion.style.top = `calc(-${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px - 2rem)`;
+    /** Resets the entire page layout to default, and removes all stored browser layout state info. */
+    resetLayout() {
+        for (let localStore of Object.keys(localStorage).filter(k => k.startsWith('barspot_'))) {
+            localStorage.removeItem(localStore);
         }
-        setCookie('barspot_pageBarTop', pageBarTop, 365);
-        setCookie('barspot_pageBarTop2', pageBarTop2, 365);
-        setCookie('barspot_pageBarMidPx', pageBarMid, 365);
-        setCookie('barspot_imageEditorSizeBar', imageEditorSizeBarVal, 365);
-        let barTopLeft = leftShut ? `0px` : pageBarTop == -1 ? (isSmallWindow ? `14rem` : `28rem`) : `${pageBarTop}px`;
-        let barTopRight = pageBarTop2 == -1 ? (isSmallWindow ? `4rem` : `21rem`) : `${pageBarTop2}px`;
+        this.leftSectionBarPos = -1;
+        this.rightSectionBarPos = -1;
+        this.bottomSectionBarPos = -1;
+        this.imageEditorBarPos = -1;
+        this.bottomShut = false;
+        this.leftShut = false;
+        this.reapplyPositions();
+        for (let runnable of this.layoutResets) {
+            runnable();
+        }
+    }
+
+    /** Sets whether the bottom section should be shut (does not trigger rerendering). */
+    setBottomShut(val) {
+        this.bottomShut = val;
+        localStorage.setItem('barspot_midForceToBottom', `${this.bottomShut}`);
+    }
+
+    /** Sets whether the left section should be shut (does not trigger rerendering). */
+    setLeftShut(val) {
+        this.leftShut = val;
+        localStorage.setItem('barspot_leftShut', `${this.leftShut}`);
+    }
+    
+    /** Signal a possible update to the size of the prompt box. */
+    altPromptSizeHandle() {
+        this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 2rem)`;
+        this.reapplyPositions();
+    }
+    
+    /** Does the full position update logic. */
+    reapplyPositions() {
+        tweakNegativePromptBox();
+        if (this.altRegion.style.display != 'none') {
+            dynamicSizeTextBox(this.altText);
+            dynamicSizeTextBox(this.altNegText);
+            this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 2rem)`;
+        }
+        setCookie('barspot_pageBarTop', this.leftSectionBarPos, 365);
+        setCookie('barspot_pageBarTop2', this.rightSectionBarPos, 365);
+        setCookie('barspot_pageBarMidPx', this.bottomSectionBarPos, 365);
+        setCookie('barspot_imageEditorSizeBar', this.imageEditorBarPos, 365);
+        let barTopLeft = this.leftShut ? `0px` : this.leftSectionBarPos == -1 ? (this.isSmallWindow ? `14rem` : `28rem`) : `${this.leftSectionBarPos}px`;
+        let barTopRight = this.rightSectionBarPos == -1 ? (this.isSmallWindow ? `4rem` : `21rem`) : `${this.rightSectionBarPos}px`;
         let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
         // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
         let fontRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
@@ -73,257 +107,250 @@ function pageSizer() {
             barTopRight = `${barTopRight} + ${400 - curImgWidthNum}px`;
             curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
         }
-        inputSidebar.style.width = `${barTopLeft}`;
-        mainInputsAreaWrapper.classList[pageBarTop < 350 ? "add" : "remove"]("main_inputs_small");
-        mainInputsAreaWrapper.style.width = `${barTopLeft}`;
-        inputSidebar.style.display = leftShut ? 'none' : '';
-        altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
-        mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
-        mainImageArea.scrollTop = 0;
+        this.inputSidebar.style.width = `${barTopLeft}`;
+        this.mainInputsAreaWrapper.classList[this.leftSectionBarPos < 350 ? "add" : "remove"]("main_inputs_small");
+        this.mainInputsAreaWrapper.style.width = `${barTopLeft}`;
+        this.inputSidebar.style.display = this.leftShut ? 'none' : '';
+        this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
+        this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
+        this.mainImageArea.scrollTop = 0;
         if (imageEditor.active) {
-            let imageEditorSizePercent = imageEditorSizeBarVal < 0 ? 0.5 : (imageEditorSizeBarVal / 100.0);
+            let imageEditorSizePercent = this.imageEditorBarPos < 0 ? 0.5 : (this.imageEditorBarPos / 100.0);
             imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent} - 3px)`;
-            currentImage.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 3px)`;
+            this.currentImage.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 3px)`;
         }
         else {
-            currentImage.style.width = `calc(${curImgWidth})`;
+            this.currentImage.style.width = `calc(${curImgWidth})`;
         }
-        currentImageBatch.style.width = `calc(${barTopRight} - 22px)`;
-        if (currentImageBatchCore.offsetWidth < 425) {
-            currentImageBatchCore.classList.add('current_image_batch_core_small');
+        this.currentImageBatch.style.width = `calc(${barTopRight} - 22px)`;
+        if (this.currentImageBatchCore.offsetWidth < 425) {
+            this.currentImageBatchCore.classList.add('current_image_batch_core_small');
         }
         else {
-            currentImageBatchCore.classList.remove('current_image_batch_core_small');
+            this.currentImageBatchCore.classList.remove('current_image_batch_core_small');
         }
-        topSplitButton.innerHTML = leftShut ? '&#x21DB;' : '&#x21DA;';
-        midSplitButton.innerHTML = midForceToBottom ? '&#x290A;' : '&#x290B;';
-        let altHeight = altRegion.style.display == 'none' ? '0px' : `(${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px + 2rem)`;
-        if (pageBarMid != -1 || midForceToBottom) {
-            let fixed = midForceToBottom ? `6.5rem` : `${pageBarMid}px`;
-            topSplit.style.height = `calc(100vh - ${fixed})`;
-            topSplit2.style.height = `calc(100vh - ${fixed})`;
-            inputSidebar.style.height = `calc(100vh - ${fixed})`;
-            mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
-            mainImageArea.style.height = `calc(100vh - ${fixed})`;
-            currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+        this.leftSplitBarButton.innerHTML = this.leftShut ? '&#x21DB;' : '&#x21DA;';
+        this.bottomSplitBarButton.innerHTML = this.bottomShut ? '&#x290A;' : '&#x290B;';
+        let altHeight = this.altRegion.style.display == 'none' ? '0px' : `(${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px + 2rem)`;
+        if (this.bottomSectionBarPos != -1 || this.bottomShut) {
+            let fixed = this.bottomShut ? `6.5rem` : `${this.bottomSectionBarPos}px`;
+            this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
+            this.rightSplitBar.style.height = `calc(100vh - ${fixed})`;
+            this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
+            this.mainInputsAreaWrapper.style.height = `calc(100vh - ${fixed})`;
+            this.mainImageArea.style.height = `calc(100vh - ${fixed})`;
+            this.currentImage.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             imageEditor.inputDiv.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
-            editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
-            currentImageBatch.style.height = `calc(100vh - ${fixed})`;
-            topBar.style.height = `calc(100vh - ${fixed})`;
-            let bottomBarHeight = bottomInfoBar.offsetHeight;
-            bottomBarContent.style.height = `calc(${fixed} - ${bottomBarHeight}px)`;
+            this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+            this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
+            this.topSection.style.height = `calc(100vh - ${fixed})`;
+            let bottomBarHeight = this.bottomInfoBar.offsetHeight;
+            this.bottomBarContent.style.height = `calc(${fixed} - ${bottomBarHeight}px)`;
         }
         else {
-            topSplit.style.height = '';
-            topSplit2.style.height = '';
-            inputSidebar.style.height = '';
-            mainInputsAreaWrapper.style.height = '';
-            mainImageArea.style.height = '';
-            currentImage.style.height = `calc(49vh - ${altHeight})`;
+            this.leftSplitBar.style.height = '';
+            this.rightSplitBar.style.height = '';
+            this.inputSidebar.style.height = '';
+            this.mainInputsAreaWrapper.style.height = '';
+            this.mainImageArea.style.height = '';
+            this.currentImage.style.height = `calc(49vh - ${altHeight})`;
             imageEditor.inputDiv.style.height = `calc(49vh - ${altHeight})`;
-            editorSizebar.style.height = `calc(49vh - ${altHeight})`;
-            currentImageBatch.style.height = '';
-            topBar.style.height = '';
-            bottomBarContent.style.height = '';
+            this.editorSizebar.style.height = `calc(49vh - ${altHeight})`;
+            this.currentImageBatch.style.height = '';
+            this.topSection.style.height = '';
+            this.bottomBarContent.style.height = '';
         }
         imageEditor.resize();
         alignImageDataFormat();
         imageHistoryBrowser.makeVisible(getRequiredElementById('t2i_bottom_bar'));
     }
-    setPageBarsFunc = setPageBars;
-    let cookieA = getCookie('barspot_pageBarTop');
-    if (cookieA) {
-        pageBarTop = parseInt(cookieA);
-    }
-    let cookieB = getCookie('barspot_pageBarTop2');
-    if (cookieB) {
-        pageBarTop2 = parseInt(cookieB);
-    }
-    let cookieC = getCookie('barspot_pageBarMidPx');
-    if (cookieC) {
-        pageBarMid = parseInt(cookieC);
-    }
-    let cookieD = getCookie('barspot_imageEditorSizeBar');
-    if (cookieD) {
-        imageEditorSizeBarVal = parseInt(cookieD);
-    }
-    setPageBars();
-    topSplit.addEventListener('mousedown', (e) => {
-        topDrag = true;
-        e.preventDefault();
-    }, true);
-    topSplit2.addEventListener('mousedown', (e) => {
-        topDrag2 = true;
-        e.preventDefault();
-    }, true);
-    topSplit.addEventListener('touchstart', (e) => {
-        topDrag = true;
-        e.preventDefault();
-    }, true);
-    topSplit2.addEventListener('touchstart', (e) => {
-        topDrag2 = true;
-        e.preventDefault();
-    }, true);
-    editorSizebar.addEventListener('mousedown', (e) => {
-        imageEditorSizeBarDrag = true;
-        e.preventDefault();
-    }, true);
-    editorSizebar.addEventListener('touchstart', (e) => {
-        imageEditorSizeBarDrag = true;
-        e.preventDefault();
-    }, true);
-    function setMidForce(val) {
-        midForceToBottom = val;
-        localStorage.setItem('barspot_midForceToBottom', midForceToBottom);
-    }
-    function setLeftShut(val) {
-        leftShut = val;
-        localStorage.setItem('barspot_leftShut', leftShut);
-    }
-    midSplit.addEventListener('mousedown', (e) => {
-        if (e.target == midSplitButton) {
-            return;
+
+    /** Internal initialization of the generate tab. */
+    init() {
+        let cookieA = getCookie('barspot_pageBarTop');
+        if (cookieA) {
+            this.leftSectionBarPos = parseInt(cookieA);
         }
-        midDrag = true;
-        setMidForce(false);
-        e.preventDefault();
-    }, true);
-    midSplit.addEventListener('touchstart', (e) => {
-        if (e.target == midSplitButton) {
-            return;
+        let cookieB = getCookie('barspot_pageBarTop2');
+        if (cookieB) {
+            this.rightSectionBarPos = parseInt(cookieB);
         }
-        midDrag = true;
-        setMidForce(false);
-        e.preventDefault();
-    }, true);
-    midSplitButton.addEventListener('click', (e) => {
-        midDrag = false;
-        setMidForce(!midForceToBottom);
-        pageBarMid = Math.max(pageBarMid, 400);
-        setPageBars();
-        e.preventDefault();
-    }, true);
-    topSplitButton.addEventListener('click', (e) => {
-        topDrag = false;
-        setLeftShut(!leftShut);
-        pageBarTop = Math.max(pageBarTop, 400);
-        setPageBars();
-        e.preventDefault();
-        triggerChangeFor(altText);
-        triggerChangeFor(altNegText);
-    }, true);
-    let moveEvt = (e, x, y) => {
-        let offX = x;
-        offX = Math.min(Math.max(offX, 100), window.innerWidth - 10);
-        if (topDrag) {
-            pageBarTop = Math.min(offX - 5, 51 * 16);
-            setLeftShut(pageBarTop < 300);
-            setPageBars();
+        let cookieC = getCookie('barspot_pageBarMidPx');
+        if (cookieC) {
+            this.bottomSectionBarPos = parseInt(cookieC);
         }
-        if (topDrag2) {
-            pageBarTop2 = window.innerWidth - offX + 15;
-            if (pageBarTop2 < 100) {
-                pageBarTop2 = 22;
+        let cookieD = getCookie('barspot_imageEditorSizeBar');
+        if (cookieD) {
+            this.imageEditorBarPos = parseInt(cookieD);
+        }
+        this.reapplyPositions();
+        this.leftSplitBar.addEventListener('mousedown', (e) => {
+            this.topDrag = true;
+            e.preventDefault();
+        }, true);
+        this.rightSplitBar.addEventListener('mousedown', (e) => {
+            this.topDrag2 = true;
+            e.preventDefault();
+        }, true);
+        this.leftSplitBar.addEventListener('touchstart', (e) => {
+            this.topDrag = true;
+            e.preventDefault();
+        }, true);
+        this.rightSplitBar.addEventListener('touchstart', (e) => {
+            this.topDrag2 = true;
+            e.preventDefault();
+        }, true);
+        this.editorSizebar.addEventListener('mousedown', (e) => {
+            this.imageEditorSizeBarDrag = true;
+            e.preventDefault();
+        }, true);
+        this.editorSizebar.addEventListener('touchstart', (e) => {
+            this.imageEditorSizeBarDrag = true;
+            e.preventDefault();
+        }, true);
+        this.bottomSplitBar.addEventListener('mousedown', (e) => {
+            if (e.target == this.bottomSplitBarButton) {
+                return;
             }
-            setPageBars();
-        }
-        if (imageEditorSizeBarDrag) {
-            let maxAreaWidth = imageEditor.inputDiv.offsetWidth + currentImage.offsetWidth + 10;
-            let imageAreaLeft = imageEditor.inputDiv.getBoundingClientRect().left;
-            let val = Math.min(Math.max(offX - imageAreaLeft + 3, 200), maxAreaWidth - 200);
-            imageEditorSizeBarVal = Math.min(90, Math.max(10, val / maxAreaWidth * 100));
-            setPageBars();
-        }
-        if (midDrag) {
-            const MID_OFF = 85;
-            let refY = Math.min(Math.max(e.pageY, MID_OFF), window.innerHeight - MID_OFF);
-            setMidForce(refY >= window.innerHeight - MID_OFF);
-            pageBarMid = window.innerHeight - refY + topBar.getBoundingClientRect().top + 3;
-            setPageBars();
-        }
-    };
-    document.addEventListener('mousemove', (e) => moveEvt(e, e.pageX, e.pageY));
-    document.addEventListener('touchmove', (e) => moveEvt(e, e.touches.item(0).pageX, e.touches.item(0).pageY));
-    document.addEventListener('mouseup', (e) => {
-        topDrag = false;
-        topDrag2 = false;
-        midDrag = false;
-        imageEditorSizeBarDrag = false;
-    });
-    document.addEventListener('touchend', (e) => {
-        topDrag = false;
-        topDrag2 = false;
-        midDrag = false;
-        imageEditorSizeBarDrag = false;
-    });
-    for (let tab of getRequiredElementById('bottombartabcollection').getElementsByTagName('a')) {
-        tab.addEventListener('click', (e) => {
-            setMidForce(false);
-            setPageBars();
+            this.midDrag = true;
+            this.setBottomShut(false);
+            e.preventDefault();
+        }, true);
+        this.bottomSplitBar.addEventListener('touchstart', (e) => {
+            if (e.target == this.bottomSplitBarButton) {
+                return;
+            }
+            this.midDrag = true;
+            this.setBottomShut(false);
+            e.preventDefault();
+        }, true);
+        this.bottomSplitBarButton.addEventListener('click', (e) => {
+            this.midDrag = false;
+            this.setBottomShut(!this.bottomShut);
+            this.bottomSectionBarPos = Math.max(this.bottomSectionBarPos, 400);
+            this.reapplyPositions();
+            e.preventDefault();
+        }, true);
+        this.leftSplitBarButton.addEventListener('click', (e) => {
+            this.topDrag = false;
+            this.setLeftShut(!this.leftShut);
+            this.leftSectionBarPos = Math.max(this.leftSectionBarPos, 400);
+            this.reapplyPositions();
+            e.preventDefault();
+            triggerChangeFor(this.altText);
+            triggerChangeFor(this.altNegText);
+        }, true);
+        let moveEvt = (e, x, y) => {
+            let offX = x;
+            offX = Math.min(Math.max(offX, 100), window.innerWidth - 10);
+            if (this.topDrag) {
+                this.leftSectionBarPos = Math.min(offX - 5, 51 * 16);
+                this.setLeftShut(this.leftSectionBarPos < 300);
+                this.reapplyPositions();
+            }
+            if (this.topDrag2) {
+                this.rightSectionBarPos = window.innerWidth - offX + 15;
+                if (this.rightSectionBarPos < 100) {
+                    this.rightSectionBarPos = 22;
+                }
+                this.reapplyPositions();
+            }
+            if (this.imageEditorSizeBarDrag) {
+                let maxAreaWidth = imageEditor.inputDiv.offsetWidth + this.currentImage.offsetWidth + 10;
+                let imageAreaLeft = imageEditor.inputDiv.getBoundingClientRect().left;
+                let val = Math.min(Math.max(offX - imageAreaLeft + 3, 200), maxAreaWidth - 200);
+                this.imageEditorBarPos = Math.min(90, Math.max(10, val / maxAreaWidth * 100));
+                this.reapplyPositions();
+            }
+            if (this.midDrag) {
+                const MID_OFF = 85;
+                let refY = Math.min(Math.max(e.pageY, MID_OFF), window.innerHeight - MID_OFF);
+                this.setBottomShut(refY >= window.innerHeight - MID_OFF);
+                this.bottomSectionBarPos = window.innerHeight - refY + this.topSection.getBoundingClientRect().top + 3;
+                this.reapplyPositions();
+            }
+        };
+        document.addEventListener('mousemove', (e) => moveEvt(e, e.pageX, e.pageY));
+        document.addEventListener('touchmove', (e) => moveEvt(e, e.touches.item(0).pageX, e.touches.item(0).pageY));
+        document.addEventListener('mouseup', (e) => {
+            this.topDrag = false;
+            this.topDrag2 = false;
+            this.midDrag = false;
+            this.imageEditorSizeBarDrag = false;
         });
+        document.addEventListener('touchend', (e) => {
+            this.topDrag = false;
+            this.topDrag2 = false;
+            this.midDrag = false;
+            this.imageEditorSizeBarDrag = false;
+        });
+        for (let tab of getRequiredElementById('bottombartabcollection').getElementsByTagName('a')) {
+            tab.addEventListener('click', (e) => {
+                this.setBottomShut(false);
+                this.reapplyPositions();
+            });
+        }
+        this.altText.addEventListener('keydown', (e) => {
+            if (e.key == 'Enter' && !e.shiftKey) {
+                this.altText.dispatchEvent(new Event('change'));
+                getRequiredElementById('alt_generate_button').click();
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+        this.altNegText.addEventListener('keydown', (e) => {
+            if (e.key == 'Enter' && !e.shiftKey) {
+                this.altNegText.dispatchEvent(new Event('change'));
+                getRequiredElementById('alt_generate_button').click();
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+        });
+        this.altText.addEventListener('input', (e) => {
+            let inputPrompt = document.getElementById('input_prompt');
+            if (inputPrompt) {
+                inputPrompt.value = this.altText.value;
+            }
+            setCookie(`lastparam_input_prompt`, this.altText.value, getParamMemoryDays());
+            textPromptDoCount(this.altText, getRequiredElementById('alt_text_tokencount'));
+            monitorPromptChangeForEmbed(this.altText.value, 'positive');
+            setGroupAdvancedOverride('regionalprompting', this.altText.value.includes('<segment:') || this.altText.value.includes('<region:'));
+        });
+        this.altText.addEventListener('input', () => {
+            setCookie(`lastparam_input_prompt`, this.altText.value, getParamMemoryDays());
+            this.reapplyPositions();
+        });
+        this.altNegText.addEventListener('input', (e) => {
+            let inputNegPrompt = document.getElementById('input_negativeprompt');
+            if (inputNegPrompt) {
+                inputNegPrompt.value = this.altNegText.value;
+            }
+            setCookie(`lastparam_input_negativeprompt`, this.altNegText.value, getParamMemoryDays());
+            let negTokCount = getRequiredElementById('alt_negtext_tokencount');
+            if (this.altNegText.value == '') {
+                negTokCount.style.display = 'none';
+            }
+            else {
+                negTokCount.style.display = '';
+            }
+            textPromptDoCount(this.altNegText, negTokCount, ', Neg: ');
+            monitorPromptChangeForEmbed(this.altNegText.value, 'negative');
+        });
+        this.altNegText.addEventListener('input', () => {
+            setCookie(`lastparam_input_negativeprompt`, this.altNegText.value, getParamMemoryDays());
+            this.reapplyPositions();
+        });
+        this.altPromptSizeHandle();
+        new ResizeObserver(this.altPromptSizeHandle.bind(this)).observe(this.altText);
+        new ResizeObserver(this.altPromptSizeHandle.bind(this)).observe(this.altNegText);
+        textPromptAddKeydownHandler(this.altText);
+        textPromptAddKeydownHandler(this.altNegText);
+        addEventListener("resize", this.reapplyPositions.bind(this));
+        textPromptAddKeydownHandler(getRequiredElementById('edit_wildcard_contents'));
     }
-    altText.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter' && !e.shiftKey) {
-            altText.dispatchEvent(new Event('change'));
-            getRequiredElementById('alt_generate_button').click();
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-    });
-    altNegText.addEventListener('keydown', (e) => {
-        if (e.key == 'Enter' && !e.shiftKey) {
-            altNegText.dispatchEvent(new Event('change'));
-            getRequiredElementById('alt_generate_button').click();
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-    });
-    altText.addEventListener('input', (e) => {
-        let inputPrompt = document.getElementById('input_prompt');
-        if (inputPrompt) {
-            inputPrompt.value = altText.value;
-        }
-        setCookie(`lastparam_input_prompt`, altText.value, getParamMemoryDays());
-        textPromptDoCount(altText, getRequiredElementById('alt_text_tokencount'));
-        monitorPromptChangeForEmbed(altText.value, 'positive');
-        setGroupAdvancedOverride('regionalprompting', altText.value.includes('<segment:') || altText.value.includes('<region:'));
-    });
-    altText.addEventListener('input', () => {
-        setCookie(`lastparam_input_prompt`, altText.value, getParamMemoryDays());
-        setPageBars();
-    });
-    altNegText.addEventListener('input', (e) => {
-        let inputNegPrompt = document.getElementById('input_negativeprompt');
-        if (inputNegPrompt) {
-            inputNegPrompt.value = altNegText.value;
-        }
-        setCookie(`lastparam_input_negativeprompt`, altNegText.value, getParamMemoryDays());
-        let negTokCount = getRequiredElementById('alt_negtext_tokencount');
-        if (altNegText.value == '') {
-            negTokCount.style.display = 'none';
-        }
-        else {
-            negTokCount.style.display = '';
-        }
-        textPromptDoCount(altNegText, negTokCount, ', Neg: ');
-        monitorPromptChangeForEmbed(altNegText.value, 'negative');
-    });
-    altNegText.addEventListener('input', () => {
-        setCookie(`lastparam_input_negativeprompt`, altNegText.value, getParamMemoryDays());
-        setPageBars();
-    });
-    function altPromptSizeHandle() {
-        altRegion.style.top = `calc(-${altText.offsetHeight + altNegText.offsetHeight + altImageRegion.offsetHeight}px - 2rem)`;
-        setPageBars();
-    }
-    altPromptSizeHandle();
-    new ResizeObserver(altPromptSizeHandle).observe(altText);
-    new ResizeObserver(altPromptSizeHandle).observe(altNegText);
-    altPromptSizeHandleFunc = altPromptSizeHandle;
-    textPromptAddKeydownHandler(altText);
-    textPromptAddKeydownHandler(altNegText);
-    addEventListener("resize", setPageBars);
-    textPromptAddKeydownHandler(getRequiredElementById('edit_wildcard_contents'));
 }
+
+/** Central handler for generate main tab layout logic. */
+let genTabLayout = new GenTabLayout();

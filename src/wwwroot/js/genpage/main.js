@@ -1741,7 +1741,7 @@ function hideRevisionInputs() {
         toggleGroupOpen(revisionGroup, false);
         revisionGroup.style.display = 'none';
     }
-    altPromptSizeHandleFunc();
+    genTabLayout.altPromptSizeHandle();
 }
 
 function showRevisionInputs(toggleOn = false) {
@@ -1778,7 +1778,7 @@ function imagePromptAddImage(file) {
         imageRemoveButton.addEventListener('click', (e) => {
             imageContainer.remove();
             autoRevealRevision();
-            altPromptSizeHandleFunc();
+            genTabLayout.altPromptSizeHandle();
         });
         imageRemoveButton.title = 'Remove this image';
         imageContainer.appendChild(imageRemoveButton);
@@ -1791,7 +1791,7 @@ function imagePromptAddImage(file) {
         clearButton.style.display = '';
         showRevisionInputs(true);
         promptImageArea.appendChild(imageContainer);
-        altPromptSizeHandleFunc();
+        genTabLayout.altPromptSizeHandle();
     };
     reader.readAsDataURL(file);
 }
@@ -2135,7 +2135,7 @@ function genpageLoad() {
             versionDisp.style.display = '';
         }
     });
-    window.imageEditor = new ImageEditor(getRequiredElementById('image_editor_input'), true, true, () => setPageBarsFunc(), () => needsNewPreview());
+    window.imageEditor = new ImageEditor(getRequiredElementById('image_editor_input'), true, true, () => genTabLayout.reapplyPositions(), () => needsNewPreview());
     let editorSizebar = getRequiredElementById('image_editor_sizebar');
     window.imageEditor.onActivate = () => {
         editorSizebar.style.display = '';
@@ -2181,7 +2181,7 @@ function genpageLoad() {
             }
         }}
     ];
-    pageSizer();
+    genTabLayout.init();
     reviseStatusBar();
     loadHashHelper();
     getSession(() => {
