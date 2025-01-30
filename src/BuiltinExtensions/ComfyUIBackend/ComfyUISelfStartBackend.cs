@@ -352,22 +352,6 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
             string[] distinfos = [.. dirs.Where(d => d.EndsWith(".dist-info"))];
             HashSet<string> libs = dirs.Select(d => d.Before('-')).ToHashSet();
-            if (dirs.Contains("ultralytics-8.3.41.dist-info") || dirs.Contains("ultralytics-8.3.42.dist-info"))
-            {
-                AddLoadStatus($"DETECTED MALICIOUS PACKAGE, WILL REMOVE...");
-                Logs.Error($"!!! WARNING !!! Malicious Python Package (ultralytics 8.3.41, Crypto miner attack) detected!");
-                Process p = DoPythonCall($"-s -m pip uninstall ultralytics");
-                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (uninstall ultralytics)", "");
-                await p.WaitForExitAsync(Program.GlobalProgramCancel);
-                _ = Utilities.RunCheckedTask(async () =>
-                {
-                    for (int i = 0; i < 5; i++)
-                    {
-                        Logs.Error($"!!! WARNING !!! Malicious Python Package (ultralytics 8.3.41, Crypto miner attack) detected! It has been automatically uninstalled. See https://github.com/ultralytics/ultralytics/issues/18027 for details.");
-                        await Task.Delay(TimeSpan.FromSeconds(5));
-                    }
-                });
-            }
             async Task install(string libFolder, string pipName)
             {
                 if (libs.Contains(libFolder))
@@ -407,6 +391,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("numpy", "numpy>=1.25.0");
             }
+            string ultralyticsVers = getVers("ultralytics");
+            if (ultralyticsVers is not null && Version.Parse(ultralyticsVers) < Version.Parse(UltralyticsVersion))
+            {
+                await update("ultralytics", $"ultralytics=={UltralyticsVersion}");
+            }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
             {
                 // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
@@ -435,6 +424,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         await NetworkBackendUtils.DoSelfStart(settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", settings.GPU_ID, settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, settings.AutoRestart);
     }
 
+    /// <summary>
+    /// Version of Ultralytics pip package to use.
+    /// This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
+    /// </summary>
+    public static string UltralyticsVersion = "8.3.69";
+
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
     [
@@ -449,7 +444,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
-        ("ultralytics", "ultralytics==8.1.47")
+        ("ultralytics", $"ultralytics=={UltralyticsVersion}")
     ];
 
     public override async Task Shutdown()
