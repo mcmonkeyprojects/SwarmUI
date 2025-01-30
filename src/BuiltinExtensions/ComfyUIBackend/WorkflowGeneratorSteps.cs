@@ -1223,6 +1223,11 @@ public class WorkflowGeneratorSteps
                     if (part.DataText.StartsWith("yolo-"))
                     {
                         string fullname = part.DataText.After("yolo-");
+                        string[] modelParts = fullname.Split(new[] { ':' }, 2, StringSplitOptions.None);
+                        
+                        fullname = modelParts[0]; 
+                        string classFilter = modelParts.Length > 1 ? modelParts[1] : "";
+                        
                         (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
                         if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
                         {
@@ -1236,7 +1241,8 @@ public class WorkflowGeneratorSteps
                         {
                             ["image"] = g.FinalImageOut,
                             ["model_name"] = fullname,
-                            ["index"] = index
+                            ["index"] = index,
+                            ["class_filter"] = classFilter
                         });
                     }
                     else

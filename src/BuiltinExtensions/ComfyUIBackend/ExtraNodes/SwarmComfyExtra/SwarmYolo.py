@@ -10,6 +10,7 @@ class SwarmYoloDetection:
                 "image": ("IMAGE",),
                 "model_name": (folder_paths.get_filename_list("yolov8"), ),
                 "index": ("INT", { "default": 0, "min": 0, "max": 256, "step": 1 }),
+                "class_filter": ("STRING", { "default": "", "multiline": False }),
             },
         }
 
@@ -17,7 +18,7 @@ class SwarmYoloDetection:
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 
-    def seg(self, image, model_name, index):
+    def seg(self, image, model_name, index, class_filter):
         # TODO: Batch support?
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -28,16 +29,36 @@ class SwarmYoloDetection:
         from ultralytics import YOLO
         model = YOLO(model_path)
         results = model(img)
+        boxes = results[0].boxes
+        class_ids = results[0].boxes.cls.cpu().numpy() if boxes is not None else []
+        if class_filter and class_filter.strip():
+            selected_classes = [int(cls.strip()) for cls in class_filter.split(",") if cls.strip().isdigit()]
+            selected_classes = selected_classes if selected_classes else None
+        else:
+            selected_classes = None
         masks = results[0].masks
-        if masks is None:
-            boxes = results[0].boxes
+        if masks is not None and selected_classes is not None:
+            selected_masks = []
+            for i, class_id in enumerate(class_ids):
+                if class_id in selected_classes:
+                    selected_masks.append(masks.data[i].cpu())
+            if selected_masks:
+                masks = torch.stack(selected_masks)
+            else:
+                masks = None
+        if masks is None or masks.shape[0] == 0:
             if boxes is None or len(boxes) == 0:
                 return (torch.zeros(1, image.shape[1], image.shape[2]), )
+            else:
+                if selected_classes:
+                    boxes = [box for i, box in enumerate(boxes) if class_ids[i] in selected_classes]
             masks = torch.zeros((len(boxes), image.shape[1], image.shape[2]), dtype=torch.float32, device="cpu")
             for i, box in enumerate(boxes):
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 masks[i, int(y1):int(y2), int(x1):int(x2)] = 1.0
         else:
+            if isinstance(masks, list):
+                masks = torch.stack(masks)
             masks = masks.data.cpu()
         masks = torch.nn.functional.interpolate(masks.unsqueeze(1), size=(image.shape[1], image.shape[2]), mode="bilinear").squeeze(1)
         if index == 0:
