@@ -204,12 +204,13 @@ class GenTabLayout {
         this.mainImageArea.scrollTop = 0;
         if (imageEditor && imageEditor.active) {
             let imageEditorSizePercent = this.imageEditorBarPos < 0 ? 0.5 : (this.imageEditorBarPos / 100.0);
-            imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent} - 3px)`;
-            this.currentImageWrapbox.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 3px)`;
+            imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent})`;
+            this.currentImage.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 6px)`;
         }
         else {
-            this.currentImageWrapbox.style.width = `calc(${curImgWidth})`;
+            this.currentImage.style.width = `calc(${curImgWidth})`;
         }
+        this.currentImageWrapbox.style.width = `calc(${curImgWidth})`;
         this.currentImageBatch.style.width = `calc(${barTopRight} - 6px)`;
         if (this.currentImageBatchCore.offsetWidth < 425) {
             this.currentImageBatchCore.classList.add('current_image_batch_core_small');

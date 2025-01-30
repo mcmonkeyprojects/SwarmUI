@@ -1781,8 +1781,8 @@ class ImageEditor {
 
     resize() {
         if (this.canvas) {
-            this.canvas.width = Math.max(100, this.inputDiv.clientWidth - this.leftBar.clientWidth - this.rightBar.clientWidth);
-            this.canvas.height = Math.max(100, this.inputDiv.clientHeight - this.bottomBar.clientHeight);
+            this.canvas.width = Math.max(100, this.inputDiv.clientWidth - this.leftBar.clientWidth - this.rightBar.clientWidth - 1);
+            this.canvas.height = Math.max(100, this.inputDiv.clientHeight - this.bottomBar.clientHeight - 1);
             if (this.maskHelperCanvas) {
                 this.maskHelperCanvas.width = this.canvas.width;
                 this.maskHelperCanvas.height = this.canvas.height;
