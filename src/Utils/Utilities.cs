@@ -474,7 +474,10 @@ public static class Utilities
             { "mp4", "video/mp4" },
             { "mpeg", "video/mpeg" },
             { "mov", "video/quicktime" },
-            { "webm", "video/webm" }
+            { "webm", "video/webm" },
+            { "aac", "audio/aac" },
+            { "wave", "audio/x-wav" },
+            { "flac", "audio/flac" }
         };
 
     /// <summary>Guesses the content type based on path for common file types.</summary>

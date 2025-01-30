@@ -140,6 +140,7 @@ class GenerateHandler {
                             img.div.remove();
                         }
                     }
+                    playCompletionAudio();
                     return;
                 }
                 if (isPreview) {

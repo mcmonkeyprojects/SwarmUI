@@ -228,6 +228,7 @@ public class WebServer
         WebApp.MapGet("/Output/{*Path}", ViewOutput);
         WebApp.MapGet("/View/{*Path}", ViewOutput);
         WebApp.MapGet("/ExtensionFile/{*f}", ViewExtensionScript);
+        WebApp.MapGet("/Audio/{*f}", ViewAudio);
         timer.Check("[Web] core maps");
         WebApp.Use(async (context, next) =>
         {
@@ -383,6 +384,50 @@ public class WebServer
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync("404, file not found.");
         }
+        await context.Response.CompleteAsync();
+    }
+
+    /// <summary>Web route for audio files.</summary>
+    public async Task ViewAudio(HttpContext context)
+    {
+        string path = context.Request.Path.ToString().After("/Audio/");
+        path = Uri.UnescapeDataString(path).Replace('\\', '/');
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.DataPath, "Audio");
+        if (GetUserIdFor(context) is null)
+        {
+            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
+            return;
+        }
+        (path, string consoleError, string userError) = CheckFilePath(root, path);
+        if (consoleError is not null)
+        {
+            Logs.Error(consoleError);
+            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj(userError, "bad_path"));
+            return;
+        }
+        byte[] data;
+        try
+        {
+            data = await File.ReadAllBytesAsync(path);
+        }
+        catch (Exception ex)
+        {
+            if (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is PathTooLongException)
+            {
+                Logs.Verbose($"File-not-found error reading audio file '${path}': ${ex.ReadableString()}");
+                await context.YieldJsonOutput(null, 404, Utilities.ErrorObj("404, file not found", "file_not_found"));
+            }
+            else
+            {
+                Logs.Error($"Failed to read output file '{path}': ${ex.ReadableString()}");
+                await context.YieldJsonOutput(null, 500, Utilities.ErrorObj("Error reading file. If you are the server owner, check program console log.", "file_error"));
+            }
+            return;
+        }
+        context.Response.ContentType = Utilities.GuessContentType(path);
+        context.Response.StatusCode = 200;
+        context.Response.ContentLength = data.Length;
+        await context.Response.Body.WriteAsync(data, Program.GlobalProgramCancel);
         await context.Response.CompleteAsync();
     }
 

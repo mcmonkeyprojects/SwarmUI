@@ -437,6 +437,15 @@ public class Settings : AutoConfiguration
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
         public string ReuseParamExcludeList = "wildcardseed";
 
+        public class AudioImpl : SettingsOptionsAttribute.AbstractImpl
+        {
+            public override string[] GetOptions => ["", .. CompletionSoundHelper.Filenames];
+        }
+
+        [ConfigComment("Optional audio file to play when a generation is completed.\nSupported file formats: .wav, .wave, .mp3, .aac, .ogg, .flac")]
+        [SettingsOptions(Impl = typeof(AudioImpl))]
+        public string CompletionSound = "";
+
         [ConfigComment("Settings related to autocompletions.")]
         public AutoCompleteData AutoComplete = new();
 

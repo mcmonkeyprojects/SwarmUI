@@ -248,6 +248,7 @@ public class Program
         RefreshAllModelSets();
         WildcardsHelper.Init();
         AutoCompleteListHelper.Init();
+        CompletionSoundHelper.Init();
         timer.Check("Model listing");
         Logs.Init("Loading backends...");
         Backends.Load();
