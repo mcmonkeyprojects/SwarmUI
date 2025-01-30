@@ -538,7 +538,7 @@ function alignImageDataFormat() {
     let ratio = imgWidth / imgHeight;
     let height = Math.min(imgHeight, curImg.offsetHeight);
     let width = Math.min(imgWidth, height * ratio);
-    let remainingWidth = curImg.clientWidth - width - 20;
+    let remainingWidth = curImg.clientWidth - width - 30;
     img.style.maxWidth = `calc(min(100%, ${width}px))`;
     if (remainingWidth > 30 * 16) {
         curImg.classList.remove('current_image_small');
