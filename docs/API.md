@@ -72,6 +72,7 @@ The following `GET` routes are also available:
 - `/fonts/*.woff2`, `/imgs/*.jpg`, `/imgs/*.png`, `/favicon.ico` - Various asset files for the interface.
 - `/View/*.*` - Returns saved outputs. By default usually in a format like `/View/(user)/raw/(year-month-day)/(file).(ext)`, but is user-customizable.
 - `/Output/*.*` - legacy output call format. Do not use.
+- `/Audio/*.*` - Returns saved user audio files (in `Data/Audio`).
 - `/ExtensionFile/(extension)/*.*` - gets a web asset file from an extension.
 - `/ComfyBackendDirect/*.*` - direct pass-through to a comfy instance, if the [ComfyUI Backend Extension](/src/BuiltinExtensions/ComfyUIBackend/README.md) is in use.
 

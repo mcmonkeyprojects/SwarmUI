@@ -437,14 +437,25 @@ public class Settings : AutoConfiguration
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
         public string ReuseParamExcludeList = "wildcardseed";
 
-        public class AudioImpl : SettingsOptionsAttribute.AbstractImpl
+        /// <summary>Settings related to audio.</summary>
+        public class AudioData : AutoConfiguration
         {
-            public override string[] GetOptions => ["", .. CompletionSoundHelper.Filenames];
+
+            public class AudioImpl : SettingsOptionsAttribute.AbstractImpl
+            {
+                public override string[] GetOptions => ["", .. UserSoundHelper.Filenames];
+            }
+
+            [ConfigComment($"Optional audio file to play when a generation is completed.\nSupported file formats: .wav, .wave, .mp3, .aac, .ogg, .flac\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/UISounds.md\">docs/Features/UISounds</a> for info.")]
+            [SettingsOptions(Impl = typeof(AudioImpl))]
+            public string CompletionSound = "";
+
+            [ConfigComment($"If any sound effects are enabled, this is the volume they will play at.\n0 means silent, 1 means max volume, 0.5 means half volume.")]
+            public double Volume = 0.5;
         }
 
-        [ConfigComment("Optional audio file to play when a generation is completed.\nSupported file formats: .wav, .wave, .mp3, .aac, .ogg, .flac")]
-        [SettingsOptions(Impl = typeof(AudioImpl))]
-        public string CompletionSound = "";
+        [ConfigComment("Settings related to audio.")]
+        public AudioData Audio = new();
 
         [ConfigComment("Settings related to autocompletions.")]
         public AutoCompleteData AutoComplete = new();

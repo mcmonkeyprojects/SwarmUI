@@ -878,9 +878,10 @@ function specialDebug(message) {
 }
 
 function playCompletionAudio() {
-    let audioFile = getUserSetting("completionsound");
+    let audioFile = getUserSetting('audio.completionsound');
     if (audioFile) {
         let audio = new Audio(`/Audio/${audioFile}`);
+        audio.volume = parseFloat(getUserSetting('audio.volume', '0.5'));
         audio.play();
     }
 }

@@ -390,14 +390,14 @@ public class WebServer
     /// <summary>Web route for audio files.</summary>
     public async Task ViewAudio(HttpContext context)
     {
-        string path = context.Request.Path.ToString().After("/Audio/");
-        path = Uri.UnescapeDataString(path).Replace('\\', '/');
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.DataDir, "Audio");
         if (GetUserIdFor(context) is null)
         {
             await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
             return;
         }
+        string path = context.Request.Path.ToString().After("/Audio/");
+        path = Uri.UnescapeDataString(path).Replace('\\', '/');
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.DataDir, "Audio");
         (path, string consoleError, string userError) = CheckFilePath(root, path);
         if (consoleError is not null)
         {
@@ -414,12 +414,12 @@ public class WebServer
         {
             if (ex is FileNotFoundException || ex is DirectoryNotFoundException || ex is PathTooLongException)
             {
-                Logs.Verbose($"File-not-found error reading audio file '${path}': ${ex.ReadableString()}");
+                Logs.Verbose($"File-not-found error reading audio file '{path}': {ex.ReadableString()}");
                 await context.YieldJsonOutput(null, 404, Utilities.ErrorObj("404, file not found", "file_not_found"));
             }
             else
             {
-                Logs.Error($"Failed to read output file '{path}': ${ex.ReadableString()}");
+                Logs.Error($"Failed to read output file '{path}': {ex.ReadableString()}");
                 await context.YieldJsonOutput(null, 500, Utilities.ErrorObj("Error reading file. If you are the server owner, check program console log.", "file_error"));
             }
             return;
