@@ -11,7 +11,7 @@ docker build --build-arg UID=$UID -f launchtools/StandardDockerfile.docker -t sw
 
 # Run this script with 'fixch' to run as root in the container and chown to the correct user
 SETUSER="--user $UID:$(id -g) --cap-drop=ALL"
-POSTARG="$0"
+POSTARG="$@"
 if [[ "$1" == "fixch" ]]
 then
     SETUSER=""
