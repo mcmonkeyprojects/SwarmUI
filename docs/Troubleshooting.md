@@ -49,6 +49,14 @@ There are several alternate AMD backend options that work better than DirectML:
 - **B:** If you can swap your PC to Linux (eg via dualbooting), Linux drivers for AMD are much more reliable than Windows one, the `ROCm` backend will install by default on a Linux install of Swarm and should work (relatively) well.
 - **C:** If you don't want to swap to Linux, Windows can install `WSL` ("Windows Subsystem for Linux") which gives you Linux drivers within a Windows environment. It's a bit weird to setup, but not too hard, and probably easier than dualbooting. It similarly to real Linux should let you install Swarm in the WSL env and use ROCm drivers.
 
+## Common Error Messages
+
+### AssertionError: Torch not compiled with CUDA enabled
+
+The message `AssertionError: Torch not compiled with CUDA enabled` means that python dependencies of Swarm's comfy backend have been mangled. This most often happens when custom nodes or packages have poorly built requirements files. You'll see issues like this most frequently if you often allow Comfy Manager to install nodepacks.
+
+**So how do I fix it?** The concept is easy, just the details vary. You need to reinstall torch, which means you need to trigger a pip install of: `torch torchvision torchaudio -U --index-url https://download.pytorch.org/whl/cu126` (the cu126 is CUDA version and may change over time, refer to [PyTorch's Website](https://pytorch.org/get-started/locally/) for updated index-url options). Note the usage of `-U` to tell pip to upgrade/replace the existing torch. To see how to install pip packages, refer to [I need to install something with pip](#i-need-to-install-something-with-pip) below.
+
 ## I Have An Error Message And Don't Know What To Do
 
 Step 1 is read the error message. A lot of error messages in Swarm are intentionally written in clear plain English to tell you exactly what went wrong and how to fix it. Sometimes it's not clear enough or you'll get an internal error without good info, so:
