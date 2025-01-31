@@ -1146,7 +1146,7 @@ public class WorkflowGenerator
                 ["vae"] = FinalVae,
                 ["pixels"] = img,
                 ["mask"] = mask,
-                ["noise_mask"] = true
+                ["noise_mask"] = false
             });
             pos = [inpaintNode, 0];
             neg = [inpaintNode, 1];
