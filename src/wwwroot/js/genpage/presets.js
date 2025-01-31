@@ -15,8 +15,8 @@ function getPresetByTitle(title) {
     return allPresets.find(p => p.title.toLowerCase() == title);
 }
 
-function getPresetTypes() {
-    return gen_param_types.filter(type => !type.toggleable || getRequiredElementById(`input_${type.id}_toggle`).checked);
+function getPresetTypes(prefix) {
+    return gen_param_types.filter(type => !type.toggleable || getRequiredElementById(`${prefix}_${type.id}_toggle`).checked);
 }
 
 function clearPresetView() {
@@ -30,7 +30,7 @@ function clearPresetView() {
     let enableImage = getRequiredElementById('new_preset_enable_image');
     enableImage.checked = false;
     enableImage.disabled = true;
-    for (let type of getPresetTypes()) {
+    for (let type of getPresetTypes(`input`)) {
         try {
             let elem = getRequiredElementById('input_' + type.id);
             let presetElem = getRequiredElementById('preset_input_' + type.id);
@@ -89,11 +89,11 @@ function save_new_preset() {
     }
     let description = getRequiredElementById('preset_description').value;
     let data = {};
-    for (let type of getPresetTypes()) {
-        if (!getRequiredElementById(`preset_input_${type.id}_toggle`).checked) {
+    for (let type of getPresetTypes(`preset_input`)) {
+        let elem = getRequiredElementById(`preset_input_${type.id}`);
+        if (!elem || !getRequiredElementById(`preset_input_${type.id}_toggle`).checked) {
             continue;
         }
-        let elem = getRequiredElementById(`preset_input_${type.id}`);
         if (type.type == "boolean") {
             data[type.id] = elem.checked ? "true" : "false";
         }
