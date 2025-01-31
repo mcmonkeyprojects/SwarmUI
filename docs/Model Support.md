@@ -236,6 +236,15 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Creativity `1` works well.
     - Larger masks recommended. Small ones may not replace content.
     - Boosting the `Flux Guidance Scale` way up to eg `30` may improve quality
+- If you want to use the **ACE Plus** Models (Character consistency)
+    - Download the LoRAs from https://huggingface.co/ali-vilab/ACE_Plus/tree/main and save as normal loras
+    - Enable the Flux Fill model, enable the LoRA you chose
+    - Set `Flux Guidance Scale` way up to `50`
+    - Open an image editor for the image you want to use as an input (Drag to center area, click Edit Image)
+    - set `Init Image Creativity` to 1 (max)
+    - Change your `Resolution` parameters to have double the `Width` (eg 1024 input, double to 2048)
+    - Add a Mask, draw a dot anywhere in the empty area (this is just a trick to tell the editor to automask all the empty area to the side, you don't need to mask it manually)
+    - Type your prompt, hit generate
 
 # Video Models
 
