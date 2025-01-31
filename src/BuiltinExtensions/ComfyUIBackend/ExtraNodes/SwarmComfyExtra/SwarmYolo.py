@@ -10,15 +10,17 @@ class SwarmYoloDetection:
                 "image": ("IMAGE",),
                 "model_name": (folder_paths.get_filename_list("yolov8"), ),
                 "index": ("INT", { "default": 0, "min": 0, "max": 256, "step": 1 }),
-                "class_filter": ("STRING", { "default": "", "multiline": False }),
             },
+            "optional": {
+                "class_filter": ("STRING", { "default": "", "multiline": False }),
+            }
         }
 
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 
-    def seg(self, image, model_name, index, class_filter):
+    def seg(self, image, model_name, index, class_filter=None):
         # TODO: Batch support?
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -60,6 +62,8 @@ class SwarmYoloDetection:
             if isinstance(masks, list):
                 masks = torch.stack(masks)
             masks = masks.data.cpu()
+        if masks is None or masks.shape[0] == 0:
+            return (torch.zeros(1, image.shape[1], image.shape[2]), )
         masks = torch.nn.functional.interpolate(masks.unsqueeze(1), size=(image.shape[1], image.shape[2]), mode="bilinear").squeeze(1)
         if index == 0:
             result = masks[0]
