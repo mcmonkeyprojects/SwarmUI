@@ -201,6 +201,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, special network forwarding logic will apply for developer modes.\nNotably, ComfyUI Frontend NPM Developer Mode requires significant special forwarding as it misroutes itself.\nDefaults to false.")]
         public bool EnableSpecialDevForwarding = false;
+
+        [ConfigComment("How long should browsers be told they can store cached copies of output images.\nDefaults to 30 seconds.\nDo not set less than 5-ish, temp-caching is important. Setting to a low value (like 5) can help if you often delete images and regenerate with the same filename.\nSome files (eg html/js for grids) in output always have a very low cache duration.")]
+        public int OutputCacheSeconds = 30;
     }
 
     /// <summary>Settings related to file paths.</summary>

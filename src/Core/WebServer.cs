@@ -534,6 +534,14 @@ public class WebServer
         context.Response.ContentType = contentType;
         context.Response.StatusCode = 200;
         context.Response.ContentLength = data.Length;
+        if (contentType.StartsWith("application/") || contentType.StartsWith("text/"))
+        {
+            context.Response.Headers.CacheControl = "private, max-age=2";
+        }
+        else
+        {
+            context.Response.Headers.CacheControl = $"private, max-age={Program.ServerSettings.Network.OutputCacheSeconds}";
+        }
         await context.Response.Body.WriteAsync(data, Program.GlobalProgramCancel);
         await context.Response.CompleteAsync();
     }
