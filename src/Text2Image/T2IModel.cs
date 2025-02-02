@@ -314,20 +314,147 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
         };
     }
 
-    /// <summary>Get the safetensors header from a model.</summary>
-    public static string GetSafetensorsHeaderFrom(string modelPath)
+    /// <summary>Data types for GGUF metadata values.</summary>
+    public enum GGUFMetadataValueType : int
+    {
+        UINT8 = 0,
+        INT8 = 1,
+        UINT16 = 2,
+        INT16 = 3,
+        UINT32 = 4,
+        INT32 = 5,
+        FLOAT32 = 6,
+        BOOL = 7,
+        STRING = 8,
+        ARRAY = 9,
+        UINT64 = 10,
+        INT64 = 11,
+        FLOAT64 = 12
+    }
+
+    public static JToken ReadRawGGUFObject(Stream file, string modelPath, int keyId, GGUFMetadataValueType type, byte[] buf)
+    {
+        switch (type)
+        {
+            case GGUFMetadataValueType.UINT8: return file.ReadByte();
+            case GGUFMetadataValueType.INT8: return (sbyte)file.ReadByte();
+            case GGUFMetadataValueType.UINT16:
+                file.ReadExactly(buf, 0, 2);
+                return BitConverter.ToUInt16(buf, 0);
+            case GGUFMetadataValueType.INT16:
+                file.ReadExactly(buf, 0, 2);
+                return BitConverter.ToInt16(buf, 0);
+            case GGUFMetadataValueType.UINT32:
+                file.ReadExactly(buf, 0, 4);
+                return BitConverter.ToUInt32(buf, 0);
+            case GGUFMetadataValueType.INT32:
+                file.ReadExactly(buf, 0, 4);
+                return BitConverter.ToInt32(buf, 0);
+            case GGUFMetadataValueType.UINT64:
+                file.ReadExactly(buf, 0, 8);
+                return BitConverter.ToUInt64(buf, 0);
+            case GGUFMetadataValueType.INT64:
+                file.ReadExactly(buf, 0, 8);
+                return BitConverter.ToInt64(buf, 0);
+            case GGUFMetadataValueType.FLOAT32:
+                file.ReadExactly(buf, 0, 4);
+                return BitConverter.ToSingle(buf, 0);
+            case GGUFMetadataValueType.FLOAT64:
+                file.ReadExactly(buf, 0, 8);
+                return BitConverter.ToDouble(buf, 0);
+            case GGUFMetadataValueType.BOOL:
+                return file.ReadByte() != 0;
+            case GGUFMetadataValueType.STRING:
+                file.ReadExactly(buf, 0, 8);
+                long valStrLen = BitConverter.ToInt64(buf, 0);
+                if (valStrLen < 0 || valStrLen > 100 * 1024 * 1024)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable metadata value string length: {valStrLen} (for metadata key {keyId})");
+                }
+                byte[] strBuf = new byte[valStrLen];
+                file.ReadExactly(strBuf, 0, (int)valStrLen);
+                return Encoding.UTF8.GetString(strBuf);
+            case GGUFMetadataValueType.ARRAY:
+                file.ReadExactly(buf, 0, 4);
+                int subtype = BitConverter.ToInt32(buf, 0);
+                if (subtype < 0 || subtype > 12)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable metadata array subtype: {subtype} (for metadata key {keyId})");
+                }
+                file.ReadExactly(buf, 0, 8);
+                long arrayLen = BitConverter.ToInt64(buf, 0);
+                if (arrayLen < 0 || arrayLen > 100 * 1024 * 1024)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable metadata array length: {arrayLen} (for metadata key {keyId})");
+                }
+                JArray array = [];
+                for (int i = 0; i < arrayLen; i++)
+                {
+                    array.Add(ReadRawGGUFObject(file, modelPath, keyId, (GGUFMetadataValueType)subtype, buf));
+                }
+                return array;
+        }
+        throw new InvalidOperationException("(Unreachable / bad GGUF metadata type)");
+    }
+
+    /// <summary>Get the safetensors or gguf header from a model. Return includes "__metadata__" key with metadata key:value map, other data at root.</summary>
+    public static JObject GetMetadataHeaderFrom(string modelPath)
     {
         using FileStream file = File.OpenRead(modelPath);
-        byte[] lenBuf = new byte[8];
-        file.ReadExactly(lenBuf, 0, 8);
-        long len = BitConverter.ToInt64(lenBuf, 0);
+        byte[] buf = new byte[8];
+        if (modelPath.EndsWith(".gguf"))
+        {
+            file.ReadExactly(buf, 0, 4);
+            if (buf[0] != 0x47 || buf[1] != 0x47 || buf[2] != 0x55 || buf[3] != 0x46)
+            {
+                throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Wrong file type? Header should be GGUF, but is {buf[0]:X} {buf[1]:X} {buf[2]:X} {buf[3]:X}");
+            }
+            file.ReadExactly(buf, 0, 4);
+            int ggufVers = BitConverter.ToInt32(buf, 0);
+            file.ReadExactly(buf, 0, 8);
+            long tensorCount = BitConverter.ToInt64(buf, 0);
+            file.ReadExactly(buf, 0, 8);
+            long metaKvCount = BitConverter.ToInt64(buf, 0);
+            JObject metadata = [];
+            for (int i = 0; i < metaKvCount; i++)
+            {
+                file.ReadExactly(buf, 0, 8);
+                long keyStrLen = BitConverter.ToInt64(buf, 0);
+                if (keyStrLen < 0 || keyStrLen > 100 * 1024 * 1024)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable metadata key length: {keyStrLen} (for metadata key {i})");
+                }
+                byte[] keyStrBuf = new byte[keyStrLen];
+                file.ReadExactly(keyStrBuf, 0, (int)keyStrLen);
+                string keyStr = Encoding.UTF8.GetString(keyStrBuf);
+                file.ReadExactly(buf, 0, 4);
+                int valType = BitConverter.ToInt32(buf, 0);
+                if (valType < 0 || valType > 12)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable metadata value type: {valType} (for metadata key {i})");
+                }
+                JToken val = ReadRawGGUFObject(file, modelPath, i, (GGUFMetadataValueType)valType, buf);
+                metadata[keyStr] = val;
+                // TODO: Bother to read the tensor list?
+            }
+            return new JObject()
+            {
+                ["gguf_version"] = ggufVers,
+                ["tensor_count"] = tensorCount,
+                ["__metadata__"] = metadata
+            };
+        }
+        // Otherwise, safetensors
+        file.ReadExactly(buf, 0, 8);
+        long len = BitConverter.ToInt64(buf, 0);
         if (len < 0 || len > 100 * 1024 * 1024)
         {
             throw new SwarmReadableErrorException($"Improper safetensors file {modelPath}. Wrong file type, or unreasonable header length: {len}");
         }
         byte[] dataBuf = new byte[len];
         file.ReadExactly(dataBuf, 0, (int)len);
-        return Encoding.UTF8.GetString(dataBuf);
+        string rawJson = Encoding.UTF8.GetString(dataBuf);
+        return rawJson.ParseToJson();
     }
 
     /// <summary>Returns the name of the model.</summary>

@@ -375,17 +375,11 @@ public class T2IModelHandler
             JObject headerData = [];
             JObject metaHeader = [];
             string textEncs = null;
-            if (model.Name.EndsWith(".safetensors") || model.Name.EndsWith(".sft"))
+            if (model.Name.EndsWith(".safetensors") || model.Name.EndsWith(".sft") || model.Name.EndsWith(".gguf"))
             {
-                string headerText = T2IModel.GetSafetensorsHeaderFrom(model.RawFilePath);
-                if (headerText is not null)
+                headerData = T2IModel.GetMetadataHeaderFrom(model.RawFilePath);
+                if (headerData is not null)
                 {
-                    headerData = headerText.ParseToJson();
-                    if (headerData is null)
-                    {
-                        Logs.Debug($"Not loading metadata for {model.Name} as the header is not JSON?");
-                        return;
-                    }
                     metaHeader = headerData["__metadata__"] as JObject ?? [];
                     textEncs = "";
                     string[] keys = headerData.Properties().Select(p => p.Name).Where(k => k.StartsWith("text_encoders.")).ToArray();

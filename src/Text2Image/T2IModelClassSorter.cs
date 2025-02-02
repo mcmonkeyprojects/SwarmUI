@@ -298,22 +298,6 @@ public class T2IModelClassSorter
         {
             return false;
         }});
-        Remaps["flux-1-dev"] = "Flux.1-dev";
-        Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
-        Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
-        Remaps["flux-dev/lora"] = "Flux.1-dev/lora";
-        Remaps["Flux.1-depth-dev-lora"] = "Flux.1-dev/lora-depth";
-        Remaps["Flux.1-canny-dev-lora"] = "Flux.1-dev/lora-canny";
-        Remaps["Flux.1-depth-dev"] = "Flux.1-dev/depth";
-        Remaps["Flux.1-canny-dev"] = "Flux.1-dev/canny";
-        Remaps["Flux.1-fill-dev"] = "Flux.1-dev/inpaint";
-        Remaps["flux-1-schnell"] = "Flux.1-schnell";
-        Remaps["flux-1-schnell/lora"] = "Flux.1-dev/lora";
-        Remaps["flux-1-schnell/controlnet"] = "Flux.1-dev/controlnet";
-        Remaps["Flux.1-schnell/lora"] = "Flux.1-dev/lora";
-        Remaps["Flux.1-schnell/controlnet"] = "Flux.1-dev/controlnet";
-        Remaps["Flux.1-AE"] = "flux.1/vae";
-        Remaps["stable-cascade-v1-stage-a"] = "stable-cascade-v1-stage-a/vae";
         // ====================== Random Other Models ======================
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -391,6 +375,27 @@ public class T2IModelClassSorter
         Register(new() { ID = "pixart-ms-sigma-xl-2-2k", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2 (2K)", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "auraflow-v1", CompatClass = "auraflow-v1", Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "auraflow-v1/tensorrt", CompatClass = "auraflow-v1", Name = "AuraFlow (TensorRT Engine)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
+        // ====================== General correction remaps ======================
+        Remaps["flux-1-dev"] = "Flux.1-dev";
+        Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
+        Remaps["flux-1-dev/lora"] = "Flux.1-dev/lora";
+        Remaps["flux-dev/lora"] = "Flux.1-dev/lora";
+        Remaps["Flux.1-depth-dev-lora"] = "Flux.1-dev/lora-depth";
+        Remaps["Flux.1-canny-dev-lora"] = "Flux.1-dev/lora-canny";
+        Remaps["Flux.1-depth-dev"] = "Flux.1-dev/depth";
+        Remaps["Flux.1-canny-dev"] = "Flux.1-dev/canny";
+        Remaps["Flux.1-fill-dev"] = "Flux.1-dev/inpaint";
+        Remaps["flux-1-schnell"] = "Flux.1-schnell";
+        Remaps["flux-1-schnell/lora"] = "Flux.1-dev/lora";
+        Remaps["flux-1-schnell/controlnet"] = "Flux.1-dev/controlnet";
+        Remaps["Flux.1-schnell/lora"] = "Flux.1-dev/lora";
+        Remaps["Flux.1-schnell/controlnet"] = "Flux.1-dev/controlnet";
+        Remaps["Flux.1-AE"] = "flux.1/vae";
+        Remaps["stable-cascade-v1-stage-a"] = "stable-cascade-v1-stage-a/vae";
+        // ====================== GGUF Remaps ======================
+        Remaps["flux"] = "Flux.1-dev";
+        Remaps["sd3"] = "stable-diffusion-v3-medium";
+        Remaps["hyvid"] = "hunyuan-video";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
@@ -404,8 +409,10 @@ public class T2IModelClassSorter
         static string fix(string s) => string.IsNullOrWhiteSpace(s) ? null : s;
         string arch = fix(header?["__metadata__"]?.Value<string>("modelspec.architecture"))
             ?? fix(header?["__metadata__"]?.Value<string>("architecture"))
+            ?? fix(header?["__metadata__"]?.Value<string>("general.architecture"))
             ?? fix(header.Value<string>("modelspec.architecture"))
-            ?? fix(header.Value<string>("architecture"));
+            ?? fix(header.Value<string>("architecture"))
+            ?? fix(header.Value<string>("general.architecture"));
         if (arch is not null)
         {
             string res = fix(header["__metadata__"]?.Value<string>("modelspec.resolution"))
