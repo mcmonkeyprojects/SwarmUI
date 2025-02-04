@@ -32,7 +32,7 @@ class SwarmYoloDetection:
         model = YOLO(model_path)
         results = model(img)
         boxes = results[0].boxes
-        class_ids = results[0].boxes.cls.cpu().numpy() if boxes is not None else []
+        class_ids = boxes.cls.cpu().numpy() if boxes is not None else []
         if class_filter and class_filter.strip():
             selected_classes = [int(cls.strip()) for cls in class_filter.split(",") if cls.strip().isdigit()]
             selected_classes = selected_classes if selected_classes else None
@@ -59,8 +59,6 @@ class SwarmYoloDetection:
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 masks[i, int(y1):int(y2), int(x1):int(x2)] = 1.0
         else:
-            if isinstance(masks, list):
-                masks = torch.stack(masks)
             masks = masks.data.cpu()
         if masks is None or masks.shape[0] == 0:
             return (torch.zeros(1, image.shape[1], image.shape[2]), )

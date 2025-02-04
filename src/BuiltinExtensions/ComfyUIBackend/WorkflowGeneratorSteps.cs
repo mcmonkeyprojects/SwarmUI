@@ -1223,10 +1223,9 @@ public class WorkflowGeneratorSteps
                     if (part.DataText.StartsWith("yolo-"))
                     {
                         string fullname = part.DataText.After("yolo-");
-                        string[] modelParts = fullname.Split(new[] {':'}, 2, StringSplitOptions.None);  
+                        string[] modelParts = fullname.Split(':', 2);
                         fullname = modelParts[0]; 
                         string classFilter = modelParts.Length > 1 ? modelParts[1] : "";
-                        
                         (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
                         if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
                         {
