@@ -89,9 +89,7 @@ public class Installation
             }
             else
             {
-                //await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
-                // TEMPORARY: Use the last Python 3.11 release instead of the new Python 3.12 builds, as 3.12 has too many compat issues
-                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/v0.2.3/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
+                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
             }
         }
         catch (HttpRequestException ex)
