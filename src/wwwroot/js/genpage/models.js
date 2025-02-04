@@ -914,8 +914,6 @@ function updateLoraWeights(doChange = true) {
     if (doChange) {
         inputWeights.dispatchEvent(new Event('change'));
     }
-    getRequiredElementById('input_loraweights_toggle').checked = valSet.length > 0;
-    doToggleEnable('input_loraweights');
 }
 
 function updateLoraList() {
@@ -981,8 +979,6 @@ function toggleSelectLora(lora) {
     $(loraInput).val(selected);
     $(loraInput).trigger('change');
     loraInput.dispatchEvent(new Event('change'));
-    getRequiredElementById('input_loras_toggle').checked = selected.length > 0;
-    doToggleEnable('input_loras');
     updateLoraWeights();
     updateLoraList();
 }
