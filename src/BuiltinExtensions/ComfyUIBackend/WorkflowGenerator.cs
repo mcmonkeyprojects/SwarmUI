@@ -188,6 +188,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "nvidia-sana-1600";
     }
 
+    /// <summary>Returns true if the current model is Alpha-VLLM's Lumina 2.</summary>
+    public bool IsLumina()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "lumina-2";
+    }
+
     /// <summary>Returns true if the current model is Hunyuan Video.</summary>
     public bool IsHunyuanVideo()
     {
@@ -935,6 +942,15 @@ public class WorkflowGenerator
             });
             LoadingModel = [auraNode, 0];
         }
+        else if (IsLumina())
+        {
+            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 6)
+            });
+            LoadingModel = [samplingNode, 0];
+        }
         else if (!string.IsNullOrWhiteSpace(predType))
         {
             string discreteNode = CreateNode("ModelSamplingDiscrete", new JObject()
@@ -949,7 +965,7 @@ public class WorkflowGenerator
         {
             if (IsFlux())
             {
-                string fluxNode = CreateNode("ModelSamplingFlux", new JObject()
+                string samplingNode = CreateNode("ModelSamplingFlux", new JObject()
                 {
                     ["model"] = LoadingModel,
                     ["width"] = UserInput.GetImageWidth(),
@@ -957,16 +973,16 @@ public class WorkflowGenerator
                     ["max_shift"] = shiftVal,
                     ["base_shift"] = 0.5 // TODO: Does this need an input?
                 });
-                LoadingModel = [fluxNode, 0];
+                LoadingModel = [samplingNode, 0];
             }
             else if (IsHunyuanVideo())
             {
-                string fluxNode = CreateNode("ModelSamplingSD3", new JObject()
+                string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
                     ["model"] = LoadingModel,
                     ["shift"] = shiftVal
                 });
-                LoadingModel = [fluxNode, 0];
+                LoadingModel = [samplingNode, 0];
             }
         }
         foreach (WorkflowGenStep step in ModelGenSteps)

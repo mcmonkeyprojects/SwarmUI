@@ -17,6 +17,7 @@
 [Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | Modern, Low Quality |
 [AuraFlow v0.1 and v0.2](#auraflow-v01) | MMDiT | 2024 | Fal.AI | 6B | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
+[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Modern |
 
 - Video models are in [Video Model Support](/docs/Video%20Model%20Support.md)
 
@@ -245,6 +246,29 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - Change your `Resolution` parameters to have double the `Width` (eg 1024 input, double to 2048)
     - Add a Mask, draw a dot anywhere in the empty area (this is just a trick to tell the editor to automask all the empty area to the side, you don't need to mask it manually)
     - Type your prompt, hit generate
+
+# Lumina 2
+
+![img](/docs/images/models/lumina-2.png)
+
+- Lumina 2 is an image diffusion transformer model, similar in structure to SD3/Flux/etc. rectified flow DiTs, with an LLM (Gemma 2 2B) as its input handler.
+- It is a 2.6B model, similar size to SDXL or SD3.5M, much smaller than Flux or SD3.5L
+- You can download the Comfy Org repackaged version of the model for use in SwarmUI here: <https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/blob/main/all_in_one/lumina_2.safetensors>
+- Because of the LLM input, you have to prompt it like an LLM.
+    - This means `a cat` yields terrible results, instead give it: `You are an assistant designed to generate superior images with the superior degree of image-text alignment based on textual prompts or user prompts. <Prompt Start> a cat` to get good results
+    - Lumina's published reference list of prompt prefixes from [source code](https://github.com/Alpha-VLLM/Lumina-Image-2.0/blob/main/sample.py#L246):
+        - `You are an assistant designed to generate high-quality images with the highest degree of image-text alignment based on textual prompts. <Prompt Start> `
+        - `You are an assistant designed to generate high-quality images based on user prompts. <Prompt Start> `
+        - `You are an assistant designed to generate high-quality images with highest degree of aesthetics based on user prompts. <Prompt Start> `
+        - `You are an assistant designed to generate superior images with the superior degree of image-text alignment based on textual prompts or user prompts. <Prompt Start> `
+        - `You are an assistant designed to generate four high-quality images with highest degree of aesthetics arranged in 2x2 grids based on user prompts. <Prompt Start> `
+- The model uses the Flux.1 VAE
+- **Parameters:**
+    - **CFG**: 4 is their base recommendation
+    - **Sigma Shift:** Lumina reference script uses `6`, Comfy recommends `3`, so you can safely mess with this parameter if you want to. 6 seems to be generally better for structure, while 3 is better for fine details by sacrificing structure, but may have unwanted artifacts. Raising step count reduces some artifacts.
+        - SwarmUI will default to 6, while Comfy workflows without the `ModelSamplingAuraFlow` node will default to 3.
+    - **Steps:** The usual 20 steps is fine, but reference Lumina script uses 250(?!) by default
+        - Quick initial testing shows that raising steps high doesn't work any particularly different on this model than others, but the model at SigmaShift=6 produces some noise artifacts at regular 20 steps, raising closer to 40 cuts those out.
 
 # Video Models
 
