@@ -30,11 +30,21 @@ class SwarmYoloDetection:
             raise ValueError(f"Model {model_name} not found, or yolov8 folder path not defined")
         from ultralytics import YOLO
         model = YOLO(model_path)
+        class_labels = model.names
         results = model(img)
         boxes = results[0].boxes
         class_ids = boxes.cls.cpu().numpy() if boxes is not None else []
+        selected_classes = []
         if class_filter and class_filter.strip():
-            selected_classes = [int(cls.strip()) for cls in class_filter.split(",") if cls.strip().isdigit()]
+            class_filter_list = [cls.strip() for cls in class_filter.split(",") if cls.strip()]
+            label_to_id = {name.lower(): id for id, name in class_labels.items()}
+            for cls in class_filter_list:
+                if cls.isdigit():
+                    selected_classes.append(int(cls))
+                else:
+                    class_id = label_to_id.get(cls.lower())
+                    if class_id is not None:
+                        selected_classes.append(class_id)
             selected_classes = selected_classes if selected_classes else None
         else:
             selected_classes = None
