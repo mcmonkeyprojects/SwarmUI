@@ -616,9 +616,18 @@ public class WorkflowGenerator
             {
                 return "llava_llama3_fp8_scaled.safetensors";
             }
-            // TODO: is a selector param needed?
             requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250");
             return "llava_llama3_fp8_scaled.safetensors";
+        }
+        string getGemma2Model()
+        {
+            // TODO: Selector param?
+            if (Program.T2IModelSets["Clip"].Models.ContainsKey("gemma_2_2b_fp16.safetensors"))
+            {
+                return "gemma_2_2b_fp16.safetensors";
+            }
+            requireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd");
+            return "gemma_2_2b_fp16.safetensors";
         }
         IsDifferentialDiffusion = false;
         LoadingModelType = type;
@@ -950,6 +959,19 @@ public class WorkflowGenerator
                 ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 6)
             });
             LoadingModel = [samplingNode, 0];
+            if (LoadingClip is null)
+            {
+                string dualClipLoader = CreateNode("CLIPLoader", new JObject()
+                {
+                    ["clip_name"] = getGemma2Model(),
+                    ["type"] = "lumina2"
+                });
+                LoadingClip = [dualClipLoader, 0];
+            }
+            if (LoadingVAE is null)
+            {
+                doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+            }
         }
         else if (!string.IsNullOrWhiteSpace(predType))
         {
