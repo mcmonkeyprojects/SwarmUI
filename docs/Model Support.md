@@ -269,8 +269,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 - The model uses the Flux.1 VAE
 - **Parameters:**
     - **CFG**: 4 is their base recommendation
-    - **Sigma Shift:** Lumina reference script uses `6`, Comfy recommends `3`, so you can safely mess with this parameter if you want to. 6 seems to be generally better for structure, while 3 is better for fine details by sacrificing structure, but may have unwanted artifacts. Raising step count reduces some artifacts.
-        - SwarmUI will default to 6, while Comfy workflows without the `ModelSamplingAuraFlow` node will default to 3.
+    - **Sigma Shift:** The default is `6` per Lumina reference script, Comfy recommends `3` for use with lower step counts, so you can safely mess with this parameter if you want to. 6 seems to be generally better for structure, while 3 is better for fine details by sacrificing structure, but may have unwanted artifacts. Raising step count reduces some artifacts.
     - **Steps:** The usual 20 steps is fine, but reference Lumina script uses 250(?!) by default
         - Quick initial testing shows that raising steps high doesn't work any particularly different on this model than others, but the model at SigmaShift=6 produces some noise artifacts at regular 20 steps, raising closer to 40 cuts those out.
 

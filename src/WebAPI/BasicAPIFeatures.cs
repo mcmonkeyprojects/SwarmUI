@@ -175,6 +175,11 @@ public static class BasicAPIFeatures
         [API.APIParameter("If true, edit an existing preset. If false, do not override pre-existing presets of the same name.")] bool is_edit = false,
         [API.APIParameter("If is_edit is set, include the original preset name here.")] string editing = null)
     {
+        title = Utilities.StrictFilenameClean(title);
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return new JObject() { ["preset_fail"] = "Invalid or empty title." };
+        }
         JObject paramData = (JObject)raw["param_map"];
         T2IPreset existingPreset = session.User.GetPreset(is_edit ? editing : title);
         if (existingPreset is not null && !is_edit)
