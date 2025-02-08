@@ -30,24 +30,26 @@ class SwarmYoloDetection:
             raise ValueError(f"Model {model_name} not found, or yolov8 folder path not defined")
         from ultralytics import YOLO
         model = YOLO(model_path)
-        class_labels = model.names
         results = model(img)
         boxes = results[0].boxes
         class_ids = boxes.cls.cpu().numpy() if boxes is not None else []
-        selected_classes = []
+        selected_classes = None
+
         if class_filter and class_filter.strip():
-            class_filter_list = [cls.strip() for cls in class_filter.split(",") if cls.strip()]
-            label_to_id = {name.lower(): id for id, name in class_labels.items()}
-            for cls in class_filter_list:
-                if cls.isdigit():
-                    selected_classes.append(int(cls))
+            class_filter_list = [cls_name.strip() for cls_name in class_filter.split(",") if cls_name.strip()]
+            label_to_id = {name.lower(): id for id, name in model.names.items()}
+            selected_classes = []
+            for cls_name in class_filter_list:
+                if cls_name.isdigit():
+                    selected_classes.append(int(cls_name))
                 else:
-                    class_id = label_to_id.get(cls.lower())
+                    class_id = label_to_id.get(cls_name.lower())
                     if class_id is not None:
                         selected_classes.append(class_id)
+                    else:
+                        print(f"Class '{cls_name}' not found in the model")
             selected_classes = selected_classes if selected_classes else None
-        else:
-            selected_classes = None
+
         masks = results[0].masks
         if masks is not None and selected_classes is not None:
             selected_masks = []
@@ -58,6 +60,7 @@ class SwarmYoloDetection:
                 masks = torch.stack(selected_masks)
             else:
                 masks = None
+
         if masks is None or masks.shape[0] == 0:
             if boxes is None or len(boxes) == 0:
                 return (torch.zeros(1, image.shape[1], image.shape[2]), )
@@ -72,6 +75,7 @@ class SwarmYoloDetection:
             masks = masks.data.cpu()
         if masks is None or masks.shape[0] == 0:
             return (torch.zeros(1, image.shape[1], image.shape[2]), )
+
         masks = torch.nn.functional.interpolate(masks.unsqueeze(1), size=(image.shape[1], image.shape[2]), mode="bilinear").squeeze(1)
         if index == 0:
             result = masks[0]
