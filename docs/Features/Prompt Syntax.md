@@ -112,7 +112,7 @@
 
 - You can use `<segment:texthere>` to automatically refine part of the image using CLIP Segmentation.
     - This is like a "restore faces" feature but much more versatile, you can refine anything and control what it does.
-    - Or `<segment:texthere,creativity,threshold>` - where creativity is inpaint strength, and threshold is segmentation minimum threshold - for example, `<segment:face,0.8,0.5>` - defaults to 0.6 creativity, 0.5 threshold.
+    - Or `<segment:texthere,creativity,threshold>` - where creativity is inpaint strength, and threshold is segmentation minimum threshold - for example, `<segment:face,0.6,0.5>` - defaults to 0.6 creativity, 0.5 threshold.
     - See [the feature announcement](https://github.com/Stability-AI/StableSwarmUI/discussions/11#discussioncomment-7236821) for details.
     - Note the first time you run with CLIPSeg, Swarm will automatically download [an fp16 safetensors version of the clipseg-rd64-refined model](https://huggingface.co/mcmonkey/clipseg-rd64-refined-fp16)
     - You can insert a `<lora:...>` inside the prompt area of the segment to have a lora model apply onto that segment
@@ -123,6 +123,7 @@
             - You can do this all in one prompt to individual refine specific faces separately
             - Without this, if there are multiple people, it will do a bulk segmented refine on all faces combined
             - Note the index order is sorted from leftmost detection to right
+        - To filter specific classes, append `:classes:` where `classes` is a comma-separated list of class IDs or names, e.g., `yolo-modelnamehere:0,apple,2:`
         - To control the creativity with a yolo model just append `,<creativity>,1`, for example `<segment:yolo-face_yolov8m-seg_60.pt-1,0.8,1>` sets a `0.8` creativity.
     - There's an advanced parameter under `Regional Prompting` named `Segment Model` to customize the base model used for segment processing
     - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask

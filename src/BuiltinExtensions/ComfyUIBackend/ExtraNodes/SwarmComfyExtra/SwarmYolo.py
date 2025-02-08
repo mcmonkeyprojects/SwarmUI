@@ -11,13 +11,16 @@ class SwarmYoloDetection:
                 "model_name": (folder_paths.get_filename_list("yolov8"), ),
                 "index": ("INT", { "default": 0, "min": 0, "max": 256, "step": 1 }),
             },
+            "optional": {
+                "class_filter": ("STRING", { "default": "", "multiline": False }),
+            }
         }
 
     CATEGORY = "SwarmUI/masks"
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 
-    def seg(self, image, model_name, index):
+    def seg(self, image, model_name, index, class_filter=None):
         # TODO: Batch support?
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -28,17 +31,51 @@ class SwarmYoloDetection:
         from ultralytics import YOLO
         model = YOLO(model_path)
         results = model(img)
+        boxes = results[0].boxes
+        class_ids = boxes.cls.cpu().numpy() if boxes is not None else []
+        selected_classes = None
+
+        if class_filter and class_filter.strip():
+            class_filter_list = [cls_name.strip() for cls_name in class_filter.split(",") if cls_name.strip()]
+            label_to_id = {name.lower(): id for id, name in model.names.items()}
+            selected_classes = []
+            for cls_name in class_filter_list:
+                if cls_name.isdigit():
+                    selected_classes.append(int(cls_name))
+                else:
+                    class_id = label_to_id.get(cls_name.lower())
+                    if class_id is not None:
+                        selected_classes.append(class_id)
+                    else:
+                        print(f"Class '{cls_name}' not found in the model")
+            selected_classes = selected_classes if selected_classes else None
+
         masks = results[0].masks
-        if masks is None:
-            boxes = results[0].boxes
+        if masks is not None and selected_classes is not None:
+            selected_masks = []
+            for i, class_id in enumerate(class_ids):
+                if class_id in selected_classes:
+                    selected_masks.append(masks.data[i].cpu())
+            if selected_masks:
+                masks = torch.stack(selected_masks)
+            else:
+                masks = None
+
+        if masks is None or masks.shape[0] == 0:
             if boxes is None or len(boxes) == 0:
                 return (torch.zeros(1, image.shape[1], image.shape[2]), )
+            else:
+                if selected_classes:
+                    boxes = [box for i, box in enumerate(boxes) if class_ids[i] in selected_classes]
             masks = torch.zeros((len(boxes), image.shape[1], image.shape[2]), dtype=torch.float32, device="cpu")
             for i, box in enumerate(boxes):
                 x1, y1, x2, y2 = box.xyxy[0].tolist()
                 masks[i, int(y1):int(y2), int(x1):int(x2)] = 1.0
         else:
             masks = masks.data.cpu()
+        if masks is None or masks.shape[0] == 0:
+            return (torch.zeros(1, image.shape[1], image.shape[2]), )
+
         masks = torch.nn.functional.interpolate(masks.unsqueeze(1), size=(image.shape[1], image.shape[2]), mode="bilinear").squeeze(1)
         if index == 0:
             result = masks[0]
