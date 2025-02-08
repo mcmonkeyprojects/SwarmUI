@@ -14,5 +14,5 @@ docker run -it \
     --rm \
     --user $UID:$(id -g) --cap-drop=ALL \
     --name swarmui \
-    -v ./:/SwarmUI \
+    -v "$PWD:/SwarmUI" \
     --gpus=all -p 7801:7801 swarmui $@
