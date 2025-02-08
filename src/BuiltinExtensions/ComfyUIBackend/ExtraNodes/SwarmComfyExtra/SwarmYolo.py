@@ -13,6 +13,7 @@ class SwarmYoloDetection:
             },
             "optional": {
                 "class_filter": ("STRING", { "default": "", "multiline": False }),
+                "sort_order": (["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], ),
             }
         }
 
@@ -20,7 +21,7 @@ class SwarmYoloDetection:
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 
-    def seg(self, image, model_name, index, class_filter=None):
+    def seg(self, image, model_name, index, class_filter=None, sort_order="left-right"):
         # TODO: Batch support?
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -87,10 +88,25 @@ class SwarmYoloDetection:
         else:
             sortedindices = []
             for mask in masks:
-                sum_x = (torch.sum(mask, dim=0) != 0).to(dtype=torch.int)
-                val = torch.argmax(sum_x).item()
+                match sort_order:
+                    case "left-right":
+                        sum_x = (torch.sum(mask, dim=0) != 0).to(dtype=torch.int)
+                        val = torch.argmax(sum_x).item()
+                    case "right-left":
+                        sum_x = (torch.sum(mask, dim=0) != 0).to(dtype=torch.int)
+                        val = mask.shape[1] - torch.argmax(torch.flip(sum_x, [0])).item() - 1
+                    case "top-bottom":
+                        sum_y = (torch.sum(mask, dim=1) != 0).to(dtype=torch.int)
+                        val = torch.argmax(sum_y).item()
+                    case "bottom-top":
+                        sum_y = (torch.sum(mask, dim=1) != 0).to(dtype=torch.int)
+                        val = mask.shape[0] - torch.argmax(torch.flip(sum_y, [0])).item() - 1
+                    case "largest-smallest" | "smallest-largest":
+                        val = torch.sum(mask).item()
                 sortedindices.append(val)
             sortedindices = np.argsort(sortedindices)
+            if sort_order in ["right-left", "bottom-top", "largest-smallest"]:
+                sortedindices = sortedindices[::-1].copy()
             masks = masks[sortedindices]
             return (masks[index - 1].unsqueeze(0), )
 

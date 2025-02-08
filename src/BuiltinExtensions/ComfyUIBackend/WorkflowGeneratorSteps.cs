@@ -1240,7 +1240,8 @@ public class WorkflowGeneratorSteps
                             ["image"] = g.FinalImageOut,
                             ["model_name"] = fullname,
                             ["index"] = index,
-                            ["class_filter"] = classFilter
+                            ["class_filter"] = classFilter,
+                            ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right")
                         });
                     }
                     else

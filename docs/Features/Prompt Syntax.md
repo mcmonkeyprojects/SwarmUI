@@ -125,7 +125,7 @@
             - Note the index order is sorted from leftmost detection to right
         - To control the creativity with a yolo model just append `,<creativity>,1`, for example `<segment:yolo-face_yolov8m-seg_60.pt-1,0.8,1>` sets a `0.8` creativity.
             - Note that threshold does nothing with yolo models, and should always just be `1`.
-        - To filter specific classes, append `:<classes>:` where `<classes>` is a comma-separated list of class IDs or names, e.g., `<segment:yolo-modelnamehere:0,apple,2:,0.8,1>`
+        - If you have a yolo model with multiple supported classes, you can filter specific classes by appending `:<classes>:` to the model name where `<classes>` is a comma-separated list of class IDs or names, e.g., `<segment:yolo-modelnamehere:0,apple,2:,0.8,1>`
     - There's an advanced parameter under `Regional Prompting` named `Segment Model` to customize the base model used for segment processing
     - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask
 
