@@ -1873,7 +1873,7 @@ function upvertAutoWebuiMetadataToSwarm(metadata) {
     // just a mishmash of text, and there's no way to necessarily predict newlines/colons/etc,
     // so just make best effort to import based on some easy examples
     if (metadata.includes("\nNegative prompt: ")) {
-        let parts = metadata.split("\nNegative prompt: ", 2);
+        let parts = splitWithTail(metadata, "\nNegative prompt: ", 2);
         realData['prompt'] = parts[0];
         let subSplit = parts[1].split("\n", 2);
         realData['negativeprompt'] = subSplit[0];

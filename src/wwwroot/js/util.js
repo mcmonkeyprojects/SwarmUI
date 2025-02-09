@@ -927,3 +927,16 @@ function isVideoExt(filename) {
     let ext = filename.split('.').pop();
     return ['mp4', 'mpeg', 'mov', 'webm'].includes(ext);
 }
+
+/** 'string.split' with a count limit, and without the stupid misbehavior of the default JS 'string.split'. */
+function splitWithTail(str, splitter, limit) {
+    let parts = str.split(splitter);
+    if (parts.length <= limit) {
+        return parts;
+    }
+    limit--;
+    let tail = parts.slice(limit).join(splitter);
+    let result = parts.slice(0, limit);
+    result.push(tail);
+    return result;
+}

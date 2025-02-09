@@ -350,9 +350,9 @@ class ModelDownloaderUtil {
         if (url.startsWith(this.civitGreenPrefix)) {
             url = this.civitPrefix + url.substring(this.civitGreenPrefix.length);
         }
-        let parts = url.substring(this.civitPrefix.length).split('/', 4); // 'models', id, name + sometimes version OR 'api', 'download', 'models', versid
+        let parts = splitWithTail(url.substring(this.civitPrefix.length), '/', 4); // 'models', id, name + sometimes version OR 'api', 'download', 'models', versid
         if (parts.length == 2 && parts[0] == 'models' && parts[1].includes('?')) {
-            let subparts = parts[1].split('?', 2);
+            let subparts = splitWithTail(parts[1], '?', 2);
             parts = ['models', subparts[0], `?${subparts[1]}`];
         }
         else if (parts.length == 2 && parts[0] == 'models' && !isNaN(parseInt(parts[1]))) {
@@ -362,7 +362,7 @@ class ModelDownloaderUtil {
             return [null, null];
         }
         if (parts[0] == 'models') {
-            let subparts = parts[2].split('?modelVersionId=', 2);
+            let subparts = splitWithTail(parts[2], '?modelVersionId=', 2);
             if (subparts.length == 2) {
                 return [parts[1], subparts[1]];
             }
@@ -381,7 +381,7 @@ class ModelDownloaderUtil {
             return;
         }
         if (url.startsWith(this.hfPrefix)) {
-            let parts = url.substring(this.hfPrefix.length).split('/', 5); // org, repo, 'blob', branch, filepath
+            let parts = splitWithTail(url.substring(this.hfPrefix.length), '/', 5); // org, repo, 'blob', branch, filepath
             if (parts.length < 5) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a specific file. Please use the path of a specific file inside the repo.";
                 this.button.disabled = false;
@@ -420,9 +420,9 @@ class ModelDownloaderUtil {
             url = this.civitPrefix + url.substring(this.civitGreenPrefix.length);
         }
         if (url.startsWith(this.civitPrefix)) {
-            let parts = url.substring(this.civitPrefix.length).split('/', 4); // 'models', id, name + sometimes version OR 'api', 'download', 'models', versid
+            let parts = splitWithTail(url.substring(this.civitPrefix.length), '/', 4); // 'models', id, name + sometimes version OR 'api', 'download', 'models', versid
             if (parts.length == 2 && parts[0] == 'models' && parts[1].includes('?')) {
-                let subparts = parts[1].split('?', 2);
+                let subparts = splitWithTail(parts[1], '?', 2);
                 parts = ['models', subparts[0], `?${subparts[1]}`];
             }
             else if (parts.length == 2 && parts[0] == 'models' && !isNaN(parseInt(parts[1]))) {
