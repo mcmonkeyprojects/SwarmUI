@@ -133,6 +133,10 @@ public class WebServer
                     */
                 }
             }
+            if (!string.IsNullOrWhiteSpace(Program.ServerSettings.Network.AccessControlAllowOrigin))
+            {
+                context.Response.Headers.AccessControlAllowOrigin = Program.ServerSettings.Network.AccessControlAllowOrigin;
+            }
             string authKey = Program.ServerSettings.Network.RequiredAuthorization;
             if (!string.IsNullOrWhiteSpace(authKey))
             {

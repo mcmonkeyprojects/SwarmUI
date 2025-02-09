@@ -204,6 +204,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("How long should browsers be told they can store cached copies of output images.\nDefaults to 30 seconds.\nDo not set less than 5-ish, temp-caching is important. Setting to a low value (like 5) can help if you often delete images and regenerate with the same filename.\nSome files (eg html/js for grids) in output always have a very low cache duration.")]
         public int OutputCacheSeconds = 30;
+
+        [ConfigComment("Optional CORS header to set. If empty, no CORS header will be set.\nDefaults to empty.")]
+        public string AccessControlAllowOrigin = "";
     }
 
     /// <summary>Settings related to file paths.</summary>
