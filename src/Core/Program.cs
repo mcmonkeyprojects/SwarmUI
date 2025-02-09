@@ -391,6 +391,9 @@ public class Program
         DataDir = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, GetCommandLineFlag("data_dir", ServerSettings.Paths.DataPath));
     }
 
+    /// <summary>Overlapping lock to prevent model set reads during a model list refresh.</summary>
+    public static ManyReadOneWriteLock RefreshLock = new(64);
+
     /// <summary>Refreshes all model sets from file source.</summary>
     public static void RefreshAllModelSets()
     {

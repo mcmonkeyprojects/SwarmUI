@@ -748,6 +748,7 @@ public static class T2IAPI
             await RefreshSemaphore.WaitAsync(Program.GlobalProgramCancel);
             if (botherToRun)
             {
+                using ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite();
                 Program.ModelRefreshEvent?.Invoke();
             }
         }
