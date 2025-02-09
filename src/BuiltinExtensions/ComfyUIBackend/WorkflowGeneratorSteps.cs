@@ -1454,7 +1454,7 @@ public class WorkflowGeneratorSteps
                     string latentNode = g.CreateNode("CosmosImageToVideoLatent", new JObject()
                     {
                         ["vae"] = vae,
-                        ["image"] = g.FinalImageOut,
+                        ["start_image"] = g.FinalImageOut,
                         ["width"] = width,
                         ["height"] = height,
                         ["length"] = frames ?? 121,
