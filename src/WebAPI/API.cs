@@ -45,7 +45,7 @@ public class API
 
             if (context.Request.Method == "OPTIONS")
             {
-                context.Response.Headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
+                context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS";
                 context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, *"; // probably needs further refining, oh well
                 context.Response.Headers["Access-Control-Max-Age"] = "3600";
                 context.Response.StatusCode = 204; 
