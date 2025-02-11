@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
@@ -8,6 +8,8 @@ using SwarmUI.Utils;
 using System.IO;
 using System.Net.WebSockets;
 using System.Reflection;
+using System.Text;
+using System.Collections.Concurrent;
 
 namespace SwarmUI.WebAPI;
 
@@ -36,6 +38,21 @@ public class API
     /// <summary>Web access call route, triggered from <see cref="WebServer"/>.</summary>
     public static async Task HandleAsyncRequest(HttpContext context)
     {
+        string corsOrigin = Program.ServerSettings.Network.AccessControlAllowOrigin;
+        if (!string.IsNullOrEmpty(corsOrigin))
+        {
+            context.Response.Headers["Access-Control-Allow-Origin"] = corsOrigin;
+
+            if (context.Request.Method == "OPTIONS")
+            {
+                context.Response.Headers["Access-Control-Allow-Methods"] = "POST, OPTIONS";
+                context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, *"; // probably needs further refining, oh well
+                context.Response.Headers["Access-Control-Max-Age"] = "3600";
+                context.Response.StatusCode = 204; 
+                return; 
+            }
+        }
+
         // TODO: Validate that 'async' is truly async here. If needed, spin up our own threads.
         Session session = null;
         void Error(string message)
