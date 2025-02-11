@@ -395,13 +395,13 @@ public class WorkflowGeneratorSteps
         #region ReVision/UnCLIP/IPAdapter
         void requireVisionModel(WorkflowGenerator g, string name, string url, string hash)
         {
-            if (WorkflowGenerator.VisionModelsValid.Contains(name))
+            if (WorkflowGenerator.VisionModelsValid.ContainsKey(name))
             {
                 return;
             }
             string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0], name);
             g.DownloadModel(name, filePath, url, hash);
-            WorkflowGenerator.VisionModelsValid.Add(name);
+            WorkflowGenerator.VisionModelsValid.TryAdd(name, name);
         }
         AddStep(g =>
         {
@@ -601,23 +601,23 @@ public class WorkflowGeneratorSteps
                         bool isXl = g.CurrentCompatClass() == "stable-diffusion-xl-v1";
                         void requireIPAdapterModel(string name, string url, string hash)
                         {
-                            if (WorkflowGenerator.IPAdapterModelsValid.Contains(name))
+                            if (WorkflowGenerator.IPAdapterModelsValid.ContainsKey(name))
                             {
                                 return;
                             }
                             string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, $"ipadapter/{name}");
                             g.DownloadModel(name, filePath, url, hash);
-                            WorkflowGenerator.IPAdapterModelsValid.Add(name);
+                            WorkflowGenerator.IPAdapterModelsValid.TryAdd(name, name);
                         }
                         void requireLora(string name, string url, string hash)
                         {
-                            if (WorkflowGenerator.IPAdapterModelsValid.Contains($"LORA-{name}"))
+                            if (WorkflowGenerator.IPAdapterModelsValid.ContainsKey($"LORA-{name}"))
                             {
                                 return;
                             }
                             string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDLoraFolder.Split(';')[0], $"ipadapter/{name}");
                             g.DownloadModel(name, filePath, url, hash);
-                            WorkflowGenerator.IPAdapterModelsValid.Add($"LORA-{name}");
+                            WorkflowGenerator.IPAdapterModelsValid.TryAdd($"LORA-{name}", name);
                         }
                         // IPAdapter model links @ https://github.com/cubiq/ComfyUI_IPAdapter_plus?tab=readme-ov-file#installation
                         // required model for any given type @ https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/main/utils.py#L29

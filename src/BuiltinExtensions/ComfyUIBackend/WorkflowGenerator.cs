@@ -34,13 +34,13 @@ public class WorkflowGenerator
     public HashSet<string> Features = [];
 
     /// <summary>Helper tracker for CLIP Models that are loaded (to skip a datadrive read from being reused every time).</summary>
-    public static HashSet<string> ClipModelsValid = [];
+    public static ConcurrentDictionary<string, string> ClipModelsValid = [];
 
     /// <summary>Helper tracker for Vision Models that are loaded (to skip a datadrive read from being reused every time).</summary>
-    public static HashSet<string> VisionModelsValid = [];
+    public static ConcurrentDictionary<string, string> VisionModelsValid = [];
 
     /// <summary>Helper tracker for IP Adapter Models that are loaded (to skip a datadrive read from being reused every time).</summary>
-    public static HashSet<string> IPAdapterModelsValid = [];
+    public static ConcurrentDictionary<string, string> IPAdapterModelsValid = [];
 
     /// <summary>Register a new step to the workflow generator.</summary>
     public static void AddStep(Action<WorkflowGenerator> step, double priority)
@@ -554,13 +554,13 @@ public class WorkflowGenerator
         }
         void requireClipModel(string name, string url, string hash)
         {
-            if (ClipModelsValid.Contains(name))
+            if (ClipModelsValid.ContainsKey(name))
             {
                 return;
             }
             string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipFolder.Split(';')[0], name);
             DownloadModel(name, filePath, url, hash);
-            ClipModelsValid.Add(name);
+            ClipModelsValid.TryAdd(name, name);
         }
         string getT5XXLModel()
         {
