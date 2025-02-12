@@ -36,6 +36,21 @@ public class API
     /// <summary>Web access call route, triggered from <see cref="WebServer"/>.</summary>
     public static async Task HandleAsyncRequest(HttpContext context)
     {
+        string corsOrigin = Program.ServerSettings.Network.AccessControlAllowOrigin;
+        if (!string.IsNullOrEmpty(corsOrigin))
+        {
+            context.Response.Headers["Access-Control-Allow-Origin"] = corsOrigin;
+
+            if (context.Request.Method == "OPTIONS")
+            {
+                context.Response.Headers["Access-Control-Allow-Methods"] = "*";
+                context.Response.Headers["Access-Control-Allow-Headers"] = "*"; 
+                context.Response.Headers["Access-Control-Max-Age"] = "3600";
+                context.Response.StatusCode = 204; 
+                return; 
+            }
+        }
+
         // TODO: Validate that 'async' is truly async here. If needed, spin up our own threads.
         Session session = null;
         void Error(string message)
