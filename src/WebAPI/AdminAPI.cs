@@ -152,7 +152,7 @@ public static class AdminAPI
         }
         Logs.Warning($"User {session.User.UserID} changed server settings: {changed.JoinString(", ")}");
         Program.SaveSettingsFile();
-        if (settings.Properties().Any(p => p.Name.StartsWith("paths.") || p.Name.StartsWith("performance.allowgpuspecific"))
+        if (settings.Properties().Any(p => p.Name.StartsWith("paths.") || p.Name.StartsWith("performance.allowgpuspecific")))
         {
             string[] paths =
             [
