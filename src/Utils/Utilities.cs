@@ -108,8 +108,8 @@ public static class Utilities
         }
     }
 
-    /// <summary>If true, presume that this system has an NVIDIA 40xx or newer graphics card.</summary>
-    public static bool PresumeNVidia40xx = false;
+    /// <summary>If true, presume that this system has a certain generation of NVIDIA or newer graphics card.</summary>
+    public static bool PresumeNVidia30xx = false, PresumeNVidia40xx = false, PresumeNVidia50xx = false;
 
     /// <summary>SwarmUI's current version.</summary>
     public static readonly string Version = Assembly.GetEntryAssembly()?.GetName().Version.ToString();

@@ -731,7 +731,7 @@ public class WorkflowGenerator
                     if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     {
                         dtype = "fp8_e4m3fn";
-                        if (Utilities.PresumeNVidia40xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
+                        if (Utilities.PresumeNVidia30xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
                         {
                             dtype = "fp8_e4m3fn_fast";
                         }

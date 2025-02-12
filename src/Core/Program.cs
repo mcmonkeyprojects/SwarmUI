@@ -214,10 +214,23 @@ public class Program
                 {
                     Logs.Init($"GPU {gpu.ID}: {gpu.GPUName} | Temp {gpu.Temperature}C | Util {gpu.UtilizationGPU}% GPU, {gpu.UtilizationMemory}% Memory | VRAM {gpu.TotalMemory} total, {gpu.FreeMemory} free, {gpu.UsedMemory} used");
                 }
-                if (gpuInfo.All(gpu => gpu.GPUName.Contains("NVIDIA GeForce RTX 40")))
+                if (gpuInfo.All(gpu => gpu.GPUName.Contains("NVIDIA GeForce RTX 50")))
+                {
+                    Utilities.PresumeNVidia50xx = true;
+                    Utilities.PresumeNVidia40xx = true;
+                    Utilities.PresumeNVidia30xx = true;
+                    Logs.Init($"Will use GPU accelerations specific to NVIDIA GeForce RTX 50xx series and newer.");
+                }
+                else if (gpuInfo.All(gpu => gpu.GPUName.Contains("NVIDIA GeForce RTX 40")))
                 {
                     Utilities.PresumeNVidia40xx = true;
-                    Logs.Init($"Will use GPU accelerations specific to NVIDIA GeForce RTX 40xx series.");
+                    Utilities.PresumeNVidia30xx = true;
+                    Logs.Init($"Will use GPU accelerations specific to NVIDIA GeForce RTX 40xx series and newer.");
+                }
+                else if (gpuInfo.All(gpu => gpu.GPUName.Contains("NVIDIA GeForce RTX 30")))
+                {
+                    Utilities.PresumeNVidia30xx = true;
+                    Logs.Init($"Will use GPU accelerations specific to NVIDIA GeForce RTX 30xx series and newer.");
                 }
             }
         }));
