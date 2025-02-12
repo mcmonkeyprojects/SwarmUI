@@ -44,7 +44,7 @@ public class API
             if (context.Request.Method == "OPTIONS")
             {
                 context.Response.Headers["Access-Control-Allow-Methods"] = "*";
-                context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type"; 
+                context.Response.Headers["Access-Control-Allow-Headers"] = "*"; 
                 context.Response.Headers["Access-Control-Max-Age"] = "3600";
                 context.Response.StatusCode = 204; 
                 return; 
