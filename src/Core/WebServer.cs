@@ -136,6 +136,14 @@ public class WebServer
             if (!string.IsNullOrWhiteSpace(Program.ServerSettings.Network.AccessControlAllowOrigin))
             {
                 context.Response.Headers.AccessControlAllowOrigin = Program.ServerSettings.Network.AccessControlAllowOrigin;
+                if (context.Request.Method == "OPTIONS")
+                {
+                    context.Response.Headers.AccessControlAllowMethods = "*";
+                    context.Response.Headers.AccessControlAllowHeaders = "*";
+                    context.Response.Headers.AccessControlMaxAge = "3600";
+                    context.Response.StatusCode = 204;
+                    return;
+                }
             }
             string authKey = Program.ServerSettings.Network.RequiredAuthorization;
             if (!string.IsNullOrWhiteSpace(authKey))
