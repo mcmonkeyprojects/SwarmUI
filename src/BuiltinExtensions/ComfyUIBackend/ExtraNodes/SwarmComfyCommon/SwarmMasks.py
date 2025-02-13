@@ -1,4 +1,7 @@
-import torch
+import torch, comfy
+
+intermediate_device = comfy.model_management.intermediate_device()
+main_device = comfy.model_management.get_torch_device()
 
 class SwarmSquareMaskFromPercent:
     @classmethod
@@ -20,7 +23,7 @@ class SwarmSquareMaskFromPercent:
 
     def mask_from_perc(self, x, y, width, height, strength):
         SCALE = 256
-        mask = torch.zeros((SCALE, SCALE), dtype=torch.float32, device="cpu")
+        mask = torch.zeros((SCALE, SCALE), dtype=torch.float32, device=intermediate_device)
         mask[int(y*SCALE):int((y+height)*SCALE), int(x*SCALE):int((x+width)*SCALE)] = strength
         return (mask.unsqueeze(0),)
 
@@ -179,10 +182,11 @@ class SwarmMaskGrow:
     def grow(self, mask, grow):
         while mask.ndim < 4:
             mask = mask.unsqueeze(0)
+        mask = mask.to(device=main_device)
         # iterate rather than all at once - this avoids padding and runs much faster for large sizes
         for _ in range((grow + 1) // 2):
             mask = torch.nn.functional.max_pool2d(mask, kernel_size=3, stride=1, padding=1)
-        return (mask,)
+        return (mask.to(device=intermediate_device),)
 
 
 # Blur code is copied out of ComfyUI's default ImageBlur
@@ -215,6 +219,7 @@ class SwarmMaskBlur:
     def blur(self, mask, blur_radius, sigma):
         if blur_radius == 0:
             return (mask,)
+        mask = mask.to(device=main_device)
         kernel_size = blur_radius * 2 + 1
         kernel = gaussian_kernel(kernel_size, sigma, device=mask.device).repeat(1, 1, 1).unsqueeze(1)
         while mask.ndim < 4:
@@ -222,7 +227,8 @@ class SwarmMaskBlur:
         padded_mask = torch.nn.functional.pad(mask, (blur_radius,blur_radius,blur_radius,blur_radius), 'reflect')
         blurred = torch.nn.functional.conv2d(padded_mask, kernel, padding=kernel_size // 2, groups=1)[:,:,blur_radius:-blur_radius, blur_radius:-blur_radius]
         blurred = blurred.squeeze(0).squeeze(0)
-        return (blurred,)
+        mask = mask.to(device=intermediate_device)
+        return (blurred.to(device=intermediate_device),)
 
 
 class SwarmMaskThreshold:
