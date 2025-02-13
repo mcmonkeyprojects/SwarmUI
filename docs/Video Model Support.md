@@ -51,7 +51,8 @@
 - Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
     - Save to the `diffusion_models` folder
 - Or use the gguf models from city96 <https://huggingface.co/city96/HunyuanVideo-gguf/tree/main>
-    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video`
+    - `Q6_K` is near identical to full precision and is recommended for 24 gig cards, `Q4_K_M` is recommended if you have low VRAM, results are still very close
+    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video` (this *might* autodetect but not guaranteed so double-check it)
 - The text encoders (T5-XXL, and LLaVA-LLaMA3) and VAE will be automatically downloaded.
 - When selected, the `Text To Video` parameter group will become visible
 
@@ -61,7 +62,7 @@
 - You can get the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
     - Save to the `diffusion_models` folder
 - Or the gguf FastVideo from city96 <https://huggingface.co/city96/FastHunyuan-gguf/tree/main>
-    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video`
+    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video` (this *might* autodetect but not guaranteed so double-check it)
 - Set the advanced `Sigma Shift` param to a high value around 17
 - Set the Flux Guidance at a higher than normal value as well (eg 10).
 - Not adjusting these values well will yield terribly distorted results. Swarm does not automate these for FastVideo currently!
@@ -86,7 +87,7 @@
 ### Hunyuan Video Performance / Optimization
 
 - Hunyuan Video is very GPU and memory intensive, especially the VAE
-    - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (GGUF model coming soon may help?)
+    - Even on an RTX 4090, this will max out your VRAM and will be very slow to generate. (the GGUF models help reduce this)
 - The VAE has a harsh memory requirement that may limit you from high duration videos.
     - VAE Tiling is basically mandatory for consumer GPUs. You can configure both image space tiling, and video frame tiling, with the parameters under `Advanced Sampling`.
     - If you do not manually enable VAE Tiling, Swarm will automatically enable it at 256 with 64 overlap, and temporal 32 frames with 4 overlap. (Because the memory requirements without tiling are basically impossible. You can set the tiling values very very high if you want to make the tile artifacts invisible and you have enough memory to handle it).
