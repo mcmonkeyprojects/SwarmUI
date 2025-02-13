@@ -185,13 +185,14 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 
 ![img](/docs/images/models/flux-schnell.jpg)
 
-### Info
+### Install
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
     - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models) (best for most graphics cards)
         - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main>
         - Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
         - `Q6_K` is best accuracy on high VRAM, but `Q4_K_S` cuts VRAM requirements while still being very close to original quality
+        - Goes in `(Swarm)/Models/diffusion_models`
     - **Alternate:** the simplified fp8 file (best on 3090, 4090, or higher tier cards):
         - Dev <https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors>
         - Schnell <https://huggingface.co/Comfy-Org/flux1-schnell/blob/main/flux1-schnell-fp8.safetensors>
@@ -199,20 +200,27 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - **or, not recommended:** You can download BFL's original files:
         - Download "Schnell" (Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-schnell>
         - Or "Dev" (non-Turbo) from <https://huggingface.co/black-forest-labs/FLUX.1-dev>
-        - Put dev/schnell in `(Swarm)/Models/diffusion_models`
-        - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
-    - For both models, use CFG=1 (negative prompt won't work). Sampling leave default (will use Euler + Simple)
-        - For the Dev model, there is also a `Flux Guidance Scale` parameter under `Sampling`, which is a distilled embedding value that the model was trained to use.
-        - Dev can use some slightly-higher CFG values (allowing for negative prompt), possibly higher if you reduce the Flux Guidance value and/or use Dynamic Thresholding.
-    - For Schnell use Steps=4 (or lower, it can even do 1 step), for Dev use Steps=20 or higher
-    - This is best on a very high end GPU (eg 4090) for now. It is a 12B model.
-        - Smaller GPUs can run it, but will be slow. This requires a lot of system RAM (32GiB+). It's been shown to work as low down as an RTX 2070 or 2060 (very slowly).
-    - On a 4090, schnell takes about 4/5 seconds to generate a 4-step image, very close to SDXL 20 steps in time, but much higher quality.
-    - By default swarm will use fp8_e4m3fn for Flux, if you have a very very big GPU and want to use fp16/bf16, under `Advanced Sampling` set `Preferred DType` to `Default (16 bit)`
-    - It natively supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results.
-        - You can mess with the resolution quite a lot and still get decent results. It's very flexible even past what it was trained on.
-    - You _can_ do a refiner upscale 2x and it will work but take a long time and might not have excellent quality. Refiner tiling may be better.
-    - You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+        - Goes in `(Swarm)/Models/diffusion_models`
+    - Required VAE & TextEncoders will be autodownloaded if you do not already have them, you don't need to worry about those.
+
+### Parameters
+
+- **CFG Scale:** For both models, use `CFG Scale` = `1` (negative prompt won't work).
+    - For the Dev model, there is also a `Flux Guidance Scale` parameter under `Sampling`, which is a distilled embedding value that the model was trained to use.
+    - Dev can use some slightly-higher CFG values (allowing for negative prompt), possibly higher if you reduce the Flux Guidance value and/or use Dynamic Thresholding.
+- **Sampler:** Leave it at default (Euler + Simple)
+- **Steps:** For Schnell use Steps=4 (or lower, it can even do 1 step), for Dev use Steps=20 or higher
+- **Resolution:** It natively supports any resolution up to 2 mp (1920x1088), and any aspect ratio thereof. By default will use 1MP 1024x1024 in Swarm. You can take it down to 256x256 and still get good results.
+    - You can mess with the resolution quite a lot and still get decent results. It's very flexible even past what it was trained on.
+- You _can_ do a refiner upscale 2x and it will work but take a long time and might not have excellent quality.
+    - Enable `Refiner Do Tiling` for any upscale target resolution above 1536x1536.
+
+### Performance
+
+- Flux is best on a very high end GPU (eg 4090) for now. It is a 12B model.
+    - Smaller GPUs can run it, but will be slow. This requires a lot of system RAM (32GiB+). It's been shown to work as low down as an RTX 2070 or 2060 (very slowly).
+- On a 4090, schnell takes about 4/5 seconds to generate a 4-step image, very close to SDXL 20 steps in time, but much higher quality.
+- By default swarm will use fp8_e4m3fn for Flux, if you have a very very big GPU and want to use fp16/bf16, under `Advanced Sampling` set `Preferred DType` to `Default (16 bit)`
 
 ### Flux.1 Tools
 
