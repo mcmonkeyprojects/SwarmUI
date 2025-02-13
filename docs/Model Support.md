@@ -188,8 +188,11 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
 ### Info
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
-    - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models)
-    - **Alternate:** the simplified fp8 file:
+    - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models) (best for most graphics cards)
+        - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main>
+        - Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
+        - `Q6_K` is best accuracy on high VRAM, but `Q4_K_S` cuts VRAM requirements while still being very close to original quality
+    - **Alternate:** the simplified fp8 file (best on 3090, 4090, or higher tier cards):
         - Dev <https://huggingface.co/Comfy-Org/flux1-dev/blob/main/flux1-dev-fp8.safetensors>
         - Schnell <https://huggingface.co/Comfy-Org/flux1-schnell/blob/main/flux1-schnell-fp8.safetensors>
         - goes in your regular `(Swarm)/Models/Stable-Diffusion` dir
