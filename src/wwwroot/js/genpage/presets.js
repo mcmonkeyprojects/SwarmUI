@@ -30,7 +30,7 @@ function clearPresetView() {
     let enableImage = getRequiredElementById('new_preset_enable_image');
     enableImage.checked = false;
     enableImage.disabled = true;
-    for (let type of getPresetTypes(`input`)) {
+    for (let type of gen_param_types) {
         try {
             let elem = getRequiredElementById('input_' + type.id);
             let presetElem = getRequiredElementById('preset_input_' + type.id);
