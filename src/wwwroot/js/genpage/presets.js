@@ -91,7 +91,7 @@ function save_new_preset() {
     let data = {};
     for (let type of getPresetTypes(`preset_input`)) {
         let elem = getRequiredElementById(`preset_input_${type.id}`);
-        if (!elem || !getRequiredElementById(`preset_input_${type.id}_toggle`).checked) {
+        if (!getRequiredElementById(`preset_input_${type.id}_toggle`).checked) {
             continue;
         }
         if (type.type == "boolean") {
