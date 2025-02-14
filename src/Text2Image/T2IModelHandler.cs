@@ -246,12 +246,27 @@ public class T2IModelHandler
             {
                 return ModelMetadataCachePerFolder.GetOrCreate(folder, () =>
                 {
-                    LiteDatabase ldb = new(folder + "/model_metadata.ldb");
+                    string path = $"{folder}/model_metadata.ldb";
+                    LiteDatabase ldb;
+                    try
+                    {
+                        ldb = new(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logs.Verbose($"Failed to read Lite Database for '{folder}' and will reset it: {ex}");
+                        File.Delete(path);
+                        ldb = new(path);
+                    }
                     return (ldb, ldb.GetCollection<ModelMetadataStore>("models"));
                 }).Item2;
             }
-            catch (UnauthorizedAccessException) { return null; }
-            catch (IOException) { return null; }
+            catch (Exception ex)
+            {
+                Logs.Warning($"Internal error, some model metadata caches will be missing or invalid, see debug log for details.");
+                Logs.Debug($"Failed to read Lite Database for '{folder}' and cannot reset it: {ex}");
+                return null;
+            }
         }
     }
 
