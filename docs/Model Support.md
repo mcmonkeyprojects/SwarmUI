@@ -191,7 +191,7 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models) (best for most graphics cards)
         - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main>
         - Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
-        - `Q6_K` is best accuracy on high VRAM, but `Q4_K_S` cuts VRAM requirements while still being very close to original quality
+        - `Q6_K` is best accuracy on high VRAM, but `Q4_K_S` cuts VRAM requirements while still being very close to original quality, other variants shouldn't be used normally
         - Goes in `(Swarm)/Models/diffusion_models`
         - After adding the model, refresh the list, then you may need to click the `☰` hamburger menu on the model, then `Edit Metadata` and set the `Architecture` to `Flux Dev` or `Flux Schnell` as relevant, unless it detects correctly on its own.
     - **Alternate:** the simplified fp8 file (best on 3090, 4090, or higher tier cards):

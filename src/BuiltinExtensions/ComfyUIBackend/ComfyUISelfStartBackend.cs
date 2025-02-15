@@ -382,6 +382,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 }
                 return dir[prefix.Length..].Before(".dist-info");
             }
+            if (!libs.Contains("pip"))
+            {
+                Logs.Warning($"Python lib folder at '{lib}' appears to not contain pip. Python operations will likely fail. Please make sure your system has a valid python3-pip install.");
+            }
             foreach ((string libFolder, string pipName) in RequiredPythonPackages)
             {
                 await install(libFolder, pipName);
