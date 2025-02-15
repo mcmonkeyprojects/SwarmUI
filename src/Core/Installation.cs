@@ -135,9 +135,16 @@ public class Installation
             }
         }
         await Output("Installing prereqs...");
-        await Utilities.DownloadFile("https://aka.ms/vs/16/release/vc_redist.x64.exe", "dlbackend/vc_redist.x64.exe", UpdateProgress);
-        UpdateProgress(0, 0, 0);
-        await Process.Start(new ProcessStartInfo(Path.GetFullPath("dlbackend/vc_redist.x64.exe"), "/quiet /install /passive /norestart") { UseShellExecute = true }).WaitForExitAsync(Program.GlobalProgramCancel);
+        try
+        {
+            await Utilities.DownloadFile("https://aka.ms/vs/16/release/vc_redist.x64.exe", "dlbackend/vc_redist.x64.exe", UpdateProgress);
+            UpdateProgress(0, 0, 0);
+            await Process.Start(new ProcessStartInfo(Path.GetFullPath("dlbackend/vc_redist.x64.exe"), "/quiet /install /passive /norestart") { UseShellExecute = true }).WaitForExitAsync(Program.GlobalProgramCancel);
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Failed to install VC Redist: {ex}");
+        }
         string path = "dlbackend/comfy/ComfyUI/main.py";
         string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
         if (install_amd)
