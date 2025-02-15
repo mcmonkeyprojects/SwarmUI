@@ -22,6 +22,7 @@ class ServerLogsHelper {
         this.logMessagesByType = {};
         this.lastBounce = 0;
         this.levels = ['Verbose', 'Debug', 'Info', 'Init', 'Warning', 'Error'];
+        this.mayLoop = true;
     }
 
     doPastebinModal() {
@@ -111,6 +112,9 @@ class ServerLogsHelper {
     }
 
     updateLoop() {
+        if (!this.mayLoop) {
+            return;
+        }
         if (!this.serverTabBody.classList.contains('active') || !this.tabBody.classList.contains('active')) {
             return;
         }
@@ -143,14 +147,15 @@ class ServerLogsHelper {
                 }
             }
         }
-        genericRequest('ListRecentLogMessages', { lastSeqId: this.lastSeq, types: visibleTypes, last_sequence_ids: lastSeqs }, (data) => {
+        this.mayLoop = false;
+        genericRequest('ListRecentLogMessages', { lastSeqId: this.lastSeq, types: visibleTypes, last_sequence_ids: lastSeqs }, async (data) => {
             if (this.typeSelectors.value != selected) {
+                this.mayLoop = true;
                 return;
             }
             this.logTypes = data.types_available;
             this.regenTypeListElem();
             this.lastSeq = data.last_sequence_id;
-            let wasScrolledDown = this.actualLogContainer.scrollTop + this.actualLogContainer.clientHeight >= this.actualLogContainer.scrollHeight;
             for (let typeNum in this.logTypes) {
                 let type = this.logTypes[typeNum];
                 let messages = data.data[type.name];
@@ -175,6 +180,7 @@ class ServerLogsHelper {
                         toRenderMessages.push([message, type]);
                     }
                 }
+                await sleep(1);
                 if (storedData.raw.length > 2048) {
                     let keys = Object.keys(storedData.raw);
                     let removeCount = keys.length - 1536;
@@ -183,15 +189,24 @@ class ServerLogsHelper {
                         delete storedData.raw[keys[i]];
                     }
                 }
+                await sleep(1);
             }
             toRenderMessages.sort((a, b) => a[0].sequence_id - b[0].sequence_id);
+            await sleep(1);
+            let newHtml = '';
             for (let [message, type] of toRenderMessages) {
-                this.actualLogContainer.innerHTML += this.htmlMessage(message, type, this.lastBounce);
+                newHtml += this.htmlMessage(message, type, this.lastBounce);
                 this.lastBounce = (this.lastBounce + 1) % 2;
             }
+            await sleep(1);
+            let wasScrolledDown = this.actualLogContainer.scrollTop + this.actualLogContainer.clientHeight >= this.actualLogContainer.scrollHeight;
+            this.actualLogContainer.innerHTML += newHtml;
             if (wasScrolledDown) {
                 this.actualLogContainer.scrollTop = this.actualLogContainer.scrollHeight;
             }
+            this.mayLoop = true;
+        }, 0, () => {
+            this.mayLoop = true;
         });
     }
 }

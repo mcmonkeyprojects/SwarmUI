@@ -146,7 +146,7 @@ public static class Logs
     public class LogTracker
     {
         /// <summary>How many log messages to keep at a time.</summary>
-        public static int MaxTracked = 512;
+        public static int MaxTracked = 1024;
 
         /// <summary>A queue of all recent log messages.</summary>
         public Queue<LogMessage> Messages = new(MaxTracked);

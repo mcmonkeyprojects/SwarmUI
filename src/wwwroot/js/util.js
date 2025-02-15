@@ -940,3 +940,8 @@ function splitWithTail(str, splitter, limit) {
     result.push(tail);
     return result;
 }
+
+/** Async function to sleep for a given number of milliseconds. */
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
