@@ -1162,12 +1162,22 @@ public class BackendHandler
                     {
                         Logs.Warning($"[BackendHandler] All backends failed to load the model '{highestPressure.Model.RawFilePath}'! Cannot generate anything.");
                         releasePressure();
-                        static string fixReason(string reason)
+                        string fixReason(string reason)
                         {
-                            // TODO: Match some common issues and append explanation text
+                            if (reason.Contains("ERROR: Could not detect model type of:"))
+                            {
+                                if (highestPressure.Model.IsDiffusionModelsFormat)
+                                {
+                                    reason += "\n\nThis may mean that the model is in the diffusion_models folder, but needs to be in the Stable-Diffusion folder";
+                                }
+                                else
+                                {
+                                    reason += "\n\nThis may mean that the model is in the Stable-Diffusion folder, but needs to be in the diffusion_models folder";
+                                }
+                            }
                             return $"Possible reason: {reason}";
                         }
-                        throw new SwarmReadableErrorException($"All available backends failed to load the model '{highestPressure.Model.RawFilePath}'.\n{highestPressure.BackendFailReasons.Select(fixReason).JoinString("\n").Trim()}");
+                        throw new SwarmReadableErrorException($"All available backends failed to load the model '{highestPressure.Model.RawFilePath}'.\n\n{highestPressure.BackendFailReasons.Select(fixReason).JoinString("\n\n").Trim()}");
                     }
                     valid = valid.Where(b => b.Backend.CurrentModelName != highestPressure.Model.Name).ToList();
                     if (valid.IsEmpty())
