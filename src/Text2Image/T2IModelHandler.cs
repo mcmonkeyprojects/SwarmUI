@@ -340,6 +340,9 @@ public class T2IModelHandler
         return null;
     }
 
+    /// <summary>Model compat-class IDs that have variable text encoder content.</summary>
+    public static HashSet<string> VariableTextEncModelClasses = ["stable-diffusion-v3-medium", "stable-diffusion-v3.5-large", "stable-diffusion-v3.5-medium", "flux-1"];
+
     /// <summary>Force-load the metadata for a model.</summary>
     public void LoadMetadata(T2IModel model)
     {
@@ -375,9 +378,8 @@ public class T2IModelHandler
                 metadata = null;
             }
         }
-        if (metadata is not null && metadata.TextEncoders is null && metadata.ModelClassType == "stable-diffusion-v3-medium")
+        if (metadata is not null && metadata.TextEncoders is null && VariableTextEncModelClasses.Contains(metadata.ModelClassType))
         {
-            // TODO: Temporary metadata fix for SD3 models before the commit that added TextEncs tracking
             metadata = null;
         }
         if (metadata is null || metadata.ModelFileVersion != modified)

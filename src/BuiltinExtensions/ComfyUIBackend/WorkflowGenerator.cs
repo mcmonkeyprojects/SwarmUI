@@ -795,6 +795,11 @@ public class WorkflowGenerator
             LoadingModel = [modelNode, 0];
             LoadingClip = [modelNode, 1];
             LoadingVAE = [modelNode, 2];
+            if (IsFlux() && (model.Metadata?.TextEncoders ?? "") == "")
+            {
+                LoadingClip = null;
+                LoadingVAE = null;
+            }
         }
         string predType = model.Metadata?.PredictionType;
         if (IsSD3())
