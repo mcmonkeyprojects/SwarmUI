@@ -394,6 +394,7 @@ public class WebServer
         else
         {
             context.Response.StatusCode = 404;
+            Logs.Verbose($"Giving 404 for extension file request '{requested}'");
             await context.Response.WriteAsync("404, file not found.");
         }
         await context.Response.CompleteAsync();

@@ -72,7 +72,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>A list of any non-real backends this instance controls.</summary>
     public ConcurrentDictionary<int, BackendHandler.T2IBackendData> ControlledNonrealBackends = new();
 
-    public Dictionary<string, Dictionary<string, JObject>> RemoteModels = null;
+    public ConcurrentDictionary<string, Dictionary<string, JObject>> RemoteModels = null;
 
     /// <summary>Gets the current target address.</summary>
     public string Address => Settings.Address.TrimEnd('/'); // Remove trailing slash to avoid issues.
@@ -129,16 +129,16 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         }
     }
 
-    public void TriggerRefresh()
+    public Task TriggerRefresh()
     {
         if (!IsReal)
         {
-            return;
+            return Task.CompletedTask;
         }
-        _ = RunWithSession(async () =>
+        return RunWithSession(async () =>
         {
             Logs.Verbose($"Trigger refresh on remote swarm {Address}");
-            await HttpClient.PostJson($"{Address}/TriggerRefresh", new() { ["session_id"] = Session }, RequestAdapter());
+            await HttpClient.PostJson($"{Address}/API/TriggerRefresh", new() { ["session_id"] = Session }, RequestAdapter());
             List<Task> tasks =
             [
                 ReviseRemoteDataList(true)
