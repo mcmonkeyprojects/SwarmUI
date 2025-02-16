@@ -774,6 +774,9 @@ public class BackendHandler
         /// <summary>Async issue prevention lock.</summary>
         public LockObject Locker = new();
 
+        /// <summary>Set of reasons backends failed to load.</summary>
+        public HashSet<string> BackendFailReasons = [];
+
         /// <summary>Gets a loose heuristic for model order preference - sort by earliest requester, but higher count of requests is worth 10 seconds.</summary>
         public long Heuristic(long timeRel) => Count * 10 + ((timeRel - TimeFirstRequest) / 1000); // TODO: 10 -> ?
     }
@@ -1159,7 +1162,12 @@ public class BackendHandler
                     {
                         Logs.Warning($"[BackendHandler] All backends failed to load the model '{highestPressure.Model.RawFilePath}'! Cannot generate anything.");
                         releasePressure();
-                        throw new SwarmReadableErrorException($"All available backends failed to load the model '{highestPressure.Model.RawFilePath}'.");
+                        static string fixReason(string reason)
+                        {
+                            // TODO: Match some common issues and append explanation text
+                            return $"Possible reason: {reason}";
+                        }
+                        throw new SwarmReadableErrorException($"All available backends failed to load the model '{highestPressure.Model.RawFilePath}'.\n{highestPressure.BackendFailReasons.Select(fixReason).JoinString("\n").Trim()}");
                     }
                     valid = valid.Where(b => b.Backend.CurrentModelName != highestPressure.Model.Name).ToList();
                     if (valid.IsEmpty())
@@ -1213,6 +1221,10 @@ public class BackendHandler
                                 ex = ae.InnerException;
                             }
                             Logs.Error($"[BackendHandler] backend #{availableBackend.ID} failed to load model with error: {ex.ReadableString()}");
+                            lock (highestPressure.Locker)
+                            {
+                                highestPressure.BackendFailReasons.Add(ex.ReadableString());
+                            }
                         }
                         finally
                         {

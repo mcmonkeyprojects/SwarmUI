@@ -450,7 +450,6 @@ public static class T2IAPI
 
     public enum ImageHistorySortMode { Name, Date }
 
-    // TODO: Configurable limit
     private static JObject GetListAPIInternal(Session session, string path, string root, HashSet<string> extensions, Func<string, bool> isAllowed, int depth, ImageHistorySortMode sortBy, bool sortReverse)
     {
         int maxInHistory = session.User.Settings.MaxImagesInHistory;
