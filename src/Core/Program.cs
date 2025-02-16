@@ -12,6 +12,7 @@ using SwarmUI.Backends;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -137,6 +138,13 @@ public class Program
             }
             Logs.Init("Applying command line settings...");
             ApplyCommandLineSettings();
+            foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+            {
+                if ($"{entry.Key}".StartsWith("SWARM_"))
+                {
+                    Logs.Init($"EnvVar '{entry.Key}' set to '{entry.Value}'");
+                }
+            }
         }
         catch (SwarmReadableErrorException ex)
         {
