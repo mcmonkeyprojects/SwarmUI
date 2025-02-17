@@ -163,6 +163,8 @@ class SwarmImageCompositeMaskedColorCorrecting:
 
         if correction_method == "Uniform":
             source_section = color_correct_uniform(source_section, dest_section, inverse_mask)
+        elif correction_method == "Linear":
+            source_section = color_correct_linear(source_section, dest_section, inverse_mask)
 
         source_portion = mask * source_section
         destination_portion = inverse_mask * dest_section
@@ -190,7 +192,6 @@ def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tens
         print(f"diff pre-shape: {diff.shape}") # 1, 3, h, w
         # calculate the average difference between the two, only where thresholded is 1
         diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
-        #diff = diff.mean(dim=[0, 2, 3])
         print(f"diff: {diff.shape}, {diff}") # 3
         diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
         print(f"diff post-shape: {diff.shape}") # 1, 3, 1, 1
@@ -198,6 +199,40 @@ def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tens
         source_hsv = source_hsv.clamp(0, 1).remainder(1)
         source_section = hsv2rgb(source_hsv)
     return source_section
+
+def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tensor, inverse_mask: torch.Tensor) -> torch.Tensor:
+    # Intended algorithm:
+    # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything).
+    # For only those pixels, do a linear fit to find a linear function for the required shift value, and apply it to the source.
+    thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
+    thresholded_sum = thresholded.sum()
+    print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
+        
+    if thresholded_sum > 50:
+        source_hsv = rgb2hsv(source_section)
+        dest_hsv = rgb2hsv(dest_section)
+        source_hsv_masked = source_hsv * thresholded
+        dest_hsv_masked = dest_hsv * thresholded
+        # We now try to model dest as a linear function of source
+        source_mean = source_hsv_masked.sum(dim=[0, 2, 3]) / thresholded_sum
+        dest_mean = dest_hsv_masked.sum(dim=[0, 2, 3]) / thresholded_sum
+        source_mean = source_mean.unsqueeze(0).unsqueeze(2).unsqueeze(2)
+        dest_mean = dest_mean.unsqueeze(0).unsqueeze(2).unsqueeze(2)
+        source_deviation = (source_hsv - source_mean) * thresholded
+        dest_deviation = (dest_hsv - dest_mean) * thresholded
+        numerator = torch.sum(source_deviation * dest_deviation, (0, 2, 3))
+        denominator = torch.sum(source_deviation * source_deviation, (0, 2, 3)) 
+        # When all src the same color, we fall back to assuming m = 1 (uniform offset)
+        m = torch.where(denominator != 0, numerator / denominator, torch.tensor(1.0))
+        m = m.unsqueeze(0).unsqueeze(2).unsqueeze(2)
+        print(f"m: {m.shape}, {m}") # 3
+        b = dest_mean - source_mean * m
+        print(f"b: {b.shape}, {b}") 
+        source_hsv = m * source_hsv + b
+        source_hsv = source_hsv.clamp(0, 1).remainder(1)
+        source_section = hsv2rgb(source_hsv)
+    return source_section
+
      
 
 # from https://github.com/limacv/RGB_HSV_HSL
