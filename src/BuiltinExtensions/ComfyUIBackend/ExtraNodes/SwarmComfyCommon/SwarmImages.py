@@ -227,6 +227,9 @@ def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tenso
         m = m.unsqueeze(0).unsqueeze(2).unsqueeze(2)
         print(f"m: {m.shape}, {m}") # 3
         b = dest_mean - source_mean * m
+        # Hue not working well here, revert to uniform
+        m[0][0][0][0] = 1.0
+        b[0][0][0][0] = 0.0
         print(f"b: {b.shape}, {b}") 
         source_hsv = m * source_hsv + b
         source_hsv = source_hsv.clamp(0, 1).remainder(1)
