@@ -128,9 +128,8 @@ class SwarmImageCompositeMaskedColorCorrecting:
                 "source": ("IMAGE",),
                 "x": ("INT", {"default": 0, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
                 "y": ("INT", {"default": 0, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
-                "mask": ("MASK",)
-                "correction_method": (["None", "Uniform", "Linear"], ),
-
+                "mask": ("MASK",),
+                "correction_method": (["None", "Uniform", "Linear"], )
             }
         }
 
