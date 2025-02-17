@@ -285,7 +285,7 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder;
     public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
@@ -442,6 +442,9 @@ public class T2IParamTypes
             ));
         UseInpaintingEncode = Register<bool>(new("Use Inpainting Encode", "Uses VAE Encode logic specifically designed for certain inpainting models.\nNotably this includes the RunwayML Stable-Diffusion-v1 Inpainting model.\nThis covers the masked area with gray.",
             "false", IgnoreIf: "false", Group: GroupInitImage, OrderPriority: -3.2, IsAdvanced: true
+            ));
+        ColorCorrectionBehavior = Register<string>(new("Color Correction Behavior", "Experimental: How to correct color when compositing a mask.\n'None' = Do not attempt color correction.\n'Uniform' = Compute a fixed offset HSV correction for all pixels.\n'Linear' = Compute a linear correction that depends on each pixel's S and V.",
+            "None", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["None", "Uniform", "Linear"], OrderPriority: -3.1, Group: GroupInitImage
             ));
         UnsamplerPrompt = Register<string>(new("Unsampler Prompt", "If enabled, feeds this prompt to an unsampler before resampling with your main prompt.\nThis is powerful for controlled image editing.\n\nFor example, use unsampler prompt 'a photo of a man wearing a black hat',\nand give main prompt 'a photo of a man wearing a sombrero', to change what type of hat a person is wearing.",
             "", OrderPriority: -3, Toggleable: true, Clean: ApplyStringEdit, ViewType: ParamViewType.PROMPT, Group: GroupInitImage, IsAdvanced: true

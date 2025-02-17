@@ -1,6 +1,7 @@
 import torch
 import comfy
 import math
+from nodes import MAX_RESOLUTION
 
 class SwarmImageScaleForMP:
     @classmethod
@@ -118,9 +119,123 @@ class SwarmImageNoise:
         return (img,)
 
 
+class SwarmImageCompositeMaskedColorCorrecting:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "destination": ("IMAGE",),
+                "source": ("IMAGE",),
+                "x": ("INT", {"default": 0, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
+                "y": ("INT", {"default": 0, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
+                "mask": ("MASK",)
+                "correction_method": (["None", "Uniform", "Linear"], ),
+
+            }
+        }
+
+    CATEGORY = "SwarmUI/images"
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "composite"
+    DESCRIPTION = "Works like ImageCompositeMasked, but does color correction for inpainted images (ie outside-the-mask areas are expected to be identical)"
+
+    def composite(self, destination, source, x, y, mask, correction_method):
+        destination = destination.clone().movedim(-1, 1)
+        source = source.clone().movedim(-1, 1).to(destination.device)
+        source = comfy.utils.repeat_to_batch_size(source, destination.shape[0])
+
+        x = max(-source.shape[3], min(x, destination.shape[3]))
+        y = max(-source.shape[2], min(y, destination.shape[2]))
+
+        left, top = (x, y)
+        right, bottom = (left + source.shape[3], top + source.shape[2],)
+
+        mask = mask.to(destination.device, copy=True)
+        mask = torch.nn.functional.interpolate(mask.reshape((-1, 1, mask.shape[-2], mask.shape[-1])), size=(source.shape[2], source.shape[3]), mode="bilinear")
+        mask = comfy.utils.repeat_to_batch_size(mask, source.shape[0])
+
+        visible_width, visible_height = (destination.shape[3] - left + min(0, x), destination.shape[2] - top + min(0, y),)
+
+        mask = mask[:, :, :visible_height, :visible_width]
+        inverse_mask = torch.ones_like(mask) - mask
+
+        source_section = source[:, :, :visible_height, :visible_width]
+        dest_section = destination[:, :, top:bottom, left:right]
+
+        if correction_method != "None":
+            # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything). Then compare the HSV difference between the two to find a required shift value, average it between all selected pixels, and apply it to the source.
+            thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
+            thresholded_sum = thresholded.sum()
+            print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
+        
+            if thresholded_sum > 50:
+                source_hsv = rgb2hsv(source_section)
+                dest_hsv = rgb2hsv(dest_section)
+                source_hsv_masked = source_hsv * thresholded
+                dest_hsv_masked = dest_hsv * thresholded
+                diff = dest_hsv_masked - source_hsv_masked
+                print(f"diff pre-shape: {diff.shape}") # 1, 3, h, w
+                # calculate the average difference between the two, only where thresholded is 1
+                diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
+                #diff = diff.mean(dim=[0, 2, 3])
+                print(f"diff: {diff.shape}, {diff}") # 3
+                diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
+                print(f"diff post-shape: {diff.shape}") # 1, 3, 1, 1
+                source_hsv = source_hsv - diff
+                source_hsv = source_hsv.clamp(0, 1).remainder(1)
+                source_section = hsv2rgb(source_hsv)
+
+        source_portion = mask * source_section
+        destination_portion = inverse_mask * dest_section
+
+        destination[:, :, top:bottom, left:right] = source_portion + destination_portion
+        return (destination.movedim(1, -1),)
+
+    @classmethod
+    def IS_CHANGED(s, destination, source, x, y, mask):
+        return time.time()
+
+
+# from https://github.com/limacv/RGB_HSV_HSL
+def rgb2hsv(rgb: torch.Tensor) -> torch.Tensor:
+    cmax, cmax_idx = torch.max(rgb, dim=1, keepdim=True)
+    cmin = torch.min(rgb, dim=1, keepdim=True)[0]
+    delta = cmax - cmin
+    hsv_h = torch.empty_like(rgb[:, 0:1, :, :])
+    cmax_idx[delta == 0] = 3
+    hsv_h[cmax_idx == 0] = (((rgb[:, 1:2] - rgb[:, 2:3]) / delta) % 6)[cmax_idx == 0]
+    hsv_h[cmax_idx == 1] = (((rgb[:, 2:3] - rgb[:, 0:1]) / delta) + 2)[cmax_idx == 1]
+    hsv_h[cmax_idx == 2] = (((rgb[:, 0:1] - rgb[:, 1:2]) / delta) + 4)[cmax_idx == 2]
+    hsv_h[cmax_idx == 3] = 0.0
+    hsv_h /= 6.0
+    hsv_s = torch.where(cmax == 0, torch.tensor(0.0).type_as(rgb), delta / cmax)
+    hsv_v = cmax
+    return torch.cat([hsv_h, hsv_s, hsv_v], dim=1)
+
+
+def hsv2rgb(hsv: torch.Tensor) -> torch.Tensor:
+    hsv_h, hsv_s, hsv_l = hsv[:, 0:1], hsv[:, 1:2], hsv[:, 2:3]
+    _c = hsv_l * hsv_s
+    _x = _c * (- torch.abs(hsv_h * 6.0 % 2.0 - 1) + 1.0)
+    _m = hsv_l - _c
+    _o = torch.zeros_like(_c)
+    idx = (hsv_h * 6.0).type(torch.uint8)
+    idx = (idx % 6).expand(-1, 3, -1, -1)
+    rgb = torch.empty_like(hsv)
+    rgb[idx == 0] = torch.cat([_c, _x, _o], dim=1)[idx == 0]
+    rgb[idx == 1] = torch.cat([_x, _c, _o], dim=1)[idx == 1]
+    rgb[idx == 2] = torch.cat([_o, _c, _x], dim=1)[idx == 2]
+    rgb[idx == 3] = torch.cat([_o, _x, _c], dim=1)[idx == 3]
+    rgb[idx == 4] = torch.cat([_x, _o, _c], dim=1)[idx == 4]
+    rgb[idx == 5] = torch.cat([_c, _o, _x], dim=1)[idx == 5]
+    rgb += _m
+    return rgb
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmImageScaleForMP": SwarmImageScaleForMP,
     "SwarmImageCrop": SwarmImageCrop,
     "SwarmVideoBoomerang": SwarmVideoBoomerang,
     "SwarmImageNoise": SwarmImageNoise,
+    "SwarmImageCompositeMaskedColorCorrecting": SwarmImageCompositeMaskedColorCorrecting
 }
