@@ -161,28 +161,8 @@ class SwarmImageCompositeMaskedColorCorrecting:
         source_section = source[:, :, :visible_height, :visible_width]
         dest_section = destination[:, :, top:bottom, left:right]
 
-        if correction_method != "None":
-            # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything). Then compare the HSV difference between the two to find a required shift value, average it between all selected pixels, and apply it to the source.
-            thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
-            thresholded_sum = thresholded.sum()
-            print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
-        
-            if thresholded_sum > 50:
-                source_hsv = rgb2hsv(source_section)
-                dest_hsv = rgb2hsv(dest_section)
-                source_hsv_masked = source_hsv * thresholded
-                dest_hsv_masked = dest_hsv * thresholded
-                diff = dest_hsv_masked - source_hsv_masked
-                print(f"diff pre-shape: {diff.shape}") # 1, 3, h, w
-                # calculate the average difference between the two, only where thresholded is 1
-                diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
-                #diff = diff.mean(dim=[0, 2, 3])
-                print(f"diff: {diff.shape}, {diff}") # 3
-                diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
-                print(f"diff post-shape: {diff.shape}") # 1, 3, 1, 1
-                source_hsv = source_hsv - diff
-                source_hsv = source_hsv.clamp(0, 1).remainder(1)
-                source_section = hsv2rgb(source_hsv)
+        if correction_method == "Uniform":
+            source_section = color_correct_uniform(source_section, dest_section, inverse_mask)
 
         source_portion = mask * source_section
         destination_portion = inverse_mask * dest_section
@@ -191,9 +171,34 @@ class SwarmImageCompositeMaskedColorCorrecting:
         return (destination.movedim(1, -1),)
 
     @classmethod
-    def IS_CHANGED(s, destination, source, x, y, mask):
+    def IS_CHANGED(s, destination, source, x, y, mask, correction_method):
         return time.time()
 
+
+def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tensor, inverse_mask: torch.Tensor) -> torch.Tensor:
+    # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything). Then compare the HSV difference between the two to find a required shift value, average it between all selected pixels, and apply it to the source.
+    thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
+    thresholded_sum = thresholded.sum()
+    print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
+        
+    if thresholded_sum > 50:
+        source_hsv = rgb2hsv(source_section)
+        dest_hsv = rgb2hsv(dest_section)
+        source_hsv_masked = source_hsv * thresholded
+        dest_hsv_masked = dest_hsv * thresholded
+        diff = dest_hsv_masked - source_hsv_masked
+        print(f"diff pre-shape: {diff.shape}") # 1, 3, h, w
+        # calculate the average difference between the two, only where thresholded is 1
+        diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
+        #diff = diff.mean(dim=[0, 2, 3])
+        print(f"diff: {diff.shape}, {diff}") # 3
+        diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
+        print(f"diff post-shape: {diff.shape}") # 1, 3, 1, 1
+        source_hsv = source_hsv + diff
+        source_hsv = source_hsv.clamp(0, 1).remainder(1)
+        source_section = hsv2rgb(source_hsv)
+    return source_section
+     
 
 # from https://github.com/limacv/RGB_HSV_HSL
 def rgb2hsv(rgb: torch.Tensor) -> torch.Tensor:
