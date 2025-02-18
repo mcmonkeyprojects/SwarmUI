@@ -1,6 +1,7 @@
 import torch
 import comfy
 import math
+import time
 from nodes import MAX_RESOLUTION
 
 class SwarmImageScaleForMP:
