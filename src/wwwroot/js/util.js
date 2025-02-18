@@ -145,56 +145,67 @@ let allowedHtmlFullAttrs = ['target="_blank"', 'target="_new"', 'rel="noopener n
 let autoExcludeHtmlAttrs = ['id', 'class'];
 /** Partially escapes HTML, allowing 'basic format' codes (bold, italic, etc) to remain. */
 function safeHtmlOnly(text) {
-    if (text == null) {
-        return '';
-    }
-    let tagStart = text.indexOf('<');
-    if (tagStart < 0) {
-        return text.replaceAll('>', '&gt;').replaceAll('\n', '\n<br>');
-    }
-    let tagEnd = text.indexOf('>', tagStart);
-    if (tagEnd < 0) {
-        return escapeHtml(text);
-    }
-    let prefix = text.substring(0, tagStart).replaceAll('>', '&gt;').replaceAll('\n', '\n<br>');
-    let tag = text.substring(tagStart + 1, tagEnd);
-    let suffix = safeHtmlOnly(text.substring(tagEnd + 1));
-    let tagForSplit = tag.endsWith('/') ? tag.substring(0, tag.length - 1).trim() : tag;
-    tagForSplit = tag.startsWith('/') ? tagForSplit.substring(1) : tagForSplit;
-    let parts = splitWithQuoting(tagForSplit, ' ');
-    let readdParts = parts.filter(part => allowedHtmlFullAttrs.includes(part));
-    parts = parts.filter(part => !allowedHtmlFullAttrs.includes(part));
-    let tagName = parts[0];
-    if (htmlTagSafeRemaps[tagName]) {
-        tagName = htmlTagSafeRemaps[tagName];
-    }
-    parts.shift();
-    let splitParts = parts.map(part => splitWithQuoting(part, '=')).filter(part => !autoExcludeHtmlAttrs.includes(part[0]));
-    let styleAttr = splitParts.find(part => part[0] == 'style');
-    if (allowedHtmlTagNames.includes(tagName)
-        && splitParts.every(part => part.length == 2 && part[1].startsWith('"') && part[1].endsWith('"'))
-        && splitParts.every(part => allowedHtmlTagAttrs.includes(part[0]))
-        && (!styleAttr || isHtmlSpanStyleAllowed(styleAttr[1]))
-        && splitParts.filter(part => part[0] == 'style').length <= 1) {
-            let result = `${prefix}<`;
-            if (tag.startsWith('/')) {
-                result += '/';
-            }
-            else {
-                if (!suffix.includes(`</${tagName}>`)) {
-                    suffix += `</${tagName}>`;
+    function inner(text) {
+        if (text == null) {
+            return ['', null];
+        }
+        let tagStart = text.indexOf('<');
+        if (tagStart < 0) {
+            return [text.replaceAll('>', '&gt;').replaceAll('\n', '\n<br>'), null];
+        }
+        let tagEnd = text.indexOf('>', tagStart);
+        if (tagEnd < 0) {
+            return [escapeHtml(text), null];
+        }
+        let prefix = text.substring(0, tagStart).replaceAll('>', '&gt;').replaceAll('\n', '\n<br>');
+        let tag = text.substring(tagStart + 1, tagEnd);
+        let suffix = text.substring(tagEnd + 1);
+        let tagForSplit = tag.endsWith('/') ? tag.substring(0, tag.length - 1).trim() : tag;
+        tagForSplit = tag.startsWith('/') ? tagForSplit.substring(1) : tagForSplit;
+        let parts = splitWithQuoting(tagForSplit, ' ');
+        let readdParts = parts.filter(part => allowedHtmlFullAttrs.includes(part));
+        parts = parts.filter(part => !allowedHtmlFullAttrs.includes(part));
+        let tagName = parts[0];
+        if (htmlTagSafeRemaps[tagName]) {
+            tagName = htmlTagSafeRemaps[tagName];
+        }
+        parts.shift();
+        let splitParts = parts.map(part => splitWithQuoting(part, '=')).filter(part => !autoExcludeHtmlAttrs.includes(part[0]));
+        let styleAttr = splitParts.find(part => part[0] == 'style');
+        if (allowedHtmlTagNames.includes(tagName)
+            && splitParts.every(part => part.length == 2 && part[1].startsWith('"') && part[1].endsWith('"'))
+            && splitParts.every(part => allowedHtmlTagAttrs.includes(part[0]))
+            && (!styleAttr || isHtmlSpanStyleAllowed(styleAttr[1]))
+            && splitParts.filter(part => part[0] == 'style').length <= 1) {
+                let result = `${prefix}<`;
+                if (tag.startsWith('/')) {
+                    result += '/';
                 }
-            }
-            result += tagName;
-            for (let part of splitParts) {
-                result += ` ${part[0]}=${part[1]}`;
-            }
-            for (let part of readdParts) {
-                result += ` ${part}`;
-            }
-            return `${result}>${suffix}`;
+                else {
+                    if (!suffix.includes(`</${tagName}>`)) {
+                        suffix += `</${tagName}>`;
+                    }
+                }
+                result += tagName;
+                for (let part of splitParts) {
+                    result += ` ${part[0]}=${part[1]}`;
+                }
+                for (let part of readdParts) {
+                    result += ` ${part}`;
+                }
+                return [`${result}>`, suffix];
+        }
+        return [`${prefix}&lt;${escapeHtml(tag)}&gt;`, suffix];
     }
-    return `${prefix}&lt;${escapeHtml(tag)}&gt;${suffix}`;
+    // Avoid recursion via direct looping here
+    let result = '';
+    let suffix = text;
+    while (suffix != null) {
+        let [newResult, newSuffix] = inner(suffix);
+        result += newResult;
+        suffix = newSuffix;
+    }
+    return `<div class="safe-html-only">${result}</div>`;
 }
 
 /** Splits the text around the splitChar, but allowing for "quoted sections" to be contained. */
