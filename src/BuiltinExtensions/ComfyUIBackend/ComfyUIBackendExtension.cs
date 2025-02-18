@@ -552,7 +552,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit;
 
-    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold;
+    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, RenormCFG;
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
@@ -648,6 +648,9 @@ public class ComfyUIBackendExtension : Extension
             ));
         RescaleCFGMultiplier = T2IParamTypes.Register<double>(new("Rescale CFG Multiplier", "If enabled, use Comfy's native version of RescaleCFG.\nThis is only expected to work on certain vpred models.\nThis is, generally, pointless.\nThe value specified is the multiplier rate.",
             "0.7", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, Toggleable: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14
+            ));
+        RenormCFG = T2IParamTypes.Register<double>(new("Renorm CFG", "If enabled, use 'Renorm CFG', a technique developed for use with Lumina 2.\nAt 0, this does nothing. Lumina 2 reference code sets this to 1.\nThis parameter only works on some models, and will corrupt others.",
+            "0", Min: 0, Max: 100, Step: 0.1, IgnoreIf: "0", ViewMax: 2, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 15
             ));
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,

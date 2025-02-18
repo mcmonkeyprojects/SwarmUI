@@ -284,6 +284,8 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - **Sigma Shift:** The default is `6` per Lumina reference script, Comfy recommends `3` for use with lower step counts, so you can safely mess with this parameter if you want to. 6 seems to be generally better for structure, while 3 is better for fine details by sacrificing structure, but may have unwanted artifacts. Raising step count reduces some artifacts.
     - **Steps:** The usual 20 steps is fine, but reference Lumina script uses 250(?!) by default (it has a weird sampler that is akin to Euler at 36 steps actually supposedly?)
         - Quick initial testing shows that raising steps high doesn't work any particularly different on this model than others, but the model at SigmaShift=6 produces some noise artifacts at regular 20 steps, raising closer to 40 cuts those out.
+    - **Renorm CFG:** Lumina 2 reference code sets a new advanced parameter `Renorm CFG` to 1. This is available in Swarm under `Advanced Sampling`.
+        - The practical difference is subjective and hard to predict, but enabling it seems to tend towards more fine detail
 
 # Video Models
 
