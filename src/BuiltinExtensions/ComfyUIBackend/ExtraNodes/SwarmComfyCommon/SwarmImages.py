@@ -161,6 +161,7 @@ class SwarmImageCompositeMaskedColorCorrecting:
         source_section = source[:, :, :visible_height, :visible_width]
         dest_section = destination[:, :, top:bottom, left:right]
 
+        # Fall through on "None"
         if correction_method == "Uniform":
             source_section = color_correct_uniform(source_section, dest_section, inverse_mask)
         elif correction_method == "Linear":
@@ -189,21 +190,19 @@ def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tens
         source_hsv_masked = source_hsv * thresholded
         dest_hsv_masked = dest_hsv * thresholded
         diff = dest_hsv_masked - source_hsv_masked
-        print(f"diff pre-shape: {diff.shape}") # 1, 3, h, w
         # calculate the average difference between the two, only where thresholded is 1
         diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
         print(f"diff: {diff.shape}, {diff}") # 3
         diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
-        print(f"diff post-shape: {diff.shape}") # 1, 3, 1, 1
         source_hsv = source_hsv + diff
         source_hsv = source_hsv.clamp(0, 1).remainder(1)
         source_section = hsv2rgb(source_hsv)
     return source_section
 
 def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tensor, inverse_mask: torch.Tensor) -> torch.Tensor:
-    # Intended algorithm:
     # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything).
-    # For only those pixels, do a linear fit to find a linear function for the required shift value, and apply it to the source.
+    # For only those pixels, do a linear fit to find a linear function y = mx + b for the required shift value, and apply it to the source.
+    # Limitations: ignoring Hue for now - it gets bad results
     thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
     thresholded_sum = thresholded.sum()
     print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
@@ -213,7 +212,7 @@ def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tenso
         dest_hsv = rgb2hsv(dest_section)
         source_hsv_masked = source_hsv * thresholded
         dest_hsv_masked = dest_hsv * thresholded
-        # We now try to model dest as a linear function of source
+        # Simple linear regression on dest as a function of source
         source_mean = source_hsv_masked.sum(dim=[0, 2, 3]) / thresholded_sum
         dest_mean = dest_hsv_masked.sum(dim=[0, 2, 3]) / thresholded_sum
         source_mean = source_mean.unsqueeze(0).unsqueeze(2).unsqueeze(2)
@@ -226,11 +225,9 @@ def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tenso
         m = torch.where(denominator != 0, numerator / denominator, torch.tensor(1.0))
         m = m.unsqueeze(0).unsqueeze(2).unsqueeze(2) # 3
         b = dest_mean - source_mean * m
-        # Hue not working well here, revert to uniform
+        # Hue not working well here, maybe due to weird contributions from dark pixels. Don't correct it.
         m[0][0][0][0] = 1.0
-        b[0][0][0][0] = 0.0
-        print(f"m: {m.shape}, {m}")
-        print(f"b: {b.shape}, {b}") 
+        b[0][0][0][0] = 0.0 
         source_hsv = m * source_hsv + b
         source_hsv = source_hsv.clamp(0, 1)
         source_section = hsv2rgb(source_hsv)
