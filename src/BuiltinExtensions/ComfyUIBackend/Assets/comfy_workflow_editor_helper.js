@@ -179,9 +179,11 @@ function comfyReloadObjectInfo() {
     let promise = new Promise(r => { resolve = r });
     getJsonDirect('ComfyBackendDirect/object_info', (_, data) => {
         comfyObjectData = data;
-        for (let param of gen_param_types) {
-            if (param.revalueGetter) {
-                param.values = param.revalueGetter();
+        if (typeof gen_param_types != 'undefined') {
+            for (let param of gen_param_types) {
+                if (param.revalueGetter) {
+                    param.values = param.revalueGetter();
+                }
             }
         }
         resolve();

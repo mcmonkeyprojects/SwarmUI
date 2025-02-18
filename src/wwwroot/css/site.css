@@ -762,6 +762,9 @@ textarea, input, select {
 .modal-content {
     width: fit-content;
 }
+.safe-html-only {
+    display: inline;
+}
 
 
 
