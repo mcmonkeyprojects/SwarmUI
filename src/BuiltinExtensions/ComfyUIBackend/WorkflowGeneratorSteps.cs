@@ -150,6 +150,16 @@ public class WorkflowGeneratorSteps
                 });
                 g.LoadingModel = [guided, 0];
             }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.RenormCFG, out double renormCfg))
+            {
+                string guided = g.CreateNode("RenormCFG", new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["cfg_trunc"] = 100, // This value is the weirdly named timestep where the renorm applies - less than this apply, above don't. 100 is default, not sure if it needs a customization param?
+                    ["renorm_cfg"] = renormCfg
+                });
+                g.LoadingModel = [guided, 0];
+            }
         }, -7);
         AddModelGenStep(g =>
         {
