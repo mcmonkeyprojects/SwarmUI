@@ -1395,6 +1395,11 @@ public class WorkflowGeneratorSteps
                 int imageWidth = g.UserInput.GetImageWidth();
                 int imageHeight = g.UserInput.GetImageHeight();
                 double defCfg = 7;
+                int resPrecision = 64;
+                if (vidModel.ModelClass?.CompatClass == "hunyuan-video")
+                {
+                    resPrecision = 16; // wants 720x720, which is wonky x16 and not x32 or x64
+                }
                 if (resFormat == "Image Aspect, Model Res")
                 {
                     if (width == 1024 && height == 576 && imageWidth == 1344 && imageHeight == 768)
@@ -1404,7 +1409,7 @@ public class WorkflowGeneratorSteps
                     }
                     else
                     {
-                        (width, height) = Utilities.ResToModelFit(imageWidth, imageHeight, width * height);
+                        (width, height) = Utilities.ResToModelFit(imageWidth, imageHeight, width * height, resPrecision);
                     }
                 }
                 else if (resFormat == "Image")
@@ -1482,6 +1487,45 @@ public class WorkflowGeneratorSteps
                     latent = [latentNode, 0];
                     defSampler = "res_multistep";
                     defScheduler = "karras";
+                }
+                else if (vidModel.ModelClass?.CompatClass == "hunyuan-video")
+                {
+                    if (fps == -1)
+                    {
+                        fps = 24;
+                    }
+                    g.FinalLoadedModel = vidModel;
+                    (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
+                    posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
+                    negCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), clip, vidModel, false);
+                    string latentNode = g.CreateNode("EmptyHunyuanLatentVideo", new JObject()
+                    {
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["length"] = frames ?? 73,
+                        ["batch_size"] = 1
+                    });
+                    string scaled = g.CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["upscale_method"] = "bilinear",
+                        ["crop"] = "disabled"
+                    });
+                    string ip2pNode = g.CreateNode("InstructPixToPixConditioning", new JObject()
+                    {
+                        ["positive"] = posCond,
+                        ["negative"] = negCond,
+                        ["vae"] = vae,
+                        ["pixels"] = new JArray() { scaled, 0 }
+                    });
+                    posCond = [ip2pNode, 0];
+                    negCond = [ip2pNode, 1];
+                    defCfg = 7;
+                    latent = [latentNode, 0];
+                    defSampler = "dpmpp_2m";
+                    defScheduler = "beta";
                 }
                 else
                 {
