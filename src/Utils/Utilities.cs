@@ -487,6 +487,24 @@ public static class Utilities
         return CommonContentTypes.GetValueOrDefault(extension, "application/octet-stream");
     }
 
+    public static AsciiMatcher GeneralValidSymbolsMatcher = new(c => (c >= 32 && c <= 126) || c == 9 || c == 10 || c == 13);
+
+    /// <summary>Clean some potentially-trash text for output into logs. Strips invalid non-ascii characters and cuts to max length.
+    /// Useful for situations such as logging parser errors, to avoid corrupt data trashing the logs.</summary>
+    public static string CleanTrashTextForDebug(string text)
+    {
+        string clean = GeneralValidSymbolsMatcher.TrimToMatches(text);
+        if (clean != text)
+        {
+            clean = $"(Invalid Characters Stripped) {clean}";
+        }
+        if (clean.Length > 256)
+        {
+            clean = $"{clean[..256]}...";
+        }
+        return clean;
+    }
+
     public static JObject ParseToJson(this string input)
     {
         try
@@ -495,7 +513,7 @@ public static class Utilities
         }
         catch (JsonReaderException ex)
         {
-            throw new JsonReaderException($"Failed to parse JSON `{input.Replace("\n", "  ")}`: {ex.Message}");
+            throw new JsonReaderException($"Failed to parse JSON `{CleanTrashTextForDebug(input.Replace("\n", "  "))}`: {ex.Message}");
         }
     }
 
