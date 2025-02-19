@@ -1395,6 +1395,11 @@ public class WorkflowGeneratorSteps
                 int imageWidth = g.UserInput.GetImageWidth();
                 int imageHeight = g.UserInput.GetImageHeight();
                 double defCfg = 7;
+                int resPrecision = 64;
+                if (vidModel.ModelClass?.CompatClass == "hunyuan-video")
+                {
+                    resPrecision = 16; // wants 720x720, which is wonky x16 and not x32 or x64
+                }
                 if (resFormat == "Image Aspect, Model Res")
                 {
                     if (width == 1024 && height == 576 && imageWidth == 1344 && imageHeight == 768)
@@ -1404,7 +1409,7 @@ public class WorkflowGeneratorSteps
                     }
                     else
                     {
-                        (width, height) = Utilities.ResToModelFit(imageWidth, imageHeight, width * height);
+                        (width, height) = Utilities.ResToModelFit(imageWidth, imageHeight, width * height, resPrecision);
                     }
                 }
                 else if (resFormat == "Image")

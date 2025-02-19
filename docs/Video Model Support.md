@@ -116,7 +116,7 @@
 - You can download a SkyReels Image2Video fp8 model from here <https://huggingface.co/Kijai/SkyReels-V1-Hunyuan_comfy/blob/main/skyreels_hunyuan_i2v_fp8_e4m3fn.safetensors>
     - Save to the `diffusion_models` folder
 - Use via the `Image To Video` param group
-- This model prefers you use real CFG Scale of `6`, and set `Flux Guidance` value to `1`
+- This model prefers you use real CFG Scale of around `4` to `6`, and set `Flux Guidance` value to `1`
 - Their docs say you should prefix prompts with `FPS-24, ` as this was trained in. In practice the differences seem to be minor.
 - The model seems to be pretty hit-or-miss as to whether it creates a video of your image, or just "transitions" from your image to something else based on the prompt.
 - The model seems to have visual quality artifacts
