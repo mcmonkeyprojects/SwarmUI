@@ -314,11 +314,11 @@ public class T2IModelClassSorter
         {
             return isHunyuanVideo(h);
         }});
-        Register(new() { ID = "hunyuan-video-skyreels", CompatClass = "hunyuan-video", Name = "Hunyuan Video - Skyreels T2V", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "hunyuan-video-skyreels", CompatClass = "hunyuan-video", Name = "Hunyuan Video - SkyReels Text2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoSkyreels(h) && !isHunyuanVideoSkyreelsImage2V(h);
         }});
-        Register(new() { ID = "hunyuan-video-skyreels-i2v", CompatClass = "hunyuan-video", Name = "Hunyuan Video - Skyreels Image2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "hunyuan-video-skyreels-i2v", CompatClass = "hunyuan-video", Name = "Hunyuan Video - SkyReels Image2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoSkyreels(h) && isHunyuanVideoSkyreelsImage2V(h);
         }});

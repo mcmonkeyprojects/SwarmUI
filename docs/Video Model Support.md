@@ -3,7 +3,7 @@
 | Model | Year | Author | Scale | Type | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- |
 [Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Outdated |
-[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video | Modern, High Quality |
+[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | Modern, High Quality |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | Modern, Decent |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, Very slow, mixed quality |
@@ -56,17 +56,6 @@
 - The text encoders (T5-XXL, and LLaVA-LLaMA3) and VAE will be automatically downloaded.
 - When selected, the `Text To Video` parameter group will become visible
 
-### FastVideo
-
-- FastVideo is a version of Hunyuan Video trained for lower step counts (as low as 6)
-- You can get the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
-    - Save to the `diffusion_models` folder
-- Or the gguf FastVideo from city96 <https://huggingface.co/city96/FastHunyuan-gguf/tree/main>
-    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video` (this *might* autodetect but not guaranteed so double-check it)
-- Set the advanced `Sigma Shift` param to a high value around 17
-- Set the Flux Guidance at a higher than normal value as well (eg 10).
-- Not adjusting these values well will yield terribly distorted results. Swarm does not automate these for FastVideo currently!
-
 ### Hunyuan Video Parameters
 
 - **Resolution:** The model is trained for 1280x720 (960x960) or 960x544 (720x720) resolutions or other aspect ratios of the same total pixel count
@@ -100,6 +89,39 @@
 
 - You can use Hunyuan Video as a Text2Image model by setting `Text2Video Frames` to `1`.
     - The base model as an image generator performs like a slightly dumber version of Flux Dev.
+
+### FastVideo
+
+- FastVideo is a version of Hunyuan Video trained for lower step counts (as low as 6)
+- You can get the FastVideo fp8 from Kijai <https://huggingface.co/Kijai/HunyuanVideo_comfy/blob/main/hunyuan_video_FastVideo_720_fp8_e4m3fn.safetensors>
+    - Save to the `diffusion_models` folder
+- Or the gguf FastVideo from city96 <https://huggingface.co/city96/FastHunyuan-gguf/tree/main>
+    - Save to the `diffusion_models` folder, then load up Swarm and click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video` (this *might* autodetect but not guaranteed so double-check it)
+- Set the advanced `Sigma Shift` param to a high value around 17
+- Set the Flux Guidance at a higher than normal value as well (eg 10).
+- Not adjusting these values well will yield terribly distorted results. Swarm does not automate these for FastVideo currently!
+
+### SkyReels Text2Video
+
+- SkyReels is a finetune of Hunyuan video produced by SkyWorkAI, see their repo [here](https://github.com/SkyworkAI/SkyReels-V1)
+- You can download a SkyReels Text2Video fp8 model from here <https://huggingface.co/Kijai/SkyReels-V1-Hunyuan_comfy/blob/main/skyreels_hunyuan_t2v_fp8_e4m3fn.safetensors>
+    - Save to the `diffusion_models` folder
+- Broadly used like any other Hunyuan Video model
+- This model prefers you use real CFG Scale of `6`, and set `Flux Guidance` value to `1`
+- Their docs say you should prefix prompts with `FPS-24, ` as this was trained in. In practice the differences seem to be minor.
+- `Sigma Shift` default value is `7`, you do not need to edit it
+
+### SkyReels Image2Video
+
+- You can download a SkyReels Image2Video fp8 model from here <https://huggingface.co/Kijai/SkyReels-V1-Hunyuan_comfy/blob/main/skyreels_hunyuan_i2v_fp8_e4m3fn.safetensors>
+    - Save to the `diffusion_models` folder
+- Use via the `Image To Video` param group
+- This model prefers you use real CFG Scale of `6`, and set `Flux Guidance` value to `1`
+- Their docs say you should prefix prompts with `FPS-24, ` as this was trained in. In practice the differences seem to be minor.
+- The model seems to be pretty hit-or-miss as to whether it creates a video of your image, or just "transitions" from your image to something else based on the prompt.
+- The model seems to have visual quality artifacts
+    - Set Video Steps higher, at least `30`, to reduce these
+- `Sigma Shift` default value is `7`, you do not need to edit it
 
 ## Genmo Mochi 1 (Text2Video)
 

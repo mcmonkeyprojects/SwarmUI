@@ -202,6 +202,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "hunyuan-video";
     }
 
+    /// <summary>Returns true if the current model is Hunyuan Video - Skyreels.</summary>
+    public bool IsHunyuanVideoSkyreels()
+    {
+        string clazz = CurrentModelClass()?.ID;
+        return clazz is not null && (clazz == "hunyuan-video-skyreels" || clazz == "hunyuan-video-skyreels-i2v");
+    }
+
     /// <summary>Returns true if the current model is Hunyuan Video.</summary>
     public bool IsNvidiaCosmos()
     {
@@ -1689,8 +1696,13 @@ public class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (Features.Contains("variation_seed") && needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()))
+        else if (Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels()))
         {
+            double defaultGuidance = -1;
+            if (IsHunyuanVideoSkyreels())
+            {
+                defaultGuidance = 1;
+            }
             node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,
@@ -1700,7 +1712,7 @@ public class WorkflowGenerator
                 ["height"] = enhance ? (int)Utilities.RoundToPrecision(height * mult, 64) : height,
                 ["target_width"] = width,
                 ["target_height"] = height,
-                ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, -1)
+                ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance)
             }, id);
         }
         else if (model is not null && model.ModelClass is not null && model.ModelClass.ID == "stable-diffusion-xl-v1-base")
