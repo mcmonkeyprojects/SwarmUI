@@ -441,6 +441,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("kornia", "kornia"),
         ("sentencepiece", "sentencepiece"),
         ("spandrel", "spandrel"),
+        ("av", "av"),
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
