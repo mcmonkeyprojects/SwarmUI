@@ -181,6 +181,7 @@ class SwarmImageCompositeMaskedColorCorrecting:
 
 def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tensor, inverse_mask: torch.Tensor) -> torch.Tensor:
     # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything). Then compare the HSV difference between the two to find a required shift value, average it between all selected pixels, and apply it to the source.
+    # Limitations: ignoring Hue for now - it gets bad results
     thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
     thresholded_sum = thresholded.sum()
     print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
@@ -194,9 +195,11 @@ def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tens
         # calculate the average difference between the two, only where thresholded is 1
         diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
         print(f"diff: {diff.shape}, {diff}") # 3
+        # Hue not working well here, maybe due to weird contributions from dark pixels. Don't correct it.
+        diff[0] = 0.0
         diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
         source_hsv = source_hsv + diff
-        source_hsv = source_hsv.clamp(0, 1).remainder(1)
+        source_hsv = source_hsv.clamp(0, 1)
         source_section = hsv2rgb(source_hsv)
     return source_section
 
