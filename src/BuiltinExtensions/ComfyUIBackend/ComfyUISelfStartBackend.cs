@@ -325,7 +325,14 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         if (response.Contains("There is no tracking information for the current branch") && checkoutResponse.Contains("Already on 'master'"))
                         {
                             string fixStatus = await Utilities.RunGitProcess("branch --set-upstream-to=origin/master master", path);
-                            AddLoadStatus($"Comfy git fix response: {fixStatus.Trim()}");
+                            AddLoadStatus($"Comfy git fix (untracked curse) response: {fixStatus.Trim()}");
+                            string repullResponse = await Utilities.RunGitProcess("pull --autostash", path);
+                            AddLoadStatus($"Comfy git re-pull response: {repullResponse.Trim()}");
+                        }
+                        else if (response.Contains("and can be fast-forwarded") && checkoutResponse.Contains("Already on 'master'"))
+                        {
+                            string fixStatus = await Utilities.RunGitProcess("reset --hard HEAD", path);
+                            AddLoadStatus($"Comfy git fix (fast-forward curse) response: {fixStatus.Trim()}");
                             string repullResponse = await Utilities.RunGitProcess("pull --autostash", path);
                             AddLoadStatus($"Comfy git re-pull response: {repullResponse.Trim()}");
                         }
