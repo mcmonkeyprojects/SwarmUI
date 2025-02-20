@@ -329,7 +329,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                             string repullResponse = await Utilities.RunGitProcess("pull --autostash", path);
                             AddLoadStatus($"Comfy git re-pull response: {repullResponse.Trim()}");
                         }
-                        else if (response.Contains("and can be fast-forwarded") && checkoutResponse.Contains("Already on 'master'"))
+                        else if (checkoutResponse.Contains("and can be fast-forwarded") && checkoutResponse.Contains("Already on 'master'"))
                         {
                             string fixStatus = await Utilities.RunGitProcess("reset --hard HEAD", path);
                             AddLoadStatus($"Comfy git fix (fast-forward curse) response: {fixStatus.Trim()}");
