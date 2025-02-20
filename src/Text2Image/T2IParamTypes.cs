@@ -285,7 +285,7 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder;
     public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, ExactBackendID, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
@@ -726,6 +726,9 @@ public class T2IParamTypes
             ));
         VAETemporalTileOverlap = Register<int>(new("VAE Temporal Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between video frames there should be.\nHigher overlap improves quality but takes longer.",
             "8", Min: 4, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.4
+            ));
+        ColorCorrectionBehavior = Register<string>(new("Color Correction Behavior", "Experimental: How to correct color when compositing a mask.\n'None' = Do not attempt color correction.\n'Uniform' = Compute a fixed offset HSV correction for all pixels.\n'Linear' = Compute a linear correction that depends on each pixel's S and V.",
+            "None", IgnoreIf: "None", IsAdvanced: true, GetValues: (_) => ["None", "Uniform", "Linear"], Group: GroupAdvancedSampling, OrderPriority: -2.1
             ));
         RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis internally uses RemBG.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -2
