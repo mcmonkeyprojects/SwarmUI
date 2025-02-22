@@ -77,7 +77,7 @@ public class T2IParamInput
         input =>
         {
             // Special patch: if model is in a preset in the prompt, we want to apply that as early as possible to ensure the model router knows how to route correctly.
-            if (input.TryGet(T2IParamTypes.Prompt, out string prompt) && prompt.Contains("<preset:"))
+            if (!input.EarlyLoadDone && input.TryGet(T2IParamTypes.Prompt, out string prompt) && prompt.Contains("<preset:"))
             {
                 StringConversionHelper.QuickSimpleTagFiller(prompt, "<", ">", tag =>
                 {
@@ -483,6 +483,7 @@ public class T2IParamInput
                 return null;
             }
             preset.ApplyTo(context.Input);
+            context.Input.ApplySpecialLogic();
             if (preset.ParamMap.TryGetValue(param, out string prompt))
             {
                 return "\0preset:" + prompt;
@@ -711,6 +712,9 @@ public class T2IParamInput
 
     /// <summary>Dense local time with incrementer.</summary>
     public int RequestRefTime;
+    
+    /// <summary>If true, special early load has already ran.</summary>
+    public bool EarlyLoadDone = false;
 
     /// <summary>Arbitrary incrementer for sub-minute unique IDs.</summary>
     public static int UIDIncrementer = 0;
@@ -1323,6 +1327,7 @@ public class T2IParamInput
         {
             handler(this);
         }
+        EarlyLoadDone = true;
     }
 
     /// <summary>Returns a simple text representation of the input data.</summary>
