@@ -90,6 +90,25 @@ When you need to install a pip dependency, you're gonna have to use the command 
 
 If you're an advanced user familiar with command line usage and/or with a custom python env, you can adapt the specifics as needed, just make note of the `python -s -m pip` syntax: that `-s` tells python to store the installed package in your current env. Without this (if you eg use just `pip install ...`) it may link to packages that are in your OS global install, which tends to cause a lot of issues. So, avoid that with `-s`.
 
+## I Want To Reinstall SwarmUI
+
+The easiest way to reinstall, is just:
+- Close SwarmUI
+- Rename the Swarm folder to `Old_SwarmUI`
+- run the installer again, fully, til you get to a working Generate tab
+- copy/move over any files you want from Old to new.
+
+However, if you want an "in-place reinstall":
+- Close SwarmUI
+- Move out the `SwarmUI/dlbackend` folder somewhere. This contains ComfyUI and anything saved in it, which may include eg workflows or past outputs. This is the most important part for Swarm to rebuild, but you should move not delete so you can restore any files you need.
+- Open the `SwarmUI/Data` folder, and delete `Backends.fds`
+- In the same Data folder, edit `Settings.fds` in any text editor, find `is_installed: true` and change it to `is_installed: false`, and save
+- launch SwarmUI again. It will show you the usual installation interface.
+
+Most importantly after reinstalling:
+- Do not repeat whatever actions led to things breaking so bad you needed the reinstall in the first place!
+- The most common reason for a total reinstall is overusage of Comfy Manager leading to a corrupted comfy backend installation. If this is the case for you, either avoid Manager, or just be much more cautious about when to use it in the future.
+
 ## Other
 
 If you have some other troubleshooting issue you think should be listed here, let me know on [the SwarmUI Discord](https://discord.gg/q2y38cqjNw).
