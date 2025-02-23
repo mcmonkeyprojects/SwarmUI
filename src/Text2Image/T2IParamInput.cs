@@ -1098,9 +1098,9 @@ public class T2IParamInput
                                 cleanResult = cleanResult["preset:".Length..];
                                 if (cleanResult.Contains("{value}"))
                                 {
-                                    addBefore += cleanResult.Before("{value}");
+                                    addBefore += ProcessPromptLike(cleanResult.Before("{value}"), context, isMain);
                                 }
-                                addAfter += cleanResult.After("{value}");
+                                addAfter += ProcessPromptLike(cleanResult.After("{value}"), context, isMain);
                                 return "";
                             }
                         }
