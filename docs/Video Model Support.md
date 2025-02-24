@@ -115,6 +115,8 @@
 
 - You can download a SkyReels Image2Video fp8 model from here <https://huggingface.co/Kijai/SkyReels-V1-Hunyuan_comfy/blob/main/skyreels_hunyuan_i2v_fp8_e4m3fn.safetensors>
     - Save to the `diffusion_models` folder
+- Or you can select a `gguf` variant from <https://huggingface.co/Kijai/SkyReels-V1-Hunyuan_comfy/tree/main>
+    - Save to the `diffusion_models` folder, reload Swarm models list, click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video - SkyReels Image2Video`
 - Use via the `Image To Video` param group
 - This model prefers you use real CFG Scale of around `4` to `6`, and set `Flux Guidance` value to `1`
 - Their docs say you should prefix prompts with `FPS-24, ` as this was trained in. In practice the differences seem to be minor.
