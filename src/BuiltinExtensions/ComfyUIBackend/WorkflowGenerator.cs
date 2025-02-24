@@ -441,14 +441,14 @@ public class WorkflowGenerator
             });
             mask = [thresholded, 0];
         }
-        string composited = CreateNode("ImageCompositeMasked", new JObject()
+        string composited = CreateNode("SwarmImageCompositeMaskedColorCorrecting", new JObject()
         {
             ["destination"] = baseImage,
             ["source"] = newImage,
             ["mask"] = mask,
             ["x"] = 0,
             ["y"] = 0,
-            ["resize_source"] = false
+            ["correction_method"] = UserInput.Get(T2IParamTypes.ColorCorrectionBehavior, "None")
         });
         return [composited, 0];
     }
@@ -473,14 +473,14 @@ public class WorkflowGenerator
             });
             croppedMask = [thresholded, 0];
         }
-        string composited = CreateNode("ImageCompositeMasked", new JObject()
+        string composited = CreateNode("SwarmImageCompositeMaskedColorCorrecting", new JObject()
         {
             ["destination"] = firstImage,
             ["source"] = new JArray() { scaledBack, 0 },
             ["mask"] = croppedMask,
             ["x"] = new JArray() { boundsNode, 0 },
             ["y"] = new JArray() { boundsNode, 1 },
-            ["resize_source"] = false
+            ["correction_method"] = UserInput.Get(T2IParamTypes.ColorCorrectionBehavior, "None")
         });
         return [composited, 0];
     }
