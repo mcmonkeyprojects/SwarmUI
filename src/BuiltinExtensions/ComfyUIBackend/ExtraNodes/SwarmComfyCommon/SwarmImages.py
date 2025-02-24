@@ -1,7 +1,6 @@
 import torch
 import comfy
 import math
-import time
 from nodes import MAX_RESOLUTION
 
 class SwarmImageScaleForMP:
@@ -174,28 +173,17 @@ class SwarmImageCompositeMaskedColorCorrecting:
         destination[:, :, top:bottom, left:right] = source_portion + destination_portion
         return (destination.movedim(1, -1),)
 
-    @classmethod
-    def IS_CHANGED(s, destination, source, x, y, mask, correction_method):
-        return time.time()
-
 
 def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tensor, inverse_mask: torch.Tensor) -> torch.Tensor:
-    # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything). Then compare the HSV difference between the two to find a required shift value, average it between all selected pixels, and apply it to the source.
-    # Limitations: ignoring Hue for now - it gets bad results
     thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
     thresholded_sum = thresholded.sum()
-    print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
-        
     if thresholded_sum > 50:
         source_hsv = rgb2hsv(source_section)
         dest_hsv = rgb2hsv(dest_section)
         source_hsv_masked = source_hsv * thresholded
         dest_hsv_masked = dest_hsv * thresholded
         diff = dest_hsv_masked - source_hsv_masked
-        # calculate the average difference between the two, only where thresholded is 1
         diff = diff.sum(dim=[0, 2, 3]) / thresholded_sum
-        print(f"diff: {diff.shape}, {diff}") # 3
-        # Hue not working well here, maybe due to weird contributions from dark pixels. Don't correct it.
         diff[0] = 0.0
         diff = diff.unsqueeze(0).unsqueeze(2).unsqueeze(2)
         source_hsv = source_hsv + diff
@@ -203,14 +191,10 @@ def color_correct_uniform(source_section: torch.Tensor, dest_section: torch.Tens
         source_section = hsv2rgb(source_hsv)
     return source_section
 
+
 def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tensor, inverse_mask: torch.Tensor) -> torch.Tensor:
-    # Threshold where the inverse_mask is 1, select those pixels only from dest and source (if there's less than 50 pixels, don't do anything).
-    # For only those pixels, do a linear fit to find a linear function y = mx + b for the required shift value, and apply it to the source.
-    # Limitations: ignoring Hue for now - it gets bad results
     thresholded = (inverse_mask.clamp(0, 1) - 0.9999).clamp(0, 1) * 10000
     thresholded_sum = thresholded.sum()
-    print(f"thresholded: {thresholded_sum} of shape {thresholded.shape}, source shape: {source_section.shape}, dest_section shape: {dest_section.shape}")
-        
     if thresholded_sum > 50:
         source_hsv = rgb2hsv(source_section)
         dest_hsv = rgb2hsv(dest_section)
@@ -229,15 +213,13 @@ def color_correct_linear(source_section: torch.Tensor, dest_section: torch.Tenso
         m = torch.where(denominator != 0, numerator / denominator, torch.tensor(1.0))
         m = m.unsqueeze(0).unsqueeze(2).unsqueeze(2) # 3
         b = dest_mean - source_mean * m
-        # Hue not working well here, maybe due to weird contributions from dark pixels. Don't correct it.
         m[0][0][0][0] = 1.0
-        b[0][0][0][0] = 0.0 
+        b[0][0][0][0] = 0.0
         source_hsv = m * source_hsv + b
         source_hsv = source_hsv.clamp(0, 1)
         source_section = hsv2rgb(source_hsv)
     return source_section
 
-     
 
 # from https://github.com/limacv/RGB_HSV_HSL
 def rgb2hsv(rgb: torch.Tensor) -> torch.Tensor:

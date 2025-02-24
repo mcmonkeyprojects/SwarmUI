@@ -688,7 +688,7 @@ public class T2IParamTypes
             "16", Min: 0, Max: 512, Toggleable: true, OrderPriority: 5.5, Group: GroupRegionalPrompting, Examples: ["0", "8", "32"]
             ));
         SegmentThresholdMax = Register<double>(new("Segment Threshold Max", "Maximum mask match value of a segment before clamping.\nLower values force more of the mask to be counted as maximum masking.\nToo-low values may include unwanted areas of the image.\nHigher values may soften the mask.",
-            "1", Min: 0.01, Max: 1, Step: 0.05, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: 6
+            "1", Min: 0, Max: 1, Step: 0.05, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: 6
             ));
         SegmentSortOrder = Register<string>(new("Segment Sort Order", "How to sort segments when using '<segment:yolo->' syntax with indices.\nFor example: <segment:yolo-face_yolov8m-seg_60.pt-2> with largest-smallest, will select the second largest face segment.",
             "left-right", IgnoreIf: "left-right", GetValues: _ => ["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], Group: GroupRegionalPrompting, OrderPriority: 7
@@ -727,8 +727,8 @@ public class T2IParamTypes
         VAETemporalTileOverlap = Register<int>(new("VAE Temporal Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between video frames there should be.\nHigher overlap improves quality but takes longer.",
             "8", Min: 4, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.4
             ));
-        ColorCorrectionBehavior = Register<string>(new("Color Correction Behavior", "Experimental: How to correct color when compositing a mask.\n'None' = Do not attempt color correction.\n'Uniform' = Compute a fixed offset HSV correction for all pixels.\n'Linear' = Compute a linear correction that depends on each pixel's S and V.",
-            "None", IgnoreIf: "None", IsAdvanced: true, GetValues: (_) => ["None", "Uniform", "Linear"], Group: GroupAdvancedSampling, OrderPriority: -2.1
+        ColorCorrectionBehavior = Register<string>(new("Color Correction Behavior", "Experimental: How to correct color when compositing a masked image.\n'None' = Do not attempt color correction.\n'Uniform' = Compute a fixed offset HSV correction for all pixels.\n'Linear' = Compute a linear correction that depends on each pixel's S and V.\nThis is useful for example when doing inpainting with Flux models, as the Flux VAE does not retain consistent colors - 'Linear' may help correct for this misbehavior.",
+            "None", IgnoreIf: "None", IsAdvanced: true, GetValues: (_) => ["None", "Uniform", "Linear"], Group: GroupAdvancedSampling, OrderPriority: -3
             ));
         RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis internally uses RemBG.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -2
