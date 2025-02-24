@@ -101,8 +101,9 @@ The easiest way to reinstall, is just:
 However, if you want an "in-place reinstall":
 - Close SwarmUI
 - Move out the `SwarmUI/dlbackend` folder somewhere. This contains ComfyUI and anything saved in it, which may include eg workflows or past outputs. This is the most important part for Swarm to rebuild, but you should move not delete so you can restore any files you need.
+- Also move or delete everything inside `SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes`
 - Open the `SwarmUI/Data` folder, and delete `Backends.fds`
-- In the same Data folder, edit `Settings.fds` in any text editor, find `is_installed: true` and change it to `is_installed: false`, and save
+- In the same Data folder, edit `Settings.fds` in any text editor, find `IsInstalled: true` and change it to `IsInstalled: false`, and save
 - launch SwarmUI again. It will show you the usual installation interface.
 
 Most importantly after reinstalling:

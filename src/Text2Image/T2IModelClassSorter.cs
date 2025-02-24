@@ -407,6 +407,10 @@ public class T2IModelClassSorter
         Remaps["Flux.1-schnell/controlnet"] = "Flux.1-dev/controlnet";
         Remaps["Flux.1-AE"] = "flux.1/vae";
         Remaps["stable-cascade-v1-stage-a"] = "stable-cascade-v1-stage-a/vae";
+        Remaps["stable-diffusion-3-3-5-large"] = "stable-diffusion-v3.5-large";
+        Remaps["stable-diffusion-3-3-5-large/lora"] = "stable-diffusion-v3.5-large/lora";
+        Remaps["stable-diffusion-3-3-5-medium"] = "stable-diffusion-v3.5-medium";
+        Remaps["stable-diffusion-3-3-5-medium/lora"] = "stable-diffusion-v3.5-medium/lora";
         // ====================== GGUF Remaps ======================
         Remaps["flux"] = "Flux.1-dev";
         Remaps["sd3"] = "stable-diffusion-v3-medium";
