@@ -220,6 +220,10 @@
 
 ## Wan 2.1
 
+![wan21_14b](https://github.com/user-attachments/assets/17ace901-bc5f-48d0-ab01-ed8984a1b1dc)
+
+*(Warn 2.1 - 14B Text2Video)*
+
 ![wan21_13b](https://github.com/user-attachments/assets/51c40a08-9a05-4553-9785-67ae4fe8b2ac)
 
 *(Wan 2.1 - 1.3B Text2Video)*
