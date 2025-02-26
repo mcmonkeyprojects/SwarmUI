@@ -234,7 +234,6 @@
     - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
     - Or Kijai's FP8 variants <https://huggingface.co/Kijai/WanVideo_comfy/tree/main>
-        - FP8 currently misbehaves, hopefully fixed soon
     - For Text2Video, pick either 1.3B (small) model, or 14B (large) model
     - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model
         - These are not autodetected separately, 480p is assumed.
