@@ -234,6 +234,7 @@
     - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
     - Or Kijai's FP8 variants <https://huggingface.co/Kijai/WanVideo_comfy/tree/main>
+        - FP8 currently misbehaves, hopefully fixed soon
     - For Text2Video, pick either 1.3B (small) model, or 14B (large) model
     - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model
         - These are not autodetected separately, 480p is assumed.
@@ -258,15 +259,16 @@
 - **Resolution:** The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
     - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
     - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
-- **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to 81 (5 seconds).
+- **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to `81` (5 seconds).
     - Use 17 for one second, 33 for two, 49 for three, 65 for 4, 81 for 5.
     - Higher frame counts above 81 seem to become distorted - still work but quality degrades and glitching appears.
     - 14B may heavily favor 81 frames (5 seconds) and behave unusually at shorter lengths
 - **Steps:** Standard, eg Steps=20, is fine. Changing this value works broadly as expected with other models.
-- **CFG Scale:** Standard CFG ranges are fine. Official recommended CFG is 6, but you can play with it.
+- **CFG Scale:** Standard CFG ranges are fine. Official recommended CFG is `6`, but you can play with it.
+    - Image2Video models may work better at lower CFGs, eg `4`. High CFGs will produce aggressive shifts in lighting.
 - **Sampler and Scheduler:** Standard, eg Euler + Simple
     - You can experiment with changing these around, some may be better than others
-- **Sigma Shift:** range of 8 to 12 suggested. Default is 8.
+- **Sigma Shift:** range of 8 to 12 suggested. Default is `8`.
 - **Performance:** To be filled in once optimizations are complete.
     - If you see generations completing but then freezing or dying at the end, the advanced `VAE Tiling` parameters may help fix that.
     - The Image2Video models are much more performance-intensive than the Text2Video models
