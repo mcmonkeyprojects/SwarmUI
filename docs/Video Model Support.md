@@ -6,7 +6,8 @@
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | Modern, High Quality |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | Modern, Decent |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
-[Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, Very slow, mixed quality |
+[Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, very slow, mixed quality |
+[Wan 2.1](#wan-21) | 2025 | Alibaba - Wan-AI | 1.3B and 14B | Text/Image 2Video | Modern |
 
 **Unsupported:**
 - Below are some video models that are not natively supported in SwarmUI's `Generate` tab, but are available to use via the `Comfy Workflow` and `Simple` tabs:
@@ -198,3 +199,29 @@
 - **Frame Count:** The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss, but generally you're stuck at exactly 121.
 - **CFG and Steps:** Nvidia default recommends CFG=7 and Steps=35
 - **Performance:** The models are extremely slow. Expect over 10 minutes for a single video even on a 4090.
+
+## Wan 2.1
+
+### Wan 2.1 Install
+
+- Wan 2.1, a video model series from Alibaba, has initial support in SwarmUI.
+    - Currently just Text2Video, Image2Video soon.
+- Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
+    - Pick either 1.3B (small) model, or 14B (large) model
+    - the 14B versions are 10x larger and require around 10x more VRAM, only high end systems can handle 14B fully
+    - save to `diffusion_models`
+- The text encoder is `umt5-xxl` ("UniMax" T5 from Google), not the same T5-XXL used by other models.
+    - It will be automatically downloaded.
+- The VAE will be automatically downloaded.
+
+### Wan 2.1 Parameters
+
+- **Prompt:** Standard. Supports English and Chinese text.
+    - They have an official reference negative prompt in Chinese, it is not required but may help: `色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走`
+        - (This is just a word spam negative "bright colors, overexposed, static, blurred details, subtitles, ..." but in Chinese)
+- **FPS:** The model is trained for 16 FPS.
+- **Resolution**: The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
+    - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
+    - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
+- **CFG and Steps:** Standard, eg Steps=20 and CFG=6
+- **Sampler and Scheduler:** Standard, eg Euler + Simple

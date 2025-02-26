@@ -216,10 +216,17 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "nvidia-cosmos-1";
     }
 
+    /// <summary>Returns true if the current model is any Wan-2.1 variant.</summary>
+    public bool IsWanVideo()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz.StartsWith("wan-21");
+    }
+
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos() || IsWanVideo();
     }
 
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
@@ -519,10 +526,15 @@ public class WorkflowGenerator
                 });
                 image = [bounced, 0];
             }
+            int fpsDefault = 24;
+            if (IsWanVideo())
+            {
+                fpsDefault = 16;
+            }
             return CreateNode("SwarmSaveAnimationWS", new JObject()
             {
                 ["images"] = image,
-                ["fps"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 24),
+                ["fps"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, fpsDefault),
                 ["lossless"] = false,
                 ["quality"] = 95,
                 ["method"] = "default",
@@ -559,33 +571,37 @@ public class WorkflowGenerator
             LoadingVAE = parts[4].Length == 0 ? null : [parts[4], int.Parse(parts[5])];
             return (model, LoadingModel, LoadingClip, LoadingVAE);
         }
-        void requireClipModel(string name, string url, string hash)
+        string requireClipModel(string name, string url, string hash, T2IRegisteredParam<T2IModel> param)
         {
+            if (param is not null && UserInput.TryGet(param, out T2IModel model))
+            {
+                return model.Name;
+            }
             if (ClipModelsValid.ContainsKey(name))
             {
-                return;
+                return name;
+            }
+            if (Program.T2IModelSets["Clip"].Models.ContainsKey(name))
+            {
+                ClipModelsValid.TryAdd(name, name);
+                return name;
             }
             string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipFolder.Split(';')[0], name);
             DownloadModel(name, filePath, url, hash);
             ClipModelsValid.TryAdd(name, name);
+            return name;
         }
         string getT5XXLModel()
         {
-            if (UserInput.TryGet(T2IParamTypes.T5XXLModel, out T2IModel model))
-            {
-                return model.Name;
-            }
-            requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors", "7d330da4816157540d6bb7838bf63a0f02f573fc48ca4d8de34bb0cbfd514f09");
-            return "t5xxl_enconly.safetensors";
+            return requireClipModel("t5xxl_enconly.safetensors", "https://huggingface.co/mcmonkey/google_t5-v1_1-xxl_encoderonly/resolve/main/t5xxl_fp8_e4m3fn.safetensors", "7d330da4816157540d6bb7838bf63a0f02f573fc48ca4d8de34bb0cbfd514f09", T2IParamTypes.T5XXLModel);
         }
         string getOldT5XXLModel()
         {
-            if (UserInput.TryGet(T2IParamTypes.T5XXLModel, out T2IModel model))
-            {
-                return model.Name;
-            }
-            requireClipModel("old_t5xxl_cosmos.safetensors", "https://huggingface.co/comfyanonymous/cosmos_1.0_text_encoder_and_VAE_ComfyUI/resolve/main/text_encoders/oldt5_xxl_fp8_e4m3fn_scaled.safetensors", "1d0dd711ec9866173d4b39e86db3f45e1614a4e3f84919556f854f773352ea81");
-            return "old_t5xxl_cosmos.safetensors";
+            return requireClipModel("old_t5xxl_cosmos.safetensors", "https://huggingface.co/comfyanonymous/cosmos_1.0_text_encoder_and_VAE_ComfyUI/resolve/main/text_encoders/oldt5_xxl_fp8_e4m3fn_scaled.safetensors", "1d0dd711ec9866173d4b39e86db3f45e1614a4e3f84919556f854f773352ea81", T2IParamTypes.T5XXLModel);
+        }
+        string getUniMaxT5XXLModel()
+        {
+            return requireClipModel("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors", "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68", T2IParamTypes.T5XXLModel);
         }
         string getClipLModel()
         {
@@ -597,8 +613,7 @@ public class WorkflowGenerator
             {
                 return "clip_l_sdxl_base.safetensors";
             }
-            requireClipModel("clip_l.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors", "660c6f5b1abae9dc498ac2d21e1347d2abdb0cf6c0c0c8576cd796491d9a6cdd");
-            return "clip_l.safetensors";
+            return requireClipModel("clip_l.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder/model.fp16.safetensors", "660c6f5b1abae9dc498ac2d21e1347d2abdb0cf6c0c0c8576cd796491d9a6cdd", T2IParamTypes.ClipLModel);
         }
         string getClipGModel()
         {
@@ -610,31 +625,16 @@ public class WorkflowGenerator
             {
                 return "clip_g_sdxl_base.safetensors";
             }
-            requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors", "ec310df2af79c318e24d20511b601a591ca8cd4f1fce1d8dff822a356bcdb1f4");
-            return "clip_g.safetensors";
+            return requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors", "ec310df2af79c318e24d20511b601a591ca8cd4f1fce1d8dff822a356bcdb1f4", T2IParamTypes.ClipGModel);
         }
         string getLlava3Model()
         {
-            if (UserInput.TryGet(T2IParamTypes.LLaVAModel, out T2IModel model))
-            {
-                return model.Name;
-            }
-            if (Program.T2IModelSets["Clip"].Models.ContainsKey("llava_llama3_fp8_scaled.safetensors"))
-            {
-                return "llava_llama3_fp8_scaled.safetensors";
-            }
-            requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250");
-            return "llava_llama3_fp8_scaled.safetensors";
+            return requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250", T2IParamTypes.LLaVAModel);
         }
         string getGemma2Model()
         {
             // TODO: Selector param?
-            if (Program.T2IModelSets["Clip"].Models.ContainsKey("gemma_2_2b_fp16.safetensors"))
-            {
-                return "gemma_2_2b_fp16.safetensors";
-            }
-            requireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd");
-            return "gemma_2_2b_fp16.safetensors";
+            return requireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd", null);
         }
         IsDifferentialDiffusion = false;
         LoadingModelType = type;
@@ -741,6 +741,10 @@ public class WorkflowGenerator
                         if (Utilities.PresumeNVidia30xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
                         {
                             dtype = "fp8_e4m3fn_fast";
+                        }
+                        if (IsWanVideo())
+                        {
+                            dtype = "default"; // fp8 not current compatible with Wan video
                         }
                     }
                     else
@@ -954,6 +958,16 @@ public class WorkflowGenerator
             LoadingClip = [clipLoader, 0];
             doVaeLoader(null, "nvidia-cosmos-1", "cosmos-vae");
         }
+        else if (IsWanVideo())
+        {
+            string clipLoader = CreateNode("CLIPLoader", new JObject()
+            {
+                ["clip_name"] = getUniMaxT5XXLModel(),
+                ["type"] = "wan"
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "wan-21", "wan21-vae");
+        }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
             string auraNode = CreateNode("ModelSamplingAuraFlow", new JObject()
@@ -1129,7 +1143,7 @@ public class WorkflowGenerator
             }
             defscheduler ??= "ltxv";
         }
-        if (IsNvidiaCosmos())
+        else if (IsNvidiaCosmos())
         {
             if (!hadSpecialCond)
             {
@@ -1144,6 +1158,10 @@ public class WorkflowGenerator
             }
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
+        }
+        else if (IsWanVideo())
+        {
+            defscheduler ??= "simple";
         }
         bool willCascadeFix = false;
         JArray cascadeModel = null;
@@ -1464,13 +1482,13 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsHunyuanVideo())
+        else if (IsHunyuanVideo() || IsWanVideo())
         {
 
             return CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 73),
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, IsWanVideo() ? 81 : 73),
                 ["height"] = height,
                 ["width"] = width
             }, id);

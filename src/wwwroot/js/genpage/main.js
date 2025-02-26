@@ -1446,7 +1446,7 @@ function reviseBackendFeatureSet() {
     doCompatFeature('stable-cascade-v1', 'cascade');
     doAnyArchFeature(['Flux.1-dev', 'hunyuan-video'], 'flux-dev');
     doCompatFeature('stable-diffusion-xl-v1', 'sdxl');
-    doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video', 'hunyuan-video', 'nvidia-cosmos-1'], 'text2video');
+    doAnyCompatFeature(['genmo-mochi-1', 'lightricks-ltx-video', 'hunyuan-video', 'nvidia-cosmos-1', `wan-21`], 'text2video');
     for (let changer of featureSetChangers) {
         let [add, remove] = changer();
         addMe.push(...add);

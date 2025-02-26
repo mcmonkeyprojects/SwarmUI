@@ -364,10 +364,10 @@ public class T2IParamTypes
             "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: -18, ViewType: ParamViewType.SLIDER, Group: GroupCore, ChangeWeight: -3
             ));
         GroupText2Video = new("Text To Video", Open: false, OrderPriority: -30, Toggles: true, Description: $"Support for Text2Video models.");
-        Text2VideoFrames = Register<int>(new("Text2Video Frames", "How many frames to generate within the video.\nGenmo Mochi 1 can support any frame count up to 200, multiples of 6 plus 1 (7, 13, 19, 25, ...) are required and will automatically round if you enter an invalid value. Defaults to 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.\nHunyuan Video supports dynamic frame counts. Multiples of 4 plus 1 (5, 9, 13, 17, ...) are required and will automatically round if you enter an invalid value. Defaults to 73.",
+        Text2VideoFrames = Register<int>(new("Text2Video Frames", "How many frames to generate within the video.\nGenmo Mochi 1 can support any frame count up to 200, multiples of 6 plus 1 (7, 13, 19, 25, ...) are required and will automatically round if you enter an invalid value. Defaults to 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.\nHunyuan Video and Wan-2.1 support dynamic frame counts. Multiples of 4 plus 1 (5, 9, 13, 17, ...) are required and will automatically round if you enter an invalid value. Defaults to 73.",
             "25", Min: 1, Max: 1000, OrderPriority: 1, Group: GroupText2Video, FeatureFlag: "text2video", Toggleable: true
             ));
-        Text2VideoFPS = Register<int>(new("Text2Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video is expecting to work at.\nFor Mochi or Hunyuan Video, this is 24.\nFor LTXV, 24 fps is native, but other values may work.",
+        Text2VideoFPS = Register<int>(new("Text2Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video is expecting to work at.\nFor Mochi or Hunyuan Video, this is 24.\nFor LTXV, 24 fps is native, but other values may work.\nFor Cosmos, 24 is good but any value from 12 to 40 works.\nFor Wan, only 16 works.",
             "24", Min: 1, Max: 1024, ViewType: ParamViewType.BIG, OrderPriority: 2, Group: GroupText2Video, FeatureFlag: "text2video", IsAdvanced: true, Toggleable: true
             ));
         Text2VideoBoomerang = Register<bool>(new("Text2Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
@@ -513,7 +513,7 @@ public class T2IParamTypes
             ));
         GroupVideo = new("Image To Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos with Stable Video Diffusion.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/Video.md\">See more docs here.</a>");
         static bool isVideoClass(string id) => id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v");
-        VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nThis should be an SVD (Stable Video Diffusion) model.\nNote that SVD favors a low CFG (~2.5).\nLTXV prefers a CFG around 3.",
+        VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nSelect an image-to-video conversion model, note that text-to-video models do not work.",
             "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoClass(m.ModelClass.ID)).Select(m => m.Name)),
             OrderPriority: 1, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
             ));
@@ -532,10 +532,10 @@ public class T2IParamTypes
         VideoMinCFG = Register<double>(new("Video Min CFG", "The minimum CFG to use for video generation.\nVideos start with max CFG on first frame, and then reduce to this CFG. Set to -1 to disable.\nOnly used for SVD.",
             "1.0", Min: -1, Max: 100, ViewMax: 30, Step: 0.5, OrderPriority: 4.5, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true, Toggleable: true
             ));
-        VideoMotionBucket = Register<int>(new("Video Motion Bucket", "Which trained 'motion bucket' to use for the video model.\nHigher values induce more motion. Most values should stay in the 100-200 range.\n127 is a good baseline, as it is the most common value in SVD's training set.",
+        VideoMotionBucket = Register<int>(new("Video Motion Bucket", "Which trained 'motion bucket' to use for the video model.\nHigher values induce more motion. Most values should stay in the 100-200 range.\n127 is a good baseline, as it is the most common value in SVD's training set.\nOnly used for SVD.",
             "127", Min: 1, Max: 1023, OrderPriority: 10, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true
             ));
-        VideoAugmentationLevel = Register<double>(new("Video Augmentation Level", "How much noise to add to the init image for Image2Video.\nHigher values yield more motion.\nFor SVD, default is 0.\nFor LTX, default is 0.15.\nCosmos does not use this.",
+        VideoAugmentationLevel = Register<double>(new("Video Augmentation Level", "How much noise to add to the init image for Image2Video.\nHigher values yield more motion.\nFor SVD, default is 0.\nFor LTX, default is 0.15.\nOther models do not use this.",
             "0.0", Min: 0, ViewMax: 1, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Toggleable: true, IsAdvanced: true, DoNotPreview: true
             ));
         VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",

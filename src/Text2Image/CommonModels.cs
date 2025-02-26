@@ -82,5 +82,6 @@ public static class CommonModels
         Register(new("sana-dcae", "NVIDIA Sana DC-AE", "The DC-AE VAE for NVIDIA Sana", "https://huggingface.co/Efficient-Large-Model/Sana_1600M_1024px_diffusers/resolve/38ebe9b227c30cf6b35f2b7871375e9a28c0ccce/vae/diffusion_pytorch_model.safetensors", "25a1d9ac3b3422160ce8a4b5454ed917f103bb18e30fc1b307dec66375167bb8", "VAE", "Sana/sana_dcae_vae.safetensors"));
         Register(new("hunyuan-video-vae", "Hunyuan Video VAE", "The VAE for Hunyuan Video", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors", "e8f8553275406d84ccf22e7a47601650d8f98bdb8aa9ccfdd6506b57a9701aed", "VAE", "HunyuanVideo/hunyuan_video_vae_bf16.safetensors"));
         Register(new("cosmos-vae", "Cosmos VAE", "The VAE for Nvidia Cosmos", "https://huggingface.co/comfyanonymous/cosmos_1.0_text_encoder_and_VAE_ComfyUI/resolve/main/vae/cosmos_cv8x8x8_1.0.safetensors", "e4478fa8629160d16262276e52bdea91ecef636b005a2a29e93a3d7764e0863b", "VAE", "Cosmos/cosmos_cv8x8x8_1.0.safetensors"));
+        Register(new("wan21-vae", "Wan 2.1 VAE", "The VAE for Wan 2.1", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors", "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b", "VAE", "Wan/wan_2.1_vae.safetensors"));
     }
 }
