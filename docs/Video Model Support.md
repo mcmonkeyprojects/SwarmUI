@@ -208,7 +208,7 @@
 
 ### Wan 2.1 Install
 
-- Wan 2.1, a video model series from Alibaba, has initial support in SwarmUI.
+- [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, has initial support in SwarmUI.
     - Currently just Text2Video, Image2Video soon.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
     - Pick either 1.3B (small) model, or 14B (large) model
@@ -217,16 +217,23 @@
 - The text encoder is `umt5-xxl` ("UniMax" T5 from Google), not the same T5-XXL used by other models.
     - It will be automatically downloaded.
 - The VAE will be automatically downloaded.
+- At time of writing, support is very primitive. On the 1.3B will work, on modern hardware. This is a temporary software limitation and will be resolved soon.
 
 ### Wan 2.1 Parameters
 
 - **Prompt:** Standard. Supports English and Chinese text.
     - They have an official reference negative prompt in Chinese, it is not required but may help: `色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走`
-        - (This is just a word spam negative "bright colors, overexposed, static, blurred details, subtitles, ..." but in Chinese)
+        - (This is just a word spam negative "bright colors, overexposed, static, blurred details, subtitles, ..." but in Chinese. It does help though.)
 - **FPS:** The model is trained for 16 FPS.
 - **Resolution:** The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
     - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
     - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
-- **Frame Count (Length):** you can select pretty freely, different values work fine.
-- **CFG and Steps:** Standard, eg Steps=20 and CFG=6
+- **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to 49 (3 seconds).
+    - Use 17 for one second, 33 for two, 49 for three, 65 for 4, 81 for 5.
+    - Higher frame counts above 81 seem to become distorted - still work but quality degrades and glitching appears.
+- **Steps:** Standard, eg Steps=20, is fine. Changing this value works broadly as expected with other models.
+- **CFG Scale:** Standard CFG ranges are fine. Official recommended CFG is 6, but you can play with it.
 - **Sampler and Scheduler:** Standard, eg Euler + Simple
+    - You can experiment with changing these around, some may be better than others
+- **Sigma Shift:** range of 8 to 12 suggested. Default is 8.
+- **Performance:** To be filled in once optimizations are complete.

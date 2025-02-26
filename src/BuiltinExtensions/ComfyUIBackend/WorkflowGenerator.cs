@@ -1023,7 +1023,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo())
+            else if (IsHunyuanVideo() || IsWanVideo())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
@@ -1488,7 +1488,7 @@ public class WorkflowGenerator
             return CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, IsWanVideo() ? 81 : 73),
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, IsWanVideo() ? 49 : 73),
                 ["height"] = height,
                 ["width"] = width
             }, id);
