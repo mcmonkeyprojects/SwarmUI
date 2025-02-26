@@ -1527,6 +1527,55 @@ public class WorkflowGeneratorSteps
                     defSampler = "dpmpp_2m";
                     defScheduler = "beta";
                 }
+                else if (vidModel.ModelClass?.CompatClass == "wan-21-14b")
+                {
+                    if (fps == -1)
+                    {
+                        fps = 16;
+                    }
+                    g.FinalLoadedModel = vidModel;
+                    (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
+                    posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
+                    negCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), clip, vidModel, false);
+                    string scaled = g.CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["upscale_method"] = "bilinear",
+                        ["crop"] = "disabled"
+                    });
+                    string targetName = "clip_vision_h.safetensors";
+                    requireVisionModel(g, targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161");
+                    string clipLoader = g.CreateNode("CLIPVisionLoader", new JObject()
+                    {
+                        ["clip_name"] = targetName
+                    });
+                    string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
+                    {
+                        ["clip_vision"] = new JArray() { clipLoader, 0 },
+                        ["image"] = new JArray() { scaled, 0 },
+                        ["crop"] = "center"
+                    });
+                    string img2vidNode = g.CreateNode("WanImageToVideo", new JObject()
+                    {
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["length"] = frames ?? 33, // 2-second default, i2v really hits vram hard
+                        ["positive"] = posCond,
+                        ["negative"] = negCond,
+                        ["vae"] = vae,
+                        ["start_image"] = new JArray() { scaled, 0 },
+                        ["clip_vision_output"] = new JArray() { encoded, 0 },
+                        ["batch_size"] = 1
+                    });
+                    posCond = [img2vidNode, 0];
+                    negCond = [img2vidNode, 1];
+                    defCfg = 7;
+                    latent = [img2vidNode, 2];
+                    defSampler = "euler";
+                    defScheduler = "simple";
+                }
                 else
                 {
                     if (fps == -1)

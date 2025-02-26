@@ -28,6 +28,24 @@
 - All generations are done on the base model of the relevant class, not on any finetune/lora/etc. Finetunes are likely to significantly change the qualitative capabilities, but unlikely to significantly change general ability to understand and follow prompts.
 - At time of writing, Hunyuan Video is the only properly good model. LTXV is really fast though.
 
+## Basic Usage
+
+### Text-To-Video Models
+
+- Select the video model in the usual `Models` sub-tab, and configure parameters as usual, and hit Generate.
+- The `Text To Video` parameter group will be available to configure video-specific parameters.
+
+### Image-To-Video Models
+
+- Select a normal model as the base in the `Models` sub-tab, not your video model. Eg SDXL or Flux.
+- Select the video model under the `Image To Video` parameter group.
+- Generate as normal - the image model will generate an image, then the video model will turn it into a video.
+- If you want a raw/external image as your input:
+    - Use the `Init Image` parameter group, upload your image there
+    - Set `Init Image Creativity` to 0
+    - The image model will be skipped entirely
+    - You can use the `Res` button next to your image to copy the resolution in (otherwise your image may be stretched or squished)
+
 # Video Models
 
 ## Stable Video Diffusion
@@ -209,15 +227,18 @@
 ### Wan 2.1 Install
 
 - [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, has initial support in SwarmUI.
-    - Currently just Text2Video, Image2Video soon.
+    - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
-    - Pick either 1.3B (small) model, or 14B (large) model
-    - the 14B versions are 10x larger and require around 10x more VRAM, only high end systems can handle 14B fully
+    - For Text2Video, pick either 1.3B (small) model, or 14B (large) model
+    - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model
+        - These are not autodetected separately, 480p is assumed.
+        - For 720p variant, you will want to click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Resolution` to `960x960`
+    - the 1.3B model is very small and can run on almost any modern GPU
+    - the 14B versions are 10x larger and require around 10x more VRAM, requires nvidia xx90 tier models to run at decent speed
     - save to `diffusion_models`
 - The text encoder is `umt5-xxl` ("UniMax" T5 from Google), not the same T5-XXL used by other models.
     - It will be automatically downloaded.
 - The VAE will be automatically downloaded.
-- At time of writing, support is very primitive. On the 1.3B will work, on modern hardware. This is a temporary software limitation and will be resolved soon.
 
 ### Wan 2.1 Parameters
 
@@ -237,3 +258,5 @@
     - You can experiment with changing these around, some may be better than others
 - **Sigma Shift:** range of 8 to 12 suggested. Default is 8.
 - **Performance:** To be filled in once optimizations are complete.
+    - If you see generations completing but then freezing or dying at the end, the advanced `VAE Tiling` parameters may help fix that.
+    - The Image2Video models are much more performance-intensive than the Text2Video models
