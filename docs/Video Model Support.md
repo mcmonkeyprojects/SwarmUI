@@ -7,7 +7,7 @@
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | Modern, Decent |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, very slow, mixed quality |
-[Wan 2.1](#wan-21) | 2025 | Alibaba - Wan-AI | 1.3B and 14B | Text/Image 2Video | Modern |
+[Wan 2.1](#wan-21) | 2025 | Alibaba - Wan-AI | 1.3B and 14B | Text/Image 2Video | Modern, Incredible Quality |
 
 **Unsupported:**
 - Below are some video models that are not natively supported in SwarmUI's `Generate` tab, but are available to use via the `Comfy Workflow` and `Simple` tabs:
@@ -202,6 +202,10 @@
 
 ## Wan 2.1
 
+![wan21_13b](https://github.com/user-attachments/assets/51c40a08-9a05-4553-9785-67ae4fe8b2ac)
+
+*(Wan 2.1 - 1.3B Text2Video)*
+
 ### Wan 2.1 Install
 
 - Wan 2.1, a video model series from Alibaba, has initial support in SwarmUI.
@@ -220,8 +224,9 @@
     - They have an official reference negative prompt in Chinese, it is not required but may help: `色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走`
         - (This is just a word spam negative "bright colors, overexposed, static, blurred details, subtitles, ..." but in Chinese)
 - **FPS:** The model is trained for 16 FPS.
-- **Resolution**: The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
+- **Resolution:** The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
     - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
     - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
+- **Frame Count (Length):** you can select pretty freely, different values work fine.
 - **CFG and Steps:** Standard, eg Steps=20 and CFG=6
 - **Sampler and Scheduler:** Standard, eg Euler + Simple
