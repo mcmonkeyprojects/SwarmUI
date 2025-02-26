@@ -18,11 +18,24 @@ function setGroupAdvancedOverride(groupId, enable) {
 }
 
 class AspectRatio {
-    constructor(id, width, height) {
+    constructor(id, width, height, altLogic = null) {
         this.id = id;
         this.width = width;
         this.height = height;
         this.ratio = width / height;
+        this.altLogic = altLogic;
+    }
+
+    read(inWidth, inHeight) {
+        if (this.altLogic) {
+            let [newWidth, newHeight] = this.altLogic(inWidth, inHeight);
+            if (newWidth && newHeight) {
+                return [newWidth, newHeight];
+            }
+        }
+        let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
+        let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
+        return [width, height];
     }
 }
 
@@ -31,7 +44,15 @@ let aspectRatios = [
     new AspectRatio("4:3", 576, 448),
     new AspectRatio("3:2", 608, 416),
     new AspectRatio("8:5", 608, 384),
-    new AspectRatio("16:9", 672, 384),
+    new AspectRatio("16:9", 672, 384, (w, h) => {
+        if (w == 640 && h == 640) {
+            return [832, 480]; // Wan 2.1, 1.3b
+        }
+        else if (w == 960 && h == 960) {
+            return [1280, 720]; // Wan 2.1, 14b
+        }
+        return [null, null];
+    }),
     new AspectRatio("21:9", 768, 320),
     new AspectRatio("3:4", 448, 576),
     new AspectRatio("2:3", 416, 608),
@@ -373,13 +394,12 @@ function genInputs(delay_final = false) {
                     let width, height;
                     for (let ratio of aspectRatios) {
                         if (ratio.id == aspectRatio) {
-                            width = ratio.width;
-                            height = ratio.height;
+                            [width, height] = ratio.read(curModelWidth, curModelHeight);
                             break;
                         }
                     }
-                    inputWidth.value = roundTo(width * (curModelWidth == 0 ? 512 : curModelWidth) / 512, 16);
-                    inputHeight.value = roundTo(height * (curModelHeight == 0 ? 512 : curModelHeight) / 512, 16);
+                    inputWidth.value = width;
+                    inputHeight.value = height;
                     triggerChangeFor(inputWidth);
                     triggerChangeFor(inputHeight);
                 }
