@@ -243,6 +243,15 @@ public class WorkflowGeneratorSteps
                 });
                 g.LoadingModel = [aitLoad, 0];
             }
+            if (g.UserInput.TryGet(T2IParamTypes.TorchCompile, out string compileMode) && compileMode != "Disabled")
+            {
+                string torchCompile = g.CreateNode("TorchCompileModel", new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["backend"] = compileMode
+                });
+                g.LoadingModel = [torchCompile, 0];
+            }
         }, -3);
         #endregion
         #region Base Image
