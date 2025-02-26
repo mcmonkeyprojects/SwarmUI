@@ -1480,11 +1480,15 @@ public class WorkflowGenerator
         }
         else if (IsHunyuanVideo() || IsWanVideo())
         {
-
+            int frames = 73;
+            if (IsWanVideo())
+            {
+                frames = 81;
+            }
             return CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, IsWanVideo() ? 49 : 73),
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, frames),
                 ["height"] = height,
                 ["width"] = width
             }, id);

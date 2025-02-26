@@ -1561,7 +1561,7 @@ public class WorkflowGeneratorSteps
                     {
                         ["width"] = width,
                         ["height"] = height,
-                        ["length"] = frames ?? 33, // 2-second default, i2v really hits vram hard
+                        ["length"] = frames ?? 81,
                         ["positive"] = posCond,
                         ["negative"] = negCond,
                         ["vae"] = vae,
