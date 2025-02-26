@@ -661,9 +661,12 @@ public class WorkflowGenerator
                 {
                     throw new SwarmUserErrorException("No default VAE for this model found, please download its VAE and set it as default in User Settings");
                 }
-                CommonModels.Known[knownName].DownloadNow().Wait();
-                Program.RefreshAllModelSets();
                 vaeFile = CommonModels.Known[knownName].FileName;
+                if (!Program.T2IModelSets["VAE"].Models.ContainsKey(vaeFile))
+                {
+                    CommonModels.Known[knownName].DownloadNow().Wait();
+                    Program.RefreshAllModelSets();
+                }
             }
             LoadingVAE = CreateVAELoader(vaeFile, nodeId);
         }
