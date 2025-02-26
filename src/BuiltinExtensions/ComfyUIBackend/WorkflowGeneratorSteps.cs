@@ -1522,7 +1522,7 @@ public class WorkflowGeneratorSteps
                     });
                     posCond = [ip2pNode, 0];
                     negCond = [ip2pNode, 1];
-                    defCfg = 7;
+                    defCfg = 6;
                     latent = [latentNode, 0];
                     defSampler = "dpmpp_2m";
                     defScheduler = "beta";
@@ -1571,7 +1571,7 @@ public class WorkflowGeneratorSteps
                     });
                     posCond = [img2vidNode, 0];
                     negCond = [img2vidNode, 1];
-                    defCfg = 7;
+                    defCfg = 6;
                     latent = [img2vidNode, 2];
                     defSampler = "euler";
                     defScheduler = "simple";
