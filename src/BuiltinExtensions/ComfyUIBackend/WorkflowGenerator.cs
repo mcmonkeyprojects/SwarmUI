@@ -742,10 +742,6 @@ public class WorkflowGenerator
                         {
                             dtype = "fp8_e4m3fn_fast";
                         }
-                        if (IsWanVideo())
-                        {
-                            dtype = "default"; // fp8 not current compatible with Wan video
-                        }
                     }
                     else
                     {
