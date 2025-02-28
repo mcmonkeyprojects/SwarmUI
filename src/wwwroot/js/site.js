@@ -145,7 +145,7 @@ function genericRequest(url, in_data, callback, depth = 0, errorHandle = null) {
             errorHandle(e);
             return;
         }
-        console.log(e);
+        console.error(e);
         showError(e);
     }
     sendJsonToServer(`API/${url}`, in_data, (status, data) => {
