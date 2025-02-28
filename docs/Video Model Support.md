@@ -238,6 +238,7 @@
     - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model
         - These are not autodetected separately, 480p is assumed.
         - For 720p variant, you will want to click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Resolution` to `960x960`
+        - The 720p model isn't bigger, it just supports higher resolutions. Subjective comments say the higher resolution isn't worth the performance loss.
     - the 1.3B model is very small and can run on almost any modern GPU
     - the 14B versions are 10x larger and require around 10x more VRAM, requires nvidia xx90 tier models to run at decent speed
     - save to `diffusion_models`
@@ -263,8 +264,9 @@
 - **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to `81` (5 seconds).
     - Use 17 for one second, 33 for two, 49 for three, 65 for 4, 81 for 5.
     - Higher frame counts above 81 seem to become distorted - still work but quality degrades and glitching appears.
-    - 14B may favor 81 frames (5 seconds) and behave unusually at shorter lengths
+    - The Text2Video models seem to favor 81 frames (5 seconds) and exhibit some signs of quality degradation at very low values, the Image2Video models are much more malleable
 - **Steps:** Standard, eg Steps=20, is fine. Changing this value works broadly as expected with other models.
+    - Slightly higher (25 or 30) is probably better for small detail quality
 - **CFG Scale:** Standard CFG ranges are fine. Official recommended CFG is `6`, but you can play with it.
     - Image2Video models may work better at lower CFGs, eg `4`. High CFGs will produce aggressive shifts in lighting.
 - **Sampler and Scheduler:** Standard, eg Euler + Simple
