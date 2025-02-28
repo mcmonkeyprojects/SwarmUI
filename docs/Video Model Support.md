@@ -261,7 +261,7 @@
 - **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to `81` (5 seconds).
     - Use 17 for one second, 33 for two, 49 for three, 65 for 4, 81 for 5.
     - Higher frame counts above 81 seem to become distorted - still work but quality degrades and glitching appears.
-    - 14B may heavily favor 81 frames (5 seconds) and behave unusually at shorter lengths
+    - 14B may favor 81 frames (5 seconds) and behave unusually at shorter lengths
 - **Steps:** Standard, eg Steps=20, is fine. Changing this value works broadly as expected with other models.
 - **CFG Scale:** Standard CFG ranges are fine. Official recommended CFG is `6`, but you can play with it.
     - Image2Video models may work better at lower CFGs, eg `4`. High CFGs will produce aggressive shifts in lighting.
