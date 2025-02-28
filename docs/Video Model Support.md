@@ -243,6 +243,8 @@
     - save to `diffusion_models`
 - Or GGUF format for reduced VRAM requirements
     - For T2V 14B <https://huggingface.co/city96/Wan2.1-T2V-14B-gguf/tree/main>
+    - For I2V 480p <https://huggingface.co/city96/Wan2.1-I2V-14B-480P-gguf/tree/main>
+    - For I2V 720p <https://huggingface.co/city96/Wan2.1-I2V-14B-720P-gguf/tree/main>
     - save to `diffusion_models`
     - click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture` to whichever is correct for the model (eg `Wan 2.1 Text2Video 14B`)
 - The text encoder is `umt5-xxl` ("UniMax" T5 from Google), not the same T5-XXL used by other models.
