@@ -230,7 +230,7 @@
 
 ### Wan 2.1 Install
 
-- [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, has initial support in SwarmUI.
+- [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, is supported in SwarmUI.
     - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
     - Or Kijai's FP8 variants <https://huggingface.co/Kijai/WanVideo_comfy/tree/main>
@@ -261,6 +261,7 @@
 - **Resolution:** The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
     - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
     - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
+        - As a vid2vid gen, the model seem to be very good at generating very high res directly.
 - **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to `81` (5 seconds).
     - Use 17 for one second, 33 for two, 49 for three, 65 for 4, 81 for 5.
     - Higher frame counts above 81 seem to become distorted - still work but quality degrades and glitching appears.
@@ -275,3 +276,4 @@
 - **Performance:** To be filled in once optimizations are complete.
     - If you see generations completing but then freezing or dying at the end, the advanced `VAE Tiling` parameters may help fix that.
     - The Image2Video models are much more performance-intensive than the Text2Video models
+    - To run faster, use a "HighRes Fix" style setup, there's a guide to that here: https://www.reddit.com/r/StableDiffusion/comments/1j0znur/run_wan_faster_highres_fix_in_2025/
