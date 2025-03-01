@@ -372,7 +372,11 @@ public static class NetworkBackendUtils
             bool everLoaded = false;
             Action onFail = autoRestart ? () =>
             {
-                if (everLoaded && !Program.GlobalProgramCancel.IsCancellationRequested)
+                if (Program.GlobalProgramCancel.IsCancellationRequested)
+                {
+                    return;
+                }
+                if (everLoaded)
                 {
                     Logs.Error($"Self-Start {nameSimple} on port {port} failed. Restarting per configuration AutoRestart=true...");
                     Func<HardwareInfo, float> memSelector = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? x => 1 - (x.MemoryStatus.AvailablePhysical / (float)x.MemoryStatus.TotalPhysical) : x => 1 - (x.MemoryStatus.AvailableVirtual / (float)x.MemoryStatus.TotalVirtual);
@@ -415,7 +419,18 @@ public static class NetworkBackendUtils
                         await launch();
                     });
                 }
-            } : null;
+                else
+                {
+                    Logs.Error($"Self-Start {nameSimple} on port {port} failed. AutoRestart ignored as this was an initial launch failure.");
+                    status = BackendStatus.ERRORED;
+                    reviseStatus(status);
+                }
+            } : () =>
+            {
+                Logs.Error($"Self-Start {nameSimple} on port {port} failed. AutoRestart disabled, treating as fatal error.");
+                status = BackendStatus.ERRORED;
+                reviseStatus(status);
+            };
             ReportLogsFromProcess(runningProcess, $"{nameSimple}", identifier, out Action signalShutdownExpected, getStatus, s => { status = s; reviseStatus(s); }, onFail: onFail);
             addShutdownEvent?.Invoke(signalShutdownExpected);
             int checks = 0;
