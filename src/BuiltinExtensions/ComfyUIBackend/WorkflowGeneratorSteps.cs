@@ -40,6 +40,7 @@ public class WorkflowGeneratorSteps
      * 27: Refiner UpscaleModelLoader
      * 28: Refiner ImageUpscaleWithModel
      * 29: Refiner ImageSave
+     * 30: Video Image Pre-Save
      *
      * 100+: Dynamic
      * 1500+: LoRA Loaders (Stable-Dynamic)
@@ -1385,7 +1386,12 @@ public class WorkflowGeneratorSteps
             }
             else
             {
-                g.CreateImageSaveNode(g.FinalImageOut, "9");
+                string nodeId = "9";
+                if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out _))
+                {
+                    nodeId = "30";
+                }
+                g.CreateImageSaveNode(g.FinalImageOut, nodeId);
             }
         }, 10);
         #endregion
@@ -1746,7 +1752,7 @@ public class WorkflowGeneratorSteps
                     ["quality"] = 95,
                     ["method"] = "default",
                     ["format"] = format
-                });
+                }, "9");
             }
         }, 11);
         #endregion
