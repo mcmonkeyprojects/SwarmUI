@@ -21,7 +21,7 @@ class SwarmSaveAnimationWS:
                 "lossless": ("BOOLEAN", {"default": True}),
                 "quality": ("INT", {"default": 80, "min": 0, "max": 100}),
                 "method": (list(s.methods.keys()),),
-                "format": (["webp", "gif", "h264-mp4", "webm", "prores"],),
+                "format": (["webp", "gif", "gif-hd", "h264-mp4", "h265-mp4", "webm", "prores"],),
             },
         }
 
@@ -54,6 +54,10 @@ class SwarmSaveAnimationWS:
                 args += ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "19"]
                 ext = "mp4"
                 type_num = 5
+            elif format == "h265-mp4":
+                args += ["-c:v", "libx265", "-pix_fmt", "yuv420p"]
+                ext = "mp4"
+                type_num = 5
             elif format == "webm":
                 args += ["-pix_fmt", "yuv420p", "-crf", "23"]
                 ext = "webm"
@@ -62,6 +66,10 @@ class SwarmSaveAnimationWS:
                 args += ["-c:v", "prores_ks", "-profile:v", "3", "-pix_fmt", "yuv422p10le"]
                 ext = "mov"
                 type_num = 7
+            elif format == "gif-hd":
+                args += ["-filter_complex", "split=2 [a][b]; [a] palettegen [pal]; [b] fifo [b]; [b] [pal] paletteuse"]
+                ext = "gif"
+                type_num = 4
             path = folder_paths.get_save_image_path("swarm_tmp_", folder_paths.get_temp_directory())[0]
             rand = '%016x' % random.getrandbits(64)
             file = os.path.join(path, f"swarm_tmp_{rand}.{ext}")
