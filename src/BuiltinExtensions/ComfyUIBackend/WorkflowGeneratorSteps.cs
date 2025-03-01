@@ -1558,7 +1558,7 @@ public class WorkflowGeneratorSteps
                         ["clip_name"] = targetName
                     });
                     JArray imageIn = g.FinalImageOut;
-                    if (g.UserInput.TryGet(T2IParamTypes.VideoLateStart, out _))
+                    if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out _))
                     {
                         string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
                         {
@@ -1666,7 +1666,7 @@ public class WorkflowGeneratorSteps
                 }
                 int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
                 int startStep = 0;
-                if (g.UserInput.TryGet(T2IParamTypes.VideoLateStart, out double lateStart))
+                if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
                 {
                     string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
                     {
@@ -1674,7 +1674,7 @@ public class WorkflowGeneratorSteps
                         ["batch_index"] = 0,
                         ["length"] = frames.Value
                     });
-                    startStep = (int)Math.Floor(steps * lateStart);
+                    startStep = (int)Math.Floor(steps * (1 - v2vCreativity));
                     string reEncode = g.CreateNode("VAEEncode", new JObject()
                     {
                         ["vae"] = vae,
