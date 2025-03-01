@@ -364,10 +364,31 @@ public class WorkflowGenerator
         string result;
         if (Features.Contains("comfy_loadimage_b64") && !RestrictCustomNodes)
         {
-            result = CreateNode("SwarmLoadImageB64", new JObject()
+            if (img.Type == Image.ImageType.IMAGE)
             {
-                ["image_base64"] = (resize ? img.Resize(UserInput.GetImageWidth(), UserInput.GetImageHeight()) : img).AsBase64
-            }, nodeId);
+                result = CreateNode("SwarmLoadImageB64", new JObject()
+                {
+                    ["image_base64"] = (resize ? img.Resize(UserInput.GetImageWidth(), UserInput.GetImageHeight()) : img).AsBase64
+                }, nodeId);
+            }
+            else
+            {
+                result = CreateNode("SwarmLoadImageB64", new JObject()
+                {
+                    ["image_base64"] = img.AsBase64
+                }, resize ? null : nodeId);
+                if (resize)
+                {
+                    result = CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = new JArray() { result, 0 },
+                        ["width"] = UserInput.GetImageWidth(),
+                        ["height"] = UserInput.GetImageHeight(),
+                        ["upscale_method"] = "bilinear",
+                        ["crop"] = "disabled"
+                    }, nodeId);
+                }
+            }
         }
         else
         {

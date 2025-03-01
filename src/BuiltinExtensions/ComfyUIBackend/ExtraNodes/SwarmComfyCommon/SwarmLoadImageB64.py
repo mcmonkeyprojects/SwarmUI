@@ -5,10 +5,19 @@ import torch, base64, io
 def b64_to_img_and_mask(image_base64):
     imageData = base64.b64decode(image_base64)
     i = Image.open(io.BytesIO(imageData))
-    i = ImageOps.exif_transpose(i)
-    image = i.convert("RGB")
-    image = np.array(image).astype(np.float32) / 255.0
-    image = torch.from_numpy(image)[None,]
+    if hasattr(i, 'is_animated') and i.is_animated:
+        images = []
+        for frame in range(i.n_frames):
+            i.seek(frame)
+            images.append(i.convert("RGB"))
+        i.seek(0)
+        image = np.array(images).astype(np.float32) / 255.0
+        image = torch.from_numpy(image)
+    else:
+        i = ImageOps.exif_transpose(i)
+        image = i.convert("RGB")
+        image = np.array(image).astype(np.float32) / 255.0
+        image = torch.from_numpy(image)[None,]
     if 'A' in i.getbands():
         mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
         mask = 1. - torch.from_numpy(mask)

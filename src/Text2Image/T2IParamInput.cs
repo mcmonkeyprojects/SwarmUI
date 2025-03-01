@@ -1258,14 +1258,22 @@ public class T2IParamInput
             ValuesInput.Remove(param.ID);
             return;
         }
+        Image imageFor(string val)
+        {
+            if (val.StartsWithFast("data:"))
+            {
+                return Image.FromDataString(val);
+            }
+            return new Image(val, Image.ImageType.IMAGE, "png");
+        }
         object obj = param.Type switch
         {
             T2IParamDataType.INTEGER => param.SharpType == typeof(long) ? long.Parse(val) : int.Parse(val),
             T2IParamDataType.DECIMAL => param.SharpType == typeof(double) ? double.Parse(val) : float.Parse(val),
             T2IParamDataType.BOOLEAN => bool.Parse(val),
             T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
-            T2IParamDataType.IMAGE => new Image(val, Image.ImageType.IMAGE, "png"),
-            T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => new Image(v, Image.ImageType.IMAGE, "png")).ToList(),
+            T2IParamDataType.IMAGE => imageFor(val),
+            T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => imageFor(v)).ToList(),
             T2IParamDataType.MODEL => getModel(val),
             T2IParamDataType.LIST => val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
             _ => throw new NotImplementedException()

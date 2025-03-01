@@ -37,12 +37,16 @@ public class Image
     {
         if (data.StartsWith("data:video/"))
         {
-            string ext = data.After("data:video/").Before(";base64,");
-            return new Image(data.ToString().After(";base64,"), ImageType.VIDEO, ext);
+            string ext = data.Before(";base64,").After("data:video/");
+            return new Image(data.After(";base64,"), ImageType.VIDEO, ext);
         }
         if (data.StartsWith("data:image/gif;"))
         {
-            return new Image(data.ToString().After(";base64,"), ImageType.ANIMATION, "gif");
+            return new Image(data.After(";base64,"), ImageType.ANIMATION, "gif");
+        }
+        if (data.StartsWith("data:image/webp;"))
+        {
+            return new Image(data.After(";base64,"), ImageType.ANIMATION, "webp");
         }
         if (data.StartsWith("data:image/"))
         {

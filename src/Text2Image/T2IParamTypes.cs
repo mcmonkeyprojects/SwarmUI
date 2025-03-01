@@ -870,9 +870,8 @@ public class T2IParamTypes
                     string shortText = val.Length > 10 ? val[..10] + "..." : val;
                     throw new SwarmUserErrorException($"Invalid image value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
                 }
-                return val;
+                return origVal;
             case T2IParamDataType.IMAGE_LIST:
-                List<string> parts = [];
                 foreach (string part in val.Split('|'))
                 {
                     string partVal = part.Trim();
@@ -889,9 +888,8 @@ public class T2IParamTypes
                         string shortText = partVal.Length > 10 ? partVal[..10] + "..." : partVal;
                         throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
                     }
-                    parts.Add(partVal);
                 }
-                return parts.JoinString("|");
+                return origVal;
             case T2IParamDataType.MODEL:
                 if (!Program.T2IModelSets.TryGetValue(type.Subtype ?? "Stable-Diffusion", out T2IModelHandler handler))
                 {
