@@ -84,6 +84,16 @@ function clickImageInBatch(div) {
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
+function rightClickImageInBatch(e, div) {
+    if (e.shiftKey || e.ctrlKey) {
+        return;
+    }
+    let popover = new AdvancedPopover('image_batch_context_menu', [ { key: 'Remove', action: () => div.remove() } ], false, mouseX, mouseY, document.body, null);
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+}
+
 /** "Reuse Parameters" button impl. */
 function copy_current_image_params() {
     if (!currentMetadataVal) {
@@ -951,6 +961,7 @@ function gotImageResult(image, metadata, batchId) {
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
     let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch');
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
+    batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
         if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
@@ -967,6 +978,7 @@ function gotImagePreview(image, metadata, batchId) {
     let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
+    batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (showLoadSpinnersElem.checked) {
         let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
         batch_div.appendChild(spinnerDiv);
