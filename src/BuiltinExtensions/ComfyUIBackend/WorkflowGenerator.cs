@@ -534,6 +534,16 @@ public class WorkflowGenerator
         return Workflow.ContainsKey(id);
     }
 
+    public int Text2VideoFPS()
+    {
+        int fpsDefault = 24;
+        if (IsWanVideo())
+        {
+            fpsDefault = 16;
+        }
+        return UserInput.Get(T2IParamTypes.Text2VideoFPS, fpsDefault);
+    }
+
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
@@ -547,15 +557,10 @@ public class WorkflowGenerator
                 });
                 image = [bounced, 0];
             }
-            int fpsDefault = 24;
-            if (IsWanVideo())
-            {
-                fpsDefault = 16;
-            }
             return CreateNode("SwarmSaveAnimationWS", new JObject()
             {
                 ["images"] = image,
-                ["fps"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, fpsDefault),
+                ["fps"] = Text2VideoFPS(),
                 ["lossless"] = false,
                 ["quality"] = 95,
                 ["method"] = "default",
