@@ -739,7 +739,7 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
             <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onImageInputPaste(arguments[0])">
         </label>
         <label for="${id}" class="auto-file-label drag_image_target">
-            <input class="auto-file" type="file" accept="image/png, image/jpeg" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
+            <input class="auto-file" type="file" accept="image/png, image/jpeg, image/webp, image/gif" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
             <div class="auto-file-input">
                 <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
                 <span class="auto-file-input-filename"></span>

@@ -708,28 +708,38 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     includeButton('Use As Init', () => {
         let initImageParam = document.getElementById('input_initimage');
         if (initImageParam) {
-            let tmpImg = new Image();
-            tmpImg.crossOrigin = 'Anonymous';
-            tmpImg.onload = () => {
-                let canvas = document.createElement('canvas');
-                canvas.width = tmpImg.naturalWidth;
-                canvas.height = tmpImg.naturalHeight;
-                let ctx = canvas.getContext('2d');
-                ctx.drawImage(tmpImg, 0, 0);
-                canvas.toBlob(blob => {
-                    let type = img.src.substring(img.src.lastIndexOf('.') + 1);
-                    let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
-                    let container = new DataTransfer(); 
-                    container.items.add(file);
-                    initImageParam.files = container.files;
-                    triggerChangeFor(initImageParam);
-                    toggleGroupOpen(initImageParam, true);
-                    let toggler = getRequiredElementById('input_group_content_initimage_toggle');
-                    toggler.checked = true;
-                    triggerChangeFor(toggler);
-                });
+            let type = img.src.substring(img.src.lastIndexOf('.') + 1);
+            let set = (blob) => {
+                let file = new File([blob], imagePathClean, { type: `image/${type.length > 0 && type.length < 20 ? type : 'png'}` });
+                let container = new DataTransfer();
+                container.items.add(file);
+                initImageParam.files = container.files;
+                triggerChangeFor(initImageParam);
+                toggleGroupOpen(initImageParam, true);
+                let toggler = getRequiredElementById('input_group_content_initimage_toggle');
+                toggler.checked = true;
+                triggerChangeFor(toggler);
             };
-            tmpImg.src = img.src;
+            if (img.dataset.src && (img.dataset.src.startsWith('data:') || img.dataset.src.startsWith('/') || img.dataset.src.startsWith('View/'))) {
+                fetch(img.dataset.src).then(response => response.blob()).then(blob => {
+                    set(blob);
+                });
+            }
+            else {
+                let tmpImg = new Image();
+                tmpImg.crossOrigin = 'Anonymous';
+                tmpImg.onload = () => {
+                    let canvas = document.createElement('canvas');
+                    canvas.width = tmpImg.naturalWidth;
+                    canvas.height = tmpImg.naturalHeight;
+                    let ctx = canvas.getContext('2d');
+                    ctx.drawImage(tmpImg, 0, 0);
+                    canvas.toBlob(blob => {
+                        set(blob);
+                    });
+                };
+                tmpImg.src = img.src;
+            }
         }
     }, '', 'Sets this image as the Init Image parameter input');
     includeButton('Use As Image Prompt', () => {
