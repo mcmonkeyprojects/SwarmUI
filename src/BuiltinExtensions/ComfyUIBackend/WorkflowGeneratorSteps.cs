@@ -1434,7 +1434,7 @@ public class WorkflowGeneratorSteps
                         }
                         int fps = g.Text2VideoFPS();
                         fps *= mult;
-                        g.UserInput.Set(T2IParamTypes.Text2VideoFPS, fps);
+                        g.T2VFPSOverride = fps;
                     }
                 }
                 g.CreateImageSaveNode(g.FinalImageOut, nodeId);

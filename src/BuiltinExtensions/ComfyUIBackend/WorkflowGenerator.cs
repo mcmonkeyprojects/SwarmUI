@@ -534,8 +534,14 @@ public class WorkflowGenerator
         return Workflow.ContainsKey(id);
     }
 
+    public int T2VFPSOverride = -1;
+
     public int Text2VideoFPS()
     {
+        if (T2VFPSOverride > 0)
+        {
+            return T2VFPSOverride;
+        }
         int fpsDefault = 24;
         if (IsWanVideo())
         {
