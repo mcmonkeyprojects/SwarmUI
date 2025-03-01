@@ -1426,6 +1426,15 @@ public class WorkflowGeneratorSteps
                     width = imageWidth;
                     height = imageHeight;
                 }
+                string scaled = g.CreateNode("ImageScale", new JObject()
+                {
+                    ["image"] = g.FinalImageOut,
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["upscale_method"] = "bilinear",
+                    ["crop"] = "disabled"
+                });
+                g.FinalImageOut = [scaled, 0];
                 JArray posCond, negCond, latent, model, vae;
                 if (vidModel.ModelClass?.CompatClass == "lightricks-ltx-video")
                 {
@@ -1433,6 +1442,7 @@ public class WorkflowGeneratorSteps
                     {
                         fps = 24;
                     }
+                    frames ??= 97;
                     g.FinalLoadedModel = vidModel;
                     (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
                     posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
@@ -1445,7 +1455,7 @@ public class WorkflowGeneratorSteps
                         ["image"] = g.FinalImageOut,
                         ["width"] = width,
                         ["height"] = height,
-                        ["length"] = frames ?? 97,
+                        ["length"] = frames,
                         ["batch_size"] = 1,
                         ["image_noise_scale"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
                     });
@@ -1471,6 +1481,7 @@ public class WorkflowGeneratorSteps
                     {
                         fps = 24;
                     }
+                    frames ??= 121;
                     g.FinalLoadedModel = vidModel;
                     (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
                     posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
@@ -1481,7 +1492,7 @@ public class WorkflowGeneratorSteps
                         ["start_image"] = g.FinalImageOut,
                         ["width"] = width,
                         ["height"] = height,
-                        ["length"] = frames ?? 121,
+                        ["length"] = frames,
                         ["batch_size"] = 1
                     });
                     string ltxvcond = g.CreateNode("LTXVConditioning", new JObject() // (Despite the name, this is just setting the framerate)
@@ -1503,6 +1514,7 @@ public class WorkflowGeneratorSteps
                     {
                         fps = 24;
                     }
+                    frames ??= 73;
                     g.FinalLoadedModel = vidModel;
                     (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
                     posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
@@ -1511,23 +1523,15 @@ public class WorkflowGeneratorSteps
                     {
                         ["width"] = width,
                         ["height"] = height,
-                        ["length"] = frames ?? 73,
+                        ["length"] = frames,
                         ["batch_size"] = 1
-                    });
-                    string scaled = g.CreateNode("ImageScale", new JObject()
-                    {
-                        ["image"] = g.FinalImageOut,
-                        ["width"] = width,
-                        ["height"] = height,
-                        ["upscale_method"] = "bilinear",
-                        ["crop"] = "disabled"
                     });
                     string ip2pNode = g.CreateNode("InstructPixToPixConditioning", new JObject()
                     {
                         ["positive"] = posCond,
                         ["negative"] = negCond,
                         ["vae"] = vae,
-                        ["pixels"] = new JArray() { scaled, 0 }
+                        ["pixels"] = g.FinalImageOut
                     });
                     posCond = [ip2pNode, 0];
                     negCond = [ip2pNode, 1];
@@ -1542,39 +1546,43 @@ public class WorkflowGeneratorSteps
                     {
                         fps = 16;
                     }
+                    frames ??= 81;
                     g.FinalLoadedModel = vidModel;
                     (vidModel, model, JArray clip, vae) = g.CreateStandardModelLoader(vidModel, "image2video", null, true);
                     posCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt, ""), clip, vidModel, true);
                     negCond = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""), clip, vidModel, false);
-                    string scaled = g.CreateNode("ImageScale", new JObject()
-                    {
-                        ["image"] = g.FinalImageOut,
-                        ["width"] = width,
-                        ["height"] = height,
-                        ["upscale_method"] = "bilinear",
-                        ["crop"] = "disabled"
-                    });
                     string targetName = "clip_vision_h.safetensors";
                     requireVisionModel(g, targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161");
                     string clipLoader = g.CreateNode("CLIPVisionLoader", new JObject()
                     {
                         ["clip_name"] = targetName
                     });
+                    JArray imageIn = g.FinalImageOut;
+                    if (g.UserInput.TryGet(T2IParamTypes.VideoLateStart, out _))
+                    {
+                        string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
+                        {
+                            ["image"] = imageIn,
+                            ["batch_index"] = 0,
+                            ["length"] = 1
+                        });
+                        imageIn = [fromBatch, 0];
+                    }
                     string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
                     {
                         ["clip_vision"] = new JArray() { clipLoader, 0 },
-                        ["image"] = new JArray() { scaled, 0 },
+                        ["image"] = imageIn,
                         ["crop"] = "center"
                     });
                     string img2vidNode = g.CreateNode("WanImageToVideo", new JObject()
                     {
                         ["width"] = width,
                         ["height"] = height,
-                        ["length"] = frames ?? 81,
+                        ["length"] = frames,
                         ["positive"] = posCond,
                         ["negative"] = negCond,
                         ["vae"] = vae,
-                        ["start_image"] = new JArray() { scaled, 0 },
+                        ["start_image"] = imageIn,
                         ["clip_vision_output"] = new JArray() { encoded, 0 },
                         ["batch_size"] = 1
                     });
@@ -1591,6 +1599,7 @@ public class WorkflowGeneratorSteps
                     {
                         fps = 6; // SVD
                     }
+                    frames ??= 25;
                     defCfg = 2.5;
                     JArray clipVision;
                     if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
@@ -1646,7 +1655,7 @@ public class WorkflowGeneratorSteps
                         ["vae"] = vae,
                         ["width"] = width,
                         ["height"] = height,
-                        ["video_frames"] = frames ?? 25,
+                        ["video_frames"] = frames,
                         ["motion_bucket_id"] = g.UserInput.Get(T2IParamTypes.VideoMotionBucket, 127),
                         ["fps"] = fps,
                         ["augmentation_level"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0)
@@ -1656,9 +1665,26 @@ public class WorkflowGeneratorSteps
                     latent = [conditioning, 2];
                 }
                 int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
+                int startStep = 0;
+                if (g.UserInput.TryGet(T2IParamTypes.VideoLateStart, out double lateStart))
+                {
+                    string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut,
+                        ["batch_index"] = 0,
+                        ["length"] = frames.Value
+                    });
+                    startStep = (int)Math.Floor(steps * lateStart);
+                    string reEncode = g.CreateNode("VAEEncode", new JObject()
+                    {
+                        ["vae"] = vae,
+                        ["pixels"] = new JArray() { fromBatch, 0 }
+                    });
+                    latent = [reEncode, 0];
+                }
                 double cfg = g.UserInput.Get(T2IParamTypes.VideoCFG, defCfg);
                 string previewType = g.UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
-                string samplered = g.CreateKSampler(model, posCond, negCond, latent, cfg, steps, 0, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 42, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: defSampler, defscheduler: defScheduler, hadSpecialCond: hadSpecialCond);
+                string samplered = g.CreateKSampler(model, posCond, negCond, latent, cfg, steps, startStep, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 42, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: defSampler, defscheduler: defScheduler, hadSpecialCond: hadSpecialCond);
                 g.FinalLatentImage = [samplered, 0];
                 string decoded = g.CreateVAEDecode(vae, g.FinalLatentImage);
                 g.FinalImageOut = [decoded, 0];
