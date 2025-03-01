@@ -1393,6 +1393,16 @@ public class WorkflowGeneratorSteps
                 }
                 if (g.IsVideoModel())
                 {
+                    if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
+                    {
+                        string trimNode = g.CreateNode("SwarmTrimFrames", new JObject()
+                        {
+                            ["image"] = g.FinalImageOut,
+                            ["trim_start"] = g.UserInput.Get(T2IParamTypes.TrimVideoStartFrames, 0),
+                            ["trim_end"] = g.UserInput.Get(T2IParamTypes.TrimVideoEndFrames, 0)
+                        });
+                        g.FinalImageOut = [trimNode, 0];
+                    }
                     if (g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                     {
                         if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
@@ -1741,6 +1751,16 @@ public class WorkflowGeneratorSteps
                 string decoded = g.CreateVAEDecode(vae, g.FinalLatentImage);
                 g.FinalImageOut = [decoded, 0];
                 string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLowerFast();
+                if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
+                {
+                    string trimNode = g.CreateNode("SwarmTrimFrames", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut,
+                        ["trim_start"] = g.UserInput.Get(T2IParamTypes.TrimVideoStartFrames, 0),
+                        ["trim_end"] = g.UserInput.Get(T2IParamTypes.TrimVideoEndFrames, 0)
+                    });
+                    g.FinalImageOut = [trimNode, 0];
+                }
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))

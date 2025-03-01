@@ -277,3 +277,5 @@
     - If you see generations completing but then freezing or dying at the end, the advanced `VAE Tiling` parameters may help fix that.
     - The Image2Video models are much more performance-intensive than the Text2Video models
     - To run faster, use a "HighRes Fix" style setup, there's a guide to that here: https://www.reddit.com/r/StableDiffusion/comments/1j0znur/run_wan_faster_highres_fix_in_2025/
+- **Quality:**
+    - The Wan models sometimes produce glitched content on the first or last few frames - under Advanced->`Other Fixes`->you can adjust `Trim Video Start Frames` (and `End`) to a small number (1 to 4) to cut the first/last few frames to dodge this.
