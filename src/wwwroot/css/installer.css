@@ -159,3 +159,12 @@ label {
     left: 0;
     top: 5px;
 }
+.installer-click-radio {
+    border-radius: 1rem;
+    padding: 0.5rem;
+    border: 1px solid var(--light-border);
+    cursor: pointer;
+}
+.installer-click-radio:hover {
+    background-color: var(--light-border);
+}
