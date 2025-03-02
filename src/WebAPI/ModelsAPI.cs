@@ -189,6 +189,7 @@ public static class ModelsAPI
             }
             return slashes < depth && dedup.Add(name);
         }
+        int sanityCap = Program.ServerSettings.Performance.ModelListSanityCap;
         using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
         if (subtype == "Wildcards")
         {
@@ -198,6 +199,10 @@ public static class ModelsAPI
                 {
                     WildcardsHelper.Wildcard card = WildcardsHelper.GetWildcard(file);
                     files.Add(new(card.Name, card.Name.AfterLast('/'), card.TimeCreated, card.TimeModified, card.GetNetObject()));
+                    if (files.Count > sanityCap)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -208,6 +213,10 @@ public static class ModelsAPI
                 if (tryMatch(possible.Name))
                 {
                     files.Add(new(possible.Name, possible.Title, possible.Metadata?.TimeCreated ?? long.MaxValue, possible.Metadata?.TimeModified ?? long.MaxValue, possible.ToNetObject()));
+                    if (files.Count > sanityCap)
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -218,6 +227,10 @@ public static class ModelsAPI
                 if (tryMatch(name))
                 {
                     files.Add(new(name, name.AfterLast('/'), long.MaxValue, long.MaxValue, possible));
+                    if (files.Count > sanityCap)
+                    {
+                        break;
+                    }
                 }
             }
         }
