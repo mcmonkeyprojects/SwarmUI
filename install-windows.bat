@@ -33,6 +33,6 @@ cd SwarmUI
 
 call .\make-shortcut.bat
 
-call .\launch-windows.bat --launch_mode webinstall
+cmd /c .\launch-windows.bat --launch_mode webinstall
 
 IF %ERRORLEVEL% NEQ 0 ( pause )
