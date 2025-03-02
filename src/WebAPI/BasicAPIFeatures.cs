@@ -93,7 +93,8 @@ public static class BasicAPIFeatures
         [API.APIParameter("Selected backend (comfy/none).")] string backend,
         [API.APIParameter("Selected models to predownload.")] string models,
         [API.APIParameter("If true, install with AMD GPU compatibility.")] bool install_amd,
-        [API.APIParameter("Selected user language.")] string language)
+        [API.APIParameter("Selected user language.")] string language,
+        [API.APIParameter("If true, make a Desktop shortcut.")] bool make_shortcut = false)
     {
         if (Program.ServerSettings.IsInstalled)
         {
@@ -102,7 +103,7 @@ public static class BasicAPIFeatures
         }
         try
         {
-            await Installation.Install(socket, theme, installed_for, backend, models, install_amd, language);
+            await Installation.Install(socket, theme, installed_for, backend, models, install_amd, language, make_shortcut);
         }
         catch (SwarmReadableErrorException ex)
         {

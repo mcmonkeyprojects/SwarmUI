@@ -31,8 +31,6 @@ IF %ERRORLEVEL% NEQ 0 (
 git clone https://github.com/mcmonkeyprojects/SwarmUI
 cd SwarmUI
 
-call .\make-shortcut.bat
-
 cmd /c .\launch-windows.bat --launch_mode webinstall
 
 IF %ERRORLEVEL% NEQ 0 ( pause )

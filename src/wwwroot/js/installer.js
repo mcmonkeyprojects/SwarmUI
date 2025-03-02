@@ -1,6 +1,6 @@
 
 class InstallerClass {
-    parts = ['license', 'skip', 'themes', 'installed_for', 'backends', 'models', 'end'];
+    parts = ['license', 'skip', 'shortcut', 'themes', 'installed_for', 'backends', 'models', 'end'];
     backButton = getRequiredElementById('installer_button_back');
     nextButton = getRequiredElementById('installer_button_next');
     bottomInfo = getRequiredElementById('bottom_info');
@@ -85,6 +85,8 @@ class InstallerClass {
                 return true;
             case 'amd':
                 return getRadioSelectionInFieldset('amd_selection_field') != null;
+            case 'shortcut':
+                return getRadioSelectionInFieldset('shortcut_selection_field') != null;
             case 'skip':
                 return getRadioSelectionInFieldset('install_path_selection_field') != null;
             case 'themes':
@@ -133,6 +135,11 @@ class InstallerClass {
         if (amd_section) {
             install_amd = getRadioSelectionInFieldset('amd_selection_field') == 'yes';
         }
+        let shortcut_section = document.getElementById('shortcut_selection_field');
+        let make_shortcut = false;
+        if (shortcut_section) {
+            make_shortcut = getRadioSelectionInFieldset('shortcut_selection_field') == 'yes';
+        }
         let models = this.modelsToDownload();
         return {
             theme: getRadioSelectionInFieldset('theme_selection_field'),
@@ -140,7 +147,8 @@ class InstallerClass {
             backend: getRadioSelectionInFieldset('backend_selection_field'),
             models: models.length == 0 ? 'none' : this.modelsToDownload().join(', '),
             language: document.getElementById('installer_language').value,
-            install_amd: install_amd
+            install_amd: install_amd,
+            make_shortcut: make_shortcut
         };
     }
 

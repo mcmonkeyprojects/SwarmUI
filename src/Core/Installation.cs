@@ -282,8 +282,40 @@ public class Installation
         Program.MainSDModels.Refresh();
     }
 
+    /// <summary>Make a desktop shortcut (Windows only).</summary>
+    public static void MakeShortcut()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return;
+        }
+        string path = $"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}/SwarmUI.url";
+        string curDir = Directory.GetCurrentDirectory().TrimEnd('\\');
+        string content =
+            $"""
+            [InternetShortcut]
+            URL="{curDir}\launch-windows.bat"
+            IconFile="{curDir}\src\wwwroot\favicon.ico"
+            IconIndex=0
+            """;
+        File.WriteAllText(path, content);
+    }
+
+    /// <summary>Apply changes to server settings.</summary>
+    public static void SettingsApply()
+    {
+        Program.ServerSettings.IsInstalled = true;
+        Program.ServerSettings.InstallDate = $"{DateTimeOffset.Now:yyyy-MM-dd}";
+        Program.ServerSettings.InstallVersion = Utilities.Version;
+        if (Program.ServerSettings.LaunchMode == "webinstall")
+        {
+            Program.ServerSettings.LaunchMode = "web";
+        }
+        Program.SaveSettingsFile();
+    }
+
     /// <summary>Main install function entry point.</summary>
-    public static async Task Install(WebSocket socket, string theme, string installed_for, string backend, string models, bool install_amd, string language)
+    public static async Task Install(WebSocket socket, string theme, string installed_for, string backend, string models, bool install_amd, string language, bool make_shortcut)
     {
         if (Directory.Exists("dlbackend/comfy"))
         {
@@ -307,14 +339,11 @@ public class Installation
         StepsThusFar++;
         UpdateProgress(0, 0, 0);
         await Backend(backend, install_amd);
-        Program.ServerSettings.IsInstalled = true;
-        Program.ServerSettings.InstallDate = $"{DateTimeOffset.Now:yyyy-MM-dd}";
-        Program.ServerSettings.InstallVersion = Utilities.Version;
-        if (Program.ServerSettings.LaunchMode == "webinstall")
+        if (make_shortcut)
         {
-            Program.ServerSettings.LaunchMode = "web";
+            MakeShortcut();
         }
-        Program.SaveSettingsFile();
+        SettingsApply();
         await Models(models);
         StepsThusFar++;
         UpdateProgress(0, 0, 0);

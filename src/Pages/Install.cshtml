@@ -117,6 +117,27 @@
         </fieldset>
     </div>
 
+    @if (WebUtil.IsWindows())
+    {
+        <div id="installer_section_shortcut" style="display: none;">
+            <div class="install_q_head">Would you like a Desktop shortcut for SwarmUI?</div>
+            <div class="install_hint">You can always delete it later.</div>
+            <br>
+            <fieldset class="form-group" id="shortcut_selection_field">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="shortcut_radio" id="shortcut_no" value="no">
+                    <label class="form-check-label" for="shortcut_no">No</label>
+                    <div class="install_hint">Don't give me a Desktop shortcut.</div>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="shortcut_radio" id="shortcut_yes" value="yes" checked="">
+                    <label class="form-check-label" for="shortcut_yes">Yes</label>
+                    <div class="install_hint">Give me a Desktop shortcut.</div>
+                </div>
+            </fieldset>
+        </div>
+    }
+
     <div id="installer_section_themes" style="display: none;">
         <div class="install_q_head">Choose a theme:</div>
         <div class="install_hint">You can always change this later in the User Settings page.</div>

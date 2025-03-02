@@ -182,4 +182,7 @@ public static class WebUtil
         }
         return false;
     }
+
+    /// <summary>Returns true if the program is running in Windows.</summary>
+    public static bool IsWindows() => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 }
