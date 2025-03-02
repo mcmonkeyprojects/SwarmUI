@@ -15,7 +15,9 @@ if exist SwarmUI.sln (
 )
 
 winget install Microsoft.DotNet.SDK.8 --accept-source-agreements --accept-package-agreements
-winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements
+
+WHERE git
+IF %ERRORLEVEL% NEQ 0 winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements
 
 git clone https://github.com/mcmonkeyprojects/SwarmUI
 cd SwarmUI
