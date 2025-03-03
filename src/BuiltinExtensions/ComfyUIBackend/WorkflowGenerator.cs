@@ -1164,7 +1164,7 @@ public class WorkflowGenerator
     {
         if (IsVideoModel())
         {
-            previews ??= UserInput.Get(ComfyUIBackendExtension.Text2VideoPreviewType, "animate");
+            previews ??= UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
         }
         if (IsLTXV())
         {
@@ -1600,6 +1600,279 @@ public class WorkflowGenerator
             ["model"] = FinalModel
         });
         FinalModel = [diffNode, 0];
+    }
+    public void RequireVisionModel(string name, string url, string hash)
+    {
+        if (VisionModelsValid.ContainsKey(name))
+        {
+            return;
+        }
+        string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0], name);
+        DownloadModel(name, filePath, url, hash);
+        VisionModelsValid.TryAdd(name, name);
+    }
+
+    /// <summary>Creates the execution logic for an Image-To-Video model.</summary>
+    public void CreateImageToVideo(T2IModel vidModel, ref int? frames, double? videoCfg, ref int? videoFps, JToken width, JToken height, string prompt, string negPrompt, int steps, long seed, Func<JArray, JArray, (JArray, int)> altLatent = null, int batchInd = -1, int batchLen = -1)
+    {
+        bool hadSpecialCond = false;
+        string defSampler = "dpmpp_2m_sde_gpu", defScheduler = "karras";
+        double defCfg = 7;
+        string scaled = CreateNode("ImageScale", new JObject()
+        {
+            ["image"] = FinalImageOut,
+            ["width"] = width,
+            ["height"] = height,
+            ["upscale_method"] = "bilinear",
+            ["crop"] = "disabled"
+        });
+        FinalImageOut = [scaled, 0];
+        JArray posCond, negCond, latent, model, vae;
+        if (vidModel.ModelClass?.CompatClass == "lightricks-ltx-video")
+        {
+            videoFps ??= 24;
+            frames ??= 97;
+            FinalLoadedModel = vidModel;
+            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
+            posCond = CreateConditioning(prompt, clip, vidModel, true);
+            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            string condNode = CreateNode("LTXVImgToVideo", new JObject()
+            {
+                ["positive"] = posCond,
+                ["negative"] = negCond,
+                ["vae"] = vae,
+                ["image"] = FinalImageOut,
+                ["width"] = width,
+                ["height"] = height,
+                ["length"] = frames,
+                ["batch_size"] = 1,
+                ["image_noise_scale"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
+            });
+            defCfg = 3;
+            posCond = [condNode, 0];
+            negCond = [condNode, 1];
+            latent = [condNode, 2];
+            string ltxvcond = CreateNode("LTXVConditioning", new JObject()
+            {
+                ["positive"] = posCond,
+                ["negative"] = negCond,
+                ["frame_rate"] = videoFps
+            });
+            posCond = [ltxvcond, 0];
+            negCond = [ltxvcond, 1];
+            hadSpecialCond = true;
+            defSampler = "euler";
+            defScheduler = "ltxv-image";
+        }
+        else if (vidModel.ModelClass?.CompatClass == "nvidia-cosmos-1")
+        {
+            videoFps ??= 24;
+            frames ??= 121;
+            FinalLoadedModel = vidModel;
+            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
+            posCond = CreateConditioning(prompt, clip, vidModel, true);
+            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            string latentNode = CreateNode("CosmosImageToVideoLatent", new JObject()
+            {
+                ["vae"] = vae,
+                ["start_image"] = FinalImageOut,
+                ["width"] = width,
+                ["height"] = height,
+                ["length"] = frames,
+                ["batch_size"] = 1
+            });
+            string ltxvcond = CreateNode("LTXVConditioning", new JObject() // (Despite the name, this is just setting the framerate)
+            {
+                ["positive"] = posCond,
+                ["negative"] = negCond,
+                ["frame_rate"] = videoFps
+            });
+            posCond = [ltxvcond, 0];
+            negCond = [ltxvcond, 1];
+            defCfg = 7;
+            latent = [latentNode, 0];
+            defSampler = "res_multistep";
+            defScheduler = "karras";
+        }
+        else if (vidModel.ModelClass?.CompatClass == "hunyuan-video")
+        {
+            videoFps ??= 24;
+            frames ??= 73;
+            FinalLoadedModel = vidModel;
+            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
+            posCond = CreateConditioning(prompt, clip, vidModel, true);
+            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            string latentNode = CreateNode("EmptyHunyuanLatentVideo", new JObject()
+            {
+                ["width"] = width,
+                ["height"] = height,
+                ["length"] = frames,
+                ["batch_size"] = 1
+            });
+            string ip2pNode = CreateNode("InstructPixToPixConditioning", new JObject()
+            {
+                ["positive"] = posCond,
+                ["negative"] = negCond,
+                ["vae"] = vae,
+                ["pixels"] = FinalImageOut
+            });
+            posCond = [ip2pNode, 0];
+            negCond = [ip2pNode, 1];
+            defCfg = 6;
+            latent = [latentNode, 0];
+            defSampler = "dpmpp_2m";
+            defScheduler = "beta";
+        }
+        else if (vidModel.ModelClass?.CompatClass == "wan-21-14b")
+        {
+            videoFps ??= 16;
+            frames ??= 81;
+            FinalLoadedModel = vidModel;
+            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
+            posCond = CreateConditioning(prompt, clip, vidModel, true);
+            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            string targetName = "clip_vision_h.safetensors";
+            RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161");
+            string clipLoader = CreateNode("CLIPVisionLoader", new JObject()
+            {
+                ["clip_name"] = targetName
+            });
+            JArray imageIn = FinalImageOut;
+            if (batchInd != -1 && batchLen != -1)
+            {
+                string fromBatch = CreateNode("ImageFromBatch", new JObject()
+                {
+                    ["image"] = imageIn,
+                    ["batch_index"] = batchInd,
+                    ["length"] = batchLen
+                });
+                imageIn = [fromBatch, 0];
+            }
+            JArray encodeIn = imageIn;
+            if (batchLen > 1)
+            {
+                string fromBatch = CreateNode("ImageFromBatch", new JObject()
+                {
+                    ["image"] = imageIn,
+                    ["batch_index"] = batchInd,
+                    ["length"] = 1
+                });
+                encodeIn = [fromBatch, 0];
+            }
+            string encoded = CreateNode("CLIPVisionEncode", new JObject()
+            {
+                ["clip_vision"] = new JArray() { clipLoader, 0 },
+                ["image"] = encodeIn,
+                ["crop"] = "center"
+            });
+            string img2vidNode = CreateNode("WanImageToVideo", new JObject()
+            {
+                ["width"] = width,
+                ["height"] = height,
+                ["length"] = frames,
+                ["positive"] = posCond,
+                ["negative"] = negCond,
+                ["vae"] = vae,
+                ["start_image"] = imageIn,
+                ["clip_vision_output"] = new JArray() { encoded, 0 },
+                ["batch_size"] = 1
+            });
+            posCond = [img2vidNode, 0];
+            negCond = [img2vidNode, 1];
+            defCfg = 6;
+            latent = [img2vidNode, 2];
+            defSampler = "euler";
+            defScheduler = "simple";
+        }
+        else
+        {
+            videoFps ??= 6; // SVD
+            frames ??= 25;
+            defCfg = 2.5;
+            JArray clipVision;
+            if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
+            {
+                string trtloader = CreateNode("TensorRTLoader", new JObject()
+                {
+                    ["unet_name"] = vidModel.ToString(ModelFolderFormat),
+                    ["model_type"] = "svd"
+                });
+                model = [trtloader, 0];
+                string fname = "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors";
+                RequireVisionModel(fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030");
+                string cliploader = CreateNode("CLIPVisionLoader", new JObject()
+                {
+                    ["clip_name"] = fname
+                });
+                clipVision = [cliploader, 0];
+                string svdVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSVDVAE;
+                if (string.IsNullOrWhiteSpace(svdVae))
+                {
+                    svdVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
+                }
+                if (string.IsNullOrWhiteSpace(svdVae))
+                {
+                    throw new SwarmUserErrorException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
+                }
+                vae = CreateVAELoader(svdVae, HasNode("11") ? null : "11");
+            }
+            else
+            {
+                string loader = CreateNode("ImageOnlyCheckpointLoader", new JObject()
+                {
+                    ["ckpt_name"] = vidModel.ToString()
+                });
+                model = [loader, 0];
+                clipVision = [loader, 1];
+                vae = [loader, 2];
+            }
+            double minCfg = UserInput.Get(T2IParamTypes.VideoMinCFG, 1);
+            if (minCfg >= 0)
+            {
+                string cfgGuided = CreateNode("VideoLinearCFGGuidance", new JObject()
+                {
+                    ["model"] = model,
+                    ["min_cfg"] = minCfg
+                });
+                model = [cfgGuided, 0];
+            }
+            string conditioning = CreateNode("SVD_img2vid_Conditioning", new JObject()
+            {
+                ["clip_vision"] = clipVision,
+                ["init_image"] = FinalImageOut,
+                ["vae"] = vae,
+                ["width"] = width,
+                ["height"] = height,
+                ["video_frames"] = frames,
+                ["motion_bucket_id"] = UserInput.Get(T2IParamTypes.VideoMotionBucket, 127),
+                ["fps"] = videoFps,
+                ["augmentation_level"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0)
+            });
+            posCond = [conditioning, 0];
+            negCond = [conditioning, 1];
+            latent = [conditioning, 2];
+        }
+        int startStep = 0;
+        if (altLatent is not null)
+        {
+            (latent, startStep) = altLatent(vae, latent);
+        }
+        videoCfg ??= defCfg;
+        string previewType = UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
+        string samplered = CreateKSampler(model, posCond, negCond, latent, videoCfg.Value, steps, startStep, 10000, seed, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: defSampler, defscheduler: defScheduler, hadSpecialCond: hadSpecialCond);
+        FinalLatentImage = [samplered, 0];
+        string decoded = CreateVAEDecode(vae, FinalLatentImage);
+        FinalImageOut = [decoded, 0];
+        if (UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
+        {
+            string trimNode = CreateNode("SwarmTrimFrames", new JObject()
+            {
+                ["image"] = FinalImageOut,
+                ["trim_start"] = UserInput.Get(T2IParamTypes.TrimVideoStartFrames, 0),
+                ["trim_end"] = UserInput.Get(T2IParamTypes.TrimVideoEndFrames, 0)
+            });
+            FinalImageOut = [trimNode, 0];
+        }
     }
 
     /// <summary>Creates an image preprocessor node.</summary>
