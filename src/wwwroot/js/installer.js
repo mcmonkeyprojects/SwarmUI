@@ -32,7 +32,7 @@ class InstallerClass {
                     this.moveToPage(this.parts.length - 1);
                     return;
                 }
-                this.moveToPage(2);
+                this.moveToPage(this.parts.findIndex(x => x == 'skip') + 1);
             });
         }
         getRequiredElementById('installer_button_confirm').addEventListener('click', this.submit.bind(this));
@@ -81,7 +81,7 @@ class InstallerClass {
 
     back() {
         if (this.cur_part == this.parts.length - 1 && getRadioSelectionInFieldset('install_path_selection_field') == 'just_install') {
-            this.moveToPage(this.parts.findIndex(x => x == 'skip') + 1);
+            this.moveToPage(this.parts.findIndex(x => x == 'skip'));
         }
         this.moveToPage(this.cur_part - 1);
     }
