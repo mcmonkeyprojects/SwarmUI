@@ -57,6 +57,12 @@ The message `AssertionError: Torch not compiled with CUDA enabled` means that py
 
 **So how do I fix it?** The concept is easy, just the details vary. You need to reinstall torch, which means you need to trigger a pip install of: `torch torchvision torchaudio -U --index-url https://download.pytorch.org/whl/cu126` (the cu126 is CUDA version and may change over time, refer to [PyTorch's Website](https://pytorch.org/get-started/locally/) for updated index-url options). Note the usage of `-U` to tell pip to upgrade/replace the existing torch. To see how to install pip packages, refer to [I need to install something with pip](#i-need-to-install-something-with-pip) below.
 
+### fatal: detected dubious ownership in repository at '...'
+
+The message `fatal: detected dubious ownership in repository at` is a relatively common error from git, indicating that you are trying to install Swarm on an improper drive. Most commonly this is an external drive (eg a USB flash drive).
+
+Swarm needs to be installed on a standard system drive. On Windows, this means any NTFS formatted drive, such as your 'C:' drive or any secondary internal drive.
+
 ## I Have An Error Message And Don't Know What To Do
 
 Step 1 is read the error message. A lot of error messages in Swarm are intentionally written in clear plain English to tell you exactly what went wrong and how to fix it. Sometimes it's not clear enough or you'll get an internal error without good info, so:
