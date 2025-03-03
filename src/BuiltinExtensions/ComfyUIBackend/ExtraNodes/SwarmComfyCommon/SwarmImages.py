@@ -143,6 +143,24 @@ class SwarmTrimFrames:
         return (s,)
 
 
+class SwarmCountFrames:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",)
+            }
+        }
+
+    CATEGORY = "SwarmUI/images"
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "count"
+    DESCRIPTION = "Counts the number of frames in an image."
+
+    def count(self, image):
+        return (image.shape[0],)
+
+
 class SwarmImageCompositeMaskedColorCorrecting:
     @classmethod
     def INPUT_TYPES(s):
@@ -287,5 +305,6 @@ NODE_CLASS_MAPPINGS = {
     "SwarmVideoBoomerang": SwarmVideoBoomerang,
     "SwarmImageNoise": SwarmImageNoise,
     "SwarmTrimFrames": SwarmTrimFrames,
+    "SwarmCountFrames": SwarmCountFrames,
     "SwarmImageCompositeMaskedColorCorrecting": SwarmImageCompositeMaskedColorCorrecting
 }
