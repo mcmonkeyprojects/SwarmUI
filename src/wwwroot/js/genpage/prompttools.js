@@ -48,6 +48,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('object', 'Select a sub-region inside the image and inpaint over it with a different prompt', (prefix) => {
             return ['\nx,y,width,height eg "0.25,0.25,0.5,0.5"', '\nor x,y,width,height,strength,strength2 eg "0,0,1,1,0.5,0.4"', '\nwhere strength is how strongly to apply the prompt to the region (vs global prompt) on the general pass, and strength2 is how strongly to inpaint (ie InitImageCreativity).'];
         });
+        this.registerPrefix('extend', 'Use an Image2Video model to extend a video repeatedly', (prefix) => {
+            return ['\nInput is a frame count, also follow this tag with a prompt for the section.\nFor example, "<extend:81> the cat runs" to add an 81 frame clip of your cat running.\nSee also the "Video Extend" parameter group.'];
+        });
         this.registerPrefix('segment', 'Automatically segment an area by CLIP matcher and inpaint it (optionally with a unique prompt)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
             if (prefixLow.startsWith('yolo-')) {

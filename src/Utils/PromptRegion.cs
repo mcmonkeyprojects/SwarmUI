@@ -11,7 +11,7 @@ public class PromptRegion
 
     public enum PartType
     {
-        Region, Object, Segment, ClearSegment
+        Region, Object, Segment, ClearSegment, Extend
     }
 
     public class Part
@@ -39,7 +39,7 @@ public class PromptRegion
 
     public PromptRegion(string prompt)
     {
-        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:"))
+        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:"))
         {
             GlobalPrompt = prompt;
             return;
@@ -92,6 +92,10 @@ public class PromptRegion
             {
                 type = PartType.Object;
             }
+            else if (prefix == "extend")
+            {
+                type = PartType.Extend;
+            }
             else if (prefix == "segment")
             {
                 type = PartType.Segment;
@@ -134,6 +138,10 @@ public class PromptRegion
                     p.Strength2 = 0.6;
                 }
             }
+            else if (type == PartType.Extend)
+            {
+                p.DataText = regionData;
+            }
             else
             {
                 if (coords.Length < 4 || coords.Length > 6
@@ -159,12 +167,18 @@ public class PromptRegion
             Parts.Add(p);
             addMore = s => p.Prompt += s;
         }
+        string previous = GlobalPrompt;
         foreach (Part part in Parts)
         {
             if (part.Type == PartType.Segment && string.IsNullOrWhiteSpace(part.Prompt))
             {
                 part.Prompt = GlobalPrompt;
             }
+            if (part.Type == PartType.Extend && string.IsNullOrWhiteSpace(part.Prompt))
+            {
+                part.Prompt = previous;
+            }
+            previous = part.Prompt;
         }
     }
 }

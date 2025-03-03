@@ -609,6 +609,7 @@ public class T2IParamInput
         };
         PromptTagPostProcessors["object"] = PromptTagPostProcessors["segment"];
         PromptTagPostProcessors["region"] = PromptTagPostProcessors["segment"];
+        PromptTagPostProcessors["extend"] = PromptTagPostProcessors["segment"];
         PromptTagBasicProcessors["break"] = (data, context) =>
         {
             return "<break>";

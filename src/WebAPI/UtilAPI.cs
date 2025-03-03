@@ -55,7 +55,7 @@ public static class UtilAPI
         }
     }
 
-    private static readonly string[] SkippablePromptSyntax = ["segment", "object", "region", "clear"];
+    private static readonly string[] SkippablePromptSyntax = ["segment", "object", "region", "clear", "extend"];
 
     [API.APIDescription("Count the CLIP-like tokens in a given text prompt.", "\"count\": 0")]
     public static async Task<JObject> CountTokens(

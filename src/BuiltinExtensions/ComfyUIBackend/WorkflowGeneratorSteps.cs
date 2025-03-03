@@ -1376,11 +1376,6 @@ public class WorkflowGeneratorSteps
             }
             else
             {
-                string nodeId = "9";
-                if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out _))
-                {
-                    nodeId = "30";
-                }
                 if (g.IsVideoModel())
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
@@ -1436,6 +1431,11 @@ public class WorkflowGeneratorSteps
                         fps *= mult;
                         g.T2VFPSOverride = fps;
                     }
+                }
+                string nodeId = "9";
+                if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:"))
+                {
+                    nodeId = "30";
                 }
                 g.CreateImageSaveNode(g.FinalImageOut, nodeId);
             }
@@ -1558,6 +1558,107 @@ public class WorkflowGeneratorSteps
                     });
                     g.FinalImageOut = [bounced, 0];
                 }
+                string nodeId = "9";
+                if (prompt.Contains("<extend:"))
+                {
+                    nodeId = $"{g.GetStableDynamicID(50000, 0)}";
+                }
+                g.CreateNode("SwarmSaveAnimationWS", new JObject()
+                {
+                    ["images"] = g.FinalImageOut,
+                    ["fps"] = videoFps,
+                    ["lossless"] = false,
+                    ["quality"] = 95,
+                    ["method"] = "default",
+                    ["format"] = format
+                }, nodeId);
+            }
+        }, 11);
+        #endregion
+        #region Extend Video
+        AddStep(g =>
+        {
+            string fullRawPrompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
+            if (fullRawPrompt.Contains("<extend:"))
+            {
+                string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
+                double cfg = g.UserInput.Get(T2IParamTypes.CFGScale, 7);
+                int steps = g.UserInput.Get(T2IParamTypes.Steps, 20);
+                long seed = g.UserInput.Get(T2IParamTypes.Seed) + 600;
+                int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
+                string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLowerFast();
+                int frameExtendOverlap = g.UserInput.Get(T2IParamTypes.VideoExtendFrameOverlap, 9);
+                bool saveIntermediate = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
+                T2IModel extendModel = g.UserInput.Get(T2IParamTypes.VideoExtendModel, null) ?? throw new SwarmUserErrorException("You have an '<extend:' block in your prompt, but you don't have a 'Video Extend Model' selected.");
+                PromptRegion regionalizer = new(fullRawPrompt);
+                List<JArray> vidChunks = [g.FinalImageOut];
+                JArray conjoinedLast = g.FinalImageOut;
+                string getWidthNode = g.CreateNode("SwarmImageWidth", new JObject()
+                {
+                    ["image"] = g.FinalImageOut
+                });
+                JArray width = [getWidthNode, 0];
+                string getHeightNode = g.CreateNode("SwarmImageHeight", new JObject()
+                {
+                    ["image"] = g.FinalImageOut
+                });
+                JArray height = [getHeightNode, 0];
+                PromptRegion.Part[] parts = [.. regionalizer.Parts.Where(p => p.Type == PromptRegion.PartType.Extend)];
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    PromptRegion.Part part = parts[i];
+                    seed++;
+                    int? frames = int.Parse(part.DataText);
+                    string prompt = part.Prompt;
+                    string frameCountNode = g.CreateNode("SwarmCountFrames", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut
+                    });
+                    JArray frameCount = [frameCountNode, 0];
+                    string fromEndCountNode = g.CreateNode("SwarmIntAdd", new JObject()
+                    {
+                        ["a"] = frameCount,
+                        ["b"] = -frameExtendOverlap
+                    });
+                    JArray fromEndCount = [fromEndCountNode, 0];
+                    string partialBatchNode = g.CreateNode("ImageFromBatch", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut,
+                        ["batch_index"] = fromEndCount,
+                        ["length"] = frameExtendOverlap
+                    });
+                    JArray partialBatch = [partialBatchNode, 0];
+                    g.FinalImageOut = partialBatch;
+                    g.CreateImageToVideo(extendModel, ref frames, cfg, ref videoFps, width, height, prompt, negPrompt, steps, seed, null, 0, frameExtendOverlap);
+                    if (saveIntermediate)
+                    {
+                        g.CreateNode("SwarmSaveAnimationWS", new JObject()
+                        {
+                            ["images"] = g.FinalImageOut,
+                            ["fps"] = videoFps,
+                            ["lossless"] = false,
+                            ["quality"] = 95,
+                            ["method"] = "default",
+                            ["format"] = format
+                        }, $"{g.GetStableDynamicID(50000, 0)}");
+                    }
+                    string cutNode = g.CreateNode("ImageFromBatch", new JObject()
+                    {
+                        ["image"] = g.FinalImageOut,
+                        ["batch_index"] = frameExtendOverlap,
+                        ["length"] = frameCount
+                    });
+                    JArray cut = [cutNode, 0];
+                    g.FinalImageOut = cut;
+                    vidChunks.Add(g.FinalImageOut);
+                    string batchedNode = g.CreateNode("ImageBatch", new JObject()
+                    {
+                        ["image1"] = conjoinedLast,
+                        ["image2"] = g.FinalImageOut
+                    });
+                    conjoinedLast = [batchedNode, 0];
+                }
+                g.FinalImageOut = conjoinedLast;
                 g.CreateNode("SwarmSaveAnimationWS", new JObject()
                 {
                     ["images"] = g.FinalImageOut,
@@ -1568,7 +1669,7 @@ public class WorkflowGeneratorSteps
                     ["format"] = format
                 }, "9");
             }
-        }, 11);
+        }, 12);
         #endregion
         #region Post-Cleanup
         AddStep(g =>
