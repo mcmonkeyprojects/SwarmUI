@@ -1640,6 +1640,23 @@ public class WorkflowGenerator
             });
             return [film, 0];
         }
+        else if (method == "GIMM-VFI")
+        {
+            string modelLoader = CreateNode("DownloadAndLoadGIMMVFIModel", new JObject()
+            {
+                ["model"] = "gimmvfi_f_arb_lpips_fp32.safetensors"
+            });
+            string gimm = CreateNode("GIMMVFI_interpolate", new JObject()
+            {
+                ["gimmvfi_model"] = new JArray() { modelLoader, 0 },
+                ["images"] = imageIn,
+                ["multiplier"] = mult,
+                ["ds_factor"] = 1,
+                ["interpolation_factor"] = mult,
+                ["seed"] = 1
+            });
+            return [gimm, 0];
+        }
         return imageIn;
     }
 

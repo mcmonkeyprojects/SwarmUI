@@ -28,6 +28,7 @@ public static class InstallableFeatures
         RegisterInstallableFeature(new("IP Adapter", "ipadapter", "https://github.com/cubiq/ComfyUI_IPAdapter_plus", "cubiq"));
         RegisterInstallableFeature(new("ControlNet Preprocessors", "controlnet_preprocessors", "https://github.com/Fannovel16/comfyui_controlnet_aux", "Fannovel16"));
         RegisterInstallableFeature(new("Frame Interpolation Utilities", "frame_interpolation", "https://github.com/Fannovel16/ComfyUI-Frame-Interpolation", "Fannovel16"));
+        RegisterInstallableFeature(new("GIMM Video Frame Interpolator", "gimm_vfi", "https://github.com/kijai/ComfyUI-GIMM-VFI", "kijai"));
         RegisterInstallableFeature(new("TensorRT", "comfyui_tensorrt", "https://github.com/comfyanonymous/ComfyUI_TensorRT", "comfyanonymous + NVIDIA", "This will install TensorRT support developed by Comfy and NVIDIA.\nDo you wish to install?", true));
         RegisterInstallableFeature(new("Segment Anything 2", "sam2", "https://github.com/kijai/ComfyUI-segment-anything-2", "kijai"));
         RegisterInstallableFeature(new("Bits-n-Bytes NF4", "bnb_nf4", "https://github.com/comfyanonymous/ComfyUI_bitsandbytes_NF4", "comfyanonymous", "This will install BnB NF4 support developed by Comfy and lllyasviel (AGPL License).\nDo you wish to install?"));

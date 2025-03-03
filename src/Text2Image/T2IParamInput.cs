@@ -1299,7 +1299,7 @@ public class T2IParamInput
         ValuesInput[param.ID] = obj;
         if (param.FeatureFlag is not null)
         {
-            RequiredFlags.Add(param.FeatureFlag);
+            RequiredFlags.UnionWith(param.FeatureFlag.SplitFast(','));
         }
     }
 
@@ -1319,7 +1319,7 @@ public class T2IParamInput
         ValuesInput[param.Type.ID] = val;
         if (param.Type.FeatureFlag is not null)
         {
-            RequiredFlags.Add(param.Type.FeatureFlag);
+            RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
         }
     }
     
