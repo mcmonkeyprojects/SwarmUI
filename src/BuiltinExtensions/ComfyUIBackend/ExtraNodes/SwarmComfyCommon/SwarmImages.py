@@ -136,6 +136,8 @@ class SwarmTrimFrames:
     DESCRIPTION = "Trims frames from the start and end of a video."
 
     def trim(self, image, trim_start, trim_end):
+        if image.shape[0] <= 1:
+            return (image,)
         s_in = image
         start = max(0, min(s_in.shape[0], trim_start))
         end = max(0, min(s_in.shape[0], trim_end))

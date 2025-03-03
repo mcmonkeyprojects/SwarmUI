@@ -32,6 +32,8 @@ class SwarmSaveAnimationWS:
 
     def save_images(self, images, fps, lossless, quality, method, format):
         method = self.methods.get(method)
+        if images.shape[0] == 0:
+            return { }
 
         out_img = io.BytesIO()
         if format in ["webp", "gif"]:

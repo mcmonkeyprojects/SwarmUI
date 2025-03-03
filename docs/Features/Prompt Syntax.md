@@ -175,6 +175,16 @@
     - The automatic inpaint can be helpful for improving quality of objects, especially for small regions, but also might produce unexpected results.
     - Objects may use global feature changes, such as `<lora:` syntax input to apply a lora to the object in the inpaint phase.
 
+## Video Extend
+
+- You can use `<extend:frames>` to extend a video by a given number of frames using an Image-To-Video model.
+    - For example, `<extend:33>` will extend the video by 33 frames.
+    - Use the `Video Extend` parameter group to configure values for this. At least `Video Extend Model` must be set.
+    - Must set Overlap less than 1/3rd of the extend frame count.
+    - Use the `Advanced Video` parameters as well.
+    - Under `Other Fixes` -> `Trim Video End Frames` may be useful on some models. Do not use `Trim Start`
+    - 
+
 ## Comment
 
 - You can use `<comment:stuff here>` to add a personal comment in the prompt box. It will be discarded from the real prompt.
