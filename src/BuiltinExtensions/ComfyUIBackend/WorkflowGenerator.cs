@@ -1601,7 +1601,7 @@ public class WorkflowGenerator
         JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new SwarmUserErrorException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
         if (objectData is JObject objObj && objObj.TryGetValue("swarm_custom", out JToken swarmCustomTok) && swarmCustomTok.Value<bool>())
         {
-            return  CreateNodesFromSpecialSyntax(objObj, [imageNode]);
+            return CreateNodesFromSpecialSyntax(objObj, [imageNode]);
         }
         string preProcNode = CreateNode(preprocessor, (_, n) =>
         {
@@ -1735,6 +1735,11 @@ public class WorkflowGenerator
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input.</summary>
     public JArray CreateConditioningDirect(string prompt, JArray clip, T2IModel model, bool isPositive, string id = null)
     {
+        string trackerId = $"__cond_direct____{clip[0]}_{clip[1]}_{isPositive}____{prompt}";
+        if (id is null && NodeHelpers.TryGetValue(trackerId, out string nodeId))
+        {
+            return [nodeId, 0];
+        }
         string node;
         double mult = isPositive ? 1.5 : 0.8;
         int width = UserInput.GetImageWidth();
@@ -1791,6 +1796,7 @@ public class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
+        NodeHelpers[trackerId] = node;
         return [node, 0];
     }
 
@@ -2005,5 +2011,40 @@ public class WorkflowGenerator
                 }
             }
         }
+    }
+
+    public HashSet<string> UsedInputs = null;
+
+    /// <summary>Returns true if the node is connected to anything, or false if it has no outbound connections.</summary>
+    public bool NodeIsConnectedAnywhere(string nodeId)
+    {
+        if (UsedInputs is null)
+        {
+            UsedInputs = [];
+            foreach (JObject node in Workflow.Values().Cast<JObject>())
+            {
+                JObject inputs = node["inputs"] as JObject;
+                foreach (JProperty property in inputs.Properties().ToArray())
+                {
+                    if (property.Value is JArray jarr && jarr.Count == 2)
+                    {
+                        UsedInputs.Add($"{jarr[0]}");
+                    }
+                }
+            }
+        }
+        return UsedInputs.Contains(nodeId);
+    }
+
+    /// <summary>Removes a class of nodes if they are not connected to anything.</summary>
+    public void RemoveClassIfUnused(string className)
+    {
+        RunOnNodesOfClass(className, (id, data) =>
+        {
+            if (!NodeIsConnectedAnywhere(id))
+            {
+                Workflow.Remove(id);
+            }
+        });
     }
 }

@@ -1851,6 +1851,8 @@ public class WorkflowGeneratorSteps
                     }
                 }
             });
+            g.RemoveClassIfUnused("VAEEncode");
+            g.RemoveClassIfUnused("CLIPTextEncode");
         }, 200);
         #endregion
     }
