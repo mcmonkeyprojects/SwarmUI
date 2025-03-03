@@ -168,3 +168,6 @@ label {
 .installer-click-radio:hover {
     background-color: var(--light-border);
 }
+.installer-click-radio > input {
+    display: none;
+}
