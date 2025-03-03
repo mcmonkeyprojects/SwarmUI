@@ -326,16 +326,17 @@ public class T2IParamTypes
     /// <summary>(Called by <see cref="Program"/> during startup) registers all default parameter types.</summary>
     public static void RegisterDefaults()
     {
+        // ================================================ Root/Top/Special ================================================
         Prompt = Register<string>(new("Prompt", "The input prompt text that describes the image you want to generate.\nTell the AI what you want to see.",
             "", Clean: ApplyStringEdit, Examples: ["a photo of a cat", "a cartoonish drawing of an astronaut"], OrderPriority: -100, VisibleNormally: false, ViewType: ParamViewType.PROMPT, ChangeWeight: -5
             ));
         PromptImages = Register<List<Image>>(new("Prompt Images", "Images to include with the prompt, for eg ReVision or UnCLIP.\nIf this parameter is visible, you've done something wrong - this parameter is tracked internally.",
             "", IgnoreIf: "", OrderPriority: -95, VisibleNormally: false, IsAdvanced: true, ImageShouldResize: false, ChangeWeight: 2, HideFromMetadata: true // Has special internal handling
             ));
-        GroupAdvancedModelAddons = new("Advanced Model Addons", Open: false, IsAdvanced: true);
         NegativePrompt = Register<string>(new("Negative Prompt", "Like the input prompt text, but describe what NOT to generate.\nTell the AI things you don't want to see.",
             "", IgnoreIf: "", Clean: ApplyStringEdit, Examples: ["ugly, bad, gross", "lowres, low quality"], OrderPriority: -90, ViewType: ParamViewType.PROMPT, ChangeWeight: -5, VisibleNormally: false
             ));
+        // ================================================ Image Prompting ================================================
         GroupImagePrompting = new("Image Prompting", Open: false, Toggles: true, OrderPriority: -70, Description: $"Image prompting with ReVision, IP-Adapter, etc.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>");
         ReVisionStrength = Register<double>(new("ReVision Strength", $"How strong to apply ReVision image inputs.\nSet to 0 to disable ReVision processing.",
             "0", IgnoreIf: "0", OrderPriority: -70, Min: 0, Max: 10, Step: 0.1, ViewType: ParamViewType.SLIDER, Group: GroupImagePrompting, FeatureFlag: "sdxl"
@@ -346,9 +347,7 @@ public class T2IParamTypes
         UseReferenceOnly = Register<bool>(new("Use Reference Only", "Use the 'Reference-Only' technique to guide the generation towards the input image.\nThis currently has side effects that notably prevent Batch from being used properly.",
             "false", IgnoreIf: "false", Group: GroupImagePrompting, IsAdvanced: true
             ));
-        ReVisionModel = Register<T2IModel>(new("ReVision Model", "The CLIP Vision model to use for ReVision inputs.\nThis will also override IPAdapter (if IPAdapter-G is in use).",
-            "", Subtype: "ClipVision", IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, FeatureFlag: "sdxl"
-            ));
+        // ================================================ Core ================================================
         GroupCore = new("Core Parameters", Toggles: false, Open: true, OrderPriority: -50);
         Images = Register<int>(new("Images", "How many images to generate at once.",
             "1", IgnoreIf: "1", Min: 1, Max: 10000, Step: 1, Examples: ["1", "4"], OrderPriority: -50, Group: GroupCore
@@ -363,6 +362,7 @@ public class T2IParamTypes
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Flux, Hunyuan Video, or any Turbo model, expect CFG to be set to 1.",
             "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: -18, ViewType: ParamViewType.SLIDER, Group: GroupCore, ChangeWeight: -3
             ));
+        // ================================================ Text2Video ================================================
         GroupText2Video = new("Text To Video", Open: false, OrderPriority: -30, Toggles: true, Description: $"Support for Text2Video models.");
         Text2VideoFrames = Register<int>(new("Text2Video Frames", "How many frames to generate within the video.\nGenmo Mochi 1 can support any frame count up to 200, multiples of 6 plus 1 (7, 13, 19, 25, ...) are required and will automatically round if you enter an invalid value. Defaults to 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.\nHunyuan Video and Wan-2.1 support dynamic frame counts. Multiples of 4 plus 1 (5, 9, 13, 17, ...) are required and will automatically round if you enter an invalid value. Hunyuan defaults to 73, Wan defaults to 81.",
             "25", Min: 1, Max: 1000, OrderPriority: 1, Group: GroupText2Video, FeatureFlag: "text2video", Toggleable: true
@@ -376,6 +376,7 @@ public class T2IParamTypes
         Text2VideoFormat = Register<string>(new("Text2Video Format", "What format to save videos in.\nWebp video is ideal, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
             "webp", GetValues: _ => ["webp", "gif", "gif-hd", "webm", "h264-mp4", "h265-mp4", "prores"], OrderPriority: 21, Group: GroupText2Video, FeatureFlag: "text2video"
             ));
+        // ================================================ Variation Seed ================================================
         GroupVariation = new("Variation Seed", Toggles: true, Open: false, OrderPriority: -17, Description: "Variation Seeds let you reuse a single seed, but slightly vary it according to a second seed and a weight value.\nThis technique results in creating images that are almost the same, but with small variations.\nUsing two static seeds and adjusting the strength can produce a smooth transition between two seeds.");
         VariationSeed = Register<long>(new("Variation Seed", "Image-variation seed.\nCombined partially with the original seed to create a similar-but-different image for the same seed.\n-1 = random.",
             "-1", Min: -1, Max: uint.MaxValue, Step: 1, Examples: ["1", "2", "...", "10"], OrderPriority: -17, ViewType: ParamViewType.SEED, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4
@@ -383,6 +384,7 @@ public class T2IParamTypes
         VariationSeedStrength = Register<double>(new("Variation Seed Strength", "How strongly to apply the variation seed.\n0 = don't use, 1 = replace the base seed entirely. 0.5 is a good value.",
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, Examples: ["0", "0.25", "0.5", "0.75"], OrderPriority: -17, ViewType: ParamViewType.SLIDER, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4
             ));
+        // ================================================ Resolution ================================================
         GroupResolution = new("Resolution", Toggles: false, Open: false, OrderPriority: -11);
         AspectRatio = Register<string>(new("Aspect Ratio", "Image aspect ratio - that is, the shape of the image (wide vs square vs tall).\nSet to 'Custom' to define a manual width/height instead.\nSome models can stretch better than others.\nNotably Flux models support almost any resolution you feel like trying.",
             "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Old PC)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution
@@ -393,6 +395,7 @@ public class T2IParamTypes
         Height = Register<int>(new("Height", "Image height, in pixels.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
             "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -9, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution
             ));
+        // ================================================ Sampling ================================================
         GroupSampling = new("Sampling", Toggles: false, Open: false, OrderPriority: -8);
         CascadeLatentCompression = Register<int>(new("Cascade Latent Compression", "How deeply to compress latents when using Stable Cascade.\nDefault is 32, you can get slightly faster but lower quality results by using 42.",
             "32", IgnoreIf: "32", Min: 1, Max: 100, Step: 1, IsAdvanced: true, Group: GroupSampling, OrderPriority: 4.5, FeatureFlag: "cascade"
@@ -409,6 +412,7 @@ public class T2IParamTypes
         SeamlessTileable = Register<string>(new("Seamless Tileable", "Makes the generated image seamlessly tileable (like a 3D texture would be).\nOptionally, can be tileable on only the X axis (horizontal) or Y axis (vertical).",
             "false", IgnoreIf: "false", GetValues: _ => ["false", "true", "X-Only", "Y-Only"], Group: GroupSampling, FeatureFlag: "seamless", OrderPriority: 15
             ));
+        // ================================================ Init Image ================================================
         GroupInitImage = new("Init Image", Toggles: true, Open: false, OrderPriority: -5, Description: "Init-image, to edit an image using diffusion.\nThis process is sometimes called 'img2img' or 'Image To Image'.");
         InitImage = Register<Image>(new("Init Image", "Init-image, to edit an image using diffusion.\nThis process is sometimes called 'img2img' or 'Image To Image'.",
             null, OrderPriority: -5, Group: GroupInitImage, ChangeWeight: 2
@@ -446,6 +450,7 @@ public class T2IParamTypes
         UnsamplerPrompt = Register<string>(new("Unsampler Prompt", "If enabled, feeds this prompt to an unsampler before resampling with your main prompt.\nThis is powerful for controlled image editing.\n\nFor example, use unsampler prompt 'a photo of a man wearing a black hat',\nand give main prompt 'a photo of a man wearing a sombrero', to change what type of hat a person is wearing.",
             "", OrderPriority: -3, Toggleable: true, Clean: ApplyStringEdit, ViewType: ParamViewType.PROMPT, Group: GroupInitImage, IsAdvanced: true
             ));
+        // ================================================ Refine/Upscale ================================================
         GroupRefiners = new("Refine / Upscale", Toggles: true, Open: false, OrderPriority: -3, Description: "This group contains everything related to two-stage image generation.\nNotably this includes post-refinement, step-swap refinement, and upscaled refinement.\nUpscaling an image and refining with the same model has been referred to as 'hires fix' in other UIs.");
         static List<string> listRefinerModels(Session s)
         {
@@ -483,6 +488,7 @@ public class T2IParamTypes
         {
             return ["Automatic", "None", .. CleanModelList(Program.T2IModelSets["VAE"].ListModelsFor(s).Select(m => m.Name))];
         }
+        // ================================================ ControlNet ================================================
         for (int i = 1; i <= 3; i++)
         {
             string suffix = i switch { 1 => "", 2 => " Two", 3 => " Three", _ => "Error" };
@@ -511,6 +517,7 @@ public class T2IParamTypes
         ControlNetPreviewOnly = Register<bool>(new("ControlNet Preview Only", "(For API usage) If enabled, requests preview output from ControlNet and no image generation at all.",
             "false", IgnoreIf: "false", FeatureFlag: "controlnet", Permission: Permissions.ParamControlNet, VisibleNormally: false
             ));
+        // ================================================ Image To Video ================================================
         GroupVideo = new("Image To Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos with Stable Video Diffusion.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/Video.md\">See more docs here.</a>");
         static bool isVideoClass(string id) => id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v") || id.Contains("-image2video");
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nSelect an image-to-video conversion model, note that text-to-video models do not work.",
@@ -550,8 +557,13 @@ public class T2IParamTypes
         VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is ideal, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
             "webp", GetValues: _ => ["webp", "gif", "gif-hd", "webm", "h264-mp4", "h265-mp4", "prores"], OrderPriority: 20, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
+        // ================================================ Advanced Model Addons ================================================
+        GroupAdvancedModelAddons = new("Advanced Model Addons", Open: false, IsAdvanced: true);
         Model = Register<T2IModel>(new("Model", "What main checkpoint model should be used.",
             "", Permission: Permissions.ModelParams, VisibleNormally: false, Subtype: "Stable-Diffusion", ChangeWeight: 10
+            ));
+        ReVisionModel = Register<T2IModel>(new("ReVision Model", "The CLIP Vision model to use for ReVision inputs.\nThis will also override IPAdapter (if IPAdapter-G is in use).",
+            "", Subtype: "ClipVision", IsAdvanced: true, Toggleable: true, Group: GroupAdvancedModelAddons, FeatureFlag: "sdxl"
             ));
         VAE = Register<T2IModel>(new("VAE", "The VAE (Variational Auto-Encoder) controls the translation between images and latent space.\nIf your images look faded out, or glitched, you may have the wrong VAE.\nAll models have a VAE baked in by default, this option lets you swap to a different one if you want to.",
             "None", IgnoreIf: "None", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, GetValues: listVaes, Subtype: "VAE", Group: GroupAdvancedModelAddons, ChangeWeight: 7
@@ -586,6 +598,7 @@ public class T2IParamTypes
         TorchCompile = Register<string>(new("Torch Compile", "Torch.Compile is a way to dynamically accelerate AI models.\nIt wastes a bit of time (around a minute) on the first call compiling a graph of the generation, and then all subsequent generations run faster thanks to the compiled graph.\nTorch.Compile depends on Triton, which is difficult to install on Windows, easier on Linux.",
             "Disabled", IgnoreIf: "Disabled", GetValues: _ => ["Disabled", "inductor", "cudagraphs"], OrderPriority: 40, Group: GroupAdvancedModelAddons
             ));
+        // ================================================ Swarm Internal ================================================
         GroupSwarmInternal = new("Swarm Internal", Open: false, OrderPriority: 0, IsAdvanced: true);
         BatchSize = Register<int>(new("Batch Size", "Batch size - generates more images at once on a single GPU.\nThis increases VRAM usage.\nMay in some cases increase overall speed by a small amount (runs slower to get the images, but slightly faster per-image).",
             "1", IgnoreIf: "1", Min: 1, Max: 100, Step: 1, IsAdvanced: true, ViewType: ParamViewType.SLIDER, ViewMax: 10, ChangeWeight: 2, Group: GroupSwarmInternal, OrderPriority: -20
@@ -646,6 +659,7 @@ public class T2IParamTypes
         ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nIf unchecked, will prefer more 'raw' behavior.",
             "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 2
             ));
+        // ================================================ FreeU (TODO: remove/extensionize?) ================================================
         GroupFreeU = new("FreeU", Open: false, OrderPriority: 10, IsAdvanced: true, Toggles: true, Description: "<a class=\"translate\" href=\"https://arxiv.org/abs/2309.11497\">Implements 'FreeU: Free Lunch in Diffusion U-Net'</a>\nThis is a minor adjustment to legacy Unet models (eg SDv1, SDXL).\nIt does not apply to newer DiT models, and even for Unet models it's not recommended.");
         FreeUApplyTo = Register<string>(new("[FreeU] Apply To", "Which models to apply FreeU to, as base, refiner, or both. Irrelevant when not using refiner.",
             "Both", GetValues: (_) => ["Both", "Base", "Refiner"], IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -10
@@ -665,6 +679,7 @@ public class T2IParamTypes
         FreeUSkip2 = Register<double>(new("[FreeU] Skip Two", "Skip2 multiplier value for FreeU.\nPaper recommends 0.2.",
             "0.2", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -1
             ));
+        // ================================================ Regional Prompting ================================================
         GroupRegionalPrompting = new("Regional Prompting", Open: false, OrderPriority: 5, IsAdvanced: true);
         GlobalRegionFactor = Register<double>(new("Global Region Factor", "When using regionalized prompts, this factor controls how strongly the global prompt overrides the regional prompts.\n0 means ignore global prompt, 1 means ignore regional, 0.5 means half-n-half.",
             "0.5", Toggleable: true, IgnoreIf: "0.5", Min: 0, Max: 1, Step: 0.05, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: -5
@@ -702,6 +717,7 @@ public class T2IParamTypes
         EndStepsEarly = Register<double>(new("End Steps Early", "Percentage of steps to cut off before the image is done generation.",
             "0", Toggleable: true, IgnoreIf: "0", VisibleNormally: false, Min: 0, Max: 1, FeatureFlag: "endstepsearly"
             ));
+        // ================================================ Advanced Sampling ================================================
         GroupAdvancedSampling = new("Advanced Sampling", Open: false, OrderPriority: 10, IsAdvanced: true);
         SamplerSigmaMin = Register<double>(new("Sampler Sigma Min", "Minimum sigma value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
             "0", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -23
@@ -739,6 +755,7 @@ public class T2IParamTypes
         RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis internally uses RemBG.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -2
              ));
+        // ================================================ Other Fixes ================================================
         GroupOtherFixes = new("Other Fixes", Open: false, OrderPriority: 20, IsAdvanced: true);
         TrimVideoStartFrames = Register<int>(new("Trim Video Start Frames", "Trim this many frames from the start of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt start frames (such as Wan).",
             "0", IgnoreIf: "0", Min: 0, Max: 1000, IsAdvanced: true, Group: GroupOtherFixes, OrderPriority: -11
