@@ -161,6 +161,42 @@ class SwarmCountFrames:
         return (image.shape[0],)
 
 
+class SwarmImageWidth:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",)
+            }
+        }
+
+    CATEGORY = "SwarmUI/images"
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "get_width"
+    DESCRIPTION = "Gets the width of an image."
+
+    def get_width(self, image):
+        return (image.shape[-2],)
+
+
+class SwarmImageHeight:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",)
+            }
+        }
+
+    CATEGORY = "SwarmUI/images"
+    RETURN_TYPES = ("INT",)
+    FUNCTION = "get_height"
+    DESCRIPTION = "Gets the height of an image."
+
+    def get_height(self, image):
+        return (image.shape[-3],)
+
+
 class SwarmImageCompositeMaskedColorCorrecting:
     @classmethod
     def INPUT_TYPES(s):
@@ -306,5 +342,7 @@ NODE_CLASS_MAPPINGS = {
     "SwarmImageNoise": SwarmImageNoise,
     "SwarmTrimFrames": SwarmTrimFrames,
     "SwarmCountFrames": SwarmCountFrames,
+    "SwarmImageWidth": SwarmImageWidth,
+    "SwarmImageHeight": SwarmImageHeight,
     "SwarmImageCompositeMaskedColorCorrecting": SwarmImageCompositeMaskedColorCorrecting
 }
