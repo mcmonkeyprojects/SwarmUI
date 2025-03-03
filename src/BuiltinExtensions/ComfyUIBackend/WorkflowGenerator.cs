@@ -254,7 +254,14 @@ public class WorkflowGenerator
     /// <summary>Creates a new node with the given class type and input data, and optional manual ID.</summary>
     public string CreateNode(string classType, JObject input, string id = null)
     {
-        return CreateNode(classType, (_, n) => n["inputs"] = input, id);
+        string lookup = $"__generic_node__{classType}___{input}";
+        if (id is null && NodeHelpers.TryGetValue(lookup, out string existingNode))
+        {
+            return existingNode;
+        }
+        string result = CreateNode(classType, (_, n) => n["inputs"] = input, id);
+        NodeHelpers[lookup] = result;
+        return result;
     }
 
     /// <summary>Helper to download a core model file required by the workflow.</summary>
@@ -1105,7 +1112,7 @@ public class WorkflowGenerator
                 ["vae_name"] = vaeFixed
             }, id);
         }
-        NodeHelpers[$"vaeloader-{vae}"] = vaeLoader;
+        NodeHelpers[$"vaeloader-{vaeFixed}"] = vaeLoader;
         return [vaeLoader, 0];
     }
 
