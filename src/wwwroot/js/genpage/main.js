@@ -1716,7 +1716,7 @@ function doFeatureInstaller(name, button_div_id, alt_confirm, callback = null, d
     if (!confirm(alt_confirm)) {
         return;
     }
-    let buttonDiv = document.getElementById(button_div_id);
+    let buttonDiv = button_div_id ? document.getElementById(button_div_id) : null;
     if (buttonDiv) {
         buttonDiv.querySelector('button').disabled = true;
         buttonDiv.appendChild(createDiv('', null, 'Installing...'));
