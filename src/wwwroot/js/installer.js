@@ -12,7 +12,7 @@ class InstallerClass {
         }
         let shortcutPart = document.getElementById('installer_section_shortcut');
         if (shortcutPart) {
-            this.parts.splice(1, 0, 'shortcut');
+            this.parts.splice(this.parts.indexOf('skip') + 1, 0, 'shortcut');
         }
         this.cur_part = 0;
         this.backButton.addEventListener('click', this.back.bind(this));
