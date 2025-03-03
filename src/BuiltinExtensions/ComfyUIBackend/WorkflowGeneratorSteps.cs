@@ -1402,31 +1402,7 @@ public class WorkflowGeneratorSteps
                                 ["format"] = g.UserInput.Get(T2IParamTypes.Text2VideoFormat, "webp")
                             }, g.GetStableDynamicID(50000, 0));
                         }
-                        if (method == "RIFE")
-                        {
-                            string rife = g.CreateNode("RIFE VFI", new JObject()
-                            {
-                                ["frames"] = g.FinalImageOut,
-                                ["multiplier"] = mult,
-                                ["ckpt_name"] = "rife47.pth",
-                                ["clear_cache_after_n_frames"] = 10,
-                                ["fast_mode"] = true,
-                                ["ensemble"] = true,
-                                ["scale_factor"] = 1
-                            });
-                            g.FinalImageOut = [rife, 0];
-                        }
-                        else if (method == "FILM")
-                        {
-                            string film = g.CreateNode("FILM VFI", new JObject()
-                            {
-                                ["frames"] = g.FinalImageOut,
-                                ["multiplier"] = mult,
-                                ["ckpt_name"] = "film_net_fp32.pt",
-                                ["clear_cache_after_n_frames"] = 10
-                            });
-                            g.FinalImageOut = [film, 0];
-                        }
+                        g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
                         int fps = g.Text2VideoFPS();
                         fps *= mult;
                         g.T2VFPSOverride = fps;
@@ -1523,31 +1499,7 @@ public class WorkflowGeneratorSteps
                             ["format"] = format
                         }, g.GetStableDynamicID(50000, 0));
                     }
-                    if (method == "RIFE")
-                    {
-                        string rife = g.CreateNode("RIFE VFI", new JObject()
-                        {
-                            ["frames"] = g.FinalImageOut,
-                            ["multiplier"] = mult,
-                            ["ckpt_name"] = "rife47.pth",
-                            ["clear_cache_after_n_frames"] = 10,
-                            ["fast_mode"] = true,
-                            ["ensemble"] = true,
-                            ["scale_factor"] = 1
-                        });
-                        g.FinalImageOut = [rife, 0];
-                    }
-                    else if (method == "FILM")
-                    {
-                        string film = g.CreateNode("FILM VFI", new JObject()
-                        {
-                            ["frames"] = g.FinalImageOut,
-                            ["multiplier"] = mult,
-                            ["ckpt_name"] = "film_net_fp32.pt",
-                            ["clear_cache_after_n_frames"] = 10
-                        });
-                        g.FinalImageOut = [film, 0];
-                    }
+                    g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
                     videoFps *= mult;
                 }
                 if (g.UserInput.Get(T2IParamTypes.VideoBoomerang, false))

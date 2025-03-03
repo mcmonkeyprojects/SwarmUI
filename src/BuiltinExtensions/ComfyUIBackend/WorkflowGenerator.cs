@@ -1612,6 +1612,37 @@ public class WorkflowGenerator
         VisionModelsValid.TryAdd(name, name);
     }
 
+    /// <summary>Do a video frame interpolation.</summary>
+    public JArray DoInterpolation(JArray imageIn, string method, double mult)
+    {
+        if (method == "RIFE")
+        {
+            string rife = CreateNode("RIFE VFI", new JObject()
+            {
+                ["frames"] = imageIn,
+                ["multiplier"] = mult,
+                ["ckpt_name"] = "rife47.pth",
+                ["clear_cache_after_n_frames"] = 10,
+                ["fast_mode"] = true,
+                ["ensemble"] = true,
+                ["scale_factor"] = 1
+            });
+            return [rife, 0];
+        }
+        else if (method == "FILM")
+        {
+            string film = CreateNode("FILM VFI", new JObject()
+            {
+                ["frames"] = imageIn,
+                ["multiplier"] = mult,
+                ["ckpt_name"] = "film_net_fp32.pt",
+                ["clear_cache_after_n_frames"] = 10
+            });
+            return [film, 0];
+        }
+        return imageIn;
+    }
+
     /// <summary>Creates the execution logic for an Image-To-Video model.</summary>
     public void CreateImageToVideo(T2IModel vidModel, ref int? frames, double? videoCfg, ref int? videoFps, JToken width, JToken height, string prompt, string negPrompt, int steps, long seed, Func<JArray, JArray, (JArray, int)> altLatent = null, int batchInd = -1, int batchLen = -1)
     {
