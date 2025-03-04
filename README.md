@@ -114,10 +114,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Change the directory (`cd`) to the folder where you want to install SwarmUI.
 - Clone the SwarmUI GitHub repository: `git clone https://github.com/mcmonkeyprojects/SwarmUI`.
 - `cd SwarmUI` and run the installation script: `./launch-macos.sh`.
-
-The installation starts now and downloads the Stable Diffusion models from the internet. Depending on your internet connection, this may take several minutes. Wait for your web browser to open the SwarmUI window.
-
-> During the SwarmUI installation, you are prompted for the type of backend you want to use. For Mac computers with M1 or M2, you can safely choose the ComfyUI backend and choose the Stable Diffusion XL Base and Refiner models in the Download Models screen.
+- Wait for the web browser to open, and follow the install instructions on-page.
 
 # Installing With Docker
 
