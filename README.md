@@ -28,13 +28,15 @@ Key feature targets not yet implemented:
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
 - convenient direct-distribution of Swarm as a program ([Tauri](https://tauri.app/), [Blazor Desktop](https://learn.microsoft.com/en-us/training/modules/build-blazor-hybrid/), or an Electron app?)
 
-# Try It On Google Colab, Runpod, or Vast.ai
+# Try It On Google Colab
 
 ### Google Colab
 
 **WARNING**: Google Colab does not necessarily allow remote WebUIs, particularly for free accounts, use at your own risk.
 
 Colab link if you want to try Swarm: https://colab.research.google.com/github/mcmonkeyprojects/SwarmUI/blob/master/colab/colab-notebook.ipynb
+
+# Run it on a Cloud GPU Provider
 
 ### Runpod
 
