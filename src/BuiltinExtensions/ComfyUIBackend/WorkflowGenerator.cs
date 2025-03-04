@@ -2313,12 +2313,18 @@ public class WorkflowGenerator
         return new(finalCond, 0);
     }
 
+    /// <summary>Returns an array of all nodes currently in the workflow with a given class_type.</summary>
+    public JProperty[] NodesOfClass(string classType)
+    {
+        return Workflow.Properties().Where(p => $"{p.Value["class_type"]}" == classType).ToArray();
+    }
+
     /// <summary>Runs an action against all nodes of a given class_type.</summary>
     /// <param name="classType">The class_type to target.</param>
     /// <param name="action">The action(NodeID, JObject Data) to run against the node.</param>
     public void RunOnNodesOfClass(string classType, Action<string, JObject> action)
     {
-        foreach (JProperty property in Workflow.Properties().Where(p => $"{p.Value["class_type"]}" == classType).ToArray())
+        foreach (JProperty property in NodesOfClass(classType))
         {
             action(property.Name, property.Value as JObject);
         }
@@ -2365,9 +2371,9 @@ public class WorkflowGenerator
     }
 
     /// <summary>Removes a class of nodes if they are not connected to anything.</summary>
-    public void RemoveClassIfUnused(string className)
+    public void RemoveClassIfUnused(string classType)
     {
-        RunOnNodesOfClass(className, (id, data) =>
+        RunOnNodesOfClass(classType, (id, data) =>
         {
             if (!NodeIsConnectedAnywhere(id))
             {

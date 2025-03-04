@@ -1412,8 +1412,16 @@ public class WorkflowGeneratorSteps
                 if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:"))
                 {
                     nodeId = "30";
+                    // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
+                    if (g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _))
+                    {
+                        nodeId = null;
+                    }
                 }
-                g.CreateImageSaveNode(g.FinalImageOut, nodeId);
+                if (nodeId is not null)
+                {
+                    g.CreateImageSaveNode(g.FinalImageOut, nodeId);
+                }
             }
         }, 10);
         #endregion
