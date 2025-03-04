@@ -28,7 +28,7 @@ Key feature targets not yet implemented:
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
 - convenient direct-distribution of Swarm as a program ([Tauri](https://tauri.app/), [Blazor Desktop](https://learn.microsoft.com/en-us/training/modules/build-blazor-hybrid/), or an Electron app?)
 
-# Try It On Google Colab or Runpod
+# Try It On Google Colab, Runpod, or Vast.ai
 
 ### Google Colab
 
@@ -39,6 +39,10 @@ Colab link if you want to try Swarm: https://colab.research.google.com/github/mc
 ### Runpod
 
 Runpod template (note: maintained by third party contributor [nerdylive123](https://github.com/nerdylive123)): https://runpod.io/console/deploy?template=u7mlkrmxq3&ref=c6jd6jj0
+
+### Vast.ai
+
+Vast.ai template ([readme](https://cloud.vast.ai/template/readme/8e5e6ab1fceb9db3f813e815907b3390)): https://cloud.vast.ai?template_id=21b140f47ee8d4ebb2ce836afe2f9ad9
 
 Note it may take several minutes to start up the first time. Check the container logs to see setup progress. Check the template `?` info for hints on how to use.
 
