@@ -1425,7 +1425,7 @@ public class WorkflowGeneratorSteps
                 int? frames = g.UserInput.TryGet(T2IParamTypes.VideoFrames, out int framesRaw) ? framesRaw : null;
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 double? videoCfg = g.UserInput.TryGet(T2IParamTypes.VideoCFG, out double cfgRaw) ? cfgRaw : null;
-                int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
+                int videoSteps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
                 string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLowerFast();
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 42;
@@ -1474,7 +1474,7 @@ public class WorkflowGeneratorSteps
                             ["batch_index"] = 0,
                             ["length"] = frames.Value
                         });
-                        startStep = (int)Math.Floor(steps * (1 - v2vCreativity));
+                        startStep = (int)Math.Floor(videoSteps * (1 - v2vCreativity));
                         string reEncode = g.CreateNode("VAEEncode", new JObject()
                         {
                             ["vae"] = vae,
@@ -1484,7 +1484,7 @@ public class WorkflowGeneratorSteps
                     }
                     return (latent, startStep);
                 }
-                g.CreateImageToVideo(vidModel, ref frames, videoCfg, ref videoFps, width, height, prompt, negPrompt, steps, seed, altLatent, batchInd, batchLen);
+                g.CreateImageToVideo(vidModel, ref frames, videoCfg, ref videoFps, width, height, prompt, negPrompt, videoSteps, seed, altLatent, batchInd, batchLen);
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
@@ -1534,8 +1534,8 @@ public class WorkflowGeneratorSteps
             if (fullRawPrompt.Contains("<extend:"))
             {
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
-                double cfg = g.UserInput.Get(T2IParamTypes.CFGScale, 7);
-                int steps = g.UserInput.Get(T2IParamTypes.Steps, 20);
+                double? videoCfg = g.UserInput.TryGet(T2IParamTypes.VideoCFG, out double cfgRaw) ? cfgRaw : null;
+                int videoSteps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 600;
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLowerFast();
@@ -1581,7 +1581,7 @@ public class WorkflowGeneratorSteps
                     });
                     JArray partialBatch = [partialBatchNode, 0];
                     g.FinalImageOut = partialBatch;
-                    g.CreateImageToVideo(extendModel, ref frames, cfg, ref videoFps, width, height, prompt, negPrompt, steps, seed, null, 0, frameExtendOverlap);
+                    g.CreateImageToVideo(extendModel, ref frames, videoCfg, ref videoFps, width, height, prompt, negPrompt, videoSteps, seed, null, 0, frameExtendOverlap);
                     if (saveIntermediate)
                     {
                         g.CreateNode("SwarmSaveAnimationWS", new JObject()
