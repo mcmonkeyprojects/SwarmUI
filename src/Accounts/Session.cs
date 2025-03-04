@@ -199,52 +199,45 @@ public class Session : IEquatable<Session>
             Logs.Verbose($"Image is type {image.Type} and will save with extension '{image.Extension}'.");
             extension = image.Extension;
         }
-        string fullPath = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}.{extension}");
+        string fullPathNoExt = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}");
+        string folderRoute = Path.GetFullPath($"{User.OutputDirectory}/{imagePath.BeforeLast('/')}");
+        string fullPath = $"{fullPathNoExt}.{extension}";
         lock (User.UserLock)
         {
             try
             {
+                Directory.CreateDirectory(folderRoute);
+                HashSet<string> existingFiles = [.. Directory.EnumerateFiles(folderRoute).Union(RecentlyDeletedFilenames.Keys.Where(f => f.StartsWith(folderRoute))).Select(f => f.BeforeLast('.'))];
                 int num = 0;
-                while (RecentlyDeletedFilenames.ContainsKey(fullPath) || File.Exists(fullPath))
+                while (existingFiles.Contains(fullPathNoExt))
                 {
                     num++;
                     imagePath = rawImagePath.Contains("[number]") ? rawImagePath.Replace("[number]", $"{num}") : $"{rawImagePath}-{num}";
-                    fullPath = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}.{extension}");
+                    fullPathNoExt = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}");
+                    fullPath = $"{fullPathNoExt}.{extension}";
                 }
-                Directory.CreateDirectory(Directory.GetParent(fullPath).FullName);
                 File.WriteAllBytes(fullPath, image.ImageData);
                 if (User.Settings.FileFormat.SaveTextFileMetadata && !string.IsNullOrWhiteSpace(metadata))
                 {
-                    File.WriteAllBytes(fullPath.BeforeLast('.') + ".txt", metadata.EncodeUTF8());
+                    File.WriteAllBytes(fullPathNoExt + ".txt", metadata.EncodeUTF8());
                 }
                 if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension) && !string.IsNullOrWhiteSpace(metadata))
                 {
-                    File.WriteAllBytes(fullPath.BeforeLast('.') + ".swarm.json", metadata.EncodeUTF8());
+                    File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
                 }
                 if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension) && !string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
                 {
-                    Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPath.BeforeLast('.') + ".swarmpreview.jpg"]).Wait();
+                    Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]).Wait();
                     if (Program.ServerSettings.UI.AllowAnimatedPreviews)
                     {
-                        Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPath.BeforeLast('.') + ".swarmpreview.webp"]).Wait();
+                        Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
                     }
                 }
             }
-            catch (Exception e1)
+            catch (Exception ex)
             {
-                string pathA = fullPath;
-                try
-                {
-                    imagePath = "image_name_error/" + Utilities.SecureRandomHex(10);
-                    fullPath = $"{User.OutputDirectory}/{imagePath}.{extension}";
-                    Directory.CreateDirectory(Directory.GetParent(fullPath).FullName);
-                    File.WriteAllBytes(fullPath, image.ImageData);
-                }
-                catch (Exception ex)
-                {
-                    Logs.Error($"Could not save user image (to '{pathA}' nor to '{fullPath}': first error '{e1.Message}', second error '{ex.Message}'");
-                    return ("ERROR", null);
-                }
+                Logs.Error($"Could not save user '{User.UserID}' image (to '{fullPath}'): error '{ex.Message}'");
+                return ("ERROR", null);
             }
         }
         string prefix = Program.ServerSettings.Paths.AppendUserNameToOutputPath ? $"View/{User.UserID}/" : "Output/";
