@@ -200,7 +200,8 @@ public class Session : IEquatable<Session>
             extension = image.Extension;
         }
         string fullPathNoExt = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}");
-        string folderRoute = Path.GetFullPath($"{User.OutputDirectory}/{imagePath.BeforeLast('/')}");
+        string pathFolder = imagePath.Contains('/') ? imagePath.BeforeLast('/') : "";
+        string folderRoute = Path.GetFullPath($"{User.OutputDirectory}/{pathFolder}");
         string fullPath = $"{fullPathNoExt}.{extension}";
         lock (User.UserLock)
         {
