@@ -295,7 +295,7 @@ public class Settings : AutoConfiguration
         {
             [ConfigComment("Builder for output file paths. Can use auto-filling placeholders like '[model]' for the model name, '[prompt]' for a snippet of prompt text, etc.\n"
                 + $"Full details in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}User%20Settings.md#path-format\">the docs here</a>")]
-            public string Format = "raw/[year]-[month]-[day]/[hour][minute]-[prompt]-[model]-[seed]";
+            public string Format = "raw/[year]-[month]-[day]/[hour][minute][request_time_inc]-[prompt]-[model]";
 
             [ConfigComment("How long any one part can be.\nDefault is 40 characters.")]
             public int MaxLenPerPart = 40;
