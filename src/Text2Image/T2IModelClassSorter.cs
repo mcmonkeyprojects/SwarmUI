@@ -38,7 +38,9 @@ public class T2IModelClassSorter
         bool isv2512name(string name) => name.Contains("512-") || name.Contains("-inpaint") || name.Contains("base-"); // keywords that identify the 512 vs the 768. Unfortunately no good proper detection here, other than execution-based hacks (see Auto WebUI ref)
         bool isControlLora(JObject h) => h.ContainsKey("lora_controlnet");
         bool isTurbo21(JObject h) => h.ContainsKey("denoiser.sigmas") && h.ContainsKey("conditioner.embedders.0.model.ln_final.bias");
-        bool isSD3(JObject h) => h.ContainsKey("model.diffusion_model.joint_blocks.0.context_block.attn.proj.bias");
+        bool tryGetSd3Tok(JObject h, out JToken tok) => h.TryGetValue("model.diffusion_model.joint_blocks.0.context_block.attn.proj.bias", out tok);
+        bool isSD3Med(JObject h) => tryGetSd3Tok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() != 2432;
+        bool isSD3Large(JObject h) => tryGetSd3Tok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 2432;
         bool isDitControlnet(JObject h) => h.ContainsKey("controlnet_blocks.0.bias") && h.ContainsKey("transformer_blocks.0.ff.net.0.proj.bias");
         bool isFluxControlnet(JObject h) => isDitControlnet(h) && h.ContainsKey("transformer_blocks.0.attn.norm_added_k.weight");
         bool isSD3Controlnet(JObject h) => isDitControlnet(h) && !isFluxControlnet(h);
@@ -93,7 +95,7 @@ public class T2IModelClassSorter
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
-            return isV1(h) && !IsAlt(h) && !isV2(h) && !isXL09Base(h) && !isSD3(h);
+            return isV1(h) && !IsAlt(h) && !isV2(h) && !isXL09Base(h) && !isSD3Med(h) && !isSD3Large(h);
         }});
         Register(new() { ID = "stable-diffusion-v1-inpainting", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 (Inpainting)", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -224,15 +226,11 @@ public class T2IModelClassSorter
         // ====================== Stable Diffusion v3 ======================
         Register(new() { ID = "stable-diffusion-v3-medium", CompatClass = "stable-diffusion-v3-medium", Name = "Stable Diffusion 3 Medium", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isSD3(h);
+            return isSD3Med(h);
         }});
         Register(new() { ID = "stable-diffusion-v3.5-large", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return false;
-        }});
-        Register(new() { ID = "stable-diffusion-v3.5-large-turbo", CompatClass = "stable-diffusion-v3.5-large", Name = "Stable Diffusion 3.5 Large Turbo", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
-        {
-            return false;
+            return isSD3Large(h);
         }});
         Register(new() { ID = "stable-diffusion-v3.5-medium", CompatClass = "stable-diffusion-v3.5-medium", Name = "Stable Diffusion 3.5 Medium", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -438,6 +436,7 @@ public class T2IModelClassSorter
         Remaps["stable-cascade-v1-stage-a"] = "stable-cascade-v1-stage-a/vae";
         Remaps["stable-diffusion-3-3-5-large"] = "stable-diffusion-v3.5-large";
         Remaps["stable-diffusion-3-3-5-large/lora"] = "stable-diffusion-v3.5-large/lora";
+        Remaps["stable-diffusion-v3.5-large-turbo"] = "stable-diffusion-v3.5-large";
         Remaps["stable-diffusion-3-3-5-medium"] = "stable-diffusion-v3.5-medium";
         Remaps["stable-diffusion-3-3-5-medium/lora"] = "stable-diffusion-v3.5-medium/lora";
         // ====================== GGUF Remaps ======================
