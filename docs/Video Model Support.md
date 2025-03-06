@@ -69,6 +69,7 @@
 - Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model, and a separate Image2Video model.
 - Use the Comfy Org repackaged Text2Video model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
     - Or the Image2Video model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_image_to_video_720p_bf16.safetensors>
+    - Or Kijai's fp8/gguf variants <https://huggingface.co/Kijai/HunyuanVideo_comfy/tree/main>
     - Save to the `diffusion_models` folder
 - Or use the gguf models from city96 <https://huggingface.co/city96/HunyuanVideo-gguf/tree/main>
     - `Q6_K` is near identical to full precision and is recommended for 24 gig cards, `Q4_K_M` is recommended if you have low VRAM, results are still very close, other variants shouldn't be used normally

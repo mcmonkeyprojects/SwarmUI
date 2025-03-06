@@ -1671,7 +1671,7 @@ public class WorkflowGenerator
     public void CreateImageToVideo(T2IModel vidModel, ref int? frames, double? videoCfg, ref int? videoFps, JToken width, JToken height, string prompt, string negPrompt, int steps, long seed, Func<JArray, JArray, (JArray, int)> altLatent = null, int batchInd = -1, int batchLen = -1)
     {
         bool hadSpecialCond = false;
-        string defSampler = "dpmpp_2m_sde_gpu", defScheduler = "karras";
+        string defSampler = null, defScheduler = null;
         double defCfg = 7;
         string scaled = CreateNode("ImageScale", new JObject()
         {
@@ -1868,6 +1868,8 @@ public class WorkflowGenerator
             videoFps ??= 6; // SVD
             frames ??= 25;
             defCfg = 2.5;
+            defSampler = "dpmpp_2m_sde_gpu";
+            defScheduler = "karras";
             JArray clipVision;
             if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
             {
