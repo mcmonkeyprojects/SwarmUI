@@ -233,7 +233,7 @@ public class ComfyUIBackendExtension : Extension
                 {
                     foreach (T2IParamDataType possible in Enum.GetValues<T2IParamDataType>())
                     {
-                        string typeId = possible.ToString().ToLowerFast();
+                        string typeId = possible.ToString().ToLower();
                         if (nameNoPrefix.StartsWith(typeId))
                         {
                             nameNoPrefix = nameNoPrefix.After(typeId);

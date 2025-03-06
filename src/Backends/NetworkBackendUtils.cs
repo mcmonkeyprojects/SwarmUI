@@ -548,7 +548,7 @@ public static class NetworkBackendUtils
             bool keepShowing = false;
             while ((line = process.StandardError.ReadLine()) != null)
             {
-                string lineLow = line.ToLowerFast();
+                string lineLow = line.ToLower();
                 if (lineLow.StartsWith("traceback (") || lineLow.Contains("error: "))
                 {
                     keepShowing = true;

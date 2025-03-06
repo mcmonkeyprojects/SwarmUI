@@ -1,6 +1,4 @@
-﻿namespace SwarmUI.Utils;
-
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 using System.IO;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using ISImage = SixLabors.ImageSharp.Image;
@@ -10,7 +8,8 @@ using FreneticUtilities.FreneticExtensions;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.PixelFormats;
+
+namespace SwarmUI.Utils;
 
 /// <summary>Helper to represent an image file cleanly and quickly.</summary>
 public class Image
@@ -213,7 +212,7 @@ public class Image
         try
         {
             ISImage img = ToIS;
-            string pngMetadata = img.Metadata?.GetPngMetadata()?.TextData?.FirstOrDefault(t => t.Keyword.ToLowerFast() == "parameters").Value;
+            string pngMetadata = img.Metadata?.GetPngMetadata()?.TextData?.FirstOrDefault(t => t.Keyword.ToLower() == "parameters").Value;
             if (pngMetadata is not null)
             {
                 return pngMetadata;

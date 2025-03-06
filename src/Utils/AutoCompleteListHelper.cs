@@ -57,14 +57,14 @@ public class AutoCompleteListHelper
         }
         string[] result = AutoCompletionLists.GetOrCreate(name, () =>
         {
-            return [.. File.ReadAllText($"{FolderPath}/{name}").Replace('\r', '\n').SplitFast('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s) && !s.StartsWithFast('#'))];
+            return [.. File.ReadAllText($"{FolderPath}/{name}").Replace('\r', '\n').Split('\n').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s) && !s.StartsWith('#'))];
         });
         bool doSpace = spaceMode == "Spaces";
         bool doUnderscore = spaceMode == "Underscores";
         result = [.. result];
         for (int i = 0; i < result.Length; i++)
         {
-            string[] parts = result[i].SplitFast(',');
+            string[] parts = result[i].Split(',');
             if (parts.Length == 2 && long.TryParse(parts[1], out _))
             {
                 parts = [parts[0], "0", parts[1], ""];

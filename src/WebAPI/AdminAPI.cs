@@ -75,7 +75,7 @@ public static class AdminAPI
             }
             output[key] = new JObject()
             {
-                ["type"] = typeName.ToLowerFast(),
+                ["type"] = typeName.ToLower(),
                 ["name"] = data.Name,
                 ["value"] = isSecret ? "\t<secret>" : JToken.FromObject(val is List<string> list ? list.JoinString(" || ") : val),
                 ["description"] = data.Field.GetCustomAttribute<AutoConfiguration.ConfigComment>()?.Comments ?? "",
@@ -614,7 +614,7 @@ public static class AdminAPI
         [API.APIParameter("Initial password for the new user.")] string password,
         [API.APIParameter("Initial role for the new user.")] string role)
     {
-        string cleaned = Utilities.StrictFilenameClean(name).ToLowerFast().Replace('/', '_');
+        string cleaned = Utilities.StrictFilenameClean(name).ToLower().Replace('/', '_');
         lock (Program.Sessions.DBLock)
         {
             User existing = Program.Sessions.GetUser(cleaned, false);
@@ -699,7 +699,7 @@ public static class AdminAPI
     public static async Task<JObject> AdminAddRole(Session session,
         [API.APIParameter("The name of the new role.")] string name)
     {
-        string cleaned = Utilities.StrictFilenameClean(name).ToLowerFast().Replace('/', '_');
+        string cleaned = Utilities.StrictFilenameClean(name).ToLower().Replace('/', '_');
         lock (Program.Sessions.DBLock)
         {
             Role newRole = new(name);

@@ -92,7 +92,7 @@ public class User
     {
         lock (SessionHandlerSource.DBLock)
         {
-            return SessionHandlerSource.GenericData.FindById($"{UserID}///${dataname}///{name.ToLowerFast()}")?.Data;
+            return SessionHandlerSource.GenericData.FindById($"{UserID}///${dataname}///{name.ToLower()}")?.Data;
         }
     }
 
@@ -129,7 +129,7 @@ public class User
             {
                 return;
             }
-            SessionHandler.GenericDataStore dataStore = new() { ID = $"{UserID}///${dataname}///{name.ToLowerFast()}", Data = data };
+            SessionHandler.GenericDataStore dataStore = new() { ID = $"{UserID}///${dataname}///{name.ToLower()}", Data = data };
             SessionHandlerSource.GenericData.Upsert(dataStore.ID, dataStore);
         }
     }
@@ -139,7 +139,7 @@ public class User
     {
         lock (SessionHandlerSource.DBLock)
         {
-            return SessionHandlerSource.GenericData.Delete($"{UserID}///${dataname}///{name.ToLowerFast()}");
+            return SessionHandlerSource.GenericData.Delete($"{UserID}///${dataname}///{name.ToLower()}");
         }
     }
 
@@ -148,7 +148,7 @@ public class User
     {
         lock (SessionHandlerSource.DBLock)
         {
-            return SessionHandlerSource.T2IPresets.FindById($"{UserID}///{name.ToLowerFast()}");
+            return SessionHandlerSource.T2IPresets.FindById($"{UserID}///{name.ToLower()}");
         }
     }
 
@@ -187,7 +187,7 @@ public class User
             {
                 return;
             }
-            preset.ID = $"{UserID}///{preset.Title.ToLowerFast()}";
+            preset.ID = $"{UserID}///{preset.Title.ToLower()}";
             SessionHandlerSource.T2IPresets.Upsert(preset.ID, preset);
             if (!Data.Presets.Contains(preset.ID))
             {
@@ -202,7 +202,7 @@ public class User
     {
         lock (SessionHandlerSource.DBLock)
         {
-            string id = $"{UserID}///{name.ToLowerFast()}";
+            string id = $"{UserID}///{name.ToLower()}";
             if (Data.Presets.Remove(id))
             {
                 SessionHandlerSource.T2IPresets.Delete(id);
@@ -415,7 +415,7 @@ public class User
     /// <summary>Returns true if the user is allowed to view a model with a given name, or false if it is restricted.</summary>
     public bool IsAllowedModel(string name)
     {
-        if (name.ToLowerFast() == "(none)")
+        if (name.ToLower() == "(none)")
         {
             return true;
         }

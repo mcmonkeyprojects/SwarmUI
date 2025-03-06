@@ -242,7 +242,7 @@ public class T2IParamInput
         string separator = " ";
         if (preData is not null)
         {
-            if (preData.EndsWithFast(','))
+            if (preData.EndsWith(','))
             {
                 separator = ", ";
                 preData = preData[0..^1];
@@ -501,7 +501,7 @@ public class T2IParamInput
         {
             data = context.Parse(data);
             context.Embeds ??= [.. Program.T2IModelSets["Embedding"].ListModelNamesFor(context.Input.SourceSession)];
-            string want = data.ToLowerFast().Replace('\\', '/');
+            string want = data.ToLower().Replace('\\', '/');
             string matched = T2IParamTypes.GetBestModelInList(want, context.Embeds);
             if (matched is null)
             {
@@ -528,7 +528,7 @@ public class T2IParamInput
         PromptTagPostProcessors["lora"] = (data, context) =>
         {
             data = context.Parse(data);
-            string lora = data.ToLowerFast().Replace('\\', '/');
+            string lora = data.ToLower().Replace('\\', '/');
             int colonIndex = lora.IndexOf(':');
             double strength = 1;
             double tencStrength = double.NaN;
@@ -1082,7 +1082,7 @@ public class T2IParamInput
                 {
                     (prefix, preData) = prefix.BeforeLast(']').BeforeAndAfter('[');
                 }
-                prefix = prefix.ToLowerFast();
+                prefix = prefix.ToLower();
                 context.RawCurrentTag = tag;
                 context.PreData = preData;
                 Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}'");
@@ -1261,7 +1261,7 @@ public class T2IParamInput
         }
         Image imageFor(string val)
         {
-            if (val.StartsWithFast("data:"))
+            if (val.StartsWith("data:"))
             {
                 return Image.FromDataString(val);
             }
@@ -1299,7 +1299,7 @@ public class T2IParamInput
         ValuesInput[param.ID] = obj;
         if (param.FeatureFlag is not null)
         {
-            RequiredFlags.UnionWith(param.FeatureFlag.SplitFast(','));
+            RequiredFlags.UnionWith(param.FeatureFlag.Split(','));
         }
     }
 
@@ -1319,7 +1319,7 @@ public class T2IParamInput
         ValuesInput[param.Type.ID] = val;
         if (param.Type.FeatureFlag is not null)
         {
-            RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
+            RequiredFlags.UnionWith(param.Type.FeatureFlag.Split(','));
         }
     }
     

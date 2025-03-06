@@ -99,7 +99,7 @@ public static class ModelsAPI
                     return card.GetNetObject();
                 }
             }
-            else if (subtype == "Stable-Diffusion" && modelName.ToLowerFast() == "(none)")
+            else if (subtype == "Stable-Diffusion" && modelName.ToLower() == "(none)")
             {
                 return new JObject() { ["model"] = NoneModel.ToNetObject() };
             }
@@ -557,7 +557,7 @@ public static class ModelsAPI
                     Logs.Verbose($"Model download websocket inbound: {data}");
                     if (data.TryGetValue("signal", out JToken signal))
                     {
-                        string cmd = $"{signal}".ToLowerFast();
+                        string cmd = $"{signal}".ToLower();
                         if (cmd == "cancel")
                         {
                             canceller.Cancel();
@@ -641,7 +641,7 @@ public static class ModelsAPI
     [API.APIDescription("Forwards a metadata request, eg to civitai API.", "")]
     public static async Task<JObject> ForwardMetadataRequest(Session session, string url)
     {
-        if (!url.StartsWithFast("https://civitai.com/"))
+        if (!url.StartsWith("https://civitai.com/"))
         {
             return new JObject() { ["error"] = "Invalid URL." };
         }

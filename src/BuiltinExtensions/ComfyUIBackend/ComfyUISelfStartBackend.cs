@@ -1,5 +1,4 @@
-﻿
-using FreneticUtilities.FreneticDataSyntax;
+﻿using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using SwarmUI.Backends;
@@ -192,7 +191,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     string fullPath;
                     if (IsWindows)
                     {
-                        fullPath = Utilities.CombinePathWithAbsolute(root, opt.ToLowerFast());
+                        fullPath = Utilities.CombinePathWithAbsolute(root, opt.ToLower());
                     }
                     else
                     {
@@ -304,7 +303,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         AddLoadStatus("Will track node repo load task...");
         List<Task> tasks = [Task.Run(EnsureNodeRepos)];
-        string autoUpd = settings.AutoUpdate.ToLowerFast();
+        string autoUpd = settings.AutoUpdate.ToLower();
         if ((autoUpd == "true" || autoUpd == "aggressive") && !string.IsNullOrWhiteSpace(settings.StartScript))
         {
             AddLoadStatus("Will track comfy git pull auto-update task...");

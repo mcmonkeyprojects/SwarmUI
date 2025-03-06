@@ -4,7 +4,6 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Utils;
-using System.IO;
 
 namespace SwarmUI.Text2Image;
 
@@ -113,7 +112,7 @@ public record class T2IParamType(string Name, string Description, string Default
             ["name"] = Name,
             ["id"] = ID,
             ["description"] = Description,
-            ["type"] = Type.ToString().ToLowerFast(),
+            ["type"] = Type.ToString().ToLower(),
             ["subtype"] = Subtype,
             ["default"] = Default,
             ["min"] = Min,
@@ -133,7 +132,7 @@ public record class T2IParamType(string Name, string Description, string Default
             ["always_retain"] = AlwaysRetain,
             ["do_not_save"] = DoNotSave,
             ["do_not_preview"] = DoNotPreview,
-            ["view_type"] = ViewType.ToString().ToLowerFast(),
+            ["view_type"] = ViewType.ToString().ToLower(),
             ["extra_hidden"] = ExtraHidden,
             ["nonreusable"] = Nonreusable
         };
@@ -243,19 +242,19 @@ public class T2IParamTypes
     /// <summary>Type-name cleaner.</summary>
     public static string CleanTypeName(string name)
     {
-        return CleanTypeNameMatcher.TrimToMatches(name.ToLowerFast().Trim());
+        return CleanTypeNameMatcher.TrimToMatches(name.ToLower().Trim());
     }
 
     /// <summary>Generic user-input name cleaner.</summary>
     public static string CleanNameGeneric(string name)
     {
-        return name.ToLowerFast().Replace(" ", "").Replace("[", "").Replace("]", "").Trim();
+        return name.ToLower().Replace(" ", "").Replace("[", "").Replace("]", "").Trim();
     }
 
     /// <summary>Strips ".safetensors" from the end of model name for cleanliness.</summary>
     public static string CleanModelName(string name)
     {
-        if (name.EndsWithFast(".safetensors"))
+        if (name.EndsWith(".safetensors"))
         {
             name = name.BeforeLast(".safetensors");
         }
@@ -265,7 +264,7 @@ public class T2IParamTypes
     /// <summary>Strips ".safetensors" from the end of model name comma-separated-lists for cleanliness.</summary>
     public static string CleanModelNameList(string names)
     {
-        return names.SplitFast(',').Select(s => CleanModelName(s.Trim())).JoinString(",");
+        return names.Split(',').Select(s => CleanModelName(s.Trim())).JoinString(",");
     }
 
     /// <summary>Applies a string edit, with support for "{value}" notation.</summary>
@@ -274,7 +273,7 @@ public class T2IParamTypes
         if (update.Contains("{value}"))
         {
             prior ??= "";
-            string low = prior.ToLowerFast();
+            string low = prior.ToLower();
             int end = new int[] { low.IndexOf("<segment:"), low.IndexOf("<object:"), low.IndexOf("<region:") }.Where(i => i != -1).Order().FirstOrDefault(-1);
             if (end != -1)
             {
@@ -320,7 +319,7 @@ public class T2IParamTypes
     /// <summary>Cleans and sorts a model listing for output in a user-exposed parameter.</summary>
     public static List<string> CleanModelList(IEnumerable<string> models)
     {
-        return [.. models.Select(CleanModelName).OrderBy(s => s.ToLowerFast())];
+        return [.. models.Select(CleanModelName).OrderBy(s => s.ToLower())];
     }
 
     /// <summary>(Called by <see cref="Program"/> during startup) registers all default parameter types.</summary>
@@ -852,7 +851,7 @@ public class T2IParamTypes
                 }
                 return valDouble.ToString();
             case T2IParamDataType.BOOLEAN:
-                val = val.ToLowerFast();
+                val = val.ToLower();
                 if (val != "true" && val != "false")
                 {
                     throw new SwarmUserErrorException($"Invalid boolean value for param {type.Name} - '{origVal}' - must be exactly 'true' or 'false'");

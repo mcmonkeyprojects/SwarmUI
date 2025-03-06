@@ -1,14 +1,10 @@
-﻿
-using FreneticUtilities.FreneticDataSyntax;
-using FreneticUtilities.FreneticExtensions;
+﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
-using System;
-using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
 using System.Web;
@@ -489,7 +485,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 if (msg[0].ToString() == "execution_error" && (msg[1] as JObject).TryGetValue("exception_message", out JToken actualMessage))
                 {
                     string note = "";
-                    string cleanCheckMessage = $"{actualMessage}".ToLowerFast().Replace('\\', '/').Trim();
+                    string cleanCheckMessage = $"{actualMessage}".ToLower().Replace('\\', '/').Trim();
                     while (cleanCheckMessage.Contains("//"))
                     {
                         cleanCheckMessage = cleanCheckMessage.Replace("//", "/");

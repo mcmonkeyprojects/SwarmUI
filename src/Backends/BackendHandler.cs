@@ -200,7 +200,7 @@ public class BackendHandler
             return new JObject()
             {
                 ["name"] = f.Name,
-                ["type"] = typeName.ToLowerFast(),
+                ["type"] = typeName.ToLower(),
                 ["description"] = f.Field.GetCustomAttribute<AutoConfiguration.ConfigComment>()?.Comments?.ToString() ?? "",
                 ["placeholder"] = f.Field.GetCustomAttribute<SuggestionPlaceholder>()?.Text ?? "",
                 ["is_secret"] = f.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null,
@@ -644,7 +644,7 @@ public class BackendHandler
     /// <summary>Tells all backends to load a given model. Returns true if any backends have loaded it, or false if not.</summary>
     public async Task<bool> LoadModelOnAll(T2IModel model, Func<T2IBackendData, bool> filter = null)
     {
-        if (model.Name.ToLowerFast() == "(none)")
+        if (model.Name.ToLower() == "(none)")
         {
             return true;
         }
@@ -1216,7 +1216,7 @@ public class BackendHandler
                                 Thread.Sleep(100);
                             }
                             Utilities.CleanRAM();
-                            if (highestPressure.Model.Name.ToLowerFast() == "(none)")
+                            if (highestPressure.Model.Name.ToLower() == "(none)")
                             {
                                 availableBackend.Backend.CurrentModelName = highestPressure.Model.Name;
                             }

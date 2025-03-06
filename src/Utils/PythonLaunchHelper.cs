@@ -41,7 +41,7 @@ public class PythonLaunchHelper
         {
             // Strip python but be a little cautious about it
             string[] paths = Environment.GetEnvironmentVariable("PATH").Split(';').Where(p => !p.Contains("Python3") && !p.Contains("Programs\\Python") && !p.Contains("Python\\Python")).ToArray();
-            string[] python = paths.Where(p => p.ToLowerFast().Contains("python")).ToArray();
+            string[] python = paths.Where(p => p.ToLower().Contains("python")).ToArray();
             if (python.Any())
             {
                 Logs.Debug($"Python paths left: {python.JoinString("; ")}");

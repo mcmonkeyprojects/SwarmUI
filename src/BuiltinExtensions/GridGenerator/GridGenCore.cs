@@ -46,7 +46,7 @@ public partial class GridGenCore
 
     public static string CleanID(string id)
     {
-        return CleanIDMatcher.TrimToMatches(id.ToLowerFast().Trim());
+        return CleanIDMatcher.TrimToMatches(id.ToLower().Trim());
     }
 
     public static List<string> ExpandNumericListRanges(List<string> inList, Type numType)
@@ -201,11 +201,11 @@ public partial class GridGenCore
                     {
                         valStr = T2IParamTypes.ValidateParam(Mode, valStr, grid.InitialParams.SourceSession);
                     }
-                    string key = ValidKeysMatcher.TrimToMatches(valStr.Replace('.', '_').ToLowerFast());
+                    string key = ValidKeysMatcher.TrimToMatches(valStr.Replace('.', '_').ToLower());
                     if (key.Length > 15)
                     {
                         // Long keys might be model names or similar, so trim them to a probably better name
-                        key = ValidKeysMatcher.TrimToMatches(valStr.AfterLast('/').ToLowerFast().Replace(".safetensors", ""));
+                        key = ValidKeysMatcher.TrimToMatches(valStr.AfterLast('/').ToLower().Replace(".safetensors", ""));
                         if (key.Length > 15)
                         {
                             key = key[0..15];
@@ -561,8 +561,8 @@ public partial class GridGenCore
                 {
                     JObject jVal = new()
                     {
-                        ["key"] = val.Key.ToLowerFast(),
-                        ["path"] = val.Key.ToLowerFast(),
+                        ["key"] = val.Key.ToLower(),
+                        ["path"] = val.Key.ToLower(),
                         ["title"] = val.Title,
                         ["description"] = val.Description ?? "",
                         ["show"] = val.Show
@@ -582,7 +582,7 @@ public partial class GridGenCore
 
         public string RadioButtonHtml(string name, string id, string descrip, string label)
         {
-            return $"<input type=\"radio\" class=\"btn-check\" name=\"{name}\" id=\"{id.ToLowerFast()}\" autocomplete=\"off\" checked=\"\"><label class=\"btn btn-outline-primary\" for=\"{id.ToLowerFast()}\" title=\"{descrip}\">{EscapeHtml(label)}</label>\n";
+            return $"<input type=\"radio\" class=\"btn-check\" name=\"{name}\" id=\"{id.ToLower()}\" autocomplete=\"off\" checked=\"\"><label class=\"btn btn-outline-primary\" for=\"{id.ToLower()}\" title=\"{descrip}\">{EscapeHtml(label)}</label>\n";
         }
 
         public string AxisBar(string label, string content)
@@ -734,7 +734,7 @@ public partial class GridGenCore
         int axisIndex = 0;
         foreach (JToken axis in axes)
         {
-            string id = axis["mode"].ToString().ToLowerFast().Trim();
+            string id = axis["mode"].ToString().ToLower().Trim();
             if (id != "")
             {
                 try

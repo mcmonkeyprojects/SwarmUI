@@ -180,7 +180,7 @@ public static class ComfyUIWebAPI
                 Logs.Warning($"User {session.User.UserID} tried to install feature '{features}' but have no comfy self-start backends.");
                 return new JObject() { ["error"] = $"Cannot install Comfy features as this Swarm instance has no running ComfyUI Self-Start backends currently." };
             }
-            features = features.ToLowerFast();
+            features = features.ToLower();
             List<InstallableFeatures.ComfyInstallableFeature> installMe = [];
             foreach (string feature in features.Split(',').Select(f => f.Trim()))
             {

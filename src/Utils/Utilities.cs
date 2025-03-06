@@ -57,7 +57,7 @@ public static class Utilities
         DateTimeOffset now = DateTimeOffset.Now;
         if (!string.IsNullOrWhiteSpace(limitHours))
         {
-            string[] hours = [.. limitHours.SplitFast(',').Select(h => h.Trim())];
+            string[] hours = [.. limitHours.Split(',').Select(h => h.Trim())];
             if (hours.Length > 0 && !hours.Contains($"{now.Hour}") && !hours.Contains($"0{now.Hour}"))
             {
                 return;
@@ -65,8 +65,8 @@ public static class Utilities
         }
         if (!string.IsNullOrWhiteSpace(limitDays))
         {
-            string[] days = [.. limitDays.SplitFast(',').Select(d => d.Trim().ToLowerFast())];
-            if (days.Length > 0 && !days.Contains($"{(int)now.DayOfWeek}") && !days.Contains($"{now.DayOfWeek.ToString().ToLowerFast()}"))
+            string[] days = [.. limitDays.Split(',').Select(d => d.Trim().ToLower())];
+            if (days.Length > 0 && !days.Contains($"{(int)now.DayOfWeek}") && !days.Contains($"{now.DayOfWeek.ToString().ToLower()}"))
             {
                 return;
             }
@@ -163,7 +163,7 @@ public static class Utilities
         string[] parts = name.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         for (int i = 0; i < parts.Length; i++)
         {
-            if (ReservedFilenames.Contains(parts[i].ToLowerFast()))
+            if (ReservedFilenames.Contains(parts[i].ToLower()))
             {
                 parts[i] = $"{parts[i]}_";
             }
@@ -707,9 +707,9 @@ public static class Utilities
                             }
                             sha256.TransformFinalBlock([], 0, 0);
                             byte[] hash = sha256.Hash;
-                            string hashStr = Convert.ToHexString(hash).ToLowerFast();
+                            string hashStr = Convert.ToHexString(hash).ToLower();
                             Logs.Verbose($"Raw file hash for {altUrl} is {hashStr}");
-                            if (verifyHash is not null && hashStr != verifyHash.ToLowerFast())
+                            if (verifyHash is not null && hashStr != verifyHash.ToLower())
                             {
                                 removeFile();
                                 throw new SwarmReadableErrorException($"Download {altUrl} failed: expected SHA256 hash {verifyHash} but got {hashStr}.");

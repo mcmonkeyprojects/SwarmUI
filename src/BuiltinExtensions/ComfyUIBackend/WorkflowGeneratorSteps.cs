@@ -86,7 +86,7 @@ public class WorkflowGeneratorSteps
                 {
                     vaeName = g.UserInput.SourceSession?.User?.Settings.VAEs.DefaultSDv1VAE;
                 }
-                if (!string.IsNullOrWhiteSpace(vaeName) && vaeName.ToLowerFast() != "none")
+                if (!string.IsNullOrWhiteSpace(vaeName) && vaeName.ToLower() != "none")
                 {
                     string match = T2IParamTypes.GetBestModelInList(vaeName, Program.T2IModelSets["VAE"].ListModelNamesFor(g.UserInput.SourceSession));
                     if (match is not null)
@@ -607,7 +607,7 @@ public class WorkflowGeneratorSteps
                     }
                     if (g.Features.Contains("cubiqipadapterunified"))
                     {
-                        string presetLow = ipAdapter.ToLowerFast();
+                        string presetLow = ipAdapter.ToLower();
                         bool isXl = g.CurrentCompatClass() == "stable-diffusion-xl-v1";
                         void requireIPAdapterModel(string name, string url, string hash)
                         {
@@ -861,7 +861,7 @@ public class WorkflowGeneratorSteps
                     {
                         preprocessor = "none";
                         string wantedPreproc = controlModel?.Metadata?.Preprocessor;
-                        string cnName = $"{controlModel?.Name}{controlModel?.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLowerFast();
+                        string cnName = $"{controlModel?.Name}{controlModel?.RawFilePath.Replace('\\', '/').AfterLast('/')}".ToLower();
                         if (string.IsNullOrWhiteSpace(wantedPreproc))
                         {
                             if (cnName.Contains("canny")) { wantedPreproc = "canny"; }
@@ -879,7 +879,7 @@ public class WorkflowGeneratorSteps
                             string[] procs = [.. ComfyUIBackendExtension.ControlNetPreprocessors.Keys];
                             bool getBestFor(string phrase)
                             {
-                                string result = procs.FirstOrDefault(m => m.ToLowerFast().Contains(phrase.ToLowerFast()));
+                                string result = procs.FirstOrDefault(m => m.ToLower().Contains(phrase.ToLower()));
                                 if (result is not null)
                                 {
                                     preprocessor = result;
@@ -921,7 +921,7 @@ public class WorkflowGeneratorSteps
                             }
                         }
                     }
-                    if (preprocessor.ToLowerFast() != "none")
+                    if (preprocessor.ToLower() != "none")
                     {
                         JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual);
                         g.NodeHelpers["controlnet_preprocessor"] = $"{preprocActual[0]}";
@@ -1434,7 +1434,7 @@ public class WorkflowGeneratorSteps
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 double? videoCfg = g.UserInput.TryGet(T2IParamTypes.VideoCFG, out double cfgRaw) ? cfgRaw : null;
                 int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
-                string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLowerFast();
+                string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLower();
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 42;
                 string prompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
@@ -1546,7 +1546,7 @@ public class WorkflowGeneratorSteps
                 int steps = g.UserInput.Get(T2IParamTypes.Steps, 20);
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 600;
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
-                string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLowerFast();
+                string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLower();
                 int frameExtendOverlap = g.UserInput.Get(T2IParamTypes.VideoExtendFrameOverlap, 9);
                 bool saveIntermediate = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
                 T2IModel extendModel = g.UserInput.Get(T2IParamTypes.VideoExtendModel, null) ?? throw new SwarmUserErrorException("You have an '<extend:' block in your prompt, but you don't have a 'Video Extend Model' selected.");

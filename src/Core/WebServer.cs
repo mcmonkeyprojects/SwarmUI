@@ -118,10 +118,10 @@ public class WebServer
         {
             if (context.Request.Headers.Host.Any() && context.Request.Headers.Origin.Any())
             {
-                string host = context.Request.Headers.Host[0].ToLowerFast();
-                string origin = context.Request.Headers.Origin[0].ToLowerFast();
+                string host = context.Request.Headers.Host[0].ToLower();
+                string origin = context.Request.Headers.Origin[0].ToLower();
                 Uri uri = new(origin);
-                string originMain = uri.Authority.ToLowerFast();
+                string originMain = uri.Authority.ToLower();
                 if (host != originMain)
                 {
                     // TODO: Instate this check fully only after comfy's version is stable.
@@ -157,7 +157,7 @@ public class WebServer
                     {
                         remoteIp = addr.MapToIPv4().ToString();
                     }
-                    if (!Program.ServerSettings.Network.AuthBypassIPs.SplitFast(',').Contains(remoteIp))
+                    if (!Program.ServerSettings.Network.AuthBypassIPs.Split(',').Contains(remoteIp))
                     {
                         if (string.IsNullOrWhiteSpace(authHeader))
                         {
@@ -197,8 +197,8 @@ public class WebServer
         timer.Check("[Web] static files");
         WebApp.Use(async (context, next) =>
         {
-            string referrer = (context.Request.Headers.Referer.FirstOrDefault() ?? "").After("://").After('/').ToLowerFast();
-            string path = context.Request.Path.Value.ToLowerFast();
+            string referrer = (context.Request.Headers.Referer.FirstOrDefault() ?? "").After("://").After('/').ToLower();
+            string path = context.Request.Path.Value.ToLower();
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
             {
                 Logs.Debug($"ComfyBackendDirect call was misrouted, rerouting to '{context.Request.Path}'");
@@ -251,7 +251,7 @@ public class WebServer
                 {
                     return;
                 }
-                string path = context.Request.Path.Value.ToLowerFast();
+                string path = context.Request.Path.Value.ToLower();
                 if (!path.StartsWith("/error/"))
                 {
                     try

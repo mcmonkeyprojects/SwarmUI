@@ -20,7 +20,7 @@ public class API
     /// <summary>Register a new API call handler.</summary>
     public static void RegisterAPICall(APICall call)
     {
-        APIHandlers.Add(call.Name.ToLowerFast(), call);
+        APIHandlers.Add(call.Name.ToLower(), call);
     }
 
     /// <summary>Register a new API call handler.</summary>
@@ -82,7 +82,7 @@ public class API
                 context.Response.Redirect("/Error/BasicAPI");
                 return;
             }
-            string path = context.Request.Path.ToString().ToLowerFast().After("/api/");
+            string path = context.Request.Path.ToString().ToLower().After("/api/");
             if (path != "getnewsession")
             {
                 if (!input.TryGetValue("session_id", out JToken session_id))
@@ -239,12 +239,12 @@ public class API
             if (call.IsWebSocket)
             {
                 docText.Append($"## WebSocket Route /API/{call.Name}\n\n");
-                toc.Append($"- WebSocket Route [{call.Name}](#websocket-route-api{call.Name.ToLowerFast()})\n");
+                toc.Append($"- WebSocket Route [{call.Name}](#websocket-route-api{call.Name.ToLower()})\n");
             }
             else
             {
                 docText.Append($"## HTTP Route /API/{call.Name}\n\n");
-                toc.Append($"- HTTP Route [{call.Name}](#http-route-api{call.Name.ToLowerFast()})\n");
+                toc.Append($"- HTTP Route [{call.Name}](#http-route-api{call.Name.ToLower()})\n");
             }
             APIDescriptionAttribute methodDesc = call.Original.GetCustomAttribute<APIDescriptionAttribute>();
             string perm = call.Permission is null ? "(MISSING)" : $"`{call.Permission.ID}` - `{call.Permission.DisplayName}` in group `{call.Permission.Group.DisplayName}`";

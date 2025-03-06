@@ -61,8 +61,8 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     {
         get
         {
-            string cleaned = OriginatingFolderPath.Replace('\\', '/').TrimEnd('/').ToLowerFast();
-            return cleaned.EndsWithFast("/unet") || cleaned.EndsWithFast("/diffusion_models"); // Hacky but it works for now
+            string cleaned = OriginatingFolderPath.Replace('\\', '/').TrimEnd('/').ToLower();
+            return cleaned.EndsWith("/unet") || cleaned.EndsWith("/diffusion_models"); // Hacky but it works for now
         }
     }
 

@@ -611,7 +611,7 @@ public class WorkflowGenerator
         string helper = $"modelloader_{model.Name}_{type}";
         if (NodeHelpers.TryGetValue(helper, out string alreadyLoaded))
         {
-            string[] parts = alreadyLoaded.SplitFast(':');
+            string[] parts = alreadyLoaded.Split(':');
             LoadingModel = [parts[0], int.Parse(parts[1])];
             LoadingClip = parts[2].Length == 0 ? null : [parts[2], int.Parse(parts[3])];
             LoadingVAE = parts[4].Length == 0 ? null : [parts[4], int.Parse(parts[5])];
@@ -1318,7 +1318,7 @@ public class WorkflowGenerator
             {
                 ["sampler_name"] = UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler)
             });
-            string scheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler).ToLowerFast();
+            string scheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler).ToLower();
             double denoise = 1;// 1.0 - (startStep / (double)steps); // NOTE: Edit model breaks on denoise<1
             JArray schedulerNode;
             if (scheduler == "turbo")
@@ -1889,7 +1889,7 @@ public class WorkflowGenerator
                 string svdVae = UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSVDVAE;
                 if (string.IsNullOrWhiteSpace(svdVae))
                 {
-                    svdVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLowerFast().Contains("sdxl"));
+                    svdVae = Program.T2IModelSets["VAE"].Models.Keys.FirstOrDefault(m => m.ToLower().Contains("sdxl"));
                 }
                 if (string.IsNullOrWhiteSpace(svdVae))
                 {

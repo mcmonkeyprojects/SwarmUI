@@ -147,9 +147,9 @@ public class GridGeneratorExtension : Extension
             if (thisParams.TryGet(PresetsParameter, out string presets))
             {
                 List<T2IPreset> userPresets = data.Session.User.GetAllPresets();
-                foreach (string preset in presets.ToLowerFast().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                foreach (string preset in presets.ToLower().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                 {
-                    T2IPreset match = userPresets.FirstOrDefault(p => p.Title.ToLowerFast() == preset);
+                    T2IPreset match = userPresets.FirstOrDefault(p => p.Title.ToLower() == preset);
                     if (match is null)
                     {
                         setError($"Could not find preset '{preset}'");

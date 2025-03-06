@@ -57,7 +57,7 @@ public class BackendAPI
         JObject data = new()
         {
             ["type"] = backend.Backend.HandlerTypeData.ID,
-            ["status"] = backend.Backend.Status.ToString().ToLowerFast(),
+            ["status"] = backend.Backend.Status.ToString().ToLower(),
             ["id"] = backend.ID,
             ["settings"] = JToken.FromObject(backend.Backend.SettingsRaw.SaveAllWithoutSecretValues("\t<secret>", "").ToSimple()),
             ["modcount"] = backend.ModCount,

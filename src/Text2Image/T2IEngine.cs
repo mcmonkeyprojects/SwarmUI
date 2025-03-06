@@ -1,12 +1,9 @@
-﻿using FreneticUtilities.FreneticExtensions;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
-using System.Diagnostics;
-using System.IO;
 
 namespace SwarmUI.Text2Image
 {
@@ -61,12 +58,12 @@ namespace SwarmUI.Text2Image
         {
             string type = user_input.Get(T2IParamTypes.BackendType, "any");
             bool requireId = user_input.TryGet(T2IParamTypes.ExactBackendID, out int reqId);
-            string typeLow = type.ToLowerFast();
+            string typeLow = type.ToLower();
             return backend =>
             {
-                if (typeLow != "any" && typeLow != backend.Backend.HandlerTypeData.ID.ToLowerFast())
+                if (typeLow != "any" && typeLow != backend.Backend.HandlerTypeData.ID.ToLower())
                 {
-                    Logs.Verbose($"Filter out backend {backend.ID} as the Type is specified as {typeLow}, but the backend type is {backend.Backend.HandlerTypeData.ID.ToLowerFast()}");
+                    Logs.Verbose($"Filter out backend {backend.ID} as the Type is specified as {typeLow}, but the backend type is {backend.Backend.HandlerTypeData.ID.ToLower()}");
                     user_input.RefusalReasons.Add($"Specific backend type requested in advanced parameters did not match");
                     return false;
                 }
@@ -90,7 +87,7 @@ namespace SwarmUI.Text2Image
                 {
                     bool requireModel(T2IRegisteredParam<T2IModel> param, string type)
                     {
-                        if (user_input.TryGet(param, out T2IModel model) && model.Name.ToLowerFast() != "(none)" && backend.Backend.Models.TryGetValue(type, out List<string> models) && !models.Contains(model.Name) && !models.Contains(model.Name + ".safetensors"))
+                        if (user_input.TryGet(param, out T2IModel model) && model.Name.ToLower() != "(none)" && backend.Backend.Models.TryGetValue(type, out List<string> models) && !models.Contains(model.Name) && !models.Contains(model.Name + ".safetensors"))
                         {
                             Logs.Verbose($"Filter out backend {backend.ID} as the request requires {type} model {model.Name}, but the backend does not have that model");
                             user_input.RefusalReasons.Add($"Request requires model '{model.Name}' but the backend does not have that model");

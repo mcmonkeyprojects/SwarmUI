@@ -309,7 +309,7 @@ public class Program
             Thread.Sleep(500);
             try
             {
-                switch (LaunchMode.Trim().ToLowerFast())
+                switch (LaunchMode.Trim().ToLower())
                 {
                     case "web":
                         Logs.Init("Launch web browser...");
@@ -597,7 +597,7 @@ public class Program
     public static void ApplyCommandLineSettings()
     {
         ReapplySettings();
-        string environment = GetCommandLineFlag("environment", "production").ToLowerFast() switch
+        string environment = GetCommandLineFlag("environment", "production").ToLower() switch
         {
             "dev" or "development" => "Development",
             "prod" or "production" => "Production",
@@ -732,7 +732,7 @@ public class Program
     /// <summary>Gets the command line flag for the given key as a boolean.</summary>
     public static bool GetCommandLineFlagAsBool(string key, bool def)
     {
-        return GetCommandLineFlag(key, def.ToString()).ToLowerFast() switch
+        return GetCommandLineFlag(key, def.ToString()).ToLower() switch
         {
             "true" or "yes" or "1" => true,
             "false" or "no" or "0" => false,

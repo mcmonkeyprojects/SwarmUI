@@ -367,7 +367,7 @@ public static class BasicAPIFeatures
                 Logs.Error($"User '{session.User.UserID}' tried to set setting '{key}' of type '{field.Field.FieldType.Name}' to '{val}', but type-conversion failed.");
                 continue;
             }
-            if (key.ToLowerFast() == "password")
+            if (key.ToLower() == "password")
             {
                 if ($"{val}".Length < 8)
                 {

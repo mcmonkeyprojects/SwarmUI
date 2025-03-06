@@ -80,7 +80,7 @@ public class PublicProxyHandler
                     Logs.Debug($"{Name} says: {line}");
                     if (Name == "Ngrok")
                     {
-                        string[] parts = line.SplitFast(' ');
+                        string[] parts = line.Split(' ');
                         // t=time lvl=info msg="started tunnel" obj=tunnels name=command_line addr=(internal_address) url=(this-is-what-we-want)
                         if (parts.Length >= 8)
                         {
