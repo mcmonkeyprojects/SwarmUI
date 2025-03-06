@@ -252,6 +252,7 @@ public static class T2IAPI
             setError(ex.Message);
             return;
         }
+        images = user_input.Get(T2IParamTypes.Images, images);
         Logs.Info($"User {session.User.UserID} requested {images} image{(images == 1 ? "" : "s")} with model '{user_input.Get(T2IParamTypes.Model)?.Name}'...");
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
         {
