@@ -1642,7 +1642,7 @@ public class WorkflowGeneratorSteps
                     g.Workflow.Remove(id);
                 }
             });
-            g.RunOnNodesOfClass("VAEDecode", (id, data) =>
+            void fixDecode(string id, JObject data)
             {
                 JArray source = data["inputs"]["samples"] as JArray;
                 string sourceNode = $"{source[0]}";
@@ -1659,7 +1659,9 @@ public class WorkflowGeneratorSteps
                         g.Workflow.Remove(id);
                     }
                 }
-            });
+            }
+            g.RunOnNodesOfClass("VAEDecode", fixDecode);
+            g.RunOnNodesOfClass("VAEDecodeTiled", fixDecode);
             g.RemoveClassIfUnused("VAEEncode");
             g.RemoveClassIfUnused("CLIPTextEncode");
         }, 200);

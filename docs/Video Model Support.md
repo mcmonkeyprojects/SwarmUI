@@ -66,8 +66,9 @@
 
 ### Hunyuan Video Basic Install
 
-- Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model.
-- Use the Comfy Org repackaged model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
+- Hunyuan Video is supported natively in SwarmUI as a Text-To-Video model, and a separate Image2Video model.
+- Use the Comfy Org repackaged Text2Video model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors>
+    - Or the Image2Video model <https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/blob/main/split_files/diffusion_models/hunyuan_video_image_to_video_720p_bf16.safetensors>
     - Save to the `diffusion_models` folder
 - Or use the gguf models from city96 <https://huggingface.co/city96/HunyuanVideo-gguf/tree/main>
     - `Q6_K` is near identical to full precision and is recommended for 24 gig cards, `Q4_K_M` is recommended if you have low VRAM, results are still very close, other variants shouldn't be used normally
@@ -198,7 +199,6 @@
 ### LTXV Image To Video
 
 - You can use the regular LTXV model as an Image-To-Video model
-    - Select an image model and configure usual generation parameters
     - Select the LTXV model under the `Image To Video` group's `Video Model` parameter
     - Set `Video FPS` to `24` and `Video CFG` to `3`, set `Video Frames` to a higher value eg `97`
     - Pay attention that your prompt is used for both the image, and video stages

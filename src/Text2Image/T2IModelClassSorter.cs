@@ -76,9 +76,10 @@ public class T2IModelClassSorter
         bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
         bool isLtxv(JObject h) => h.ContainsKey("model.diffusion_model.adaln_single.emb.timestep_embedder.linear_1.bias");
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
-        bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight");
-        bool isHunyuanVideoSkyreels(JObject h) => h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight");
+        bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight") || h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight");
+        bool isHunyuanVideoSkyreels(JObject h) => h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight"); // TODO: Bad detection hack
         bool isHunyuanVideoSkyreelsImage2V(JObject h) => h.TryGetValue("img_in.proj.weight", out JToken jtok) && jtok["shape"].ToArray()[1].Value<long>() == 32;
+        bool isHunyuanVideoNativeImage2V(JObject h) => h.TryGetValue("img_in.proj.weight", out JToken jtok) && jtok["shape"].ToArray()[1].Value<long>() == 33;
         bool isHunyuanVideoVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias");
         bool isHunyuanVideoLora(JObject h) => h.ContainsKey("transformer.single_blocks.9.modulation.linear.lora_B.weight") || h.ContainsKey("transformer.double_blocks.9.txt_mod.linear.lora_B.weight");
         bool isCosmos7b(JObject h) => h.TryGetValue("net.blocks.block0.blocks.0.adaLN_modulation.1.weight", out JToken jtok) && jtok["shape"].ToArray()[^1].Value<long>() == 4096;
@@ -339,15 +340,19 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "hunyuan-video", CompatClass = "hunyuan-video", Name = "Hunyuan Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
-            return isHunyuanVideo(h);
+            return isHunyuanVideo(h) && !isHunyuanVideoNativeImage2V(h) && !isHunyuanVideoSkyreels(h);
         }});
         Register(new() { ID = "hunyuan-video-skyreels", CompatClass = "hunyuan-video", Name = "Hunyuan Video - SkyReels Text2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
-            return isHunyuanVideoSkyreels(h) && !isHunyuanVideoSkyreelsImage2V(h);
+            return isHunyuanVideoSkyreels(h) && !isHunyuanVideoSkyreelsImage2V(h) && !isHunyuanVideoNativeImage2V(h);
         }});
         Register(new() { ID = "hunyuan-video-skyreels-i2v", CompatClass = "hunyuan-video", Name = "Hunyuan Video - SkyReels Image2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoSkyreels(h) && isHunyuanVideoSkyreelsImage2V(h);
+        }});
+        Register(new() { ID = "hunyuan-video-i2v", CompatClass = "hunyuan-video", Name = "Hunyuan Video - Image2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
+        {
+            return isHunyuanVideo(h) && isHunyuanVideoNativeImage2V(h);
         }});
         Register(new() { ID = "hunyuan-video/vae", CompatClass = "hunyuan-video", Name = "Hunyuan Video VAE", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {

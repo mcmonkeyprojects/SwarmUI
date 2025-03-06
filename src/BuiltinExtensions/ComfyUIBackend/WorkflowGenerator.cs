@@ -1742,7 +1742,31 @@ public class WorkflowGenerator
             defSampler = "res_multistep";
             defScheduler = "karras";
         }
-        else if (vidModel.ModelClass?.CompatClass == "hunyuan-video")
+        else if (vidModel.ModelClass?.ID == "hunyuan-video-i2v")
+        {
+            videoFps ??= 24;
+            frames ??= 53;
+            FinalLoadedModel = vidModel;
+            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
+            posCond = CreateConditioning(prompt, clip, vidModel, true);
+            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            string i2vnode = CreateNode("HunyuanImageToVideo", new JObject()
+            {
+                ["positive"] = posCond,
+                ["vae"] = vae,
+                ["width"] = width,
+                ["height"] = height,
+                ["length"] = frames,
+                ["batch_size"] = 1,
+                ["start_image"] = FinalImageOut
+            });
+            posCond = [i2vnode, 0];
+            defCfg = 1;
+            latent = [i2vnode, 1];
+            defSampler = "euler";
+            defScheduler = "simple";
+        }
+        else if (vidModel.ModelClass?.CompatClass == "hunyuan-video") // skyreels
         {
             videoFps ??= 24;
             frames ??= 73;
