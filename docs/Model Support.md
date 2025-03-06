@@ -8,9 +8,7 @@
 [Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Outdated, prefer .5 |
 [Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Modern, High Quality |
 [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Modern, High Quality |
-[SDXL Turbo and SD Turbo](#sdxl-turbo-and-sd-turbo) | unet | 2023 | Stability AI | 2B | Outdated |
-[Latent Consistency Models](#latency-consistency-models) | unet | 2023 | Tsinghua University | 1B/2B | Outdated |
-[Lightning Models](#lightning-models) | unet | 2024 | ByteDance | 1B/2B | Outdated |
+[SD1 and SDXL Turbo Variants](#sd1-and-sdxl-turbo-variants) | unet | 2023 | Stability AI and others | 2B | Outdated |
 [Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Outdated |
 [Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Outdated |
 [PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | Outdated |
@@ -66,6 +64,17 @@ SDXL models work as normal, with the bonus that by default enhanced inference se
 
 Additional, SDXL-Refiner architecture models can be inferenced, both as refiner or even as a base (you must manually set res to 512x512 and it will generate weird results).
 
+## SD1 and SDXL Turbo Variants
+
+Turbo, LCM (Latent Consistency Models), Lightning, etc. models work the same as regular models, just set `CFG Scale` to `1` and:
+    - For Turbo, `Steps` to `1` Under the `Sampling` group set `Scheduler` to `Turbo`.
+    - For LCM, `Steps` to `4`. Under the `Sampling` group set `Sampler` to `lcm`.
+    - For lightning, (?)
+
+## SegMind SSD-1B
+
+SegMind SSD-1B models work the same as SD models.
+
 ## Stable Diffusion 3
 
 ![img](/docs/images/models/sd3m.jpg)
@@ -84,39 +93,21 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 ![img](/docs/images/models/sd35l.jpg)
 
-Stable Diffusion 3.5 Large is supported and works as normal, including both normal and Turbo variants.
-
-They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
-
-You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+- Stable Diffusion 3.5 Large is supported and works as normal, including both normal and Turbo variants.
+- The [TensorArt 3.5L TurboX](https://huggingface.co/tensorart/stable-diffusion-3.5-large-TurboX/tree/main) works too, just set `CFG Scale` to `1`, and `Steps` to `8`, and advanced `Sigma Shift` to `5`
+- They behave approximately the same as the SD3 Medium models, including same settings and all, other than harsher resource requirements and better quality.
+- You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+    - SD3.5 Large <https://huggingface.co/city96/stable-diffusion-3.5-large-gguf/tree/main> or LargeTurbo <https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf/tree/main>
 
 ### Stable Diffusion 3.5 Medium
 
 ![img](/docs/images/models/sd35m.jpg)
 
-Stable Diffusion 3.5 Medium is supported and works as normal.
-
-They behave approximately the same as the SD3 Medium models, including same settings and all.
-
-You can also use [GGUF Versions](#gguf-quantized-models) of the models.
-
-SD 3.5 Medium support resolutions from 512x512 to 1440x1440, and the model metadata of the official model recommends 1440x1440. However, the official model is not good at this resolution. You will want to click the `☰` hamburger menu on a model, then `Edit Metadata`, then change the resolution to `1024x1024` for better results. You can of course set the `Aspect Ratio` parameter to `Custom` and the edit resolutions on the fly per-image.
-
-## SDXL Turbo and SD Turbo
-
-Turbo models work the same as regular models, just set `CFG Scale` to `1` and `Steps` to `1` as well. Under the `Sampling` group set `Scheduler` to `Turbo`.
-
-## Latency Consistency Models
-
-LCM models work the same as regular models, just set `CFG Scale` to `1` and `Steps` to `4`. Under the `Sampling` group set `Sampler` to `lcm`.
-
-## Lightning Models
-
-Lightning models work the same as regular models, just set `CFG Scale` to `1` and (TODO: Sampling specifics for lightning).
-
-## SegMind SSD-1B
-
-SegMind SSD-1B models work the same as SD models.
+- Stable Diffusion 3.5 Medium is supported and works as normal.
+- They behave approximately the same as the SD3 Medium models, including same settings and all.
+- You can also use [GGUF Versions](#gguf-quantized-models) of the models.
+    - SD3.5 Medium <https://huggingface.co/city96/stable-diffusion-3.5-medium-gguf/tree/main>
+- SD 3.5 Medium support resolutions from 512x512 to 1440x1440, and the model metadata of the official model recommends 1440x1440. However, the official model is not good at this resolution. You will want to click the `☰` hamburger menu on a model, then `Edit Metadata`, then change the resolution to `1024x1024` for better results. You can of course set the `Aspect Ratio` parameter to `Custom` and the edit resolutions on the fly per-image.
 
 ## Stable Cascade
 
@@ -307,10 +298,6 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
 ## GGUF Quantized Models
 
 - GGUF Quantized `diffusion_models` models are supported in SwarmUI automatically.
-    - Examples of GGUF core models include:
-        - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main> or Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
-        - SD3.5 Large <https://huggingface.co/city96/stable-diffusion-3.5-large-gguf/tree/main> or LargeTurbo <https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf/tree/main>
-        - SD3.5 Medium <https://huggingface.co/city96/stable-diffusion-3.5-medium-gguf/tree/main>
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
