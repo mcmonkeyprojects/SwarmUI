@@ -33,6 +33,10 @@ class AspectRatio {
                 return [newWidth, newHeight];
             }
         }
+        if (inWidth != inHeight) {
+            inWidth = roundTo(Math.sqrt(inWidth * inHeight), 16);
+            inHeight = inWidth;
+        }
         let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
         let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
         return [width, height];
@@ -42,7 +46,12 @@ class AspectRatio {
 let aspectRatios = [
     new AspectRatio("1:1", 512, 512),
     new AspectRatio("4:3", 576, 448),
-    new AspectRatio("3:2", 608, 416),
+    new AspectRatio("3:2", 608, 416, (w, h) => {
+        if (w == 768 && h == 512) {
+            return [768, 512];
+        }
+        return [null, null];
+    }),
     new AspectRatio("8:5", 608, 384),
     new AspectRatio("16:9", 672, 384, (w, h) => {
         if (w == 640 && h == 640) {
@@ -55,7 +64,12 @@ let aspectRatios = [
     }),
     new AspectRatio("21:9", 768, 320),
     new AspectRatio("3:4", 448, 576),
-    new AspectRatio("2:3", 416, 608),
+    new AspectRatio("2:3", 416, 608, (w, h) => {
+        if (w == 768 && h == 512) {
+            return [768, 512];
+        }
+        return [null, null];
+    }),
     new AspectRatio("5:8", 384, 608),
     new AspectRatio("9:16", 384, 672),
     new AspectRatio("9:21", 320, 768)

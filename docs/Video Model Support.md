@@ -169,26 +169,45 @@
 
 *(LTX-Video 0.9.1, Text2Video, CFG=7 because 3 was really bad)*
 
+### LTXV Install
+
 - Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video and also as an Image-To-Video model.
     - The text2video is not great quality compared to other models, but the image2video functionality is popular.
-- Download <https://huggingface.co/Lightricks/LTX-Video/blob/main/ltx-video-2b-v0.9.safetensors>
+- Download your preferred safetensors version from <https://huggingface.co/Lightricks/LTX-Video/tree/main>
+    - At time of writing, they have 0.9, 0.9.1, and 0.9.5, each new version better than the last
     - save to `Stable-Diffusion` folder
     - The text encoder (T5-XXL) and VAE will be automatically downloaded
         - You can also set these manually if preferred
-- When selected in the Models list, the `Text To Video` parameter group will become visible
-- The model is trained for 24 fps but supports custom fps values, and frame counts dynamic anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required due to the 8x temporal compression in the LTXV VAE. The input parameter will automatically round if you enter an invalid value.
-- Recommended CFG=3, and very very long descriptive prompts.
+- On the `Server` -> `Extensions` tab, you'll want to grab `SkipLayerGuidanceExtension`, so you can use "STG", a quality improvement for LTXV
+
+### LTXV Parameters
+
+- **FPS:** The model is trained for 24 fps but supports custom fps values
+- **Frames:** frame counts dynamic anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required due to the 8x temporal compression in the LTXV VAE. The input parameter will automatically round if you enter an invalid value.
+- **Resolution:** They recommend 768x512, which is a 3:2 resolution. Other aspect ratios are fine, but the recommended resolution does appear to yield better quality.
+- **CFG:** Recommended CFG=3
+- **Prompt:** very very long descriptive prompts.
     - Seriously this model will make a mess with short prompts.
     - Example prompt (from ComfyUI's reference workflow):
         - Prompt: `best quality, 4k, HDR, a tracking shot of a beautiful scene of the sea waves on the beach`
         - Negative Prompt: `low quality, worst quality, deformed, distorted, disfigured, motion smear, motion artifacts, fused fingers, bad anatomy, weird hand, ugly`
-- You can use it as an Image-To-Video model
+- If you installed the `SkipLayerGuidanceExtension`, Find the `Skip Layer Guidance` parameter group in advanced
+    - Set `[SLG] Scale` to `1`
+    - Leave `Rescaling Scale` and `Layer Target` unchecked, leave the start/end percents default
+
+### LTXV Image To Video
+
+- You can use the regular LTXV model as an Image-To-Video model
     - Select an image model and configure usual generation parameters
     - Select the LTXV model under the `Image To Video` group's `Video Model` parameter
     - Set `Video FPS` to `24` and `Video CFG` to `3`, set `Video Frames` to a higher value eg `97`
     - Pay attention that your prompt is used for both the image, and video stages
         - You may wish to generate the image once, then do the video separately
         - To do that, set the image as an `Init Image`, and set `Creativity` to `0`
+
+### LTXV Performance
+
+- LTXV has the best performance of any video model supported in Swarm. It is wildly fast. This comes at the cost of quality.
 
 ## NVIDIA Cosmos
 
