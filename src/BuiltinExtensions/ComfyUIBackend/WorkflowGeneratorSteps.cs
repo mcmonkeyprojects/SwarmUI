@@ -1376,7 +1376,10 @@ public class WorkflowGeneratorSteps
             }
             else
             {
-                if (g.IsVideoModel())
+                bool willHaveFollowupVideo = g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
+                // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
+                bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
+                if (g.IsVideoModel() && !formedFromSingleImage && !willHaveFollowupVideo)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
                     {
@@ -1409,11 +1412,10 @@ public class WorkflowGeneratorSteps
                     }
                 }
                 string nodeId = "9";
-                if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:"))
+                if (willHaveFollowupVideo)
                 {
                     nodeId = "30";
-                    // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
-                    if (g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _))
+                    if (formedFromSingleImage)
                     {
                         nodeId = null;
                     }
@@ -1649,7 +1651,6 @@ public class WorkflowGeneratorSteps
                 JObject actualNode = g.Workflow[sourceNode] as JObject;
                 if ($"{actualNode["class_type"]}" == "VAEEncode")
                 {
-                    // (VAE is almost definitely the same but check to be safe)
                     JArray myVae = data["inputs"]["vae"] as JArray;
                     JArray srcVae = actualNode["inputs"]["vae"] as JArray;
                     if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
