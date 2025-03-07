@@ -2107,6 +2107,12 @@ public class WorkflowGenerator
         int height = UserInput.GetImageHeight();
         bool enhance = UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true);
         bool needsAdvancedEncode = (prompt.Contains('[') && prompt.Contains(']')) || prompt.Contains("<break>");
+        double defaultGuidance = -1;
+        if (IsHunyuanVideoSkyreels())
+        {
+            defaultGuidance = 1;
+        }
+        bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels());
         if (IsSana())
         {
             node = CreateNode("SanaTextEncode", new JObject()
@@ -2131,20 +2137,34 @@ public class WorkflowGenerator
                 ["image"] = new JArray() { imgNodeId, int.Parse(imgNodePart) },
                 ["crop"] = "center"
             });
-            node = CreateNode("TextEncodeHunyuanVideo_ImageToVideo", new JObject()
+            if (wantsSwarmCustom)
             {
-                ["clip"] = clip,
-                ["clip_vision_output"] = new JArray() { encoded, 0 },
-                ["prompt"] = content
-            }, id);
-        }
-        else if (Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels()))
-        {
-            double defaultGuidance = -1;
-            if (IsHunyuanVideoSkyreels())
-            {
-                defaultGuidance = 1;
+                node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+                {
+                    ["clip"] = clip,
+                    ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                    ["prompt"] = content,
+                    ["width"] = enhance ? (int)Utilities.RoundToPrecision(width * mult, 64) : width,
+                    ["height"] = enhance ? (int)Utilities.RoundToPrecision(height * mult, 64) : height,
+                    ["target_width"] = width,
+                    ["target_height"] = height,
+                    ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
+                    ["clip_vision_output"] = new JArray() { encoded, 0 },
+                    ["llama_template"] = "hunyuan_image"
+                }, id);
             }
+            else
+            {
+                node = CreateNode("TextEncodeHunyuanVideo_ImageToVideo", new JObject()
+                {
+                    ["clip"] = clip,
+                    ["clip_vision_output"] = new JArray() { encoded, 0 },
+                    ["prompt"] = content
+                }, id);
+            }
+        }
+        else if (wantsSwarmCustom)
+        {
             node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
             {
                 ["clip"] = clip,

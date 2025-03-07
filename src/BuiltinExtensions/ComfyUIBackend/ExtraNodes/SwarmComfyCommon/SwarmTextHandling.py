@@ -2,6 +2,21 @@ import torch, comfy
 from nodes import MAX_RESOLUTION
 
 
+# LLaMA template for Hunyuan Image2Video.
+# This is actually a single-line monstrosity due to the way it's formatted.
+# This is probably an accident from the python devs misunderstanding how string lines work,
+# but, well, we're just matching what they did and that's what they did.
+PROMPT_TEMPLATE_ENCODE_VIDEO_I2V = (
+    "<|start_header_id|>system<|end_header_id|>\n\n<image>\nDescribe the video by detailing the following aspects according to the reference image: "
+    "1. The main content and theme of the video."
+    "2. The color, shape, size, texture, quantity, text, and spatial relationships of the objects."
+    "3. Actions, events, behaviors temporal relationships, physical movement changes of the objects."
+    "4. background environment, light, style and atmosphere."
+    "5. camera angles, movements, and transitions used in the video:<|eot_id|>\n\n"
+    "<|start_header_id|>user<|end_header_id|>\n\n{}<|eot_id|>"
+    "<|start_header_id|>assistant<|end_header_id|>\n\n"
+)
+
 class SwarmClipTextEncodeAdvanced:
     @classmethod
     def INPUT_TYPES(s):
@@ -17,6 +32,8 @@ class SwarmClipTextEncodeAdvanced:
             },
             "optional": {
                 "guidance": ("FLOAT", {"default": -1, "min": -1, "max": 100.0, "step": 0.1, "tooltip": "Guidance value to embed, used by some models (eg Flux)."}),
+                "llama_template": ("STRING", {"default": "", "multiline": True, "tooltip": "Template for the LLaMA model, if applicable."}),
+                "clip_vision_output": ("CLIP_VISION_OUTPUT", {"default": None, "tooltip": "Optional CLIP Vision Output to use for the LLaMA model, if applicable."}),
             }
         }
 
@@ -25,28 +42,39 @@ class SwarmClipTextEncodeAdvanced:
     FUNCTION = "encode"
     DESCRIPTION = "Acts like the regular CLIPTextEncode, but supports more advanced special features like '<break>', '[from:to:when]', '[alter|nate]', ..."
 
-    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1):
+    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None):
+        if llama_template == "hunyuan_image":
+            llama_template = PROMPT_TEMPLATE_ENCODE_VIDEO_I2V
+
+        def tokenize(text: str):
+            if clip_vision_output is not None:
+                tokens = clip.tokenize(text, llama_template=llama_template, image_embeds=clip_vision_output.mm_projected)
+            else:
+                tokens = clip.tokenize(text)
+            return tokens
 
         encoding_cache = {}
 
         def text_to_cond(text: str, start_percent: float, end_percent: float):
             text = text.replace("\0\1", "[").replace("\0\2", "]").replace("\0\3", "embedding:")
             if text in encoding_cache:
-                cond, pooled = encoding_cache[text]
+                cond_arr = encoding_cache[text]
             else:
                 cond_chunks = text.split("<break>")
-                tokens = clip.tokenize(cond_chunks[0])
-                cond, pooled = clip.encode_from_tokens(tokens, return_pooled=True)
+                tokens = tokenize(cond_chunks[0])
+                cond_arr = clip.encode_from_tokens_scheduled(tokens)
                 if len(cond_chunks) > 1:
                     for chunk in cond_chunks[1:]:
-                        tokens = clip.tokenize(chunk)
-                        cond_chunk, pooled_chunk = clip.encode_from_tokens(tokens, return_pooled=True)
-                        cond = torch.cat([cond, cond_chunk], dim=1)
-                encoding_cache[text] = (cond, pooled)
-            result = {"pooled_output": pooled, "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}
+                        tokens = tokenize(chunk)
+                        cond_arr_chunk = clip.encode_from_tokens_scheduled(tokens)
+                        catted_cond = torch.cat([cond_arr[0][0], cond_arr_chunk[0][0]], dim=1)
+                        cond_arr[0] = [catted_cond, cond_arr[0][1]]
+                encoding_cache[text] = cond_arr
+            result = {"pooled_output": cond_arr[0][1]["pooled_output"], "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}
             if guidance >= 0:
                 result["guidance"] = guidance
-            return [cond, result]
+            cond_arr[0][1] = result
+            return cond_arr
 
         prompt = prompt.replace("\\[", "\0\1").replace("\\]", "\0\2").replace("embedding:", "\0\3")
 
@@ -132,7 +160,7 @@ class SwarmClipTextEncodeAdvanced:
         get_chunks(prompt)
 
         if not any[0]:
-            return ([text_to_cond(prompt, 0, 1)], )
+            return (text_to_cond(prompt, 0, 1), )
 
         conds_out = []
         last_text = ""
@@ -145,10 +173,10 @@ class SwarmClipTextEncodeAdvanced:
                     text += chunk['text']
             if text != last_text or i == 0:
                 if i != 0:
-                    conds_out.append(text_to_cond(last_text, start_perc - 0.001, perc + 0.001))
+                    conds_out.extend(text_to_cond(last_text, start_perc - 0.001, perc + 0.001))
                 last_text = text
                 start_perc = perc
-        conds_out.append(text_to_cond(last_text, start_perc - 0.001, 1))
+        conds_out.extend(text_to_cond(last_text, start_perc - 0.001, 1))
         return (conds_out, )
 
 
