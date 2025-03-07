@@ -122,6 +122,12 @@
 - Set the Flux Guidance at a higher than normal value as well (eg 10).
 - Not adjusting these values well will yield terribly distorted results. Swarm does not automate these for FastVideo currently!
 
+### Hunyuan Image2Video
+
+- Hunyuan Image2Video is the official image-to-video model from Hunyuan's team, install info above.
+- Works like any other Image2Video model, with the same general parameter expectations as regular Hunyuan Video.
+- You will want to use the Advanced -> `Other Fixes` -> `Trim Video Start Frames` parameter with a value of `4`, as the model tends to corrupt the first few frames.
+
 ### SkyReels Text2Video
 
 - SkyReels is a finetune of Hunyuan video produced by SkyWorkAI, see their repo [here](https://github.com/SkyworkAI/SkyReels-V1)
