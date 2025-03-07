@@ -217,12 +217,44 @@ public class WorkflowGeneratorSteps
                         g.LoadingModel = [teaCacheNode, 0];
                     }
                 }
-                else if (g.IsHunyuanVideo() || g.IsLTXV())
+                else if (g.IsHunyuanVideo() || g.IsLTXV() || g.IsWanVideo())
                 {
+                    string type = "";
+                    if (g.IsHunyuanVideo())
+                    {
+                        type = "hunyuan_video";
+                    }
+                    else if (g.IsLTXV())
+                    {
+                        type = "ltxv";
+                    }
+                    else
+                    {
+                        string arch = g.CurrentModelClass()?.ID;
+                        if (arch == "wan-2_1-text2video-1_3b")
+                        {
+                            type = "wan2.1_t2v_1.3B";
+                        }
+                        else if (arch == "wan-2_1-text2video-14b")
+                        {
+                            type = "wan2.1_t2v_14B";
+                        }
+                        else if (arch == "wan-2_1-image2video-14b")
+                        {
+                            if (g.FinalLoadedModel.Name.Contains("720p") || g.FinalLoadedModel.StandardWidth == 960)
+                            {
+                                type = "wan2.1_i2v_720p_14B";
+                            }
+                            else
+                            {
+                                type = "wan2.1_i2v_480p_14B";
+                            }
+                        }
+                    }
                     string teaCacheNode = g.CreateNode("TeaCacheForVidGen", new JObject()
                     {
                         ["model"] = g.LoadingModel,
-                        ["model_type"] = g.IsHunyuanVideo() ? "hunyuan_video" : "ltxv",
+                        ["model_type"] = type,
                         ["rel_l1_thresh"] = teaCacheThreshold
                     });
                     g.LoadingModel = [teaCacheNode, 0];
