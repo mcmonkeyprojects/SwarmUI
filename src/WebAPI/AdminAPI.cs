@@ -147,6 +147,10 @@ public static class AdminAPI
             {
                 continue;
             }
+            if (key.ToLowerFast() == "authorization.authorizationrequired" && $"{obj}".ToLowerFast() == "true" && session.User.Data.PasswordHashed == "")
+            {
+                return new JObject() { ["error"] = "Tried to enable authorization mode, but your account does not have a password. Configure your account login information before enabling authorization, so you don't get locked out." };
+            }
             Program.ServerSettings.TrySetFieldValue(key, obj);
             changed.Add(key);
         }
@@ -625,7 +629,7 @@ public static class AdminAPI
             User.DatabaseEntry userData = new() { ID = cleaned, RawSettings = "\n" };
             User user = new(Program.Sessions, userData);
             user.Settings.Roles = [role];
-            user.Settings.Password = Utilities.HashPassword(cleaned, password);
+            user.Data.PasswordHashed = Utilities.HashPassword(cleaned, password);
             Program.Sessions.Users.TryAdd(cleaned, user);
             user.Save();
         }

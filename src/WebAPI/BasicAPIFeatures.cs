@@ -11,6 +11,7 @@ using SwarmUI.Backends;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Primitives;
 using System.Reflection;
+using FreneticUtilities.FreneticToolkit;
 
 namespace SwarmUI.WebAPI;
 
@@ -31,6 +32,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(InterruptAll, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(GetUserSettings, false, Permissions.ReadUserSettings);
         API.RegisterAPICall(ChangeUserSettings, true, Permissions.EditUserSettings);
+        API.RegisterAPICall(ChangePassword, true, Permissions.EditUserSettings);
         API.RegisterAPICall(SetParamEdits, true, Permissions.EditParams);
         API.RegisterAPICall(GetLanguage, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(ServerDebugMessage, false, Permissions.ServerDebugMessage);
@@ -367,16 +369,36 @@ public static class BasicAPIFeatures
                 Logs.Error($"User '{session.User.UserID}' tried to set setting '{key}' of type '{field.Field.FieldType.Name}' to '{val}', but type-conversion failed.");
                 continue;
             }
-            if (key.ToLowerFast() == "password")
-            {
-                if ($"{val}".Length < 8)
-                {
-                    return new JObject() { ["error"] = "Password must be at least 8 characters long." };
-                }
-                obj = Utilities.HashPassword(session.User.UserID, $"{val}");
-            }
             session.User.Settings.TrySetFieldValue(key, obj);
         }
+        session.User.Save();
+        return new JObject() { ["success"] = true };
+    }
+
+    /// <summary>Rate limiter for <see cref="ChangePassword(Session, string, string)"/> to prevent spamming it.</summary>
+    public static SimpleRateLimiter<string> PasswordChangeRateLimiter = new(5, TimeSpan.FromMinutes(1));
+
+    [API.APIDescription("User route to change their own password. Has a ratelimit built in.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> ChangePassword(Session session,
+        [API.APIParameter("Your current password.")] string oldPassword,
+        [API.APIParameter("Your new password. Must be at least 8 characters.")] string newPassword)
+    {
+        if (newPassword.Length < 8)
+        {
+            return new JObject() { ["error"] = "New password must be at least 8 characters long." };
+        }
+        if (!PasswordChangeRateLimiter.TryUseOne(session.User.UserID))
+        {
+            return new JObject() { ["error"] = "Rate-limit hit, you're trying to change password too quickly. Wait a minute before trying again." };
+        }
+        if (session.User.Data.PasswordHashed.Length > 0 && !Utilities.CompareHashedPassword(session.User.UserID, oldPassword, session.User.Data.PasswordHashed))
+        {
+            return new JObject() { ["error"] = "Incorrect old password. Refused." };
+        }
+        session.User.Data.PasswordHashed = Utilities.HashPassword(session.User.UserID, newPassword);
         session.User.Save();
         return new JObject() { ["success"] = true };
     }

@@ -1152,7 +1152,8 @@ public static class Utilities
     {
         byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
-        byte[] hashed = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 100_000, numBytesRequested: 256 / 8);
+        // 10k is low enough that the swarm server won't thrash its CPU if it has to hash passwords often (eg somebody spamming bad auth requests), but high enough to at least be a bit of a barrier to somebody that yoinks the raw hashes
+        byte[] hashed = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
         return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hashed);
     }
 
@@ -1163,7 +1164,7 @@ public static class Utilities
         byte[] salt = Convert.FromBase64String(saltRaw);
         byte[] hash = Convert.FromBase64String(hashRaw);
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
-        byte[] hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 100_000, numBytesRequested: 256 / 8);
+        byte[] hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
         return hashedAttempt.SequenceEqual(hash);
     }
 }
