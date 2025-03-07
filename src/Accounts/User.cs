@@ -28,6 +28,9 @@ public class User
 
         /// <summary>JSON blob of user customized parameter edits (if any).</summary>
         public string RawParamEdits { get; set; } = "";
+
+        /// <summary>Hashed blob of the user password, or empty if unset.</summary>
+        public string PasswordHashed { get; set; } = "";
     }
 
     public void BuildRoles()

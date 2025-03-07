@@ -323,3 +323,38 @@ class ParamConfigurationClass {
 
 /** Instance of ParamConfigurationClass, central handler for user-edited parameters. */
 let paramConfig = new ParamConfigurationClass();
+
+function doPasswordChangeSubmit() {
+    let resultArea = getRequiredElementById('change_password_result_area');
+    let submitButton = getRequiredElementById('change_password_submit_button');
+    let oldPassword = getRequiredElementById('change_password_old_password');
+    let newPassword = getRequiredElementById('change_password_new_password');
+    let newPassword2 = getRequiredElementById('change_password_new_password2');
+    if (newPassword.value != newPassword2.value) {
+        resultArea.innerText = 'New passwords do not match';
+        return;
+    }
+    if (newPassword.value == oldPassword.value) {
+        resultArea.innerText = 'New password cannot be the same as the old password';
+        return;
+    }
+    if (newPassword.value.length < 8) {
+        resultArea.innerText = 'New password must be at least 8 characters long';
+        return;
+    }
+    resultArea.innerText = 'Submitting...';
+    genericRequest('ChangePassword', { oldPassword: oldPassword.value, newPassword: newPassword.value }, data => {
+        resultArea.innerText = 'Password changed.';
+        submitButton.disabled = true;
+        setTimeout(() => {
+            resultArea.innerText = '';
+            oldPassword.value = '';
+            newPassword.value = '';
+            newPassword2.value = '';
+            submitButton.disabled = false;
+            $('#change_password_modal').modal('hide');
+        }, 3000);
+    }, 0, e => {
+        resultArea.innerText = 'Error: ' + e;
+    });
+}

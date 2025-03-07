@@ -824,6 +824,21 @@
             <div class="tab-pane show active translate" id="user-info" role="tabpanel">
                 (TODO: info n stuff here)
                 <br>
+                <br><button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
+                @WebUtil.ModalHeader("change_password_modal", "Change Password")
+                    <div class="modal-body">
+                        <p class="translate">This form lets you change your user password. If you never had a password before, leave the old password blank.</p>
+                        <br>Old/Current Password: <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="change_password_old_password" placeholder="Enter old/current password..." autocomplete="off" value="" />
+                        <br>New Password: <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="change_password_new_password" placeholder="Enter new password..." autocomplete="off" value="" />
+                        <br>Confirm New Password: <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="change_password_new_password2" placeholder="Confirm new password..." autocomplete="off" value="" />
+                        <div id="change_password_result_area"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary basic-button translate" id="change_password_submit_button" onclick="doPasswordChangeSubmit()">Submit</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" id="change_password_cancel_button" onclick="$('#change_password_modal').modal('hide')">Cancel</button>
+                    </div>
+                @WebUtil.ModalFooter()
+                <br>
                 <div class="card border-secondary mb-3 card-center-container">
                     <div class="card-header translate">API Keys</div>
                     <div class="card-body">
