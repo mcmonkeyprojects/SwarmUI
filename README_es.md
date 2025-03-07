@@ -13,7 +13,7 @@ Sigue el [Feature Announcements Thread](https://github.com/mcmonkeyprojects/Swar
 
 ----
 
-# Status
+# Estatus
 
 Este proyecto se encuentra en estado **Beta**. Esto significa que para la mayoría de las tareas, Swarm tiene excelentes herramientas a su disposición, pero hay mucho más planeado. Swarm se recomienda como una interfaz de usuario ideal para la mayoría de los usuarios, principiantes y profesionales por igual. Aún quedan algunas cosas por pulir.
 
