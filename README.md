@@ -1,5 +1,7 @@
 # SwarmUI
 
+[README_es.md](README_es.md)
+
 **SwarmUI v0.9.5 Beta**.
 
 Formerly known as StableSwarmUI.
