@@ -981,8 +981,11 @@ public class T2IParamInput
     /// <summary>Special utility to process prompt inputs before the request is executed (to parse wildcards, embeddings, etc).</summary>
     public void PreparsePromptLikes()
     {
-        ValuesInput["prompt"] = ProcessPromptLike(T2IParamTypes.Prompt);
-        ValuesInput["negativeprompt"] = ProcessPromptLike(T2IParamTypes.NegativePrompt);
+        PromptTagContext posContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID };
+        ValuesInput["prompt"] = ProcessPromptLike(T2IParamTypes.Prompt, posContext);
+        PromptTagContext negContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID };
+        negContext.Variables = posContext.Variables;
+        ValuesInput["negativeprompt"] = ProcessPromptLike(T2IParamTypes.NegativePrompt, negContext);
     }
 
     /// <summary>Formats embeddings in a prompt string and returns the cleaned string.</summary>
@@ -1047,7 +1050,7 @@ public class T2IParamInput
     }
 
     /// <summary>Special utility to process prompt inputs before the request is executed (to parse wildcards, embeddings, etc).</summary>
-    public string ProcessPromptLike(T2IRegisteredParam<string> param)
+    public string ProcessPromptLike(T2IRegisteredParam<string> param, PromptTagContext context = null)
     {
         string val = Get(param);
         if (val is null)
@@ -1055,7 +1058,7 @@ public class T2IParamInput
             return "";
         }
         string fixedVal = val.Replace('\0', '\a').Replace("\a", "");
-        PromptTagContext context = new() { Input = this, Param = param.Type.ID };
+        context ??= new() { Input = this, Param = param.Type.ID };
         fixedVal = ProcessPromptLike(fixedVal, context, true);
         if (fixedVal != val && !ExtraMeta.ContainsKey($"original_{param.Type.ID}"))
         {
