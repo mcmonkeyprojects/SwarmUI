@@ -2159,7 +2159,8 @@ public class WorkflowGenerator
                 {
                     ["clip"] = clip,
                     ["clip_vision_output"] = new JArray() { encoded, 0 },
-                    ["prompt"] = content
+                    ["prompt"] = content,
+                    ["image_interleave"] = 2 // TODO: Does this need a param?
                 }, id);
             }
         }
