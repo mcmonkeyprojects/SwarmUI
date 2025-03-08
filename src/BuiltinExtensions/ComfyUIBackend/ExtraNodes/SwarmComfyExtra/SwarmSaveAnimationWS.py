@@ -75,9 +75,16 @@ class SwarmSaveAnimationWS:
             path = folder_paths.get_save_image_path("swarm_tmp_", folder_paths.get_temp_directory())[0]
             rand = '%016x' % random.getrandbits(64)
             file = os.path.join(path, f"swarm_tmp_{rand}.{ext}")
-            result = subprocess.run(args + [file], input=raw_images.tobytes(), capture_output=True, check=True)
-            if result.stderr:
-                print(result.stderr.decode("utf-8"), file=sys.stderr)
+            result = subprocess.run(args + [file], input=raw_images.tobytes(), capture_output=True)
+            if result.returncode != 0:
+                print(f"ffmpeg failed with return code {result.returncode}", file=sys.stderr)
+                f_out = result.stdout.decode("utf-8").strip()
+                f_err = result.stderr.decode("utf-8").strip()
+                if f_out:
+                    print("ffmpeg out: " + f_out, file=sys.stderr)
+                if f_err:
+                    print("ffmpeg error: " + f_err, file=sys.stderr)
+                raise Exception(f"ffmpeg failed: {f_err}")
             # TODO: Is there a way to get ffmpeg to operate entirely in memory?
             with open(file, "rb") as f:
                 out_img.write(f.read())
