@@ -256,6 +256,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
+    public static string SwarmValidatedFrontendVersion = "1.11.8";
+
     public override async Task Init()
     {
         AddLoadStatus("Starting init...");
@@ -283,7 +285,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             else if (Settings.FrontendVersion == "LatestSwarmValidated")
             {
-                addedArgs += " --front-end-version Comfy-Org/ComfyUI_frontend@v1.9.18";
+                addedArgs += $" --front-end-version Comfy-Org/ComfyUI_frontend@v{SwarmValidatedFrontendVersion}";
             }
             else if (Settings.FrontendVersion == "Legacy")
             {
@@ -398,6 +400,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("numpy", "numpy>=1.25.0");
             }
+            string frontendVersion = getVers("comfyui_frontend_package");
+            if (frontendVersion is not null && Version.Parse(frontendVersion) < Version.Parse(SwarmValidatedFrontendVersion))
+            {
+                await update("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}");
+            }
             string ultralyticsVers = getVers("ultralytics");
             if (ultralyticsVers is not null && Version.Parse(ultralyticsVers) < Version.Parse(UltralyticsVersion))
             {
@@ -445,7 +452,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("sentencepiece", "sentencepiece"),
         ("spandrel", "spandrel"),
         ("av", "av"),
-        ("comfyui_frontend_package", "comfyui_frontend_package"),
+        ("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}"),
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
