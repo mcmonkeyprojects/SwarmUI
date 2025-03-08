@@ -48,10 +48,9 @@ class SwarmClipTextEncodeAdvanced:
 
         def tokenize(text: str):
             if clip_vision_output is not None:
-                tokens = clip.tokenize(text, llama_template=llama_template, image_embeds=clip_vision_output.mm_projected)
+                return clip.tokenize(text, llama_template=llama_template, image_embeds=clip_vision_output.mm_projected)
             else:
-                tokens = clip.tokenize(text)
-            return tokens
+                return clip.tokenize(text)
 
         encoding_cache = {}
 
@@ -73,8 +72,9 @@ class SwarmClipTextEncodeAdvanced:
             result = {"pooled_output": cond_arr[0][1]["pooled_output"], "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}
             if guidance >= 0:
                 result["guidance"] = guidance
-            cond_arr[0][1] = result
-            return cond_arr
+            out_cond_arr = [[cond_arr[0][0], result]]
+            out_cond_arr.extend(cond_arr[1:])
+            return out_cond_arr
 
         prompt = prompt.replace("\\[", "\0\1").replace("\\]", "\0\2").replace("embedding:", "\0\3")
 
