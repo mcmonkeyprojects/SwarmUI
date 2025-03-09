@@ -71,7 +71,15 @@ let aspectRatios = [
         return [null, null];
     }),
     new AspectRatio("5:8", 384, 608),
-    new AspectRatio("9:16", 384, 672),
+    new AspectRatio("9:16", 384, 672, (w, h) => {
+        if (w == 640 && h == 640) {
+            return [480, 832]; // Wan 2.1, 1.3b
+        }
+        else if (w == 960 && h == 960) {
+            return [720, 1280]; // Wan 2.1, 14b
+        }
+        return [null, null];
+    }),
     new AspectRatio("9:21", 320, 768)
 ];
 
