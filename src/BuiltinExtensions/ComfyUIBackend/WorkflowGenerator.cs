@@ -1765,7 +1765,8 @@ public class WorkflowGenerator
                 ["height"] = height,
                 ["length"] = frames,
                 ["batch_size"] = 1,
-                ["start_image"] = FinalImageOut
+                ["start_image"] = FinalImageOut,
+                ["guidance_type"] = "v1 (concat)" // TODO: or v2
             });
             posCond = [i2vnode, 0];
             defCfg = 1;
