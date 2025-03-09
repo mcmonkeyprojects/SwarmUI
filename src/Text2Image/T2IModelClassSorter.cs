@@ -353,6 +353,10 @@ public class T2IModelClassSorter
         {
             return isHunyuanVideo(h) && isHunyuanVideoNativeImage2V(h);
         }});
+        Register(new() { ID = "hunyuan-video-i2v-v2", CompatClass = "hunyuan-video", Name = "Hunyuan Video - Image2Video v2 ('Fixed')", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "hunyuan-video/vae", CompatClass = "hunyuan-video", Name = "Hunyuan Video VAE", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
             return isHunyuanVideoVae(h);

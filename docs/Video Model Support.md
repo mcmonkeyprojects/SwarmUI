@@ -126,7 +126,8 @@
 
 - Hunyuan Image2Video is the official image-to-video model from Hunyuan's team, install info above.
 - Works like any other Image2Video model, with the same general parameter expectations as regular Hunyuan Video.
-- You will want to use the Advanced -> `Other Fixes` -> `Trim Video Start Frames` parameter with a value of `4`, as the model tends to corrupt the first few frames.
+- For I2V "v1", You will want to use the Advanced -> `Other Fixes` -> `Trim Video Start Frames` parameter with a value of `4`, as the model tends to corrupt the first few frames.
+- For I2V "v2" / "Fixed" version, you will need to click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Architecture:` field to `Hunyuan Video - Image2Video V2 ('Fixed')`
 
 ### SkyReels Text2Video
 

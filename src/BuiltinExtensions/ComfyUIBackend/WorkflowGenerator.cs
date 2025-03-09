@@ -206,7 +206,7 @@ public class WorkflowGenerator
     public bool IsHunyuanVideoI2V()
     {
         string clazz = CurrentModelClass()?.ID;
-        return clazz is not null && clazz == "hunyuan-video-i2v";
+        return clazz is not null && (clazz == "hunyuan-video-i2v" || clazz == "hunyuan-video-i2v-v2");
     }
 
     /// <summary>Returns true if the current model is Hunyuan Video - Skyreels.</summary>
@@ -1749,7 +1749,7 @@ public class WorkflowGenerator
             defSampler = "res_multistep";
             defScheduler = "karras";
         }
-        else if (vidModel.ModelClass?.ID == "hunyuan-video-i2v")
+        else if (vidModel.ModelClass?.ID == "hunyuan-video-i2v" || vidModel.ModelClass?.ID == "hunyuan-video-i2v-v2")
         {
             videoFps ??= 24;
             frames ??= 53;
@@ -1766,7 +1766,7 @@ public class WorkflowGenerator
                 ["length"] = frames,
                 ["batch_size"] = 1,
                 ["start_image"] = FinalImageOut,
-                ["guidance_type"] = "v1 (concat)" // TODO: or v2
+                ["guidance_type"] = vidModel.ModelClass?.ID == "hunyuan-video-i2v-v2" ? "v2 (replace)" : "v1 (concat)"
             });
             posCond = [i2vnode, 0];
             defCfg = 1;
@@ -2161,7 +2161,7 @@ public class WorkflowGenerator
                     ["clip"] = clip,
                     ["clip_vision_output"] = new JArray() { encoded, 0 },
                     ["prompt"] = content,
-                    ["image_interleave"] = 2 // TODO: Does this need a param?
+                    ["image_interleave"] = CurrentModelClass()?.ID == "hunyuan-video-i2v-v2" ? 4 : 2
                 }, id);
             }
         }
