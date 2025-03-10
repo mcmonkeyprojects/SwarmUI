@@ -183,8 +183,20 @@
     - Must set Overlap less than 1/3rd of the extend frame count.
     - Use the `Advanced Video` parameters as well.
     - Under `Other Fixes` -> `Trim Video End Frames` may be useful on some models. Do not use `Trim Start`
-    - 
+
+For example:
+```
+a video of a cat standing in a forest
+<extend:81> the cat starts running through the forest
+<extend:81> the cat runs up to a river
+<extend:81> the cat stops running at the river edge, and drinks from it
+```
 
 ## Comment
 
 - You can use `<comment:stuff here>` to add a personal comment in the prompt box. It will be discarded from the real prompt.
+
+## Refine/Upscale Prompt Addition
+
+- When using the Refine/Upscale param group, you can add to your prompt `<refiner> some prompt here` to have that section of prompt only be used for the refiner stage.
+    - This includes `<lora:...>` syntax to attach a lora to the refiner.

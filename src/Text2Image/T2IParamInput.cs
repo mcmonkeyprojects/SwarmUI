@@ -601,8 +601,21 @@ public class T2IParamInput
             context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
             return "";
         };
+        PromptTagPostProcessors["refiner"] = (data, context) =>
+        {
+            context.SectionID = 1;
+            return "<refiner//cid=1>";
+        };
+        PromptTagLengthEstimators["refiner"] = (data, context) =>
+        {
+            return "<refiner>";
+        };
         PromptTagPostProcessors["segment"] = (data, context) =>
         {
+            if (context.SectionID < 10)
+            {
+                context.SectionID = 10;
+            }
             context.SectionID++;
             string raw = context.RawCurrentTag.Before("//cid=");
             return $"<{raw}//cid={context.SectionID}>";
@@ -1074,7 +1087,7 @@ public class T2IParamInput
             return null;
         }
         string addBefore = "", addAfter = "";
-        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set, bool requireData)
+        void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set)
         {
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
@@ -1087,10 +1100,15 @@ public class T2IParamInput
                 prefix = prefix.ToLowerFast();
                 context.RawCurrentTag = tag;
                 context.PreData = preData;
-                Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}'");
-                if ((!string.IsNullOrWhiteSpace(data) || !requireData) && set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
+                int sectionId = context.SectionID;
+                Logs.Verbose($"[Prompt Parsing] Found tag {val}, will fill... prefix = '{prefix}', data = '{data}', predata = '{preData}', section = '{sectionId}'");
+                if (set.TryGetValue(prefix, out Func<string, PromptTagContext, string> proc))
                 {
                     string result = proc(data, context);
+                    if (sectionId != context.SectionID)
+                    {
+                        Logs.Verbose($"[Prompt Parsing] Section ID changed from {sectionId} to {context.SectionID}");
+                    }
                     if (result is not null)
                     {
                         if (result.StartsWithNull()) // Special case for preset tag modifying the current value
@@ -1113,9 +1131,9 @@ public class T2IParamInput
                 return $"<{tag}>";
             }, false, 0);
         }
-        processSet(PromptTagBasicProcessors, false);
-        processSet(PromptTagProcessors, true);
-        processSet(PromptTagPostProcessors, true);
+        processSet(PromptTagBasicProcessors);
+        processSet(PromptTagProcessors);
+        processSet(PromptTagPostProcessors);
         if (isMain)
         {
             string triggerPhrase = context.TriggerPhraseExtra;

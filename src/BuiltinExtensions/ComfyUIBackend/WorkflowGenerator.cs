@@ -2236,10 +2236,15 @@ public class WorkflowGenerator
     public record struct RegionHelper(JArray PartCond, JArray Mask);
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
-    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null)
+    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false)
     {
         PromptRegion regionalizer = new(prompt);
-        JArray globalCond = CreateConditioningLine(regionalizer.GlobalPrompt, clip, model, isPositive, firstId);
+        string globalPromptText = regionalizer.GlobalPrompt;
+        if (isRefiner && !string.IsNullOrWhiteSpace(regionalizer.RefinerPrompt))
+        {
+            globalPromptText = $"{globalPromptText} {regionalizer.RefinerPrompt}";
+        }
+        JArray globalCond = CreateConditioningLine(globalPromptText.Trim(), clip, model, isPositive, firstId);
         if (!isPositive && string.IsNullOrWhiteSpace(prompt) && UserInput.Get(T2IParamTypes.ZeroNegative, false))
         {
             string zeroed = CreateNode("ConditioningZeroOut", new JObject()

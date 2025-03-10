@@ -229,12 +229,14 @@ Download the model, then click "`Edit Metadata`" and select `(Temporary) AuraFlo
     - The advanced `Style Model Merge Strength` param lets you partial merge the style model against the nonstyled input, similar to Multiply Strength
     - The advanced `Style Model Multiply Strength` param directly multiplies the style model output, similar to Merge Strength
 - For "**Canny**" / "**Depth**" models, they work like regular models (or LoRAs), but require an Init Image to function.
+    - Goes in the regular `diffusion_models` or lora folder depending on which you downloaded.
     - You must input an appropriate image. So eg for the depth model, input a Depth Map.
         - You can use the controlnet parameter group to generate depth maps or canny images from regular images.
             - (TODO: Native interface to make that easier instead of janking controlnet)
     - Make sure to set Creativity to `1`.
     - This is similar in operation to Edit models.
 - For "**Fill**" (inpaint model), it works like other inpaint models.
+    - It's a regular model file, it goes in the regular `diffusion_models` folder same as other flux models.
     - "Edit Image" interface encouraged.
     - Mask a region and go.
     - Creativity `1` works well.

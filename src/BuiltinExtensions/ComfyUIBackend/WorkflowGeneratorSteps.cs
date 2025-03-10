@@ -99,7 +99,7 @@ public class WorkflowGeneratorSteps
         }, -14);
         AddModelGenStep(g =>
         {
-            (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(0, g.LoadingModel, g.LoadingClip);
+            (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(g.IsRefinerStage ? 1 : 0, g.LoadingModel, g.LoadingClip);
         }, -10);
         AddModelGenStep(g =>
         {
@@ -1116,18 +1116,22 @@ public class WorkflowGeneratorSteps
                 g.IsRefinerStage = true;
                 JArray origVae = g.FinalVae, prompt = g.FinalPrompt, negPrompt = g.FinalNegativePrompt;
                 bool modelMustReencode = false;
-                if (g.UserInput.TryGet(T2IParamTypes.RefinerModel, out T2IModel refineModel) && refineModel is not null)
+                T2IModel baseModel = g.UserInput.Get(T2IParamTypes.Model);
+                T2IModel refineModel = baseModel;
+                string loaderNodeId = null;
+                if (g.UserInput.TryGet(T2IParamTypes.RefinerModel, out T2IModel altRefineModel) && altRefineModel is not null)
                 {
-                    T2IModel baseModel = g.UserInput.Get(T2IParamTypes.Model);
+                    refineModel = altRefineModel;
                     modelMustReencode = refineModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1-refiner" || baseModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1";
-                    g.NoVAEOverride = refineModel.ModelClass?.CompatClass != baseModel.ModelClass?.CompatClass;
-                    g.FinalLoadedModel = refineModel;
-                    g.FinalLoadedModelList = [refineModel];
-                    (g.FinalLoadedModel, g.FinalModel, g.FinalClip, g.FinalVae) = g.CreateStandardModelLoader(refineModel, "Refiner", "20");
-                    prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, refineModel, true);
-                    negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.FinalClip, refineModel, false);
-                    g.NoVAEOverride = false;
+                    loaderNodeId = "20";
                 }
+                g.NoVAEOverride = refineModel.ModelClass?.CompatClass != baseModel.ModelClass?.CompatClass;
+                g.FinalLoadedModel = refineModel;
+                g.FinalLoadedModelList = [refineModel];
+                (g.FinalLoadedModel, g.FinalModel, g.FinalClip, g.FinalVae) = g.CreateStandardModelLoader(refineModel, "Refiner", loaderNodeId);
+                g.NoVAEOverride = false;
+                prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, g.FinalLoadedModel, true, isRefiner: true);
+                negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.FinalClip, g.FinalLoadedModel, false, isRefiner: true);
                 bool doSave = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
                 bool doUspcale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
                 // TODO: Better same-VAE check
