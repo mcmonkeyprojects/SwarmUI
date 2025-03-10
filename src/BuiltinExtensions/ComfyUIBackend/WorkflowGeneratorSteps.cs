@@ -99,7 +99,12 @@ public class WorkflowGeneratorSteps
         }, -14);
         AddModelGenStep(g =>
         {
-            (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(g.IsRefinerStage ? 1 : 0, g.LoadingModel, g.LoadingClip);
+            (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(-1, g.LoadingModel, g.LoadingClip);
+            (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(0, g.LoadingModel, g.LoadingClip);
+            if (g.IsRefinerStage)
+            {
+                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(1, g.LoadingModel, g.LoadingClip);
+            }
         }, -10);
         AddModelGenStep(g =>
         {
@@ -1337,7 +1342,10 @@ public class WorkflowGeneratorSteps
                     int oversize = g.UserInput.Get(T2IParamTypes.SegmentMaskOversize, 16);
                     (string boundsNode, string croppedMask, string masked, string scaledImage) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, oversize, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
                     g.EnableDifferential();
-                    (model, clip) = g.LoadLorasForConfinement(part.ContextID, g.FinalModel, clip);
+                    if (part.ContextID > 0)
+                    {
+                        (model, clip) = g.LoadLorasForConfinement(part.ContextID, g.FinalModel, clip);
+                    }
                     JArray prompt = g.CreateConditioning(part.Prompt, clip, t2iModel, true);
                     string neg = negativeParts.FirstOrDefault(p => p.DataText == part.DataText)?.Prompt ?? negativeRegion.GlobalPrompt;
                     JArray negPrompt = g.CreateConditioning(neg, clip, t2iModel, false);

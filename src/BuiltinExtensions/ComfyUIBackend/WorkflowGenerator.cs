@@ -239,13 +239,16 @@ public class WorkflowGenerator
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
     public string GetStableDynamicID(int index, int offset)
     {
-        int id = 1000 + index + offset;
-        string result = $"{id}";
-        if (!HasNode(result))
+        for (int i = 0; i < 99999; i++)
         {
-            return result;
+            int id = 1000 + index + offset + i;
+            string result = $"{id}";
+            if (!HasNode(result))
+            {
+                return result;
+            }
         }
-        return GetStableDynamicID(index, offset + 1);
+        throw new Exception("Failed to find a stable dynamic ID.");
     }
 
     /// <summary>Creates a new node with the given class type and configuration action, and optional manual ID.</summary>
@@ -259,10 +262,10 @@ public class WorkflowGenerator
     }
 
     /// <summary>Creates a new node with the given class type and input data, and optional manual ID.</summary>
-    public string CreateNode(string classType, JObject input, string id = null)
+    public string CreateNode(string classType, JObject input, string id = null, bool idMandatory = true)
     {
         string lookup = $"__generic_node__{classType}___{input}";
-        if (id is null && NodeHelpers.TryGetValue(lookup, out string existingNode))
+        if ((id is null || !idMandatory) && NodeHelpers.TryGetValue(lookup, out string existingNode))
         {
             return existingNode;
         }
@@ -318,7 +321,7 @@ public class WorkflowGenerator
     /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID.</summary>
     public (JArray, JArray) LoadLorasForConfinement(int confinement, JArray model, JArray clip)
     {
-        if (confinement < 0 || !UserInput.TryGet(T2IParamTypes.Loras, out List<string> loras))
+        if (!UserInput.TryGet(T2IParamTypes.Loras, out List<string> loras))
         {
             return (model, clip);
         }
@@ -332,6 +335,15 @@ public class WorkflowGenerator
         T2IModelHandler loraHandler = Program.T2IModelSets["LoRA"];
         for (int i = 0; i < loras.Count; i++)
         {
+            int confinementId = -1;
+            if (confinements is not null && confinements.Count > i)
+            {
+                confinementId = int.Parse(confinements[i]);
+            }
+            if (confinementId != confinement)
+            {
+                continue;
+            }
             if (!loraHandler.Models.TryGetValue(loras[i] + ".safetensors", out T2IModel lora))
             {
                 if (!loraHandler.Models.TryGetValue(loras[i], out lora))
@@ -344,14 +356,6 @@ public class WorkflowGenerator
             {
                 lora.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
             }
-            if (confinements is not null && confinements.Count > i)
-            {
-                int confinementId = int.Parse(confinements[i]);
-                if (confinementId >= 0 && confinementId != confinement)
-                {
-                    continue;
-                }
-            }
             float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
             float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
             string newId = CreateNode("LoraLoader", new JObject()
@@ -361,7 +365,7 @@ public class WorkflowGenerator
                 ["lora_name"] = lora.ToString(ModelFolderFormat),
                 ["strength_model"] = weight,
                 ["strength_clip"] = tencWeight
-            }, GetStableDynamicID(500, i));
+            }, GetStableDynamicID(2000, i), false);
             model = [newId, 0];
             clip = [newId, 1];
         }
