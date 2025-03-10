@@ -40,10 +40,21 @@ fi
 export ASPNETCORE_ENVIRONMENT="Production"
 export ASPNETCORE_URLS="http://*:7801"
 
+# Allow restarting to be forwarded (for docker)
+FORWARD_RESTART=""
+if [ "$1" == "--forward_restart" ]; then
+    FORWARD_RESTART="true"
+    shift
+fi
+
 # Actual runner.
 ./src/bin/live_release/SwarmUI $@
 
 # Exit code 42 means restart, anything else = don't.
 if [ $? == 42 ]; then
-    . ./launch-linux.sh $@
+    if [ "$FORWARD_RESTART" == "true" ]; then
+        exit 42
+    else
+        exec ./launch-linux.sh $@
+    fi
 fi
