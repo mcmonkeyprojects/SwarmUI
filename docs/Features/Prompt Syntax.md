@@ -161,7 +161,7 @@
     - Note that different models behave very differently around this functionality.
         - Notably MM-DiT models (SD3/Flux) are likely to only process regions in early steps then entirely ignore them in latter steps (as they process the input image and try to retain it, ie devaluing your actual prompt text, so unusual combinations will make the model unhappy).
         - SDXL and models like it responds very strongly to regional prompts.
-    - Regional prompts cannot currently use loras or other global feature changes. This is likely to change in the future.
+    - Regional prompts can use `<lora:` syntax to add a lora uniquely embedded in that region.
 
 ## Regional Object Prompting
 

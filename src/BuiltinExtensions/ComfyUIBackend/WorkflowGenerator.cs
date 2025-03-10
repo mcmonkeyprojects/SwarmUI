@@ -318,6 +318,70 @@ public class WorkflowGenerator
         }
     }
 
+    /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID, as a Set CLIP Hooks node.</summary>
+    public JArray CreateHookLorasForConfinement(int confinement, JArray clip)
+    {
+        if (!UserInput.TryGet(T2IParamTypes.Loras, out List<string> loras))
+        {
+            return clip;
+        }
+        List<string> weights = UserInput.Get(T2IParamTypes.LoraWeights);
+        List<string> tencWeights = UserInput.Get(T2IParamTypes.LoraTencWeights);
+        List<string> confinements = UserInput.Get(T2IParamTypes.LoraSectionConfinement);
+        if (confinement > 0 && (confinements is null || confinements.Count == 0))
+        {
+            return clip;
+        }
+        T2IModelHandler loraHandler = Program.T2IModelSets["LoRA"];
+        JArray last = null;
+        for (int i = 0; i < loras.Count; i++)
+        {
+            int confinementId = -1;
+            if (confinements is not null && confinements.Count > i)
+            {
+                confinementId = int.Parse(confinements[i]);
+            }
+            if (confinementId != confinement)
+            {
+                continue;
+            }
+            if (!loraHandler.Models.TryGetValue(loras[i] + ".safetensors", out T2IModel lora))
+            {
+                if (!loraHandler.Models.TryGetValue(loras[i], out lora))
+                {
+                    throw new SwarmUserErrorException($"LoRA Model '{loras[i]}' not found in the model set.");
+                }
+            }
+            FinalLoadedModelList.Add(lora);
+            if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+            {
+                lora.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
+            }
+            float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
+            float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
+            string newId = CreateNode("CreateHookLora", new JObject()
+            {
+                ["prev_hooks"] = last,
+                ["lora_name"] = lora.ToString(ModelFolderFormat),
+                ["strength_model"] = weight,
+                ["strength_clip"] = tencWeight
+            }, GetStableDynamicID(2500, i), false);
+            last = [newId, 0];
+        }
+        if (last is null)
+        {
+            return clip;
+        }
+        string newHooks = CreateNode("SetClipHooks", new JObject()
+        {
+            ["hooks"] = last,
+            ["clip"] = clip,
+            ["apply_to_conds"] = true,
+            ["schedule_clip"] = false
+        }, GetStableDynamicID(2500, loras.Count), false);
+        return [newHooks, 0];
+    }
+
     /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID.</summary>
     public (JArray, JArray) LoadLorasForConfinement(int confinement, JArray model, JArray clip)
     {
@@ -2297,7 +2361,8 @@ public class WorkflowGenerator
         JArray lastMergedMask = null;
         foreach (PromptRegion.Part part in parts)
         {
-            JArray partCond = CreateConditioningLine(part.Prompt, clip, model, isPositive);
+            JArray subClip = part.ContextID <= 1 ? clip : CreateHookLorasForConfinement(part.ContextID, clip);
+            JArray partCond = CreateConditioningLine(part.Prompt, subClip, model, isPositive);
             string regionNode = CreateNode("SwarmSquareMaskFromPercent", new JObject()
             {
                 ["x"] = part.X,

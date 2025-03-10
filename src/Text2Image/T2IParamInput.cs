@@ -610,7 +610,7 @@ public class T2IParamInput
         {
             return "<refiner>";
         };
-        PromptTagPostProcessors["segment"] = (data, context) =>
+        string autoConfine(string data, PromptTagContext context)
         {
             if (context.SectionID < 10)
             {
@@ -619,10 +619,11 @@ public class T2IParamInput
             context.SectionID++;
             string raw = context.RawCurrentTag.Before("//cid=");
             return $"<{raw}//cid={context.SectionID}>";
-        };
-        PromptTagPostProcessors["object"] = PromptTagPostProcessors["segment"];
-        PromptTagPostProcessors["region"] = PromptTagPostProcessors["segment"];
-        PromptTagPostProcessors["extend"] = PromptTagPostProcessors["segment"];
+        }
+        PromptTagPostProcessors["segment"] = autoConfine;
+        PromptTagPostProcessors["object"] = autoConfine;
+        PromptTagPostProcessors["region"] = autoConfine;
+        PromptTagPostProcessors["extend"] = autoConfine;
         PromptTagBasicProcessors["break"] = (data, context) =>
         {
             return "<break>";
