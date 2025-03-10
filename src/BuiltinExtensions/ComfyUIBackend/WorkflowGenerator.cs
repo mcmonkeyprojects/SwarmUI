@@ -206,7 +206,7 @@ public class WorkflowGenerator
     public bool IsHunyuanVideoI2V()
     {
         string clazz = CurrentModelClass()?.ID;
-        return clazz is not null && clazz == "hunyuan-video-i2v";
+        return clazz is not null && (clazz == "hunyuan-video-i2v" || clazz == "hunyuan-video-i2v-v2");
     }
 
     /// <summary>Returns true if the current model is Hunyuan Video - Skyreels.</summary>
@@ -239,13 +239,16 @@ public class WorkflowGenerator
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
     public string GetStableDynamicID(int index, int offset)
     {
-        int id = 1000 + index + offset;
-        string result = $"{id}";
-        if (!HasNode(result))
+        for (int i = 0; i < 99999; i++)
         {
-            return result;
+            int id = 1000 + index + offset + i;
+            string result = $"{id}";
+            if (!HasNode(result))
+            {
+                return result;
+            }
         }
-        return GetStableDynamicID(index, offset + 1);
+        throw new Exception("Failed to find a stable dynamic ID.");
     }
 
     /// <summary>Creates a new node with the given class type and configuration action, and optional manual ID.</summary>
@@ -259,10 +262,10 @@ public class WorkflowGenerator
     }
 
     /// <summary>Creates a new node with the given class type and input data, and optional manual ID.</summary>
-    public string CreateNode(string classType, JObject input, string id = null)
+    public string CreateNode(string classType, JObject input, string id = null, bool idMandatory = true)
     {
         string lookup = $"__generic_node__{classType}___{input}";
-        if (id is null && NodeHelpers.TryGetValue(lookup, out string existingNode))
+        if ((id is null || !idMandatory) && NodeHelpers.TryGetValue(lookup, out string existingNode))
         {
             return existingNode;
         }
@@ -315,10 +318,74 @@ public class WorkflowGenerator
         }
     }
 
+    /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID, as a Set CLIP Hooks node.</summary>
+    public JArray CreateHookLorasForConfinement(int confinement, JArray clip)
+    {
+        if (!UserInput.TryGet(T2IParamTypes.Loras, out List<string> loras))
+        {
+            return clip;
+        }
+        List<string> weights = UserInput.Get(T2IParamTypes.LoraWeights);
+        List<string> tencWeights = UserInput.Get(T2IParamTypes.LoraTencWeights);
+        List<string> confinements = UserInput.Get(T2IParamTypes.LoraSectionConfinement);
+        if (confinement > 0 && (confinements is null || confinements.Count == 0))
+        {
+            return clip;
+        }
+        T2IModelHandler loraHandler = Program.T2IModelSets["LoRA"];
+        JArray last = null;
+        for (int i = 0; i < loras.Count; i++)
+        {
+            int confinementId = -1;
+            if (confinements is not null && confinements.Count > i)
+            {
+                confinementId = int.Parse(confinements[i]);
+            }
+            if (confinementId != confinement)
+            {
+                continue;
+            }
+            if (!loraHandler.Models.TryGetValue(loras[i] + ".safetensors", out T2IModel lora))
+            {
+                if (!loraHandler.Models.TryGetValue(loras[i], out lora))
+                {
+                    throw new SwarmUserErrorException($"LoRA Model '{loras[i]}' not found in the model set.");
+                }
+            }
+            FinalLoadedModelList.Add(lora);
+            if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
+            {
+                lora.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
+            }
+            float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
+            float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
+            string newId = CreateNode("CreateHookLora", new JObject()
+            {
+                ["prev_hooks"] = last,
+                ["lora_name"] = lora.ToString(ModelFolderFormat),
+                ["strength_model"] = weight,
+                ["strength_clip"] = tencWeight
+            }, GetStableDynamicID(2500, i), false);
+            last = [newId, 0];
+        }
+        if (last is null)
+        {
+            return clip;
+        }
+        string newHooks = CreateNode("SetClipHooks", new JObject()
+        {
+            ["hooks"] = last,
+            ["clip"] = clip,
+            ["apply_to_conds"] = true,
+            ["schedule_clip"] = false
+        }, GetStableDynamicID(2500, loras.Count), false);
+        return [newHooks, 0];
+    }
+
     /// <summary>Loads and applies LoRAs in the user parameters for the given LoRA confinement ID.</summary>
     public (JArray, JArray) LoadLorasForConfinement(int confinement, JArray model, JArray clip)
     {
-        if (confinement < 0 || !UserInput.TryGet(T2IParamTypes.Loras, out List<string> loras))
+        if (!UserInput.TryGet(T2IParamTypes.Loras, out List<string> loras))
         {
             return (model, clip);
         }
@@ -332,6 +399,15 @@ public class WorkflowGenerator
         T2IModelHandler loraHandler = Program.T2IModelSets["LoRA"];
         for (int i = 0; i < loras.Count; i++)
         {
+            int confinementId = -1;
+            if (confinements is not null && confinements.Count > i)
+            {
+                confinementId = int.Parse(confinements[i]);
+            }
+            if (confinementId != confinement)
+            {
+                continue;
+            }
             if (!loraHandler.Models.TryGetValue(loras[i] + ".safetensors", out T2IModel lora))
             {
                 if (!loraHandler.Models.TryGetValue(loras[i], out lora))
@@ -344,14 +420,6 @@ public class WorkflowGenerator
             {
                 lora.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
             }
-            if (confinements is not null && confinements.Count > i)
-            {
-                int confinementId = int.Parse(confinements[i]);
-                if (confinementId >= 0 && confinementId != confinement)
-                {
-                    continue;
-                }
-            }
             float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
             float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
             string newId = CreateNode("LoraLoader", new JObject()
@@ -361,7 +429,7 @@ public class WorkflowGenerator
                 ["lora_name"] = lora.ToString(ModelFolderFormat),
                 ["strength_model"] = weight,
                 ["strength_clip"] = tencWeight
-            }, GetStableDynamicID(500, i));
+            }, GetStableDynamicID(2000, i), false);
             model = [newId, 0];
             clip = [newId, 1];
         }
@@ -1749,7 +1817,7 @@ public class WorkflowGenerator
             defSampler = "res_multistep";
             defScheduler = "karras";
         }
-        else if (vidModel.ModelClass?.ID == "hunyuan-video-i2v")
+        else if (vidModel.ModelClass?.ID == "hunyuan-video-i2v" || vidModel.ModelClass?.ID == "hunyuan-video-i2v-v2")
         {
             videoFps ??= 24;
             frames ??= 53;
@@ -1765,7 +1833,8 @@ public class WorkflowGenerator
                 ["height"] = height,
                 ["length"] = frames,
                 ["batch_size"] = 1,
-                ["start_image"] = FinalImageOut
+                ["start_image"] = FinalImageOut,
+                ["guidance_type"] = vidModel.ModelClass?.ID == "hunyuan-video-i2v-v2" ? "v2 (replace)" : "v1 (concat)"
             });
             posCond = [i2vnode, 0];
             defCfg = 1;
@@ -2160,7 +2229,7 @@ public class WorkflowGenerator
                     ["clip"] = clip,
                     ["clip_vision_output"] = new JArray() { encoded, 0 },
                     ["prompt"] = content,
-                    ["image_interleave"] = 2 // TODO: Does this need a param?
+                    ["image_interleave"] = CurrentModelClass()?.ID == "hunyuan-video-i2v-v2" ? 4 : 2
                 }, id);
             }
         }
@@ -2235,10 +2304,15 @@ public class WorkflowGenerator
     public record struct RegionHelper(JArray PartCond, JArray Mask);
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
-    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null)
+    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false)
     {
         PromptRegion regionalizer = new(prompt);
-        JArray globalCond = CreateConditioningLine(regionalizer.GlobalPrompt, clip, model, isPositive, firstId);
+        string globalPromptText = regionalizer.GlobalPrompt;
+        if (isRefiner && !string.IsNullOrWhiteSpace(regionalizer.RefinerPrompt))
+        {
+            globalPromptText = $"{globalPromptText} {regionalizer.RefinerPrompt}";
+        }
+        JArray globalCond = CreateConditioningLine(globalPromptText.Trim(), clip, model, isPositive, firstId);
         if (!isPositive && string.IsNullOrWhiteSpace(prompt) && UserInput.Get(T2IParamTypes.ZeroNegative, false))
         {
             string zeroed = CreateNode("ConditioningZeroOut", new JObject()
@@ -2287,7 +2361,8 @@ public class WorkflowGenerator
         JArray lastMergedMask = null;
         foreach (PromptRegion.Part part in parts)
         {
-            JArray partCond = CreateConditioningLine(part.Prompt, clip, model, isPositive);
+            JArray subClip = part.ContextID <= 1 ? clip : CreateHookLorasForConfinement(part.ContextID, clip);
+            JArray partCond = CreateConditioningLine(part.Prompt, subClip, model, isPositive);
             string regionNode = CreateNode("SwarmSquareMaskFromPercent", new JObject()
             {
                 ["x"] = part.X,

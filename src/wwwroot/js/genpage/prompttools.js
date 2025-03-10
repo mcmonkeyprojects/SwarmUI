@@ -88,6 +88,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('break', 'Split this prompt across multiple lines of conditioning to the model (helps separate concepts for long prompts).', (prefix) => {
             return [];
         }, true);
+        this.registerPrefix('refiner', 'Add a section of prompt text that is only used for the Refine/Upscale pass.', (prefix) => {
+            return [];
+        }, true);
         this.registerPrefix('trigger', "Automatically fills with the current model or LoRA's trigger phrase(s), if any.", (prefix) => {
             return [];
         }, true);

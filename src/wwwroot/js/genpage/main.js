@@ -2239,6 +2239,8 @@ function genpageLoad() {
             paramConfig.preInit();
             paramConfig.applyParamEdits(data.param_edits);
             paramConfig.loadUserParamConfigTab();
+            autoRepersistParams();
+            setInterval(autoRepersistParams, 60 * 60 * 1000); // Re-persist again hourly if UI left over
             genInputs();
             genToolsList();
             reviseStatusBar();

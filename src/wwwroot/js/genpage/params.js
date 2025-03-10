@@ -71,7 +71,15 @@ let aspectRatios = [
         return [null, null];
     }),
     new AspectRatio("5:8", 384, 608),
-    new AspectRatio("9:16", 384, 672),
+    new AspectRatio("9:16", 384, 672, (w, h) => {
+        if (w == 640 && h == 640) {
+            return [480, 832]; // Wan 2.1, 1.3b
+        }
+        else if (w == 960 && h == 960) {
+            return [720, 1280]; // Wan 2.1, 14b
+        }
+        return [null, null];
+    }),
     new AspectRatio("9:21", 320, 768)
 ];
 
@@ -233,6 +241,22 @@ document.addEventListener('click', e => {
 
 function getParamMemoryDays() {
     return parseFloat(getUserSetting('parametermemorydurationhours', '6')) / 24;
+}
+
+/** Re-persist stored parameter values - to avoid some disappearing and others staying */
+function autoRepersistParams() {
+    for (let param of gen_param_types) {
+        let val = getCookie(`lastparam_input_${param.id}`);
+        if (val) {
+            setCookie(`lastparam_input_${param.id}`, val, getParamMemoryDays());
+        }
+        if (param.toggleable) {
+            let val = getCookie(`lastparam_input_${param.id}_toggle`);
+            if (val) {
+                setCookie(`lastparam_input_${param.id}_toggle`, val, getParamMemoryDays());
+            }
+        }
+    }
 }
 
 function genInputs(delay_final = false) {
@@ -602,15 +626,24 @@ function genInputs(delay_final = false) {
             }
             if (!param.do_not_save) {
                 elem.addEventListener('change', () => {
+                    let val = null;
                     if (param.type == "boolean") {
-                        setCookie(`lastparam_input_${param.id}`, elem.checked, getParamMemoryDays());
+                        val = elem.checked;
                     }
                     else if (param.type == "list" && elem.tagName == "SELECT") {
                         let valSet = [...elem.selectedOptions].map(option => option.value);
-                        setCookie(`lastparam_input_${param.id}`, valSet.join(','), getParamMemoryDays());
+                        val = valSet.join(',');
                     }
                     else if (param.type != "image") {
-                        setCookie(`lastparam_input_${param.id}`, elem.value, getParamMemoryDays());
+                        val = elem.value;
+                    }
+                    if (val !== null) {
+                        if (val == param.default) {
+                            deleteCookie(`lastparam_input_${param.id}`);
+                        }
+                        else {
+                            setCookie(`lastparam_input_${param.id}`, val, getParamMemoryDays());
+                        }
                     }
                 });
             }
@@ -626,7 +659,9 @@ function genInputs(delay_final = false) {
                         if (!toggler.checked) {
                             deleteCookie(`lastparam_input_${param.id}`);
                         }
-                        setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
+                        else {
+                            setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
+                        }
                     });
                 }
             }

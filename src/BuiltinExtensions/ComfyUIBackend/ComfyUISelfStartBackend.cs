@@ -401,7 +401,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await update("numpy", "numpy>=1.25.0");
             }
             string frontendVersion = getVers("comfyui_frontend_package");
-            if (frontendVersion is not null && Version.Parse(frontendVersion) < Version.Parse(SwarmValidatedFrontendVersion))
+            if (frontendVersion is not null && frontendVersion != SwarmValidatedFrontendVersion)
             {
                 await update("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}");
             }
