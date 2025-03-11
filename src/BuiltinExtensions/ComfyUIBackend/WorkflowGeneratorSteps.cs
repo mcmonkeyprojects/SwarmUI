@@ -213,11 +213,12 @@ public class WorkflowGeneratorSteps
                 {
                     if (teaCacheMode != "video only")
                     {
-                        string teaCacheNode = g.CreateNode("TeaCacheForImgGen", new JObject()
+                        string teaCacheNode = g.CreateNode("TeaCache", new JObject()
                         {
                             ["model"] = g.LoadingModel,
                             ["model_type"] = "flux",
-                            ["rel_l1_thresh"] = teaCacheThreshold
+                            ["rel_l1_thresh"] = teaCacheThreshold,
+                            ["max_skip_steps"] = 3
                         });
                         g.LoadingModel = [teaCacheNode, 0];
                     }
@@ -256,11 +257,12 @@ public class WorkflowGeneratorSteps
                             }
                         }
                     }
-                    string teaCacheNode = g.CreateNode("TeaCacheForVidGen", new JObject()
+                    string teaCacheNode = g.CreateNode("TeaCache", new JObject()
                     {
                         ["model"] = g.LoadingModel,
                         ["model_type"] = type,
-                        ["rel_l1_thresh"] = teaCacheThreshold
+                        ["rel_l1_thresh"] = teaCacheThreshold,
+                        ["max_skip_steps"] = 3
                     });
                     g.LoadingModel = [teaCacheNode, 0];
                 }
