@@ -52,8 +52,7 @@ public class DynamicThresholdingExtension : Extension
             Examples: ["0", "1", "2", "5"]
             ));
         SchedulerValue = T2IParamTypes.Register<double>(new("[DT] Scheduler Value", "[Dynamic Thresholding]\nIf either scale scheduler is 'Power', this is the power factor.\nIf using 'repeating', this is the number of repeats per image. Otherwise, it does nothing.",
-            "4", Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 7,
-            Examples: ["2", "4", "8"]
+            "4", Min: -999999, Max: 999999, Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 7, Examples: ["2", "4", "8"]
             ));
         SeparateFeatureChannels = T2IParamTypes.Register<bool>(new("[DT] Separate Feature Channels", "[Dynamic Thresholding]\nWhether to separate the feature channels.\nNormally leave this on. I think it should be off for RCFG?",
             "true", Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 8

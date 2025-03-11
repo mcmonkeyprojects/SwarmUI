@@ -235,6 +235,13 @@ public class T2IParamTypes
     public static T2IRegisteredParam<T> Register<T>(T2IParamType type)
     {
         type = type with { ID = CleanTypeName(type.Name), Type = SharpTypeToDataType(typeof(T), type.GetValues != null), SharpType = typeof(T) };
+        if (type.Type == T2IParamDataType.DECIMAL || type.Type == T2IParamDataType.INTEGER)
+        {
+            if (type.Min == 0 && type.Max == 0)
+            {
+                Logs.Error($"Param '{type.Name}' is registered as a numeric type with Min=0 and Max=0, parameter will not function as intended.");
+            }
+        }
         Types.Add(type.ID, type);
         LanguagesHelper.AppendSetInternal(type.Name, type.Description);
         return new T2IRegisteredParam<T>() { Type = type };
@@ -651,7 +658,7 @@ public class T2IParamTypes
             IsAdvanced: true, Permission: Permissions.ParamBackendType, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -10
             ));
         ExactBackendID = Register<int>(new("Exact Backend ID", "Manually force a specific exact backend (by ID #) to be used for this generation.",
-            "0", Toggleable: true, IsAdvanced: true, ViewType: ParamViewType.BIG, Permission: Permissions.ParamBackendID, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -9
+            "0", Min: -9999999, Max: 9999999, Toggleable: true, IsAdvanced: true, ViewType: ParamViewType.BIG, Permission: Permissions.ParamBackendID, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -9
             ));
         WildcardSeed = Register<long>(new("Wildcard Seed", "Wildcard selection seed.\nIf enabled, this seed will be used for selecting entries from wildcards.\nIf disabled, the image seed will be used.\n-1 = random.",
             "-1", Min: -1, Max: uint.MaxValue, Step: 1, Toggleable: true, Examples: ["1", "2", "...", "10"], ViewType: ParamViewType.SEED, Group: GroupSwarmInternal, AlwaysRetain: true, ChangeWeight: -4, OrderPriority: -5
