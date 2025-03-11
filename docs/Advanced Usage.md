@@ -33,7 +33,7 @@ So, all those parameters aren't enough, you want MORE control? Don't worry, we g
 
 More thorough information about custom Comfy Workflows will be in [Features/Custom Comfy Workflows](/docs/Features/Comfy-Workflows.md).
 
-## Triton/SageAttention on Windows
+## Triton, TorchCompile, SageAttention on Windows
 
 (This is specific to Windows, Linux/Mac is different)
 
