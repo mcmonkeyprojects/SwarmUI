@@ -273,12 +273,13 @@ class ModelDownloaderUtil {
                 }
             }
             else {
+                baseLoop:
                 for (let vers of rawData.modelVersions) {
                     for (let vFile of vers.files) {
                         if (vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`)) {
                             rawVersion = vers;
                             file = vFile;
-                            break;
+                            break baseLoop;
                         }
                     }
                 }
