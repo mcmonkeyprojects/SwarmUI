@@ -1185,7 +1185,7 @@ public class WorkflowGeneratorSteps
                                 ["image"] = new JArray() { "28", 0 },
                                 ["width"] = width,
                                 ["height"] = height,
-                                ["upscale_method"] = "bilinear",
+                                ["upscale_method"] = "lanczos",
                                 ["crop"] = "disabled"
                             }, "26");
                         }
