@@ -260,7 +260,7 @@
 - [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, is supported in SwarmUI.
     - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
-    - Use the `fp8` models, not `bf16`
+    - Favor the `fp8_scaled` models as the main choice, or `fp16` for the 1.3B.
     - For Text2Video, pick either 1.3B (small) model, or 14B (large) model
     - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model
         - These are not autodetected separately, 480p is assumed.
