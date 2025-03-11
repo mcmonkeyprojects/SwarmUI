@@ -300,10 +300,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             AddLoadStatus($"Start script '{Settings.StartScript}' looks wrong");
             Logs.Warning($"ComfyUI start script is '{Settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
         }
-        AddLoadStatus("Will track node repo load task...");
+        Directory.CreateDirectory(Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes"));
         string autoUpd = Settings.AutoUpdate.ToLowerFast();
         if ((autoUpd == "true" || autoUpd == "aggressive") && !string.IsNullOrWhiteSpace(Settings.StartScript))
         {
+            AddLoadStatus("Will track node repo load task...");
             List<Task> tasks = [Task.Run(EnsureNodeRepos)];
             AddLoadStatus("Will track comfy git pull auto-update task...");
             tasks.Add(Task.Run(async () =>

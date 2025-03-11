@@ -852,17 +852,17 @@ public class WorkflowGenerator
                 string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
                 if (dtype == "automatic")
                 {
-                    if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) // TODO: Or AMD?
+                    {
+                        dtype = "default";
+                    }
+                    else
                     {
                         dtype = "fp8_e4m3fn";
                         if (Utilities.PresumeNVidia30xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
                         {
                             dtype = "fp8_e4m3fn_fast";
                         }
-                    }
-                    else
-                    {
-                        dtype = "default";
                     }
                 }
                 string modelNode = CreateNode("UNETLoader", new JObject()

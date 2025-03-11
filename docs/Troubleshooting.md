@@ -41,6 +41,8 @@ If you see `Cannot handle this data type: (1, 1, 3), <f4`, that is because live 
 
 If you see `The parameter is incorrect.`, you are running something incompatible with AMD+DirectML+Windows, and can either just not run that, or swap backend (see below).
 
+If you see `Invalid or unsupported data type Float8_e4m3fn.`, you can avoid this by editing the parameter `Preferred DType` to `Default (16 bit)`
+
 ### Swap AMD Backend
 
 There are several alternate AMD backend options that work better than DirectML:
