@@ -17,6 +17,9 @@ RUN chown -R $UID:$UID ./SwarmUI
 # Stupidproofing on git calls from inside docker
 RUN git config --global --add safe.directory '*'
 
+# Ensure a user exists within docker for the given uid
+RUN useradd -u $UID swarmui
+
 # Expose the port for other containers (to use Swarm as an API if you want)
 EXPOSE 7801
 
