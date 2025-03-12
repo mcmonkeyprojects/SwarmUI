@@ -280,15 +280,32 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             bool isExpectingVideo = false;
             string currentNode = "";
             bool isMe = false;
-            while (true)
+            // autoCanceller will be cancelled via the using to end the task and not leave it waiting when the method clears
+            using CancellationTokenSource autoCanceller = new();
+            using CancellationTokenSource interruptCanceller = CancellationTokenSource.CreateLinkedTokenSource(interrupt, autoCanceller.Token);
+            Task interruptTask = Task.Delay(TimeSpan.FromHours(24), interruptCanceller.Token);
+            async Task doInterruptNow()
             {
-                if (interrupt.IsCancellationRequested && !hasInterrupted)
+                if (!hasInterrupted)
                 {
                     hasInterrupted = true;
                     Logs.Debug("ComfyUI Interrupt requested");
                     await HttpClient.PostAsync($"{APIAddress}/interrupt", new StringContent(""), Program.GlobalProgramCancel);
                 }
-                byte[] output = await socket.ReceiveData(100 * 1024 * 1024, Program.GlobalProgramCancel);
+            }
+            while (true)
+            {
+                if (interrupt.IsCancellationRequested && !hasInterrupted)
+                {
+                    await doInterruptNow();
+                }
+                Task<byte[]> getData = socket.ReceiveData(100 * 1024 * 1024, Program.GlobalProgramCancel);
+                Task t = await Task.WhenAny(getData, interruptTask);
+                if (t == interruptTask)
+                {
+                    await doInterruptNow();
+                }
+                byte[] output = await getData;
                 if (output is not null)
                 {
                     if (Encoding.ASCII.GetString(output, 0, 8) == "{\"type\":")
