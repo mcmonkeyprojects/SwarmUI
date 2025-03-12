@@ -93,6 +93,7 @@ When you need to install a pip dependency, you're gonna have to use the command 
 - activate the venv with `source venv/bin/activate`
 - type the command `python -s -m pip install (your package)`
     - For example `python -s -m pip install transformers -U`
+- For Docker, you'll want to explicitly call `./venv/bin/python -s -m pip install (your package)`
 
 ### Note
 

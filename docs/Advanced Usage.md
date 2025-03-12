@@ -36,7 +36,7 @@ More thorough information about custom Comfy Workflows will be in [Features/Cust
 ## Triton, TorchCompile, SageAttention on Windows
 
 - If on Linux, probably just:
-    - Follow [Troubleshooting Pip Install](/docs/Troubleshooting.md#i-need-to-install-something-with-pip) to pip install `triton sageattention`
+    - Make sure you have updated torch, and follow [Troubleshooting Pip Install](/docs/Troubleshooting.md#i-need-to-install-something-with-pip) to `pip install -U triton sageattention`
     - and then edit the Backend to have `--use-sage-attention` under `ExtraArgs`
     - and maybe just works?
 - For Windows, it's a lot more effort, see below:
