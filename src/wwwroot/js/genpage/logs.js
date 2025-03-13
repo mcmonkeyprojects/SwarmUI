@@ -170,15 +170,20 @@ class ServerLogsHelper {
                     };
                     this.logMessagesByType[type.name] = storedData;
                 }
+                let any = false;
                 for (let message of messages) {
                     if (storedData.raw[message.sequence_id]) {
                         continue;
                     }
+                    any = true;
                     storedData.raw[message.sequence_id] = message;
                     storedData.last_seq_id = message.sequence_id;
                     if (!filter || message.message.toLowerCase().includes(filter)) {
                         toRenderMessages.push([message, type]);
                     }
+                }
+                if (!any) {
+                    continue;
                 }
                 await sleep(1);
                 if (storedData.raw.length > 2048) {
@@ -190,6 +195,10 @@ class ServerLogsHelper {
                     }
                 }
                 await sleep(1);
+            }
+            if (toRenderMessages.length == 0) {
+                this.mayLoop = true;
+                return;
             }
             toRenderMessages.sort((a, b) => a[0].sequence_id - b[0].sequence_id);
             await sleep(1);
