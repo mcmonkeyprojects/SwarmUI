@@ -31,6 +31,9 @@ public class User
 
         /// <summary>Hashed blob of the user password, or empty if unset.</summary>
         public string PasswordHashed { get; set; } = "";
+
+        /// <summary>True if password was set by an admin, false if password was set by the user.</summary>
+        public bool IsPasswordSetByAdmin { get; set; } = true;
     }
 
     public void BuildRoles()

@@ -889,3 +889,23 @@ function playCompletionAudio() {
         audio.play();
     }
 }
+
+async function doPasswordClientPrehash(userId, pw) {
+    if (!userId) {
+        throw new Error('Password handling failed, no userId set?');
+    }
+    // The server does the real hash, but the client prehash is because dumb users tend to reuse passwords across sites, so we'd rather not let the Swarm instance owner know the raw password.
+    // This is not particularly secure, but it doesn't hurt to do, and decreases the odds of a malicious owner (or hacker) to grab passwords.
+    // (They could also just swap the JS or something so an intentional attacker wouldn't really be stopped here)
+    let str = `swarmclientpw:${userId}:${pw}`;
+    try {
+        let hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return toHexString(new Uint8Array(hash)).toLowerCase();
+    }
+    catch (e) {
+        // SHA-256 is restricted in some contexts (eg no https) because I guess web standards devs hate you? So if you don't have network security, transmit extra-raw passwords.
+        // Prefixed to ensure server will do the prehash (so that https and non-https have equivalent values)
+        console.warn(`Crypto.Subtle is invalid in your browser context, passwords won't be prehashed`);
+        return `__swarmdoprehash:${str}`;
+    }
+}

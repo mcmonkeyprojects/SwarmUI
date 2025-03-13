@@ -13,6 +13,15 @@
             - For Debian Linux servers, look at how the [Colab Notebook](/colab/colab-notebook.ipynb) installs and uses cloudflared.
         - For **ngrok:**  Install ngrok according to [their documentation](https://ngrok.com/) and login to your ngrok account, and launch SwarmUI with `--ngrok-path [...]`
 
+# Hosting SwarmUI On The Web
+
+- This is only for experienced sys-admins, not for normal people.
+- You should not host publicly without an authentication layer in front.
+    - Some Swarm API routes can be used maliciously, such as the routes that forward raw ComfyUI access.
+- Apache2/Nginx reverse-proxy setups can be built with an authentication layer easily enough if you know what you're doing.
+- Ensure your instance has https (eg use LetsEncrypt certbot, which grants free https keys), raw http hosting may cause issues.
+- Multi-user-support with Swarm-provided authentication handling is Coming Soon (TM)
+
 ## Custom Workflows (ComfyUI)
 
 So, all those parameters aren't enough, you want MORE control? Don't worry, we got you covered, with the power of raw ComfyUI node graphs!

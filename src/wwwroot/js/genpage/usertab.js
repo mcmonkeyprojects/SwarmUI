@@ -324,7 +324,7 @@ class ParamConfigurationClass {
 /** Instance of ParamConfigurationClass, central handler for user-edited parameters. */
 let paramConfig = new ParamConfigurationClass();
 
-function doPasswordChangeSubmit() {
+async function doPasswordChangeSubmit() {
     let resultArea = getRequiredElementById('change_password_result_area');
     let submitButton = getRequiredElementById('change_password_submit_button');
     let oldPassword = getRequiredElementById('change_password_old_password');
@@ -342,10 +342,12 @@ function doPasswordChangeSubmit() {
         resultArea.innerText = 'New password must be at least 8 characters long';
         return;
     }
+    let oldPwHash = await doPasswordClientPrehash(user_id, oldPassword.value);
+    let newPwHash = await doPasswordClientPrehash(user_id, newPassword.value);
     resultArea.innerText = 'Submitting...';
-    genericRequest('ChangePassword', { oldPassword: oldPassword.value, newPassword: newPassword.value }, data => {
+    submitButton.disabled = true;
+    genericRequest('ChangePassword', { oldPassword: oldPwHash, newPassword: newPwHash }, data => {
         resultArea.innerText = 'Password changed.';
-        submitButton.disabled = true;
         setTimeout(() => {
             resultArea.innerText = '';
             oldPassword.value = '';
@@ -353,8 +355,9 @@ function doPasswordChangeSubmit() {
             newPassword2.value = '';
             submitButton.disabled = false;
             $('#change_password_modal').modal('hide');
-        }, 3000);
+        }, 1000);
     }, 0, e => {
         resultArea.innerText = 'Error: ' + e;
+        submitButton.disabled = false;
     });
 }

@@ -35,9 +35,13 @@ public static class AdminAPI
         API.RegisterAPICall(UninstallExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(AdminListUsers, false, Permissions.ManageUsers);
         API.RegisterAPICall(AdminAddUser, true, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminSetUserPassword, true, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminChangeUserSettings, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminDeleteUser, true, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminGetUserInfo, false, Permissions.ManageUsers);
         API.RegisterAPICall(AdminListRoles, false, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminAddRole, true, Permissions.ConfigureRoles);
+        API.RegisterAPICall(AdminEditRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminDeleteRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminListPermissions, false, Permissions.ConfigureRoles);
     }
@@ -630,9 +634,74 @@ public static class AdminAPI
             User user = new(Program.Sessions, userData);
             user.Settings.Roles = [role];
             user.Data.PasswordHashed = Utilities.HashPassword(cleaned, password);
+            user.Data.IsPasswordSetByAdmin = true;
             Program.Sessions.Users.TryAdd(cleaned, user);
             user.Save();
         }
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Admin route to force-set a user's password.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> AdminSetUserPassword(Session session,
+        [API.APIParameter("The name of the user.")] string name,
+        [API.APIParameter("New password for the user.")] string password)
+    {
+        User user = Program.Sessions.GetUser(name, false);
+        if (user is null)
+        {
+            return new JObject() { ["error"] = "No user by that name exists." };
+        }
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            user.Data.PasswordHashed = "";
+        }
+        else
+        {
+            if (password.Length < 8)
+            {
+                return new JObject() { ["error"] = "Password must be at least 8 characters long." };
+            }
+            user.Data.PasswordHashed = Utilities.HashPassword(user.UserID, password);
+        }
+        user.Data.IsPasswordSetByAdmin = true;
+        user.Save();
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Admin route to forcibly change user settings data for a user.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> AdminChangeUserSettings(Session session,
+        [API.APIParameter("The name of the user.")] string name,
+        [API.APIParameter("Simple object map of key as setting ID to new setting value to apply, under 'settings'.")] JObject rawData)
+    {
+        User user = Program.Sessions.GetUser(name, false);
+        if (user is null)
+        {
+            return new JObject() { ["error"] = "No user by that name exists." };
+        }
+        JObject settings = (JObject)rawData["settings"];
+        foreach ((string key, JToken val) in settings)
+        {
+            AutoConfiguration.Internal.SingleFieldData field = user.Settings.TryGetFieldInternalData(key, out _);
+            if (field is null)
+            {
+                Logs.Error($"User '{session.User.UserID}' tried to admin-set unknown setting '{key}' to '{val}'.");
+                continue;
+            }
+            object obj = DataToType(val, field.Field.FieldType);
+            if (obj is null)
+            {
+                Logs.Error($"User '{session.User.UserID}' tried to admin-set setting '{key}' of type '{field.Field.FieldType.Name}' to '{val}', but type-conversion failed.");
+                continue;
+            }
+            user.Settings.TrySetFieldValue(key, obj);
+        }
+        user.Save();
         return new JObject() { ["success"] = true };
     }
 
@@ -657,6 +726,30 @@ public static class AdminAPI
             Program.Sessions.RemoveUser(user);
         }
         return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Admin route to get info about a user.",
+        """
+            "user_id": "useridhere",
+            "password_set_by_admin": true, // false if set by user
+            "settings": { ... }, // User settings, same format as GetUserSettings
+            "max_t2i": 32 // actual value of max t2i simultaneous, calculated from current roles and available backends
+        """)]
+    public static async Task<JObject> AdminGetUserInfo(Session session,
+        [API.APIParameter("The name of the user to get info for.")] string name)
+    {
+        User user = Program.Sessions.GetUser(name, false);
+        if (user is null)
+        {
+            return new JObject() { ["error"] = "No user by that name exists." };
+        }
+        return new JObject()
+        {
+            ["user_id"] = user.UserID,
+            ["password_set_by_admin"] = user.Data.IsPasswordSetByAdmin,
+            ["settings"] = AutoConfigToParamData(session.User.Settings, false),
+            ["max_t2i"] = user.CalcMaxT2ISimultaneous
+        };
     }
 
     [API.APIDescription("Admin route to get a list of all available roles.",
@@ -712,6 +805,38 @@ public static class AdminAPI
             {
                 return new JObject() { ["error"] = "A role by that name already exists." };
             }
+            Program.Sessions.Save();
+        }
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Admin route to edit a permission role.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> AdminEditRole(Session session,
+        [API.APIParameter("The name of the role.")] string name,
+        [API.APIParameter("The description text for the role.")] string description,
+        [API.APIParameter("The maximum outpath depth allowed for the role.")] int max_outpath_depth,
+        [API.APIParameter("The maximum number of simultaneous T2I allowed for the role.")] int max_t2i_simultaneous,
+        [API.APIParameter("Whether to allow unsafe outpaths for the role.")] bool allow_unsafe_outpaths,
+        [API.APIParameter("Comma-separated list of model names to whitelist for the role.")] string model_whitelist,
+        [API.APIParameter("Comma-separated list of model names to blacklist for the role.")] string model_blacklist,
+        [API.APIParameter("Comma-separated list of enabled permission nodes.")] string permissions)
+    {
+        lock (Program.Sessions.DBLock)
+        {
+            if (!Program.Sessions.Roles.TryGetValue(name, out Role role))
+            {
+                return new JObject() { ["error"] = "No role by that name exists." };
+            }
+            role.Data.Description = description;
+            role.Data.MaxOutPathDepth = max_outpath_depth;
+            role.Data.MaxT2ISimultaneous = max_t2i_simultaneous;
+            role.Data.AllowUnsafeOutpaths = allow_unsafe_outpaths;
+            role.Data.ModelWhitelist = model_whitelist.Split(',').Select(s => s.Trim()).ToHashSet();
+            role.Data.ModelBlacklist = model_blacklist.Split(',').Select(s => s.Trim()).ToHashSet();
+            role.Data.PermissionFlags = permissions.Split(',').Select(s => s.Trim()).ToHashSet();
             Program.Sessions.Save();
         }
         return new JObject() { ["success"] = true };

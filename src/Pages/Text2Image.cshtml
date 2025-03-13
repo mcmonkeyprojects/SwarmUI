@@ -828,9 +828,9 @@
                 @WebUtil.ModalHeader("change_password_modal", "Change Password")
                     <div class="modal-body">
                         <p class="translate">This form lets you change your user password. If you never had a password before, leave the old password blank.</p>
-                        <br>Old/Current Password: <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="change_password_old_password" placeholder="Enter old/current password..." autocomplete="off" value="" />
-                        <br>New Password: <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="change_password_new_password" placeholder="Enter new password..." autocomplete="off" value="" />
-                        <br>Confirm New Password: <input type="text" class="auto-text auto-text-block password" translate translate-no-text" id="change_password_new_password2" placeholder="Confirm new password..." autocomplete="off" value="" />
+                        <br>Old/Current Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="change_password_old_password" placeholder="Enter old/current password..." autocomplete="off" value="" />
+                        <br>New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="change_password_new_password" placeholder="Enter new password..." autocomplete="off" value="" />
+                        <br>Confirm New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="change_password_new_password2" placeholder="Confirm new password..." autocomplete="off" value="" />
                         <div id="change_password_result_area"></div>
                     </div>
                     <div class="modal-footer">
@@ -1213,6 +1213,18 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.addRoleMenuSubmit()">Add</button>
                         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#server_add_role_menu').modal('hide')">Cancel</button>
+                    </div>
+                @WebUtil.ModalFooter()
+                @WebUtil.ModalHeader("server_change_user_password_modal", "Change User Password")
+                    <div class="modal-body">
+                        <p class="translate">This form lets you change another user's password. Be sure to tell them what their new password is, and that they should change their password themself after.</p>
+                        <br>New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="server_change_user_password_new_password" placeholder="Enter new password..." autocomplete="off" value="" />
+                        <br>Confirm New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="server_change_user_password_new_password2" placeholder="Confirm new password..." autocomplete="off" value="" />
+                        <div id="server_change_user_password_result_area"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary basic-button translate" id="server_change_user_password_submit_button" onclick="userAdminManager.changeUserPwSubmit()">Submit</button>
+                        <button type="button" class="btn btn-secondary basic-button translate" id="server_change_user_password_cancel_button" onclick="$('#server_change_user_password_modal').modal('hide')">Cancel</button>
                     </div>
                 @WebUtil.ModalFooter()
                 <div class="manage-users-left" id="manage_users_leftbox">

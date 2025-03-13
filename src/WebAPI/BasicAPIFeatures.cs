@@ -347,7 +347,7 @@ public static class BasicAPIFeatures
             "success": true
         """)]
     public static async Task<JObject> ChangeUserSettings(Session session,
-        [API.APIParameter("Simple object map of key as setting ID to new setting value to apply.")] JObject rawData)
+        [API.APIParameter("Simple object map of key as setting ID to new setting value to apply, under 'settings'.")] JObject rawData)
     {
         JObject settings = (JObject)rawData["settings"];
         foreach ((string key, JToken val) in settings)
@@ -399,6 +399,7 @@ public static class BasicAPIFeatures
             return new JObject() { ["error"] = "Incorrect old password. Refused." };
         }
         session.User.Data.PasswordHashed = Utilities.HashPassword(session.User.UserID, newPassword);
+        session.User.Data.IsPasswordSetByAdmin = false;
         session.User.Save();
         return new JObject() { ["success"] = true };
     }

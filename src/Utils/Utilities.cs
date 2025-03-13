@@ -1160,6 +1160,11 @@ public static class Utilities
     /// <summary>Hashes a password for storage.</summary>
     public static string HashPassword(string username, string password)
     {
+        if (password.StartsWith("__swarmdoprehash:"))
+        {
+            password = password["__swarmdoprehash:".Length..];
+            password = Convert.ToHexString(SHA256.HashData(password.EncodeUTF8())).ToLowerFast();
+        }
         byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
         // 10k is low enough that the swarm server won't thrash its CPU if it has to hash passwords often (eg somebody spamming bad auth requests), but high enough to at least be a bit of a barrier to somebody that yoinks the raw hashes

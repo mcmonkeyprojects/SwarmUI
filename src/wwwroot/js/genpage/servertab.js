@@ -119,7 +119,7 @@ class UserAdminManager {
         let html = '';
         for (let user of this.userNames) {
             if (!this.filterBox.value || user.includes(this.filterBox.value)) {
-                html += `<div class="admin-user-manage-name" onclick="userAdminManager.clickUser('${escapeHtml(user)}')" title="Click to manage user '${escapeHtml(user)}'">${escapeHtml(user)}</div>`;
+                html += `<div class="admin-user-manage-name" onclick="userAdminManager.clickUser(unescapeHtml('${escapeHtml(user)}'))" title="Click to manage user '${escapeHtml(user)}'">${escapeHtml(user)}</div>`;
             }
         }
         this.leftBoxUserList.innerHTML = html;
@@ -148,11 +148,75 @@ class UserAdminManager {
         this.setRightboxLoading();
         // TODO
         this.setNothingDisplayed();
-        // TODO: Load user settings n wotnot
         this.displayedUser = name;
+        this.curUserSettingsEditTracker = {
+            known: {},
+            altered: {}
+        };
+        let prefix = `admin_edit_user_${escapeHtml(name)}_settings_`;
         this.rightBox.innerHTML = `<div class="admin-user-right-titlebar">User: <span class="admin-user-right-titlebar-name">${escapeHtml(name)}</span></div>`
-            + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser('${escapeHtml(name)}')">Delete User</button>`)
-            + `<br><br>`;
+            + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser(unescapeHtml('${escapeHtml(name)}'))">Delete User</button>`)
+            + `<br><br><button type="button" class="basic-button translate" onclick="userAdminManager.editUserPw(unescapeHtml('${escapeHtml(name)}'))">Change User Password</button>`
+            + `<br><br><div class="admin_edit_user_settings_container" id="admin_edit_user_settings_container"></div>
+            <div class="settings_submit_confirmer" id="${prefix}confirmer">
+                <span class="settings_submit_confirmer_text">Save <span id="${prefix}edit_count">0</span> edited setting(s)?</span>
+                <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.saveUserSettings()">Save</button>
+                <button type="button" class="btn btn-secondary basic-button translate" onclick="userAdminManager.cancelUserSettings()">Cancel</button>
+            </div>`;
+        let userSettingsContainer = getRequiredElementById('admin_edit_user_settings_container');
+        genericRequest('AdminGetUserInfo', {'name': name}, data => {
+            if (this.displayedUser != name) {
+                return;
+            }
+            buildSettingsMenu(userSettingsContainer, data.settings, prefix, this.curUserSettingsEditTracker);
+        });
+    }
+
+    saveUserSettings() {
+        genericRequest('AdminChangeUserSettings', { name: this.displayedUser, settings: this.curUserSettingsEditTracker.altered }, data => {
+            getRequiredElementById(`admin_edit_user_${escapeHtml(this.displayedUser)}_settings_confirmer`).style.display = 'none';
+            this.clickUser(this.displayedUser);
+        });
+    }
+
+    cancelUserSettings() {
+        doSettingsReset(`admin_edit_user_${escapeHtml(this.displayedUser)}_settings_`, this.curUserSettingsEditTracker);
+    }
+
+    editUserPw(name) {
+        this.displayedUser = name;
+        $('#server_change_user_password_modal').modal('show');
+    }
+
+    async changeUserPwSubmit() {
+        let resultArea = getRequiredElementById('server_change_user_password_result_area');
+        let submitButton = getRequiredElementById('server_change_user_password_submit_button');
+        let newPassword = getRequiredElementById('server_change_user_password_new_password');
+        let newPassword2 = getRequiredElementById('server_change_user_password_new_password2');
+        if (newPassword.value != newPassword2.value) {
+            resultArea.innerText = 'New passwords do not match';
+            return;
+        }
+        if (newPassword.value.length < 8) {
+            resultArea.innerText = 'New password must be at least 8 characters long';
+            return;
+        }
+        resultArea.innerText = 'Submitting...';
+        submitButton.disabled = true;
+        let pwHash = await doPasswordClientPrehash(this.displayedUser, newPassword.value);
+        genericRequest('AdminSetUserPassword', {'name': this.displayedUser, 'password': pwHash}, data => {
+            resultArea.innerText = 'Password changed.';
+            setTimeout(() => {
+                resultArea.innerText = '';
+                newPassword.value = '';
+                newPassword2.value = '';
+                submitButton.disabled = false;
+                $('#server_change_user_password_modal').modal('hide');
+            }, 1000);
+        }, 0, e => {
+            resultArea.innerText = 'Error: ' + e;
+            submitButton.disabled = false;
+        });
     }
 
     deleteUser(name) {
@@ -164,6 +228,15 @@ class UserAdminManager {
             this.setStaticRightBox(`<span class="translate">User deleted successfully</span>`);
         });
     }
+
+    roleSettingMap = {
+        'description': 'adminrolemenu_description',
+        'max_outpath_depth': 'adminrolemenu_maxoutpathdepth',
+        'max_t2i_simultaneous': 'adminrolemenu_maxt2isimultaneous',
+        'allow_unsafe_outpaths': 'adminrolemenu_allowunsafeoutpaths',
+        'model_whitelist': 'adminrolemenu_modelwhitelist',
+        'model_blacklist': 'adminrolemenu_modelblacklist'
+    };
 
     clickRole(roleId) {
         this.setRightboxLoading();
@@ -188,7 +261,12 @@ class UserAdminManager {
                 + makeTextInput(null, 'adminrolemenu_modelwhitelist', '', 'Model Whitelist', '', '', 'normal', "Model Whitelist...", false, false, true)
                 + makeGenericPopover('adminrolemenu_modelblacklist', 'Model Blacklist', 'text', "What models are forbidden, as a list of prefixes.\nFor example 'sdxl/' forbids models in the SDXL folder.\nOr, 'sdxl/,flux/' forbids models in the SDXL or Flux folders.\nIf empty, no blacklist logic is applied.\nNote that blacklist is 'more powerful' than whitelist and overrides it.\nThis stacks between roles, roles can add blacklist entries together.", '')
                 + makeTextInput(null, 'adminrolemenu_modelblacklist', '', 'Model Blacklist', '', '', 'normal', "Model Blacklist...", false, false, true)
-                + '\n<br><hr><br>\n<h4 class="translate">Permissions</h4><br>\n';
+                + '\n<br><hr><br>\n<h4 class="translate">Permissions</h4><br>\n'
+                + `<div class="settings_submit_confirmer" id="adminrolemenu_confirmer">
+                    <span class="settings_submit_confirmer_text">Save <span id="adminrolemenu_edit_count">0</span> edited setting(s)?</span>
+                    <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.saveRoleSettings()">Save</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="userAdminManager.cancelRoleSettings()">Cancel</button>
+                </div>`;
             let lastGroupName = null;
             let isFirst = true;
             for (let perm of this.permissions_ordered) {
@@ -217,24 +295,118 @@ class UserAdminManager {
                         <span class="translate" title="${perm}">${translateableHtml(permInfo.name)}</span>${popover}
                         </td>
                         <td>
-                            <span class="form-check form-switch toggle-switch display-inline-block"><input class="auto-slider-toggle form-check-input" type="checkbox" id="${id}_toggle" title="Enable/disable ${perm}" autocomplete="off"${(role.permissions.includes(perm) ? ' checked' : '')}><div class="auto-slider-toggle-content"></div></span>
+                            <span class="form-check form-switch toggle-switch display-inline-block"><input class="auto-slider-toggle form-check-input" type="checkbox" id="${id}_toggle" title="Enable/disable ${perm}" autocomplete="off"${(role.permissions.includes(perm) ? ' checked' : '')} onchange="userAdminManager.checkShowRoleEditConfirm()"><div class="auto-slider-toggle-content"></div></span>
                         </td>
                     </tr>`;
             }
             html += '</table></div>';
             this.setNothingDisplayed();
+            this.roles = data.roles;
             this.displayedRole = roleId;
             this.rightBox.innerHTML = html;
             let descriptionBox = getRequiredElementById('adminrolemenu_description');
             descriptionBox.value = role.description;
             dynamicSizeTextBox(descriptionBox);
-            getRequiredElementById('adminrolemenu_maxoutpathdepth').value = role.max_outpath_depth;
-            getRequiredElementById('adminrolemenu_maxt2isimultaneous').value = role.max_t2i_simultaneous;
-            getRequiredElementById('adminrolemenu_allowunsafeoutpaths').checked = role.allow_unsafe_outpaths;
-            getRequiredElementById('adminrolemenu_modelwhitelist').value = role.model_whitelist.join(', ');
-            getRequiredElementById('adminrolemenu_modelblacklist').value = role.model_blacklist.join(', ');
-            // TODO: cancel/save changes
+            for (let key in this.roleSettingMap) {
+                let elem = getRequiredElementById(this.roleSettingMap[key]);
+                elem.addEventListener('input', () => {
+                    this.checkShowRoleEditConfirm();
+                });
+                let val = role[key];
+                if (Array.isArray(val)) {
+                    val = val.join(', ');
+                }
+                if (elem.type == 'checkbox') {
+                    elem.checked = val;
+                }
+                else {
+                    elem.value = val;
+                }
+            }
         });
+    }
+
+    saveRoleSettings() {
+        let role = this.roles[this.displayedRole];
+        let inData = {
+            'name': this.displayedRole
+        };
+        for (let key in this.roleSettingMap) {
+            let elem = getRequiredElementById(this.roleSettingMap[key]);
+            let val;
+            if (elem.type == 'checkbox') {
+                val = elem.checked;
+            }
+            else {
+                val = elem.value;
+            }
+            inData[key] = val;
+        }
+        let permissions = [];
+        for (let perm of this.permissions_ordered) {
+            let isChecked = getRequiredElementById(`adminrolemenu_perm_${perm}_toggle`).checked;
+            if (isChecked) {
+                permissions.push(perm);
+            }
+        }
+        inData['permissions'] = permissions.join(',');
+        genericRequest('AdminEditRole', inData, data => {
+            this.clickRole(this.displayedRole);
+        });
+    }
+
+    cancelRoleSettings() {
+        let role = this.roles[this.displayedRole];
+        for (let key in this.roleSettingMap) {
+            let elem = getRequiredElementById(this.roleSettingMap[key]);
+            let val = role[key];
+            if (Array.isArray(val)) {
+                val = val.join(', ');
+            }
+            if (elem.type == 'checkbox') {
+                elem.checked = val;
+            }
+            else {
+                elem.value = val;
+            }
+        }
+        for (let perm of this.permissions_ordered) {
+            getRequiredElementById(`adminrolemenu_perm_${perm}_toggle`).checked = role.permissions.includes(perm);
+        }
+        getRequiredElementById('adminrolemenu_confirmer').style.display = 'none';
+    }
+
+    checkShowRoleEditConfirm() {
+        let shouldShow = false;
+        let role = this.roles[this.displayedRole];
+        let count = 0;
+        for (let key in this.roleSettingMap) {
+            let elem = getRequiredElementById(this.roleSettingMap[key]);
+            let roleVal = role[key];
+            if (Array.isArray(roleVal)) {
+                roleVal = roleVal.join(', ');
+            }
+            let elemVal;
+            if (elem.type == 'checkbox') {
+                elemVal = elem.checked;
+            }
+            else {
+                elemVal = elem.value;
+            }
+            if (roleVal != elemVal) {
+                shouldShow = true;
+                count++;
+            }
+        }
+        for (let perm of this.permissions_ordered) {
+            let isChecked = getRequiredElementById(`adminrolemenu_perm_${perm}_toggle`).checked;
+            if (isChecked != role.permissions.includes(perm)) {
+                shouldShow = true;
+                count++;
+            }
+        }
+        getRequiredElementById('adminrolemenu_confirmer').style.display = shouldShow ? 'block' : 'none';
+        getRequiredElementById('adminrolemenu_edit_count').innerText = count;
     }
 
     deleteRole(roleId) {
@@ -305,7 +477,7 @@ class UserAdminManager {
             return;
         }
         $('#server_add_user_menu').modal('hide');
-        genericRequest('AdminAddUser', {'name': name, 'password': pass, 'role': role}, data => {
+        genericRequest('AdminAddUser', {'name': name, 'password': doPasswordClientPrehash(name, pass), 'role': role}, data => {
             this.onTabButtonClick();
         });
     }

@@ -91,6 +91,14 @@ function escapeHtmlNoBr(text) {
     return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
+/** Undoes escapeHtml. */
+function unescapeHtml(text) {
+    if (text == null) {
+        return '';
+    }
+    return text.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&#039;', "'").replaceAll('&amp;', '&');
+}
+
 /** Escapes a string for use in a JavaScript string literal. */
 function escapeJsString(text) {
     if (text == null) {
