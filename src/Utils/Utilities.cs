@@ -137,6 +137,11 @@ public static class Utilities
 
     public static HashSet<string> ReservedFilenames = ["con", "prn", "aux", "nul"];
 
+    /// <summary>Set of unicode control chars that can accidentally wind up in text that would be a (noncritical) nuisance if left in filename.</summary>
+    public static HashSet<char> RestrictedControlChars = ['\u180e', '\u200b', '\u200c', '\u200d', '\u200e', '\u200f', '\u202a',
+        '\u202b', '\u202c', '\u202d', '\u202e', '\u2060', '\u2061', '\u2062', '\u2063', '\u2064', '\u2066', '\u2067', '\u2068',
+        '\u2069', '\u206a', '\u206b', '\u206c', '\u206b', '\u206e', '\u206f', '\ufeff', '\ufff9', '\ufffa', '\ufffb'];
+
     static Utilities()
     {
         if (File.Exists("./.git/refs/heads/master"))
@@ -154,12 +159,17 @@ public static class Utilities
     /// <summary>Cleans a filename with strict filtering, including removal of forbidden characters, removal of the '.' symbol, but permitting '/'.</summary>
     public static string StrictFilenameClean(string name)
     {
+        // Cleanup ASCII character oddities
         name = FilePathForbidden.TrimToNonMatches(name.Replace('\\', '/')).Replace(".", "");
+        // Cleanup non-breaking but unwanted values
+        name = new string([.. name.Where(c => !RestrictedControlChars.Contains(c))]);
+        // Cleanup pathing format
         while (name.Contains("//"))
         {
             name = name.Replace("//", "/");
         }
         name = name.TrimStart('/').Trim();
+        // Prevent windows reserved filenames
         string[] parts = name.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         for (int i = 0; i < parts.Length; i++)
         {
