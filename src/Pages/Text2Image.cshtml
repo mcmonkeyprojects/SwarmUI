@@ -3,6 +3,7 @@
     ViewData["Title"] = "Image Generation";
     string alwaysRefreshOnLoad = Program.ServerSettings.Backends.AlwaysRefreshOnLoad ? "true" : "false";
     string experimentalHide = Program.ServerSettings.ShowExperimentalFeatures ? "" : "secretexperimental";
+    string instanceTitle = Program.ServerSettings.Network.InstanceTitle;
 }
 @section Header {
     <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
@@ -17,6 +18,7 @@
 }
 <script>
     window.alwaysRefreshOnLoad = @alwaysRefreshOnLoad;
+    window.instanceTitle = "@instanceTitle";
     window.comfy_features = {};
     @foreach (InstallableFeatures.ComfyInstallableFeature feature in InstallableFeatures.ComfyFeatures.Values)
     {

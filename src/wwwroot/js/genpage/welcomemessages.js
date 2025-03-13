@@ -22,7 +22,7 @@ function automaticWelcomeMessage(override = null) {
     if (div.innerHTML.trim() != '') {
         return;
     }
-    let prefix = `Welcome to <b>${getRequiredElementById('version_display').innerText}</b>!\n`;
+    let prefix = `Welcome to <b>${getRequiredElementById('version_display').innerText} - ${window.instanceTitle}</b>!\n`;
     let curModelElem = getRequiredElementById('current_model');
     if (!curModelElem.value) {
         if (allModels.length == 0) {

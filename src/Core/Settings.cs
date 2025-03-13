@@ -210,6 +210,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("Optional CORS header to set. If empty, no CORS header will be set.\nDefaults to empty.")]
         public string AccessControlAllowOrigin = "";
+
+        [ConfigComment("Title of this SwarmUI instance.\nDisplayed eg in some page headers and logs.\nKeep it simple, avoid html text in here.")]
+        public string InstanceTitle = "Local";
     }
 
     /// <summary>Settings related to file paths.</summary>
