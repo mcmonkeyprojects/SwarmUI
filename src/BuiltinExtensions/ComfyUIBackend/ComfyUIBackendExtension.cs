@@ -64,7 +64,9 @@ public class ComfyUIBackendExtension : Extension
         ["CheckpointLoaderNF4"] = "bnb_nf4",
         ["UnetLoaderGGUF"] = "gguf",
         ["TensorRTLoader"] = "tensorrt",
-        ["TeaCache"] = "teacache"
+        ["TeaCache"] = "teacache",
+        ["TeaCacheForVidGen"] = "teacache",
+        ["TeaCacheForImgGen"] = "teacache_oldvers"
     };
 
     /// <inheritdoc/>

@@ -213,7 +213,7 @@ public class WorkflowGeneratorSteps
                 {
                     if (teaCacheMode != "video only")
                     {
-                        string teaCacheNode = g.CreateNode("TeaCache", new JObject()
+                        string teaCacheNode = g.CreateNode(g.Features.Contains("teacache_oldvers") ? "TeaCacheForImgGen" : "TeaCache", new JObject()
                         {
                             ["model"] = g.LoadingModel,
                             ["model_type"] = "flux",
@@ -257,7 +257,7 @@ public class WorkflowGeneratorSteps
                             }
                         }
                     }
-                    string teaCacheNode = g.CreateNode("TeaCache", new JObject()
+                    string teaCacheNode = g.CreateNode(g.Features.Contains("teacache_oldvers") ? "TeaCacheForVidGen" : "TeaCache", new JObject()
                     {
                         ["model"] = g.LoadingModel,
                         ["model_type"] = type,

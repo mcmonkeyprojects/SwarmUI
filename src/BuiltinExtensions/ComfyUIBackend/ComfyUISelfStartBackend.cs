@@ -120,6 +120,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return null;
     }
 
+    /// <summary>Mapping of node folder names to exact git commits to maintain.</summary>
+    public static ConcurrentDictionary<string, string> ComfyNodeGitPins = new()
+    {
+        ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
+    };
+
     public async Task EnsureNodeRepos()
     {
         try
@@ -147,9 +153,24 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     string pathSimple = toUse.Replace('\\', '/').AfterLast('/');
                     tasks.Add(Task.Run(async () =>
                     {
-                        AddLoadStatus($"Ensure node repos - Will git pull for {pathSimple}...");
-                        string response = await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", toUse);
-                        AddLoadStatus($"Node pull response for {pathSimple}: {response.Trim()}");
+                        if (ComfyNodeGitPins.TryGetValue(pathSimple, out string hash))
+                        {
+                            string localHash = (await Utilities.RunGitProcess("rev-parse HEAD", toUse)).Trim();
+                            if (localHash.ToLowerFast() != hash.ToLowerFast())
+                            {
+                                AddLoadStatus($"Ensure node repos - Will git pull for {pathSimple} to explicit pinned commend {hash}...");
+                                string response = await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", toUse);
+                                AddLoadStatus($"Node pull response for {pathSimple}: {response.Trim()}");
+                                string response2 = await Utilities.RunGitProcess($"reset --hard {hash}", toUse);
+                                AddLoadStatus($"Node reset to {hash} response for {pathSimple}: {response2.Trim()}");
+                            }
+                        }
+                        else
+                        {
+                            AddLoadStatus($"Ensure node repos - Will git pull for {pathSimple}...");
+                            string response = await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", toUse);
+                            AddLoadStatus($"Node pull response for {pathSimple}: {response.Trim()}");
+                        }
                     }));
                 }
             }
