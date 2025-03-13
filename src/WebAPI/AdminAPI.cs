@@ -613,6 +613,8 @@ public static class AdminAPI
         return new JObject() { ["users"] = JArray.FromObject(users) };
     }
 
+    public static AsciiMatcher UsernameValidator = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "_");
+
     [API.APIDescription("Admin route to create a new user account.",
         """
             "success": true
@@ -622,7 +624,11 @@ public static class AdminAPI
         [API.APIParameter("Initial password for the new user.")] string password,
         [API.APIParameter("Initial role for the new user.")] string role)
     {
-        string cleaned = Utilities.StrictFilenameClean(name).ToLowerFast().Replace('/', '_');
+        string cleaned = UsernameValidator.TrimToMatches(name).ToLowerFast();
+        if (cleaned.Length < 3)
+        {
+            return new JObject() { ["error"] = "Username must be at least 3 characters long, A-Z 0-9 only." };
+        }
         lock (Program.Sessions.DBLock)
         {
             User existing = Program.Sessions.GetUser(cleaned, false);
@@ -796,7 +802,11 @@ public static class AdminAPI
     public static async Task<JObject> AdminAddRole(Session session,
         [API.APIParameter("The name of the new role.")] string name)
     {
-        string cleaned = Utilities.StrictFilenameClean(name).ToLowerFast().Replace('/', '_');
+        string cleaned = UsernameValidator.TrimToMatches(name).ToLowerFast();
+        if (cleaned.Length < 3)
+        {
+            return new JObject() { ["error"] = "Role name must be at least 3 characters long, A-Z 0-9 only." };
+        }
         lock (Program.Sessions.DBLock)
         {
             Role newRole = new(name);
