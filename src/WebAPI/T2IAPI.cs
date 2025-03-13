@@ -731,6 +731,8 @@ public static class T2IAPI
 
     public static SemaphoreSlim RefreshSemaphore = new(1, 1);
 
+    public static long LastRefreshed = Environment.TickCount64;
+
     [API.APIDescription("Trigger a refresh of the server's data, returning parameter data. Requires permission 'control_model_refresh' to actually take effect, otherwise just pulls latest data.",
         """
             // see `ListT2IParams` for details
@@ -744,6 +746,11 @@ public static class T2IAPI
     {
         Logs.Verbose($"User {session.User.UserID} triggered a {(strong ? "strong" : "weak")} data refresh");
         bool botherToRun = strong && RefreshSemaphore.CurrentCount > 0; // no need to run twice at once
+        if (Environment.TickCount64 - LastRefreshed < 10000)
+        {
+            Logs.Debug($"User {session.User.UserID} requested weak refresh within 10 seconds of last refresh, ignoring as redundant.");
+            botherToRun = false;
+        }
         if (!session.User.HasPermission(Permissions.ControlModelRefresh))
         {
             Logs.Debug($"User {session.User.UserID} requested refresh, but will not perform actual refresh as they lack permission.");
@@ -756,6 +763,7 @@ public static class T2IAPI
             {
                 using ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite();
                 Program.ModelRefreshEvent?.Invoke();
+                LastRefreshed = Environment.TickCount64;
             }
         }
         finally
