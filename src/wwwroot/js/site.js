@@ -569,7 +569,7 @@ function makeSliderInput(featureid, id, paramid, name, description, value, min, 
         <input class="auto-slider-number" type="number" id="${id}" data-param_id="${paramid}" value="${value}" min="${min}" max="${max}" step="${step}" data-ispot="${isPot}" autocomplete="off" onchange="autoNumberWidth(this)">
         <br>
         <div class="auto-slider-range-wrapper" style="${getRangeStyle(rangeVal, view_min, view_max)}">
-            <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${rangeVal}" min="${view_min}" max="${view_max}" step="${step}" data-ispot="${isPot}" autocomplete="off" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+            <input class="auto-slider-range" type="range" id="${id}_rangeslider" value="${rangeVal}" min="${view_min}" max="${view_max}" step="${step}" data-ispot="${isPot}" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
         </div>
     </div>`;
 }

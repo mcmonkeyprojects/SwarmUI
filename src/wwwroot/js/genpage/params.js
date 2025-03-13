@@ -906,6 +906,16 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         }
         paramElem.value = value;
     }
+    else if (param.type == "integer" || param.type == "decimal") {
+        paramElem.value = value;
+        if (!doTrigger) {
+            let range = document.getElementById(`input_${param.id}_rangeslider`);
+            if (range && range.oninput) {
+                range.value = value;
+                range.oninput({srcElement: range});
+            }
+        }
+    }
     else {
         paramElem.value = value;
     }
