@@ -81,13 +81,19 @@ class GridGenClass {
         inputBox.id = `grid-gen-axis-input-${id}`;
         let mode = null;
         function getFillable() {
-            if (mode && (mode.values || mode.type == 'model')) {
-                return mode.type == 'model' ? coreModelMap[mode.subtype || 'Stable-Diffusion'] : mode.values;
+            if (!mode) {
+                return null;
             }
-            else if (mode && mode.type == 'boolean') {
+            if (mode.type == 'model' || mode.subtype in coreModelMap) {
+                return coreModelMap[mode.subtype || 'Stable-Diffusion'].filter(m => m != '(None)');
+            }
+            if (mode.values) {
+                return mode.values;
+            }
+            else if (mode.type == 'boolean') {
                 return ['true', 'false'];
             }
-            else if (mode && mode.examples) {
+            else if (mode.examples) {
                 return mode.examples;
             }
             return null;
@@ -162,7 +168,7 @@ class GridGenClass {
             }
             inputBox.innerHTML = html;
             if (lastSelection != -1) {
-                let searchable = mode.type == 'model' ? coreModelMap[mode.subtype || 'Stable-Diffusion'] : mode.values;
+                let searchable = getFillable();
                 if (searchable) {
                     let searchPre = text.substring(0, lastSelection);
                     let searchPost = text.substring(lastSelection);
