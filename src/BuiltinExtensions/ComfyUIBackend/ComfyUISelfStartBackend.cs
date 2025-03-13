@@ -28,6 +28,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
         public string AutoUpdate = "true";
 
+        [ConfigComment("Whether the Comfy backend should automatically update nodes within Swarm's managed nodes folder.\nYou can update every launch, never update automatically, or force-update (bypasses some common git issues).")]
+        [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
+        public string UpdateManagedNodes = "true";
+
         [ConfigComment("Which version of the ComfyUI frontend to enable.\n'Latest' uses the latest version available (including dev commits).\n'None' uses whatever is baked into ComfyUI itself.\n'Latest Swarm Validated' uses the latest version that Swarm has been tested and confirmed to work with.\n'Legacy' uses the pre-September-2024 legacy UI.")]
         [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
         public string FrontendVersion = "LatestSwarmValidated";
@@ -133,7 +137,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await Task.WhenAll(tasks);
             }
             tasks.Clear();
-            string autoUpd = Settings.AutoUpdate.ToLowerFast();
+            string autoUpd = Settings.UpdateManagedNodes.ToLowerFast();
             foreach (string node in Directory.EnumerateDirectories(nodePath))
             {
                 await Task.Delay(TimeSpan.FromSeconds(0.05));
@@ -301,11 +305,16 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             Logs.Warning($"ComfyUI start script is '{Settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
         }
         Directory.CreateDirectory(Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes"));
+        string autoUpdNodes = Settings.UpdateManagedNodes.ToLowerFast();
+        List<Task> tasks = [];
+        if ((autoUpdNodes == "true" || autoUpdNodes == "aggressive") && !string.IsNullOrWhiteSpace(Settings.StartScript))
+        {
+            AddLoadStatus("Will track node repo load task...");
+            tasks.Add(Task.Run(EnsureNodeRepos));
+        }
         string autoUpd = Settings.AutoUpdate.ToLowerFast();
         if ((autoUpd == "true" || autoUpd == "aggressive") && !string.IsNullOrWhiteSpace(Settings.StartScript))
         {
-            AddLoadStatus("Will track node repo load task...");
-            List<Task> tasks = [Task.Run(EnsureNodeRepos)];
             AddLoadStatus("Will track comfy git pull auto-update task...");
             tasks.Add(Task.Run(async () =>
             {
@@ -347,6 +356,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Failed to auto-update comfy backend: {ex.ReadableString()}");
                 }
             }));
+        }
+        if (tasks.Any())
+        {
             AddLoadStatus($"Waiting on git tasks to complete...");
             await Task.WhenAll(tasks);
             AddLoadStatus($"All tasks done.");
