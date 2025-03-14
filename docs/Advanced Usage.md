@@ -1,8 +1,12 @@
 # Advanced Usage
 
-(TODO: More examples of advanced usage with explanation)
+- [Accessing SwarmUI From Other Devices](#accessing-swarmui-from-other-devices)
+- [Hosting SwarmUI On The Web](#hosting-swarmui-on-the-web)
+- [Custom Workflows (ComfyUI)](#custom-workflows-comfyui)
+- [Triton, TorchCompile, SageAttention on Windows](#triton-torchcompile-sageattention-on-windows)
+- [Multiple Model Folders](#multiple-model-folders)
 
-# Accessing SwarmUI From Other Devices
+## Accessing SwarmUI From Other Devices
 
 - To access SwarmUI from another device over LAN:
     - Simply open SwarmUI to the `Server` -> `Server Configuration` tab, find `Host` (default value is `localhost`) and change the value to `0.0.0.0`, then save and restart
@@ -13,7 +17,7 @@
             - For Debian Linux servers, look at how the [Colab Notebook](/colab/colab-notebook.ipynb) installs and uses cloudflared.
         - For **ngrok:**  Install ngrok according to [their documentation](https://ngrok.com/) and login to your ngrok account, and launch SwarmUI with `--ngrok-path [...]`
 
-# Hosting SwarmUI On The Web
+## Hosting SwarmUI On The Web
 
 - This is only for experienced sys-admins, not for normal people.
 - You should not host publicly without an authentication layer in front.
