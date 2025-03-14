@@ -388,6 +388,11 @@ public class Program
             {
                 int sfCount = 0;
                 string[] subfolders = [.. folder.Split(';').Where(p => !string.IsNullOrWhiteSpace(p))];
+                if (subfolders.Length == 0)
+                {
+                    Logs.Error($"Model set {handler.ModelType} has no subfolders defined! You cannot set a path to empty.");
+                    return;
+                }
                 if (rootCount == downloadRootId)
                 {
                     handler.DownloadFolderPath = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, modelRoot.Trim(), subfolders[0].Trim());

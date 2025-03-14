@@ -34,7 +34,7 @@ public class T2IModelHandler
     public string ModelType;
 
     /// <summary>The full folder path for relevant models.</summary>
-    public string[] FolderPaths;
+    public string[] FolderPaths = [];
 
     /// <summary>The full folder path to download models to.</summary>
     public string DownloadFolderPath;
