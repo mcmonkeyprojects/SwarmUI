@@ -221,6 +221,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("Root path for model files. Use a full-formed path (starting with '/' or a Windows drive like 'C:') to use an absolute path.\nDefaults to 'Models'.\nUse a semicolon ';' to split multiple paths.")]
         public string ModelRoot = "Models";
 
+        [ConfigComment("0-based index of which ModelRoot entry to download models to.\nDefaults to 0 (the first entry).\nNaturally only is relevant if there's multiple model roots set.")]
+        public int DownloadToRootID = 0;
+
         public string ActualModelRoot => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ModelRoot.Split(';')[0]);
 
         [ConfigComment("The model folder to use within 'ModelRoot'.\nDefaults to 'Stable-Diffusion'.\n'checkpoints' should be used for matching pre-existing ComfyUI model directories.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]

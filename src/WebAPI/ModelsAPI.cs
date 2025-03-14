@@ -515,13 +515,13 @@ public static class ModelsAPI
         }
         try
         {
-            string outPath = $"{handler.FolderPaths[0]}/{name}.safetensors";
+            string outPath = $"{handler.DownloadFolderPath}/{name}.safetensors";
             if (File.Exists(outPath))
             {
                 await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
                 return null;
             }
-            string tempPath = $"{handler.FolderPaths[0]}/{name}.download.tmp";
+            string tempPath = $"{handler.DownloadFolderPath}/{name}.download.tmp";
             if (File.Exists(tempPath))
             {
                 File.Delete(tempPath);
@@ -569,7 +569,7 @@ public static class ModelsAPI
             File.Move(tempPath, outPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
-                File.WriteAllText($"{handler.FolderPaths[0]}/{name}.swarm.json", metadata);
+                File.WriteAllText($"{handler.DownloadFolderPath}/{name}.swarm.json", metadata);
             }
             if (Program.ServerSettings.Paths.DownloaderAlwaysResave)
             {

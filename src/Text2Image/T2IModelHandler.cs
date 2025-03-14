@@ -36,6 +36,9 @@ public class T2IModelHandler
     /// <summary>The full folder path for relevant models.</summary>
     public string[] FolderPaths;
 
+    /// <summary>The full folder path to download models to.</summary>
+    public string DownloadFolderPath;
+
     /// <summary>Quick internal tracker for unauthorized access errors, to aggregate the warning.</summary>
     public ConcurrentQueue<string> UnathorizedAccessSet = new();
 

@@ -378,17 +378,24 @@ public class Program
         {
             Logs.Error($"Failed to create directories for models. You may need to check your ModelRoot or SDModelFolder settings. {ex.Message}");
         }
-        static string[] buildPathList(string folder)
+        string[] roots = [.. ServerSettings.Paths.ModelRoot.Split(';').Where(p => !string.IsNullOrWhiteSpace(p))];
+        int downloadRootId = Math.Abs(ServerSettings.Paths.DownloadToRootID) % roots.Length;
+        void buildPathList(string folder, T2IModelHandler handler)
         {
             List<string> result = [];
             int rootCount = 0;
-            foreach (string modelRoot in ServerSettings.Paths.ModelRoot.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)))
+            foreach (string modelRoot in roots)
             {
                 int sfCount = 0;
-                foreach (string subfolder in folder.Split(';').Where(p => !string.IsNullOrWhiteSpace(p)))
+                string[] subfolders = [.. folder.Split(';').Where(p => !string.IsNullOrWhiteSpace(p))];
+                if (rootCount == downloadRootId)
                 {
-                    string patched = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, modelRoot, subfolder.Trim());
-                    if ((sfCount > 0 || rootCount > 0) && !Directory.Exists(patched))
+                    handler.DownloadFolderPath = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, modelRoot.Trim(), subfolders[0].Trim());
+                }
+                foreach (string subfolder in subfolders)
+                {
+                    string patched = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, modelRoot.Trim(), subfolder.Trim());
+                    if ((sfCount > 0 || rootCount > 0) && rootCount != downloadRootId && !Directory.Exists(patched))
                     {
                         continue;
                     }
@@ -397,17 +404,24 @@ public class Program
                 }
                 rootCount++;
             }
-            return [.. result];
+            handler.FolderPaths = [.. result];
         }
         Directory.CreateDirectory(ServerSettings.Paths.ActualModelRoot + "/tensorrt");
         Directory.CreateDirectory(ServerSettings.Paths.ActualModelRoot + "/diffusion_models");
-        T2IModelSets["Stable-Diffusion"] = new() { ModelType = "Stable-Diffusion", FolderPaths = buildPathList(ServerSettings.Paths.SDModelFolder + ";tensorrt;diffusion_models;unet") };
-        T2IModelSets["VAE"] = new() { ModelType = "VAE", FolderPaths = buildPathList(ServerSettings.Paths.SDVAEFolder) };
-        T2IModelSets["LoRA"] = new() { ModelType = "LoRA", FolderPaths = buildPathList(ServerSettings.Paths.SDLoraFolder) };
-        T2IModelSets["Embedding"] = new() { ModelType = "Embedding", FolderPaths = buildPathList(ServerSettings.Paths.SDEmbeddingFolder) };
-        T2IModelSets["ControlNet"] = new() { ModelType = "ControlNet", FolderPaths = buildPathList(ServerSettings.Paths.SDControlNetsFolder) };
-        T2IModelSets["Clip"] = new() { ModelType = "Clip", FolderPaths = buildPathList(ServerSettings.Paths.SDClipFolder) };
-        T2IModelSets["ClipVision"] = new() { ModelType = "ClipVision", FolderPaths = buildPathList(ServerSettings.Paths.SDClipVisionFolder) };
+        T2IModelSets["Stable-Diffusion"] = new() { ModelType = "Stable-Diffusion" };
+        buildPathList(ServerSettings.Paths.SDModelFolder + ";tensorrt;diffusion_models;unet", T2IModelSets["Stable-Diffusion"]);
+        T2IModelSets["VAE"] = new() { ModelType = "VAE" };
+        buildPathList(ServerSettings.Paths.SDVAEFolder, T2IModelSets["VAE"]);
+        T2IModelSets["LoRA"] = new() { ModelType = "LoRA" };
+        buildPathList(ServerSettings.Paths.SDLoraFolder, T2IModelSets["LoRA"]);
+        T2IModelSets["Embedding"] = new() { ModelType = "Embedding" };
+        buildPathList(ServerSettings.Paths.SDEmbeddingFolder, T2IModelSets["Embedding"]);
+        T2IModelSets["ControlNet"] = new() { ModelType = "ControlNet" };
+        buildPathList(ServerSettings.Paths.SDControlNetsFolder, T2IModelSets["ControlNet"]);
+        T2IModelSets["Clip"] = new() { ModelType = "Clip" };
+        buildPathList(ServerSettings.Paths.SDClipFolder, T2IModelSets["Clip"]);
+        T2IModelSets["ClipVision"] = new() { ModelType = "ClipVision" };
+        buildPathList(ServerSettings.Paths.SDClipVisionFolder, T2IModelSets["ClipVision"]);
     }
 
     /// <summary>Rebuild <see cref="DataDir"/>.</summary>

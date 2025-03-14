@@ -79,3 +79,16 @@ Triton is a Linux-only AI acceleration library that you can hack into working on
         - This will be much slower on the first run of any model, then subsequent runs will be faster.
         - That means TorchCompile is only faster if you're going to generate many things in sequence. It's maybe a 30% speedup, but 1-2 minutes added to the first run.
         - So for example Flux Dev on my 4090 with sageattention takes 10 seconds to generate 1 image, with TorchCompile it's 7 seconds. That's 3 seconds cut per gen but 20 x 3 seconds added to first run, meaning I have to generate at least 20 images in a row just to pull even on gen speeds. Arguably with slow iterations (trying different things one at a time) it will still "feel" faster and thus be worth using anyway. Up to personal choice.
+
+## Multiple Model Folders
+
+- Do you have multiple model folders? Say an old Auto1111 install and an old ComfyUI install, or maybe you have a high-speed SSD and a slower drive and you want your favorite models on the fast one, and the rest on the other one?
+    - If so, good news: this is super easy in SwarmUI!
+- Simply go to `Server` -> `Server Configuration`
+    - At the top you'll find `Paths` configuration
+    - Set `ModelRoot` to a `;` separated list of folders to use. For example `C:/AI/Auto1111/Models;C:/AI/ComfyUI/models` or `/home/username/SwarmUI/Models;/media/fatdrive/SwarmModels`. You can add as many as you want here.
+        - If you have a fast/slow combo, put the fast one first and the slow after.
+        - If you want models downloaded by the Model Downloader Utility to go to a specific folder, set the `DownloadToRootID` to the relevant index - `0` for the first one, `1` for the second, etc.
+    - Set the other paths to sub-folder names. For example, `SDModelFolder` can be `checkpoints` for comfy-style folders, or `Stable-Diffusion;checkpoints` to allow both Auto1111 and ComfyUI style paths.
+        - The first one in this list is favored for both loading and downloading.
+        - Note, do not set full system paths in most case. This is just the sub-folder name.
