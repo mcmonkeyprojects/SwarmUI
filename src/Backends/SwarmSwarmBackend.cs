@@ -466,7 +466,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     {
         user_input.ProcessPromptEmbeds(x => $"<embedding:{x}>");
         JObject generated = SendAPIJSON("GenerateText2Image", BuildRequest(user_input)).Result;
-        Image[] images = generated["images"].Select(img => Image.FromDataString(img.ToString())).ToArray();
+        Image[] images = [.. generated["images"].Select(img => Image.FromDataString(img.ToString()))];
         return images;
     }
 

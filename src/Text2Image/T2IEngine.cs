@@ -76,7 +76,7 @@ namespace SwarmUI.Text2Image
                     user_input.RefusalReasons.Add($"Specific backend ID# requested in advanced parameters did not match");
                     return false;
                 }
-                HashSet<string> features = backend.Backend.SupportedFeatures.ToHashSet();
+                HashSet<string> features = [.. backend.Backend.SupportedFeatures];
                 foreach (string flag in user_input.RequiredFlags)
                 {
                     if (!features.Contains(flag) && !DisregardedFeatureFlags.Contains(flag))

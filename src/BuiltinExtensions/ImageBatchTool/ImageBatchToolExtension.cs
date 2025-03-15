@@ -49,7 +49,7 @@ public class ImageBatchToolExtension : Extension
             await socket.SendJson(new JObject() { ["error"] = "Input and output folder cannot be the same" }, API.WebsocketTimeout);
             return null;
         }
-        string[] imageFiles = Directory.EnumerateFiles(input_folder).Where(f => f.EndsWith(".png") || f.EndsWith(".jpg") || f.EndsWith(".jpeg") || f.EndsWith(".webp")).ToArray();
+        string[] imageFiles = [.. Directory.EnumerateFiles(input_folder).Where(f => f.EndsWith(".png") || f.EndsWith(".jpg") || f.EndsWith(".jpeg") || f.EndsWith(".webp"))];
         if (imageFiles.Length == 0)
         {
             await socket.SendJson(new JObject() { ["error"] = "Input folder does not contain any images" }, API.WebsocketTimeout);

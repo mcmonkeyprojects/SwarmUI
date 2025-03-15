@@ -477,7 +477,7 @@ public class ComfyUIRedirectHelper
                     tasks.Add(webClient.SendAsync(dupRequest));
                 }
                 await Task.WhenAll(tasks);
-                List<HttpResponseMessage> responses = tasks.Select(t => t.Result).ToList();
+                List<HttpResponseMessage> responses = [.. tasks.Select(t => t.Result)];
                 response = responses.FirstOrDefault(t => t.StatusCode == HttpStatusCode.OK);
                 response ??= responses.FirstOrDefault();
             }

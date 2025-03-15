@@ -1247,7 +1247,7 @@ public class WorkflowGeneratorSteps
         #region Segmentation Processing
         AddStep(g =>
         {
-            PromptRegion.Part[] parts = new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.Segment).ToArray();
+            PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
             if (parts.Any())
             {
                 if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))

@@ -796,7 +796,7 @@ public class T2IParamInput
             toret.ValuesInput[key] = useVal;
         }
         toret.ExtraMeta = new Dictionary<string, object>(ExtraMeta);
-        toret.RequiredFlags = new HashSet<string>(RequiredFlags);
+        toret.RequiredFlags = [.. RequiredFlags];
         return toret;
     }
 

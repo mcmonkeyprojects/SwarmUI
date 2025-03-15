@@ -115,7 +115,7 @@ public class T2IModelClassSorter
             {
                 return emb_data;
             }
-            JProperty[] props = h.Properties().Where(p => p.Name.StartsWith('<') && p.Name.EndsWith('>')).ToArray();
+            JProperty[] props = [.. h.Properties().Where(p => p.Name.StartsWith('<') && p.Name.EndsWith('>'))];
             if (props.Length == 1)
             {
                 return props[0].Value;

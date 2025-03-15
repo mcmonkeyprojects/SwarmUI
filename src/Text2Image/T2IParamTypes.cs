@@ -1039,7 +1039,7 @@ public class T2IParamTypes
     public static void ConcatDropdownValsClean(ref List<string> mainList, IEnumerable<string> addIn)
     {
         HashSet<string> existing = mainList.Select(v => v.Before("///")).ToHashSet();
-        List<string> result = new(mainList);
+        List<string> result = [.. mainList];
         foreach (string str in addIn)
         {
             if (!existing.Contains(str.Before("///")))

@@ -390,7 +390,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             AddLoadStatus($"Will validate required libs...");
             string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
             string[] distinfos = [.. dirs.Where(d => d.EndsWith(".dist-info"))];
-            HashSet<string> libs = dirs.Select(d => d.Before('-')).ToHashSet();
+            HashSet<string> libs = [.. dirs.Select(d => d.Before('-'))];
             async Task install(string libFolder, string pipName)
             {
                 if (libs.Contains(libFolder))

@@ -40,8 +40,8 @@ public class PythonLaunchHelper
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
             // Strip python but be a little cautious about it
-            string[] paths = Environment.GetEnvironmentVariable("PATH").Split(';').Where(p => !p.Contains("Python3") && !p.Contains("Programs\\Python") && !p.Contains("Python\\Python")).ToArray();
-            string[] python = paths.Where(p => p.ToLowerFast().Contains("python")).ToArray();
+            string[] paths = [.. Environment.GetEnvironmentVariable("PATH").Split(';').Where(p => !p.Contains("Python3") && !p.Contains("Programs\\Python") && !p.Contains("Python\\Python"))];
+            string[] python = [.. paths.Where(p => p.ToLowerFast().Contains("python"))];
             if (python.Any())
             {
                 Logs.Debug($"Python paths left: {python.JoinString("; ")}");

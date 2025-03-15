@@ -418,7 +418,7 @@ public static class AdminAPI
     public static async Task<JObject> DebugLanguageAdd(Session session,
         [API.APIParameter("\"set\": [ \"word\", ... ]")] JObject raw)
     {
-        LanguagesHelper.TrackSet(raw["set"].ToArray().Select(v => $"{v}").ToArray());
+        LanguagesHelper.TrackSet([.. raw["set"].ToArray().Select(v => $"{v}")]);
         return new JObject() { ["success"] = true };
     }
 

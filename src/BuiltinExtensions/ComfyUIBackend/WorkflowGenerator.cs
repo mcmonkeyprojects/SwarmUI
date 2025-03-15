@@ -2468,7 +2468,7 @@ public class WorkflowGenerator
     /// <summary>Returns an array of all nodes currently in the workflow with a given class_type.</summary>
     public JProperty[] NodesOfClass(string classType)
     {
-        return Workflow.Properties().Where(p => $"{p.Value["class_type"]}" == classType).ToArray();
+        return [.. Workflow.Properties().Where(p => $"{p.Value["class_type"]}" == classType)];
     }
 
     /// <summary>Runs an action against all nodes of a given class_type.</summary>

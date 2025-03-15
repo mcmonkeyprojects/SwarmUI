@@ -800,7 +800,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             }
             return workflow;
         }
-        string workflow = CreateWorkflow(user_input, initImageFixer, ModelFolderFormat, SupportedFeatures.ToHashSet());
+        string workflow = CreateWorkflow(user_input, initImageFixer, ModelFolderFormat, [.. SupportedFeatures]);
         try
         {
             await AwaitJobLive(workflow, batchId, takeOutput, user_input, user_input.InterruptToken);

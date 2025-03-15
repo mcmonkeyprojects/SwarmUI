@@ -40,7 +40,7 @@ public class DataHolderHelper
     public DataHolderHelper(Type t)
     {
         T = t;
-        Fields = T.GetFields().Select(f => new FieldData(f, f.GetCustomAttribute<IDataHolder.NetData>())).Where(f => f.Data is not null).ToArray();
+        Fields = [.. T.GetFields().Select(f => new FieldData(f, f.GetCustomAttribute<IDataHolder.NetData>())).Where(f => f.Data is not null)];
     }
 }
 

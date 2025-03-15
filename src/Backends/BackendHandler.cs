@@ -860,7 +860,7 @@ public class BackendHandler
                 }
                 return;
             }
-            possible = Filter is null ? possible : possible.Where(Filter).ToList();
+            possible = Filter is null ? possible : [.. possible.Where(Filter)];
             if (!possible.Any())
             {
                 string reason = "";

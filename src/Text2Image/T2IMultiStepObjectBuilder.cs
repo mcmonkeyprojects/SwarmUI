@@ -29,7 +29,7 @@ public class T2IMultiStepObjectBuilder
             return null;
         }
         PromptRegion regions = new(prompt);
-        PromptRegion.Part[] objects = regions.Parts.Where(p => p.Type == PromptRegion.PartType.Object).ToArray();
+        PromptRegion.Part[] objects = [.. regions.Parts.Where(p => p.Type == PromptRegion.PartType.Object)];
         if (objects.IsEmpty())
         {
             return null;

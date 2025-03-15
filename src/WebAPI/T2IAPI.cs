@@ -190,7 +190,7 @@ public static class T2IAPI
     public static T2IParamInput RequestToParams(Session session, JObject rawInput)
     {
         T2IParamInput user_input = new(session);
-        List<string> keys = rawInput.Properties().Select(p => p.Name).ToList();
+        List<string> keys = [.. rawInput.Properties().Select(p => p.Name)];
         keys = keys.Where(AlwaysTopKeys.Contains).Concat(keys.Where(k => !AlwaysTopKeys.Contains(k))).ToList();
         foreach (string key in keys)
         {

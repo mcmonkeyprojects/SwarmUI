@@ -401,7 +401,7 @@ public partial class GridGenCore
             Axis curAxis = axisList[0];
             if (axisList.Count == 1)
             {
-                return curAxis.Values.Where(v => !v.Skip || !FastSkip).Select(v => new SingleGridCall(Grid, [v])).ToList();
+                return [.. curAxis.Values.Where(v => !v.Skip || !FastSkip).Select(v => new SingleGridCall(Grid, [v]))];
             }
             List<SingleGridCall> result = [];
             List<Axis> nextAxisList = axisList.GetRange(1, axisList.Count - 1);

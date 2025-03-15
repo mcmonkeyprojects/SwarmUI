@@ -346,7 +346,7 @@ public class Settings : AutoConfiguration
         {
             public override string[] GetOptions => [.. Program.Web.RegisteredThemes.Keys];
 
-            public override string[] Names => Program.Web.RegisteredThemes.Values.Select(v => v.Name).ToArray();
+            public override string[] Names => [.. Program.Web.RegisteredThemes.Values.Select(v => v.Name)];
         }
 
         [ConfigComment("What theme to use. Default is 'modern_dark'.")]

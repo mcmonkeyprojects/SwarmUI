@@ -47,7 +47,7 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
                     CurrentModelName = model.Name;
                 }
             }
-            List<string> samplers = (await SendGet<JArray>("samplers")).Select(obj => (string)obj["name"]).ToList();
+            List<string> samplers = [.. (await SendGet<JArray>("samplers")).Select(obj => (string)obj["name"])];
             AutoWebUIBackendExtension.LoadSamplerList(samplers);
             Status = BackendStatus.RUNNING;
         }
@@ -112,7 +112,7 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
         }
         JObject result = await SendPost<JObject>(route, toSend);
         // TODO: Error handlers
-        return result["images"].Select(i => new Image((string)i, Image.ImageType.IMAGE, "png")).ToArray();
+        return [.. result["images"].Select(i => new Image((string)i, Image.ImageType.IMAGE, "png"))];
     }
 
     public async Task<JType> SendGet<JType>(string url) where JType : class

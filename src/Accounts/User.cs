@@ -105,7 +105,7 @@ public class User
     /// <summary>Returns a list of all generic-data IDs this user has saved.</summary>
     public List<string> ListAllGenericData(string dataname)
     {
-        return GetAllGenericData(dataname).Select(d => d.ID.After("///").After("///")).ToList();
+        return [.. GetAllGenericData(dataname).Select(d => d.ID.After("///").After("///"))];
     }
 
     /// <summary>Returns a list of all generic-data this user has saved.</summary>
@@ -116,7 +116,7 @@ public class User
             string id = $"{UserID}///${dataname}///";
             try
             {
-                return SessionHandlerSource.GenericData.Find(b => b.ID.StartsWith(id)).ToList();
+                return [.. SessionHandlerSource.GenericData.Find(b => b.ID.StartsWith(id))];
             }
             catch (Exception ex)
             {
@@ -165,10 +165,10 @@ public class User
         {
             try
             {
-                List<T2IPreset> presets = Data.Presets.Select(p => SessionHandlerSource.T2IPresets.FindById(p)).ToList();
+                List<T2IPreset> presets = [.. Data.Presets.Select(p => SessionHandlerSource.T2IPresets.FindById(p))];
                 if (presets.Any(p => p is null))
                 {
-                    List<string> bad = Data.Presets.Where(p => SessionHandlerSource.T2IPresets.FindById(p) is null).ToList();
+                    List<string> bad = [.. Data.Presets.Where(p => SessionHandlerSource.T2IPresets.FindById(p) is null)];
                     Logs.Error($"User {UserID} has presets that don't exist (database error?): {string.Join(", ", bad)}");
                     presets.RemoveAll(p => p is null);
                     Data.Presets.RemoveAll(bad.Contains);

@@ -452,7 +452,7 @@ public class GridGeneratorExtension : Extension
             {
                 (string, string) proc(AxisValue val) => (val.Title, T2IParamTypes.CleanNameGeneric(val.Key));
                 List<(string, string)> xAxis = grid.Axes[0].Values.Where(v => !v.Skip).Select(proc).ToList();
-                List<(string, string)> yAxis = grid.Axes.Count > 1 ? grid.Axes[1].Values.Where(v => !v.Skip).Select(proc).ToList() : [(null, null)];
+                List<(string, string)> yAxis = grid.Axes.Count > 1 ? [.. grid.Axes[1].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
                 List<(string, string)> y2Axis = grid.Axes.Count > 2 ? grid.Axes[2].Values.Where(v => !v.Skip).Select(proc).ToList() : [(null, null)];
                 int maxWidth = data.GeneratedOutputs.Max(x => x.Value.ToIS.Width);
                 int maxHeight = data.GeneratedOutputs.Max(x => x.Value.ToIS.Height);

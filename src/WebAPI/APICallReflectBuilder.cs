@@ -47,7 +47,7 @@ public class APICallReflectBuilder
             {
                 caller.InputMappers.Add((_, _, _, input) =>
                 {
-                    JObject dup = new(input);
+                    JObject dup = [.. input];
                     dup.Remove("session_id");
                     return (null, dup);
                 });

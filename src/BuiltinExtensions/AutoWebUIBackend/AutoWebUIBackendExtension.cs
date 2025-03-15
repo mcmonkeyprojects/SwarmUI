@@ -26,7 +26,7 @@ public class AutoWebUIBackendExtension : Extension
     {
         lock (ExtBackLock)
         {
-            Samplers = Samplers.Union(newSamplers).Distinct().ToList();
+            Samplers = [.. Samplers.Union(newSamplers).Distinct()];
         }
     }
 

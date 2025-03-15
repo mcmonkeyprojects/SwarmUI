@@ -44,8 +44,8 @@ public class ExtensionsManager
     /// <summary>Initial call that prepares the extensions list.</summary>
     public void PrepExtensions()
     {
-        string[] builtins = Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => s.Replace('\\', '/').AfterLast("/src/")).ToArray();
-        string[] extras = Directory.Exists("./src/Extensions") ? Directory.EnumerateDirectories("./src/Extensions/").Select(s => s.Replace('\\', '/').AfterLast("/src/")).ToArray() : [];
+        string[] builtins = [.. Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => s.Replace('\\', '/').AfterLast("/src/"))];
+        string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => s.Replace('\\', '/').AfterLast("/src/"))] : [];
         foreach (string deletable in extras.Where(e => e.TrimEnd('/').EndsWith(".delete")))
         {
             try
