@@ -27,6 +27,20 @@ let autoCompletionsOptimize = false;
 
 let mainGenHandler = new GenerateHandler();
 
+let pageTitleSuffix = document.title.split(' - ')[1];
+let curAutoTitle = "Page is loading...";
+
+function setPageTitle(newTitle) {
+    document.title = `${newTitle} - ${pageTitleSuffix}`;
+}
+
+function autoTitle() {
+    let tabList = getRequiredElementById('toptablist');
+    let activeTopTab = tabList.querySelector('.active');
+    curAutoTitle = activeTopTab.textContent;
+    setPageTitle(curAutoTitle);
+}
+
 function updateOtherInfoSpan() {
     let span = getRequiredElementById('other_info_span');
     span.innerHTML = otherInfoSpanContent.join(' ');
@@ -990,8 +1004,6 @@ function gotImagePreview(image, metadata, batchId) {
     return batch_div;
 }
 
-let originalPageTitle = document.title;
-
 let generatingPreviewsText = translatable('Generating live previews...');
 let waitingOnModelLoadText = translatable('waiting on model load');
 let generatingText = translatable('generating');
@@ -1027,7 +1039,7 @@ function updateCurrentStatusDirect(data) {
     }
     elem.innerHTML = total == 0 ? (isGeneratingPreviews ? translatableText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
     let max = Math.max(num_current_gens, num_models_loading, num_live_gens, num_backends_waiting);
-    document.title = total == 0 ? originalPageTitle : `(${max} ${generatingText.get()}) ${originalPageTitle}`;
+    setPageTitle(total == 0 ? curAutoTitle : `(${max} ${generatingText.get()}) ${curAutoTitle}`);
 }
 
 let doesHaveGenCountUpdateQueued = false;
@@ -2105,6 +2117,7 @@ function updateHash() {
         }
     }
     history.pushState(null, null, hash);
+    autoTitle();
 }
 
 function loadHashHelper() {
@@ -2137,6 +2150,7 @@ function loadHashHelper() {
             let target = decodeURIComponent(split[2]);
             simpleTab.mustSelectTarget = target;
         }
+        autoTitle();
     }
     for (let tab of tabs) {
         tab.addEventListener('click', (e) => {
@@ -2254,6 +2268,7 @@ function genpageLoad() {
                 callback();
             }
             automaticWelcomeMessage();
+            autoTitle();
         });
         reviseStatusInterval = setInterval(reviseStatusBar, 2000);
         window.resLoopInterval = setInterval(serverResourceLoop, 1000);
