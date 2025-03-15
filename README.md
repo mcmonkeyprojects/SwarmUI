@@ -2,15 +2,16 @@
 
 **SwarmUI v0.9.5 Beta**.
 
-Formerly known as StableSwarmUI.
+*Formerly known as StableSwarmUI.*
 
-A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (Stable Diffusion, Flux, etc.), and AI video models (LTX-V, Hunyuan Video, Cosmos, Wan, etc.), with plans to support eg audio and more in the future.
+A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Stable Diffusion, Flux, etc.*), and AI video models (*LTX-V, Hunyuan Video, Cosmos, Wan, etc.*), with plans to support eg audio and more in the future.
 
 ![ui-screenshot](.github/images/swarmui.jpg)
 
-Join the [Discord](https://discord.gg/q2y38cqjNw) to discuss the project, get support, see announcements, etc.
-
-Follow the [Feature Announcements Thread](https://github.com/mcmonkeyprojects/SwarmUI/discussions/1) for updates on new features.
+- **Discord Community**: Join the [Discord](https://discord.gg/q2y38cqjNw) to discuss the project, get support, see announcements, etc.
+- **Announcements**: Follow the [Feature Announcements Thread](https://github.com/mcmonkeyprojects/SwarmUI/discussions/1) for updates on new features.
+- **General documentation**: [/docs folder](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/README.md)
+- **Website**: [SwarmUI.net](https://swarmui.net/)
 
 ----
 

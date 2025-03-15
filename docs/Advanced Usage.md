@@ -64,8 +64,7 @@ Triton is a Linux-only AI acceleration library that you can hack into working on
     - type the command `python_embeded\python.exe --version`
     - Install a global python of the exact same version (eg mine is `Python 3.11.8`, so I had to install a global `3.11.8`)
 - Open a new terminal not in any specific location
-    - Type `python --version`, make sure it matches. If not you'll have to clean up your env path.
-    - Type `python -m pip install triton-windows`
+    - Type `python --version`, make sure it matches. If not you'll have to clean up your env path, or just figure out where the relevant install path is on your own.
     - Type `where python` and open the folder for the python exe it gives you, for example mine was `C:\Users\my_user_name\AppData\Local\Programs\Python\Python311\`
     - Also open a second folder window of `(Your Swarm Install)\dlbackend\comfy\python_embeded`
     - Copy over the `Libs` (with an 's') folder from the global python to the 'embeded' python
