@@ -58,7 +58,7 @@ public class BackendHandler
     /// <summary>Gets a hashset of all supported features across all backends.</summary>
     public HashSet<string> GetAllSupportedFeatures()
     {
-        return T2IBackends.Values.Where(b => b is not null && b.Backend.IsEnabled && b.Backend.Status != BackendStatus.IDLE).SelectMany(b => b.Backend.SupportedFeatures).ToHashSet();
+        return [.. T2IBackends.Values.Where(b => b is not null && b.Backend.IsEnabled && b.Backend.Status != BackendStatus.IDLE).SelectMany(b => b.Backend.SupportedFeatures)];
     }
 
     public BackendHandler()
@@ -96,7 +96,7 @@ public class BackendHandler
                     ["any_loading"] = false
                 };
             }
-            BackendStatus[] statuses = backends.Select(b => b.Backend.Status).ToArray();
+            BackendStatus[] statuses = [.. backends.Select(b => b.Backend.Status)];
             int loading = statuses.Count(s => s == BackendStatus.LOADING || s == BackendStatus.WAITING);
             if (statuses.Any(s => s == BackendStatus.ERRORED))
             {
@@ -187,7 +187,7 @@ public class BackendHandler
     {
         Type settingsType = type.GetNestedTypes().First(t => t.IsSubclassOf(typeof(AutoConfiguration)));
         AutoConfiguration.Internal.AutoConfigData settingsInternal = (Activator.CreateInstance(settingsType) as AutoConfiguration).InternalData.SharedData;
-        List<JObject> fields = settingsInternal.Fields.Values.Select(f =>
+        List<JObject> fields = [.. settingsInternal.Fields.Values.Select(f =>
         {
             string typeName = f.IsSection ? "group" : T2IParamTypes.SharpTypeToDataType(f.Field.FieldType, false).ToString();
             string[] vals = f.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Options ?? null;
@@ -207,7 +207,7 @@ public class BackendHandler
                 ["values"] = vals is null ? null : JArray.FromObject(vals),
                 ["value_names"] = val_names is null ? null : JArray.FromObject(val_names)
             };
-        }).ToList();
+        })];
         JObject netDesc = new()
         {
             ["id"] = id,
@@ -650,7 +650,7 @@ public class BackendHandler
         }
         Logs.Verbose($"Got request to load model on all: {model.Name}");
         bool any = false;
-        T2IBackendData[] filtered = T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.CanLoadModels).ToArray();
+        T2IBackendData[] filtered = [.. T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.CanLoadModels)];
         if (!filtered.Any())
         {
             Logs.Warning($"Cannot load model as no backends are available.");
@@ -658,7 +658,7 @@ public class BackendHandler
         }
         if (filter is not null)
         {
-            filtered = filtered.Where(filter).ToArray();
+            filtered = [.. filtered.Where(filter)];
             if (!filtered.Any())
             {
                 Logs.Warning($"Cannot load model as no backends match the requested filter.");
@@ -734,7 +734,7 @@ public class BackendHandler
                 Logs.Info($"Still waiting for {tasks.Count} backends to shut down ({string.Join(", ", tasks.Select(p => p.Item1).Select(b => $"{b.ID}: {b.Backend.HandlerTypeData.Name}"))})...");
             }
             Task.Delay(TimeSpan.FromMilliseconds(100)).Wait();
-            tasks = tasks.Where(t => !t.Item2.IsCompleted).ToList();
+            tasks = [.. tasks.Where(t => !t.Item2.IsCompleted)];
         }
         WebhookManager.TryMarkDoneGenerating().Wait();
         if (BackendsEdited)
@@ -848,7 +848,7 @@ public class BackendHandler
         public void TryFind()
         {
             List<T2IBackendData> currentBackends = [.. Handler.T2IBackends.Values];
-            List<T2IBackendData> possible = currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.Status == BackendStatus.RUNNING).ToList();
+            List<T2IBackendData> possible = [.. currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.Status == BackendStatus.RUNNING)];
             Logs.Verbose($"[BackendHandler] Backend request #{ID} searching for backend... have {possible.Count}/{currentBackends.Count} possible");
             if (!possible.Any())
             {
@@ -886,7 +886,7 @@ public class BackendHandler
             }
             if (Model is not null)
             {
-                List<T2IBackendData> correctModel = available.Where(b => b.Backend.CurrentModelName == Model.Name).ToList();
+                List<T2IBackendData> correctModel = [.. available.Where(b => b.Backend.CurrentModelName == Model.Name)];
                 if (correctModel.Any())
                 {
                     T2IBackendData backend = correctModel.FirstOrDefault();
@@ -1113,7 +1113,7 @@ public class BackendHandler
     /// <summary>Internal helper route for <see cref="GetNextT2IBackend"/> to trigger a backend model load.</summary>
     public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, ModelRequestPressure pressure, CancellationToken cancel)
     {
-        List<T2IBackendData> availableLoaders = available.Where(b => b.Backend.CanLoadModels).ToList();
+        List<T2IBackendData> availableLoaders = [.. available.Where(b => b.Backend.CanLoadModels)];
         if (availableLoaders.IsEmpty())
         {
             if (pressure?.IsLoading ?? false)
@@ -1134,13 +1134,13 @@ public class BackendHandler
             Logs.Verbose($"[BackendHandler] No model requests, skipping load.");
             return;
         }
-        pressures = pressures.Where(p => p.Requests.Any(r => r.Filter is null || availableLoaders.Any(b => r.Filter(b)))).ToList();
+        pressures = [.. pressures.Where(p => p.Requests.Any(r => r.Filter is null || availableLoaders.Any(b => r.Filter(b))))];
         if (pressures.IsEmpty())
         {
             Logs.Verbose($"[BackendHandler] Unable to find valid model requests that are matched to the current backend list.");
             return;
         }
-        List<ModelRequestPressure> perfect = pressures.Where(p => p.Requests.All(r => r.Filter is null || availableLoaders.Any(b => r.Filter(b)))).ToList();
+        List<ModelRequestPressure> perfect = [.. pressures.Where(p => p.Requests.All(r => r.Filter is null || availableLoaders.Any(b => r.Filter(b))))];
         if (!perfect.IsEmpty())
         {
             pressures = perfect;
@@ -1159,7 +1159,7 @@ public class BackendHandler
                 if (availableLoaders.Count == 1 || timeWait > 1500)
                 {
                     Logs.Verbose($"Selecting backends outside of refusal set: {highestPressure.BadBackends.JoinString(", ")}");
-                    List<T2IBackendData> valid = availableLoaders.Where(b => !highestPressure.BadBackends.Contains(b.ID)).ToList();
+                    List<T2IBackendData> valid = [.. availableLoaders.Where(b => !highestPressure.BadBackends.Contains(b.ID))];
                     if (valid.IsEmpty())
                     {
                         Logs.Warning($"[BackendHandler] All backends failed to load the model '{highestPressure.Model.RawFilePath}'! Cannot generate anything.");
@@ -1181,13 +1181,13 @@ public class BackendHandler
                         }
                         throw new SwarmReadableErrorException($"All available backends failed to load the model '{highestPressure.Model.RawFilePath}'.\n\n{highestPressure.BackendFailReasons.Select(fixReason).JoinString("\n\n").Trim()}");
                     }
-                    valid = valid.Where(b => b.Backend.CurrentModelName != highestPressure.Model.Name).ToList();
+                    valid = [.. valid.Where(b => b.Backend.CurrentModelName != highestPressure.Model.Name)];
                     if (valid.IsEmpty())
                     {
                         Logs.Verbose("$[BackendHandler] Cancelling highest-pressure load, model is already loaded on all available backends.");
                         return;
                     }
-                    List<T2IBackendData> unused = valid.Where(a => a.Usages == 0).ToList();
+                    List<T2IBackendData> unused = [.. valid.Where(a => a.Usages == 0)];
                     valid = unused.Any() ? unused : valid;
                     T2IBackendData availableBackend = valid.MinBy(a => a.TimeLastRelease);
                     Logs.Debug($"[BackendHandler] backend #{availableBackend.ID} will load a model: {highestPressure.Model.RawFilePath}, with {highestPressure.Count} requests waiting for {timeWait / 1000f:0.#} seconds");

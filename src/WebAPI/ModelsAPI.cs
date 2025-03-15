@@ -275,7 +275,7 @@ public static class ModelsAPI
     public static async Task<JObject> ListLoadedModels(Session session)
     {
         using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
-        List<T2IModel> matches = Program.MainSDModels.Models.Values.Where(m => m.AnyBackendsHaveLoaded && session.User.IsAllowedModel(m.Name)).ToList();
+        List<T2IModel> matches = [.. Program.MainSDModels.Models.Values.Where(m => m.AnyBackendsHaveLoaded && session.User.IsAllowedModel(m.Name))];
         return new JObject()
         {
             ["models"] = JArray.FromObject(matches.Select(m => m.ToNetObject()).ToList())

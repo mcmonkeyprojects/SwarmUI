@@ -463,7 +463,7 @@ public class T2IParamTypes
         static List<string> listRefinerModels(Session s)
         {
             List<T2IModel> baseList = [.. Program.MainSDModels.ListModelsFor(s).OrderBy(m => m.Name)];
-            List<T2IModel> refinerList = baseList.Where(m => m.ModelClass is not null && m.ModelClass.Name.Contains("Refiner")).ToList();
+            List<T2IModel> refinerList = [.. baseList.Where(m => m.ModelClass is not null && m.ModelClass.Name.Contains("Refiner"))];
             List<string> bases = CleanModelList(baseList.Select(m => m.Name));
             return ["(Use Base)", .. CleanModelList(refinerList.Select(m => m.Name)), "-----", .. bases];
         }
@@ -1038,7 +1038,7 @@ public class T2IParamTypes
     /// <summary>Adds new entries to a list of dropdown values, in a clean way that avoids breaking from display names, and applying an async-safe concat.</summary>
     public static void ConcatDropdownValsClean(ref List<string> mainList, IEnumerable<string> addIn)
     {
-        HashSet<string> existing = mainList.Select(v => v.Before("///")).ToHashSet();
+        HashSet<string> existing = [.. mainList.Select(v => v.Before("///"))];
         List<string> result = [.. mainList];
         foreach (string str in addIn)
         {

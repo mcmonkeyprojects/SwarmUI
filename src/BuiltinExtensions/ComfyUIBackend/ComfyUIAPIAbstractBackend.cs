@@ -57,13 +57,13 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             if (RawObjectInfo.TryGetValue(node, out JToken loaderNode))
             {
-                string[] modelList = loaderNode["input"]["required"][param][0].Select(t => (string)t).ToArray();
+                string[] modelList = [.. loaderNode["input"]["required"][param][0].Select(t => (string)t)];
                 firstBackSlash ??= modelList.FirstOrDefault(m => m.Contains('\\'));
                 if (newModels.TryGetValue(subtype, out List<string> existingList))
                 {
                     modelList = [.. modelList.Concat(existingList)];
                 }
-                newModels[subtype] = modelList.Select(m => m.Replace('\\', '/')).ToList();
+                newModels[subtype] = [.. modelList.Select(m => m.Replace('\\', '/'))];
             }
         }
         trackModels("Stable-Diffusion", "CheckpointLoaderSimple", "ckpt_name");

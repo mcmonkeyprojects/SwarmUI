@@ -43,7 +43,7 @@ public class GridGeneratorExtension : Extension
                     return list;
                 }
                 string first = list[0];
-                return list.Select(v =>
+                return [.. list.Select(v =>
                 {
                     bool skip = v.StartsWith("SKIP:");
                     if (skip)
@@ -52,10 +52,10 @@ public class GridGeneratorExtension : Extension
                         return $"SKIP:{first}={v}";
                     }
                     return $"{first}={v}";
-                }).ToList();
+                })];
             }));
         PresetsParameter = T2IParamTypes.Register<string>(new("[Grid Gen] Presets", "Apply parameter presets to the image. Can use a comma-separated list to apply multiple per-cell, eg 'a, b || a, c || b, c'",
-            "", VisibleNormally: false, AlwaysRetain: true, Toggleable: true, Nonreusable: true, ValidateValues: false, ChangeWeight: 2, GetValues: (session) => session.User.GetAllPresets().Select(p => p.Title).ToList()));
+            "", VisibleNormally: false, AlwaysRetain: true, Toggleable: true, Nonreusable: true, ValidateValues: false, ChangeWeight: 2, GetValues: (session) => [.. session.User.GetAllPresets().Select(p => p.Title)]));
         GridCallInitHook = (call) =>
         {
             call.LocalData = new GridCallData();
@@ -336,7 +336,7 @@ public class GridGeneratorExtension : Extension
         {
             lock (UpdateLock)
             {
-                return Rendering.Where(x => !x.IsCompleted).ToArray();
+                return [.. Rendering.Where(x => !x.IsCompleted)];
             }
         }
 
@@ -451,9 +451,9 @@ public class GridGeneratorExtension : Extension
             if (grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE && grid.Axes.Count <= 3)
             {
                 (string, string) proc(AxisValue val) => (val.Title, T2IParamTypes.CleanNameGeneric(val.Key));
-                List<(string, string)> xAxis = grid.Axes[0].Values.Where(v => !v.Skip).Select(proc).ToList();
+                List<(string, string)> xAxis = [.. grid.Axes[0].Values.Where(v => !v.Skip).Select(proc)];
                 List<(string, string)> yAxis = grid.Axes.Count > 1 ? [.. grid.Axes[1].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
-                List<(string, string)> y2Axis = grid.Axes.Count > 2 ? grid.Axes[2].Values.Where(v => !v.Skip).Select(proc).ToList() : [(null, null)];
+                List<(string, string)> y2Axis = grid.Axes.Count > 2 ? [.. grid.Axes[2].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
                 int maxWidth = data.GeneratedOutputs.Max(x => x.Value.ToIS.Width);
                 int maxHeight = data.GeneratedOutputs.Max(x => x.Value.ToIS.Height);
                 float extraSizeMult = 1;

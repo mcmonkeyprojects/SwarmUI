@@ -176,7 +176,7 @@ public class T2IModelHandler
         {
             return [.. Models.Values];
         }
-        return Models.Values.Where(m => session.User.IsAllowedModel(m.Name)).ToList();
+        return [.. Models.Values.Where(m => session.User.IsAllowedModel(m.Name))];
     }
 
     public List<string> ListModelNamesFor(Session session)

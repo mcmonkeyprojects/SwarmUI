@@ -376,7 +376,7 @@ public partial class GridGenCore
             lock (Grid.LastUpdatLock)
             {
                 DateTimeOffset tNow = DateTimeOffset.Now;
-                Grid.LastUpdates = Grid.LastUpdates.Where(x => (tNow - x.Item2).TotalSeconds < 20).ToList();
+                Grid.LastUpdates = [.. Grid.LastUpdates.Where(x => (tNow - x.Item2).TotalSeconds < 20)];
                 Grid.LastUpdates.Add((newFile, tNow));
                 File.WriteAllText(BasePath + "/last.js", $"window.lastUpdated = [\"{string.Join("\", \"", Grid.LastUpdates.Select(p => p.Item1))}\"]");
             }

@@ -148,10 +148,10 @@ public class ComfyUIRedirectHelper
             await context.Response.CompleteAsync();
             return;
         }
-        List<ComfyUIBackendExtension.ComfyBackendData> allBackends = ComfyUIBackendExtension.ComfyBackendsDirect().ToList();
+        List<ComfyUIBackendExtension.ComfyBackendData> allBackends = [.. ComfyUIBackendExtension.ComfyBackendsDirect()];
         if (context.Request.Headers.TryGetValue("X-Swarm-Backend-ID", out StringValues backendId) && int.TryParse(backendId, out int backendIdInt))
         {
-            allBackends = allBackends.Where(b => b.Backend.BackendData.ID == backendIdInt).ToList();
+            allBackends = [.. allBackends.Where(b => b.Backend.BackendData.ID == backendIdInt)];
         }
         (HttpClient webClient, string apiAddress, string webAddress, AbstractT2IBackend backend) = allBackends.FirstOrDefault();
         if (webClient is null)
@@ -185,8 +185,8 @@ public class ComfyUIRedirectHelper
             List<Task> tasks = [];
             ComfyUser user = new();
             // Order all evens then all odds - eg 0, 2, 4, 6, 1, 3, 5, 7 (to reduce chance of overlap when sharing)
-            int[] vals = Enumerable.Range(0, allBackends.Count).ToArray();
-            vals = vals.Where(v => v % 2 == 0).Concat(vals.Where(v => v % 2 == 1)).ToArray();
+            int[] vals = [.. Enumerable.Range(0, allBackends.Count)];
+            vals = [.. vals.Where(v => v % 2 == 0), .. vals.Where(v => v % 2 == 1)];
             bool found = false;
             void tryFindBackend()
             {

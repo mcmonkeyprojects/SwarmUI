@@ -2321,7 +2321,7 @@ public class WorkflowGenerator
             });
             return [zeroed, 0];
         }
-        PromptRegion.Part[] parts = regionalizer.Parts.Where(p => p.Type == PromptRegion.PartType.Object || p.Type == PromptRegion.PartType.Region).ToArray();
+        PromptRegion.Part[] parts = [.. regionalizer.Parts.Where(p => p.Type == PromptRegion.PartType.Object || p.Type == PromptRegion.PartType.Region)];
         if (parts.IsEmpty())
         {
             return globalCond;

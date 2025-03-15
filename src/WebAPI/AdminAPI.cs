@@ -241,7 +241,7 @@ public static class AdminAPI
         long lastSeq = Interlocked.Read(ref Logs.LogTracker.LastSequenceID);
         result["last_sequence_id"] = lastSeq;
         JObject messageData = [];
-        List<string> types = raw["types"].Select(v => $"{v}").ToList();
+        List<string> types = [.. raw["types"].Select(v => $"{v}")];
         foreach (string type in types)
         {
             Logs.LogTracker tracker;
@@ -457,13 +457,13 @@ public static class AdminAPI
             }
             return result;
         }
-        JArray list = new(Program.Sessions.Users.Values.Where(u => u.TimeSinceLastPresent.TotalMinutes < 3 && !u.UserID.StartsWith("__")).OrderBy(u => u.UserID).Select(u => new JObject()
+        JArray list = [.. Program.Sessions.Users.Values.Where(u => u.TimeSinceLastPresent.TotalMinutes < 3 && !u.UserID.StartsWith("__")).OrderBy(u => u.UserID).Select(u => new JObject()
         {
             ["id"] = u.UserID,
             ["last_active_seconds"] = u.TimeSinceLastUsed.TotalSeconds,
             ["active_sessions"] = sessWrangle(u.CurrentSessions.Values.Where(s => s.TimeSinceLastUsed.TotalMinutes < 3).Select(s => s.OriginAddress)),
             ["last_active"] = $"{u.TimeSinceLastUsed.SimpleFormat(false, false)} ago"
-        }).ToArray());
+        }).ToArray()];
         return new JObject() { ["users"] = list };
     }
 
@@ -609,7 +609,7 @@ public static class AdminAPI
         """)]
     public static async Task<JObject> AdminListUsers(Session session)
     {
-        List<string> users = Program.Sessions.UserDatabase.FindAll().Select(u => u.ID).ToList();
+        List<string> users = [.. Program.Sessions.UserDatabase.FindAll().Select(u => u.ID)];
         return new JObject() { ["users"] = JArray.FromObject(users) };
     }
 
@@ -844,9 +844,9 @@ public static class AdminAPI
             role.Data.MaxOutPathDepth = max_outpath_depth;
             role.Data.MaxT2ISimultaneous = max_t2i_simultaneous;
             role.Data.AllowUnsafeOutpaths = allow_unsafe_outpaths;
-            role.Data.ModelWhitelist = model_whitelist.Split(',').Select(s => s.Trim()).ToHashSet();
-            role.Data.ModelBlacklist = model_blacklist.Split(',').Select(s => s.Trim()).ToHashSet();
-            role.Data.PermissionFlags = permissions.Split(',').Select(s => s.Trim()).ToHashSet();
+            role.Data.ModelWhitelist = [.. model_whitelist.Split(',').Select(s => s.Trim())];
+            role.Data.ModelBlacklist = [.. model_blacklist.Split(',').Select(s => s.Trim())];
+            role.Data.PermissionFlags = [.. permissions.Split(',').Select(s => s.Trim())];
             Program.Sessions.Save();
         }
         return new JObject() { ["success"] = true };
