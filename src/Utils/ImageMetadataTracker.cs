@@ -393,6 +393,10 @@ public static class ImageMetadataTracker
         }
         static void ClearFolder(string folder)
         {
+            if (!Directory.Exists(folder))
+            {
+                return;
+            }
             remove(folder);
             foreach (string subFolder in Directory.GetDirectories(folder))
             {

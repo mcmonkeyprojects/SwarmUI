@@ -24,7 +24,7 @@
     - Some Swarm API routes can be used maliciously, such as the routes that forward raw ComfyUI access.
 - Apache2/Nginx reverse-proxy setups can be built with an authentication layer easily enough if you know what you're doing.
 - Ensure your instance has https (eg use LetsEncrypt certbot, which grants free https keys), raw http hosting may cause issues.
-- Multi-user-support with Swarm-provided authentication handling is Coming Soon (TM)
+- Multi-user-support with Swarm-provided authentication handling is available in an initial experimental form, but you should still have a barrier in front until it is validated
 
 ## Custom Workflows (ComfyUI)
 
