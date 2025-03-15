@@ -45,7 +45,12 @@ public class APICallReflectBuilder
             }
             else if (param.ParameterType == typeof(JObject))
             {
-                caller.InputMappers.Add((_, _, _, input) => (null, input));
+                caller.InputMappers.Add((_, _, _, input) =>
+                {
+                    JObject dup = new(input);
+                    dup.Remove("session_id");
+                    return (null, dup);
+                });
             }
             else if (param.ParameterType == typeof(WebSocket))
             {
