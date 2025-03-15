@@ -30,7 +30,11 @@ def swarm_fixed_noise(seed, latent_image, var_seed, var_seed_strength):
         if var_seed_strength > 0:
             noise = swarm_partial_noise(seed, latent_image[i])
             var_noise = swarm_partial_noise(var_seed + i, latent_image[i])
-            noise = slerp(var_seed_strength, noise, var_noise)
+            if noise.ndim == 4: # Video models are B C F H W, we're in a B loop already so sub-iterate over F (Frames)
+                for j in range(noise.shape[1]):
+                    noise[:, j] = slerp(var_seed_strength, noise[:, j], var_noise[:, j])
+            else:
+                noise = slerp(var_seed_strength, noise, var_noise)
         else:
             noise = swarm_partial_noise(seed + i, latent_image[i])
         noises.append(noise)
