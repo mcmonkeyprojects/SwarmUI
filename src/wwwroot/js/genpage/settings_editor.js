@@ -21,9 +21,6 @@ function isSettingWrongLooking(id, value) {
             }
         }
     }
-    if (id == 'authorization.authorizationrequired' && value) {
-        return true;
-    }
     return false;
 }
 
@@ -180,8 +177,9 @@ function loadServerSettings() {
 }
 
 function loadSettingsEditor() {
-    // TODO: Permission check
-    loadServerSettings();
+    if (permissions.hasPermission('read_server_settings')) {
+        loadServerSettings();
+    }
     loadUserSettings(() => {
         let inputBatchSize = document.getElementById('input_batchsize');
         let shouldResetBatch = getUserSetting('resetbatchsizetoone', false);

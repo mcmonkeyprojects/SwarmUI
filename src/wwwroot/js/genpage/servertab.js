@@ -464,7 +464,7 @@ class UserAdminManager {
         $('#server_add_user_menu').modal('show');
     }
 
-    addUserMenuSubmit() {
+    async addUserMenuSubmit() {
         let name = this.addUserNameInput.value;
         if (!name) {
             alert('Please fill in the name field, or cancel');
@@ -477,7 +477,8 @@ class UserAdminManager {
             return;
         }
         $('#server_add_user_menu').modal('hide');
-        genericRequest('AdminAddUser', {'name': name, 'password': doPasswordClientPrehash(name, pass), 'role': role}, data => {
+        let password = await doPasswordClientPrehash(name, pass);
+        genericRequest('AdminAddUser', {'name': name, 'password': password, 'role': role}, data => {
             this.onTabButtonClick();
         });
     }

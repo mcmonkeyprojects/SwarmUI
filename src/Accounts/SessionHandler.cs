@@ -6,6 +6,7 @@ using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticToolkit;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticDataSyntax;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace SwarmUI.Accounts;
 
@@ -47,6 +48,9 @@ public class SessionHandler
 
     /// <summary>Generic user data store.</summary>
     public ILiteCollection<GenericDataStore> GenericData;
+
+    /// <summary>Internal database (login sessions).</summary>
+    public ILiteCollection<LoginSession> LoginSessions;
 
     /// <summary>Internal database access locker.</summary>
     public LockObject DBLock = new();
@@ -128,6 +132,32 @@ public class SessionHandler
     public static int PatchOwnerMaxT2I = 32, PatchOwnerMaxDepth = 5;
     public static bool PatchOwnerAllowUnsafe = false;
 
+    /// <summary>Helper for login session data.</summary>
+    public class LoginSession
+    {
+        [BsonId]
+        public string ID { get; set; }
+
+        public string UserID { get; set; }
+
+        public string OriginAddress { get; set; }
+
+        public string OriginUserAgent { get; set; }
+
+        public long LastActiveUnixTime { get; set; }
+
+        public string ValidationHash { get; set; }
+
+        public bool CheckValidation(string input)
+        {
+            (string salt, string content) = ValidationHash.BeforeAndAfter(':');
+            byte[] saltBytes = Convert.FromHexString(salt);
+            byte[] contentBytes = Convert.FromHexString(content);
+            byte[] inHash = KeyDerivation.Pbkdf2(password: input, salt: saltBytes, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10, numBytesRequested: 256 / 8);
+            return inHash.SequenceEqual(contentBytes);
+        }
+    }
+
     public SessionHandler()
     {
         Database = new LiteDatabase($"{Program.DataDir}/Users.ldb");
@@ -135,6 +165,7 @@ public class SessionHandler
         SessionDatabase = Database.GetCollection<Session.DatabaseEntry>("sessions");
         T2IPresets = Database.GetCollection<T2IPreset>("t2i_presets");
         GenericData = Database.GetCollection<GenericDataStore>("generic_data");
+        LoginSessions = Database.GetCollection<LoginSession>("login_sessions");
         FDSSection rolesData = new();
         try
         {
@@ -229,7 +260,7 @@ public class SessionHandler
         }
     }
 
-    public Session CreateAdminSession(string source, string userId = null)
+    public Session CreateSession(string source, string userId = null)
     {
         if (HasShutdown)
         {
@@ -241,7 +272,7 @@ public class SessionHandler
         {
             throw new SwarmReadableErrorException($"User '{user.UserID}' may not create new sessions currently.");
         }
-        Logs.Info($"Creating new admin session '{userId}' for {source}");
+        Logs.Info($"Creating new session '{user.UserID}' for {source}");
         for (int i = 0; i < 1000; i++)
         {
             Session sess = new()
@@ -328,10 +359,19 @@ public class SessionHandler
             Session.DatabaseEntry existing = SessionDatabase.FindById(id);
             if (existing is not null)
             {
+                if (!string.IsNullOrWhiteSpace(existing.OriginToken))
+                {
+                    if (LoginSessions.FindById(existing.OriginToken) is null)
+                    {
+                        SessionDatabase.Delete(id);
+                        return false;
+                    }
+                }
                 session = new()
                 {
                     ID = existing.ID,
                     OriginAddress = existing.OriginAddress,
+                    OriginToken = existing.OriginToken,
                     User = GetUser(existing.UserID)
                 };
                 if (Sessions.TryAdd(session.ID, session))

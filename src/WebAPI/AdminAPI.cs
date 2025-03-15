@@ -647,10 +647,12 @@ public static class AdminAPI
             User.DatabaseEntry userData = new() { ID = cleaned, RawSettings = "\n" };
             User user = new(Program.Sessions, userData);
             user.Settings.Roles = [role];
+            user.Settings.TrySetFieldModified(nameof(User.Settings.Roles), true);
             user.Data.PasswordHashed = Utilities.HashPassword(cleaned, password);
             user.Data.IsPasswordSetByAdmin = true;
-            Program.Sessions.Users.TryAdd(cleaned, user);
+            user.BuildRoles();
             user.Save();
+            Program.Sessions.Users.TryAdd(cleaned, user);
         }
         return new JObject() { ["success"] = true };
     }
@@ -765,7 +767,7 @@ public static class AdminAPI
         {
             ["user_id"] = user.UserID,
             ["password_set_by_admin"] = user.Data.IsPasswordSetByAdmin,
-            ["settings"] = AutoConfigToParamData(session.User.Settings, false),
+            ["settings"] = AutoConfigToParamData(user.Settings, false),
             ["max_t2i"] = user.CalcMaxT2ISimultaneous
         };
     }
@@ -856,9 +858,9 @@ public static class AdminAPI
             role.Data.MaxOutPathDepth = max_outpath_depth;
             role.Data.MaxT2ISimultaneous = max_t2i_simultaneous;
             role.Data.AllowUnsafeOutpaths = allow_unsafe_outpaths;
-            role.Data.ModelWhitelist = [.. model_whitelist.Split(',').Select(s => s.Trim())];
-            role.Data.ModelBlacklist = [.. model_blacklist.Split(',').Select(s => s.Trim())];
-            role.Data.PermissionFlags = [.. permissions.Split(',').Select(s => s.Trim())];
+            role.Data.ModelWhitelist = [.. model_whitelist.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
+            role.Data.ModelBlacklist = [.. model_blacklist.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
+            role.Data.PermissionFlags = [.. permissions.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
             Program.Sessions.Save();
         }
         return new JObject() { ["success"] = true };

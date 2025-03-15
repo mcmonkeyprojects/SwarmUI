@@ -239,7 +239,7 @@ function backendLoopUpdate() {
     if (isVisible(backendsListView)) {
         serverLogs.onTabButtonClick();
         if (backendsCheckRateCounter++ % 3 == 0) {
-            loadBackendsList(); // TODO: only if have permission
+            loadBackendsList();
         }
     }
     else {

@@ -1,4 +1,46 @@
 @page
 @{
-    ViewData["Title"] = $"Login to SwarmUI";
+    ViewData["Title"] = $"Login";
+}
+@section Header {
+    <link rel="stylesheet" href="css/loginpage.css?vary=@Utilities.VaryID" />
+}
+@if (WebUtil.HasValidLogin(HttpContext))
+{
+    <script>
+        window.location.href = "Text2Image";
+    </script>
+    return;
+}
+
+<div class="login-header-container login-container">
+    <div class="big-header">
+        <span class="translate">Login to</span> SwarmUI: @Program.ServerSettings.UserAuthorization.InstanceTitle
+    </div>
+    <div class="small-header">
+        <span class="translate">Please verify you are on the specific instance of SwarmUI you intend to be, verify the address in the URL is correct. Accounts are not shared between different instances of SwarmUI.</span>
+    </div>
+    <br><hr><br>
+    @Program.ServerSettings.UserAuthorization.LoginNotice
+</div>
+<div class="login-form-container login-container">
+    <div class="login-input-block">
+        <span class="translate">Username:</span> <input type="text" id="username_input" name="username" class="auto-text auto-text-block translate translate-no-text" placeholder="Username" autocomplete="off" value="" />
+    </div>
+    <div class="login-input-block">
+        <span class="translate">Password:</span> <input type="text" id="password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Password" autocomplete="off" value="" />
+    </div>
+    <div class="login-input-block login-message-block" id="login_error_block"></div>
+    <div class="login-input-block">
+        <button type="button" class="basic-button translate" id="login_button" onclick="loginHandler.doLogin()">Login</button>
+    </div>
+</div>
+<div class="login-footer-container login-container">
+    <span class="translate">This is a local login page for a specific instance of SwarmUI, owned by the operators of this instance.</span>
+    <br><span class="translate">This instance is not associated with</span> <a href="https://swarmui.net" target="_blank" rel="noopener noreferrer">SwarmUI</a> <span class="translate">or its developers.</span>
+    <br>SwarmUI <a href="https://github.com/mcmonkeyprojects/SwarmUI" target="_blank" rel="noopener noreferrer" class="translate">is open source on GitHub</a>.
+</div>
+
+@section Scripts {
+    <script src="js/loginpage.js?vary=@Utilities.VaryID"></script>
 }

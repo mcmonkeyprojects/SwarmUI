@@ -51,8 +51,8 @@ public class Settings : AutoConfiguration
     [ConfigComment("If set true, new/upcoming/experimental features will be visible.\nEnabling this will cause issues, do not expect a stable server.\nDo not report any bugs while this is enabled, and do not request new features related to experimental features.")]
     public bool ShowExperimentalFeatures = false;
 
-    [ConfigComment("Settings related to authorization.")]
-    public AuthorizationData Authorization = new();
+    [ConfigComment("Settings related to multi-user authorization.")]
+    public UserAuthorizationData UserAuthorization = new();
 
     [ConfigComment("Settings related to logging.")]
     public LogsData Logs = new();
@@ -86,13 +86,19 @@ public class Settings : AutoConfiguration
     }
 
     /// <summary>Settings related to authorization.</summary>
-    public class AuthorizationData : AutoConfiguration
+    public class UserAuthorizationData : AutoConfiguration
     {
-        [ConfigComment("If true, Swarm will require users to log in or use an API key to access the UI. If false, the UI will be open to anyone who can connect to it.\nDefaults to false.")]
+        [ConfigComment("If true, Swarm will require users to log in or use an API key to access the UI. If false, the UI will be open to anyone who can connect to it.\nDefaults to false.\nMake sure you know your own admin account login before enabling this!")]
         public bool AuthorizationRequired = false;
 
         [ConfigComment("If true, a direct connection from localhost can bypass login requirements.\nIf false, even local users will be required to login (they can just go manually edit the server settings file to toggle this though).\nDefaults to true.")]
         public bool AllowLocalhostBypass = true;
+
+        [ConfigComment("Title of this SwarmUI instance.\nDisplayed eg in some page headers and logs.\nKeep it simple, avoid html text in here.")]
+        public string InstanceTitle = "Local";
+
+        [ConfigComment("Message to add on the login page.\nYou may use (basic!) HTML here.\nIt is recommended to add contact information here, such as a Discord invite code or an email address.")]
+        public string LoginNotice = "This is a local instance not yet configured for shared usage. If you're seeing this on the login screen, ask the server owner to fill it in on the Server Configuration page.";
     }
 
     /// <summary>Settings related to logging.</summary>
@@ -196,8 +202,8 @@ public class Settings : AutoConfiguration
         [ConfigComment("If you wish to access your Swarm instance externally, set this to the path of a CloudFlared executable, and it will automatically be used.\n(Must restart to apply).\nThe URL will be visible on the Server Info tab and/or terminal log.\nSee documentation in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Advanced Usage.md#accessing-swarmui-from-other-devices\">the docs here</a>")]
         public string CloudflaredPath = "";
 
-        [ConfigComment("Any IPs that can bypass authorization requirements, as a comma-separated list.\nDefaults to '127.0.0.1' (localhost IPv4) and '::1' (localhost IPv6).")]
-        public string AuthBypassIPs = "127.0.0.1,::1";
+        [ConfigComment("Any IPs that can bypass network-authorization requirements, as a comma-separated list.\nDefaults to '127.0.0.1' (localhost IPv4) and '::1' (localhost IPv6) and '::ffff:127.0.0.1' (IPv4 localhost forwarded through IPv6).")]
+        public string AuthBypassIPs = "127.0.0.1,::1,::ffff:127.0.0.1";
 
         [ConfigComment("If set, connections will require an Authorization header.\nThis is intended for if you're hosting your Swarm instance to a public IP and want to reduce the risks from it being exposed.\nUsing a safe reverse proxy with actual authentication such as Apache2 is recommended instead.\nThis is a simple equality check, and should be something like `Bearer some_passphrase_or_something_here`.\nDefaults to empty (no authorization required).\nIf you accidentally lock yourself out, edit `Data/Settings.fds` to remove this setting and restart Swarm.")]
         public string RequiredAuthorization = "";
@@ -211,8 +217,8 @@ public class Settings : AutoConfiguration
         [ConfigComment("Optional CORS header to set. If empty, no CORS header will be set.\nDefaults to empty.")]
         public string AccessControlAllowOrigin = "";
 
-        [ConfigComment("Title of this SwarmUI instance.\nDisplayed eg in some page headers and logs.\nKeep it simple, avoid html text in here.")]
-        public string InstanceTitle = "Local";
+        [ConfigComment("How many entries in an X-Forwarded-For header to trust.\nDefaults to 3.\nSet to 0 to not trust any forwarded-for.")]
+        public int MaxXForwardedFor = 3;
     }
 
     /// <summary>Settings related to file paths.</summary>

@@ -350,7 +350,7 @@ public class Program
         {
             Logs.Warning($"Your folder path for SwarmUI contains a space. While Swarm itself can handle this fine, sometimes upstream dependencies misbehave around spaces. It is recommended you keep file paths very simple.");
         }
-        Logs.Init($"SwarmUI v{Utilities.Version} - {ServerSettings.Network.InstanceTitle} is now running.");
+        Logs.Init($"SwarmUI v{Utilities.Version} - {ServerSettings.UserAuthorization.InstanceTitle} is now running.");
         WebhookManager.SendWebhook("Startup", ServerSettings.WebHooks.ServerStartWebhook, ServerSettings.WebHooks.ServerShutdownWebhook);
         WebServer.WebApp.WaitForShutdown();
         Shutdown();

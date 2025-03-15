@@ -361,3 +361,12 @@ async function doPasswordChangeSubmit() {
         submitButton.disabled = false;
     });
 }
+
+function doUserLogout() {
+    if (!confirm('Are you sure you want to logout? This will close all current sessions originating from this browser.')) {
+        return;
+    }
+    genericRequest('Logout', {}, data => {
+        window.location.href = 'Login';
+    });
+}

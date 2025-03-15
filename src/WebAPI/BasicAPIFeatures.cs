@@ -21,7 +21,9 @@ public static class BasicAPIFeatures
     /// <summary>Called by <see cref="Program"/> to register the core API calls.</summary>
     public static void Register()
     {
+        API.RegisterAPICall(Login); // Login is special
         API.RegisterAPICall(GetNewSession); // GetNewSession is special
+        API.RegisterAPICall(Logout, true, Permissions.Fundamental);
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(SetStarredModels, true, Permissions.FundamentalModelAccess);
@@ -45,6 +47,67 @@ public static class BasicAPIFeatures
         UtilAPI.Register();
     }
 
+    /// <summary>Rate limiter for <see cref="Login(HttpContext, string, string)"/> to prevent spamming it, limited by IP address.</summary>
+    public static SimpleRateLimiter<string> LoginRateLimiterByIP = new(5, TimeSpan.FromMinutes(1));
+
+    /// <summary>Rate limiter for <see cref="Login(HttpContext, string, string)"/> to prevent spamming it, limited by username.</summary>
+    public static SimpleRateLimiter<string> LoginRateLimiterByUser = new(15, TimeSpan.FromMinutes(1));
+
+    [API.APIDescription("Special route to log in as a user account. Generally only for UI users, bots/automated API usages should have a user account generate a token first.",
+        """
+            "success": "true" // and sets a cookie
+            // or
+            "error_id": "invalid_login" // or "ratelimit"
+        """)]
+    public static async Task<JObject> Login(HttpContext context,
+        [API.APIParameter("Login username.")] string username,
+        [API.APIParameter("Login password.")] string password)
+    {
+        username = AdminAPI.UsernameValidator.TrimToMatches(username);
+        string ip = WebUtil.GetIPString(context);
+        string userAgent = WebUtil.AllowedXForwardedForChars.TrimToMatches(context.Request.Headers.UserAgent[0] ?? "unknown");
+        if (username.Length < 3 || username.Length > 100 || password.Length < 8 || password.Length > 500)
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, failed due to entirely invalid inputs.");
+            return new JObject() { ["error_id"] = "invalid_login" };
+        }
+        if (!LoginRateLimiterByIP.TryUseOne(ip))
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, ratelimited by IP.");
+            return new JObject() { ["error_id"] = "ratelimit" };
+        }
+        if (!LoginRateLimiterByUser.TryUseOne(username))
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, ratelimited by username.");
+            return new JObject() { ["error_id"] = "ratelimit" };
+        }
+        User user = Program.Sessions.GetUser(username, false);
+        if (user is null)
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, failed due to no such user.");
+            return new JObject() { ["error_id"] = "invalid_login" };
+        }
+        if (user.Data.PasswordHashed.Length == 0)
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, failed due to no password set.");
+            return new JObject() { ["error_id"] = "invalid_login" };
+        }
+        if (!Utilities.CompareHashedPassword(username, password, user.Data.PasswordHashed))
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, failed due to incorrect password.");
+            return new JObject() { ["error_id"] = "invalid_login" };
+        }
+        (_, string tok) = user.CreateLoginSession(ip, userAgent);
+        if (tok is null)
+        {
+            Logs.Warning($"Login attempt from {ip} as {username}, failed due to session creation failure.");
+            return new JObject() { ["error_id"] = "internal_error" };
+        }
+        context.Response.Cookies.Append("swarm_token", tok, new CookieOptions() { HttpOnly = true, Expires = DateTimeOffset.UtcNow.AddYears(1), SameSite = SameSiteMode.Lax });
+        Logs.Info($"Login attempt from {ip} as {username}, successful.");
+        return new JObject() { ["success"] = "true" };
+    }
+
     [API.APIDescription("Special route to create a new session ID. Must be called before any other API route. Also returns other fundamental user and server data.",
         """
             "session_id": "session_id",
@@ -56,28 +119,21 @@ public static class BasicAPIFeatures
         """)]
     public static async Task<JObject> GetNewSession(HttpContext context)
     {
-        string userId = WebServer.GetUserIdFor(context);
-        if (userId is null)
+        User user = WebServer.GetUserFor(context);
+        if (user is null)
         {
             return new JObject() { ["error"] = "Invalid or unauthorized." };
         }
-        string source = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        if (context.Request.Headers.TryGetValue("X-Forwarded-For", out StringValues forwardedFor) && forwardedFor.Count > 0)
-        {
-            foreach (string forward in forwardedFor)
-            {
-                source += $" (forwarded-for: {Utilities.ControlCodesMatcher.TrimToNonMatches(forward)})";
-            }
-        }
+        string source = WebUtil.GetIPString(context);
         if (source.Length > 100)
         {
             source = source[..100] + "...";
         }
-        Session session = Program.Sessions.CreateAdminSession(source, userId);
+        Session session = Program.Sessions.CreateSession(source, user.UserID);
         return new JObject()
         {
             ["session_id"] = session.ID,
-            ["user_id"] = session.User.UserID,
+            ["user_id"] = user.UserID,
             ["output_append_user"] = Program.ServerSettings.Paths.AppendUserNameToOutputPath,
             ["version"] = Utilities.VaryID,
             ["server_id"] = Utilities.LoopPreventionID.ToString(),
@@ -85,10 +141,37 @@ public static class BasicAPIFeatures
         };
     }
 
-    [API.APIDescription("Websocket route for the initial installation from the UI.",
+    [API.APIDescription("Causes a user to log out, closing all assocated sessions in the process.",
         """
-            // ... (do not automate calls to this)
+            "success": "true"
         """)]
+    public static async Task<JObject> Logout(HttpContext context, Session session)
+    {
+        if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return new JObject() { ["error"] = "Authorization is not enabled, you have no account to log out of." };
+        }
+        string[] parts = WebUtil.GetSwarmTokenFor(context);
+        if (parts is null)
+        {
+            return new JObject() { ["error"] = "You do not appear to be actually logged in. How'd you get here?" };
+        }
+        string token = parts[1];
+        lock (Program.Sessions.DBLock)
+        {
+            foreach (Session sess in Program.Sessions.Sessions.Values.Where(sess => sess.OriginToken == token))
+            {
+                Program.Sessions.RemoveSession(sess);
+            }
+        }
+        context.Response.Cookies.Append("swarm_token", "", new CookieOptions() { HttpOnly = true, MaxAge = TimeSpan.FromSeconds(-1), SameSite = SameSiteMode.Lax });
+        return new JObject() { ["success"] = "true" };
+    }
+
+    [API.APIDescription("Websocket route for the initial installation from the UI.",
+    """
+        // ... (do not automate calls to this)
+    """)]
     public static async Task<JObject> InstallConfirmWS(Session session, WebSocket socket,
         [API.APIParameter("Selected user theme.")] string theme,
         [API.APIParameter("Selected install_for (network mode choice) value.")] string installed_for,
@@ -389,6 +472,10 @@ public static class BasicAPIFeatures
         if (newPassword.Length < 8)
         {
             return new JObject() { ["error"] = "New password must be at least 8 characters long." };
+        }
+        if (newPassword.Length > 500)
+        {
+            return new JObject() { ["error"] = "New password is too long." };
         }
         if (!PasswordChangeRateLimiter.TryUseOne(session.User.UserID))
         {

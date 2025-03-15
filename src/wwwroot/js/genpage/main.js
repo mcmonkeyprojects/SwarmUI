@@ -2244,7 +2244,6 @@ function genpageLoad() {
         console.log('First session loaded - prepping page.');
         imageHistoryBrowser.navigate('');
         initialModelListLoad();
-        loadBackendTypesMenu();
         genericRequest('ListT2IParams', {}, data => {
             updateAllModels(data.models);
             allWildcards = data.wildcards;
@@ -2262,6 +2261,9 @@ function genpageLoad() {
             toggle_advanced();
             setCurrentModel();
             loadUserData(() => {
+                if (permissions.hasPermission('view_backends_list')) {
+                    loadBackendTypesMenu();
+                }
                 selectInitialPresetList();
             });
             for (let callback of sessionReadyCallbacks) {

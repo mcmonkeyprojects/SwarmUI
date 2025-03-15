@@ -1,4 +1,5 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticExtensions;
 using SwarmUI.Utils;
 
 namespace SwarmUI.Accounts;
@@ -56,5 +57,10 @@ public class Role(string name)
             role.ModelBlacklist.UnionWith(otherRole.ModelBlacklist);
         }
         return new Role("generated") { Data = role };
+    }
+
+    public override string ToString()
+    {
+        return $"Role '{ID}', Desc='{Data.Description}' Permissions=[{Data.PermissionFlags.JoinString(", ")}]";
     }
 }

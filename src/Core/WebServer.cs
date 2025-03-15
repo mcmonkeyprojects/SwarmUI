@@ -403,7 +403,7 @@ public class WebServer
     /// <summary>Web route for audio files.</summary>
     public async Task ViewAudio(HttpContext context)
     {
-        if (GetUserIdFor(context) is null)
+        if (GetUserFor(context) is null)
         {
             await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
             return;
@@ -444,23 +444,17 @@ public class WebServer
         await context.Response.CompleteAsync();
     }
 
-    public static string GetUserIdFor(HttpContext context)
-    {
-        if (Program.ServerSettings.Authorization.AuthorizationRequired)
-        {
-            // TODO
-            return null;
-        }
-        if (context.Request.Headers.TryGetValue("X-SWARM-USER_ID", out StringValues user_id))
-        {
-            return user_id[0];
-        }
-        return SessionHandler.LocalUserID; // TODO: disable this if non-local swarm instance
-    }
-
     public static User GetUserFor(HttpContext context)
     {
-        string id = GetUserIdFor(context);
+        if (Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return WebUtil.GetValidLogin(context);
+        }
+        string id = SessionHandler.LocalUserID;
+        if (context.Request.Headers.TryGetValue("X-SWARM-USER_ID", out StringValues user_id))
+        {
+            id = user_id[0];
+        }
         return id is null ? null : Program.Sessions.GetUser(id);
     }
 

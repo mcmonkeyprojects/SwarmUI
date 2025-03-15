@@ -8,6 +8,7 @@ using SwarmUI.Text2Image;
 using FreneticUtilities.FreneticExtensions;
 using System.Security.Cryptography;
 using SwarmUI.Backends;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 
 namespace SwarmUI.Accounts;
 
@@ -34,6 +35,9 @@ public class User
 
         /// <summary>True if password was set by an admin, false if password was set by the user.</summary>
         public bool IsPasswordSetByAdmin { get; set; } = true;
+
+        /// <summary>IDs of the user's current login sessions.</summary>
+        public List<string> LoginSessions { get; set; } = [];
     }
 
     public void BuildRoles()
@@ -53,6 +57,7 @@ public class User
     {
         SessionHandlerSource = sessions;
         Data = data;
+        Data.LoginSessions ??= [];
         Settings.Load(Program.ServerSettings.DefaultUser.Save(false));
         foreach (string field in Settings.InternalData.SharedData.Fields.Keys)
         {
@@ -444,5 +449,35 @@ public class User
             }
         }
         return false;
+    }
+
+    public (SessionHandler.LoginSession, string) CreateLoginSession(string ip, string userAgent)
+    {
+        string id = Utilities.SecureRandomHex(32);
+        string validationText = Utilities.SecureRandomHex(32);
+        byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
+        byte[] hashedText = KeyDerivation.Pbkdf2(password: validationText, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10, numBytesRequested: 256 / 8);
+        string validationHashed = Utilities.BytesToHex(salt) + ":" + Utilities.BytesToHex(hashedText);
+        SessionHandler.LoginSession session = new()
+        {
+            ID = id,
+            UserID = UserID,
+            OriginAddress = ip,
+            OriginUserAgent = userAgent,
+            LastActiveUnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            ValidationHash = validationHashed
+        };
+        lock (SessionHandlerSource.DBLock)
+        {
+            if (!MayCreateSessions)
+            {
+                return (null, null);
+            }
+            Data.LoginSessions.Add(id);
+            Save();
+            SessionHandlerSource.LoginSessions.Upsert(id, session);
+        }
+        string userIdHex = Utilities.BytesToHex(Encoding.UTF8.GetBytes(UserID));
+        return (session, $"{userIdHex}.{id}.{validationText}");
     }
 }

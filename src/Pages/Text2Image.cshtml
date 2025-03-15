@@ -3,7 +3,9 @@
     ViewData["Title"] = "Page is loading...";
     string alwaysRefreshOnLoad = Program.ServerSettings.Backends.AlwaysRefreshOnLoad ? "true" : "false";
     string experimentalHide = Program.ServerSettings.ShowExperimentalFeatures ? "" : "secretexperimental";
-    string instanceTitle = Program.ServerSettings.Network.InstanceTitle;
+    string instanceTitle = Program.ServerSettings.UserAuthorization.InstanceTitle;
+    bool isLoginEnabled = Program.ServerSettings.UserAuthorization.AuthorizationRequired;
+    User user = isLoginEnabled ? WebUtil.GetValidLogin(HttpContext) : null;
 }
 @section Header {
     <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
@@ -13,6 +15,13 @@
 {
     <script>
         window.location.href = "Install";
+    </script>
+    return;
+}
+@if (isLoginEnabled && user is null)
+{
+    <script>
+        window.location.href = "Login";
     </script>
     return;
 }
@@ -35,7 +44,7 @@
 </script>
 
 <ul class="nav nav-tabs" role="tablist" id="toptablist">
-    <li class="nav-item" role="presentation">
+    <li class="nav-item" role="presentation" data-requiredpermission="comfy_dynamic_custom_workflows">
         <a class="nav-link translate" data-bs-toggle="tab" href="#Simple" id="simpletabbutton" aria-selected="false" tabindex="-1" role="tab">Simple</a>
     </li>
     <li class="nav-item" role="presentation">
@@ -824,9 +833,24 @@
         </ul>
         <div class="tab-content">
             <div class="tab-pane show active translate" id="user-info" role="tabpanel">
-                (TODO: info n stuff here)
-                <br>
-                <br><button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
+                <div class="card border-secondary mb-3 card-center-container">
+                    <div class="card-header translate">User Account</div>
+                    <div class="card-body">
+                        @if (!isLoginEnabled)
+                        {
+                            <p class="translate">User accounts are not enabled. You are the local default user. You can enable multi-user accounts in the <a href="#Settings-Server" onclick="getRequiredElementById('servertabbutton').click();getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab.</p>
+                        }
+                        else
+                        {
+                            <span class="translate">You are logged in as:</span> <b>@user.UserID</b>
+                            <br>
+                            <br>
+                            <button class="basic-button translate" id="logout_button" onclick="doUserLogout()">Logout</button>
+                            // TODO: Other user stuff here. List of tokens/sessions, etc.
+                            <button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
+                        }
+                    </div>
+                </div>
                 @WebUtil.ModalHeader("change_password_modal", "Change Password")
                     <div class="modal-body">
                         <p class="translate">This form lets you change your user password. If you never had a password before, leave the old password blank.</p>
@@ -939,7 +963,7 @@
             <li class="nav-item" role="presentation" data-requiredpermission="read_server_settings">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Server" id="serverconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Server Configuration</a>
             </li>
-            <li class="nav-item @experimentalHide" role="presentation" data-requiredpermission="manage_users">
+            <li class="nav-item" role="presentation" data-requiredpermission="manage_users">
                 <a class="nav-link translate" data-bs-toggle="tab" href="#Server-ManageUsers" id="manageusersbutton" aria-selected="false" tabindex="-1" role="tab">Users</a>
             </li>
             <li class="nav-item" role="presentation" data-requiredpermission="manage_extensions">

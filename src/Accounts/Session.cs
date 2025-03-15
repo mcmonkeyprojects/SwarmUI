@@ -27,6 +27,9 @@ public class Session : IEquatable<Session>
 
         /// <summary>Originating remote IP address of the session.</summary>
         public string OriginAddress { get; set; }
+
+        /// <summary>If authorization is enabled, this is the token ID that created this session.</summary>
+        public string OriginToken { get; set; }
     }
 
     /// <summary>Randomly generated ID.</summary>
@@ -34,6 +37,9 @@ public class Session : IEquatable<Session>
 
     /// <summary>The relevant <see cref="User"/>.</summary>
     public User User;
+
+    /// <summary>If authorization is enabled, this is the token ID that created this session.</summary>
+    public string OriginToken;
 
     /// <summary>The current database entry for this <see cref="Session"/>.</summary>
     public DatabaseEntry MakeDBEntry()
@@ -43,7 +49,8 @@ public class Session : IEquatable<Session>
             ID = ID,
             UserID = User.UserID,
             LastActiveUnixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - (long)TimeSinceLastUsed.TotalSeconds,
-            OriginAddress = OriginAddress
+            OriginAddress = OriginAddress,
+            OriginToken = OriginToken
         };
     }
 
@@ -268,9 +275,5 @@ public class Session : IEquatable<Session>
     {
         SessInterrupt.Cancel();
         SessInterrupt = new();
-    }
-
-    public void Remove()
-    {
     }
 }

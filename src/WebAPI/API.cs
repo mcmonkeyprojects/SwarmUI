@@ -26,7 +26,7 @@ public class API
     /// <summary>Register a new API call handler.</summary>
     public static void RegisterAPICall(Delegate method, bool isUserUpdate = false, PermInfo permission = null)
     {
-        if (permission is null && method.Method.Name != "GetNewSession")
+        if (permission is null && method.Method.Name != "GetNewSession" && method.Method.Name != "Login")
         {
             Logs.Error($"Warning: API method '{method.Method.Name}' registered without permission! (legacy call, or debugging? Make sure it has a permission added before committing to public access)");
         }
@@ -83,7 +83,7 @@ public class API
                 return;
             }
             string path = context.Request.Path.ToString().ToLowerFast().After("/api/");
-            if (path != "getnewsession")
+            if (path != "getnewsession" && path != "login")
             {
                 if (!input.TryGetValue("session_id", out JToken session_id))
                 {

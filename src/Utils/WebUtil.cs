@@ -1,5 +1,9 @@
 ﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Html;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -185,4 +189,108 @@ public static class WebUtil
 
     /// <summary>Returns true if the program is running in Windows.</summary>
     public static bool IsWindows() => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+    public static AsciiMatcher AllowedXForwardedForChars = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + " .:,;_-*@#%[]");
+
+    public static string GetIPString(HttpContext context)
+    {
+        string ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        int maxForwards = Program.ServerSettings.Network.MaxXForwardedFor;
+        if (maxForwards > 0 && context.Request.Headers.TryGetValue("X-Forwarded-For", out StringValues xff))
+        {
+            string[] parts = xff;
+            for (int i = 0; i < Math.Min(parts.Length, maxForwards); i++)
+            {
+                ip += $" (via {AllowedXForwardedForChars.TrimToMatches(parts[i])})";
+            }
+        }
+        if (ip.Length > 500)
+        {
+            ip = ip[..500] + " (...)";
+        }
+        return ip;
+    }
+
+    public static bool HasValidLogin(HttpContext context)
+    {
+        if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return true;
+        }
+        return GetValidLogin(context) is not null;
+    }
+
+    public static string[] GetSwarmTokenFor(HttpContext context)
+    {
+        if (!context.Request.Cookies.TryGetValue("swarm_token", out string token))
+        {
+            return null;
+        }
+        if (token.Length < 10 || token.Length > 1000)
+        {
+            return null;
+        }
+        string[] parts = token.Split('.');
+        if (parts.Length != 3)
+        {
+            return null;
+        }
+        return parts;
+    }
+
+    public static User GetUserForSwarmToken(HttpContext context, string[] parts)
+    {
+        if (parts is null)
+        {
+            return null;
+        }
+        byte[] firstPart = Convert.FromHexString(parts[0]);
+        string username = Encoding.UTF8.GetString(firstPart);
+        User user = Program.Sessions.GetUser(username, false);
+        if (user is null)
+        {
+            return null;
+        }
+        string tokId = parts[1];
+        string validation = parts[2];
+        lock (Program.Sessions.DBLock)
+        {
+            if (!user.Data.LoginSessions.Contains(tokId))
+            {
+                return null;
+            }
+            SessionHandler.LoginSession sess = Program.Sessions.LoginSessions.FindById(tokId);
+            if (sess is null || sess.ID != tokId || sess.UserID != user.UserID)
+            {
+                return null;
+            }
+            if (!sess.CheckValidation(validation))
+            {
+                Logs.Warning($"Connection from {GetIPString(context)} has a token for {tokId} but failed secondary validation. Possibly attempting brute force attack?");
+                return null;
+            }
+            sess.LastActiveUnixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            Program.Sessions.LoginSessions.Upsert(sess);
+            return user;
+        }
+    }
+
+    public static User GetValidLogin(HttpContext context)
+    {
+        try
+        {
+            string ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            if (Program.ServerSettings.UserAuthorization.AllowLocalhostBypass && (ip == "127.0.0.1" || ip == "::1" || ip == "::ffff:127.0.0.1") && !context.Request.Headers.ContainsKey("X-Forwarded-For"))
+            {
+                return Program.Sessions.GetUser(SessionHandler.LocalUserID);
+            }
+            string[] parts = GetSwarmTokenFor(context);
+            return GetUserForSwarmToken(context, parts);
+        }
+        catch (Exception ex)
+        {
+            Logs.Verbose($"Fatal error trying to parse swarm_token: {ex}");
+            return null;
+        }
+    }
 }
