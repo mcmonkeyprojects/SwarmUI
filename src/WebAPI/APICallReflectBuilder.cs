@@ -47,7 +47,9 @@ public class APICallReflectBuilder
             {
                 caller.InputMappers.Add((_, _, _, input) =>
                 {
-                    JObject dup = [.. input];
+#pragma warning disable IDE0028 // Simplify collection initialization
+                    JObject dup = new(input);
+#pragma warning restore IDE0028 // Simplify collection initialization
                     dup.Remove("session_id");
                     return (null, dup);
                 });
