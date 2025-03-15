@@ -58,7 +58,8 @@ This is only for very advanced / tech-skilled users. Normal users beware, here b
 
 Triton is a Linux-only AI acceleration library that you can hack into working on Windows. It enables `Torch.Compile` params and things like that. `SageAttention` is an acceleration tool that depends on Triton.
 
-- First, follow steps 5 and 6 of Triton-Windows install guide (MSVC, VCRedist) https://github.com/woct0rdho/triton-windows?tab=readme-ov-file#5-msvc-and-windows-sdk
+- First, follow step 6 of Triton-Windows install guide (VCRedist) https://github.com/woct0rdho/triton-windows?tab=readme-ov-file#5-msvc-and-windows-sdk
+    - It changes sometimes, so double-check for other missing steps
     - See also the GPU-specific notes at the top of the readme
 - Open a command line in `(Your Swarm Install)\dlbackend\comfy`
     - type the command `python_embeded\python.exe --version`

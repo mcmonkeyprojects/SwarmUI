@@ -1268,7 +1268,7 @@ public class WorkflowGeneratorSteps
                     g.FinalModel = model;
                 }
                 PromptRegion negativeRegion = new(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""));
-                PromptRegion.Part[] negativeParts = negativeRegion.Parts.Where(p => p.Type == PromptRegion.PartType.Segment).ToArray();
+                PromptRegion.Part[] negativeParts = [.. negativeRegion.Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
                 for (int i = 0; i < parts.Length; i++)
                 {
                     PromptRegion.Part part = parts[i];
@@ -1365,7 +1365,7 @@ public class WorkflowGeneratorSteps
         #region SaveImage
         AddStep(g =>
         {
-            PromptRegion.Part[] parts = new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.ClearSegment).ToArray();
+            PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.ClearSegment)];
             foreach (PromptRegion.Part part in parts)
             {
                 if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))

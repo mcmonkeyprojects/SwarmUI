@@ -402,7 +402,7 @@ public class T2IModelHandler
                 {
                     metaHeader = headerData["__metadata__"] as JObject ?? [];
                     textEncs = "";
-                    string[] keys = headerData.Properties().Select(p => p.Name).Where(k => k.StartsWith("text_encoders.")).ToArray();
+                    string[] keys = [.. headerData.Properties().Select(p => p.Name).Where(k => k.StartsWith("text_encoders."))];
                     if (keys.Any(k => k.StartsWith("text_encoders.clip_g."))) { textEncs += "clip_g,"; }
                     if (keys.Any(k => k.StartsWith("text_encoders.clip_l."))) { textEncs += "clip_l,"; }
                     if (keys.Any(k => k.StartsWith("text_encoders.t5xxl."))) { textEncs += "t5xxl,"; }

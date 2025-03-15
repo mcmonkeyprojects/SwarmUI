@@ -97,6 +97,7 @@ public static class Permissions
     public static PermInfo EditUserSettings = Register(new("edit_user_settings", "Edit User Settings", "Allows this user to edit their own settings.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo EditParams = Register(new("edit_params", "Edit Params", "Allows this user to edit params (in a way that only affects themself, not other users).", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo ManagePresets = Register(new("manage_presets", "Manage Presets", "Allows this user to manage (add, edit, delete) their own presets.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
+    public static PermInfo Fundamental = Register(new("fundamental", "Fundamental", "Most basic possible permission for core functions.", PermissionDefault.GUEST, GroupUser, PermSafetyLevel.SAFE));
 
     public static PermInfoGroup GroupExtensionTabs = new("Extension Tabs", "Permissions related to extension tabs.");
 

@@ -228,9 +228,9 @@ public static class Utilities
     {
         if (length % 2 == 1)
         {
-            return Convert.ToHexString(RandomNumberGenerator.GetBytes((length + 1) / 2))[0..^1];
+            return BytesToHex(RandomNumberGenerator.GetBytes((length + 1) / 2))[0..^1];
         }
-        return Convert.ToHexString(RandomNumberGenerator.GetBytes(length / 2));
+        return BytesToHex(RandomNumberGenerator.GetBytes(length / 2));
     }
 
     /// <summary>Gets a convenient cancel token that cancels itself after a given time OR the program itself is cancelled.</summary>
@@ -717,7 +717,7 @@ public static class Utilities
                             }
                             sha256.TransformFinalBlock([], 0, 0);
                             byte[] hash = sha256.Hash;
-                            string hashStr = Convert.ToHexString(hash).ToLowerFast();
+                            string hashStr = BytesToHex(hash).ToLowerFast();
                             Logs.Verbose($"Raw file hash for {altUrl} is {hashStr}");
                             if (verifyHash is not null && hashStr != verifyHash.ToLowerFast())
                             {
@@ -1160,10 +1160,14 @@ public static class Utilities
     /// <summary>Hashes a password for storage.</summary>
     public static string HashPassword(string username, string password)
     {
+        if (password.Length > 512) // Sanity cap
+        {
+            throw new SwarmReadableErrorException("Password is too long.");
+        }
         if (password.StartsWith("__swarmdoprehash:"))
         {
             password = password["__swarmdoprehash:".Length..];
-            password = Convert.ToHexString(SHA256.HashData(password.EncodeUTF8())).ToLowerFast();
+            password = BytesToHex(SHA256.HashData(password.EncodeUTF8())).ToLowerFast();
         }
         byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";

@@ -15,7 +15,7 @@ Remove-Item 'src/obj/' -Recurse
 dotnet build src/SwarmUI.csproj --configuration Debug -o src/bin/live_release
 
 # Default env configuration, gets overwritten by the C# code's settings handler
-$Env:ASPNETCORE_ENVIRONMENT = "Production"
+$Env:ASPNETCORE_ENVIRONMENT = "Development"
 $Env:ASPNETCORE_URLS = "http://*:7801"
 
 # Actual runner.

@@ -629,6 +629,14 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Username must be at least 3 characters long, A-Z 0-9 only." };
         }
+        if (password.Length < 8)
+        {
+            return new JObject() { ["error"] = "Password must be at least 8 characters long." };
+        }
+        if (cleaned.Length > 70 || password.Length > 500)
+        {
+            return new JObject() { ["error"] = "Username or password too long." };
+        }
         lock (Program.Sessions.DBLock)
         {
             User existing = Program.Sessions.GetUser(cleaned, false);
@@ -669,6 +677,10 @@ public static class AdminAPI
             if (password.Length < 8)
             {
                 return new JObject() { ["error"] = "Password must be at least 8 characters long." };
+            }
+            if (password.Length > 500)
+            {
+                return new JObject() { ["error"] = "Password too long." };
             }
             user.Data.PasswordHashed = Utilities.HashPassword(user.UserID, password);
         }

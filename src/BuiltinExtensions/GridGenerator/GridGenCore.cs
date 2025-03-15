@@ -421,7 +421,7 @@ public partial class GridGenCore
             {
                 foreach (SingleGridCall obj in result)
                 {
-                    obj.Values = obj.Values.OrderBy(v => v.Axis.Index).Reverse().ToList();
+                    obj.Values = [.. obj.Values.OrderBy(v => v.Axis.Index).Reverse()];
                 }
             }
             return result;
