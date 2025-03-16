@@ -578,6 +578,12 @@ function comfyBuildParams(callback) {
                         if (nodeId in nodeIsRandomize) {
                             val = -1;
                         }
+                        if (val < 0) {
+                            val = -1;
+                        }
+                        else if (val > max) {
+                            val = parseInt(`${val}`.substring(0, `${max}`.length - 1));
+                        }
                     }
                     else if (['width', 'height'].includes(inputId)) {
                         type = 'integer';
