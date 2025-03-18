@@ -33,12 +33,13 @@ class AspectRatio {
                 return [newWidth, newHeight];
             }
         }
+        //change to round to the nearest whole instead for more acurate aspect ratios
         if (inWidth != inHeight) {
-            inWidth = roundTo(Math.sqrt(inWidth * inHeight), 16);
+            inWidth = Math.round(Math.sqrt(inWidth * inHeight));
             inHeight = inWidth;
         }
-        let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
-        let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
+        let width = Math.round(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
+        let height = Math.round(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
         return [width, height];
     }
 }
