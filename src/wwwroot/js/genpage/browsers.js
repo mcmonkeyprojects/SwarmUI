@@ -579,6 +579,7 @@ class GenPageBrowserClass {
             }
             formatSelector.addEventListener('change', () => {
                 this.format = formatSelector.value;
+                setCookie(`${this.id}_format`, this.format, 90);
                 localStorage.setItem(`browser_${this.id}_format`, this.format);
                 this.updateWithoutDup();
             });
