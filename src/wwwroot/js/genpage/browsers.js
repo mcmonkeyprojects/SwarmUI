@@ -76,7 +76,7 @@ class GenPageBrowserClass {
         this.extraHeader = extraHeader;
         this.navCaller = this.navigate.bind(this);
         this.tree = new BrowserTreePart('', {}, false, true, null, '');
-        this.depth = localStorage.getItem(`browser_${id}_depth`) || defaultDepth;
+        this.depth = localStorage.getItem(`browser_${id}_depth`) || getCookie(`browser_${this.id}_depth`) || defaultDepth;
         this.filter = localStorage.getItem(`browser_${id}_filter`) || '';
         this.folderTreeVerticalSpacing = '0';
         this.splitterMinWidth = 100;
@@ -596,6 +596,7 @@ class GenPageBrowserClass {
             let depthInput = inputArr[0];
             depthInput.addEventListener('change', () => {
                 this.depth = depthInput.value;
+                setCookie(`browser_${this.id}_depth`, this.depth, 90);
                 localStorage.setItem(`browser_${this.id}_depth`, this.depth);
                 this.updateWithoutDup();
             });

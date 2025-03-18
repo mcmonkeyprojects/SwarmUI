@@ -484,8 +484,8 @@ class ModelBrowserWrapper {
             }, 100);
             return;
         }
-        let sortBy = localStorage.getItem(`models_${this.subType}_sort_by`) ?? 'Name';
-        let reverse = localStorage.getItem(`models_${this.subType}_sort_reverse`) == 'true';
+        let sortBy = localStorage.getItem(`models_${this.subType}_sort_by`) ?? getCookie(`models_${this.subType}_sort_by`) ?? 'Name';
+        let reverse = (localStorage.getItem(`models_${this.subType}_sort_reverse`) ?? getCookie(`models_${this.subType}_sort_by`)) == 'true';
         let sortElem = document.getElementById(`models_${this.subType}_sort_by`);
         let sortReverseElem = document.getElementById(`models_${this.subType}_sort_reverse`);
         let fix = null;
@@ -500,10 +500,12 @@ class ModelBrowserWrapper {
                 sortElem.value = sortBy;
                 sortReverseElem.checked = reverse;
                 sortElem.addEventListener('change', () => {
+                    setCookie(`models_${this.subType}_sort_by`, sortElem.value, 90);
                     localStorage.setItem(`models_${this.subType}_sort_by`, sortElem.value);
                     this.browser.update();
                 });
                 sortReverseElem.addEventListener('change', () => {
+                    setCookie(`models_${this.subType}_sort_reverse`, sortReverseElem.checked, 90);
                     localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
                     this.browser.update();
                 });
