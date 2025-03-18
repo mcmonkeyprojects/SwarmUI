@@ -1021,20 +1021,41 @@ public class T2IParamTypes
     {
         int width, height;
         if (aspectRatio == "1:1") { width = 512; height = 512; }
-        else if (aspectRatio == "4:3") { width = 576; height = 448; }
-        else if (aspectRatio == "3:2") { width = 608; height = 416; }
-        else if (aspectRatio == "8:5") { width = 608; height = 384; }
-        else if (aspectRatio == "16:9") { width = 672; height = 384; }
-        else if (aspectRatio == "21:9") { width = 768; height = 320; }
-        else if (aspectRatio == "3:4") { width = 448; height = 576; }
-        else if (aspectRatio == "2:3") { width = 416; height = 608; }
-        else if (aspectRatio == "5:8") { width = 384; height = 608; }
-        else if (aspectRatio == "9:16") { width = 384; height = 672; }
-        else if (aspectRatio == "9:21") { width = 320; height = 768; }
+        else if (aspectRatio == "4:3") { width = 591; height = 443; }
+        else if (aspectRatio == "3:2") { width = 627; height = 418; }
+        else if (aspectRatio == "8:5") { width = 648; height = 405; }
+        else if (aspectRatio == "16:9") { width = 683; height = 384; }
+        else if (aspectRatio == "21:9") { width = 782; height = 335; }
+        else if (aspectRatio == "3:4") { width = 443; height = 591; }
+        else if (aspectRatio == "2:3") { width = 418; height = 627; }
+        else if (aspectRatio == "5:8") { width = 405; height = 648; }
+        else if (aspectRatio == "9:16") { width = 384; height = 683; }
+        else if (aspectRatio == "9:21") { width = 335; height = 782; }
         else { width = -1; height = -1; }
         return (width, height);
     }
+    /// Implementation of above that works for any given aspect ratio
+    /*
+    /// <summary>Calculates the actual width,height value for a given aspect ratio, based on a 512x512 base scale.</summary>
+    public static (int, int) AspectRatioToSizeReference(string aspectRatio)
+    {
+        if (string.IsNullOrWhiteSpace(aspectRatio))
+            return (-1, -1);
+        string[] parts = aspectRatio.Split(':');
+        if (parts.Length != 2)
+            return (-1, -1);
+        if (!double.TryParse(parts[0], out double a) || !double.TryParse(parts[1], out double b))
+            return (-1, -1);
+        if (a <= 0 || b <= 0)
+            return (-1, -1);
 
+        double area = 512 * 512;
+        int width = (int)Math.Round(Math.Sqrt(area * (a / b)));
+        int height = (int)Math.Round(Math.Sqrt(area * (b / a)));
+
+        return (width, height);
+    }
+    */
     /// <summary>Adds new entries to a list of dropdown values, in a clean way that avoids breaking from display names, and applying an async-safe concat.</summary>
     public static void ConcatDropdownValsClean(ref List<string> mainList, IEnumerable<string> addIn)
     {

@@ -42,46 +42,48 @@ class AspectRatio {
         return [width, height];
     }
 }
-
+//replaced with values that actually match the aspect ratios for 512^2 pixels
 let aspectRatios = [
     new AspectRatio("1:1", 512, 512),
-    new AspectRatio("4:3", 576, 448),
-    new AspectRatio("3:2", 608, 416, (w, h) => {
-        if (w == 768 && h == 512) {
+    new AspectRatio("4:3", 591, 443),
+    new AspectRatio("3:2", 627, 418, (w, h) => {
+        if (w === 768 && h === 512) {
             return [768, 512];
         }
         return [null, null];
     }),
-    new AspectRatio("8:5", 608, 384),
-    new AspectRatio("16:9", 672, 384, (w, h) => {
-        if (w == 640 && h == 640) {
+    new AspectRatio("8:5", 648, 405),
+    new AspectRatio("16:9", 683, 384, (w, h) => {
+        if (w === 640 && h === 640) {
             return [832, 480]; // Wan 2.1, 1.3b
         }
-        else if (w == 960 && h == 960) {
+        else if (w === 960 && h === 960) {
             return [1280, 720]; // Wan 2.1, 14b
         }
         return [null, null];
     }),
-    new AspectRatio("21:9", 768, 320),
-    new AspectRatio("3:4", 448, 576),
-    new AspectRatio("2:3", 416, 608, (w, h) => {
-        if (w == 768 && h == 512) {
+    new AspectRatio("21:9", 782, 335),
+    new AspectRatio("3:4", 443, 591),
+    new AspectRatio("2:3", 418, 627, (w, h) => {
+        if (w === 768 && h === 512) {
             return [768, 512];
         }
         return [null, null];
     }),
-    new AspectRatio("5:8", 384, 608),
-    new AspectRatio("9:16", 384, 672, (w, h) => {
-        if (w == 640 && h == 640) {
+    new AspectRatio("5:8", 405, 648),
+    new AspectRatio("9:16", 384, 683, (w, h) => {
+        if (w === 640 && h === 640) {
             return [480, 832]; // Wan 2.1, 1.3b
         }
-        else if (w == 960 && h == 960) {
+        else if (w === 960 && h === 960) {
             return [720, 1280]; // Wan 2.1, 14b
         }
         return [null, null];
     }),
-    new AspectRatio("9:21", 320, 768)
+    new AspectRatio("9:21", 335, 782)
 ];
+
+
 
 
 function getHtmlForParam(param, prefix) {
