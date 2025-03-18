@@ -1781,11 +1781,15 @@ function installTensorRT() {
     });
 }
 
-function hideRevisionInputs() {
+function clearPromptImages() {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     promptImageArea.innerHTML = '';
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     clearButton.style.display = 'none';
+    autoRevealRevision();
+}
+
+function hideRevisionInputs() {
     let revisionGroup = document.getElementById('input_group_imageprompting');
     let revisionToggler = document.getElementById('input_group_content_imageprompting_toggle');
     if (revisionGroup) {
@@ -1810,9 +1814,11 @@ function showRevisionInputs(toggleOn = false) {
     }
 }
 
+revisionRevealerSources = [];
+
 function autoRevealRevision() {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
-    if (promptImageArea.children.length > 0) {
+    if (promptImageArea.children.length > 0 || revisionRevealerSources.some(x => x())) {
         showRevisionInputs();
     }
     else {
@@ -1857,7 +1863,7 @@ function imagePromptInputHandler() {
     });
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     clearButton.addEventListener('click', () => {
-        hideRevisionInputs();
+        clearPromptImages();
     });
     dragArea.addEventListener('drop', (e) => {
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {

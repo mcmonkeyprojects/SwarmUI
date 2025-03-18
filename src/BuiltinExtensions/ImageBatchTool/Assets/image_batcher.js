@@ -46,6 +46,9 @@ class ImageBatcherClass {
                 autoRevealRevision();
             }
         });
+        revisionRevealerSources.push(() => {
+            return toolSelector.value == 'image_batcher';
+        });
     }
 }
 
