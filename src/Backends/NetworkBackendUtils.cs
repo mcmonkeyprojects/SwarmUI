@@ -222,18 +222,18 @@ public static class NetworkBackendUtils
         return port;
     }
 
-    /// <summary>Tries to identify the lib folder that will be used for a given start script.</summary>
+    /// <summary>Tries to identify the lib/site-packages/ folder that will be used for a given start script.</summary>
     public static string GetProbableLibFolderFor(string script)
     {
         string path = script.Replace('\\', '/');
         string dir = Path.GetDirectoryName(path);
         if (File.Exists($"{dir}/venv/Scripts/python.exe"))
         {
-            return Path.GetFullPath($"{dir}/venv/Lib");
+            return Path.GetFullPath($"{dir}/venv/Lib/site-packages/");
         }
         if (File.Exists($"{dir}/../python_embeded/python.exe"))
         {
-            return Path.GetFullPath($"{dir}/../python_embeded/Lib");
+            return Path.GetFullPath($"{dir}/../python_embeded/Lib/site-packages/");
         }
         if (File.Exists($"{dir}/venv/bin/python3"))
         {
@@ -244,7 +244,7 @@ public static class NetworkBackendUtils
             {
                 if (subDir.AfterLast('/').StartsWith("python"))
                 {
-                    return Path.GetFullPath(subDir);
+                    return Path.GetFullPath($"{subDir}/site-packages/");
                 }
             }
         }

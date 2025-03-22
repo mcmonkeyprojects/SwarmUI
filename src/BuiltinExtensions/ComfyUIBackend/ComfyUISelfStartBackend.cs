@@ -392,7 +392,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         else
         {
             AddLoadStatus($"Will validate required libs...");
-            string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
+            string[] dirs = [.. Directory.GetDirectories($"{lib}").Select(f => f.Replace('\\', '/').AfterLast('/'))];
             string[] distinfos = [.. dirs.Where(d => d.EndsWith(".dist-info"))];
             HashSet<string> libs = [.. dirs.Select(d => d.Before('-'))];
             async Task install(string libFolder, string pipName)
@@ -452,16 +452,16 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
                 await install("Cython", "cython");
-                if (File.Exists($"{lib}/../python311.dll"))
+                if (File.Exists($"{lib}/../../python311.dll"))
                 {
                     // TODO: This is deeply cursed. This is published by the comfyui-ReActor-node developer so at least it's not a complete rando, but, jeesh. Insightface please fix your pip package.
                     await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp311-cp311-win_amd64.whl");
                 }
-                else if (File.Exists($"{lib}/../python312.dll"))
+                else if (File.Exists($"{lib}/../../python312.dll"))
                 {
                     await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp312-cp312-win_amd64.whl");
                 }
-                else if (File.Exists($"{lib}/../python310.dll"))
+                else if (File.Exists($"{lib}/../../python310.dll"))
                 {
                     await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp310-cp310-win_amd64.whl");
                 }
