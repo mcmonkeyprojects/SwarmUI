@@ -248,6 +248,28 @@ public static class NetworkBackendUtils
                 }
             }
         }
+        try
+        {
+            ProcessStartInfo start = new()
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                WorkingDirectory = dir
+            };
+            ConfigurePythonExeFor(script, "folder-finder", start, out string preArgs, out _);
+            start.Arguments = $"{preArgs} -c \"import sysconfig; print(sysconfig.get_path('purelib'))\"".Trim();
+            Process process = Process.Start(start);
+            string output = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExitAsync(Program.GlobalProgramCancel).Wait();
+            if (Directory.Exists(output))
+            {
+                return output;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logs.Debug($"Failed to find lib folder for {script}: {ex.ReadableString()}");
+        }
         return null;
     }
 
