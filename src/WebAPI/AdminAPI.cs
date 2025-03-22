@@ -241,7 +241,7 @@ public static class AdminAPI
         long lastSeq = Interlocked.Read(ref Logs.LogTracker.LastSequenceID);
         result["last_sequence_id"] = lastSeq;
         JObject messageData = [];
-        List<string> types = [.. raw["types"].Select(v => $"{v}")];
+        string[] types = raw["types"].ToObject<string[]>();
         foreach (string type in types)
         {
             Logs.LogTracker tracker;
@@ -418,7 +418,7 @@ public static class AdminAPI
     public static async Task<JObject> DebugLanguageAdd(Session session,
         [API.APIParameter("\"set\": [ \"word\", ... ]")] JObject raw)
     {
-        LanguagesHelper.TrackSet([.. raw["set"].ToArray().Select(v => $"{v}")]);
+        LanguagesHelper.TrackSet(raw["set"].ToObject<string[]>());
         return new JObject() { ["success"] = true };
     }
 
