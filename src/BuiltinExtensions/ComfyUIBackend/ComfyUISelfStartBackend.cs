@@ -385,7 +385,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             AddLoadStatus($"All tasks done.");
         }
         string lib = NetworkBackendUtils.GetProbableLibFolderFor(Settings.StartScript);
-        if (lib is not null)
+        if (lib is null)
+        {
+            AddLoadStatus($"Skip lib validation, can't find folder.");
+        }
+        else
         {
             AddLoadStatus($"Will validate required libs...");
             string[] dirs = [.. Directory.GetDirectories($"{lib}/site-packages/").Select(f => f.Replace('\\', '/').AfterLast('/'))];
