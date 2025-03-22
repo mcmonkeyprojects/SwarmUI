@@ -256,8 +256,8 @@ public static class NetworkBackendUtils
                 RedirectStandardError = true,
                 WorkingDirectory = dir
             };
-            ConfigurePythonExeFor(script, "folder-finder", start, out string preArgs, out _);
-            start.Arguments = $"{preArgs} -c \"import sysconfig; print(sysconfig.get_path('purelib'))\"".Trim();
+            ConfigurePythonExeFor(script, "folder-finder", start, out _, out string forcePrior);
+            start.Arguments = $"{forcePrior} -s -c \"import sysconfig; print(sysconfig.get_path('purelib'))\"".Trim();
             Process process = Process.Start(start);
             process.WaitForExitAsync(Program.GlobalProgramCancel).Wait();
             string output = process.StandardOutput.ReadToEnd().Trim();
