@@ -261,10 +261,12 @@ public static class NetworkBackendUtils
             Process process = Process.Start(start);
             string output = process.StandardOutput.ReadToEnd().Trim();
             process.WaitForExitAsync(Program.GlobalProgramCancel).Wait();
+            Logs.Debug($"Ran python fallback folder-finder, result is: {output}");
             if (Directory.Exists(output))
             {
                 return output;
             }
+            Logs.Debug($"Output is not a valid folder.");
         }
         catch (Exception ex)
         {
