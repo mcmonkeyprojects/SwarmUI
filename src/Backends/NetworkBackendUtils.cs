@@ -259,9 +259,10 @@ public static class NetworkBackendUtils
             ConfigurePythonExeFor(script, "folder-finder", start, out string preArgs, out _);
             start.Arguments = $"{preArgs} -c \"import sysconfig; print(sysconfig.get_path('purelib'))\"".Trim();
             Process process = Process.Start(start);
-            string output = process.StandardOutput.ReadToEnd().Trim();
             process.WaitForExitAsync(Program.GlobalProgramCancel).Wait();
-            Logs.Debug($"Ran python fallback folder-finder, result is: {output}");
+            string output = process.StandardOutput.ReadToEnd().Trim();
+            string errOut = process.StandardError.ReadToEnd().Trim();
+            Logs.Debug($"Ran python fallback folder-finder '{start.FileName}' '{start.Arguments}', result is: {output}, errOut is {errOut}");
             if (Directory.Exists(output))
             {
                 return output;
