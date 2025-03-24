@@ -359,6 +359,14 @@ public class T2IParamInput
         PromptTagLengthEstimators["fromto"] = PromptTagLengthEstimators["random"];
         PromptTagProcessors["wildcard"] = (data, context) =>
         {
+            data = context.Parse(data);
+            string[] dataParts = data.SplitFast(',', 1);
+            data = dataParts[0];
+            HashSet<string> exclude = [];
+            if (dataParts.Length > 1 && dataParts[1].StartsWithFast("not="))
+            {
+                exclude.UnionWith(SplitSmart(dataParts[1].After('=')));
+            }
             (int count, string partSeparator) = InterpretPredataForRandom("random", context.PreData, data, context);
             if (partSeparator is null)
             {
@@ -373,8 +381,17 @@ public class T2IParamInput
             WildcardsHelper.Wildcard wildcard = WildcardsHelper.GetWildcard(card);
             List<string> usedWildcards = context.Input.ExtraMeta.GetOrCreate("used_wildcards", () => new List<string>()) as List<string>;
             usedWildcards.Add(card);
+            string[] options = wildcard.Options;
+            if (exclude.Count > 0)
+            {
+                options = [.. options.Except(exclude)];
+            }
+            if (options.Length == 0)
+            {
+                return "";
+            }
+            List<string> vals = [.. options];
             string result = "";
-            List<string> vals = [.. wildcard.Options];
             for (int i = 0; i < count; i++)
             {
                 int index;
@@ -390,7 +407,7 @@ public class T2IParamInput
                 result += context.Parse(choice).Trim() + partSeparator;
                 if (vals.Count == 1)
                 {
-                    vals = [.. wildcard.Options];
+                    vals = [.. options];
                 }
                 else
                 {
@@ -402,7 +419,7 @@ public class T2IParamInput
         PromptTagProcessors["wc"] = PromptTagProcessors["wildcard"];
         PromptTagLengthEstimators["wildcard"] = (data, context) =>
         {
-            string card = T2IParamTypes.GetBestInList(data, WildcardsHelper.ListFiles);
+            string card = T2IParamTypes.GetBestInList(data.Before(','), WildcardsHelper.ListFiles);
             if (card is null)
             {
                 return "";

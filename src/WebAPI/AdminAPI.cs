@@ -235,7 +235,7 @@ public static class AdminAPI
             }
         """)]
     public static async Task<JObject> ListRecentLogMessages(Session session,
-        [API.APIParameter("Optionally input `\"last_sequence_ids\": { \"info\": 123 }` to set the start point.")] JObject raw)
+        [API.APIParameter("Use eg `\"types\": [\"info\"]` to specify what log types to include.\nOptionally input `\"last_sequence_ids\": { \"info\": 123 }` to set the start point.")] JObject raw)
     {
         JObject result = await ListLogTypes(session);
         long lastSeq = Interlocked.Read(ref Logs.LogTracker.LastSequenceID);

@@ -52,6 +52,8 @@
     - This random is seeded by the main seed - so if you have a static seed, this won't change.
         - You can override this with the `Wildcard Seed` parameter
         - If your wildcards won't change but your seed is changing, check if you've accidentally enabled the `Wildcard Seed` parameter. Some users have done this by accident.
+    - You can exclude certain values like so: `<wildcard:animals,not=cat,dog>`
+        - This can be combined with [Variables](#variables), eg `a photo of a <setvar[animal]:<wildcard:animals>> playing with a <wildcard:animals,not=<var:animal>>`
 
 ## Variables
 
