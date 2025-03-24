@@ -498,7 +498,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
-        ("ultralytics", $"ultralytics=={UltralyticsVersion}")
+        ("ultralytics", $"ultralytics=={UltralyticsVersion}"),
+        ("omegaconf", "omegaconf") // some yolo models require this but ultralytics itself doesn't? wut?
     ];
 
     public override async Task Shutdown()
