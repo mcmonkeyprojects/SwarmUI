@@ -45,7 +45,7 @@ Runpod template (note: maintained by third party contributor [nerdylive123](http
 
 ### Vast.ai
 
-Vast.ai template ([readme](https://cloud.vast.ai/template/readme/8e5e6ab1fceb9db3f813e815907b3390)): https://cloud.vast.ai?template_id=21b140f47ee8d4ebb2ce836afe2f9ad9
+Vast.ai template ([readme](https://cloud.vast.ai/template/readme/8e5e6ab1fceb9db3f813e815907b3390)): https://cloud.vast.ai/?ref_id=62897&creator_id=62897&name=SwarmUI
 
 Note it may take several minutes to start up the first time. Check the container logs to see setup progress. Check the template `?` info for hints on how to use.
 
