@@ -35,6 +35,16 @@ public static class Utilities
         Program.TickNoGenerationsEvent += MemCleaner.TickNoGenerations;
         Program.TickEvent += SystemStatusMonitor.Tick;
         Program.SlowTickEvent += AutoRestartCheck;
+        int subticks = 0;
+        Program.SlowTickEvent += () =>
+        {
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false, false);
+            if (subticks++ > 20)
+            {
+                subticks = 0;
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false, true);
+            }
+        };
         new Thread(TickLoop).Start();
     }
 
