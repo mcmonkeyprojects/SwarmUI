@@ -41,7 +41,7 @@ public static class Utilities
             if (subticks++ > 20)
             {
                 subticks = 0;
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false, true);
+                CleanRAM();
             }
             else
             {
