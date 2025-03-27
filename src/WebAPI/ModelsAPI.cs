@@ -254,6 +254,7 @@ public static class ModelsAPI
         {
             files.Reverse();
         }
+        Utilities.QuickGC(); // (Could potentially be quite large data, so encourage GC to not slam RAM from listing out model data)
         return new JObject()
         {
             ["folders"] = JArray.FromObject(folders.ToList()),

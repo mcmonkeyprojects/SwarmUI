@@ -400,6 +400,7 @@ public class GridGeneratorExtension : Extension
 
     public async Task<JObject> GridGenRun(WebSocket socket, Session session, JObject raw, string outputFolderName, bool doOverwrite, bool fastSkip, bool generatePage, bool publishGenMetadata, bool dryRun, bool weightOrder, string outputType, bool continueOnError, bool showOutputs)
     {
+        Utilities.QuickGC();
         using Session.GenClaim claim = session.Claim(gens: 1);
         T2IParamInput baseParams;
         try
@@ -570,6 +571,7 @@ public class GridGeneratorExtension : Extension
                 Volatile.Write(ref data.ErrorOut, ExToError(ex));
             }
         }
+        Utilities.QuickGC();
         if (grid is not null && grid.OutputType == Grid.OutputyTypeEnum.WEB_PAGE)
         {
             PostClean(session.User.OutputDirectory, outputFolderName);

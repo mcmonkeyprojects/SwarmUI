@@ -38,11 +38,14 @@ public static class Utilities
         int subticks = 0;
         Program.SlowTickEvent += () =>
         {
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false, false);
             if (subticks++ > 20)
             {
                 subticks = 0;
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, false, true);
+            }
+            else
+            {
+                QuickGC();
             }
         };
         new Thread(TickLoop).Start();
@@ -253,7 +256,7 @@ public static class Utilities
     public static async Task SendJson(this WebSocket socket, JObject obj, TimeSpan maxDuration)
     {
         using CancellationTokenSource cancel = TimedCancel(maxDuration);
-        await socket.SendAsync(obj.ToString(Formatting.None).EncodeUTF8(), WebSocketMessageType.Text, true, cancel.Token);
+        await socket.SendAsync(JsonToByteArray(obj), WebSocketMessageType.Text, true, cancel.Token);
     }
 
     /// <summary>Equivalent to <see cref="Task.WhenAny(IEnumerable{Task})"/> but doesn't break on an empty list.</summary>
@@ -378,6 +381,52 @@ public static class Utilities
         return JObject.FromObject(obj.Properties().OrderBy(p => sort(p.Name)).ToDictionary(p => p.Name, p => p.Value));
     }
 
+    /// <summary>(Experimental) aggressively simply low-mem ToString for JSON data. Dense, spaceless, unformatted.</summary>
+    public static void ToStringFast(this JToken jval, StringBuilder builder)
+    {
+        if (jval is JObject jobj)
+        {
+            builder.Append('{');
+            if (jobj.Count > 0)
+            {
+                foreach ((string key, JToken val) in jobj)
+                {
+                    builder.Append('"').Append(EscapeJsonString(key)).Append("\":");
+                    val.ToStringFast(builder);
+                    builder.Append(',');
+                }
+                builder.Length--;
+            }
+            builder.Append('}');
+        }
+        else if (jval is JArray jarr)
+        {
+            builder.Append('[');
+            if (jarr.Count > 0)
+            {
+                foreach (JToken val in jarr)
+                {
+                    val.ToStringFast(builder);
+                    builder.Append(',');
+                }
+                builder.Length--;
+            }
+            builder.Append(']');
+        }
+        else
+        {
+            builder.Append(jval.ToString(Formatting.None));
+        }
+    }
+
+    /// <summary>Converts a <see cref="JObject"/> to a UTF-8 string byte array.</summary>
+    public static byte[] JsonToByteArray(JObject jdata)
+    {
+        StringBuilder builder = new(1024);
+        jdata.ToStringFast(builder);
+        return builder.ToString().EncodeUTF8();
+    }
+
     /// <summary>Gives a clean standard 4-space serialize of this <see cref="JObject"/>.</summary>
     public static string SerializeClean(this JObject jobj)
     {
@@ -391,7 +440,6 @@ public static class Utilities
         serializer.Serialize(jw, jobj);
         jw.Flush();
         return sw.ToString() + Environment.NewLine;
-
     }
 
     public static async Task YieldJsonOutput(this HttpContext context, WebSocket socket, int status, JObject obj)
@@ -403,7 +451,7 @@ public static class Utilities
             await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
             return;
         }
-        byte[] resp = obj.ToString(Formatting.None).EncodeUTF8();
+        byte[] resp = JsonToByteArray(obj);
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = status;
         context.Response.ContentLength = resp.Length;
@@ -419,7 +467,7 @@ public static class Utilities
 
     public static ByteArrayContent JSONContent(JObject jobj)
     {
-        ByteArrayContent content = new(jobj.ToString(Formatting.None).EncodeUTF8());
+        ByteArrayContent content = new(JsonToByteArray(jobj));
         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         return content;
     }
@@ -969,6 +1017,12 @@ public static class Utilities
             Logs.Debug($"Failed to get local IP address: {ex.ReadableString()}");
         }
         return null;
+    }
+
+    /// <summary>Encourage the Garbage Collector to clean up memory.</summary>
+    public static void QuickGC()
+    {
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false, false);
     }
 
     /// <summary>Cause an immediate aggressive RAM cleanup.</summary>
