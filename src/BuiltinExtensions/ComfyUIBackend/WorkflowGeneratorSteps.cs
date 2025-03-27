@@ -130,41 +130,49 @@ public class WorkflowGeneratorSteps
         {
             if (g.UserInput.TryGet(ComfyUIBackendExtension.SelfAttentionGuidanceScale, out double sagScale))
             {
-                string guided = g.CreateNode("SelfAttentionGuidance", new JObject()
+                string patched = g.CreateNode("SelfAttentionGuidance", new JObject()
                 {
                     ["model"] = g.LoadingModel,
                     ["scale"] = sagScale,
                     ["blur_sigma"] = g.UserInput.Get(ComfyUIBackendExtension.SelfAttentionGuidanceSigmaBlur, 2.0)
                 });
-                g.LoadingModel = [guided, 0];
+                g.LoadingModel = [patched, 0];
             }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.PerturbedAttentionGuidanceScale, out double pagScale))
             {
-                string guided = g.CreateNode("PerturbedAttentionGuidance", new JObject()
+                string patched = g.CreateNode("PerturbedAttentionGuidance", new JObject()
                 {
                     ["model"] = g.LoadingModel,
                     ["scale"] = pagScale
                 });
-                g.LoadingModel = [guided, 0];
+                g.LoadingModel = [patched, 0];
             }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.RescaleCFGMultiplier, out double rescaleCfg))
             {
-                string guided = g.CreateNode("RescaleCFG", new JObject()
+                string patched = g.CreateNode("RescaleCFG", new JObject()
                 {
                     ["model"] = g.LoadingModel,
                     ["multiplier"] = rescaleCfg
                 });
-                g.LoadingModel = [guided, 0];
+                g.LoadingModel = [patched, 0];
             }
             if (g.UserInput.TryGet(ComfyUIBackendExtension.RenormCFG, out double renormCfg))
             {
-                string guided = g.CreateNode("RenormCFG", new JObject()
+                string patched = g.CreateNode("RenormCFG", new JObject()
                 {
                     ["model"] = g.LoadingModel,
                     ["cfg_trunc"] = 100, // This value is the weirdly named timestep where the renorm applies - less than this apply, above don't. 100 is default, not sure if it needs a customization param?
                     ["renorm_cfg"] = renormCfg
                 });
-                g.LoadingModel = [guided, 0];
+                g.LoadingModel = [patched, 0];
+            }
+            if (g.UserInput.Get(ComfyUIBackendExtension.UseCfgZeroStar, false))
+            {
+                string patched = g.CreateNode("CFGZeroStar", new JObject()
+                {
+                    ["model"] = g.LoadingModel
+                });
+                g.LoadingModel = [patched, 0];
             }
         }, -7);
         AddModelGenStep(g =>
