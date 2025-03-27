@@ -260,9 +260,11 @@
 - [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, is supported in SwarmUI.
     - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
+    - Or Kijai's versions <https://huggingface.co/Kijai/WanVideo_comfy/tree/main>
+    - For I2V 1.3B, use <https://huggingface.co/alibaba-pai/Wan2.1-Fun-1.3B-InP/blob/main/diffusion_pytorch_model.safetensors>  (rename the file when you save it to avoid confusion)
     - Favor the `fp8_scaled` models as the main choice, or `fp16` for the 1.3B.
     - For Text2Video, pick either 1.3B (small) model, or 14B (large) model
-    - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model
+    - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model, OR the new "Fun-Inp" models (1.3B or 14B)
         - These are not autodetected separately, 480p is assumed.
         - For 720p variant, you will want to click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Resolution` to `960x960`
         - The 720p model isn't bigger, it just supports higher resolutions. Subjective comments say the higher resolution isn't worth the performance loss.

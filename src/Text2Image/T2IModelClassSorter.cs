@@ -312,6 +312,10 @@ public class T2IModelClassSorter
         {
             return isWan21_1_3b(h) && !isWanI2v(h);
         }});
+        Register(new() { ID = "wan-2_1-image2video-1_3b", CompatClass = "wan-21-1_3b", Name = "Wan 2.1 Image2Video 1.3B", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        {
+            return isWan21_1_3b(h) && isWanI2v(h);
+        }});
         Register(new() { ID = "wan-2_1-text2video-1_3b/lora", CompatClass = "wan-21-1_3b", Name = "Wan 2.1 Text2Video 1.3B LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return isWan21_1_3bLora(h);
