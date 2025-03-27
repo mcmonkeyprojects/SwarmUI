@@ -15,6 +15,8 @@ namespace SwarmUI.WebAPI;
 [API.APIClass("API routes related to handling models (including loras, wildcards, etc).")]
 public static class ModelsAPI
 {
+    public static long ModelEditID = 0;
+
     public static void Register()
     {
         API.RegisterAPICall(ListModels, false, Permissions.FundamentalModelAccess);
@@ -198,7 +200,7 @@ public static class ModelsAPI
                 if (tryMatch(file))
                 {
                     WildcardsHelper.Wildcard card = WildcardsHelper.GetWildcard(file);
-                    files.Add(new(card.Name, card.Name.AfterLast('/'), card.TimeCreated, card.TimeModified, card.GetNetObject()));
+                    files.Add(new(card.Name, card.Name.AfterLast('/'), card.TimeCreated, card.TimeModified, card.GetNetObject(false)));
                     if (files.Count > sanityCap)
                     {
                         break;
@@ -212,7 +214,7 @@ public static class ModelsAPI
             {
                 if (tryMatch(possible.Name))
                 {
-                    files.Add(new(possible.Name, possible.Title, possible.Metadata?.TimeCreated ?? long.MaxValue, possible.Metadata?.TimeModified ?? long.MaxValue, possible.ToNetObject()));
+                    files.Add(new(possible.Name, possible.Title, possible.Metadata?.TimeCreated ?? long.MaxValue, possible.Metadata?.TimeModified ?? long.MaxValue, possible.ToNetObject(dataImgs: false)));
                     if (files.Count > sanityCap)
                     {
                         break;
@@ -226,7 +228,13 @@ public static class ModelsAPI
             {
                 if (tryMatch(name))
                 {
-                    files.Add(new(name, name.AfterLast('/'), long.MaxValue, long.MaxValue, possible));
+                    JObject toAdd = possible;
+                    if (toAdd.TryGetValue("preview_image", out JToken previewImg) && previewImg.ToString().StartsWith("data:"))
+                    {
+                        toAdd = toAdd.DeepClone() as JObject;
+                        toAdd["preview_image"] = $"/ViewSpecial/{subtype}/{name}";
+                    }
+                    files.Add(new(name, name.AfterLast('/'), long.MaxValue, long.MaxValue, toAdd));
                     if (files.Count > sanityCap)
                     {
                         break;
@@ -403,6 +411,7 @@ public static class ModelsAPI
             File.WriteAllBytes($"{WildcardsHelper.Folder}/{card}.jpg", img.ImageData);
             WildcardsHelper.WildcardFiles[card] = new WildcardsHelper.Wildcard() { Name = card };
         }
+        Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
     }
 
@@ -473,6 +482,7 @@ public static class ModelsAPI
         }
         handler.ResetMetadataFrom(actualModel);
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel());
+        Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
     }
 
@@ -804,6 +814,7 @@ public static class ModelsAPI
                 doMoveNow(altPath);
             }
         }
+        Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
     }
 }

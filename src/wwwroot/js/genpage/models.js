@@ -102,7 +102,7 @@ function save_edit_wildcard() {
         }
         genericRequest('EditWildcard', data, resData => {
             wildcardsBrowser.browser.refresh();
-            if (card.name != data.card) {
+            if (card.name && card.name != data.card) {
                 genericRequest('DeleteWildcard', { card: card.name }, data => {});
             }
         });

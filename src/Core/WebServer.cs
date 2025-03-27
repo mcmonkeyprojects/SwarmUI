@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
@@ -239,6 +240,7 @@ public class WebServer
         WebApp.Map("/API/{*Call}", API.HandleAsyncRequest);
         WebApp.MapGet("/Output/{*Path}", ViewOutput);
         WebApp.MapGet("/View/{*Path}", ViewOutput);
+        WebApp.MapGet("/ViewSpecial/{*Path}", ViewSpecial);
         WebApp.MapGet("/ExtensionFile/{*f}", ViewExtensionScript);
         WebApp.MapGet("/Audio/{*f}", ViewAudio);
         timer.Check("[Web] core maps");
@@ -551,5 +553,70 @@ public class WebServer
         }
         await context.Response.Body.WriteAsync(data, Program.GlobalProgramCancel);
         await context.Response.CompleteAsync();
+    }
+
+    /// <summary>Web route for viewing special images (eg model icons).</summary>
+    public async Task ViewSpecial(HttpContext context)
+    {
+        string path = context.Request.Path.ToString();
+        path = Uri.UnescapeDataString(path).Replace('\\', '/').Trim('/');
+        while (path.Contains("//"))
+        {
+            path = path.Replace("//", "/");
+        }
+        (string subtype, string name) = path.After("ViewSpecial/").BeforeAndAfter('/');
+        User user = GetUserFor(context);
+        if (user is null)
+        {
+            await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
+            return;
+        }
+        async Task yieldResult(string imageData)
+        {
+            Image img = Image.FromDataString(imageData);
+            context.Response.ContentType = img.MimeType();
+            context.Response.StatusCode = 200;
+            context.Response.ContentLength = img.ImageData.Length;
+            context.Response.Headers.CacheControl = $"private, max-age=2";
+            await context.Response.Body.WriteAsync(img.ImageData, Program.GlobalProgramCancel);
+            await context.Response.CompleteAsync();
+        }
+        if (!user.IsAllowedModel(name))
+        {
+            Logs.Verbose($"Not showing user '{user.UserID}' sub-type '{subtype}' model image '{name}': user restriction");
+        }
+        else
+        {
+            if (subtype == "Wildcards")
+            {
+                WildcardsHelper.Wildcard card = WildcardsHelper.GetWildcard(name);
+                if (card is not null && card.Image.StartsWithFast("data:"))
+                {
+                    await yieldResult(card.Image);
+                    return;
+                }
+            }
+            if (Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
+            {
+                if (handler.Models.TryGetValue(name + ".safetensors", out T2IModel model) || handler.Models.TryGetValue(name, out model))
+                {
+                    if (model.Metadata?.PreviewImage?.StartsWithFast("data:") ?? false)
+                    {
+                        await yieldResult(model.Metadata.PreviewImage);
+                        return;
+                    }
+                }
+                else if (ModelsAPI.InternalExtraModels(subtype).TryGetValue(name + ".safetensors", out JObject remoteModel) || ModelsAPI.InternalExtraModels(subtype).TryGetValue(name, out remoteModel))
+                {
+                    if (remoteModel.TryGetValue("preview_image", out JToken previewImg) && previewImg.ToString().StartsWithFast("data:"))
+                    {
+                        await yieldResult(previewImg.ToString());
+                        return;
+                    }
+                }
+            }
+            Logs.Verbose($"Not showing user '{user.UserID}' sub-type '{subtype}' model image '{name}': not found");
+        }
+        await context.YieldJsonOutput(null, 404, Utilities.ErrorObj("404, file not found.", "file_not_found"));
     }
 }

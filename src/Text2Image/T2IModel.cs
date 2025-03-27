@@ -3,6 +3,7 @@ using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
 using SwarmUI.Utils;
+using SwarmUI.WebAPI;
 using System.IO;
 using System.Security.Cryptography;
 
@@ -265,15 +266,20 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     }
 
     /// <summary>Gets a networkable copy of this model's data.</summary>
-    public JObject ToNetObject(string prefix = "")
+    public JObject ToNetObject(string prefix = "", bool dataImgs = true)
     {
+        string previewImg = PreviewImage;
+        if (!dataImgs && previewImg is not null && previewImg.StartsWithFast("data:"))
+        {
+            previewImg = $"/ViewSpecial/{Handler.ModelType}/{name}?editid={ModelsAPI.ModelEditID}";
+        }
         return new JObject()
         {
             [$"{prefix}name"] = Name,
             [$"{prefix}title"] = Metadata?.Title,
             [$"{prefix}author"] = Metadata?.Author,
             [$"{prefix}description"] = Description,
-            [$"{prefix}preview_image"] = PreviewImage,
+            [$"{prefix}preview_image"] = previewImg,
             [$"{prefix}loaded"] = AnyBackendsHaveLoaded,
             [$"{prefix}architecture"] = ModelClass?.ID,
             [$"{prefix}class"] = ModelClass?.Name,
