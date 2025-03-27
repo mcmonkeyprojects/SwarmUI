@@ -476,6 +476,10 @@ class UserAdminManager {
             alert('Please fill in the password field, or cancel');
             return;
         }
+        if (pass.length < 8) {
+            alert('New password must be at least 8 characters long');
+            return;
+        }
         $('#server_add_user_menu').modal('hide');
         let password = await doPasswordClientPrehash(name, pass);
         genericRequest('AdminAddUser', {'name': name, 'password': password, 'role': role}, data => {
