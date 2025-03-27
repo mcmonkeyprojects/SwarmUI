@@ -1,6 +1,7 @@
 @page
 @{
-    ViewData["Title"] = $"Login";
+    ViewData["Title"] = "Login";
+    HtmlString notice = new(Program.ServerSettings.UserAuthorization.LoginNotice);
 }
 @section Header {
     <link rel="stylesheet" href="css/loginpage.css?vary=@Utilities.VaryID" />
@@ -21,7 +22,7 @@
         <span class="translate">Please verify you are on the specific instance of SwarmUI you intend to be, verify the address in the URL is correct. Accounts are not shared between different instances of SwarmUI.</span>
     </div>
     <br><hr><br>
-    @Program.ServerSettings.UserAuthorization.LoginNotice
+    @notice
 </div>
 <div class="login-form-container login-container">
     <div class="login-input-block">
