@@ -836,12 +836,11 @@ function refreshParameterValues(strong = true, callback = null) {
             let origParam = gen_param_types.find(p => p.id == param.id);
             if (origParam) {
                 origParam.values = param.values;
+                origParam.value_names = param.value_names;
             }
         }
-        genericRequest('ListT2IParams', {}, data => {
-            updateAllModels(data.models);
-            allWildcards = data.wildcards;
-        });
+        updateAllModels(data.models);
+        allWildcards = data.wildcards;
         let promises = [Promise.resolve(true)];
         for (let extra of refreshParamsExtra) {
             let promise = extra();
