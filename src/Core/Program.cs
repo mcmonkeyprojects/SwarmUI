@@ -191,10 +191,11 @@ public class Program
         {
             try
             {
-                string commitDate = await Utilities.RunGitProcess("show --no-patch --format=%ci HEAD");
-                DateTimeOffset date = DateTimeOffset.Parse(commitDate.Trim()).ToUniversalTime();
+                string showOutput = await Utilities.RunGitProcess("show --no-patch --format=%h^%ci^%s HEAD");
+                string[] parts = showOutput.SplitFast('^', 2);
+                DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
                 CurrentGitDate = $"{date:yyyy-MM-dd HH:mm:ss}";
-                Logs.Init($"Current git commit marked as date {CurrentGitDate}");
+                Logs.Init($"Current git commit is [{parts[0]}: {parts[2]}], marked as date {CurrentGitDate}");
             }
             catch (Exception ex)
             {
