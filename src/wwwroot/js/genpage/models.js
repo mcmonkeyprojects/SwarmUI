@@ -614,12 +614,28 @@ class ModelBrowserWrapper {
                     toggler.click();
                     toggleGroupOpen(toggler, true);
                 }
-            }
+            };
+            let buttonSetAsImageToVideo = () => {
+                let input = document.getElementById('input_videomodel');
+                if (!input) {
+                    return;
+                }
+                forceSetDropdownValue(input, model.data.name);
+                let toggler = document.getElementById('input_group_content_imagetovideo_toggle');
+                if (toggler && !toggler.checked) {
+                    toggler.click();
+                    toggleGroupOpen(toggler, true);
+                }
+            };
             buttons = [];
             if (permissions.hasPermission('load_models_now')) {
                 buttons.push({ label: 'Load Now', onclick: buttonLoad });
             }
             buttons.push({ label: 'Set as Refiner', onclick: buttonRefiner });
+            let videoModelInput = document.getElementById('input_videomodel');
+            if (videoModelInput && [...videoModelInput.options].map(o => o.value).includes(cleanModelName(model.data.name))) {
+                buttons.push({ label: 'Set as Image To Video', onclick: buttonSetAsImageToVideo });
+            }
         }
         else if (this.subType == 'Embedding') {
             buttons = [
