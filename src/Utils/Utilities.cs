@@ -328,11 +328,11 @@ public static class Utilities
     }
 
     /// <summary>Sends a JSON object post and receives a JSON object back.</summary>
-    public static async Task<JObject> PostJson(this HttpClient client, string url, JObject data, Action<HttpRequestMessage> adaptFunc)
+    public static async Task<JObject> PostJson(this HttpClient client, string url, JObject data, Action<HttpRequestMessage> adaptFunc, CancellationToken? cancel = null)
     {
         HttpRequestMessage request = new(HttpMethod.Post, url) { Content = JSONContent(data) };
         adaptFunc?.Invoke(request);
-        HttpResponseMessage response = await client.SendAsync(request, Program.GlobalProgramCancel);
+        HttpResponseMessage response = await client.SendAsync(request, cancel ?? Program.GlobalProgramCancel);
         return (await response.Content.ReadAsStringAsync()).ParseToJson();
     }
 
