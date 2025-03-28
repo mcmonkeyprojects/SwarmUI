@@ -162,6 +162,10 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, any time you load the UI, trigger a server refresh.\nIf false, only triggers a refresh if you restart Swarm or trigger a refresh manually from the Quick Tools menu.\nDefaults to true.")]
         public bool AlwaysRefreshOnLoad = true;
+
+        [ConfigComment("Preference for order of backend selection when loading a new model.\n'Last Used' will load the model on the last backend to load a model. This tends to distribute work between GPUs fairly.\n'First Free' will load the model on the first free backend. This tends to cause frequent model reloading on your first backend, and underuse of others.\nDefaults to Last Used.")]
+        [ManualSettingsOptions(ManualNames = ["Last Used", "First Free"], Vals = ["last_used", "first_free"])]
+        public string ModelLoadOrderPreference = "last_used";
     }
 
     /// <summary>Settings related to networking and the webserver.</summary>

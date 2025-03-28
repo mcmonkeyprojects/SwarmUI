@@ -1189,7 +1189,20 @@ public class BackendHandler
                     }
                     List<T2IBackendData> unused = [.. valid.Where(a => a.Usages == 0)];
                     valid = unused.Any() ? unused : valid;
-                    T2IBackendData availableBackend = valid.MinBy(a => a.TimeLastRelease);
+                    string orderMode = Program.ServerSettings.Backends.ModelLoadOrderPreference;
+                    T2IBackendData availableBackend;
+                    if (orderMode == "last_used")
+                    {
+                        availableBackend = valid.MinBy(a => a.TimeLastRelease);
+                    }
+                    else if (orderMode == "first_free")
+                    {
+                        availableBackend = valid.First();
+                    }
+                    else
+                    {
+                        throw new SwarmReadableErrorException($"Invalid server setting for ModelLoadOrderPreference: '{orderMode}' unrecognized");
+                    }
                     Logs.Debug($"[BackendHandler] backend #{availableBackend.ID} will load a model: {highestPressure.Model.RawFilePath}, with {highestPressure.Count} requests waiting for {timeWait / 1000f:0.#} seconds");
                     highestPressure.IsLoading = true;
                     List<Session.GenClaim> claims = [];
