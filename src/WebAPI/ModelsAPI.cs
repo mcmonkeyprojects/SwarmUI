@@ -148,7 +148,8 @@ public static class ModelsAPI
         [API.APIParameter("Model sub-type - `LoRA`, `Wildcards`, etc.")] string subtype = "Stable-Diffusion",
         [API.APIParameter("What to sort the list by - `Name`, `DateCreated`, or `DateModified.")] string sortBy = "Name",
         [API.APIParameter("If true, allow remote models. If false, only local models.")] bool allowRemote = true,
-        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
+        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false,
+        [API.APIParameter("If true, provide model images in raw data format. If false, use URLs.")] bool dataImages = false)
     {
         if (!Enum.TryParse(sortBy, true, out ModelHistorySortMode sortMode))
         {
@@ -200,7 +201,7 @@ public static class ModelsAPI
                 if (tryMatch(file))
                 {
                     WildcardsHelper.Wildcard card = WildcardsHelper.GetWildcard(file);
-                    files.Add(new(card.Name, card.Name.AfterLast('/'), card.TimeCreated, card.TimeModified, card.GetNetObject(false)));
+                    files.Add(new(card.Name, card.Name.AfterLast('/'), card.TimeCreated, card.TimeModified, card.GetNetObject(dataImages)));
                     if (files.Count > sanityCap)
                     {
                         break;
@@ -214,7 +215,7 @@ public static class ModelsAPI
             {
                 if (tryMatch(possible.Name))
                 {
-                    files.Add(new(possible.Name, possible.Title, possible.Metadata?.TimeCreated ?? long.MaxValue, possible.Metadata?.TimeModified ?? long.MaxValue, possible.ToNetObject(dataImgs: false)));
+                    files.Add(new(possible.Name, possible.Title, possible.Metadata?.TimeCreated ?? long.MaxValue, possible.Metadata?.TimeModified ?? long.MaxValue, possible.ToNetObject(dataImgs: dataImages)));
                     if (files.Count > sanityCap)
                     {
                         break;
@@ -229,7 +230,7 @@ public static class ModelsAPI
                 if (tryMatch(name))
                 {
                     JObject toAdd = possible;
-                    if (toAdd.TryGetValue("preview_image", out JToken previewImg) && previewImg.ToString().StartsWith("data:"))
+                    if (!dataImages && toAdd.TryGetValue("preview_image", out JToken previewImg) && previewImg.ToString().StartsWith("data:"))
                     {
                         toAdd = toAdd.DeepClone() as JObject;
                         toAdd["preview_image"] = $"/ViewSpecial/{subtype}/{name}";
