@@ -1871,7 +1871,7 @@ public class WorkflowGenerator
             defSampler = "dpmpp_2m";
             defScheduler = "beta";
         }
-        else if (vidModel.ModelClass?.CompatClass == "wan-21-14b")
+        else if (vidModel.ModelClass?.CompatClass == "wan-21-14b" || vidModel.ModelClass?.CompatClass == "wan-21-1_3b")
         {
             videoFps ??= 16;
             frames ??= 81;
