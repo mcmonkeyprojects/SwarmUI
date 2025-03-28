@@ -190,7 +190,7 @@ function doGroupOpenUpdate(group, parent, isOpen) {
             symbol.innerHTML = '&#x2B9F;';
         }
         if (!group.dataset.do_not_save) {
-            setCookie(`group_open_${parent.id}`, 'open', 365);
+            setCookie(`group_open_${parent.id}`, 'open', getParamMemoryDays());
         }
     }
     else {
@@ -200,7 +200,7 @@ function doGroupOpenUpdate(group, parent, isOpen) {
             symbol.innerHTML = '&#x2B9E;';
         }
         if (!group.dataset.do_not_save) {
-            setCookie(`group_open_${parent.id}`, 'closed', 365);
+            setCookie(`group_open_${parent.id}`, 'closed', getParamMemoryDays());
         }
     }
     scheduleParamUnsupportUpdate();
@@ -220,7 +220,7 @@ function doToggleGroup(id) {
         group.classList.remove('input-group-content-activated');
     }
     if (!group.dataset.do_not_save) {
-        setCookie(`group_toggle_${parent.id}`, elem.checked ? 'yes' : 'no', 365);
+        setCookie(`group_toggle_${parent.id}`, elem.checked ? 'yes' : 'no', getParamMemoryDays());
     }
     doGroupOpenUpdate(group, parent, group.style.display != 'none');
 }
@@ -245,6 +245,7 @@ function getParamMemoryDays() {
 
 /** Re-persist stored parameter values - to avoid some disappearing and others staying */
 function autoRepersistParams() {
+    let groups = [];
     for (let param of gen_param_types) {
         let val = getCookie(`lastparam_input_${param.id}`);
         if (val) {
@@ -254,6 +255,19 @@ function autoRepersistParams() {
             let val = getCookie(`lastparam_input_${param.id}_toggle`);
             if (val) {
                 setCookie(`lastparam_input_${param.id}_toggle`, val, getParamMemoryDays());
+            }
+        }
+        if (param.group && !groups.includes(param.group.id)) {
+            groups.push(param.group.id);
+            let open = getCookie(`group_open_auto-group-${param.group.id}`);
+            if (open) {
+                setCookie(`group_open_auto-group-${param.group.id}`, open, getParamMemoryDays());
+            }
+            if (param.group.toggles) {
+                let toggle = getCookie(`group_toggle_auto-group-${param.group.id}`);
+                if (toggle) {
+                    setCookie(`group_toggle_auto-group-${param.group.id}`, toggle, getParamMemoryDays());
+                }
             }
         }
     }
@@ -926,6 +940,9 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
 
 function resetParamsToDefault(exclude = []) {
     for (let cookie of listCookies('lastparam_')) {
+        deleteCookie(cookie);
+    }
+    for (let cookie of listCookies('group_toggle_')) {
         deleteCookie(cookie);
     }
     localStorage.removeItem('last_comfy_workflow_input');
