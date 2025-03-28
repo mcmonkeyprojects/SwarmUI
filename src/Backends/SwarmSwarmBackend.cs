@@ -225,15 +225,17 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 {
                     features.UnionWith(backend["features"].ToArray().Select(f => f.ToString()));
                     string type = backend["type"].ToString();
+                    string title = backend["title"].ToString();
                     types.Add(type);
                     if (IsReal && !ids.Remove(id) && (Settings.AllowForwarding || type != "swarmswarmbackend"))
                     {
-                        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {id} ({type})");
+                        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {id} ({type}) '{title}'");
                         BackendHandler.T2IBackendData newData = Handler.AddNewNonrealBackend(HandlerTypeData, BackendData, SettingsRaw);
                         SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
                         newSwarm.LinkedRemoteBackendID = id;
                         newSwarm.Models = Models;
                         newSwarm.LinkedRemoteBackendType = type;
+                        newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] {title}";
                         newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
                         OnSwarmBackendAdded?.Invoke(newSwarm);
                         ControlledNonrealBackends.TryAdd(id, newData);

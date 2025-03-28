@@ -60,7 +60,8 @@ namespace SwarmUI.Text2Image
         public static Func<BackendHandler.T2IBackendData, bool> BackendMatcherFor(T2IParamInput user_input)
         {
             string type = user_input.Get(T2IParamTypes.BackendType, "any");
-            bool requireId = user_input.TryGet(T2IParamTypes.ExactBackendID, out int reqId);
+            bool requireId = user_input.TryGet(T2IParamTypes.ExactBackendID, out string reqIdStr);
+            int reqId = requireId ? int.Parse(reqIdStr) : -1;
             string typeLow = type.ToLowerFast();
             return backend =>
             {
