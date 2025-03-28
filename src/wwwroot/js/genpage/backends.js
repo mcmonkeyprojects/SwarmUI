@@ -48,8 +48,14 @@ function addBackendToHtml(backend, disable, spot = null) {
     cardTitleStatus.innerText = backend.status;
     cardTitleSpan.appendChild(cardTitleStatus);
     let cardTitleCenter = document.createElement('span');
-    cardTitleCenter.innerText = ` backend: (${backend.id}): `;
+    cardTitleCenter.innerText = ` backend: (`;
     cardTitleSpan.appendChild(cardTitleCenter);
+    let cardTitleCenterID = document.createElement('span');
+    cardTitleCenterID.innerText = `${backend.id}`;
+    cardTitleSpan.appendChild(cardTitleCenterID);
+    let cardTitleCenter3 = document.createElement('span');
+    cardTitleCenter3.innerText = `): `;
+    cardTitleSpan.appendChild(cardTitleCenter3);
     let actualCardTitle = document.createElement('span');
     actualCardTitle.innerText = backend.title || type.name;
     cardTitleSpan.appendChild(actualCardTitle);
@@ -115,8 +121,15 @@ function addBackendToHtml(backend, disable, spot = null) {
     if (!disable) {
         actualCardTitle.contentEditable = true;
         actualCardTitle.classList.add('backend-title-editable');
+        cardTitleCenterID.contentEditable = true;
+        cardTitleCenterID.classList.add('backend-title-editable');
     }
     actualCardTitle.addEventListener('keydown', e => {
+        if (e.key == 'Enter') {
+            e.preventDefault();
+        }
+    });
+    cardTitleCenterID.addEventListener('keydown', e => {
         if (e.key == 'Enter') {
             e.preventDefault();
         }
@@ -126,6 +139,8 @@ function addBackendToHtml(backend, disable, spot = null) {
         editButton.disabled = true;
         actualCardTitle.contentEditable = true;
         actualCardTitle.classList.add('backend-title-editable');
+        cardTitleCenterID.contentEditable = true;
+        cardTitleCenterID.classList.add('backend-title-editable');
         for (let entry of cardBody.querySelectorAll('[data-name]')) {
             entry.disabled = false;
         }
@@ -134,16 +149,43 @@ function addBackendToHtml(backend, disable, spot = null) {
         saveButton.style.display = 'none';
         actualCardTitle.contentEditable = false;
         actualCardTitle.classList.remove('backend-title-editable');
+        cardTitleCenterID.contentEditable = false;
+        cardTitleCenterID.classList.remove('backend-title-editable');
         for (let entry of cardBody.querySelectorAll('[data-name]')) {
             let name = entry.dataset.name;
             let value = entry.type == 'checkbox' ? entry.checked : entry.value;
             backend.settings[name] = value;
             entry.disabled = true;
         }
-        genericRequest('EditBackend', {'backend_id': backend.id, 'title': actualCardTitle.textContent, 'settings': backend.settings}, data => {
+        let dataIn = {
+            'backend_id': backend.id,
+            'title': actualCardTitle.textContent,
+            'settings': backend.settings
+        };
+        if (cardTitleCenterID.textContent && cardTitleCenterID.textContent != backend.id) {
+            dataIn['new_id'] = parseInt(cardTitleCenterID.textContent);
+        }
+        genericRequest('EditBackend', dataIn, data => {
             addBackendToHtml(data, true, spot);
+            if (dataIn['new_id']) {
+                clearBackendsList();
+                loadBackendsList();
+            }
+        }, 0, e => {
+            console.error(e);
+            showError(e);
+            clearBackendsList();
+            loadBackendsList();
         });
     });
+}
+
+function clearBackendsList() {
+    for (let oldBack of Object.values(backends_loaded)) {
+        let spot = document.getElementById(`backend-wrapper-spot-${oldBack.id}`);
+        spot.remove();
+    }
+    backends_loaded = {};
 }
 
 function loadBackendsList() {

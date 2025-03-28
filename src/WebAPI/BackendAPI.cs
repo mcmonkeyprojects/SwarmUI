@@ -163,7 +163,8 @@ public class BackendAPI
     public static async Task<JObject> EditBackend(Session session,
         [API.APIParameter("ID of the backend to edit.")] int backend_id,
         [API.APIParameter("New title of the backend.")] string title,
-        [API.APIParameter(" Input should contain a map of `\"settingname\": value`.")] JObject raw_inp)
+        [API.APIParameter(" Input should contain a map of `\"settingname\": value`.")] JObject raw_inp,
+        [API.APIParameter("Optional new ID to change the backend to.")] int new_id = -1)
     {
         Logs.Warning($"User {session.User.UserID} requested edit of backend {backend_id}.");
         if (Program.LockSettings)
@@ -174,9 +175,17 @@ public class BackendAPI
         {
             return new() { ["error"] = "Missing settings." };
         }
+        if (new_id == backend_id)
+        {
+            new_id = -1;
+        }
+        if (new_id >= 0 && Program.Backends.T2IBackends.ContainsKey(new_id))
+        {
+            return new() { ["error"] = $"Backend ID {new_id} is already in use." };
+        }
         FDSSection parsed = FDSSection.FromSimple(settings.ToBasicObject());
         Logs.Verbose($"New settings to apply: {parsed}");
-        BackendHandler.T2IBackendData result = await Program.Backends.EditById(backend_id, parsed, title);
+        BackendHandler.T2IBackendData result = await Program.Backends.EditById(backend_id, parsed, title, new_id);
         if (result is null)
         {
             return new() { ["error"] = $"Invalid backend ID {backend_id}" };

@@ -351,13 +351,22 @@ public class BackendHandler
     }
 
     /// <summary>Replace the settings of a given backend. Shuts it down immediately and queues a reload.</summary>
-    public async Task<T2IBackendData> EditById(int id, FDSSection newSettings, string title)
+    public async Task<T2IBackendData> EditById(int id, FDSSection newSettings, string title, int new_id = -1)
     {
         if (!T2IBackends.TryGetValue(id, out T2IBackendData data))
         {
             return null;
         }
         await ShutdownBackendCleanly(data);
+        if (new_id >= 0)
+        {
+            if (!T2IBackends.TryAdd(new_id, data))
+            {
+                throw new SwarmReadableErrorException($"Backend new ID {new_id} is already in use!");
+            }
+            data.ID = new_id;
+            T2IBackends.TryRemove(id, out _);
+        }
         newSettings = data.Backend.SettingsRaw.ExcludeSecretValuesThatMatch(newSettings, "\t<secret>");
         data.Backend.SettingsRaw.Load(newSettings);
         Logs.Verbose($"Settings applied, now: {data.Backend.SettingsRaw.Save(true)}");
