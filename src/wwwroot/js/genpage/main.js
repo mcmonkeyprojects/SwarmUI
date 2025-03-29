@@ -102,7 +102,44 @@ function rightClickImageInBatch(e, div) {
     if (e.shiftKey || e.ctrlKey) {
         return;
     }
-    let popover = new AdvancedPopover('image_batch_context_menu', [ { key: 'Remove', action: () => div.remove() } ], false, mouseX, mouseY, document.body, null);
+
+    popover_actions = [{ key: 'Remove from view', action: () => div.remove() }];
+
+    let src = div.dataset.src;
+    if (permissions.hasPermission('user_delete_image') && src.startsWith('View/')) {
+        popover_actions.push({
+            key: 'Delete from server',
+            action: (e) => {
+                let fullsrc = src.substring('View/'.length);
+                firstSlash = fullsrc.indexOf('/');
+                if (firstSlash != -1) {
+                    fullsrc = fullsrc.substring(firstSlash + 1);
+                }
+                genericRequest('DeleteImage', {'path': fullsrc}, data => {
+                    if (e) {
+                        e.remove();
+                    }
+                    else {
+                        let historySection = getRequiredElementById('imagehistorybrowser-content');
+                        let div = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
+                        if (div) {
+                            div.remove();
+                        }
+                        div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
+                        if (div) {
+                            div.remove();
+                        }
+                    }
+                    let currentImage = document.getElementById('current_image_img');
+                    if (currentImage && currentImage.dataset.src == src) {
+                        forceShowWelcomeMessage();
+                    }
+                });
+            }
+        });
+    }
+
+    let popover = new AdvancedPopover('image_batch_context_menu', popover_actions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();
     return false;
@@ -1317,7 +1354,7 @@ function buttonsForImage(fullsrc, src, metadata) {
                     }
                     else {
                         let historySection = getRequiredElementById('imagehistorybrowser-content');
-                        let div = historySection.querySelector(`.image-block[data-src="${src}"]`);
+                        let div = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
                         if (div) {
                             div.remove();
                         }
