@@ -35,7 +35,13 @@ public static class ModelsAPI
         API.RegisterAPICall(RenameModel, false, Permissions.DeleteModels);
     }
 
-    public static Dictionary<string, JObject> InternalExtraModels(string subtype)
+    /// <summary>Map of unique registration IDs to extra model provider functions.</summary>
+    public static ConcurrentDictionary<string, Func<string, Dictionary<string, JObject>>> ExtraModelProviders = new()
+    {
+        ["remote_swarm"] = InternalSwarmRemoteModels
+    };
+
+    public static Dictionary<string, JObject> InternalSwarmRemoteModels(string subtype)
     {
         SwarmSwarmBackend[] backends = [.. Program.Backends.RunningBackendsOfType<SwarmSwarmBackend>().Where(b => b.RemoteModels is not null)];
         IEnumerable<Dictionary<string, JObject>> sets = backends.Select(b => b.RemoteModels.GetValueOrDefault(subtype)).Where(b => b is not null);
@@ -44,6 +50,27 @@ public static class ModelsAPI
             return [];
         }
         return sets.Aggregate((a, b) => a.Union(b).PairsToDictionary(false));
+    }
+
+    public static Dictionary<string, JObject> InternalExtraModels(string subtype)
+    {
+        List<Dictionary<string, JObject>> provided = [];
+        foreach (string provider in ExtraModelProviders.Keys)
+        {
+            try
+            {
+                Dictionary<string, JObject> result = ExtraModelProviders[provider](subtype);
+                if (result is not null)
+                {
+                    provided.Add(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Failed to load extra models from provider '{provider}': {ex.ReadableString()}");
+            }
+        }
+        return provided.Aggregate((a, b) => a.Union(b).PairsToDictionary(false));
     }
 
     /// <summary>Placeholder model indicating the lack of a model.</summary>

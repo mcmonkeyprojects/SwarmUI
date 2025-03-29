@@ -271,7 +271,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
         string previewImg = PreviewImage;
         if (!dataImgs && previewImg is not null && previewImg.StartsWithFast("data:"))
         {
-            previewImg = $"/ViewSpecial/{Handler.ModelType}/{name}?editid={ModelsAPI.ModelEditID}";
+            previewImg = $"/ViewSpecial/{Handler.ModelType}/{Name}?editid={ModelsAPI.ModelEditID}";
         }
         return new JObject()
         {
