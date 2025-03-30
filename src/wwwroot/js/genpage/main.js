@@ -115,7 +115,7 @@ function rightClickImageInBatch(e, div) {
             popoverActions.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
         else {
-            includeButton(div, popoverActions, added.label, added.onclick, '', added.title);
+            popoverActions.push({ key: added.label, action: added.onclick, title: added.title });
         }
     }
     popoverActions.push({ key: 'Remove from view', action: () => div.remove() })
@@ -648,19 +648,6 @@ function getImageFullSrc(src) {
     return fullSrc;
 }
 
-function includeButton(buttons, subButtons, name, action, extraClass = '', title = '', buttonsChoice=undefined) {
-    let checkName = name.toLowerCase().replaceAll(' ', '');
-    if (checkName == 'starred') {
-        checkName = 'star';
-    }
-    if (buttonsChoice?.includes(checkName)) {
-        quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
-    }
-    else {
-        subButtons.push({ key: name, action: action, title: title });
-    }
-}
-
 function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
@@ -753,7 +740,19 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
     buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
     let isDataImage = src.startsWith('data:');
-    includeButton(buttons, subButtons, 'Use As Init', () => {
+    function includeButton(name, action, extraClass = '', title = '') {
+        let checkName = name.toLowerCase().replaceAll(' ', '');
+        if (checkName == 'starred') {
+            checkName = 'star';
+        }
+        if (buttonsChoice.includes(checkName)) {
+            quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
+        }
+        else {
+            subButtons.push({ key: name, action: action, title: title });
+        }
+    }
+    includeButton('Use As Init', () => {
         let initImageParam = document.getElementById('input_initimage');
         if (initImageParam) {
             let type = img.src.substring(img.src.lastIndexOf('.') + 1);
@@ -789,8 +788,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 tmpImg.src = img.src;
             }
         }
-    }, '', 'Sets this image as the Init Image parameter input', buttonsChoice);
-    includeButton(buttons, subButtons, 'Use As Image Prompt', () => {
+    }, '', 'Sets this image as the Init Image parameter input');
+    includeButton('Use As Image Prompt', () => {
         let altPromptRegion = document.getElementById('alt_prompt_region');
         if (!altPromptRegion) {
             return;
@@ -810,8 +809,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         };
         tmpImg.src = img.src;
-    }, '', 'Uses this image as an Image Prompt input', buttonsChoice);
-    includeButton(buttons, subButtons, 'Edit Image', () => {
+    }, '', 'Uses this image as an Image Prompt input');
+    includeButton('Edit Image', () => {
         let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
         if (initImageGroupToggle) {
             initImageGroupToggle.checked = true;
@@ -837,8 +836,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         imageEditor.setBaseImage(img);
         imageEditor.activate();
-    }, '', 'Opens an Image Editor for this image', buttonsChoice);
-    includeButton(buttons, subButtons, 'Upscale 2x', () => {
+    }, '', 'Opens an Image Editor for this image');
+    includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();
             let input_overrides = {
@@ -850,8 +849,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             };
             mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
-    }, '', 'Runs an instant generation with this image as the input and scale doubled', buttonsChoice);
-    includeButton(buttons, subButtons, 'Refine Image', () => {
+    }, '', 'Runs an instant generation with this image as the input and scale doubled');
+    includeButton('Refine Image', () => {
         toDataURL(img.src, (url => {
             let input_overrides = {
                 'initimage': url,
@@ -879,7 +878,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             triggerChangeFor(togglerInit);
             triggerChangeFor(togglerRefine);
         }));
-    }, '', 'Runs an instant generation with Refine / Upscale turned on', buttonsChoice);
+    }, '', 'Runs an instant generation with Refine / Upscale turned on');
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {
@@ -890,13 +889,13 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
     }
     if (!isDataImage) {
-        includeButton(buttons, subButtons, metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
+        includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
             toggleStar(imagePathClean, src);
-        }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted', buttonsChoice);
+        }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
     }
-    includeButton(buttons, subButtons, 'Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings', buttonsChoice);
+    includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
     if (!isDataImage) {
-        includeButton(buttons, subButtons, 'View In History', () => {
+        includeButton('View In History', () => {
             let folder = imagePathClean;
             let lastSlash = folder.lastIndexOf('/');
             if (lastSlash != -1) {
@@ -904,7 +903,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
             getRequiredElementById('imagehistorytabclickable').click();
             imageHistoryBrowser.navigate(folder);
-        }, '', 'Jumps the Image History browser to where this image is at.', buttonsChoice);
+        }, '', 'Jumps the Image History browser to where this image is at.');
     }
     for (let added of buttonsForImage(imagePathClean, src, metadata)) {
         if (added.label == 'Star') {
@@ -914,7 +913,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             subButtons.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
         else {
-            includeButton(buttons, subButtons, added.label, added.onclick, '', added.title, buttonsChoice);
+            includeButton(added.label, added.onclick, '', added.title);
         }
     }
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
