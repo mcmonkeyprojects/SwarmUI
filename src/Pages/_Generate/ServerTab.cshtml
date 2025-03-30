@@ -20,8 +20,8 @@
         <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Logs" id="logtabbutton" aria-selected="false" tabindex="-1" role="tab">Logs</a>
     </li>
 </ul>
-<div class="tab-content">
-    <div class="tab-pane show active" id="Server-Info" role="tabpanel">
+<div class="tab-content tab-no-scroll">
+    <div class="tab-pane show active scroll-within-tab" id="Server-Info" role="tabpanel">
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">Server</div>
             <div class="card-body">
@@ -138,9 +138,8 @@
                 </div>
             </div>
         </div>
-        <div style="height: 10rem"></div> <!-- Spacer -->
     </div>
-    <div class="tab-pane" id="Settings-Backends" role="tabpanel">
+    <div class="tab-pane scroll-within-tab" id="Settings-Backends" role="tabpanel">
         <div class="backend_add_button_container">
             Add new backend of type:
             <span class="form-check form-switch display-inline-block">
@@ -152,16 +151,14 @@
             <button class="basic-button translate" onclick="restart_all_backends()">Restart All Backends</button>
         </div>
         <div class="backends_list" id="backends_list"></div>
-        <div style="height: 10rem"></div> <!-- Spacer -->
     </div>
-    <div class="tab-pane" id="Settings-Server" role="tabpanel">
+    <div class="tab-pane scroll-within-tab" id="Settings-Server" role="tabpanel">
         <div id="server_settings_container" class="settings-container"></div>
         <div class="settings_submit_confirmer" id="serversettings_confirmer">
             <span class="settings_submit_confirmer_text">Save <span id="serversettings_edit_count">0</span> edited setting(s)?</span>
             <button type="button" class="btn btn-primary basic-button translate" onclick="save_server_settings()">Save</button>
             <button type="button" class="btn btn-secondary basic-button translate" onclick="cancel_server_settings_edit()">Cancel</button>
         </div>
-        <div style="height: 10rem"></div> <!-- Spacer -->
     </div>
     <div class="tab-pane" id="Server-Logs" role="tabpanel">
         @WebUtil.ModalHeader("do_log_pastebin_modal", "Submit Logs To Pastebin")
@@ -181,7 +178,7 @@
         <center>View: <select id="server_log_type_selector"></select> Filter: <input type="text" id="server_log_filter" placeholder="Filter" /> <button class="basic-button" id="server_log_pastebin">Pastebin</button></center>
         <div id="server_logs_container" class="server_logs_container"></div>
     </div>
-    <div class="tab-pane" id="Server-Extensions" role="tabpanel">
+    <div class="tab-pane scroll-within-tab" id="Server-Extensions" role="tabpanel">
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">Extensions</div>
             <div class="card-body">
@@ -260,7 +257,6 @@
                 }
             </table>
         </center>
-        <div style="height: 10rem"></div> <!-- Spacer -->
     </div>
     <div class="tab-pane" id="Server-ManageUsers" role="tabpanel">
         @WebUtil.ModalHeader("server_add_user_menu", "Add New User Account")

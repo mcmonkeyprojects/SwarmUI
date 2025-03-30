@@ -909,3 +909,13 @@ async function doPasswordClientPrehash(userId, pw) {
         return `__swarmdoprehash:${str}`;
     }
 }
+
+function fixTabHeights() {
+    let tabs = document.querySelectorAll('.scroll-within-tab');
+    for (let tab of tabs) {
+        tab.style.maxHeight = `calc(100vh - ${tab.offsetTop}px)`;
+    }
+}
+
+fixTabHeights();
+setTimeout(fixTabHeights, 100);

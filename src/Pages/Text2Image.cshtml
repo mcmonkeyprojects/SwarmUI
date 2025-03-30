@@ -65,13 +65,13 @@
         @await Html.PartialAsync("_Generate/GenerateTab.cshtml", pageModel)
     </div>
     @WebServer.T2ITabBody
-    <div class="tab-pane tab-pane-vw" id="utilities_tab" role="tabpanel">
+    <div class="tab-pane tab-pane-vw tab-no-scroll" id="utilities_tab" role="tabpanel">
         @await Html.PartialAsync("_Generate/UtilitiesTab.cshtml", pageModel)
     </div>
-    <div class="tab-pane tab-pane-vw" id="user_tab" role="tabpanel">
+    <div class="tab-pane tab-pane-vw tab-no-scroll" id="user_tab" role="tabpanel">
         @await Html.PartialAsync("_Generate/UserTab.cshtml", pageModel)
     </div>
-    <div class="tab-pane tab-pane-vw" id="server_tab" role="tabpanel">
+    <div class="tab-pane tab-pane-vw tab-no-scroll" id="server_tab" role="tabpanel">
         @await Html.PartialAsync("_Generate/ServerTab.cshtml", pageModel)
     </div>
 </div>
