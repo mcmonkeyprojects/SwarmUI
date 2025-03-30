@@ -1,0 +1,219 @@
+@model GeneratePageModel
+
+<div class="t2i-top-bar-container" style="line-height:1.5">
+    <div class="t2i-top-bar" id="t2i_top_bar">
+        <div class="input-sidebar" id="input_sidebar">
+            <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Left Sidebar" data-content="inputsidebartab_content" role="tablist" id="inputsidebartabcollection">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active translate" data-bs-toggle="tab" href="#Input-Sidebar-Main-Tab" aria-selected="true" role="tab">Inputs</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="inputsidebartab_content">
+                <div class="tab-pane show active genpage-bottom-tab" id="Input-Sidebar-Main-Tab" role="tabpanel">
+                    <span class="interrupt_line"></span>
+                    <div class="main_inputs_area_wrapper" id="main_inputs_area_wrapper">
+                        <div class="input_filter_container">
+                            <input type="text translate" class="main_inputs_filter auto-text" id="main_inputs_filter" oninput="hideUnsupportableParams()" placeholder="Filter parameters..." />
+                            <span class="clear_input_icon" id="clear_input_icon" onclick="clearParamFilterInput()">&#x2715;</span>
+                        </div>
+                        <div id="main_inputs_area"></div>
+                        <div id="main_inputs_area_advanced" class="main_inputs_area_advanced"></div>
+                        <div id="main_inputs_area_hidden" class="main_inputs_area_hidden"></div>
+                        <div style="height: 10rem;"></div> <!-- Spacer -->
+                    </div>
+                    <div class="advanced_input_checkbox">
+                        <input type="checkbox" id="advanced_options_checkbox" onclick="toggle_advanced()"/>
+                        <span onclick="toggle_advanced_checkbox_manual()"><span class="translate">Display Advanced Options?</span> <span id="advanced_hidden_count"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-split-bar"><div class="t2i-split-quickbutton t2i-top-split-quickbutton" id="t2i-top-split-quickbutton">&#x21DA;</div></div><div class="main-image-area" id="main_image_area"><div class="current_image_wrapbox" id="current_image_wrapbox">
+            <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Center Area" data-content="currentimagecontent" role="tablist" id="currentimagecollection">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Result-Tab" aria-selected="true" role="tab">Image</a>
+                </li>
+            </ul>
+            <div class="tab-content" id="currentimagecontent">
+                <div class="tab-pane show active genpage-bottom-tab" style="overflow:hidden" id="Image-Result-Tab" role="tabpanel">
+                    <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div>
+                </div>
+            </div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div><div class="current_image_batch" id="current_image_batch_wrapper">
+                <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" data-content="rightsidebarcontent" role="tablist" id="rightsidebarcollection">
+                    <li class="nav-item" role="presentation">
+                        <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Batch-Tab" aria-selected="true" role="tab">Batch</a>
+                    </li>
+                </ul>
+                <div class="tab-content" id="rightsidebarcontent">
+                    <div class="tab-pane show active genpage-bottom-tab" id="Image-Batch-Tab" role="tabpanel">
+                        <div style="position: relative; width: 0; height: 0;">
+                            <div class="batch-gear-button" onclick="doPopover('batchgear')">&#9881;</div>
+                        </div>
+                        <div class="sui-popover sui_popover_model" id="popover_batchgear">
+                            <div class="batchgear-toggler" title="Clears the batch view.">
+                                <button class="interrupt-button translate" id="clear_batch_button" onclick="clearBatch()">Clear Batch</button>
+                            </div>
+                            <div class="batchgear-toggler" title="If enabled, automatically clears out the image batch when generating a new one. If disabled, leaves history to grow until you refresh the page.">
+                                <span class="form-check form-switch display-inline-block">
+                                    <input type="checkbox" class="form-check-input" id="auto_clear_batch_checkbox" onchange="toggleAutoClearBatch()"> <label class="form-check-label translate" for="auto_clear_batch_checkbox">Auto Clear Batch</label>
+                                </span>
+                            </div>
+                            <div class="batchgear-toggler" title="If enabled, automatically swaps to previews of new images the moment they're available, before the image itself is done generating.">
+                                <span class="form-check form-switch display-inline-block">
+                                    <input type="checkbox" class="form-check-input" id="auto_load_previews_checkbox" onchange="toggleAutoLoadPreviews()" checked=""> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Previews</label>
+                                </span>
+                            </div>
+                            <div class="batchgear-toggler" title="If enabled, automatically swaps to new images the moment they're done generating.">
+                                <span class="form-check form-switch display-inline-block">
+                                    <input type="checkbox" class="form-check-input" id="auto_load_images_checkbox" onchange="toggleAutoLoadImages()" checked="true"> <label class="form-check-label translate" for="auto_load_previews_checkbox">Auto Swap To Images</label>
+                                </span>
+                            </div>
+                            <div class="batchgear-toggler" title="If enabled, display loading spinners and failed generation crosses.">
+                                <span class="form-check form-switch display-inline-block">
+                                    <input type="checkbox" class="form-check-input" id="show_load_spinners_checkbox" onchange="toggleShowLoadSpinners()" checked="true"> <label class="form-check-label translate" for="show_load_spinners_checkbox">Show Load Spinners</label>
+                                </span>
+                            </div>
+                        </div>
+                        <div id="current_image_batch" class="current_image_batch_core"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="alt_prompt_region drag_image_target" id="alt_prompt_region">
+                <div id="alt_prompt_extra_area" class="alt_prompt_extra_area">
+                    <button class="interrupt-button image-clear-button translate" style="display: none;" id="alt_prompt_image_clear_button">Clear Images</button>
+                    <div class="added-image-area alt-prompt-added-image-area" id="alt_prompt_image_area"></div>
+                </div>
+                <div class="alt_prompt_main_line">
+                    <span class="alt-text-add-button-wrapper">
+                        <span class="basic-button alt-text-add-button" id="alt_text_add_button">+</span>
+                    </span>
+                    <span class="alt-text-tokencount-wrapper">
+                        <span class="auto-input-prompt-tokencount alt-text-tokencount">
+                            <span id="alt_text_tokencount" title="Prompt's Text-Encoder token count / chunk-size">0/75</span><span id="alt_negtext_tokencount" style="display:none" title="Negative prompt's Text-Encoder token count / chunk-size">Neg: 0/75</span>
+                        </span>
+                    </span>
+                    <div class="alt_prompt_textboxes">
+                        <textarea id="alt_prompt_textbox" class="alt_prompt_textbox translate" rows="1" placeholder="Type your prompt here... (or, drag/paste an image in to use Image Prompting)" onpaste="imagePromptImagePaste(arguments[0])"></textarea>
+                        <br>
+                        <textarea id="alt_negativeprompt_textbox" class="alt_prompt_textbox translate" rows="1" placeholder="Optionally, type a negative prompt here..."></textarea>
+                    </div>
+                    <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate" id="alt_generate_button" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">Generate</button>
+                    <button class="alt-prompt-buttons alt-prompt-center-button basic-button" id="alt_center_button" oncontextmenu="doPopover('generate_center'); return false;" onclick="doPopover('generate_center')">&#x2B9F;</button>
+                    <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt" id="alt_interrupt_button" oncontextmenu="doPopover('interrupt'); return false;" onclick="mainGenHandler.doInterrupt()">&times;</button>
+                </div>
+            </div>
+            <div class="sui-popover sui_popover_model" id="popover_generate_center">
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doGenerate()">Generate</div>
+                <div class="sui_popover_model_button translate" id="generate_forever_button" onclick="toggleGenerateForever()">Generate Forever</div>
+                <div class="sui_popover_model_button translate" id="generate_previews_button" onclick="toggleGeneratePreviews()">Generate Previews</div>
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterruptAndGen()" title="Alt+Click the Generate button to do this">Interrupt And Generate</div>
+                <div class="sui_popover_model_button translate" onclick="showPromptTokenizen('alt_prompt_textbox')">Show Prompt Tokenization</div>
+            </div>
+            <div class="sui-popover sui_popover_model" id="popover_generate">
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doGenerate()">Generate</div>
+                <div class="sui_popover_model_button translate" id="generate_forever_button" onclick="toggleGenerateForever()">Generate Forever</div>
+                <div class="sui_popover_model_button translate" id="generate_previews_button" onclick="toggleGeneratePreviews()">Generate Previews</div>
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterruptAndGen()" title="Alt+Click the Generate button to do this">Interrupt And Generate</div>
+            </div>
+            <div class="sui-popover sui_popover_model" id="popover_interrupt">
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
+                <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
+            </div>
+        </div>
+        <div class="model-block-menu-button t2i-area-quicktools translate" onclick="doPopover('quicktools')">Quick Tools</div>
+        <div class="sui-popover sui_popover_model" id="popover_quicktools">
+            <div class="sui_popover_model_button translate" onclick="genTabLayout.resetLayout()">Reset Page Layout</div>
+            <div class="sui_popover_model_button translate" onclick="refreshParameterValues(true)">Reload Parameter Values</div>
+            <div class="sui_popover_model_button translate" onclick="resetParamsToDefault()">Reset Params to Default</div>
+            <div class="sui_popover_model_button translate" onclick="openEmptyEditor()">Open Empty Image Editor</div>
+            <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
+            <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
+            <div class="sui_popover_model_button translate" onclick="forceShowWelcomeMessage()">Reshow Welcome Message</div>
+            <div class="sui_popover_model_button translate" onclick="hideUnalteredParameters()">Hide Unaltered Parameters</div>
+        </div>
+    </div>
+</div>
+<div class="t2i-mid-split-bar splitter-bar" id="t2i-mid-split-bar"><div class="t2i-split-quickbutton t2i-mid-split-quickbutton" id="t2i-mid-split-quickbutton">&#x290B;</div></div>
+<div class="t2i-bottom-bar" id="t2i_bottom_bar" style="line-height:1.5">
+    <div class="bottom-info-bar-container" id="bottom_info_bar">
+        <span class="bottom-info-bar-component"><span class="other_info_span" id="other_info_span" style="min-height: 1rem"></span></span>
+        <span class="bottom-info-bar-component"><b class="translate">Model</b>: <select class="auto-dropdown current_model_view" onchange="autoSelectWidth(this)" id="current_model"></select></span>
+        <span class="bottom-info-bar-component" style="display:none;" id="current_presets_wrapper"><span><b class="translate">Current presets</b><span id="preset_info_slot"></span>: </span> <span id="current_preset_list_view"></span></span>
+        <span class="bottom-info-bar-component" style="display:none;" id="current_loras_wrapper"><span class="translate"><b>Current LoRAs</b><span id="lora_info_slot"></span>: </span> <span id="current_lora_list_view"></span></span>
+        <span class="bottom-info-bar-component"><span class="num_jobs_span" id="num_jobs_span" style="min-height: 1rem"></span></span>
+    </div>
+    <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Bottom Bar" data-content="t2i_bottom_bar_content" role="tablist" id="bottombartabcollection">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active translate" id="imagehistorytabclickable" data-bs-toggle="tab" href="#Image-History-Tab" aria-selected="true" role="tab">Image History</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Presets-Tab" aria-selected="false" tabindex="-1" role="tab">Presets</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Models-Tab" id="modelstabheader" aria-selected="false" tabindex="-1" role="tab">Models</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Vaes-Tab" aria-selected="false" tabindex="-1" role="tab">VAEs</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Loras-Tab" aria-selected="false" tabindex="-1" role="tab">LoRAs</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Embeddings-Tab" aria-selected="false" tabindex="-1" role="tab">Embeddings</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#ControlNets-Tab" aria-selected="false" tabindex="-1" role="tab">ControlNets</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Wildcards-Tab" aria-selected="false" tabindex="-1" role="tab">Wildcards</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Tools-Tab" aria-selected="false" tabindex="-1" role="tab">Tools</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="t2i_bottom_bar_content">
+        <div class="tab-pane show active genpage-bottom-tab" id="Image-History-Tab" role="tabpanel">
+            <div class="browser_container" id="image_history"></div>
+        </div>
+        <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_fullview_modal">
+            <div id="image_fullview_modal_content" style="width:fit-content;margin:auto;min-width:70vw;"></div>
+            <div style="position: fixed; top: 1rem; right: 10%; width: 0; height: 0">
+                <span class="text_button translate" onclick="imageFullView.close()">[Close]</span>
+            </div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Presets-Tab" role="tabpanel">
+            <div class="browser_container preset_list_container" id="preset_list"></div>
+            <div class="sui-popover sui_popover_model" id="popover_presetmenu">
+                <div class="sui_popover_model_button translate" onclick="presetMenuEdit()">Edit Preset</div>
+                <div class="sui_popover_model_button translate" onclick="presetMenuDelete()">Delete Preset</div>
+            </div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Models-Tab" role="tabpanel">
+            <div class="browser_container" id="model_list"></div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Vaes-Tab" role="tabpanel">
+            <div class="browser_container" id="vae_list"></div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Loras-Tab" role="tabpanel">
+            <div class="browser_container" id="lora_list"></div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Embeddings-Tab" role="tabpanel">
+            <div class="browser_container" id="embedding_list"></div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="ControlNets-Tab" role="tabpanel">
+            <div class="browser_container" id="controlnet_list"></div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Wildcards-Tab" role="tabpanel">
+            <div class="browser_container" id="wildcard_list"></div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Tools-Tab" role="tabpanel">
+            <select class="tool-selector" id="tool_selector">
+                <option value="" selected></option>
+            </select>
+            <div class="tool-container" id="tool_container">
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("GenTabModals.cshtml", Model)
+</div>

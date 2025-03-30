@@ -1,0 +1,324 @@
+@model GeneratePageModel
+
+<ul class="nav nav-tabs" role="tablist" id="servertablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active translate" data-bs-toggle="tab" href="#Server-Info" id="serverinfotabbutton" aria-selected="true" role="tab">Server Info</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="view_backends_list">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Backends" id="serverbackendstabbutton" aria-selected="false" role="tab">Backends</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="read_server_settings">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Server" id="serverconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Server Configuration</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="manage_users">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Server-ManageUsers" id="manageusersbutton" aria-selected="false" tabindex="-1" role="tab">Users</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="manage_extensions">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Extensions" id="extensionstabbutton" aria-selected="false" tabindex="-1" role="tab">Extensions</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="view_logs">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Server-Logs" id="logtabbutton" aria-selected="false" tabindex="-1" role="tab">Logs</a>
+    </li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane show active" id="Server-Info" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">Server</div>
+            <div class="card-body">
+                <p class="card-text">
+                    The "Server" tab provides access to SwarmUI's server internals, including:
+                    <span data-requiredpermission="view_backends_list"><br>&bullet; The <a href="#Settings-Backends" onclick="getRequiredElementById('serverbackendstabbutton').click()">Backends</a> tab, which allows you to configure and manage backends (the underlying engines that provide the generation core, or remote instances of swarm this instance is connected to)</span>
+                    <span data-requiredpermission="read_server_settings"><br>&bullet; The <a href="#Settings-Server" onclick="getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab, which allows you to configure and manage Swarm's settings (such as models directory, server host port, etc)</span>
+                    <span data-requiredpermission="manage_extensions"><br>&bullet; The <a href="#Server-Extensions" onclick="getRequiredElementById('extensionstabbutton').click()">Extensions</a> tab, which provides ways to manage your Swarm extensions or install new ones</span>
+                    <span data-requiredpermission="view_logs"><br>&bullet; The <a href="#Server-Logs" onclick="getRequiredElementById('logtabbutton').click()">Logs</a> tab, which allows you to view the server logs (eg if you get an error, check Logs -&gt; Debug)</span>
+                    <br>
+                    <br>This is not to be confused with the <a href="#user_tab" onclick="getRequiredElementById('usersettingstabbutton').click();getRequiredElementById('userconfigtabbutton').click()">User Settings</a> tab, which allows you to configure your user settings (eg save path/format, default VAE choice, etc)
+                </p>
+            </div>
+        </div>
+        <div class="card-collection-inline">
+            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
+                <div class="card-header translate">Local Network</div>
+                <div class="card-body">
+                    <p class="card-text">
+                        @if (Program.ServerSettings.Network.Host == "127.0.0.1" || Program.ServerSettings.Network.Host == "localhost")
+                        {
+                            <p class="translate">This server is only accessible from this computer.</p>
+                        }
+                        else
+                        {
+                            string address = Utilities.GetLocalIPAddress();
+                            if (address is null)
+                            {
+                                <p><span class="translate">Unknown local address, but seems to be open to LAN based on Host setting</span>
+                                <br>'<b>@(Program.ServerSettings.Network.Host)</b>'</p>
+                            }
+                            else
+                            {
+                                <p><span class="translate">This server is likely accessible from LAN on one of the following addresses:</span>
+                                <br>@(address)</p>
+                            }
+                        }
+                        @if (Program.ProxyHandler is not null && Program.ProxyHandler.PublicURL is not null)
+                        {
+                            <p><span class="translate">This server is also accessible from the open internet at:</span>
+                            <br>@(Program.ProxyHandler?.PublicURL)</p>
+                        }
+                    </p>
+                </div>
+            </div>
+            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
+                <div class="card-header translate">Resource Usage</div>
+                <div class="card-body">
+                    <p class="card-text" id="resource_usage_area">
+                        (Loading...)
+                    </p>
+                </div>
+            </div>
+            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="read_server_info_panels">
+                <div class="card-header translate">Connected Users</div>
+                <div class="card-body">
+                    <p class="card-text" id="connected_users_list">
+                        (Loading...)
+                    </p>
+                </div>
+            </div>
+            @if (Utilities.DotNetVersMissing is not null)
+            {
+                <div class="card border-danger mb-3 card-center-container">
+                    <div class="card-header">DotNET @Utilities.DotNetVersMissing Missing</div>
+                    <div class="card-body">
+                        <p id="dotnet_missing_message" class="card-text">
+                            You do not seem to have DotNET @Utilities.DotNetVersMissing installed - this will be required in a future version of SwarmUI.
+                            <br>Please install DotNET SDK @(Utilities.DotNetVersMissing).0 from <a target="_blank" href="https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0">https://dotnet.microsoft.com/en-us/download/dotnet/@(Utilities.DotNetVersMissing).0</a>
+                        </p>
+                    </div>
+                </div>
+            }
+            @if (Program.CurrentGitDate == "Git failed to load")
+            {
+                <div class="card border-danger mb-3 card-center-container">
+                    <div class="card-header">Git Failed To Load</div>
+                    <div class="card-body">
+                        <p id="git_failed_message" class="card-text">
+                            You seem to have installed SwarmUI improperly. Many features, including auto-updating, will not work.
+                            <br>Please install SwarmUI as explained in <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI?tab=readme-ov-file#installing-on-windows">The readme install instructions.</a>
+                        </p>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="card-collection-inline">
+            <div class="card border-danger mb-3 card-center-container" data-requiredpermission="shutdown,restart">
+                <div class="card-header translate">Shutdown</div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <span data-requiredpermission="shutdown">
+                        <span class="translate">If you want to shut down the server, click the button below.</span>
+                        <br><button class="basic-button danger-button translate" onclick="shutdown_server()">Shutdown Server</button>
+                        </span>
+                        <br>
+                        <span data-requiredpermission="restart">
+                        <br><span class="translate">Or you can update and restart if there are updates available:</span>
+                        <br><button class="basic-button danger-button translate" onclick="update_and_restart_server()">Update and Restart Server</button>
+                        </span>
+                        <span id="shutdown_notice_area"></span>
+                    </p>
+                </div>
+            </div>
+            <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="control_mem_clean">
+                <div class="card-header translate">Free Memory</div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <span class="translate">You can free up the VRAM usage, or system memory usage (cache) from backends with the two buttons below.</span>
+                        <br>
+                        <button class="basic-button danger-button" onclick="server_clear_vram()">Free VRAM</button>
+                        <button class="basic-button danger-button" onclick="server_clear_sysram()">Free System RAM</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div style="height: 10rem"></div> <!-- Spacer -->
+    </div>
+    <div class="tab-pane" id="Settings-Backends" role="tabpanel">
+        <div class="backend_add_button_container">
+            Add new backend of type:
+            <span class="form-check form-switch display-inline-block">
+                <input class="form-check-input translate" type="checkbox" id="backends_show_advanced" title="Show Advanced Backend Types" onclick="toggleShowAdvancedBackends()" autocomplete="off"> Show Advanced
+            </span>
+            <div id="backend_add_buttons"></div>
+        </div>
+        <div>
+            <button class="basic-button translate" onclick="restart_all_backends()">Restart All Backends</button>
+        </div>
+        <div class="backends_list" id="backends_list"></div>
+        <div style="height: 10rem"></div> <!-- Spacer -->
+    </div>
+    <div class="tab-pane" id="Settings-Server" role="tabpanel">
+        <div id="server_settings_container" class="settings-container"></div>
+        <div class="settings_submit_confirmer" id="serversettings_confirmer">
+            <span class="settings_submit_confirmer_text">Save <span id="serversettings_edit_count">0</span> edited setting(s)?</span>
+            <button type="button" class="btn btn-primary basic-button translate" onclick="save_server_settings()">Save</button>
+            <button type="button" class="btn btn-secondary basic-button translate" onclick="cancel_server_settings_edit()">Cancel</button>
+        </div>
+        <div style="height: 10rem"></div> <!-- Spacer -->
+    </div>
+    <div class="tab-pane" id="Server-Logs" role="tabpanel">
+        @WebUtil.ModalHeader("do_log_pastebin_modal", "Submit Logs To Pastebin")
+            <div class="modal-body">
+                <p class="translate">This will submit the text of your server logs to a <a target="_blank" href="https://paste.denizenscript.com/New/Swarm">public pastebin service</a>. This is to make it easy to share debug logs when getting support on the <a target="_blank" href="https://discord.gg/q2y38cqjNw">SwarmUI discord</a>.</p>
+                <p class="translate">Once submitted, your server logs will be visible to the public and not easily deletable. Please ensure your logs do not contain private information (eg personal prompts) before autosubmitting.</p>
+                <p class="translate">(If your logs do have private information, please restart and replicate whatever you need to show, then pastebin the logs).</p>
+                <p class="translate">(Alternately, you can manually submit and edit the content first via <a target="_blank" href="https://paste.denizenscript.com/New/Swarm">this link</a>, just be sure not to delete anything important).</p>
+                <span class="translate">Which minimum log level would you like to submit?</span> <select id="log_pastebin_type" autocomplete="off"><option>verbose</option><option selected>debug</option><option>info</option></select>
+                <div id="log_pastebin_result_area"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary basic-button translate" id="log_submit_pastebin_button">Submit</button>
+                <button type="button" class="btn btn-secondary basic-button translate" id="log_cancel_pastebin_button" onclick="$('#do_log_pastebin_modal').modal('hide')">Cancel</button>
+            </div>
+        @WebUtil.ModalFooter()
+        <center>View: <select id="server_log_type_selector"></select> Filter: <input type="text" id="server_log_filter" placeholder="Filter" /> <button class="basic-button" id="server_log_pastebin">Pastebin</button></center>
+        <div id="server_logs_container" class="server_logs_container"></div>
+    </div>
+    <div class="tab-pane" id="Server-Extensions" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">Extensions</div>
+            <div class="card-body">
+                <p class="card-text">
+                    <span class="translate">The "Extensions" tab lets you control your installed Swarm extensions, or install new ones.</span>
+                </p>
+            </div>
+        </div>
+        <div class="card border-warning mb-3 card-center-container" id="extensions_installed_card" style="display:none">
+            <div class="card-header translate">New Extensions Installed</div>
+            <div class="card-body">
+                <p class="card-text">
+                    <span class="translate">Extensions installed or updated. Changes will apply the next time you restart the SwarmUI server.</span>
+                    <div><button class="basic-button translate" id="extension_restart_button" onclick="extensionsManager.restartServer()">Restart Now</button></div>
+                </p>
+            </div>
+        </div>
+        <center>
+            <h3>Installed Extensions</h3>
+            <table class="simple-table">
+                <tr>
+                    <th>Name</th>
+                    <th>Version</th>
+                    <th>Tags</th>
+                    <th>Author</th>
+                    <th>Description</th>
+                    <th>Readme</th>
+                    <th>License</th>
+                    <th>Actions</th>
+                </tr>
+                @foreach (Extension ext in Program.Extensions.Extensions.Where(e => !e.IsCore))
+                {
+                    <tr>
+                        <td>@ext.ExtensionName</td>
+                        <td><code>@ext.Version</code></td>
+                        <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
+                        <td>@ext.ExtensionAuthor</td>
+                        <td>@ext.Description</td>
+                        <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
+                        <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
+                        <td>
+                            @if (ext.CanUpdate)
+                            {
+                                <button class="basic-button" onclick="extensionsManager.updateExtension('@ext.ExtensionName', this)">Update</button>
+                            }
+                            <button class="basic-button" onclick="extensionsManager.uninstallExtension('@ext.ExtensionName', this)">Uninstall</button>
+                        </td>
+                    </tr>
+                }
+            </table>
+            <br>
+            <h3>Available Extensions</h3>
+            <table class="simple-table">
+                <tr>
+                    <th>Name</th>
+                    <th>Tags</th>
+                    <th>Author</th>
+                    <th>Description</th>
+                    <th>Readme</th>
+                    <th>License</th>
+                    <th>Actions</th>
+                </tr>
+                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
+                {
+                    <tr>
+                        <td>@ext.Name</td>
+                        <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
+                        <td>@ext.Author</td>
+                        <td>@ext.Description</td>
+                        <td><a target="_blank" href="@ext.URL">Here</a></td>
+                        <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
+                        <td>
+                            <button class="basic-button" onclick="extensionsManager.installExtension('@ext.Name', this)">Install</button>
+                        </td>
+                    </tr>
+                }
+            </table>
+        </center>
+        <div style="height: 10rem"></div> <!-- Spacer -->
+    </div>
+    <div class="tab-pane" id="Server-ManageUsers" role="tabpanel">
+        @WebUtil.ModalHeader("server_add_user_menu", "Add New User Account")
+            <div class="modal-body">
+                <p class="translate">This will add a new user account to your SwarmUI server.</p>
+                <p class="translate">Please configure carefully, the account will be active immediately upon click 'Add' below.</p>
+                <p class="translate">Click 'Cancel' if you're not ready to add a user.</p>
+                <div id="add_user_menu_inputs"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.addUserMenuSubmit()">Add</button>
+                <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#server_add_user_menu').modal('hide')">Cancel</button>
+            </div>
+        @WebUtil.ModalFooter()
+        @WebUtil.ModalHeader("server_add_role_menu", "Add New User Permission Role")
+            <div class="modal-body">
+                <p class="translate">This will add a new user permission role to your SwarmUI server.</p>
+                <p class="translate">This should be used when you need to define unique contexts in which certain users get a certain subset of permissions.</p>
+                <p class="translate">For the most part, you should just configure the base set of roles rather than adding new ones..</p>
+                <p class="translate">Click 'Cancel' if you're not ready to add a user.</p>
+                <div id="add_role_menu_inputs"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary basic-button translate" onclick="userAdminManager.addRoleMenuSubmit()">Add</button>
+                <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#server_add_role_menu').modal('hide')">Cancel</button>
+            </div>
+        @WebUtil.ModalFooter()
+        @WebUtil.ModalHeader("server_change_user_password_modal", "Change User Password")
+            <div class="modal-body">
+                <p class="translate">This form lets you change another user's password. Be sure to tell them what their new password is, and that they should change their password themself after.</p>
+                <br>New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="server_change_user_password_new_password" placeholder="Enter new password..." autocomplete="off" value="" />
+                <br>Confirm New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="server_change_user_password_new_password2" placeholder="Confirm new password..." autocomplete="off" value="" />
+                <div id="server_change_user_password_result_area"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary basic-button translate" id="server_change_user_password_submit_button" onclick="userAdminManager.changeUserPwSubmit()">Submit</button>
+                <button type="button" class="btn btn-secondary basic-button translate" id="server_change_user_password_cancel_button" onclick="$('#server_change_user_password_modal').modal('hide')">Cancel</button>
+            </div>
+        @WebUtil.ModalFooter()
+        <div class="manage-users-left" id="manage_users_leftbox">
+            <div class="input_filter_container">
+                <input type="text translate" class="main_inputs_filter auto-text" id="admin_user_filter" oninput="userAdminManager.updateFilter()" placeholder="Filter users/roles..." />
+                <span class="clear_input_icon" id="admin_user_clear_input_icon" onclick="userAdminManager.clearFilter()">&#x2715;</span>
+            </div>
+            <div class="manage-users-left-header">
+                <span class="manage-users-left-title translate">Roles</span>
+                <button class="basic-button translate" onclick="userAdminManager.showAddRoleMenu()" title="Add a new role...">Add Role</button>
+            </div>
+            <div class="manage_user_leftbox_content" id="manage_users_leftbox_content_rolelist"></div>
+            <div class="manage-users-left-header">
+                <span class="manage-users-left-title translate">Users</span>
+                <button class="basic-button translate" onclick="userAdminManager.showAddUserMenu()" title="Add a new user...">Add User</button>
+            </div>
+            <div class="manage_user_leftbox_content" id="manage_users_leftbox_content_userlist"></div>
+        </div>
+        <div class="splitter-bar" id="manage_users_splitbar"></div>
+        <div class="manage-users-right" id="manage_users_rightbox">
+            <div id="manage_users_rightbox_content"></div>
+        </div>
+    </div>
+</div>

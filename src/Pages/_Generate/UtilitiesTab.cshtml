@@ -1,0 +1,216 @@
+@model GeneratePageModel
+
+<ul class="nav nav-tabs" role="tablist" id="utilitiestablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active translate" data-bs-toggle="tab" href="#Utilities-Info-Tab" aria-selected="true" role="tab">Info</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="use_tokenizer">
+        <a class="nav-link translate" data-bs-toggle="tab" id="cliptokentabbutton" href="#Utilities-CLIP-Token-Tab" aria-selected="false" tabindex="-1" role="tab">CLIP Tokenization</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="pickle2safetensors">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Utilities-Pickle2Safetensor-Tab" aria-selected="false" tabindex="-1" role="tab">Pickle To Safetensors</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="extra_loras">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Utilities-LoraExtractor-Tab" id="loraextractortabbutton" aria-selected="false" tabindex="-1" role="tab">LoRA Extractor</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="download_models">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Utilities-ModelDownloader-Tab" id="modeldownloadertabbutton" aria-selected="false" tabindex="-1" role="tab">Model Downloader</a>
+    </li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane show active" id="Utilities-Info-Tab" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header">Utilities</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    The "Utilities" tab provides a variety of general utilities and tools in the subtabs above, and the quicktools below.
+                </p>
+            </div>
+        </div>
+        <br>
+        <div class="card border-secondary mb-3 card-center-container" data-requiredpermission="reset_metadata">
+            <div class="card-header translate">Metadata Utilities</div>
+            <div class="card-body">
+                <p class="card-text">
+                    <div class="card-center-container">
+                        <button id="util_massmetadataclear_button" class="basic-button translate" onclick="util_massMetadataClear()">Reset All Metadata</button>
+                    </div>
+                    <br>If you click this button, all Model and Image metadata datastores will be reset, and they will be reloaded from source files.
+                    <br>This is useful for example if you've externally modified your model or image files and want to clean out or update Swarm's metadata tracking.
+                    <br>Note that this does not remove metadata from the models or images themselves, just from the databases that keep an efficient tracker of them.
+                    <br>This may take a moment to run.
+                    <hr>
+                    <span data-requiredpermission="edit_model_metadata">
+                        <div class="card-center-container">
+                            <button id="util_modelmetadatascanner_button" class="basic-button translate" onclick="modelMetadataScanner.run()">Scan Civitai For Metadata</button>
+                        </div>
+                        <br>Model Sub-type: <select id="util_modelmetadatascanner_subtype" class="auto-dropdown">
+                            <option value="all" class="translate" selected>all</option>
+                            @foreach (string key in Program.T2IModelSets.Keys)
+                            {
+                                <option value="@key" class="translate">@key</option>
+                            }
+                        </select>
+                        &emsp;Date range: <select id="util_modelmetadatascanner_date" class="auto-dropdown">
+                            <option value="all" class="translate" selected>All (ignore time)</option>
+                            <option value="today" class="translate">Models downloaded today (24 hours)</option>
+                            <option value="week" class="translate">Models downloaded this week (7 days)</option>
+                            <option value="month" class="translate">Models downloaded this month (31 days)</option>
+                        </select>
+                        <br>Filter: <select id="util_modelmetadatascanner_requirements" class="auto-dropdown">
+                            <option value="all" class="translate" selected>All</option>
+                            <option value="no_thumbnail" class="translate">Only models without a thumbnail</option>
+                            <option value="no_description" class="translate">Only models without a description</option>
+                            <option value="no_author" class="translate">Only models without an author</option>
+                            <option value="explicit_url" class="translate">Only models with an explicit civitai url in the description</option>
+                        </select>
+                        &emsp;Replace: <select id="util_modelmetadatascanner_replace" class="auto-dropdown">
+                            <option value="only_missing" class="translate" selected>Only missing data</option>
+                            <option value="all" class="translate">All (Replace everything)</option>
+                            <option value="only_thumbnail" class="translate">Only the thumbnail image</option>
+                            <option value="only_text" class="translate">Only the basic text inputs (eg description)</option>
+                        </select>
+                        <br>
+                        Model filename filter: <input type="text" id="util_modelmetadatascanner_filter" class="auto-text" placeholder="Filter by filename" />
+                        <br><span id="util_modelmetadatascanner_result"></span>
+                        <br>
+                        <br>If you click this button, Swarm will scan Civitai for metadata on models, and update the metadata database with any information found.
+                        <br>You can filter by date range (eg only recently downloaded model files), and/or by required missing content (eg only scan those without images).
+                        <br>You can also choose what metadata gets updated (eg only the image).
+                        <br>Optionally use the model filename filter to only scan models with a specific filename. Use '*' as a wildcard.
+                        <br>(For example, 'SDXL/*' will scan only models within a folder named 'SDXL/'. This is case-insensitive.)
+                        <br>Will take a while, and may seem to freeze up if it has to apply edits. This is normal.
+                        <br>Additional debug info while running can be found in the browser console.
+                        <br><b>Be careful!</b> If you have manually edited metadata, you can easily accidentally delete it. There is no undo for unwanted changes, they are applied rapidly in bulk.
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane" id="Utilities-CLIP-Token-Tab" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">CLIP Tokenizer</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    This is a tool to analyze CLIP tokenization for Stable Diffusion models.
+                    <br>All current Stable Diffusion models use the same CLIP token set, so this applies to them all.
+                    <br>Simply type some text in the box below to see how it gets tokenized.
+                    <br>It will show each text-piece, and its numerical ID.
+                </p>
+            </div>
+        </div>
+        <div style="padding: 1rem">
+            <br><textarea class="auto-text clip-tokenization-input-box" id="clip_tokenization_test_textarea" rows="2" oninput="utilClipTokenize()"></textarea>
+            <br>
+            <br><span class="tokenizer-output-area" id="clip_tokenization_result_line"></span>
+        </div>
+    </div>
+    <div class="tab-pane" id="Utilities-Pickle2Safetensor-Tab" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">Pickle To Safetensors</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    This is a tool to quickly convert legacy Pickle (.pt, .ckpt, .bin) files to modern Safetensors files.
+                    <br><b>WARNING:</b> Pickle files may contain malicious code. Do not use this tool or otherwise load pickle files unless you trust their source.
+                    <br>The pickle files will be moved to a "backups" folder, and the safetensors files left in place where the pickles originally were.
+                    <br>You may delete the backups folder after confirming the new safetensors files work as intended.
+                    <br>Be aware that this may temporarily use a large amount of filespace.
+                    <br>This may take some time to process.
+                    <br>(You can continue using the UI as normal while this runs)
+                </p>
+            </div>
+        </div>
+        <div class="card-center-container">
+            <input type="checkbox" id="pickle2safetensor_fp16" checked> <label for="pickle2safetensor_fp16" class="translate">Convert to FP16?</label> (This will save filespace with minimal side effects, highly recommended)
+        </div>
+        <div class="card-center-container" id="pickle2safetensor_text_area">
+        </div>
+        <div class="card-center-container">
+            <table class="spaced_util_table">
+                <tr>
+                    <th class="translate">Type</th><th class="translate">Count</th><th class="translate">Convert</th>
+                </tr>
+                <tr><td class="translate">Models</td><td><span id="pickle2safetensor_stable-diffusion_count">?</span></td><td><button id="pickle2safetensor_stable-diffusion_button" class="basic-button translate" onclick="pickle2safetensor_run('Stable-Diffusion')">Convert Models</button></td></tr>
+                <tr><td class="translate">LoRAs</td><td><span id="pickle2safetensor_lora_count">?</span></td><td><button id="pickle2safetensor_lora_button" class="basic-button translate" onclick="pickle2safetensor_run('LoRA')">Convert LoRAs</button></td></tr>
+                <tr><td class="translate">VAEs</td><td><span id="pickle2safetensor_vae_count">?</span></td><td><button id="pickle2safetensor_vae_button" class="basic-button translate" onclick="pickle2safetensor_run('VAE')">Convert VAEs</button></td></tr>
+                <tr><td class="translate">Embeddings</td><td><span id="pickle2safetensor_embedding_count">?</span></td><td><button id="pickle2safetensor_embedding_button" class="basic-button translate" onclick="pickle2safetensor_run('Embedding')">Convert Embeddings</button></td></tr>
+                <tr><td class="translate">ControlNets</td><td><span id="pickle2safetensor_controlnet_count">?</span></td><td><button id="pickle2safetensor_controlnet_button" class="basic-button translate" onclick="pickle2safetensor_run('ControlNet')">Convert ControlNets</button></td></tr>
+            </table>
+        </div>
+        <br>
+    </div>
+    <div class="tab-pane" id="Utilities-LoraExtractor-Tab" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">LoRA Extractor</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    This is a tool to extract a LoRA from the difference between two models.
+                    <br>"Base" should be whatever the common base model is, eg SDXL-1.0-Base.
+                    <br>"Other" should be the unique model with information to extract into the LoRA.
+                    <br>The closer Base is to Other, the less complex the LoRA's data will be, and the more likely it will work well with other models that were built off the same base.
+                    <br>
+                    <br>Note that LoRA Extraction is an imperfect partial process, and will lose some of the data that makes the model unique.
+                    <br>Rank is a number indicating how much detail to try to save. Higher numbers result in bigger files, and only slightly more accurate matching. Small values (eg 16) are usually sufficient.
+                </p>
+            </div>
+        </div>
+        <div class="card-center-container">
+            Base model: <select class="auto-dropdown" id="lora_extractor_base_model"></select>
+            <br>Other model: <select class="auto-dropdown" id="lora_extractor_other_model"></select>
+            <br>Rank: <input type="number" id="lora_extractor_rank" value="16" min="1" max="320" />
+            <br>Save as: <input type="text" id="lora_extractor_name" placeholder="LoRA Name" />
+            <br>
+            <br>
+            <center>
+                <button id="lora_extractor_button" class="basic-button translate" onclick="loraExtractor.run()">Extract LoRA</button>
+            </center>
+            <br>
+            <div class="lora_extractor_special" id="lora_extractor_special_progressbar"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"></div></div>
+        </div>
+        <div class="card-center-container" id="lora_extractor_text_area">
+        </div>
+    </div>
+    <div class="tab-pane" id="Utilities-ModelDownloader-Tab" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">Model Downloader</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    This is a tool to download models for you and save them to Swarm's model folder.
+                    <br>Note that only <code>.safetensors</code> models may be downloaded.
+                    <br><b>HuggingFace</b> file URLs are supported.
+                    <br><b>Civitai</b> URLs are supported and will automatically download+apply model metadata from the civitai API.
+                    <br>For anything else, make sure your URL is a direct download URL (not eg an html page with the info about it).
+                </p>
+            </div>
+        </div>
+        <div class="model-downloader-section-wrapper">
+            <div class="model-downloader-main-section">
+                <div style="width: 100%">
+                    <br>@WebUtil.TextPopoverButton("modeldownloaderurl", "Exact web URL to the model.\nCivitai URLs are fully supported and will load metadata.\nHuggingFace URLs will be recognized.\nFor anything else, make sure the URL is a direct download URL, not a webpage.\nNote only '.safetensors' models are allowed.") <b>URL</b>: <input type="text" id="model_downloader_url" class="auto-text auto-text-wide" placeholder="Model URL" oninput="modelDownloader.urlInput()" autocomplete="off" />
+                    <br>
+                    <br><div>@WebUtil.TextPopoverButton("modeldownloaderstatus", "This section will update after you input a URL to inform you if the URL is valid.\nThe box below will display loaded metadata if you use a civitai URL.") <b>Status</b>: <span id="model_downloader_status">(...)</span></div>
+                    <div class="model_downloader_metadatazone" id="model_downloader_metadatazone"></div>
+                    <div class="model_downloader_imageside" id="model_downloader_imageside"></div>
+                    <br>@WebUtil.TextPopoverButton("modeldownloadertype", "The base model sub-type to use, ie what category it gets saved to.\nMake sure this is correct, you don't want a LoRA in your base models folder or similar.\nCivitai links will autoset this when they load metadata.") <b>Model Type</b>: <select class="auto-dropdown" id="model_downloader_type" autocomplete="off">
+                        <option value="Stable-Diffusion">Base Model</option>
+                        <option value="LoRA">LoRA</option>
+                        <option value="VAE">VAE</option>
+                        <option value="Embedding">Embedding</option>
+                        <option value="ControlNet">ControlNet</option>
+                    </select>
+                    <br>@WebUtil.TextPopoverButton("modeldownloaderfolder", "What folder to put the model in.\nTo create new folders, simply type paths with '/' in them into the 'Save as:' name box below.") <b>Folder</b>: <select class="auto-dropdown" id="model_downloader_folder" autocomplete="off"></select>
+                    <br>
+                    <br>@WebUtil.TextPopoverButton("modeldownloadersaveas", "File name to save as. Don't include the '.safetensors' file extension, just the name.\nYou can use a folder path with the '/' symbol.") <b>Save as</b>: <input type="text" id="model_downloader_name" class="auto-text auto-text-wide" placeholder="Model Name" autocomplete="off" oninput="modelDownloader.nameInput()" />
+                    <br>
+                    <br>
+                    <center>
+                        <button id="model_downloader_button" class="basic-button translate" onclick="modelDownloader.run()" disabled>Download</button>
+                    </center>
+                </div>
+            </div>
+            <div class="model-downloader-right-sidebar" id="model_downloader_right_sidebar">
+            </div>
+        </div>
+    </div>
+</div>
+<div style="height: 10rem"></div> <!-- Spacer -->

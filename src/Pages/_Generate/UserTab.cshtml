@@ -1,0 +1,136 @@
+@model GeneratePageModel
+
+<ul class="nav nav-tabs" role="tablist" id="usertablist">
+    <li class="nav-item" role="presentation">
+        <a class="nav-link active translate" data-bs-toggle="tab" href="#user-info" id="userinfotabbutton" aria-selected="true" role="tab">User Info</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="read_user_settings">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-User" id="userconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">User Settings</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="edit_params">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Param-Config-User" id="userparamconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Parameter Configuration</a>
+    </li>
+    <li class="nav-item" role="presentation" data-requiredpermission="read_user_settings">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#Layout-Config-User" id="userlayoutconfigtabbutton" aria-selected="false" tabindex="-1" role="tab">Generate Tab Layout</a>
+    </li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane show active translate" id="user-info" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">User Account</div>
+            <div class="card-body">
+                @if (!Model.IsLoginEnabled)
+                {
+                    <p class="translate">User accounts are not enabled. You are the local default user. You can enable multi-user accounts in the <a href="#Settings-Server" onclick="getRequiredElementById('servertabbutton').click();getRequiredElementById('serverconfigtabbutton').click()">Server Configuration</a> tab.</p>
+                }
+                else
+                {
+                    <span class="translate">You are logged in as:</span> <b>@Model.User.UserID</b>
+                    <br>
+                    <br>
+                    <button class="basic-button translate" id="logout_button" onclick="doUserLogout()">Logout</button>
+                    // TODO: Other user stuff here. List of tokens/sessions, etc.
+                    <button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
+                }
+            </div>
+        </div>
+        @WebUtil.ModalHeader("change_password_modal", "Change Password")
+            <div class="modal-body">
+                <p class="translate">This form lets you change your user password. If you never had a password before, leave the old password blank.</p>
+                <br>Old/Current Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="change_password_old_password" placeholder="Enter old/current password..." autocomplete="off" value="" />
+                <br>New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="change_password_new_password" placeholder="Enter new password..." autocomplete="off" value="" />
+                <br>Confirm New Password: <input type="text" class="auto-text auto-text-block password translate translate-no-text" id="change_password_new_password2" placeholder="Confirm new password..." autocomplete="off" value="" />
+                <div id="change_password_result_area"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary basic-button translate" id="change_password_submit_button" onclick="doPasswordChangeSubmit()">Submit</button>
+                <button type="button" class="btn btn-secondary basic-button translate" id="change_password_cancel_button" onclick="$('#change_password_modal').modal('hide')">Cancel</button>
+            </div>
+        @WebUtil.ModalFooter()
+        <br>
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header translate">API Keys</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    To use remote APIs in SwarmUI, you must set the key for it. If you have an API key for any of the below APIs, paste it into the corresponding box and click 'Save'.
+                </p>
+                <table class="simple-table" id="api_keys_table">
+                    <tr><th>API</th><th>Status</th><th>Actions</th><th>Link</th><th>Info</th></tr>
+                    @foreach (UserUpstreamApiKeys.ApiKeyInfo keyInfo in UserUpstreamApiKeys.KeysByType.Values)
+                    {
+                        <tr data-prefix="@keyInfo.JSPrefix" data-key="@keyInfo.KeyType">
+                            <td><b>@keyInfo.Title</b></td>
+                            <td><span id="@(keyInfo.JSPrefix)_key_status">(Unknown)</span></td>
+                            <td>
+                                <input type="text" id="@(keyInfo.JSPrefix)_api_key" placeholder="@keyInfo.Title API Key" autocomplete="off" oninput="apiHelpers['@keyInfo.KeyType'].onKeyInput()" />
+                                <button class="basic-button translate" id="@(keyInfo.JSPrefix)_key_submit" onclick="apiHelpers['@keyInfo.KeyType'].onSaveButton()" disabled autocomplete="off">Save</button>
+                                <button class="basic-button translate" id="@(keyInfo.JSPrefix)_key_remove" onclick="apiHelpers['@keyInfo.KeyType'].onRemoveButton()" disabled autocomplete="off">Remove</button>
+                            </td>
+                            <td><a href="@keyInfo.CreateLink" target="_blank" rel="noreferrer noopener">Go here to create a key</a></td>
+                            <td>@keyInfo.InfoHtml</td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane" id="Settings-User" role="tabpanel">
+        <div class="settings-container">
+            <div class="auto-input" style="overflow: visible">
+                <span class="auto-input-name translate">Language</span>
+                <ul class="nav" style="display:inline-block" role="tablist">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" id="language_dropdown_link" style="color:var(--text)" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Language</a>
+                        <div class="dropdown-menu translate-menu notranslate">
+                            @foreach (string code in LanguagesHelper.PreferredLanguages)
+                            {
+                                LanguagesHelper.Language lang = LanguagesHelper.Languages[code];
+                                <a class="dropdown-item" onclick="changeLanguage('@code')" href="#"><span class="translate-block-sm"><img class="translate-img" src="imgs/flags/@(code).jpg" /></span><span class="translate-block-sm2">@code</span> - @lang.Name - @lang.LocalName</a>
+                            }
+                            <div class="dropdown-divider"></div>
+                            @foreach (string code in LanguagesHelper.SortedList.Except(LanguagesHelper.PreferredLanguages))
+                            {
+                                LanguagesHelper.Language lang = LanguagesHelper.Languages[code];
+                                <a class="dropdown-item" onclick="changeLanguage('@code')" href="#"><span class="translate-block-sm"><img class="translate-img" src="imgs/flags/@(code).jpg" /></span><span class="translate-block-sm2">@code</span> - @lang.Name - @lang.LocalName</a>
+                            }
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div id="user_settings_container"></div>
+        </div>
+        <div class="settings_submit_confirmer" id="usersettings_confirmer">
+            <span class="settings_submit_confirmer_text">Save <span id="usersettings_edit_count">0</span> edited setting(s)?</span>
+            <button type="button" class="btn btn-primary basic-button translate" onclick="save_user_settings()">Save</button>
+            <button type="button" class="btn btn-secondary basic-button translate" onclick="cancel_user_settings_edit()">Cancel</button>
+        </div>
+    </div>
+    <div class="tab-pane" id="Param-Config-User" role="tabpanel">
+        <br>
+        <h4 class="translate">Notice: this is raw internal configuration of parameters. Don't mess with this unless you know what you're doing.</h4>
+        <div id="user_param_config_container" class="settings-container"></div>
+        <div class="settings_submit_confirmer" id="user_param_config_confirmer">
+            <span class="settings_submit_confirmer_text">Save <span id="user_param_config_edit_count">0</span> edited parameter setting(s)?</span>
+            <button type="button" class="btn btn-primary basic-button translate" onclick="paramConfig.saveEdits()">Save</button>
+            <button type="button" class="btn btn-secondary basic-button translate" onclick="paramConfig.cancelEdits()">Cancel</button>
+        </div>
+    </div>
+    <div class="tab-pane" id="Layout-Config-User" role="tabpanel">
+        <div class="card border-secondary mb-3 card-center-container">
+            <div class="card-header">Generate Tab Layout Configuration</div>
+            <div class="card-body">
+                <p class="card-text translate">
+                    The settings below let you reorganize the sub-tabs within the Generate tab.
+                    <br>Any sub-tab group that does not have any sub-tabs inside of it will be hidden automatically.
+                    <br>
+                    <br><button class="basic-button translate" onclick="genTabLayout.resetSubTabs()">Reset to Default</button>
+                    <br>
+                    <br>
+                    <div id="layoutconfigarea">
+                    </div>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<div style="height: 10rem"></div> <!-- Spacer -->

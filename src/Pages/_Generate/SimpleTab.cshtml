@@ -1,0 +1,36 @@
+@model GeneratePageModel
+
+<div class="simpletabbrowserwrapper browser_container" id="simpletabbrowserwrapper">
+    <div class="browser-content-container simpletabmainview" id="simpletabmainview" style="display:none;">
+        <div class="simple-wrapper-flex" id="simple_tab_top_area">
+            <div class="input-sidebar simpleinputsidebar" id="simple_input_sidebar">
+                <div class="simpleinput-top-section">
+                    <div id="simple_inputs_area"></div>
+                    <div id="simple_inputs_area_advanced" class="main_inputs_area_advanced" style="display:none;"></div>
+                    <div id="simple_inputs_area_hidden" class="main_inputs_area_hidden"></div>
+                    <div style="height: 2rem;"></div> <!-- Spacer -->
+                </div>
+                <div class="simple-gen-button-wrapper">
+                    <button class="generate-button" id="simple_generate_button" onclick="simpleTab.generate()">Generate</button>
+                </div>
+            </div>
+            <div class="simple-outer-wall" style="margin-left:0;margin-right: 1rem;"></div>
+            <div id="simple_image_container" class="simpleimagearea">
+                <div class="image-preview-progress-wrapper simpletab-progress-wrapper" id="simpletab_progress_wrapper">
+                    <div class="image-preview-progress-inner"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"></div></div>
+                </div>
+                <img id="simple_image_container_img" src="imgs/model_placeholder.jpg" />
+                <div id="simple_loading_spinner" class="loading-spinner" style="display:none">
+                    <div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div>
+                </div>
+            </div>
+            <div class="simple-outer-wall"></div>
+        </div>
+        <div class="simple-vertical-divider"></div>
+        <div class="simple-bottom-area" id="simple_tab_bottom_area">
+            <div class="simple_current_image_batch" id="simple_current_image_batch_wrapper">
+                <div id="simple_current_image_batch" class="simple_current_image_batch_core"></div>
+            </div>
+        </div>
+    </div>
+</div>
