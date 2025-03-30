@@ -1243,6 +1243,11 @@ public static class Utilities
     /// <summary>Returns whether the given password matches the stored hash.</summary>
     public static bool CompareHashedPassword(string username, string password, string hashed)
     {
+        if (password.StartsWith("__swarmdoprehash:"))
+        {
+            password = password["__swarmdoprehash:".Length..];
+            password = BytesToHex(SHA256.HashData(password.EncodeUTF8())).ToLowerFast();
+        }
         string saltRaw = hashed.BeforeAndAfter(':', out string hashRaw);
         byte[] salt = Convert.FromBase64String(saltRaw);
         byte[] hash = Convert.FromBase64String(hashRaw);
