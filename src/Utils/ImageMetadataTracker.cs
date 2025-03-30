@@ -177,7 +177,7 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading image metadata for file '{file}' from database: {ex.ReadableString()}");
+            Logs.Warning($"Error reading image metadata for file '{file}' from database: {ex.ReadableString()}");
             metadata.HadNewError();
         }
         if (!File.Exists(file))
@@ -212,7 +212,7 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading image preview for file '{file}': {ex.ReadableString()}");
+            Logs.Warning($"Error reading image preview for file '{file}': {ex.ReadableString()}");
             return null;
         }
         try
@@ -226,7 +226,7 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving image preview for file '{file}' to database: {ex.ReadableString()}");
+            Logs.Debug($"Error saving image preview for file '{file}' to database: {ex.ReadableString()}");
             metadata.HadNewError();
             return null;
         }
@@ -281,7 +281,7 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading image metadata for file '{file}' from database: {ex.ReadableString()}");
+            Logs.Warning($"Error reading image metadata for file '{file}' from database: {ex.ReadableString()}");
             metadata.HadNewError();
         }
         if (!File.Exists(file))
@@ -331,7 +331,7 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading image metadata for file '{file}': {ex.ReadableString()}");
+            Logs.Warning($"Error reading image metadata for file '{file}': {ex.ReadableString()}");
             return null;
         }
         ImageMetadataEntry entry = new() { FileName = filename, Metadata = fileData, LastVerified = timeNow, FileTime = fileTime };
@@ -344,7 +344,7 @@ public static class ImageMetadataTracker
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error writing image metadata for file '{file}' to database: {ex.ReadableString()}");
+            Logs.Debug($"Error writing image metadata for file '{file}' to database: {ex.ReadableString()}");
             metadata.HadNewError();
         }
         return entry;

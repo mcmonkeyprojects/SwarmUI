@@ -422,6 +422,11 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             file.ReadExactly(buf, 0, 8);
             long metaKvCount = BitConverter.ToInt64(buf, 0);
             JObject metadata = [];
+            JObject result = new()
+            {
+                ["gguf_version"] = ggufVers,
+                ["tensor_count"] = tensorCount
+            };
             for (int i = 0; i < metaKvCount; i++)
             {
                 file.ReadExactly(buf, 0, 8);
@@ -441,14 +446,46 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                 }
                 JToken val = ReadRawGGUFObject(file, modelPath, i, (GGUFMetadataValueType)valType, buf);
                 metadata[keyStr] = val;
-                // TODO: Bother to read the tensor list?
             }
-            return new JObject()
+            for (int i = 0; i < tensorCount; i++)
             {
-                ["gguf_version"] = ggufVers,
-                ["tensor_count"] = tensorCount,
-                ["__metadata__"] = metadata
-            };
+                file.ReadExactly(buf, 0, 8);
+                long tensorNameLen = BitConverter.ToInt64(buf, 0);
+                if (tensorNameLen < 0 || tensorNameLen > 100 * 1024 * 1024)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable tensor name length: {tensorNameLen} (for tensor {i})");
+                }
+                byte[] tensorNameBuf = new byte[tensorNameLen];
+                file.ReadExactly(tensorNameBuf, 0, (int)tensorNameLen);
+                string tensorName = Encoding.UTF8.GetString(tensorNameBuf);
+                file.ReadExactly(buf, 0, 4);
+                int nDimensions = BitConverter.ToInt32(buf, 0);
+                if (nDimensions < 0 || nDimensions > 100)
+                {
+                    throw new SwarmReadableErrorException($"Improper GGUF file {modelPath}. Unreasonable tensor dimension count: {nDimensions} (for tensor {i})");
+                }
+                ulong[] dims = new ulong[nDimensions];
+                ulong totalLen = 1; // TODO: Dtype width
+                for (int j = 0; j < nDimensions; j++)
+                {
+                    file.ReadExactly(buf, 0, 8);
+                    dims[j] = BitConverter.ToUInt64(buf, 0);
+                    totalLen *= dims[j];
+                }
+                file.ReadExactly(buf, 0, 4);
+                int dtype = BitConverter.ToInt32(buf, 0);
+                file.ReadExactly(buf, 0, 8);
+                ulong dataOffset = BitConverter.ToUInt64(buf, 0);
+                JObject tensor = new()
+                {
+                    ["dtype"] = dtype,
+                    ["shape"] = new JArray(dims),
+                    ["data_offsets"] = new JArray() { dataOffset, dataOffset + totalLen }
+                };
+                result[tensorName] = tensor;
+            }
+            result["__metadata__"] = metadata;
+            return result;
         }
         // Otherwise, safetensors
         file.ReadExactly(buf, 0, 8);

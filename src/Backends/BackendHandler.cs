@@ -431,7 +431,7 @@ public class BackendHandler
             {
                 return;
             }
-            Console.WriteLine($"Could not read Backends save file: {ex.ReadableString()}");
+            Logs.Error($"Could not read Backends save file: {ex.ReadableString()}");
             return;
         }
         if (file is null)
@@ -443,7 +443,7 @@ public class BackendHandler
             FDSSection section = file.GetSection(idstr);
             if (!BackendTypes.TryGetValue(section.GetString("type"), out BackendType type))
             {
-                Console.WriteLine($"Unknown backend type '{section.GetString("type")}' in save file, skipping backend #{idstr}.");
+                Logs.Error($"Unknown backend type '{section.GetString("type")}' in save file, skipping backend #{idstr}.");
                 continue;
             }
             T2IBackendData data = new()
