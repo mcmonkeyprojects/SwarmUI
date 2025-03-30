@@ -731,7 +731,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
-    let subButtons = [];
     let imagePathClean = getImageFullSrc(src);
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
     if (buttonsChoice == '')
@@ -739,7 +738,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         buttonsChoice = defaultButtonChoices;
     }
     buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
-    let isDataImage = src.startsWith('data:');
+    let subButtons = [];
     function includeButton(name, action, extraClass = '', title = '') {
         let checkName = name.toLowerCase().replaceAll(' ', '');
         if (checkName == 'starred') {
@@ -752,6 +751,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             subButtons.push({ key: name, action: action, title: title });
         }
     }
+    let isDataImage = src.startsWith('data:');
     includeButton('Use As Init', () => {
         let initImageParam = document.getElementById('input_initimage');
         if (initImageParam) {
