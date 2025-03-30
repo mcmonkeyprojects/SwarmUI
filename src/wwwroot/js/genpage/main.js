@@ -103,43 +103,25 @@ function rightClickImageInBatch(e, div) {
         return;
     }
 
-    popover_actions = [{ key: 'Remove from view', action: () => div.remove() }];
-
     let src = div.dataset.src;
-    if (permissions.hasPermission('user_delete_image') && src.startsWith('View/')) {
-        popover_actions.push({
-            key: 'Delete from server',
-            action: (e) => {
-                let fullsrc = src.substring('View/'.length);
-                firstSlash = fullsrc.indexOf('/');
-                if (firstSlash != -1) {
-                    fullsrc = fullsrc.substring(firstSlash + 1);
-                }
-                genericRequest('DeleteImage', {'path': fullsrc}, data => {
-                    if (e) {
-                        e.remove();
-                    }
-                    else {
-                        let historySection = getRequiredElementById('imagehistorybrowser-content');
-                        let div = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
-                        if (div) {
-                            div.remove();
-                        }
-                        div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
-                        if (div) {
-                            div.remove();
-                        }
-                    }
-                    let currentImage = document.getElementById('current_image_img');
-                    if (currentImage && currentImage.dataset.src == src) {
-                        forceShowWelcomeMessage();
-                    }
-                });
-            }
-        });
+    let fullsrc = getFullsrc(src);
+    let metadata = div.dataset.metadata;
+    let buttonsChoice = getButtonsChoice();
+    let popoverActions = [];
+    for (let added of buttonsForImage(fullsrc, src, metadata)) {
+        if (added.label == 'Star') {
+            continue;
+        }
+        if (added.href) {
+            popoverActions.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
+        }
+        else {
+            includeButton(div, popoverActions, added.label, added.onclick, '', added.title, div, popoverActions);
+        }
     }
+    popoverActions.push({ key: 'Remove from view', action: () => div.remove() })
 
-    let popover = new AdvancedPopover('image_batch_context_menu', popover_actions, false, mouseX, mouseY, document.body, null);
+    let popover = new AdvancedPopover('image_batch_context_menu', popoverActions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();
     return false;
@@ -646,6 +628,51 @@ function toggleStar(path, rawSrc) {
 
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
+function getFullsrc(src) {
+    let fullSrc = src;
+    if (fullSrc.startsWith("http://") || fullSrc.startsWith("https://")) {
+        fullSrc = fullSrc.substring(fullSrc.indexOf('/', fullSrc.indexOf('/') + 2));
+    }
+    if (fullSrc.startsWith('/')) {
+        fullSrc = fullSrc.substring(1);
+    }
+    if (fullSrc.startsWith('Output/')) {
+        fullSrc = fullSrc.substring('Output/'.length);
+    }
+    if (fullSrc.startsWith('View/')) {
+        fullSrc = fullSrc.substring('View/'.length);
+        let firstSlash = fullSrc.indexOf('/');
+        if (firstSlash != -1) {
+            fullSrc = fullSrc.substring(firstSlash + 1);
+        }
+    }
+    return fullSrc;
+}
+
+function getButtonsChoice() {
+    let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
+    if (buttonsChoice == '')
+    {
+        buttonsChoice = defaultButtonChoices;
+    }
+    buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
+    return buttonsChoice;
+}
+
+function includeButton(buttons, subButtons, name, action, extraClass = '', title = '') {
+    let buttonsChoice = getButtonsChoice();
+    let checkName = name.toLowerCase().replaceAll(' ', '');
+    if (checkName == 'starred') {
+        checkName = 'star';
+    }
+    if (buttonsChoice.includes(checkName)) {
+        quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
+    }
+    else {
+        subButtons.push({ key: name, action: action, title: title });
+    }
+}
+
 function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
@@ -729,44 +756,10 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
-    let imagePathClean = src;
-    if (imagePathClean.startsWith("http://") || imagePathClean.startsWith("https://")) {
-        imagePathClean = imagePathClean.substring(imagePathClean.indexOf('/', imagePathClean.indexOf('/') + 2));
-    }
-    if (imagePathClean.startsWith('/')) {
-        imagePathClean = imagePathClean.substring(1);
-    }
-    if (imagePathClean.startsWith('Output/')) {
-        imagePathClean = imagePathClean.substring('Output/'.length);
-    }
-    if (imagePathClean.startsWith('View/')) {
-        imagePathClean = imagePathClean.substring('View/'.length);
-        let firstSlash = imagePathClean.indexOf('/');
-        if (firstSlash != -1) {
-            imagePathClean = imagePathClean.substring(firstSlash + 1);
-        }
-    }
-    let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
-    if (buttonsChoice == '')
-    {
-        buttonsChoice = defaultButtonChoices;
-    }
-    buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
+    let imagePathClean = getFullsrc(src)
     let subButtons = [];
-    function includeButton(name, action, extraClass = '', title = '') {
-        let checkName = name.toLowerCase().replaceAll(' ', '');
-        if (checkName == 'starred') {
-            checkName = 'star';
-        }
-        if (buttonsChoice.includes(checkName)) {
-            quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
-        }
-        else {
-            subButtons.push({ key: name, action: action, title: title });
-        }
-    }
     let isDataImage = src.startsWith('data:');
-    includeButton('Use As Init', () => {
+    includeButton(buttons, subButtons, 'Use As Init', () => {
         let initImageParam = document.getElementById('input_initimage');
         if (initImageParam) {
             let type = img.src.substring(img.src.lastIndexOf('.') + 1);
@@ -803,7 +796,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
         }
     }, '', 'Sets this image as the Init Image parameter input');
-    includeButton('Use As Image Prompt', () => {
+    includeButton(buttons, subButtons, 'Use As Image Prompt', () => {
         let altPromptRegion = document.getElementById('alt_prompt_region');
         if (!altPromptRegion) {
             return;
@@ -823,9 +816,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         };
         tmpImg.src = img.src;
-
     }, '', 'Uses this image as an Image Prompt input');
-    includeButton('Edit Image', () => {
+    includeButton(buttons, subButtons, 'Edit Image', () => {
         let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
         if (initImageGroupToggle) {
             initImageGroupToggle.checked = true;
@@ -852,7 +844,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         imageEditor.setBaseImage(img);
         imageEditor.activate();
     }, '', 'Opens an Image Editor for this image');
-    includeButton('Upscale 2x', () => {
+    includeButton(buttons, subButtons, 'Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();
             let input_overrides = {
@@ -865,7 +857,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
     }, '', 'Runs an instant generation with this image as the input and scale doubled');
-    includeButton('Refine Image', () => {
+    includeButton(buttons, subButtons, 'Refine Image', () => {
         toDataURL(img.src, (url => {
             let input_overrides = {
                 'initimage': url,
@@ -904,13 +896,13 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
     }
     if (!isDataImage) {
-        includeButton(metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
+        includeButton(buttons, subButtons, metaParsed.is_starred ? 'Starred' : 'Star', (e, button) => {
             toggleStar(imagePathClean, src);
         }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
     }
-    includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
+    includeButton(buttons, subButtons, 'Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
     if (!isDataImage) {
-        includeButton('View In History', () => {
+        includeButton(buttons, subButtons, 'View In History', () => {
             let folder = imagePathClean;
             let lastSlash = folder.lastIndexOf('/');
             if (lastSlash != -1) {
@@ -928,7 +920,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             subButtons.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
         else {
-            includeButton(added.label, added.onclick, '', added.title);
+            includeButton(buttons, subButtons, added.label, added.onclick, '', added.title);
         }
     }
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
