@@ -455,15 +455,15 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 if (File.Exists($"{lib}/../../python311.dll"))
                 {
                     // TODO: This is deeply cursed. This is published by the comfyui-ReActor-node developer so at least it's not a complete rando, but, jeesh. Insightface please fix your pip package.
-                    await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp311-cp311-win_amd64.whl");
+                    await install("insightface", "https://github.com/Gourieff/Assets/raw/a20f16a2f4d2c856a14960afd709540a88ebef25/Insightface/insightface-0.7.3-cp311-cp311-win_amd64.whl");
                 }
                 else if (File.Exists($"{lib}/../../python312.dll"))
                 {
-                    await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp312-cp312-win_amd64.whl");
+                    await install("insightface", "https://github.com/Gourieff/Assets/raw/a20f16a2f4d2c856a14960afd709540a88ebef25/Insightface/insightface-0.7.3-cp312-cp312-win_amd64.whl");
                 }
                 else if (File.Exists($"{lib}/../../python310.dll"))
                 {
-                    await install("insightface", "https://github.com/Gourieff/Assets/raw/main/Insightface/insightface-0.7.3-cp310-cp310-win_amd64.whl");
+                    await install("insightface", "https://github.com/Gourieff/Assets/raw/a20f16a2f4d2c856a14960afd709540a88ebef25/Insightface/insightface-0.7.3-cp310-cp310-win_amd64.whl");
                 }
                 else
                 {
