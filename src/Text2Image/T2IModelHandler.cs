@@ -318,7 +318,7 @@ public class T2IModelHandler
 
     public static readonly string[] AltMetadataDescriptionKeys = ["VersionName", "VersionDescription", "ModelDescription", "description"];
 
-    public static readonly string[] AltMetadataTriggerWordsKeys = ["TrainedWords", "trainedWords"];
+    public static readonly string[] AltMetadataTriggerWordsKeys = ["TrainedWords", "trainedWords", "ss_tag_frequency"];
 
     public static readonly string[] AltMetadataNameKeys = ["UserTitle", "ModelName", "name"];
 
@@ -428,45 +428,75 @@ public class T2IModelHandler
             }
             string altDescription = "", altName = null;
             HashSet<string> triggerPhrases = [];
+            void procAltHeader(JObject altMetadata)
+            {
+                if (altMetadata.TryGetValue("model", out JToken modelSection) && modelSection is JObject modelSectionObj && modelSectionObj.TryGetValue("name", out JToken subNameTok))
+                {
+                    altName ??= subNameTok.Value<string>();
+                }
+                foreach (string nameKey in AltMetadataNameKeys)
+                {
+                    if (altMetadata.TryGetValue(nameKey, out JToken nameTok) && nameTok.Type != JTokenType.Null)
+                    {
+                        altName ??= nameTok.Value<string>();
+                    }
+                }
+                foreach (string descKey in AltMetadataDescriptionKeys)
+                {
+                    if (altMetadata.TryGetValue(descKey, out JToken descTok) && descTok.Type != JTokenType.Null)
+                    {
+                        altDescription += descTok.Value<string>() + "\n";
+                    }
+                }
+                foreach (string wordsKey in AltMetadataTriggerWordsKeys)
+                {
+                    static string[] procWordsFrom(JToken tok)
+                    {
+                        if (tok.Type == JTokenType.Array)
+                        {
+                            return tok.ToObject<string[]>();
+                        }
+                        else if (tok is JObject jobj)
+                        {
+                            IEnumerable<string[]> wordSets = jobj.Properties().Select(p => p.Value is JObject subData ? procWordsFrom(subData) : [p.Name]);
+                            return [.. wordSets.Flatten()];
+                        }
+                        else if (tok.Type == JTokenType.String)
+                        {
+                            string trainedWordsTok = tok.Value<string>();
+                            if (trainedWordsTok.StartsWithFast('{') && trainedWordsTok.EndsWithFast('}'))
+                            {
+                                try
+                                {
+                                    return procWordsFrom(trainedWordsTok.ParseToJson());
+                                }
+                                catch (Exception) { } // Ignored
+                            }
+                            return trainedWordsTok.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                        }
+                        return null;
+                    }
+                    if (altMetadata.TryGetValue(wordsKey, out JToken wordsTok) && wordsTok.Type != JTokenType.Null)
+                    {
+                        string[] trainedWords = procWordsFrom(wordsTok);
+                        if (trainedWords is not null && trainedWords.Length > 0)
+                        {
+                            triggerPhrases.UnionWith(trainedWords);
+                        }
+                    }
+                }
+                if (altMetadata.TryGetValue("activation text", out JToken actTok) && actTok.Type != JTokenType.Null)
+                {
+                    triggerPhrases.Add(actTok.Value<string>());
+                }
+            }
+            procAltHeader(metaHeader);
             foreach (string altSuffix in AltModelMetadataJsonFileSuffixes)
             {
                 if (File.Exists(altModelPrefix + altSuffix))
                 {
                     JObject altMetadata = File.ReadAllText(altModelPrefix + altSuffix).ParseToJson();
-                    if (altMetadata.TryGetValue("model", out JToken modelSection) && modelSection is JObject modelSectionObj && modelSectionObj.TryGetValue("name", out JToken subNameTok))
-                    {
-                        altName ??= subNameTok.Value<string>();
-                    }
-                    foreach (string nameKey in AltMetadataNameKeys)
-                    {
-                        if (altMetadata.TryGetValue(nameKey, out JToken nameTok) && nameTok.Type != JTokenType.Null)
-                        {
-                            altName ??= nameTok.Value<string>();
-                        }
-                    }
-                    foreach (string descKey in AltMetadataDescriptionKeys)
-                    {
-                        if (altMetadata.TryGetValue(descKey, out JToken descTok) && descTok.Type != JTokenType.Null)
-                        {
-                            altDescription += descTok.Value<string>() + "\n";
-                        }
-                    }
-                    foreach (string wordsKey in AltMetadataTriggerWordsKeys)
-                    {
-                        if (altMetadata.TryGetValue(wordsKey, out JToken wordsTok) && wordsTok.Type != JTokenType.Null)
-                        {
-                            string[] trainedWords = wordsTok.ToObject<string[]>();
-                            if (trainedWords is not null && trainedWords.Length > 0)
-                            {
-                                triggerPhrases.UnionWith(trainedWords);
-                            }
-                        }
-                    }
-                    if (altMetadata.TryGetValue("activation text", out JToken actTok) && actTok.Type != JTokenType.Null)
-                    {
-                        triggerPhrases.Add(actTok.Value<string>());
-                    }
-                    break;
+                    procAltHeader(altMetadata);
                 }
             }
             string altTriggerPhrase = triggerPhrases.JoinString(", ");
