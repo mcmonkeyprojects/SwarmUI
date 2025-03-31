@@ -437,6 +437,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("When generating live previews (ie the turbo preview system, not normal generation previews after you've hit the Generate button),\nthis is how many simultaneous generation requests can be waiting at one time.")]
         public int MaxSimulPreviews = 1;
 
+        [ConfigComment("If true, hitting enter while in the prompt box starts generation.\nIf false, hitting enter will insert a newline.")]
+        public bool EnterKeyGenerates = true;
+
         [ConfigComment("Delay, in seconds, between Generate Forever updates.\nIf the delay hits and a generation is still waiting, it will be skipped.\nDefault is 0.1 seconds.")]
         public double GenerateForeverDelay = 0.1;
 
