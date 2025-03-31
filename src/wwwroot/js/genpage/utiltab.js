@@ -6,7 +6,7 @@ function utilClipTokenize() {
     let resultLine = getRequiredElementById('clip_tokenization_result_line');
     function process() {
         elem.dataset.is_running_proc = true;
-        genericRequest('TokenizeInDetail', { text: elem.value }, data => {
+        genericRequest('TokenizeInDetail', { text: elem.value, skipPromptSyntax: true }, data => {
             let html = `<span style="width: 3rem; display: inline-block;">${data.tokens.length} tokens: </span>`;
             for (let token of data.tokens) {
                 let text = token.text;

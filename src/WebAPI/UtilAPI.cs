@@ -60,7 +60,7 @@ public static class UtilAPI
     [API.APIDescription("Count the CLIP-like tokens in a given text prompt.", "\"count\": 0")]
     public static async Task<JObject> CountTokens(
         [API.APIParameter("The text to tokenize.")] string text,
-        [API.APIParameter("If false, processing prompt syntax (things like `<random:`). If true, don't process that.")] bool skipPromptSyntax = false,
+        [API.APIParameter("If false, process prompt syntax (things like `<random:`) as if its regular text. If true, clean it up first.")] bool skipPromptSyntax = false,
         [API.APIParameter("What tokenization set to use.")] string tokenset = "clip",
         [API.APIParameter("If true, process weighting (like `(word:1.5)`). If false, don't process that.")] bool weighting = true)
     {
@@ -104,9 +104,22 @@ public static class UtilAPI
         """)]
     public static async Task<JObject> TokenizeInDetail(
         [API.APIParameter("The text to tokenize.")] string text,
+        [API.APIParameter("If false, process prompt syntax (things like `<random:`) as if its regular text. If true, clean it up first.")] bool skipPromptSyntax = false,
         [API.APIParameter("What tokenization set to use.")] string tokenset = "clip",
         [API.APIParameter("If true, process weighting (like `(word:1.5)`). If false, don't process that.")] bool weighting = true)
     {
+        if (skipPromptSyntax)
+        {
+            foreach (string str in SkippablePromptSyntax)
+            {
+                int skippable = text.IndexOf($"<{str}:");
+                if (skippable != -1)
+                {
+                    text = text[..skippable];
+                }
+            }
+            text = T2IParamInput.ProcessPromptLikeForLength(text);
+        }
         (JObject error, CliplikeTokenizer tokenizer) = GetTokenizerForAPI(text, tokenset);
         if (error is not null)
         {
