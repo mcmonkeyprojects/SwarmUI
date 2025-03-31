@@ -13,6 +13,7 @@ Data/
 Models/
 tmp/
 dlbackend/
+/docker-compose.yml
 
 # Python
 __pycache__/
