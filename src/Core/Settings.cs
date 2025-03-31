@@ -374,6 +374,10 @@ public class Settings : AutoConfiguration
             + "\nThe default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'")]
         public string ButtonsUnderMainImages = "";
 
+        [ConfigComment("How to format image metadata on the Generate tab when looking at an image.\n'below' means put the metadata below the image.\n'side' means put the image in a vertical column to the side.\n'auto' means switch to whichever fits better depending on the page width.\nDefault is 'auto'.")]
+        [ManualSettingsOptions(Vals = ["auto", "below", "side"])]
+        public string ImageMetadataFormat = "auto";
+
         [ConfigComment("If enabled, batch size will be reset to 1 when parameters are loaded.\nThis can prevent accidents that might thrash your GPU or cause compatibility issues, especially for example when importing a comfy workflow.\nYou can still set the batch size at will in the GUI.")]
         public bool ResetBatchSizeToOne = false;
 

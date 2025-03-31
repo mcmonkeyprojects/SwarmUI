@@ -568,6 +568,7 @@ function alignImageDataFormat() {
     if (!img) {
         return;
     }
+    let format = getUserSetting('ImageMetadataFormat', 'auto');
     let extrasWrapper = curImg.querySelector('.current-image-extras-wrapper');
     let scale = img.dataset.previewGrow == 'true' ? 8 : 1;
     let imgWidth = img.naturalWidth * scale;
@@ -577,18 +578,27 @@ function alignImageDataFormat() {
     let width = Math.min(imgWidth, height * ratio);
     let remainingWidth = curImg.clientWidth - width - 30;
     img.style.maxWidth = `calc(min(100%, ${width}px))`;
-    if (remainingWidth > 30 * 16) {
+    if ((remainingWidth > 30 * 16 && format == 'auto') || format == 'side') {
         curImg.classList.remove('current_image_small');
-        extrasWrapper.style.width = `${remainingWidth}px`;
-        extrasWrapper.style.maxWidth = `${remainingWidth}px`;
         extrasWrapper.style.display = 'inline-block';
+        extrasWrapper.classList.add('extras-wrapper-sideblock');
         img.style.maxHeight = `calc(max(15rem, 100%))`;
+        if (remainingWidth < 30 * 16) {
+            extrasWrapper.style.width = `${30 * 16}px`;
+            extrasWrapper.style.maxWidth = `${30 * 16}px`;
+            img.style.maxWidth = `calc(min(100%, ${curImg.clientWidth - 30 * 16 - 30}px))`;
+        }
+        else {
+            extrasWrapper.style.width = `${remainingWidth}px`;
+            extrasWrapper.style.maxWidth = `${remainingWidth}px`;
+        }
     }
     else {
         curImg.classList.add('current_image_small');
         extrasWrapper.style.width = '100%';
         extrasWrapper.style.maxWidth = `100%`;
         extrasWrapper.style.display = 'block';
+        extrasWrapper.classList.remove('extras-wrapper-sideblock');
         img.style.maxHeight = `calc(max(15rem, 100% - 5.1rem))`;
     }
 }

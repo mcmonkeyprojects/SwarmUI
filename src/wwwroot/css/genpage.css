@@ -219,6 +219,12 @@ body {
     margin-left: 0.5rem;
     max-height: 10rem;
 }
+.extras-wrapper-sideblock .current-image-data {
+    text-align: left;
+}
+.extras-wrapper-sideblock .param_view_block {
+    width: calc(100% - 10px);
+}
 .batch-gear-button {
     height: 1.4rem;
     position: absolute;
