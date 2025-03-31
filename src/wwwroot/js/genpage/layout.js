@@ -114,7 +114,6 @@ class GenTabLayout {
         this.bottomInfoBar = getRequiredElementById('bottom_info_bar');
         this.bottomBar = getRequiredElementById('t2i_bottom_bar');
         this.inputSidebar = getRequiredElementById('input_sidebar');
-        this.mainInputsAreaWrapper = getRequiredElementById('main_inputs_area_wrapper');
         this.mainImageArea = getRequiredElementById('main_image_area');
         this.currentImage = getRequiredElementById('current_image');
         this.currentImageWrapbox = getRequiredElementById('current_image_wrapbox');
@@ -196,8 +195,6 @@ class GenTabLayout {
             curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
         }
         this.inputSidebar.style.width = `${barTopLeft}`;
-        this.mainInputsAreaWrapper.classList[this.leftSectionBarPos < 350 ? "add" : "remove"]("main_inputs_small");
-        this.mainInputsAreaWrapper.style.width = `${barTopLeft}`;
         this.inputSidebar.style.display = this.leftShut ? 'none' : '';
         this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
         this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
