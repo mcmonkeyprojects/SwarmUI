@@ -22,6 +22,7 @@ public class PythonLaunchHelper
         }
         RemoveEnvLoudly("PYTHONHOME");
         RemoveEnvLoudly("PYTHONPATH");
+        RemoveEnvLoudly("PIP_REQUIRE_VIRTUALENV");
         if (start.Environment.TryGetValue("LIB", out string libVal) && libVal.Contains("python"))
         {
             start.Environment.Remove("LIB");
