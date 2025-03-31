@@ -102,7 +102,25 @@ function rightClickImageInBatch(e, div) {
     if (e.shiftKey || e.ctrlKey) {
         return;
     }
-    let popover = new AdvancedPopover('image_batch_context_menu', [ { key: 'Remove', action: () => div.remove() } ], false, mouseX, mouseY, document.body, null);
+
+    let src = div.dataset.src;
+    let fullsrc = getImageFullSrc(src);
+    let metadata = div.dataset.metadata;
+    let popoverActions = [];
+    for (let added of buttonsForImage(fullsrc, src, metadata)) {
+        if (added.label == 'Star') {
+            continue;
+        }
+        if (added.href) {
+            popoverActions.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
+        }
+        else {
+            popoverActions.push({ key: added.label, action: added.onclick, title: added.title });
+        }
+    }
+    popoverActions.push({ key: 'Remove from view', action: () => div.remove() })
+
+    let popover = new AdvancedPopover('image_batch_context_menu', popoverActions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();
     return false;
@@ -609,6 +627,27 @@ function toggleStar(path, rawSrc) {
 
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
+function getImageFullSrc(src) {
+    let fullSrc = src;
+    if (fullSrc.startsWith("http://") || fullSrc.startsWith("https://")) {
+        fullSrc = fullSrc.substring(fullSrc.indexOf('/', fullSrc.indexOf('/') + 2));
+    }
+    if (fullSrc.startsWith('/')) {
+        fullSrc = fullSrc.substring(1);
+    }
+    if (fullSrc.startsWith('Output/')) {
+        fullSrc = fullSrc.substring('Output/'.length);
+    }
+    if (fullSrc.startsWith('View/')) {
+        fullSrc = fullSrc.substring('View/'.length);
+        let firstSlash = fullSrc.indexOf('/');
+        if (firstSlash != -1) {
+            fullSrc = fullSrc.substring(firstSlash + 1);
+        }
+    }
+    return fullSrc;
+}
+
 function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
@@ -692,23 +731,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
-    let imagePathClean = src;
-    if (imagePathClean.startsWith("http://") || imagePathClean.startsWith("https://")) {
-        imagePathClean = imagePathClean.substring(imagePathClean.indexOf('/', imagePathClean.indexOf('/') + 2));
-    }
-    if (imagePathClean.startsWith('/')) {
-        imagePathClean = imagePathClean.substring(1);
-    }
-    if (imagePathClean.startsWith('Output/')) {
-        imagePathClean = imagePathClean.substring('Output/'.length);
-    }
-    if (imagePathClean.startsWith('View/')) {
-        imagePathClean = imagePathClean.substring('View/'.length);
-        let firstSlash = imagePathClean.indexOf('/');
-        if (firstSlash != -1) {
-            imagePathClean = imagePathClean.substring(firstSlash + 1);
-        }
-    }
+    let imagePathClean = getImageFullSrc(src);
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
     if (buttonsChoice == '')
     {
@@ -786,7 +809,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         };
         tmpImg.src = img.src;
-
     }, '', 'Uses this image as an Image Prompt input');
     includeButton('Edit Image', () => {
         let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
@@ -1317,7 +1339,7 @@ function buttonsForImage(fullsrc, src, metadata) {
                     }
                     else {
                         let historySection = getRequiredElementById('imagehistorybrowser-content');
-                        let div = historySection.querySelector(`.image-block[data-src="${src}"]`);
+                        let div = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
                         if (div) {
                             div.remove();
                         }
