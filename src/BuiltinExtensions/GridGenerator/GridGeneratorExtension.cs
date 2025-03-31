@@ -419,7 +419,7 @@ public class GridGeneratorExtension : Extension
         }
         baseParams.Remove(T2IParamTypes.BatchSize);
         baseParams.Remove(T2IParamTypes.Images);
-        baseParams.Remove(T2IParamTypes.SaveIntermediateImages);
+        baseParams.Remove(T2IParamTypes.OutputIntermediateImages);
         await sendStatus();
         SwarmUIGridData data = new()
         {

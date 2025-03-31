@@ -1147,7 +1147,7 @@ public class WorkflowGeneratorSteps
                 g.NoVAEOverride = false;
                 prompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.Prompt), g.FinalClip, g.FinalLoadedModel, true, isRefiner: true);
                 negPrompt = g.CreateConditioning(g.UserInput.Get(T2IParamTypes.NegativePrompt), g.FinalClip, g.FinalLoadedModel, false, isRefiner: true);
-                bool doSave = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
+                bool doSave = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
                 bool doUspcale = g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1;
                 // TODO: Better same-VAE check
                 bool doPixelUpscale = doUspcale && (upscaleMethod.StartsWith("pixel-") || upscaleMethod.StartsWith("model-"));
@@ -1258,7 +1258,7 @@ public class WorkflowGeneratorSteps
             PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
             if (parts.Any())
             {
-                if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                 {
                     g.CreateImageSaveNode(g.FinalImageOut, g.GetStableDynamicID(50000, 0));
                 }
@@ -1376,7 +1376,7 @@ public class WorkflowGeneratorSteps
             PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.ClearSegment)];
             foreach (PromptRegion.Part part in parts)
             {
-                if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                 {
                     g.CreateImageSaveNode(g.FinalImageOut, g.GetStableDynamicID(50000, 0));
                 }
@@ -1414,7 +1414,7 @@ public class WorkflowGeneratorSteps
             }
             if (g.UserInput.Get(T2IParamTypes.RemoveBackground, false))
             {
-                if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                 {
                     g.CreateImageSaveNode(g.FinalImageOut, g.GetStableDynamicID(50000, 0));
                 }
@@ -1432,7 +1432,7 @@ public class WorkflowGeneratorSteps
             {
                 bool willHaveFollowupVideo = g.UserInput.TryGet(T2IParamTypes.VideoModel, out _) || g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
                 // Heuristic check for if this is an Init Image with no further processing, ie the initial image save is redundant because we're just wanting to extend a presaved image to a video
-                bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
+                bool formedFromSingleImage = g.UserInput.Get(T2IParamTypes.InitImageCreativity, -1) == 0 && !g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false) && !g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out _);
                 if (g.IsVideoModel() && !formedFromSingleImage && !willHaveFollowupVideo)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || g.UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
@@ -1449,7 +1449,7 @@ public class WorkflowGeneratorSteps
                         && g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMultiplier, out int mult) && mult > 1
                         && g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 99) > 1)
                     {
-                        if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                        if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                         {
                             g.CreateNode("SwarmSaveAnimationWS", new JObject()
                             {
@@ -1553,7 +1553,7 @@ public class WorkflowGeneratorSteps
                 g.CreateImageToVideo(vidModel, ref frames, videoCfg, ref videoFps, width, height, prompt, negPrompt, steps, seed, altLatent, batchInd, batchLen);
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
-                    if (g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false))
+                    if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
                         g.CreateNode("SwarmSaveAnimationWS", new JObject()
                         {
@@ -1606,7 +1606,7 @@ public class WorkflowGeneratorSteps
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLowerFast();
                 int frameExtendOverlap = g.UserInput.Get(T2IParamTypes.VideoExtendFrameOverlap, 9);
-                bool saveIntermediate = g.UserInput.Get(T2IParamTypes.SaveIntermediateImages, false);
+                bool saveIntermediate = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
                 T2IModel extendModel = g.UserInput.Get(T2IParamTypes.VideoExtendModel, null) ?? throw new SwarmUserErrorException("You have an '<extend:' block in your prompt, but you don't have a 'Video Extend Model' selected.");
                 PromptRegion regionalizer = new(fullRawPrompt);
                 List<JArray> vidChunks = [g.FinalImageOut];
