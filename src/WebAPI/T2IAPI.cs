@@ -221,7 +221,6 @@ public static class T2IAPI
             }
             user_input.ExtraMeta["presets_used"] = presets.Values().Select(v => v.ToString()).ToList();
         }
-        user_input.ApplySpecialLogic();
         return user_input;
     }
 
@@ -252,6 +251,7 @@ public static class T2IAPI
             setError(ex.Message);
             return;
         }
+        user_input.ApplySpecialLogic();
         images = user_input.Get(T2IParamTypes.Images, images);
         Logs.Info($"User {session.User.UserID} requested {images} image{(images == 1 ? "" : "s")} with model '{user_input.Get(T2IParamTypes.Model)?.Name}'...");
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
@@ -446,6 +446,7 @@ public static class T2IAPI
         {
             return new() { ["error"] = ex.Message };
         }
+        user_input.ApplySpecialLogic();
         Logs.Info($"User {session.User.UserID} stored an image to history.");
         (img, string metadata) = user_input.SourceSession.ApplyMetadata(img, user_input, 1);
         (string path, _) = session.SaveImage(img, 0, user_input, metadata);

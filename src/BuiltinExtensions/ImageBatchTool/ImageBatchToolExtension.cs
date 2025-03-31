@@ -134,6 +134,7 @@ public class ImageBatchToolExtension : Extension
                 param.Set(T2IParamTypes.Height, height);
                 param.Remove(T2IParamTypes.AspectRatio);
                 param.Remove(T2IParamTypes.AltResolutionHeightMult);
+                param.Remove(T2IParamTypes.RawResolution);
             }
             switch (resMode)
             {
@@ -176,6 +177,7 @@ public class ImageBatchToolExtension : Extension
                     param.Set(controlnetParams.Image, image);
                 }
             }
+            param.ApplySpecialLogic();
             int genId = 0;
             tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, (image, metadata) =>
             {
