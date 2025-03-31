@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Text2Image;
@@ -15,6 +16,8 @@ namespace SwarmUI.Builtin_ScorersExtension;
 
 public class ScorersExtension : Extension
 {
+    public static PermInfo PermUseScorers = Permissions.Register(new("scorersext_use_scorers", "[Scorers Extension] Use Scorers", "If true, the user may use the Scorer params. These are pretty wonky on the inside atm.", PermissionDefault.POWERUSERS, Permissions.GroupParams));
+
     public static string[] ScoringEngines = ["pickscore", "schuhmann_clip_plus_mlp"];
 
     public static T2IRegisteredParam<List<string>> AutomaticScorer;
@@ -31,14 +34,14 @@ public class ScorersExtension : Extension
         T2IEngine.PostBatchEvent += PostBatchEvent;
         T2IParamGroup scoreGroup = new("Scoring", Toggles: true, IsAdvanced: true, Open: false, Description: "The Scorers extension implements automatic image scoring, useful for eg Grid Generator usage to automatically rate the grid.\nThis is a legacy implementation pending a rewrite. Most users should not use this.");
         AutomaticScorer = T2IParamTypes.Register<List<string>>(new("Automatic Scorer", "Scoring engine(s) to use when scoring this image. Multiple scorers can be used and will be averaged together. Scores are saved in image metadata.",
-                       "schuhmann_clip_plus_mlp", Group: scoreGroup, GetValues: (_) => [.. ScoringEngines]
+                       "schuhmann_clip_plus_mlp", Group: scoreGroup, Permission: PermUseScorers, GetValues: (_) => [.. ScoringEngines]
                        ));
         ScoreMustExceed = T2IParamTypes.Register<double>(new("Score Must Exceed", "Only keep images with a generated score above this minimum.",
-                       "0.5", Min: 0, Max: 1, Step: 0.1, Toggleable: true, Group: scoreGroup, Examples: ["0.25", "0.5", "0.75", "0.9"]
+                       "0.5", Min: 0, Max: 1, Step: 0.1, Toggleable: true, Group: scoreGroup, Permission: PermUseScorers, Examples: ["0.25", "0.5", "0.75", "0.9"]
                        ));
         TakeBestNScore = T2IParamTypes.Register<int>(new("Take Best N Score", "Only keep the best *this many* images in a batch based on scoring."
                         + "\n(For example, if batch size = 8, and this value = 2, then 8 images will generate and will be scored, and the 2 best will be kept and the other 6 discarded.)",
-                       "1", Min: 1, Max: 100, Step: 1, Toggleable: true, Group: scoreGroup, Examples: ["1", "2", "3"]
+                       "1", Min: 1, Max: 100, Step: 1, Toggleable: true, Group: scoreGroup, Permission: PermUseScorers, Examples: ["1", "2", "3"]
                        ));
     }
 
