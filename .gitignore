@@ -21,6 +21,7 @@ tmp/
 *.debug
 custom-launch-docker.sh
 dotnet-install.sh
+docker-compose.yml
 
 # Python
 __pycache__/
