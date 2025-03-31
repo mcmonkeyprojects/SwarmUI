@@ -5,11 +5,11 @@
 - [Advanced Usage](/docs/Advanced%20Usage.md) for various advanced usage topics (use from external device, comfy workflows, ...)
 - [Features](/docs/Features/README.md) for a sub-listing of various specific Swarm features and how to use them.
 - [Docker](/docs/Docker.md) for using SwarmUI inside a Docker container.
-- [Using more GPUs](/docs/Using%20More%20GPUs.md) for more info about splitting generations between multiple GPUs.
+- [Using More GPUs](/docs/Using%20More%20GPUs.md) for more info about splitting generations between multiple GPUs.
+- [Sharing Your Swarm](/docs/Sharing%20Your%20Swarm.md) for info about sharing your SwarmUI instance with others.
 - [Model Support](/docs/Model%20Support.md) for details about support of different image model types.
     - [Video Model Support](/docs/Video%20Model%20Support.md) for details about video model types.
 - TODO: Settings guide (server & user)
-- TODO: Account system
 - [Command line arguments](/docs/Command%20Line%20Arguments.md) describes the available command line arguments in detail.
 - [Extensions](/docs/Extensions.md) for info about how to use extensions.
     - [Making Extensions](/docs/Making%20Extensions.md) explains how to make extensions.

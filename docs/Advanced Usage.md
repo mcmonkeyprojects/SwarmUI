@@ -11,6 +11,7 @@
 - To access SwarmUI from another device over LAN:
     - Simply open SwarmUI to the `Server` -> `Server Configuration` tab, find `Host` (default value is `localhost`) and change the value to `0.0.0.0`, then save and restart
         - Note you may also need to allow SwarmUI through your firewall.
+    - The `Server Info` tab will show you what it thinks your LAN address is, when available.
 - To access SwarmUI over open internet without port forwarding:
     - You can either launch use Cloudflared or Ngrok
         - For **Cloudflared:** Install Cloudflared according to [their readme](https://github.com/cloudflare/cloudflared?tab=readme-ov-file#installing-cloudflared) (note: ignore the stuff about accounts/domains/whatever, only the `cloudflared` software install is relevant), and launch SwarmUI with `--cloudflared-path [...]` or set the path in Server Configuration `CloudflaredPath` option and restart
