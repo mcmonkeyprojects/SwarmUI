@@ -131,7 +131,7 @@ public class Settings : AutoConfiguration
         public bool AllowGpuSpecificOptimizations = true;
 
         [ConfigComment("How many models can be loaded in a model list at once.\nPast this count, the list will simply be cut off.\nUse sub-folder organization to prevent issues.")]
-        public int ModelListSanityCap = 2000;
+        public int ModelListSanityCap = 5000;
     }
 
     /// <summary>Settings related to backends.</summary>
