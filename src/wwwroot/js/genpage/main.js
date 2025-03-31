@@ -102,15 +102,11 @@ function rightClickImageInBatch(e, div) {
     if (e.shiftKey || e.ctrlKey) {
         return;
     }
-
     let src = div.dataset.src;
     let fullsrc = getImageFullSrc(src);
     let metadata = div.dataset.metadata;
     let popoverActions = [];
     for (let added of buttonsForImage(fullsrc, src, metadata)) {
-        if (added.label == 'Star') {
-            continue;
-        }
         if (added.href) {
             popoverActions.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
         }
@@ -118,8 +114,7 @@ function rightClickImageInBatch(e, div) {
             popoverActions.push({ key: added.label, action: added.onclick, title: added.title });
         }
     }
-    popoverActions.push({ key: 'Remove from view', action: () => div.remove() })
-
+    popoverActions.push({ key: 'Remove From Batch View', action: () => div.remove() })
     let popover = new AdvancedPopover('image_batch_context_menu', popoverActions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();
@@ -906,7 +901,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }, '', 'Jumps the Image History browser to where this image is at.');
     }
     for (let added of buttonsForImage(imagePathClean, src, metadata)) {
-        if (added.label == 'Star') {
+        if (added.label == 'Star' || added.label == 'Unstar') {
             continue;
         }
         if (added.href) {
@@ -1296,7 +1291,7 @@ function buttonsForImage(fullsrc, src, metadata) {
     buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
-            label: 'Star',
+            label: (metadata && JSON.parse(metadata).is_starred) ? 'Unstar' : 'Star',
             title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
