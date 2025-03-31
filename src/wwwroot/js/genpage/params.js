@@ -758,6 +758,7 @@ function toggle_advanced_checkbox_manual() {
 
 function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let input = JSON.parse(JSON.stringify(input_preoverrides));
+    let extraMetadata = {};
     for (let type of gen_param_types) {
         if (type.toggleable && !getRequiredElementById(`input_${type.id}_toggle`).checked) {
             continue;
@@ -776,6 +777,10 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         let val = getInputVal(elem);
         if (val != null) {
             input[type.id] = val;
+        }
+        if (type.type == 'image') {
+            extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
+            extraMetadata[`${type.id}_resolution`] = elem.dataset.resolution;
         }
         if (type.id == 'prompt') {
             let container = findParentOfClass(elem, 'auto-input');
@@ -799,6 +804,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         input["promptimages"] = revisionImages.map(img => img.dataset.filedata).join('|');
     }
     if (imageEditor.active) {
+        extraMetadata["used_image_editor"] = "true";
         input["initimage"] = imageEditor.getFinalImageData();
         input["maskimage"] = imageEditor.getFinalMaskData();
         input["width"] = Math.floor(imageEditor.realWidth / 8) * 8;
@@ -823,6 +829,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             input[key] = input_overrides[key];
         }
     }
+    input["extra_metadata"] = extraMetadata;
     return input;
 }
 

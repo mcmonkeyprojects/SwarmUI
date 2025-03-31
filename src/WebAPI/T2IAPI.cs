@@ -77,7 +77,7 @@ public static class T2IAPI
         """)]
     public static async Task<JObject> GenerateText2ImageWS(WebSocket socket, Session session,
         [API.APIParameter("The number of images to generate.")] int images,
-        [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.")] JObject rawInput)
+        [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.\nThe key 'extra_metadata' may be used to apply extra internal metadata as a JSON string:string map.")] JObject rawInput)
     {
         using CancellationTokenSource cancelTok = new();
         bool retain = false, ended = false;
@@ -154,7 +154,7 @@ public static class T2IAPI
         """)]
     public static async Task<JObject> GenerateText2Image(Session session,
         [API.APIParameter("The number of images to generate.")] int images,
-        [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.")] JObject rawInput)
+        [API.APIParameter("Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ \"prompt\": \"a photo of a cat\", \"model\": \"OfficialStableDiffusion/sd_xl_base_1.0\", \"steps\": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.\nThe key 'extra_metadata' may be used to apply extra internal metadata as a JSON string:string map.")] JObject rawInput)
     {
         List<JObject> outputs = await API.RunWebsocketHandlerCallDirect(GenT2I_Internal, session, (images, rawInput, new SharedGenT2IData(), 0));
         Dictionary<int, string> imageOutputs = [];
@@ -192,9 +192,16 @@ public static class T2IAPI
         T2IParamInput user_input = new(session);
         List<string> keys = [.. rawInput.Properties().Select(p => p.Name)];
         keys = [.. keys.Where(AlwaysTopKeys.Contains), .. keys.Where(k => !AlwaysTopKeys.Contains(k))];
+        if (rawInput.TryGetValue("extra_metadata", out JToken extraMeta) && extraMeta is JObject obj)
+        {
+            foreach (JProperty prop in obj.Properties())
+            {
+                user_input.ExtraMeta[prop.Name] = prop.Value.ToString();
+            }
+        }
         foreach (string key in keys)
         {
-            if (key == "session_id" || key == "presets")
+            if (key == "session_id" || key == "presets" || key == "extra_metadata")
             {
                 // Skip
             }
