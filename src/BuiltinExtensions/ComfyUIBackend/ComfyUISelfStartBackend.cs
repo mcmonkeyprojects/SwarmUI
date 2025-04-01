@@ -123,7 +123,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>Mapping of node folder names to exact git commits to maintain.</summary>
     public static ConcurrentDictionary<string, string> ComfyNodeGitPins = new()
     {
-        ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
+        //["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
     public async Task EnsureNodeRepos()
