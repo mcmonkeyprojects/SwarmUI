@@ -499,11 +499,11 @@ public static class ModelsAPI
                 actualModel.PreviewImage = img.AsDataString();
                 actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
             }
-            actualModel.Metadata.Author = string.IsNullOrWhiteSpace(author) ? null : author;
-            actualModel.Metadata.UsageHint = string.IsNullOrWhiteSpace(usage_hint) ? null : usage_hint;
-            actualModel.Metadata.Date = string.IsNullOrWhiteSpace(date) ? null : date;
-            actualModel.Metadata.License = string.IsNullOrWhiteSpace(license) ? null : license;
-            actualModel.Metadata.TriggerPhrase = string.IsNullOrWhiteSpace(trigger_phrase) ? null : trigger_phrase;
+            actualModel.Metadata.Author = author;
+            actualModel.Metadata.UsageHint = usage_hint;
+            actualModel.Metadata.Date = date;
+            actualModel.Metadata.License = license;
+            actualModel.Metadata.TriggerPhrase = trigger_phrase;
             actualModel.Metadata.Tags = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             actualModel.Metadata.IsNegativeEmbedding = is_negative_embedding;
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
