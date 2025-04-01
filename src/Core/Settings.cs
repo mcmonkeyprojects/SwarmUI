@@ -301,7 +301,7 @@ public class Settings : AutoConfiguration
         public bool EditMetadataWriteJSON = false;
 
         [ConfigComment("If true, image metadata will include a list of models with their hashes.\nThis is useful for services like civitai to automatically link models.\nThis will cause extra time to be taken when new hashes need to be loaded.")]
-        public bool ImageMetadataIncludeModelHash = false;
+        public bool ImageMetadataIncludeModelHash = true;
     }
 
     /// <summary>Settings per-user.</summary>
