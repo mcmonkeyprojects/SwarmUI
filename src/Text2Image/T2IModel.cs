@@ -197,6 +197,17 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                         metaHeader.Remove($"modelspec.{key}");
                     }
                 }
+                void specSetEmptyable(string key, string val)
+                {
+                    if (val is not null)
+                    {
+                        metaHeader[$"modelspec.{key}"] = val;
+                    }
+                    else
+                    {
+                        metaHeader.Remove($"modelspec.{key}");
+                    }
+                }
                 specSet("sai_model_spec", "1.0.0");
                 specSet("title", Metadata.Title);
                 specSet("architecture", Metadata.ModelClassType);
@@ -204,9 +215,9 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                 specSet("description", Metadata.Description);
                 specSet("thumbnail", Metadata.PreviewImage);
                 specSet("license", Metadata.License);
-                specSet("usage_hint", Metadata.UsageHint);
-                specSet("trigger_phrase", Metadata.TriggerPhrase);
-                specSet("tags", string.Join(",", Metadata.Tags ?? []));
+                specSetEmptyable("usage_hint", Metadata.UsageHint);
+                specSetEmptyable("trigger_phrase", Metadata.TriggerPhrase);
+                specSetEmptyable("tags", Metadata.Tags is null ? null : string.Join(",", Metadata.Tags));
                 specSet("merged_from", Metadata.MergedFrom);
                 specSet("date", Metadata.Date);
                 specSet("preprocessor", Metadata.Preprocessor);
