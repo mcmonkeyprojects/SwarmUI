@@ -476,7 +476,7 @@ public class T2IModelHandler
                         }
                         return null;
                     }
-                    if (altMetadata.TryGetValue(wordsKey, out JToken wordsTok) && wordsTok.Type != JTokenType.Null)
+                    if (triggerPhrases.IsEmpty() && altMetadata.TryGetValue(wordsKey, out JToken wordsTok) && wordsTok.Type != JTokenType.Null)
                     {
                         string[] trainedWords = procWordsFrom(wordsTok);
                         if (trainedWords is not null && trainedWords.Length > 0)
@@ -485,7 +485,7 @@ public class T2IModelHandler
                         }
                     }
                 }
-                if (altMetadata.TryGetValue("activation text", out JToken actTok) && actTok.Type != JTokenType.Null)
+                if (triggerPhrases.IsEmpty() && altMetadata.TryGetValue("activation text", out JToken actTok) && actTok.Type != JTokenType.Null)
                 {
                     triggerPhrases.Add(actTok.Value<string>());
                 }
