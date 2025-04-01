@@ -288,6 +288,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         AddLoadStatus("Starting init...");
         EnsureComfyFile();
         string addedArgs = "";
+        bool doFixFrontend = false;
         if (!Settings.DisableInternalArgs)
         {
             string pathRaw = $"{Program.DataDir}/comfy-auto-model.yaml";
@@ -311,6 +312,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             else if (Settings.FrontendVersion == "LatestSwarmValidated")
             {
                 addedArgs += $" --front-end-version Comfy-Org/ComfyUI_frontend@v{SwarmValidatedFrontendVersion}";
+                doFixFrontend = true;
             }
             else if (Settings.FrontendVersion == "Legacy")
             {
@@ -439,7 +441,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await update("numpy", "numpy>=1.25.0");
             }
             string frontendVersion = getVers("comfyui_frontend_package");
-            if (frontendVersion is not null && frontendVersion != SwarmValidatedFrontendVersion)
+            if (doFixFrontend && frontendVersion is not null && frontendVersion != SwarmValidatedFrontendVersion)
             {
                 await update("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}");
             }
