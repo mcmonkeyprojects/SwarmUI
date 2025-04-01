@@ -552,8 +552,13 @@ public class T2IModelHandler
             }
             static string pickBest(params string[] options)
             {
+                string nonNull = null;
                 foreach (string opt in options)
                 {
+                    if (opt is not null)
+                    {
+                        nonNull = opt;
+                    }
                     if (!string.IsNullOrWhiteSpace(opt))
                     {
                         return opt;
@@ -563,7 +568,7 @@ public class T2IModelHandler
                 {
                     return options[0];
                 }
-                return null;
+                return nonNull;
             }
             metadata = new()
             {
@@ -580,7 +585,7 @@ public class T2IModelHandler
                 StandardHeight = height,
                 UsageHint = pickBest(metaHeader?.Value<string>("modelspec.usage_hint"), metaHeader?.Value<string>("usage_hint")),
                 MergedFrom = pickBest(metaHeader?.Value<string>("modelspec.merged_from"), metaHeader?.Value<string>("merged_from")),
-                TriggerPhrase = pickBest(metaHeader?.Value<string>("modelspec.trigger_phrase"), metaHeader?.Value<string>("trigger_phrase"), altTriggerPhrase),
+                TriggerPhrase = pickBest(metaHeader?.Value<string>("modelspec.trigger_phrase"), metaHeader?.Value<string>("trigger_phrase")) ?? altTriggerPhrase,
                 License = pickBest(metaHeader?.Value<string>("modelspec.license"), metaHeader?.Value<string>("license")),
                 Date = pickBest(metaHeader?.Value<string>("modelspec.date"), metaHeader?.Value<string>("date")),
                 Preprocessor = pickBest(metaHeader?.Value<string>("modelspec.preprocessor"), metaHeader?.Value<string>("preprocessor")),
