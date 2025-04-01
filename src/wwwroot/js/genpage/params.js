@@ -1018,6 +1018,11 @@ function hideUnalteredParameters() {
     hideUnsupportableParams();
 }
 
+/** Callbacks to run after hideUnsupportableParams, to do extra logic for showing/hiding specific params.
+ * Called as `callback(groups)`, where `groups` is an object mapping group IDs to `{ visible: 0, data: param.group, altered: 0 }`.
+ */
+let hideParamCallbacks = [];
+
 function hideUnsupportableParams() {
     if (!gen_param_types) {
         return;
@@ -1097,6 +1102,9 @@ function hideUnsupportableParams() {
                 }
             }
         }
+    }
+    for (let callback of hideParamCallbacks) {
+        callback(groups);
     }
     getRequiredElementById('advanced_hidden_count').innerText = `(${advancedCount})`;
     for (let group in groups) {
