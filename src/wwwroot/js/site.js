@@ -435,7 +435,7 @@ function load_image_file(elem) {
                 label.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight}, ${describeAspectRatio(img.naturalWidth, img.naturalHeight)})`;
                 elem.dataset.width = img.naturalWidth;
                 elem.dataset.height = img.naturalHeight;
-                elem.dataset.filename = name;
+                elem.dataset.filename = file.name.length > 500 ? file.name.substring(0, 150) + '...' : file.name;
                 elem.dataset.resolution = `${img.naturalWidth}x${img.naturalHeight}`;
                 loadImageFileDedup = true;
                 triggerChangeFor(elem);
