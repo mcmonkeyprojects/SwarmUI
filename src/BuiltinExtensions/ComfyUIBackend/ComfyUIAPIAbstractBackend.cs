@@ -116,6 +116,13 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Status = BackendStatus.DISABLED;
             return;
         }
+        BackendStatus wasStatus = Status;
+        if (wasStatus == BackendStatus.ERRORED)
+        {
+            Logs.Verbose($"Refusing init because marked as errored.");
+            return;
+        }
+        // TODO: dotnet update: Future version should swap to: Interlocked.CompareExchange(ref Status, BackendStatus.LOADING, wasStatus);
         Status = BackendStatus.LOADING;
         try
         {

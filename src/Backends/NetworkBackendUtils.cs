@@ -486,7 +486,7 @@ public static class NetworkBackendUtils
                 }
             }
             everLoaded = status != BackendStatus.ERRORED;
-            addLoadStatus($"{nameSimple} self-start port {port} loop ending (should now be alive)");
+            addLoadStatus($"{nameSimple} self-start port {port} loop ending {(everLoaded ? "(should now be alive)" : "(failed?)")}");
         }
         await launch();
     }
