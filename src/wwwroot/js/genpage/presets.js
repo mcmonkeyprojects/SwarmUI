@@ -59,8 +59,12 @@ function clearPresetView() {
     }
 }
 
+let createNewPresetTitle = translatable('Create New Preset');
+let editPresetTitle = translatable('Edit Preset');
+
 function create_new_preset_button() {
     clearPresetView();
+    getRequiredElementById('new_preset_modal_title').innerText = createNewPresetTitle.get();
     $('#add_preset_modal').modal('show');
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.tagName == 'IMG') {
@@ -274,6 +278,7 @@ function editPreset(preset) {
         enableImage.checked = false;
         enableImage.disabled = false;
     }
+    getRequiredElementById('new_preset_modal_title').innerText = editPresetTitle.get();
     $('#add_preset_modal').modal('show');
     for (let key of Object.keys(preset.param_map)) {
         let type = gen_param_types.filter(p => p.id == key)[0];
