@@ -47,6 +47,7 @@ function automaticWelcomeMessage(override = null) {
         `Did you know:\nYou can create a <b>Preset</b> and name it exactly <b>Default</b>\nand that preset will automatically be used to load your default params when you launch Swarm.`,
         `Did you know:\nSomething going wrong?\nCheck the <b>Server</b> tab for debug logs, system resource usage, etc.`,
         `Did you know:\nWant to try some fancy prompting?\nJust type a '&lt;' symbol and watch the suggestions for prompt-syntax tools appear! Give the syntax features a try! <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md">(Documentation Here)</a>`,
+        `Did you know:\nSwarm doesn't update itself by default.\nGo to the '<b>Server</b>' tab and click '<b>Update and Restart</b>' to get the latest version. There's also a '<b>Server Config</b>' option to always pull dev updates.`,
         /* Version release notes */
         `Release notes (2025-01-31): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.5-Beta">Release Notes for version 0.9.5 (Beta)</a>`
     ];
