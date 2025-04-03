@@ -15,12 +15,7 @@ if exist .\src\bin\always_pull (
     git pull
 )
 
-if exist .\src\bin\must_rebuild (
-    echo Rebuilding...
-    rmdir /s /q .\src\bin\live_release_backup
-    move .\src\bin\live_release .\src\bin\live_release_backup
-    del .\src\bin\must_rebuild
-) else if not exist .git (
+if not exist .git (
     echo.
     echo.
     echo WARNING: YOU DID NOT CLONE FROM GIT. THIS WILL BREAK SOME SYSTEMS. PLEASE INSTALL PER THE README.
@@ -35,9 +30,17 @@ if exist .\src\bin\must_rebuild (
         echo WARNING: You did a git pull without building. Will now build for you...
         echo.
         echo.
+        echo. 2>.\src\bin\must_rebuild
+    )
+)
+
+if exist .\src\bin\must_rebuild (
+    echo Rebuilding...
+    if exist .\src\bin\live_release (
         rmdir /s /q .\src\bin\live_release_backup
         move .\src\bin\live_release .\src\bin\live_release_backup
     )
+    del .\src\bin\must_rebuild
 )
 
 rem Build the program if it isn't already built
@@ -48,6 +51,16 @@ if not exist src\bin\live_release\SwarmUI.exe (
     dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD2=%%i
     echo !CUR_HEAD2!> src/bin/last_build
+)
+
+if not exist src\bin\live_release\SwarmUI.exe if exist src\bin\live_release_backup\SwarmUI.exe (
+    echo.
+    echo.
+    echo WARNING: BUILD FAILED? Restoring backup...
+    echo.
+    echo.
+    rmdir /s /q src\bin\live_release
+    move src\bin\live_release_backup src\bin\live_release
 )
 
 rem Default env configuration, gets overwritten by the C# code's settings handler
