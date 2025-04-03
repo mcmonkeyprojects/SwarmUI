@@ -17,6 +17,7 @@ if [ -d .git ]; then
     fi
 else
     printf "\n\nWARNING: YOU DID NOT CLONE FROM GIT. THIS WILL BREAK SOME SYSTEMS. PLEASE INSTALL PER THE README.\n\n"
+    sleep 5
 fi
 
 if [ -f ./src/bin/must_rebuild ]; then
@@ -35,7 +36,8 @@ if [ ! -f src/bin/live_release/SwarmUI.dll ]; then
 fi
 
 if [ ! -f src/bin/live_release/SwarmUI.dll ] && [ -f src/bin/live_release_backup/SwarmUI.dll ]; then
-    echo "WARNING: BUILD FAILED? Restoring backup..."
+    printf "\n\nWARNING: BUILD FAILED? Restoring backup...\n\n"
+    sleep 5
     rm -rf ./src/bin/live_release
     mv ./src/bin/live_release_backup ./src/bin/live_release
 fi

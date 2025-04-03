@@ -21,6 +21,7 @@ if not exist .git (
     echo WARNING: YOU DID NOT CLONE FROM GIT. THIS WILL BREAK SOME SYSTEMS. PLEASE INSTALL PER THE README.
     echo.
     echo.
+    timeout 5
 ) else (
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD=%%i
     set /p BUILT_HEAD=<src/bin/last_build
@@ -59,6 +60,7 @@ if not exist src\bin\live_release\SwarmUI.exe if exist src\bin\live_release_back
     echo WARNING: BUILD FAILED? Restoring backup...
     echo.
     echo.
+    timeout 5
     rmdir /s /q src\bin\live_release
     move src\bin\live_release_backup src\bin\live_release
 )
