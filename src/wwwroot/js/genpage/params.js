@@ -245,6 +245,10 @@ function getParamMemoryDays() {
 
 /** Re-persist stored parameter values - to avoid some disappearing and others staying */
 function autoRepersistParams() {
+    let hrs = getUserSetting('parametermemorydurationhours', 'none');
+    if (hrs == 'none') { // (Avoid repersisting if the user setting isn't loaded)
+        return;
+    }
     let groups = [];
     for (let param of gen_param_types) {
         let val = getCookie(`lastparam_input_${param.id}`);
