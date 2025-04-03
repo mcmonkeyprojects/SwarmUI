@@ -249,28 +249,29 @@ function autoRepersistParams() {
     if (hrs == 'none') { // (Avoid repersisting if the user setting isn't loaded)
         return;
     }
+    let days = parseFloat(hrs) / 24;
     let groups = [];
     for (let param of gen_param_types) {
         let val = getCookie(`lastparam_input_${param.id}`);
         if (val) {
-            setCookie(`lastparam_input_${param.id}`, val, getParamMemoryDays());
+            setCookie(`lastparam_input_${param.id}`, val, days);
         }
         if (param.toggleable) {
             let val = getCookie(`lastparam_input_${param.id}_toggle`);
             if (val) {
-                setCookie(`lastparam_input_${param.id}_toggle`, val, getParamMemoryDays());
+                setCookie(`lastparam_input_${param.id}_toggle`, val, days);
             }
         }
         if (param.group && !groups.includes(param.group.id)) {
             groups.push(param.group.id);
             let open = getCookie(`group_open_auto-group-${param.group.id}`);
             if (open) {
-                setCookie(`group_open_auto-group-${param.group.id}`, open, getParamMemoryDays());
+                setCookie(`group_open_auto-group-${param.group.id}`, open, days);
             }
             if (param.group.toggles) {
                 let toggle = getCookie(`group_toggle_auto-group-${param.group.id}`);
                 if (toggle) {
-                    setCookie(`group_toggle_auto-group-${param.group.id}`, toggle, getParamMemoryDays());
+                    setCookie(`group_toggle_auto-group-${param.group.id}`, toggle, days);
                 }
             }
         }
