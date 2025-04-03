@@ -1023,7 +1023,7 @@ public class WorkflowGeneratorSteps
                     }
                     else if (g.IsSD3() || g.IsFlux())
                     {
-                        applyNode = g.CreateNode("ControlNetApplySD3", new JObject()
+                        applyNode = g.CreateNode("ControlNetApplyAdvanced", new JObject()
                         {
                             ["positive"] = g.FinalPrompt,
                             ["negative"] = g.FinalNegativePrompt,
