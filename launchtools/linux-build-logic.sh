@@ -27,6 +27,7 @@ if [ -f ./src/bin/must_rebuild ]; then
         mv ./src/bin/live_release ./src/bin/live_release_backup
     fi
     rm ./src/bin/must_rebuild
+fi
 
 # Build the program if it isn't already built
 if [ ! -f src/bin/live_release/SwarmUI.dll ]; then
