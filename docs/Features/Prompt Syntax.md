@@ -126,7 +126,7 @@
             - Without this, if there are multiple people, it will do a bulk segmented refine on all faces combined
             - Note the index order is sorted from leftmost detection to right
         - To control the creativity/threshold with a yolo model just append `,<creativity>,<threshold>`, for example `<segment:yolo-face_yolov8m-seg_60.pt-1,0.8,0.25>` sets a `0.8` creativity and `0.25` threshold.
-            - Note the default "confidence threshold" for Yolo models is `0.25`, which is different than is often used with ClipSeg, and does not have a max value.
+            - Note the default "confidence threshold" for Yolo models is `0.25`, which is different than is often used with ClipSeg, and does not have a "max threshold" like ClipSeg does.
         - If you have a yolo model with multiple supported classes, you can filter specific classes by appending `:<classes>:` to the model name where `<classes>` is a comma-separated list of class IDs or names, e.g., `<segment:yolo-modelnamehere:0,apple,2:,0.8,0.25>`
     - There's an advanced parameter under `Regional Prompting` named `Segment Model` to customize the base model used for segment processing
     - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask

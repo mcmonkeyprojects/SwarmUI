@@ -6,7 +6,7 @@ class GenerateHandler {
         this.totalGenRunTime = 0;
         this.validateModel = true;
         this.interrupted = -1;
-        this.socket = null;
+        this.sockets = {};
         this.imageContainerDivId = 'current_image';
         this.imageId = 'current_image_img';
         this.progressBarHtml = `<div class="image-preview-progress-inner"><div class="image-preview-progress-overall"></div><div class="image-preview-progress-current"></div></div>`;
@@ -116,9 +116,11 @@ class GenerateHandler {
             }
             return;
         }
+        let socketId = 'normal';
         let isPreview = '_preview' in input_overrides;
         if (isPreview) {
             delete input_overrides['_preview'];
+            socketId = 'preview';
         }
         this.beforeGenRun();
         let run = () => {
@@ -131,8 +133,8 @@ class GenerateHandler {
             let socket = null;
             let handleData = data => {
                 if ('socket_intention' in data && data.socket_intention == 'close') {
-                    if (this.socket == socket) {
-                        this.socket = null;
+                    if (this.sockets[socketId] == socket) {
+                        this.sockets[socketId] = null;
                     }
                     if (Object.keys(discardable).length > 0) {
                         // clear any lingering previews
@@ -267,12 +269,12 @@ class GenerateHandler {
                 }
                 this.hadError(e);
             };
-            if (this.socket && this.socket.readyState == WebSocket.OPEN) {
-                this.socket.send(JSON.stringify(actualInput));
+            if (this.sockets[socketId] && this.sockets[socketId].readyState == WebSocket.OPEN) {
+                this.sockets[socketId].send(JSON.stringify(actualInput));
             }
             else {
                 socket = makeWSRequestT2I('GenerateText2ImageWS', actualInput, handleData, handleError);
-                this.socket = socket;
+                this.sockets[socketId] = socket;
             }
         };
         if (this.validateModel) {
