@@ -87,6 +87,10 @@ public class Installation
             {
                 await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_cu118_or_cpu_22_05_2023.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
             }
+            else if (Utilities.PresumeNVidia50xx)
+            {
+                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_or_cpu_nightly_pytorch.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
+            }
             else
             {
                 await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
