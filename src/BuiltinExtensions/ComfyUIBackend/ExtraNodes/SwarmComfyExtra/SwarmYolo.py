@@ -14,6 +14,7 @@ class SwarmYoloDetection:
             "optional": {
                 "class_filter": ("STRING", { "default": "", "multiline": False }),
                 "sort_order": (["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], ),
+                "threshold": ("FLOAT", { "default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01 }),
             }
         }
 
@@ -21,7 +22,7 @@ class SwarmYoloDetection:
     RETURN_TYPES = ("MASK",)
     FUNCTION = "seg"
 
-    def seg(self, image, model_name, index, class_filter=None, sort_order="left-right"):
+    def seg(self, image, model_name, index, class_filter=None, sort_order="left-right", threshold=0.25):
         # TODO: Batch support?
         i = 255.0 * image[0].cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
@@ -31,7 +32,7 @@ class SwarmYoloDetection:
             raise ValueError(f"Model {model_name} not found, or yolov8 folder path not defined")
         from ultralytics import YOLO
         model = YOLO(model_path)
-        results = model(img)
+        results = model.predict(img, conf=threshold)
         boxes = results[0].boxes
         class_ids = boxes.cls.cpu().numpy() if boxes is not None else []
         selected_classes = None

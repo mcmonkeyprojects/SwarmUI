@@ -1302,7 +1302,8 @@ public class WorkflowGeneratorSteps
                             ["model_name"] = fullname,
                             ["index"] = index,
                             ["class_filter"] = classFilter,
-                            ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right")
+                            ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
+                            ["threshold"] = Math.Abs(part.Strength)
                         });
                     }
                     else

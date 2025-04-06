@@ -132,6 +132,10 @@ public class PromptRegion
                     p.Strength = Math.Clamp(x, -1, 1);
                     p.DataText = coords.SkipLast(1).JoinString(",");
                 }
+                else if (regionData.StartsWith("yolo-"))
+                {
+                    p.Strength = 0.25;
+                }
                 else
                 {
                     p.Strength = 0.5;
