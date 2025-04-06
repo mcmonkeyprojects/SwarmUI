@@ -1119,11 +1119,14 @@ function doGenForeverOnce(minQueueSize) {
     mainGenHandler.doGenerate();
 }
 
+let generateForeverTranslatable = translatable('Generate Forever');
+let stopGenerateForeverTranslatable = translatable('Stop Generating Forever');
+
 function toggleGenerateForever() {
     let button = getRequiredElementById('generate_forever_button');
     isGeneratingForever = !isGeneratingForever;
     if (isGeneratingForever) {
-        button.innerText = 'Stop Generating';
+        button.innerText = stopGenerateForeverTranslatable.get();
         let delaySeconds = parseFloat(getUserSetting('generateforeverdelay', '0.1'));
         let minQueueSize = Math.max(1, parseInt(getUserSetting('generateforeverqueuesize', '1')));
         let delayMs = Math.max(parseInt(delaySeconds * 1000), 1);
@@ -1132,7 +1135,7 @@ function toggleGenerateForever() {
         }, delayMs);
     }
     else {
-        button.innerText = 'Generate Forever';
+        button.innerText = generateForeverTranslatable.get();
         clearInterval(genForeverInterval);
     }
 }
