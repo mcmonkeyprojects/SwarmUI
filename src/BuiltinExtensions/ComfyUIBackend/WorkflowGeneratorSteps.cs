@@ -1296,6 +1296,11 @@ public class WorkflowGeneratorSteps
                         {
                             index = 0;
                         }
+                        if (part.Strength > 0.999)
+                        {
+                            Logs.Warning($"Yolo confidence threshold is set to 1. This was recommended syntax before yolo thresholds were supported, but is no longer valid. Swarm will automatically reset the value to default (0.25) instead.");
+                            part.Strength = 0.25;
+                        }
                         segmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
                         {
                             ["image"] = g.FinalImageOut,
