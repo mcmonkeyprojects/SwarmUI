@@ -739,7 +739,7 @@ class ModelMetadataScanner {
                 let civitUrl = getCivitUrlGuessFor(model);
                 if (filter != 'all') {
                     let allowed = true;
-                    if (filter == 'no_thumbnail' && model.preview_image) {
+                    if (filter == 'no_thumbnail' && model.preview_image && model.preview_image != 'imgs/model_placeholder.jpg') {
                         allowed = false;
                     }
                     else if (filter == 'no_description' && !invalidDescriptions.includes(model.description.trim())) {
