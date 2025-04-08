@@ -46,7 +46,7 @@ def swarm_send_extra_preview(id, image):
     num_data = 1 + (id * 16)
     header = struct.pack(">I", num_data)
     bytesIO.write(header)
-    image.save(bytesIO, format="JPEG", quality=95, compress_level=4)
+    image.save(bytesIO, format="JPEG", quality=90, compress_level=4)
     preview_bytes = bytesIO.getvalue()
     server.send_sync(1, preview_bytes, sid=server.client_id)
 
@@ -56,7 +56,7 @@ def swarm_send_animated_preview(id, images):
     num_data = 3 + (id * 16)
     header = struct.pack(">I", num_data)
     bytesIO.write(header)
-    images[0].save(bytesIO, save_all=True, duration=int(1000.0/6), append_images=images[1 : len(images)], lossless=False, quality=50, method=0, format='WEBP')
+    images[0].save(bytesIO, save_all=True, duration=int(1000.0/6), append_images=images[1 : len(images)], lossless=False, quality=60, method=0, format='WEBP')
     bytesIO.seek(0)
     preview_bytes = bytesIO.getvalue()
     server.send_sync(1, preview_bytes, sid=server.client_id)
