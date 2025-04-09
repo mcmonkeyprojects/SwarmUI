@@ -245,7 +245,7 @@ public class WorkflowGeneratorSteps
                     else
                     {
                         string arch = g.CurrentModelClass()?.ID;
-                        if (arch == "wan-2_1-text2video-1_3b")
+                        if (arch == "wan-2_1-text2video-1_3b" || arch == "wan-2_1-image2video-1_3b")
                         {
                             type = "wan2.1_t2v_1.3B";
                         }
