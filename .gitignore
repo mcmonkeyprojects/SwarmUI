@@ -15,6 +15,7 @@ Properties/
 /Output
 /Data
 /Models
+/ComfyUI
 tmp/
 /src/Extensions
 /dlbackend

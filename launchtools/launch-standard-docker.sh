@@ -29,6 +29,8 @@ docker run -it \
     -v "$PWD/Models:/SwarmUI/Models" \
     -v "$PWD/Output:/SwarmUI/Output" \
     -v "$PWD/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows" \
+    -v "$PWD/ComfyUI/custom_nodes:/SwarmUI/dlbackend/ComfyUI/custom_nodes" \
+    -v "$PWD/ComfyUI/models:/SwarmUI/dlbackend/ComfyUI/models" \
     --gpus=all -p 7801:7801 swarmui $POSTARG
 
 if [ $? == 42 ]; then
