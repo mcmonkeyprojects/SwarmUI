@@ -459,6 +459,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     // TODO: This is deeply cursed. This is published by the comfyui-ReActor-node developer so at least it's not a complete rando, but, jeesh. Insightface please fix your pip package.
                     await install("insightface", "https://github.com/Gourieff/Assets/raw/a20f16a2f4d2c856a14960afd709540a88ebef25/Insightface/insightface-0.7.3-cp311-cp311-win_amd64.whl");
                 }
+                else if (File.Exists($"{lib}/../../python313.dll"))
+                {
+                    await install("insightface", "https://github.com/Gourieff/Assets/raw/62742c24b2376266e915a327a4b2b6fb03943ef0/Insightface/insightface-0.7.3-cp313-cp313-win_amd64.whl");
+                }
                 else if (File.Exists($"{lib}/../../python312.dll"))
                 {
                     await install("insightface", "https://github.com/Gourieff/Assets/raw/a20f16a2f4d2c856a14960afd709540a88ebef25/Insightface/insightface-0.7.3-cp312-cp312-win_amd64.whl");
