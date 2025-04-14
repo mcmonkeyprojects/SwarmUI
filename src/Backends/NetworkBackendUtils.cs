@@ -195,6 +195,7 @@ public static class NetworkBackendUtils
             return false;
         }
         string subPath = path[1] == ':' ? path[2..] : path;
+        subPath = subPath.Replace("/@", "/"); // Allow an exception for eg `Programs/@comfyorgcomfyui` which Comfy Desktop uses for some reason
         if (Utilities.FilePathForbidden.ContainsAnyMatch(subPath))
         {
             Logs.Error($"Failed init of {backendLabel} with script target '{path}' because that file path contains invalid characters ( {Utilities.FilePathForbidden.TrimToMatches(subPath)} ). Please verify your start script location.");
