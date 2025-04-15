@@ -154,12 +154,16 @@ class PromptTabCompleteClass {
             let rawMatchSet = [];
             if (completionSet) {
                 let startWithList = [];
+                let startWithAltList = [];
                 let containList = [];
                 for (let i = 0; i < completionSet.length; i++) {
                     let entry = completionSet[i];
-                    if (entry.low.includes(wordLow)) {
+                    if (entry.low.includes(wordLow) || entry.alts.some(alt => alt.includes(wordLow))) {
                         if (entry.low.startsWith(wordLow)) {
                             startWithList.push(entry);
+                        }
+                        else if (entry.alts.some(alt => alt.startsWith(wordLow))) {
+                            startWithAltList.push(entry);
                         }
                         else {
                             containList.push(entry);
@@ -183,8 +187,9 @@ class PromptTabCompleteClass {
                 let matchMode = getUserSetting('autocomplete.matchmode');
                 if (matchMode == 'Bucketed') {
                     doSortList(startWithList);
+                    doSortList(startWithAltList);
                     doSortList(containList);
-                    baseList = startWithList.concat(containList);
+                    baseList = startWithList.concat(startWithAltList).concat(containList);
                 }
                 else if (matchMode == 'Contains') {
                     doSortList(rawMatchSet);
@@ -192,7 +197,8 @@ class PromptTabCompleteClass {
                 }
                 else if (matchMode == 'StartsWith') {
                     doSortList(startWithList);
-                    baseList = startWithList;
+                    doSortList(startWithAltList);
+                    baseList = startWithList.concat(startWithAltList);
                 }
                 if (baseList.length > 50) {
                     baseList = baseList.slice(0, 50);

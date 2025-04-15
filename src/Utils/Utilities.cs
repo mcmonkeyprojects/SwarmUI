@@ -1255,4 +1255,48 @@ public static class Utilities
         byte[] hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
         return hashedAttempt.SequenceEqual(hash);
     }
+
+    /// <summary>Splits a standard CSV file - that is, comma separated values that allow for quoted chunks with commas inside.</summary>
+    public static string[] SplitStandardCsv(string input)
+    {
+        List<string> strs = [];
+        bool inQuotes = false;
+        StringBuilder current = new(64);
+        for (int i = 0; i < input.Length; i++)
+        {
+            char c = input[i];
+            if (c == '\\')
+            {
+                i++;
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                strs.Add(current.ToString());
+                current.Clear();
+                if (i + 1 < input.Length && input[i + 1] == '"')
+                {
+                    inQuotes = true;
+                    i++;
+                }
+            }
+            else if (c == '"' && inQuotes)
+            {
+                if (i + 1 < input.Length && input[i + 1] == '"') // Cursed escape hack in some csvs
+                {
+                    current.Append('"');
+                    i++;
+                }
+                else
+                {
+                    inQuotes = false;
+                }
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+        strs.Add(current.ToString());
+        return [.. strs];
+    }
 }

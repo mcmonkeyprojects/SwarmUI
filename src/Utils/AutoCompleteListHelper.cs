@@ -64,7 +64,7 @@ public class AutoCompleteListHelper
         result = [.. result];
         for (int i = 0; i < result.Length; i++)
         {
-            string[] parts = result[i].SplitFast(',');
+            string[] parts = Utilities.SplitStandardCsv(result[i]);
             if (parts.Length == 2 && long.TryParse(parts[1], out _))
             {
                 parts = [parts[0], "0", parts[1], ""];

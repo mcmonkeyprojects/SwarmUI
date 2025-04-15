@@ -358,14 +358,23 @@ function loadUserData(callback) {
                 let split = val.split('\n');
                 let datalist = autoCompletionsList[val[0]];
                 let entry = { name: split[0], low: split[1].replaceAll(' ', '_').toLowerCase(), clean: split[1], raw: val, count: 0 };
-                if (split.length > 3) {
+                if (split.length > 2) {
                     entry.tag = split[2];
                 }
-                if (split.length > 4) {
+                if (split.length > 3) {
                     count = parseInt(split[3]) || 0;
                     if (count) {
                         entry.count = count;
                         entry.count_display = largeCountStringify(count);
+                    }
+                }
+                if (split.length > 4) {
+                    entry.alts = split[4].split(',').map(x => x.trim().toLowerCase());
+                    for (let alt of entry.alts) {
+                        if (!autoCompletionsList[alt]) {
+                            autoCompletionsList[alt] = [];
+                        }
+                        autoCompletionsList[alt].push(entry);
                     }
                 }
                 if (!datalist) {
