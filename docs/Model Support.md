@@ -325,6 +325,7 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
         - Then try to generate again, and it should just work
     - Nunchaku has various compatibility limitations due to hacks in the custom nodes. Not all lora, textenc, etc. features will work as intended.
         - It does not work on all python/torch/etc. versions, as they have deeply cursed dependency distribution
+    - The `Nunchaku Cache Threshold` param is available to enable block-caching, which improves performance further at the cost of quality.
 
 ## TensorRT
 

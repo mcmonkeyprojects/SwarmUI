@@ -868,11 +868,11 @@ public class WorkflowGenerator
                 string modelNode = CreateNode("NunchakuFluxDiTLoader", new JObject()
                 {
                     ["model_path"] = model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}"),
-                    ["cache_threshold"] = 0,
+                    ["cache_threshold"] = UserInput.Get(ComfyUIBackendExtension.NunchakuCacheThreshold, 0),
                     ["attention"] = "nunchaku-fp16",
                     ["cpu_offload"] = "auto",
                     ["device_id"] = 0,
-                    ["data_type"] = "bfloat16",
+                    ["data_type"] = "float16",
                     ["i2f_mode"] = "enabled"
                 }, id);
                 LoadingModel = [modelNode, 0];
