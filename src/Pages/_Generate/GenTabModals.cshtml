@@ -83,6 +83,18 @@
         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#bnb_nf4_installer').modal('hide')">Cancel</button>
     </div>
 @WebUtil.ModalFooter()
+@WebUtil.ModalHeader("nunchaku_installer", "Install Nunchaku Support")
+    <div class="modal-body">
+        The model you're trying to use appears to be a Nunchaku SVDQuant format model.
+        <br>
+        <br>This requires an extension released by MIT Han Lab (Apache2 license) to run. Would you like to install it?
+    </div>
+    <div class="modal-footer" id="install_nunchaku_button">
+        <button type="button" class="btn btn-primary basic-button translate" onclick="installFeatureById('nunchaku', 'install_nunchaku_button', 'nunchaku_installer')">Install</button>
+        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#nunchaku_installer').modal('hide');localStorage.setItem('hide_nunchaku_check', 'true')">No and don't show again</button>
+        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#nunchaku_installer').modal('hide')">Cancel</button>
+    </div>
+@WebUtil.ModalFooter()
 @WebUtil.ModalHeader("gguf_installer", "Install GGUF Support")
     <div class="modal-body">
         The model you're trying to use appears to be a GGUF format model.

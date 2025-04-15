@@ -63,6 +63,7 @@ public class ComfyUIBackendExtension : Extension
         ["SanaCheckpointLoader"] = "extramodelssana",
         ["CheckpointLoaderNF4"] = "bnb_nf4",
         ["UnetLoaderGGUF"] = "gguf",
+        ["NunchakuFluxDiTLoader"] = "nunchaku",
         ["TensorRTLoader"] = "tensorrt",
         ["TeaCache"] = "teacache",
         ["TeaCacheForVidGen"] = "teacache",

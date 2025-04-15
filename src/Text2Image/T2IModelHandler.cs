@@ -514,6 +514,11 @@ public class T2IModelHandler
             {
                 specialFormat = "gguf";
             }
+            if (model.Name.EndsWith("/transformer_blocks.safetensors") && File.Exists(model.RawFilePath.Replace('\\', '/').BeforeLast('/') + "/comfy_config.json"))
+            {
+                specialFormat = "nunchaku";
+                altName ??= model.Name.BeforeLast('/').AfterLast('/');
+            }
             if (specialFormat is not null)
             {
                 Logs.Debug($"Model {model.Name} has special format '{specialFormat}'");
@@ -674,6 +679,10 @@ public class T2IModelHandler
             }
             else if (T2IModel.NativelySupportedModelExtensions.Contains(fn.AfterLast('.')))
             {
+                if (fixedFileName.EndsWith("/unquantized_layers.safetensors") && File.Exists(fixedFileName.BeforeLast('/') + "/comfy_config.json"))
+                {
+                    return; // Nunchaku secondary file
+                }
                 T2IModel model = new(this, pathBase, fixedFileName, fullFilename)
                 {
                     Title = fullFilename.AfterLast('/'),

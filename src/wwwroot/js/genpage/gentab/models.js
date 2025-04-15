@@ -1172,6 +1172,10 @@ function doModelInstallRequiredCheck() {
         $('#bnb_nf4_installer').modal('show');
         return true;
     }
+    if (curModelSpecialFormat == 'nunchaku' && !currentBackendFeatureSet.includes('nunchaku') && !localStorage.getItem('hide_nunchaku_check')) {
+        $('#nunchaku_installer').modal('show');
+        return true;
+    }
     let imageVidToggler = document.getElementById('input_group_content_imagetovideo_toggle');
     let isImageVidToggled = imageVidToggler && imageVidToggler.checked;
     let videoModel = isImageVidToggled ? document.getElementById('input_videomodel')?.value : '';
