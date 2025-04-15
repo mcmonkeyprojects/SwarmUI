@@ -476,6 +476,33 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     await install("insightface", "insightface");
                 }
             }
+            if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
+            {
+                // Nunchaku devs seem very confused how to python package. So we gotta do some cursed install for them.
+                string pyVers = "310";
+                if (File.Exists($"{lib}/../../python311.dll")) { pyVers = "311"; }
+                else if (File.Exists($"{lib}/../../python313.dll")) { pyVers = "313"; }
+                else if (File.Exists($"{lib}/../../python312.dll")) { pyVers = "312"; }
+                else if (File.Exists($"{lib}/../../python310.dll")) { pyVers = "310"; }
+                else
+                {
+                    Logs.Error($"Nunchaku is not currently supported on your python version.");
+                }
+                string osVers = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win_amd64" : "linux_x86_64";
+                string torchPipVers = getVers("torch");
+                string torchVers = "2.8";
+                if (torchPipVers.StartsWith("2.5.")) { torchVers = "2.5"; }
+                else if (torchPipVers.StartsWith("2.6.")) { torchVers = "2.6"; }
+                else if (torchPipVers.StartsWith("2.7.")) { torchVers = "2.7"; }
+                else if (torchPipVers.StartsWith("2.8.")) { torchVers = "2.8"; }
+                else
+                {
+                    Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.8]).");
+                }
+                // eg https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch2.5-cp310-cp310-linux_x86_64.whl
+                string url = $"https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
+                await install("nunchaku", url);
+            }
             AddLoadStatus("Done validating required libs.");
         }
         AddLoadStatus("Starting self-start ComfyUI process...");

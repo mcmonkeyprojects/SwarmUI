@@ -422,16 +422,31 @@ public class WorkflowGenerator
             }
             float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
             float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
-            string newId = CreateNode("LoraLoader", new JObject()
+            string id = GetStableDynamicID(2000, i);
+            if (FinalLoadedModel?.Metadata?.SpecialFormat == "nunchaku")
             {
-                ["model"] = model,
-                ["clip"] = clip,
-                ["lora_name"] = lora.ToString(ModelFolderFormat),
-                ["strength_model"] = weight,
-                ["strength_clip"] = tencWeight
-            }, GetStableDynamicID(2000, i), false);
-            model = [newId, 0];
-            clip = [newId, 1];
+                // This is dirty to use this alt node, but it seems required for Nunchaku.
+                string newId = CreateNode("NunchakuFluxLoraLoader", new JObject()
+                {
+                    ["model"] = model,
+                    ["lora_name"] = lora.ToString(ModelFolderFormat),
+                    ["lora_strength"] = weight
+                }, id, false);
+                model = [newId, 0];
+            }
+            else
+            {
+                string newId = CreateNode("LoraLoader", new JObject()
+                {
+                    ["model"] = model,
+                    ["clip"] = clip,
+                    ["lora_name"] = lora.ToString(ModelFolderFormat),
+                    ["strength_model"] = weight,
+                    ["strength_clip"] = tencWeight
+                }, id, false);
+                model = [newId, 0];
+                clip = [newId, 1];
+            }
         }
         return (model, clip);
     }
@@ -843,6 +858,25 @@ public class WorkflowGenerator
                 }, id);
                 LoadingModel = [modelNode, 0];
             }
+            else if (model.Metadata?.SpecialFormat == "nunchaku")
+            {
+                if (!Features.Contains("nunchaku"))
+                {
+                    throw new SwarmUserErrorException($"Model '{model.Name}' is in Nunchaku format, but the server does not have Nunchaku support installed. Cannot run.");
+                }
+                // TODO: Configuration of these params?
+                string modelNode = CreateNode("NunchakuFluxDiTLoader", new JObject()
+                {
+                    ["model_path"] = model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}"),
+                    ["cache_threshold"] = 0,
+                    ["attention"] = "nunchaku-fp16",
+                    ["cpu_offload"] = "auto",
+                    ["device_id"] = 0,
+                    ["data_type"] = "bfloat16",
+                    ["i2f_mode"] = "enabled"
+                }, id);
+                LoadingModel = [modelNode, 0];
+            }
             else
             {
                 if (model.RawFilePath.EndsWith(".gguf"))
@@ -911,6 +945,10 @@ public class WorkflowGenerator
             if (model.Metadata?.SpecialFormat == "gguf")
             {
                 throw new SwarmUserErrorException($"Model '{model.Name}' is in GGUF format, but it's in your main Stable-Diffusion models folder. GGUF files are weird, and need to go in the special 'diffusion_models' folder.");
+            }
+            if (model.Metadata?.SpecialFormat == "nunchaku")
+            {
+                throw new SwarmUserErrorException($"Model '{model.Name}' is in Nunchaku format, but it's in your main Stable-Diffusion models folder. Nunchaku files are weird, and need to go in the special 'diffusion_models' folder with their own special subfolder.");
             }
             string modelNode = CreateNode("CheckpointLoaderSimple", new JObject()
             {
