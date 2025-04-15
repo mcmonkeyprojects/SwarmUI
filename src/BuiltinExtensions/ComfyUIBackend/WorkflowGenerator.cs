@@ -1338,6 +1338,19 @@ public class WorkflowGenerator
             string modelId = model?.ModelClass?.ID ?? "";
             return modelId.EndsWith("/lora-depth") || modelId.EndsWith("/lora-canny");
         }
+        if (UserInput.Get(T2IParamTypes.FluxDisableGuidance, false))
+        {
+            string disabledPos = CreateNode("FluxDisableGuidance", new JObject()
+            {
+                ["conditioning"] = pos
+            });
+            pos = [disabledPos, 0];
+            string disabledNeg = CreateNode("FluxDisableGuidance", new JObject()
+            {
+                ["conditioning"] = neg
+            });
+            neg = [disabledNeg, 0];
+        }
         if (classId == "Flux.1-dev/inpaint")
         {
             // Not sure why, but InpaintModelConditioning is required here.

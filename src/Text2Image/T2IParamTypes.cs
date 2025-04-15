@@ -301,7 +301,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, ReVisionModel, RegionalObjectInpaintingModel, SegmentModel, VideoModel, RefinerVAE, ClipLModel, ClipGModel, T5XXLModel, LLaVAModel, VideoExtendModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
-    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang;
+    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang, FluxDisableGuidance;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners,
         GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupAdvancedSampling, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes;
@@ -412,10 +412,13 @@ public class T2IParamTypes
             "CLIP + T5", GetValues: _ => ["CLIP Only", "T5 Only", "CLIP + T5"], Toggleable: true, Group: GroupSampling, FeatureFlag: "sd3", OrderPriority: 5, ChangeWeight: 9
             ));
         FluxGuidanceScale = Register<double>(new("Flux Guidance Scale", "What guidance scale to use for Flux-Dev or related models.\nDoes not apply to Flux-Schnell.\nFor Flux-Dev, this is a distilled embedded value the model was trained on, this is based on an alternative guidance methodology, and is not CFG.\n3.5 is default, but closer to 2.0 may allow for more stylistic flexibility.\nFor Hunyuan Video, this is distilled from CFG Scale, and prefers values closer to 6.",
-            "3.5", Min: 0, Max: 100, ViewMax: 10, Step: 0.1, Toggleable: true, Group: GroupSampling, ViewType: ParamViewType.SLIDER, FeatureFlag: "flux-dev"
+            "3.5", Min: 0, Max: 100, ViewMax: 10, Step: 0.1, Toggleable: true, Group: GroupSampling, ViewType: ParamViewType.SLIDER, OrderPriority: 6, FeatureFlag: "flux-dev"
+            ));
+        FluxDisableGuidance = Register<bool>(new("Flux Disable Guidance", "Disables Flux Guidance Scale.\nSome models prefer this. Usually you don't need this.",
+            "false", IgnoreIf: "false", Group: GroupSampling, IsAdvanced: true, OrderPriority: 6.2, FeatureFlag: "flux-dev"
             ));
         ZeroNegative = Register<bool>(new("Zero Negative", "Zeroes the negative prompt if it's empty.\nDoes nothing if the negative prompt is not empty.\nThis may yield better quality on SD3.",
-            "false", IgnoreIf: "false", Group: GroupSampling
+            "false", IgnoreIf: "false", Group: GroupSampling, OrderPriority: 7
             ));
         SeamlessTileable = Register<string>(new("Seamless Tileable", "Makes the generated image seamlessly tileable (like a 3D texture would be).\nOptionally, can be tileable on only the X axis (horizontal) or Y axis (vertical).",
             "false", IgnoreIf: "false", GetValues: _ => ["false", "true", "X-Only", "Y-Only"], Group: GroupSampling, FeatureFlag: "seamless", OrderPriority: 15
