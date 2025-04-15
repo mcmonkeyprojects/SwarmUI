@@ -383,7 +383,7 @@ public class Program
         int downloadRootId = Math.Abs(ServerSettings.Paths.DownloadToRootID) % roots.Length;
         void buildPathList(string folder, T2IModelHandler handler)
         {
-            List<string> result = [];
+            Dictionary<string, string> result = [];
             int rootCount = 0;
             foreach (string modelRoot in roots)
             {
@@ -405,12 +405,12 @@ public class Program
                     {
                         continue;
                     }
-                    result.Add(patched);
+                    result.Add(patched, patched);
                     sfCount++;
                 }
                 rootCount++;
             }
-            handler.FolderPaths = [.. result];
+            handler.FolderPaths = [.. result.Keys];
         }
         Directory.CreateDirectory(ServerSettings.Paths.ActualModelRoot + "/tensorrt");
         Directory.CreateDirectory(ServerSettings.Paths.ActualModelRoot + "/diffusion_models");
