@@ -22,6 +22,7 @@
 - [Alternative Model Formats](#alternative-model-formats)
     - [BnB NF4](#bits-and-bytes-nf4-format-models)
     - [GGUF](#gguf-quantized-models)
+    - [Nunchaku](#nunchaku-mit-han-lab)
     - [TensorRT](#tensorrt)
 
 # General Info
