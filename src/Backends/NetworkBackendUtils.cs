@@ -1,4 +1,5 @@
 ﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticToolkit;
 using Hardware.Info;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -527,7 +528,8 @@ public static class NetworkBackendUtils
             {
                 string line;
                 bool keepShowing = false;
-                while ((line = process.StandardOutput.ReadLine()) != null)
+                using StreamReader fixedReader = new(process.StandardOutput.BaseStream, Encoding.UTF8); // Force UTF-8, always
+                while ((line = fixedReader.ReadLine()) != null)
                 {
                     if (line.StartsWith("Traceback (") || line.StartsWith("RuntimeError: ") || line.StartsWith("Error: "))
                     {
@@ -574,7 +576,8 @@ public static class NetworkBackendUtils
                 StringBuilder errorLog = new();
                 string line;
                 bool keepShowing = false;
-                while ((line = process.StandardError.ReadLine()) != null)
+                using StreamReader fixedReader = new(process.StandardError.BaseStream, Encoding.UTF8); // Force UTF-8, always
+                while ((line = fixedReader.ReadLine()) != null)
                 {
                     string lineLow = line.ToLowerFast();
                     if (lineLow.StartsWith("traceback (") || lineLow.Contains("error: "))

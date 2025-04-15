@@ -87,6 +87,9 @@ try:
                 orig(data)
                 self.flush()
             interceptor.write = functools.partial(write, interceptor)
+            # Force UTF-8 too, to prevent encoding errors (Comfy will full crash outputting some languages)
+            # (Swarm's C# engine has code to forcibly assume UTF-8, so this is safe. Otherwise it would wonk the terminal if the terminal isn't set to UTF-8)
+            interceptor.reconfigure(encoding='utf-8')
     patch_interceptor(logger.stdout_interceptor)
     patch_interceptor(logger.stderr_interceptor)
 except Exception as e:
