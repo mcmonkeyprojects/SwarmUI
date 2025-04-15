@@ -305,11 +305,25 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
-    - You will have to click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to the relevant correct one (it cannot be autodetected currently).
+    - You may have to click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to the relevant correct one (it cannot be autodetected currently).
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
-    - You can accept this popup, and it will install and reload the backend
-    - Then try to generate again, and it should just work
+        - You can accept this popup, and it will install and reload the backend
+        - Then try to generate again, and it should just work
+
+## Nunchaku (MIT Han Lab)
+
+- MIT Han Lab's "[Nunchaku](https://github.com/mit-han-lab/ComfyUI-nunchaku)" / 4-bit SVDQuant models are a unusual quant format that is supported in SwarmUI.
+    - Nunchaku is a very dense quantization of models (eg 6GiB for Flux models) that runs very fast (4.4 seconds for a 20 step Flux Dev image on Windows RTX 4090)
+    - They go in `(Swarm)/Models/diffusion_models` and have to have their own folder (eg `(Swarm)/Models/diffusion_models/myfluxmodel`) and work similar to other `diffusion_models` format models
+        - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
+    - The detection is based on the folder structure, you need the files `transformer_blocks.safetensors` and `comfy_config.json` inside the folder. You cannot have unrelated files in the folder.
+    - The first time you try to load a Nunchaku model, it will give you a popup asking to install support
+        - This will autoinstall https://github.com/mit-han-lab/ComfyUI-nunchaku
+        - You can accept this popup, and it will install and reload the backend
+        - Then try to generate again, and it should just work
+    - Nunchaku has various compatibility limitations due to hacks in the custom nodes. Not all lora, textenc, etc. features will work as intended.
+        - It does not work on all python/torch/etc. versions, as they have deeply cursed dependency distribution
 
 ## TensorRT
 
