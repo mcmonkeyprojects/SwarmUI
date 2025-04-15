@@ -479,14 +479,18 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
                 // Nunchaku devs seem very confused how to python package. So we gotta do some cursed install for them.
+                bool isValid = true;
                 string pyVers = "310";
-                if (File.Exists($"{lib}/../../python311.dll")) { pyVers = "311"; }
-                else if (File.Exists($"{lib}/../../python313.dll")) { pyVers = "313"; }
-                else if (File.Exists($"{lib}/../../python312.dll")) { pyVers = "312"; }
-                else if (File.Exists($"{lib}/../../python310.dll")) { pyVers = "310"; }
+                Process proc = DoPythonCall("--version");
+                string actualPyVers = await proc.StandardOutput.ReadToEndAsync();
+                if (actualPyVers.Contains("Python 3.11")) { pyVers = "311"; }
+                else if (actualPyVers.Contains("Python 3.13")) { pyVers = "313"; }
+                else if (actualPyVers.Contains("Python 3.12")) { pyVers = "312"; }
+                else if (actualPyVers.Contains("Python 3.10")) { pyVers = "310"; }
                 else
                 {
                     Logs.Error($"Nunchaku is not currently supported on your python version.");
+                    isValid = false;
                 }
                 string osVers = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win_amd64" : "linux_x86_64";
                 string torchPipVers = getVers("torch");
@@ -498,10 +502,14 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 else
                 {
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.8]).");
+                    isValid = false;
                 }
                 // eg https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch2.5-cp310-cp310-linux_x86_64.whl
                 string url = $"https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
-                await install("nunchaku", url);
+                if (isValid)
+                {
+                    await install("nunchaku", url);
+                }
             }
             AddLoadStatus("Done validating required libs.");
         }
