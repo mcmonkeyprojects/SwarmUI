@@ -217,6 +217,10 @@ public class WorkflowGeneratorSteps
                 {
                     // wrong step, skip
                 }
+                else if (g.FinalLoadedModel?.Metadata?.SpecialFormat == "nunchaku")
+                {
+                    Logs.Warning($"Ignore TeaCache Mode parameter because the current model is Nunchaku which does not support TeaCache. Use 'Nunchaku Cache Threshold' for a similar effect to TeaCache.");
+                }
                 else if (g.IsFlux())
                 {
                     if (teaCacheMode != "video only")
