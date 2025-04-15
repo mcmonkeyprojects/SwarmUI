@@ -4,7 +4,7 @@ from io import BytesIO
 import latent_preview
 import comfy
 from server import PromptServer
-from comfy.model_base import SDXL, SVD_img2vid
+from comfy.model_base import SDXL, SVD_img2vid, Flux, WAN21
 from comfy import samplers
 import numpy as np
 from math import ceil
@@ -118,7 +118,10 @@ def loglinear_interp(t_steps, num_steps):
 AYS_NOISE_LEVELS = {
     "SD1": [14.6146412293, 6.4745760956,  3.8636745985,  2.6946151520, 1.8841921177,  1.3943805092,  0.9642583904,  0.6523686016, 0.3977456272,  0.1515232662,  0.0291671582],
     "SDXL":[14.6146412293, 6.3184485287,  3.7681790315,  2.1811480769, 1.3405244945,  0.8620721141,  0.5550693289,  0.3798540708, 0.2332364134,  0.1114188177,  0.0291671582],
-    "SVD": [700.00, 54.5, 15.886, 7.977, 4.248, 1.789, 0.981, 0.403, 0.173, 0.034, 0.002]
+    "SVD": [700.00, 54.5, 15.886, 7.977, 4.248, 1.789, 0.981, 0.403, 0.173, 0.034, 0.002],
+    # Flux and Wan from https://github.com/comfyanonymous/ComfyUI/pull/7584
+    "Flux": [0.9968, 0.9886, 0.9819, 0.975, 0.966, 0.9471, 0.9158, 0.8287, 0.5512, 0.2808, 0.001],
+    "Wan": [1.0, 0.997, 0.995, 0.993, 0.991, 0.989, 0.987, 0.985, 0.98, 0.975, 0.973, 0.968, 0.96, 0.946, 0.927, 0.902, 0.864, 0.776, 0.539, 0.208, 0.001]
 }
 
 def split_latent_tensor(latent_tensor, tile_size=1024, scale_factor=8):
@@ -264,6 +267,10 @@ class SwarmKSampler:
                 model_type = "SDXL"
             elif isinstance(model.model, SVD_img2vid):
                 model_type = "SVD"
+            elif isinstance(model.model, Flux):
+                model_type = "Flux"
+            elif isinstance(model.model, WAN21):
+                model_type = "Wan"
             else:
                 model_type = "SD1"
             sigmas = AYS_NOISE_LEVELS[model_type][:]
