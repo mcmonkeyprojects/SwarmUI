@@ -419,6 +419,9 @@ function isModelArchCorrect(model) {
             if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('stable-diffusion-v3') && curModelCompatClass.startsWith('stable-diffusion-v3')) {
                 return true;
             }
+            if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('flux-1') && curModelCompatClass.startsWith('hidream-i1')) {
+                return true;
+            }
             return model.compat_class == curModelCompatClass;
         }
     }

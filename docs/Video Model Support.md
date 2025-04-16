@@ -17,6 +17,8 @@ Support for image models and technical formats is documented in [the Model Suppo
 
 ## Current Recommendations
 
+Video model(s) most worth using, as of April 2025:
+
 - Wan 2.1 - It's just leaps above the rest, no competition currently worth using.
 
 ## Demo Gifs
