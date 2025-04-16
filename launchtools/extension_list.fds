@@ -126,9 +126,10 @@ Mahiro:
     license: MIT
     tags:
     - parameters
-TIPOforSwarmUI:
+
+TIPO:
     author: Hugs288
-    description: Tipo custom node wrapper for swarmui.
+    description: Adds a parameter group for TIPO (anime tag prompt gen).
     url: https://github.com/Hugs288/TipoForSwarmUI
     license: MIT
     tags:
