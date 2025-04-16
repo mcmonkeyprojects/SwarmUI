@@ -377,6 +377,9 @@ function loadUserData(callback) {
                         autoCompletionsList[alt].push(entry);
                     }
                 }
+                else {
+                    entry.alts = [];
+                }
                 if (!datalist) {
                     datalist = [];
                     autoCompletionsList[val[0]] = datalist;
