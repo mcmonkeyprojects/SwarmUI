@@ -753,7 +753,7 @@ public class T2IParamTypes
         SamplerSigmaMax = Register<double>(new("Sampler Sigma Max", "Maximum sigma value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
             "10", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, FeatureFlag: "sd3", OrderPriority: -22
             ));
-        SigmaShift = Register<double>(new("Sigma Shift", "Sigma shift is used for MMDiT models (like SD3) specifically.\nFor SD3, this value is recommended to be in the range of 1.5 to 3, normally 3.\nFor AuraFlow, 1.73 (square root of 3) is recommended.\nFor Flux, Schnell uses 0, 1.15 may be good for Dev.",
+        SigmaShift = Register<double>(new("Sigma Shift", "Sigma shift is used for modern rectified flow models (like SD3) specifically.\nThis shifts the range of steps between low-frequency steps (structural/compositional steps), and high-frequency steps (detail steps).\nThis value only works within ranges a model was trained for, so for most models you should leave this param disabled to use the default, but fiddling it can sometimes work to adjust results.\nFor SD3, this value is recommended to be in the range of 1.5 to 3, normally 3.\nFor AuraFlow, 1.73 (square root of 3) is recommended.\nFor Flux, Schnell uses 0, 1.15 may be good for Dev.\nHiDream uses 3, but HiDream Dev also likes 6.",
             "3", Min: 0, Max: 100, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -21
             ));
         SamplerRho = Register<double>(new("Sampler Rho", "Rho value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
