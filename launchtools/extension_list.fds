@@ -126,3 +126,10 @@ Mahiro:
     license: MIT
     tags:
     - parameters
+TIPOforSwarmUI:
+    author: Hugs288
+    description: Tipo custom node wrapper for swarmui.
+    url: https://github.com/Hugs288/TipoForSwarmUI
+    license: MIT
+    tags:
+    - parameters
