@@ -286,6 +286,9 @@ Parameters and usage is the same as any other normal model.
 
 # HiDream-i1
 
+![img](/docs/images/models/hidream-i1-dev.jpg)
+*(Generated with HiDream-i1 Dev, CFG=1, Steps=20, SigmaShift=3)*
+
 - HiDream-i1 Models are supported in SwarmUI.
     - You can pick Full, Dev, or Fast variant
         - **Full:** Uses standard CFG and step counts, no distillation or other tricks. Slowest option, best quality.
