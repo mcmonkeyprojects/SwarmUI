@@ -290,13 +290,13 @@ Parameters and usage is the same as any other normal model.
 *(Generated with HiDream-i1 Dev, CFG=1, Steps=20, SigmaShift=3)*
 
 - HiDream-i1 Models are supported in SwarmUI.
-    - You can pick Full, Dev, or Fast variant
-        - **Full:** Uses standard CFG and step counts, no distillation or other tricks. Slowest option, best quality.
+    - You can pick Full, Dev, or Fast variant. Most users should prefer Dev or Fast.
+        - **Full:** Uses standard CFG and step counts, no distillation or other tricks. Slowest option, theoretically best quality (in practice it looks terrible though).
         - **Dev:** Uses CFG=1 distillation but standard step counts, akin to Flux-Dev. Best middle ground option.
         - **Fast:** Uses CFG=1 and low step count distillation, akin to Flux-Schnell. Best for speed focus, at cost of quality.
     - The models are 17B, which is massive, so you'll likely prefer a quantized version.
-        - Dev model gguf quant: <https://huggingface.co/city96/HiDream-I1-Dev-gguf>
-        - Full model gguf quant: <https://huggingface.co/city96/HiDream-I1-Full-gguf>
+        - Dev model gguf quant: <https://huggingface.co/city96/HiDream-I1-Dev-gguf/tree/main>
+        - Full model gguf quant: <https://huggingface.co/city96/HiDream-I1-Full-gguf/tree/main>
         - `Q6_K` is best accuracy on high VRAM, but `Q4_K_S` cuts VRAM requirements while still being very close to original quality, other variants shouldn't be used normally
         - Comfy Org's fp8 and fat bf16 versions: <https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/tree/main/split_files/diffusion_models>
         - Goes in `(Swarm)/Models/diffusion_models`
@@ -306,12 +306,12 @@ Parameters and usage is the same as any other normal model.
         - These will be autodownloaded for you if not already present
 - Parameters:
     - **CFG Scale:** HiDream Full uses standard standard CFG ranges (eg 6), HiDream Dev and Fast use CFG=1
-    - **Steps:** HiDream Full and Dev use standard step counts (eg 20), HiDream Fast uses low counts (eg 8)
-        - Official HiDream recommendation however is: Full=50, Dev=28, Fast=16.
+    - **Steps:** HiDream Dev uses standard step counts (eg 20), HiDream Fast can use low counts (eg 8). HiDream Full requires higher than normal step counts (at least 30, maybe 50) for clean results.
+        - Official recommendation from HiDream team is: Full=50, Dev=28, Fast=16.
     - **Sampler and Scheduler:** Standard samplers/schedulers work. Defaults to `Euler` and `Normal`
         - The dev model is more open to weirder samplers like `LCM`, but not needed
-    - **Sigma Shift:** HiDream Full and Fast recommend Shift of 3, but for Dev they recommend 6.
-        - The default is 3. Because Full is not autodetected, you will want to manually change Sigma Shift to 6 when using full.
+    - **Sigma Shift:** Sigma shift defaults to 3 and does not need to be modified.
+        - Officially, HiDream Full and Fast recommend Shift of 3, but for Dev they recommend 6. That 6 on dev seems to look worse though, so I don't recommend it.
 
 # Video Models
 
