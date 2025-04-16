@@ -175,6 +175,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is HiDream-i1.</summary>
+    public bool IsHiDream()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "hidream-i1";
+    }
+
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
@@ -760,6 +767,11 @@ public class WorkflowGenerator
         {
             return requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250", T2IParamTypes.LLaVAModel);
         }
+        string getLlama31_8b_Model()
+        {
+            // TODO: Selector param?
+            return requireClipModel("llama_3.1_8b_instruct_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors", "9f86897bbeb933ef4fd06297740edb8dd962c94efcd92b373a11460c33765ea6", null);
+        }
         string getGemma2Model()
         {
             // TODO: Selector param?
@@ -1054,6 +1066,23 @@ public class WorkflowGenerator
             LoadingClip = [dualClipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
+        else if (IsHiDream())
+        {
+            string loaderType = "QuadrupleCLIPLoader";
+            if (getT5XXLModel().EndsWith(".gguf") || getLlama31_8b_Model().EndsWith(".gguf"))
+            {
+                loaderType = "QuadrupleCLIPLoaderGGUF";
+            }
+            string quadClipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name1"] = getClipLModel(),
+                ["clip_name2"] = getClipGModel(),
+                ["clip_name3"] = getT5XXLModel(),
+                ["clip_name4"] = getLlama31_8b_Model()
+            });
+            LoadingClip = [quadClipLoader, 0];
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
         else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
         {
             string loaderType = "CLIPLoader";
@@ -1174,7 +1203,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsWanVideo())
+            else if (IsHunyuanVideo() || IsWanVideo() || IsHiDream())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
@@ -1608,7 +1637,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux())
+        else if (IsSD3() || IsFlux() || IsHiDream())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {

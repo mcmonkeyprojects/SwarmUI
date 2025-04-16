@@ -16,6 +16,7 @@
 [AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
 [Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Modern, Decent Quality |
+[HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Modern, High Quality, very memory intense |
 
 - Video models are in [Video Model Support](/docs/Video%20Model%20Support.md)
 
@@ -282,6 +283,32 @@ Parameters and usage is the same as any other normal model.
         - Quick initial testing shows that raising steps high doesn't work any particularly different on this model than others, but the model at SigmaShift=6 produces some noise artifacts at regular 20 steps, raising closer to 40 cuts those out.
     - **Renorm CFG:** Lumina 2 reference code sets a new advanced parameter `Renorm CFG` to 1. This is available in Swarm under `Advanced Sampling`.
         - The practical difference is subjective and hard to predict, but enabling it seems to tend towards more fine detail
+
+# HiDream-i1
+
+- HiDream-i1 Models are supported in SwarmUI.
+    - You can pick Full, Dev, or Fast variant
+        - **Full:** Uses standard CFG and step counts, no distillation or other tricks. Slowest option, best quality.
+        - **Dev:** Uses CFG=1 distillation but standard step counts, akin to Flux-Dev. Best middle ground option.
+        - **Fast:** Uses CFG=1 and low step count distillation, akin to Flux-Schnell. Best for speed focus, at cost of quality.
+    - The models are 17B, which is massive, so you'll likely prefer a quantized version.
+        - Dev model gguf quant: <https://huggingface.co/city96/HiDream-I1-Dev-gguf>
+        - Full model gguf quant: <https://huggingface.co/city96/HiDream-I1-Full-gguf>
+        - `Q6_K` is best accuracy on high VRAM, but `Q4_K_S` cuts VRAM requirements while still being very close to original quality, other variants shouldn't be used normally
+        - Comfy Org's fp8 and fat bf16 versions: <https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/tree/main/split_files/diffusion_models>
+        - Goes in `(Swarm)/Models/diffusion_models`
+        - All models share the same architecture identifiers. Make sure to configure parameters appropriately for the specific variant you're using (CFG and Steps).
+    - HiDream uses the Flux VAE, it will be autodownloaded for you if not already present
+    - HiDream uses a quad-textencoder of CLIP L, CLIP G, T5-XXL, and LLaMA-3.1-8B (this is unhinged I'm so sorry for your RAM size)
+        - These will be autodownloaded for you if not already present
+- Parameters:
+    - **CFG Scale:** HiDream Full uses standard standard CFG ranges (eg 6), HiDream Dev and Fast use CFG=1
+    - **Steps:** HiDream Full and Dev use standard step counts (eg 20), HiDream Fast uses low counts (eg 8)
+        - Official HiDream recommendation however is: Full=50, Dev=28, Fast=16.
+    - **Sampler and Scheduler:** Standard samplers/schedulers work. Defaults to `Euler` and `Normal`
+        - The dev model is more open to weirder samplers like `LCM`, but not needed
+    - **Sigma Shift:** HiDream Full and Fast recommend Shift of 3, but for Dev they recommend 6.
+        - The default is 3. Because Full is not autodetected, you will want to manually change Sigma Shift to 6 when using full.
 
 # Video Models
 
