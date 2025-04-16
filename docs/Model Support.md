@@ -25,24 +25,37 @@
 - **Censored?** is tested by generating eg "a photo of a naked woman" on the model.
     - This test only refers to the base models, finetunes can add nudity and other "risque" content back in.
     - Most base models will not generate genitalia, and have limited quality with other body parts and poses. Every popular model has finetunes available to add those capabilities, if you want them.
+        - Sometimes it's not even intentional censorship, just the simple fact that broad base models aren't good at any one thing - so, again, content-specific finetunes fix that.
+    - Model censorship can take other forms (eg does it recognize names of celebrities/artists/brands, can it do gore, etc.) so if a model sounds right to you you may want do your own testing to see if it's capable of the type of content you like
     - "No" means it generates what was asked,
     - "Minimal" means it's eg missing genitals but otherwise complete,
-    - "Partial" means it's clearly undertrained at NSFW content (eg difficult to prompt for or poor quality body),
+    - "Partial" means it's clearly undertrained at NSFW content (eg difficult to prompt for or poor quality body) but doesn't explicitly refuse,
     - "Yes" means it's entirely incapable or provides an explicit refusal response.
 - **Quality/Status** is a loose vibe-based metric to imply whether it's worth using in the current year or not.
 
 - Video models are in [Video Model Support](/docs/Video%20Model%20Support.md)
 
-- [Alternative Model Formats](#alternative-model-formats)
-    - [BnB NF4](#bits-and-bytes-nf4-format-models)
-    - [GGUF](#gguf-quantized-models)
-    - [Nunchaku](#nunchaku-mit-han-lab)
-    - [TensorRT](#tensorrt)
+# Current Recommendations
+
+Image model(s) most worth using, as of April 2025:
+
+- Flux Dev in Nunchaku format for best speed/quality combo
+- SDXL finetunes for best broad availability of finetunes and loras, at high speed (with limited quality), especially for anime-style usage
+- HiDream for best base model quality and least censorship, at cost of speed (especially with limited PC hardware)
 
 # General Info
 
 - Swarm natively supports `.safetensors` format models with [ModelSpec](https://github.com/Stability-AI/ModelSpec) metadata
     - can also import metadata from some legacy formats used by other UIs (auto webui thumbnails, matrix jsons, etc)
+    - can also fallback to a `.swarm.json` sidecar file for other supported file formats
+- Swarm can load other model file formats, see [Alternative Model Formats](#alternative-model-formats)
+    - Notably, *quantization* technique formats. "Quantization" means shrinking a model to use lower memory than is normally reasonable.
+        - Normal sizes are named like "BF16", "FP16", "FP8", ... ("BF"/"FP" prefixes are standard formats)
+        - Quantized sizes have names like "NF4", "Q4_K_M", "Q8", "SVDQ-4", "Int-4", ("Q" means quantized, but there are technique-specific labels)
+    - [BnB NF4](#bits-and-bytes-nf4-format-models) (not recommended, quantization technique)
+    - [GGUF](#gguf-quantized-models) (recommended, good quality quantization technique, slower speed)
+    - [Nunchaku](#nunchaku-mit-han-lab) (very recommended, great quality high speed quantization technique)
+    - [TensorRT](#tensorrt) (not recommended, speedup technique)
 
 # Image Models
 
