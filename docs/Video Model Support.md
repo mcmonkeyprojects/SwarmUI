@@ -1,15 +1,15 @@
 # Video Model Type Support In SwarmUI
 
-| Model | Year | Author | Scale | Type | Quality/Status |
+| Model | Year | Author | Scale | Type | Censored? | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- |
-[Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Outdated |
-[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | Modern, Decent Quality |
-[Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | Outdated |
-[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | Modern, Fast but ugly |
-[Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | Modern, very slow, poor quality |
-[Wan 2.1](#wan-21) | 2025 | Alibaba - Wan-AI | 1.3B and 14B | Text/Image 2Video | Modern, Incredible Quality |
+[Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
+[Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
+[Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
+[Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
+[Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
+[Wan 2.1](#wan-21) | 2025 | Alibaba - Wan-AI | 1.3B and 14B | Text/Image 2Video | No | Modern, Incredible Quality |
 
-Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md)
+Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above
 
 **Unsupported:**
 - Below are some video models that are not natively supported in SwarmUI's `Generate` tab, but are available to use via the `Comfy Workflow` and `Simple` tabs:

@@ -1,22 +1,35 @@
 # Model Type Support In SwarmUI
 
-| Model | Architecture | Year | Author | Scale | Quality/Status |
-| ----  | ---- | ---- | ---- | ---- | ---- |
-[Stable Diffusion v1 and v2](#stable-diffusion-v1-and-v2) | unet | 2022 | Stability AI | 1B | Outdated |
-[Stable Diffusion v1 Inpainting Models](#stable-diffusion-v1-inpainting-models) | unet | 2022 | RunwayML | 1B | Outdated |
-[Stable Diffusion XL](#stable-diffusion-xl) | unet | 2023 | Stability AI | 2B | Older but some finetunes are worth using |
-[SD1 and SDXL Turbo Variants](#sd1-and-sdxl-turbo-variants) | unet | 2023 | Stability AI and others | 2B | Outdated |
-[Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Outdated, prefer 3.5 |
-[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Modern, High Quality |
-[Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Modern, Good Quality |
-[Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Outdated |
-[Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Outdated |
-[PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | Outdated |
-[Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | Modern, Low Quality |
-[AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Outdated |
-[Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Modern, High Quality |
-[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Modern, Decent Quality |
-[HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Modern, High Quality, very memory intense |
+| Model | Architecture | Year | Author | Scale | Censored? | Quality/Status |
+| ----  | ---- | ---- | ---- | ---- | ---- | ---- |
+[Stable Diffusion v1 and v2](#stable-diffusion-v1-and-v2) | unet | 2022 | Stability AI | 1B | No | Outdated |
+[Stable Diffusion v1 Inpainting Models](#stable-diffusion-v1-inpainting-models) | unet | 2022 | RunwayML | 1B | No | Outdated |
+[Stable Diffusion XL](#stable-diffusion-xl) | unet | 2023 | Stability AI | 2B | Partial | Older but some finetunes are worth using |
+[SD1 and SDXL Turbo Variants](#sd1-and-sdxl-turbo-variants) | unet | 2023 | Stability AI and others | 2B | Partial | Outdated |
+[Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Yes | Outdated, prefer 3.5 |
+[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Partial | Modern, High Quality |
+[Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Modern, Good Quality |
+[Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Partial | Outdated |
+[Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Partial | Outdated |
+[PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | ? | Outdated |
+[Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Modern, Low Quality |
+[AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
+[Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Modern, High Quality |
+[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Decent Quality |
+[HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
+
+- **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
+- **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
+    - One parameter is one number value, so for example in fp16 (16 bit, ie 2 bytes per number), a 2B model is 4 gigabytes. In fp8 (8 bit, ie 1 byte per number), a 2B model is 2 gigabytes.
+    - If you often use fp8 or q8 models, just read the "B" as "gigabytes" for a good approximation
+- **Censored?** is tested by generating eg "a photo of a naked woman" on the model.
+    - This test only refers to the base models, finetunes can add nudity and other "risque" content back in.
+    - Most base models will not generate genitalia, and have limited quality with other body parts and poses. Every popular model has finetunes available to add those capabilities, if you want them.
+    - "No" means it generates what was asked,
+    - "Minimal" means it's eg missing genitals but otherwise complete,
+    - "Partial" means it's clearly undertrained at NSFW content (eg difficult to prompt for or poor quality body),
+    - "Yes" means it's entirely incapable or provides an explicit refusal response.
+- **Quality/Status** is a loose vibe-based metric to imply whether it's worth using in the current year or not.
 
 - Video models are in [Video Model Support](/docs/Video%20Model%20Support.md)
 
