@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Page is loading...";
     GeneratePageModel pageModel = new(HttpContext);
+    string doCheckForUpdates = Program.ServerSettings.Maintenance.CheckForUpdates ? "true" : "false";
 }
 @section Header {
     <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
@@ -25,6 +26,7 @@
     window.alwaysRefreshOnLoad = @pageModel.AlwaysRefreshOnLoad;
     window.instanceTitle = "@pageModel.InstanceTitle";
     window.comfy_features = {};
+    window.checkForUpdatesAutomatically = @doCheckForUpdates;
     @foreach (InstallableFeatures.ComfyInstallableFeature feature in InstallableFeatures.ComfyFeatures.Values)
     {
         <text>

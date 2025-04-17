@@ -582,7 +582,13 @@ function server_clear_sysram() {
 function serverResourceLoop() {
     if (isVisible(getRequiredElementById('Server-Info'))) {
         if (!hasEverCheckedForUpdates) {
-            check_for_updates();
+            if (window.checkForUpdatesAutomatically) {
+                check_for_updates();
+            }
+            else {
+                hasEverCheckedForUpdates = true;
+                getRequiredElementById('updates_available_notice_area').innerText = 'Automatic update checks disabled in Server Configuration';
+            }
         }
         genericRequest('GetServerResourceInfo', {}, data => {
             let target = getRequiredElementById('resource_usage_area');
