@@ -84,7 +84,7 @@ public class Program
     public static string DataDir = "Data";
 
     /// <summary>If a version update is available, this is the message.</summary>
-    public static string VersionUpdateMessage = null;
+    public static string VersionUpdateMessage = null, VersionUpdateMessageShort = null;
 
     /// <summary>Date of the current git commit, if known.</summary>
     public static string CurrentGitDate = null;
@@ -178,8 +178,8 @@ public class Program
                 {
                     string url = $"{Utilities.RepoRoot}/releases/tag/{newer[0]}";
                     Logs.Warning($"A new version of SwarmUI is available: {newer[0]}! You are running version {Utilities.Version}, this is {newer.Length} release(s) behind. See release notes at {url}");
-                    VersionUpdateMessage = $"Update available: {newer[0]} (you are running {Utilities.Version}, this is {newer.Length} release(s) behind):\nSee release notes at <a target=\"_blank\" href=\"{url}\">{url}</a>"
-                        + "\nThere is a button available to automatically apply the update on the <a href=\"#Settings-Server\" onclick=\"getRequiredElementById('servertabbutton').click();getRequiredElementById('serverinfotabbutton').click();\">Server Info Tab</a>.";
+                    VersionUpdateMessageShort = $"Update available: {newer[0]} (you are running {Utilities.Version}, this is {newer.Length} release(s) behind):\nSee release notes at <a target=\"_blank\" href=\"{url}\">{url}</a>";
+                    VersionUpdateMessage = $"{VersionUpdateMessageShort}\nThere is a button available to automatically apply the update on the <a href=\"#Settings-Server\" onclick=\"getRequiredElementById('servertabbutton').click();getRequiredElementById('serverinfotabbutton').click();\">Server Info Tab</a>.";
                 }
                 else
                 {

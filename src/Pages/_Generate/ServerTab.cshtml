@@ -109,18 +109,31 @@
             }
         </div>
         <div class="card-collection-inline">
-            <div class="card border-danger mb-3 card-center-container" data-requiredpermission="shutdown,restart">
+            <div class="card border-secondary mb-3 card-center-container" id="server_updates_card" data-requiredpermission="restart" style="min-width: 400px;">
+                <div class="card-header translate">Update</div>
+                <div class="card-body">
+                    <span class="card-text">
+                        @if (Program.VersionUpdateMessageShort is not null)
+                        {
+                            <span>@Program.VersionUpdateMessageShort</span>
+                        }
+                        <span id="updates_available_notice_area" style="white-space:pre-wrap">(Loading...)</span>
+                        <br><button class="basic-button translate" onclick="check_for_updates()">Check For Updates</button>
+                        <hr>
+                        <input class="form-check-input" type="checkbox" id="server_update_include_extensions" checked> <label for="server_update_include_extensions" class="translate">Include Extensions</label>
+                        <br>
+                        <br><button class="basic-button danger-button translate" onclick="update_and_restart_server()">Update and Restart Server</button>
+                        <span id="update_server_notice_area"></span>
+                    </span>
+                </div>
+            </div>
+            <div class="card border-danger mb-3 card-center-container" data-requiredpermission="shutdown">
                 <div class="card-header translate">Shutdown</div>
                 <div class="card-body">
                     <p class="card-text">
                         <span data-requiredpermission="shutdown">
                         <span class="translate">If you want to shut down the server, click the button below.</span>
                         <br><button class="basic-button danger-button translate" onclick="shutdown_server()">Shutdown Server</button>
-                        </span>
-                        <br>
-                        <span data-requiredpermission="restart">
-                        <br><span class="translate">Or you can update and restart if there are updates available:</span>
-                        <br><button class="basic-button danger-button translate" onclick="update_and_restart_server()">Update and Restart Server</button>
                         </span>
                         <span id="shutdown_notice_area"></span>
                     </p>

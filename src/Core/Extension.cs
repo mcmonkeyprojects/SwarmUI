@@ -28,7 +28,7 @@ public abstract class Extension
     /// <summary>URL to the readme or GitHub repo for this extension.</summary>
     public string ReadmeURL = "";
 
-    /// <summary>If true, this is a core extension.</summary>
+    /// <summary>If true, this is a core (built-in) extension.</summary>
     public bool IsCore = false;
 
     /// <summary>If true, this extension is capable of automatic updates.</summary>

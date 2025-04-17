@@ -29,6 +29,7 @@ public static class AdminAPI
         API.RegisterAPICall(DebugLanguageAdd, true, Permissions.AdminDebug);
         API.RegisterAPICall(DebugGenDocs, true, Permissions.AdminDebug);
         API.RegisterAPICall(ListConnectedUsers, false, Permissions.ReadServerInfoPanels);
+        API.RegisterAPICall(CheckForUpdates, false, Permissions.Restart);
         API.RegisterAPICall(UpdateAndRestart, true, Permissions.Restart);
         API.RegisterAPICall(InstallExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(UpdateExtension, true, Permissions.ManageExtensions);
@@ -467,12 +468,83 @@ public static class AdminAPI
         return new JObject() { ["users"] = list };
     }
 
+    [API.APIDescription("Do a scan for any available updates to SwarmUI, extensions, or backends.",
+        """
+            "server_updates_count": 0,
+            "server_updates_preview": ["name1", ..., "name6"], // capped to just a few
+            "extension_updates": ["name1", ...],
+            "backend_updates": ["name1", ...]
+        """)]
+    public static async Task<JObject> CheckForUpdates(Session session)
+    {
+        Logs.Debug($"User {session.User.UserID} requested check for updates.");
+        List<Task> fetchTasks = [];
+        LockObject locker = new();
+        List<string> extensions = [];
+        int serverUpdates = 0;
+        List<string> updatesPreview = [];
+        List<string> backendUpdates = [];
+        fetchTasks.Add(Utilities.RunCheckedTask(async () =>
+        {
+            await Utilities.RunGitProcess("fetch");
+            string[] commits = (await Utilities.RunGitProcess("rev-list HEAD..origin")).Trim().Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            serverUpdates = commits.Length;
+            if (commits.Length > 6)
+            {
+                commits = [.. commits[0..2], "...", .. commits[^3..]];
+            }
+            for (int i = 0; i < commits.Length; i++)
+            {
+                if (commits[i].Length > 5)
+                {
+                    string showOutput = await Utilities.RunGitProcess("show --no-patch --format=%h^%ci^%s HEAD");
+                    string[] parts = showOutput.SplitFast('^', 2);
+                    DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
+                    string dateFormat = $"{date:yyyy-MM-dd HH:mm:ss}";
+                    commits[i] = $"{dateFormat}: {parts[2]}";
+                }
+            }
+            updatesPreview = [.. commits];
+        }));
+        foreach (Extension extension in Program.Extensions.Extensions.Where(e => !e.IsCore))
+        {
+            Extension ext = extension; // lambda capture
+            fetchTasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
+                await Utilities.RunGitProcess("fetch", path);
+                string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
+                string remoteHash = (await Utilities.RunGitProcess("rev-parse origin", path)).Trim();
+                Logs.Debug($"Update checker: current hash for {ext.ExtensionName} is {priorHash}, origin hash is {remoteHash}");
+                if (priorHash != remoteHash)
+                {
+                    lock (locker)
+                    {
+                        extensions.Add(ext.ExtensionName);
+                    }
+                }
+            }));
+        }
+        await Task.WhenAll(fetchTasks);
+        Logs.Debug($"Update check complete - {serverUpdates} Swarm commits, {extensions.Count} extensions, {backendUpdates.Count} backends.");
+        // TODO: Backends
+        return new()
+        {
+            ["server_updates_count"] = serverUpdates,
+            ["server_updates_preview"] = JArray.FromObject(updatesPreview),
+            ["extension_updates"] = JArray.FromObject(extensions),
+            ["backend_updates"] = JArray.FromObject(backendUpdates)
+        };
+    }
+
     [API.APIDescription("Causes swarm to update, then close and restart itself. If there's no update to apply, won't restart.",
         """
             "success": true, // or false if not updated
             "result": "No changes found." // or any other applicable human-readable English message
         """)]
     public static async Task<JObject> UpdateAndRestart(Session session,
+        [API.APIParameter("True to also update any extensions.")] bool updateExtensions = false,
+        [API.APIParameter("True to also update any backends.")] bool updateBackends = false, // TODO: Impl
         [API.APIParameter("True to always rebuild and restart even if there's no visible update.")] bool force = false)
     {
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
@@ -483,8 +555,30 @@ public static class AdminAPI
             return new JObject() { ["error"] = "Git pull failed because you have local changes to source files.\nPlease remove them, or manually run 'git pull --autostash', or 'git fetch origin && git checkout -f master' in the SwarmUI folder." };
         }
         string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-        Logs.Debug($"Update checker: prior hash was {priorHash}, new hash is {localHash}");
-        if (priorHash == localHash && !force)
+        Logs.Debug($"Updater: prior hash was {priorHash}, new hash is {localHash}");
+        long updates = localHash != priorHash ? 1 : 0;
+        List<Task> pullTasks = [];
+        if (updateExtensions)
+        {
+            foreach (Extension extension in Program.Extensions.Extensions.Where(e => !e.IsCore))
+            {
+                Extension ext = extension; // lambda capture
+                pullTasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
+                    string priorExtHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
+                    await Utilities.RunGitProcess("pull", path);
+                    string localExtHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
+                    Logs.Debug($"Updater: prior hash for {ext.ExtensionName} was {priorHash}, new hash is {localHash}");
+                    if (priorExtHash != localExtHash)
+                    {
+                        Interlocked.Increment(ref updates);
+                    }
+                }));
+            }
+        }
+        await Task.WhenAll(pullTasks);
+        if (Interlocked.Read(ref updates) == 0 && !force)
         {
             return new JObject() { ["success"] = false, ["result"] = "No changes found." };
         }

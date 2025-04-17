@@ -520,15 +520,50 @@ function shutdown_server() {
     }
 }
 
-let restartConfirmationText = translatable("Are you sure you want to update and restart SwarmUI?");
 let checkingForUpdatesText = translatable("Checking for updates...");
+let updatesAvailableText = translatable("update(s) available for SwarmUI:");
+let extensionsAvailableText = translatable("extensions can be updated:");
+
+let hasEverCheckedForUpdates = false;
+
+function check_for_updates() {
+    let updatesCard = getRequiredElementById('server_updates_card');
+    let noticeArea = getRequiredElementById('updates_available_notice_area');
+    noticeArea.innerText = checkingForUpdatesText.get();
+    hasEverCheckedForUpdates = true;
+    genericRequest('CheckForUpdates', {}, data => {
+        let text = '';
+        if (data.server_updates_count > 0) {
+            text += `${data.server_updates_count} ${updatesAvailableText.get()} "${data.server_updates_preview.join('", "')}"`;
+        }
+        if (data.extension_updates.length > 0) {
+            text += `\n${data.extension_updates.length} ${extensionsAvailableText.get()} ${data.extension_updates.join(', ')}`;
+        }
+        // TODO: Backend updates
+        updatesCard.classList.remove('border-secondary');
+        updatesCard.classList.remove('border-success');
+        if (!text) {
+            text = 'No updates available';
+            updatesCard.classList.add('border-secondary');
+        }
+        else {
+            updatesCard.classList.add('border-success');
+        }
+        noticeArea.innerText = text.trim();
+    }, 0, e => {
+        noticeArea.innerText = e;
+    });
+}
+
+let restartConfirmationText = translatable("Are you sure you want to update and restart SwarmUI?");
 
 function update_and_restart_server() {
-    let noticeArea = getRequiredElementById('shutdown_notice_area');
+    let noticeArea = getRequiredElementById('update_server_notice_area');
+    let includeExtensions = getRequiredElementById('server_update_include_extensions').checked;
     noticeArea.style.display = 'block';
     if (confirm(restartConfirmationText.get())) {
         noticeArea.innerText = checkingForUpdatesText.get();
-        genericRequest('UpdateAndRestart', {}, data => {
+        genericRequest('UpdateAndRestart', { 'updateExtensions': includeExtensions }, data => {
             noticeArea.innerText = data.result;
         }, 0, e => {
             noticeArea.innerText = e;
@@ -542,4 +577,46 @@ function server_clear_vram() {
 
 function server_clear_sysram() {
     genericRequest('FreeBackendMemory', { 'system_ram': true }, data => {});
+}
+
+function serverResourceLoop() {
+    if (isVisible(getRequiredElementById('Server-Info'))) {
+        if (!hasEverCheckedForUpdates) {
+            check_for_updates();
+        }
+        genericRequest('GetServerResourceInfo', {}, data => {
+            let target = getRequiredElementById('resource_usage_area');
+            let priorWidth = 0;
+            if (target.style.minWidth) {
+                priorWidth = parseFloat(target.style.minWidth.replaceAll('px', ''));
+            }
+            target.style.minWidth = `${Math.max(priorWidth, target.offsetWidth)}px`;
+            if (data.gpus) {
+                let html = '<table class="simple-table"><tr><th>Resource</th><th>ID</th><th>Temp</th><th>Usage</th><th>Mem Usage</th><th>Used Mem</th><th>Free Mem</th><th>Total Mem</th></tr>';
+                html += `<tr><td>CPU</td><td>...</td><td>...</td><td>${Math.round(data.cpu.usage * 100)}% (${data.cpu.cores} cores)</td><td>${Math.round(data.system_ram.used / data.system_ram.total * 100)}%</td><td>${fileSizeStringify(data.system_ram.used)}</td><td>${fileSizeStringify(data.system_ram.free)}</td><td>${fileSizeStringify(data.system_ram.total)}</td></tr>`;
+                for (let gpu of Object.values(data.gpus)) {
+                    html += `<tr><td>${gpu.name}</td><td>${gpu.id}</td><td>${gpu.temperature}&deg;C</td><td>${gpu.utilization_gpu}% Core, ${gpu.utilization_memory}% Mem</td><td>${Math.round(gpu.used_memory / gpu.total_memory * 100)}%</td><td>${fileSizeStringify(gpu.used_memory)}</td><td>${fileSizeStringify(gpu.free_memory)}</td><td>${fileSizeStringify(gpu.total_memory)}</td></tr>`;
+                }
+                html += '</table>';
+                target.innerHTML = html;
+            }
+        });
+        genericRequest('ListConnectedUsers', {}, data => {
+            let target = getRequiredElementById('connected_users_list');
+            let priorWidth = 0;
+            if (target.style.minWidth) {
+                priorWidth = parseFloat(target.style.minWidth.replaceAll('px', ''));
+            }
+            target.style.minWidth = `${Math.max(priorWidth, target.offsetWidth)}px`;
+            let html = '<table class="simple-table"><tr><th>Name</th><th>Last Active</th><th>Active Sessions</th></tr>';
+            for (let user of data.users) {
+                html += `<tr><td>${user.id}</td><td>${user.last_active}</td><td>${user.active_sessions.map(sess => `${sess.count}x from ${sess.address}`).join(', ')}</td></tr>`;
+            }
+            html += '</table>';
+            target.innerHTML = html;
+        });
+    }
+    if (isVisible(backendsListView)) {
+        backendLoopUpdate();
+    }
 }
