@@ -405,7 +405,7 @@ public class Program
                     {
                         continue;
                     }
-                    result.Add(patched, patched);
+                    result[patched] = patched;
                     sfCount++;
                 }
                 rootCount++;
