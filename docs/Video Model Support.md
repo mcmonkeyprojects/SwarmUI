@@ -38,6 +38,8 @@ Video model(s) most worth using, as of April 2025:
 
 ## Basic Usage
 
+There's a full step by step guide for video model usage here: <https://github.com/mcmonkeyprojects/SwarmUI/discussions/716>
+
 ### Text-To-Video Models
 
 - Select the video model in the usual `Models` sub-tab, and configure parameters as usual, and hit Generate.
@@ -211,6 +213,7 @@ Video model(s) most worth using, as of April 2025:
 - If you installed the `SkipLayerGuidanceExtension`, Find the `Skip Layer Guidance` parameter group in advanced
     - Set `[SLG] Scale` to `1`
     - Leave `Rescaling Scale` and `Layer Target` unchecked, leave the start/end percents default
+- LTX has some official tips and info on their HF page <https://huggingface.co/Lightricks/LTX-Video>
 
 ### LTXV Image To Video
 

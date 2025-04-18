@@ -281,7 +281,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.14.6";
+    public static string SwarmValidatedFrontendVersion = "1.16.8";
 
     public override async Task Init()
     {
@@ -394,9 +394,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         else
         {
             AddLoadStatus($"Will validate required libs...");
+            string[] reqsRaw = [.. File.ReadAllLines(Path.GetDirectoryName(Settings.StartScript) + "/requirements.txt").Where(s => !string.IsNullOrWhiteSpace(s) && !s.Trim().StartsWith('#'))];
+            Dictionary<string, Version> reqs = reqsRaw.Select(s => s.Replace(">=", "==").Replace("<=", "==").Split("=="))
+                                                .Where(pair => RequirementPartMatcher.IsOnlyMatches(pair[0]) && (pair.Length == 1 || RequirementPartMatcher.IsOnlyMatches(pair[1])))
+                                                .ToDictionary(pair => pair[0], pair => pair.Length == 1 ? null : Version.Parse(pair[1]));
             string[] dirs = [.. Directory.GetDirectories($"{lib}").Select(f => f.Replace('\\', '/').AfterLast('/'))];
             string[] distinfos = [.. dirs.Where(d => d.EndsWith(".dist-info"))];
-            HashSet<string> libs = [.. dirs.Select(d => d.Before('-'))];
+            HashSet<string> libs = [.. dirs.Select(d => d.Before('-').ToLowerFast())];
             async Task install(string libFolder, string pipName)
             {
                 if (libs.Contains(libFolder))
@@ -443,7 +447,15 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             string frontendVersion = getVers("comfyui_frontend_package");
             if (doFixFrontend && frontendVersion is not null && frontendVersion != SwarmValidatedFrontendVersion)
             {
-                await update("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}");
+                await update("comfyui_frontend_package", $"comfyui-frontend-package=={SwarmValidatedFrontendVersion}");
+            }
+            if (reqs.TryGetValue("comfyui_frontend_package", out Version frontVers) && $"{frontVers}" != SwarmValidatedFrontendVersion)
+            {
+                Logs.Warning($"(Developer Notice) ComfyUI Frontend target version is {frontVers}, but validated version is {SwarmValidatedFrontendVersion}");
+            }
+            if (doFixFrontend && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers))
+            {
+                await install("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
             }
             string ultralyticsVers = getVers("ultralytics");
             if (ultralyticsVers is not null && Version.Parse(ultralyticsVers) < Version.Parse(UltralyticsVersion))
@@ -511,11 +523,21 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     await install("nunchaku", url);
                 }
             }
+            foreach (string req in reqs.Keys)
+            {
+                if (!libs.Contains(req.Replace('-', '_').ToLowerFast()))
+                {
+                    Logs.Warning($"(Developer Warning) ComfyUI required package '{req}' not found in lib folder. May be an install error, or may be a new dependency.");
+                }
+            }
             AddLoadStatus("Done validating required libs.");
         }
         AddLoadStatus("Starting self-start ComfyUI process...");
         await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart);
     }
+
+    /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>
+    public static AsciiMatcher RequirementPartMatcher = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + ".-_");
 
     /// <summary>
     /// Version of Ultralytics pip package to use.
