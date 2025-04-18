@@ -328,7 +328,7 @@ Parameters and usage is the same as any other normal model.
         - Goes in `(Swarm)/Models/diffusion_models`
         - All models share the same architecture identifiers. Make sure to configure parameters appropriately for the specific variant you're using (CFG and Steps).
     - HiDream uses the Flux VAE, it will be autodownloaded for you if not already present
-    - HiDream uses a quad-textencoder of CLIP L, CLIP G, T5-XXL, and LLaMA-3.1-8B (this is unhinged I'm so sorry for your RAM size)
+    - HiDream uses a quad-textencoder of Long-CLIP L, Long-CLIP G, T5-XXL, and LLaMA-3.1-8B (this is unhinged I'm so sorry for your RAM size)
         - These will be autodownloaded for you if not already present
 - Parameters:
     - **CFG Scale:** HiDream Full uses standard standard CFG ranges (eg 6), HiDream Dev and Fast use CFG=1

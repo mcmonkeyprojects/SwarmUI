@@ -764,6 +764,14 @@ public class WorkflowGenerator
             }
             return requireClipModel("clip_g.safetensors", "https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/text_encoder_2/model.fp16.safetensors", "ec310df2af79c318e24d20511b601a591ca8cd4f1fce1d8dff822a356bcdb1f4", T2IParamTypes.ClipGModel);
         }
+        string getHiDreamClipLModel()
+        {
+            return requireClipModel("long_clip_l_hi_dream.safetensors", "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/clip_l_hidream.safetensors", "706fdb88e22e18177b207837c02f4b86a652abca0302821f2bfa24ac6aea4f71", T2IParamTypes.ClipLModel);
+        }
+        string getHiDreamClipGModel()
+        {
+            return requireClipModel("long_clip_g_hi_dream.safetensors", "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/clip_g_hidream.safetensors", "3771e70e36450e5199f30bad61a53faae85a2e02606974bcda0a6a573c0519d5", T2IParamTypes.ClipGModel);
+        }
         string getLlava3Model()
         {
             return requireClipModel("llava_llama3_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors", "2f0c3ad255c282cead3f078753af37d19099cafcfc8265bbbd511f133e7af250", T2IParamTypes.LLaVAModel);
@@ -1076,8 +1084,8 @@ public class WorkflowGenerator
             }
             string quadClipLoader = CreateNode(loaderType, new JObject()
             {
-                ["clip_name1"] = getClipLModel(),
-                ["clip_name2"] = getClipGModel(),
+                ["clip_name1"] = getHiDreamClipLModel(),
+                ["clip_name2"] = getHiDreamClipGModel(),
                 ["clip_name3"] = getT5XXLModel(),
                 ["clip_name4"] = getLlama31_8b_Model()
             });
