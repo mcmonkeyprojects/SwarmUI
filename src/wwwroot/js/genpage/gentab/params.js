@@ -1101,9 +1101,9 @@ function hideUnsupportableParams() {
                 groups[param.group.id] = groupData;
                 if (show) {
                     groupData.visible++;
-                }
-                if (isAltered) {
-                    groupData.altered++;
+                    if (isAltered) {
+                        groupData.altered++;
+                    }
                 }
             }
         }
