@@ -257,9 +257,9 @@ public class WorkflowGeneratorSteps
                         {
                             type = "wan2.1_t2v_14B";
                         }
-                        else if (arch == "wan-2_1-image2video-14b")
+                        else if (arch == "wan-2_1-image2video-14b" || arch == "wan-2_1-flf2v-14b")
                         {
-                            if (g.FinalLoadedModel.Name.Contains("720p") || g.FinalLoadedModel.StandardWidth == 960)
+                            if (g.FinalLoadedModel.Name.Contains("720p") || g.FinalLoadedModel.StandardWidth == 960 || arch == "wan-2_1-flf2v-14b")
                             {
                                 type = "wan2.1_i2v_720p_14B";
                             }

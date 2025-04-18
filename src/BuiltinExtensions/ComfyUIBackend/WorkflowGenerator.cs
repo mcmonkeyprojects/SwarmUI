@@ -1839,22 +1839,29 @@ public class WorkflowGenerator
             (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
             posCond = CreateConditioning(prompt, clip, vidModel, true);
             negCond = CreateConditioning(negPrompt, clip, vidModel, false);
-            string condNode = CreateNode("LTXVImgToVideo", new JObject()
+            if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
-                ["positive"] = posCond,
-                ["negative"] = negCond,
-                ["vae"] = vae,
-                ["image"] = FinalImageOut,
-                ["width"] = width,
-                ["height"] = height,
-                ["length"] = frames,
-                ["batch_size"] = 1,
-                ["image_noise_scale"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
-            });
+                throw new SwarmReadableErrorException("LTX-V end-frame is TODO");
+            }
+            else
+            {
+                string condNode = CreateNode("LTXVImgToVideo", new JObject()
+                {
+                    ["positive"] = posCond,
+                    ["negative"] = negCond,
+                    ["vae"] = vae,
+                    ["image"] = FinalImageOut,
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["length"] = frames,
+                    ["batch_size"] = 1,
+                    ["image_noise_scale"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
+                });
+                posCond = [condNode, 0];
+                negCond = [condNode, 1];
+                latent = [condNode, 2];
+            }
             defCfg = 3;
-            posCond = [condNode, 0];
-            negCond = [condNode, 1];
-            latent = [condNode, 2];
             string ltxvcond = CreateNode("LTXVConditioning", new JObject()
             {
                 ["positive"] = posCond,
@@ -1875,15 +1882,23 @@ public class WorkflowGenerator
             (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
             posCond = CreateConditioning(prompt, clip, vidModel, true);
             negCond = CreateConditioning(negPrompt, clip, vidModel, false);
-            string latentNode = CreateNode("CosmosImageToVideoLatent", new JObject()
+            if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
-                ["vae"] = vae,
-                ["start_image"] = FinalImageOut,
-                ["width"] = width,
-                ["height"] = height,
-                ["length"] = frames,
-                ["batch_size"] = 1
-            });
+                throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
+            }
+            else
+            {
+                string latentNode = CreateNode("CosmosImageToVideoLatent", new JObject()
+                {
+                    ["vae"] = vae,
+                    ["start_image"] = FinalImageOut,
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["length"] = frames,
+                    ["batch_size"] = 1
+                });
+                latent = [latentNode, 0];
+            }
             string ltxvcond = CreateNode("LTXVConditioning", new JObject() // (Despite the name, this is just setting the framerate)
             {
                 ["positive"] = posCond,
@@ -1893,7 +1908,6 @@ public class WorkflowGenerator
             posCond = [ltxvcond, 0];
             negCond = [ltxvcond, 1];
             defCfg = 7;
-            latent = [latentNode, 0];
             defSampler = "res_multistep";
             defScheduler = "karras";
         }
@@ -1965,6 +1979,7 @@ public class WorkflowGenerator
             {
                 ["clip_name"] = targetName
             });
+            JArray clipLoaderNode = [clipLoader, 0];
             JArray imageIn = FinalImageOut;
             if (batchInd != -1 && batchLen != -1)
             {
@@ -1989,26 +2004,57 @@ public class WorkflowGenerator
             }
             string encoded = CreateNode("CLIPVisionEncode", new JObject()
             {
-                ["clip_vision"] = new JArray() { clipLoader, 0 },
+                ["clip_vision"] = clipLoaderNode,
                 ["image"] = encodeIn,
                 ["crop"] = "center"
             });
-            string img2vidNode = CreateNode("WanImageToVideo", new JObject()
+            if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
-                ["width"] = width,
-                ["height"] = height,
-                ["length"] = frames,
-                ["positive"] = posCond,
-                ["negative"] = negCond,
-                ["vae"] = vae,
-                ["start_image"] = imageIn,
-                ["clip_vision_output"] = new JArray() { encoded, 0 },
-                ["batch_size"] = 1
-            });
-            posCond = [img2vidNode, 0];
-            negCond = [img2vidNode, 1];
+                string endFrame = CreateLoadImageNode(videoEndFrame, T2IParamTypes.VideoEndFrame.Type.ID, true);
+                JArray endFrameNode = [endFrame, 0];
+                string encodedEnd = CreateNode("CLIPVisionEncode", new JObject()
+                {
+                    ["clip_vision"] = clipLoaderNode,
+                    ["image"] = endFrameNode,
+                    ["crop"] = "center"
+                });
+                string img2vidNode = CreateNode("WanFirstLastFrameToVideo", new JObject()
+                {
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["length"] = frames,
+                    ["positive"] = posCond,
+                    ["negative"] = negCond,
+                    ["vae"] = vae,
+                    ["start_image"] = imageIn,
+                    ["clip_vision_start_image"] = new JArray() { encoded, 0 },
+                    ["end_image"] = endFrameNode,
+                    ["clip_vision_end_image"] = new JArray() { encodedEnd, 0 },
+                    ["batch_size"] = 1
+                });
+                posCond = [img2vidNode, 0];
+                negCond = [img2vidNode, 1];
+                latent = [img2vidNode, 2];
+            }
+            else
+            {
+                string img2vidNode = CreateNode("WanImageToVideo", new JObject()
+                {
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["length"] = frames,
+                    ["positive"] = posCond,
+                    ["negative"] = negCond,
+                    ["vae"] = vae,
+                    ["start_image"] = imageIn,
+                    ["clip_vision_output"] = new JArray() { encoded, 0 },
+                    ["batch_size"] = 1
+                });
+                posCond = [img2vidNode, 0];
+                negCond = [img2vidNode, 1];
+                latent = [img2vidNode, 2];
+            }
             defCfg = 6;
-            latent = [img2vidNode, 2];
             defSampler = "euler";
             defScheduler = "simple";
         }
