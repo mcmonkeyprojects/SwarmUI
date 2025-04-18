@@ -1,7 +1,7 @@
 # Video Model Type Support In SwarmUI
 
 | Model | Year | Author | Scale | Type | Censored? | Quality/Status |
-| ----  | ---- | ---- | ---- | ---- | ---- |
+| ----  | ---- | ---- | ---- | ---- | ---- | ---- |
 [Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
