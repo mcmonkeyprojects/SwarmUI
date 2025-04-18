@@ -575,12 +575,12 @@ public class ComfyUIBackendExtension : Extension
             "lms///LMS (Linear Multi-Step)", "dpm_fast///DPM Fast (DPM without the DPM2 slowdown)", "dpm_adaptive///DPM Adaptive (Dynamic Steps)",
             "dpmpp_2s_ancestral///DPM++ 2S Ancestral (2nd Order Single-Step) (2x Slow)", "dpmpp_sde///DPM++ SDE (Stochastic / randomizing) (2x Slow)", "dpmpp_sde_gpu///DPM++ SDE, GPU Seeded (2x Slow)",
             "dpmpp_2m///DPM++ 2M (2nd Order Multi-Step)", "dpmpp_2m_sde///DPM++ 2M SDE", "dpmpp_2m_sde_gpu///DPM++ 2M SDE, GPU Seeded", "dpmpp_3m_sde///DPM++ 3M SDE (3rd Order Multi-Step)", "dpmpp_3m_sde_gpu///DPM++ 3M SDE, GPU Seeded",
-            "ddim///DDIM (Denoising Diffusion Implicit Models) (Identical to Euler)", "ddpm///DDPM (Denoising Diffusion Probabilistic Models)",
+            "ddim///DDIM (Denoising Diffusion Implicit Models) (Identical to Euler)", "ddpm///DDPM (Denoising Diffusion Probabilistic Models)", "er_sde///ER-SDE-Solver (used with AlignYourSteps schedule)", "seeds_2///SEEDS 2 (Exponential SDE Solvers, variant of DPM++ SDE)", "seeds_2///SEEDS 3",
             // Unique tack-ons
-             "lcm///LCM (for LCM models)", "uni_pc///UniPC (Unified Predictor-Corrector)", "uni_pc_bh2///UniPC BH2", "res_multistep///Res MultiStep (for Cosmos)",
+             "lcm///LCM (for LCM models)", "uni_pc///UniPC (Unified Predictor-Corrector)", "uni_pc_bh2///UniPC BH2", "res_multistep///Res MultiStep (for Cosmos)", "res_multistep_ancestral///Res MultiStep Ancestral (randomizing, for Cosmos)",
             "ipndm///iPNDM (Improved Pseudo-Numerical methods for Diffusion Models)", "ipndm_v///iPNDM-V (Variable-Step)", "deis///DEIS (Diffusion Exponential Integrator Sampler)", "gradient_estimation///Gradient Estimation (Improving from Optimization Perspective)",
             // CFG++ variants
-            "euler_cfg_pp///Euler CFG++ (Manifold-constrained CFG)", "euler_ancestral_cfg_pp///Euler Ancestral CFG++", "dpmpp_2m_cfg_pp///DPM++ 2M CFG++", "dpmpp_2s_ancestral_cfg_pp///DPM++ 2S Ancestral CFG++ (2x Slow)", "res_multistep_cfg_pp///Res MultiStep CFG++"
+            "euler_cfg_pp///Euler CFG++ (Manifold-constrained CFG)", "euler_ancestral_cfg_pp///Euler Ancestral CFG++", "dpmpp_2m_cfg_pp///DPM++ 2M CFG++", "dpmpp_2s_ancestral_cfg_pp///DPM++ 2S Ancestral CFG++ (2x Slow)", "res_multistep_cfg_pp///Res MultiStep CFG++", "res_multistep_ancestral_cfg_pp///Res MultiStep Ancestral CFG++"
         ],
         Schedulers = ["normal///Normal", "karras///Karras", "exponential///Exponential", "simple///Simple", "ddim_uniform///DDIM Uniform", "sgm_uniform///SGM Uniform", "turbo///Turbo (for turbo models, max 10 steps)", "align_your_steps///Align Your Steps (NVIDIA, rec. 10 steps)", "beta///Beta", "linear_quadratic///Linear Quadratic (Mochi)", "ltxv///LTX-Video", "ltxv-image///LTXV-Image", "kl_optimal///KL Optimal (Nvidia AYS)"];
 
