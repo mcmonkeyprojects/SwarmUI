@@ -345,6 +345,11 @@ public static class ModelsAPI
             refusal = new JObject() { ["error"] = "Model not found." };
             return true;
         }
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            refusal = new JObject() { ["error"] = "Invalid empty name." };
+            return true;
+        }
         refusal = null;
         return false;
     }

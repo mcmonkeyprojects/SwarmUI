@@ -129,7 +129,7 @@ public abstract class AbstractT2IBackend
     /// <summary>The maximum number of simultaneous requests this backend should take.</summary>
     public int MaxUsages = 1;
 
-    /// <summary>Whether this backend has the capability to load a model.</summary>
+    /// <summary>Whether this backend has the capability to load a model. Marking this false indicates a "not for generation usage" backend, such as an API handler that emits temporary (IsReal=false) backends to do the actual generations.</summary>
     public bool CanLoadModels = true;
 
     /// <summary>If above 0, something wants preferential ownership of this backend, and so general generations should not be sent to it.</summary>
