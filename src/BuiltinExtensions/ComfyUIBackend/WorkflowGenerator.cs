@@ -430,7 +430,8 @@ public class WorkflowGenerator
             float weight = weights is null || i >= weights.Count ? 1 : float.Parse(weights[i]);
             float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
             string id = GetStableDynamicID(2000, i);
-            if (FinalLoadedModel?.Metadata?.SpecialFormat == "nunchaku")
+            string specialFormat = FinalLoadedModel?.Metadata?.SpecialFormat;
+            if (specialFormat == "nunchaku" || specialFormat == "nunchaku-fp4")
             {
                 // This is dirty to use this alt node, but it seems required for Nunchaku.
                 string newId = CreateNode("NunchakuFluxLoraLoader", new JObject()
@@ -870,7 +871,7 @@ public class WorkflowGenerator
                 }, id);
                 LoadingModel = [modelNode, 0];
             }
-            else if (model.Metadata?.SpecialFormat == "nunchaku")
+            else if (model.Metadata?.SpecialFormat == "nunchaku" || model.Metadata?.SpecialFormat == "nunchaku-fp4")
             {
                 if (!Features.Contains("nunchaku"))
                 {
@@ -884,7 +885,7 @@ public class WorkflowGenerator
                     ["attention"] = "nunchaku-fp16",
                     ["cpu_offload"] = "auto",
                     ["device_id"] = 0,
-                    ["data_type"] = "float16",
+                    ["data_type"] = model.Metadata?.SpecialFormat == "nunchaku-fp4" ? "bfloat16" : "float16",
                     ["i2f_mode"] = "enabled"
                 }, id);
                 LoadingModel = [modelNode, 0];
@@ -958,7 +959,7 @@ public class WorkflowGenerator
             {
                 throw new SwarmUserErrorException($"Model '{model.Name}' is in GGUF format, but it's in your main Stable-Diffusion models folder. GGUF files are weird, and need to go in the special 'diffusion_models' folder.");
             }
-            if (model.Metadata?.SpecialFormat == "nunchaku")
+            if (model.Metadata?.SpecialFormat == "nunchaku" || model.Metadata?.SpecialFormat == "nunchaku-fp4")
             {
                 throw new SwarmUserErrorException($"Model '{model.Name}' is in Nunchaku format, but it's in your main Stable-Diffusion models folder. Nunchaku files are weird, and need to go in the special 'diffusion_models' folder with their own special subfolder.");
             }

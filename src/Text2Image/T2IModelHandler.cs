@@ -517,6 +517,10 @@ public class T2IModelHandler
             if (model.Name.EndsWith("/transformer_blocks.safetensors") && File.Exists(model.RawFilePath.Replace('\\', '/').BeforeLast('/') + "/comfy_config.json"))
             {
                 specialFormat = "nunchaku";
+                if (headerData.ContainsKey("single_transformer_blocks.0.mlp_fc1.wtscale"))
+                {
+                    specialFormat = "nunchaku-fp4";
+                }
                 altName ??= model.Name.BeforeLast('/').AfterLast('/');
             }
             if (specialFormat is not null)

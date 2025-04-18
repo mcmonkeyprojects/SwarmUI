@@ -38,7 +38,7 @@ If you have pre-existing Stable Diffusion files, you'll want to configure settin
 
 - Open the `Generate` tab at the top
 - At the bottom, there's a `Models` tab, click that
-    - on the left, there's a folder tree. Click into the folder you want. If this is a fresh install and you downloaded the official models, there's exactly one OfficialStableDiffusion folder here.
+    - on the left, there's a folder tree. Click into the folder you want. If this is a fresh install and you downloaded the official models, there's exactly one `OfficialStableDiffusion` folder here.
     - there's now a model listing. Click the icon of the model you want. (You can also change the view between cards/thumbnails/list)
     - You can also click the name of the model in the info bar just above those bottom tabs, and you'll get a quick-dropdown list of models, if you prefer that.
     - You can also click the bar separating the bottom tabs from the main area above it, and drag it down, to get it out of your way.
@@ -52,7 +52,7 @@ If you have pre-existing Stable Diffusion files, you'll want to configure settin
 
 - If all went well, you should have a nice picture of a cat in the center of your screen!
 
-If it didn't go well, ... well it's alpha software, hopefully there's an error message telling you what went wrong. If you can't figure it out, open an [issue here](https://github.com/mcmonkeyprojects/SwarmUI/issues) or ask on [discord](https://discord.gg/q2y38cqjNw).
+If it didn't go well, there's usually an error message telling you what went wrong, if not check `Server` -> `Logs` tab. If you can't figure it out, open an [issue here](https://github.com/mcmonkeyprojects/SwarmUI/issues) or ask on [discord](https://discord.gg/q2y38cqjNw).
 
 ## Using A Refiner / Upscaling Images
 
@@ -118,7 +118,7 @@ What's the fun in testing changes one by one, when you can unleash your machine 
 
 ## Combining Features
 
-- Want to use [IP-Adapter](/docs/Features/ImagePrompting.md) with a [Video](/docs/Features/Video.md)?
+- Want to use [IP-Adapter](/docs/Features/ImagePrompting.md) image gen with an [Image-To-Video](/docs/Features/Video.md)?
     - No problem! Just... do both! Swarm is so easy it's crazy sometimes - you can just enable multiple different features at the same time, and generally trust Swarm will automatically figure out how to combine them appropriately.
     - If you ever find a case that doesn't work, you can just [file an issue](https://github.com/mcmonkeyprojects/SwarmUI/issues) to get that fixed.
 

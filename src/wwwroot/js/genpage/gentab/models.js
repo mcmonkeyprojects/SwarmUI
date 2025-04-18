@@ -1175,7 +1175,7 @@ function doModelInstallRequiredCheck() {
         $('#bnb_nf4_installer').modal('show');
         return true;
     }
-    if (curModelSpecialFormat == 'nunchaku' && !currentBackendFeatureSet.includes('nunchaku') && !localStorage.getItem('hide_nunchaku_check')) {
+    if ((curModelSpecialFormat == 'nunchaku' || curModelSpecialFormat == 'nunchaku-fp4') && !currentBackendFeatureSet.includes('nunchaku') && !localStorage.getItem('hide_nunchaku_check')) {
         $('#nunchaku_installer').modal('show');
         return true;
     }
