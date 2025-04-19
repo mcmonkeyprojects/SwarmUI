@@ -219,7 +219,8 @@ class GenTabLayout {
         this.bottomSplitBarButton.innerHTML = this.bottomShut ? '&#x290A;' : '&#x290B;';
         let altHeight = this.altRegion.style.display == 'none' ? '0px' : `${this.altRegion.offsetHeight}px`;
         if (this.bottomSectionBarPos != -1 || this.bottomShut) {
-            let fixed = this.bottomShut ? `6.5rem` : `${this.bottomSectionBarPos}px`;
+            let bottomBarHeight = this.bottomInfoBar.offsetHeight;
+            let fixed = this.bottomShut ? `(5rem + ${bottomBarHeight}px)` : `${this.bottomSectionBarPos}px`;
             this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
             this.rightSplitBar.style.height = `calc(100vh - ${fixed} - 5px)`;
             this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
@@ -231,7 +232,6 @@ class GenTabLayout {
             this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
             this.topSection.style.height = `calc(100vh - ${fixed})`;
-            let bottomBarHeight = this.bottomInfoBar.offsetHeight;
             this.bottomBar.style.height = `calc(${fixed} - 50px)`;
         }
         else {
