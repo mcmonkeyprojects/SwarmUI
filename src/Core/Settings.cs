@@ -83,6 +83,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("Comma-separated list of numeric days-of-week in which auto-restarting is allowed. Sunday is 0, Saturday is 6.\nIf empty, days are unrestricted.\nFor example, '6,0' only allows auto-restarting from Sunday/Saturday.")]
         public string RestartDayAllowed = "";
+
+        [ConfigComment("If true, critical GPU errors (eg CUDA operation not permitted, or nvidia-smi crash) will cause SwarmUI to entirely restart itself.\nThis primarily exists as a workaround for an nvidia-docker bug (docker randomly uses GPU, so do full restart to get the GPU back)\nbut may be useful to other configs.\nIf false, GPU errors will be logged and nothing further will happen.")]
+        public bool RestartOnGpuCriticalError = false;
     }
 
     /// <summary>Settings related to authorization.</summary>

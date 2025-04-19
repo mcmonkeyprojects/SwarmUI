@@ -458,6 +458,12 @@ public class Program
 
     private volatile static bool HasShutdown = false;
 
+    /// <summary>Tell the server to shutdown and restart. This call is not blocking, other code will continue momentarily.</summary>
+    public static void RequestRestart()
+    {
+        _ = Utilities.RunCheckedTask(() => Shutdown(42));
+    }
+
     /// <summary>Main shutdown handler. Tells everything to stop.</summary>
     public static void Shutdown(int code = 0)
     {

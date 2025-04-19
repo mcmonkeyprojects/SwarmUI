@@ -50,6 +50,10 @@ public static class NvidiaUtil
         {
             lock (Internal.QueryLock)
             {
+                if (Program.GlobalProgramCancel.IsCancellationRequested)
+                {
+                    return null;
+                }
                 if (Internal.LastResultCache is not null && Environment.TickCount64 < Internal.LastQueryTime + Program.ServerSettings.NvidiaQueryRateLimitMS)
                 {
                       return Internal.LastResultCache;
@@ -83,13 +87,29 @@ public static class NvidiaUtil
                     NvidiaInfo info = new(output.Count, GPUName, driverVersion, temp, utilGPU, utilMemory, new(totalMemory), new(freeMemory), new(usedMemory));
                     output.Add(info);
                 }
+                if (output.Count == 0 && Internal.LastResultCache is not null && Internal.LastResultCache.Length > 0)
+                {
+                    Logs.Error("Previously had at least one GPU according to nvidia-smi, but now have zero (has your GPU driver faulted?)");
+                    if (Program.ServerSettings.Maintenance.RestartOnGpuCriticalError)
+                    {
+                        Program.RequestRestart();
+                    }
+                }
                 Internal.LastResultCache = [.. output];
                 Internal.LastQueryTime = Environment.TickCount64;
                 return Internal.LastResultCache;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            if (Internal.LastQueryTime != 0)
+            {
+                Logs.Error($"Previously had a valid nvidia-smi result, but now failed (has your GPU driver faulted?): {ex}");
+                if (Program.ServerSettings.Maintenance.RestartOnGpuCriticalError)
+                {
+                    Program.RequestRestart();
+                }
+            }
             Internal.HasNvidiaGPU = false;
         }
         return null;

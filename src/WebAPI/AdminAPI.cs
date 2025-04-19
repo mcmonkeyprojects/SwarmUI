@@ -583,7 +583,7 @@ public static class AdminAPI
             return new JObject() { ["success"] = false, ["result"] = "No changes found." };
         }
         File.WriteAllText("src/bin/must_rebuild", "yes");
-        _ = Utilities.RunCheckedTask(() => Program.Shutdown(42));
+        Program.RequestRestart();
         return new JObject() { ["success"] = true, ["result"] = "Update successful. Restarting... (please wait a moment, then refresh the page)" };
     }
 

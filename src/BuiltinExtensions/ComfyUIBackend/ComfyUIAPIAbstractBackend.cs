@@ -522,6 +522,14 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     {
                         note = $"\n\n-- This looks like a Windows path length error (with a path of length {cleanCheckMessage.After(':').Trim().Length}). If it is, see https://superuser.com/questions/1807770/how-to-enable-long-paths-on-windows-11-home for info on how to enable Long Paths in Windows to fix this bug.";
                     }
+                    else if (cleanCheckMessage.StartsWith("cuda error: operation not permitted") && cleanCheckMessage.Contains("for debugging consider passing cuda_launch_blocking=1"))
+                    {
+                        note = $"\n\n-- This looks like an NVIDIA CUDA driver fault. This may indicate your GPU has a fault, or that your drivers yielded an error. You may need to restart SwarmUI, or your whole PC. Check whether other GPU related tasks are functioning, such as whether you can call 'nvidia-smi' and get a correct result.";
+                        if (Program.ServerSettings.Maintenance.RestartOnGpuCriticalError)
+                        {
+                            Program.RequestRestart();
+                        }
+                    }
                     throw new SwarmReadableErrorException($"ComfyUI execution error: {actualMessage}{note}");
                 }
             }

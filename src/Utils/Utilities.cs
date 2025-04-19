@@ -88,7 +88,7 @@ public static class Utilities
         {
             return;
         }
-        Program.Shutdown(42);
+        Program.RequestRestart();
     }
 
     /// <summary>Internal tick loop thread main method.</summary>
