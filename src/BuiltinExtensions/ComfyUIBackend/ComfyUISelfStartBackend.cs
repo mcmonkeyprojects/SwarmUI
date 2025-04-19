@@ -289,6 +289,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         EnsureComfyFile();
         string addedArgs = "";
         bool doFixFrontend = false;
+        bool doLatestFrontend = false;
         if (!Settings.DisableInternalArgs)
         {
             string pathRaw = $"{Program.DataDir}/comfy-auto-model.yaml";
@@ -308,6 +309,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             if (Settings.FrontendVersion == "Latest")
             {
                 addedArgs += " --front-end-version Comfy-Org/ComfyUI_frontend@latest";
+                doLatestFrontend = true;
             }
             else if (Settings.FrontendVersion == "LatestSwarmValidated")
             {
@@ -445,7 +447,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await update("numpy", "numpy>=1.25.0");
             }
             string frontendVersion = getVers("comfyui_frontend_package");
-            if (doFixFrontend && frontendVersion is not null && frontendVersion != SwarmValidatedFrontendVersion)
+            if (doFixFrontend && (frontendVersion is null || frontendVersion != SwarmValidatedFrontendVersion))
             {
                 await update("comfyui_frontend_package", $"comfyui-frontend-package=={SwarmValidatedFrontendVersion}");
             }
@@ -453,9 +455,17 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 Logs.Warning($"(Developer Notice) ComfyUI Frontend target version is {frontVers}, but validated version is {SwarmValidatedFrontendVersion}");
             }
-            if (doFixFrontend && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers))
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers))
             {
-                await install("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
+                await update("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
+            }
+            if (doLatestFrontend)
+            {
+                await update("comfyui_frontend_package", "comfyui-frontend-package");
+            }
+            else if (!doFixFrontend)
+            {
+                await install("comfyui_frontend_package", "comfyui-frontend-package");
             }
             string ultralyticsVers = getVers("ultralytics");
             if (ultralyticsVers is not null && Version.Parse(ultralyticsVers) < Version.Parse(UltralyticsVersion))
