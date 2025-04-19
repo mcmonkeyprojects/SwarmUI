@@ -232,7 +232,7 @@ class GenTabLayout {
             this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
             this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
             this.topSection.style.height = `calc(100vh - ${fixed})`;
-            this.bottomBar.style.height = `calc(${fixed} - 50px)`;
+            this.bottomBar.style.height = `calc(${fixed} - 45px)`;
         }
         else {
             this.leftSplitBar.style.height = 'calc(49vh)';
@@ -247,7 +247,7 @@ class GenTabLayout {
             this.currentImageBatch.style.height = '';
             this.topSection.style.height = '';
             let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            this.bottomBar.style.height = `calc(49vh - 35px)`;
+            this.bottomBar.style.height = `calc(49vh - 30px)`;
         }
         if (imageEditor) {
             imageEditor.resize();

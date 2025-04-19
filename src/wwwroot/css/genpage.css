@@ -736,13 +736,13 @@ body {
 .browser-folder-tree-container {
     width: 15rem;
     display: inline-block;
-    height: calc(max(10rem, 100% - 1rem));
+    height: calc(max(10rem, 100%));
     overflow: auto;
     vertical-align: top;
 }
 .browser-folder-tree-splitter {
     width: 7px;
-    height: calc(max(10rem, 100% - 1rem));
+    height: calc(max(10rem, 100%));
     cursor: col-resize;
 }
 .browser-header-bar {
@@ -770,7 +770,7 @@ body {
 .browser-content-container {
     display: inline-block;
     width: 100%;
-    height: calc(100% - 3rem);
+    height: calc(100% - 2rem);
     overflow: auto;
     vertical-align: top;
     padding-bottom: 3rem;
