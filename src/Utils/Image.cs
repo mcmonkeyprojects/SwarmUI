@@ -309,16 +309,20 @@ public class Image
             case "JPG75":
                 img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 75 });
                 break;
-                case "WEBP_LOSSLESS":
+            case "WEBP_LOSSLESS":
+                ext = "webp";
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = true, Quality = 100 });
                 break;
-                case "WEBP_100":
+            case "WEBP_100":
+                ext = "webp";
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 100 });
                 break;
             case "WEBP_90":
+                ext = "webp";
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 90 });
                 break;
             case "WEBP_75":
+                ext = "webp";
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 75 });
                 break;
             default:

@@ -197,8 +197,9 @@ public class Session : IEquatable<Session>
         {
             extension = Image.ImageFormatToExtension(format);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Logs.Debug($"Invalid file format extension: {ex.GetType().Name}: {ex.Message}");
             extension = "jpg";
         }
         if (image.Type != Image.ImageType.IMAGE)
