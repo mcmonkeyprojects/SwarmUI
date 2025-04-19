@@ -656,6 +656,11 @@ public class T2IModelHandler
         Parallel.ForEach(Directory.EnumerateDirectories(actualFolder), subfolder =>
         {
             string path = $"{prefix}{subfolder.Replace('\\', '/').AfterLast('/')}";
+            if (path.AfterLast('/') == ".git")
+            {
+                Logs.Warning($"You have a .git folder in your {ModelType} model folder '{pathBase}/{path}'! That's not supposed to be there.");
+                return;
+            }
             try
             {
                 AddAllFromFolder(pathBase, path);
