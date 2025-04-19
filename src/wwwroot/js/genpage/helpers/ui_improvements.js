@@ -410,6 +410,11 @@ class UIImprovementHandler {
                 clearDrag();
             }
         }, true);
+        window.addEventListener('mousemove', (e) => {
+            if (isDoingADrag && e.buttons == 0) {
+                clearDrag();
+            }
+        }, true);
     }
 
     /** Returns a list of files from the given dataTransfer object, auto-correcting for browsers inconsistently handling certain drag types. */
