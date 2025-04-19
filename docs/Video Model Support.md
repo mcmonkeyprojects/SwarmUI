@@ -193,7 +193,7 @@ There's a full step by step guide for video model usage here: <https://github.co
 - Lightricks LTX Video ("LTXV") is supported natively in SwarmUI as a Text-To-Video and also as an Image-To-Video model.
     - The text2video is not great quality compared to other models, but the image2video functionality is popular.
 - Download your preferred safetensors version from <https://huggingface.co/Lightricks/LTX-Video/tree/main>
-    - At time of writing, they have 0.9, 0.9.1, and 0.9.5, each new version better than the last
+    - At time of writing, they have 0.9, 0.9.1, 0.9.5, and 0.9.6, each new version better than the last, but all pretty bad
     - save to `Stable-Diffusion` folder
     - The text encoder (T5-XXL) and VAE will be automatically downloaded
         - You can also set these manually if preferred
@@ -206,9 +206,10 @@ There's a full step by step guide for video model usage here: <https://github.co
 - **Resolution:** They recommend 768x512, which is a 3:2 resolution. Other aspect ratios are fine, but the recommended resolution does appear to yield better quality.
 - **CFG:** Recommended CFG=3
 - **Prompt:** very very long descriptive prompts.
-    - Seriously this model will make a mess with short prompts.
+    - Seriously this model will make a mess with short prompts. If you ask for `a video of a cat` you will just get a dark blur.
     - Example prompt (from ComfyUI's reference workflow):
         - Prompt: `best quality, 4k, HDR, a tracking shot of a beautiful scene of the sea waves on the beach`
+        - Or Prompt: `A drone quickly rises through a bank of morning fog, revealing a pristine alpine lake surrounded by snow-capped mountains. The camera glides forward over the glassy water, capturing perfect reflections of the peaks. As it continues, the perspective shifts to reveal a lone wooden cabin with a curl of smoke from its chimney, nestled among tall pines at the lake's edge. The final shot tracks upward rapidly, transitioning from intimate to epic as the full mountain range comes into view, bathed in the golden light of sunrise breaking through scattered clouds.`
         - Negative Prompt: `low quality, worst quality, deformed, distorted, disfigured, motion smear, motion artifacts, fused fingers, bad anatomy, weird hand, ugly`
 - If you installed the `SkipLayerGuidanceExtension`, Find the `Skip Layer Guidance` parameter group in advanced
     - Set `[SLG] Scale` to `1`
