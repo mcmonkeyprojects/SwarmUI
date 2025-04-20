@@ -389,7 +389,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             AddLoadStatus($"All tasks done.");
         }
         string lib = NetworkBackendUtils.GetProbableLibFolderFor(Settings.StartScript);
-        if (lib is null)
+        if (lib is null || lib.Length < 3)
         {
             AddLoadStatus($"Skip lib validation, can't find folder.");
         }

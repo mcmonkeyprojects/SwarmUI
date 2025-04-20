@@ -317,7 +317,7 @@ Parameters and usage is the same as any other normal model.
 
 - HiDream-i1 Models are supported in SwarmUI.
     - You can pick Full, Dev, or Fast variant. Most users should prefer Dev or Fast.
-        - **Full:** Uses standard CFG and step counts, no distillation or other tricks. Slowest option, theoretically best quality (in practice it looks terrible though).
+        - **Full:** Uses standard CFG and step counts, no distillation or other tricks. Slowest option, theoretically smartest model (in practice visual quality is poor, but prompt understanding is strong)
         - **Dev:** Uses CFG=1 distillation but standard step counts, akin to Flux-Dev. Best middle ground option.
         - **Fast:** Uses CFG=1 and low step count distillation, akin to Flux-Schnell. Best for speed focus, at cost of quality.
     - The models are 17B, which is massive, so you'll likely prefer a quantized version.
@@ -330,6 +330,7 @@ Parameters and usage is the same as any other normal model.
     - HiDream uses the Flux VAE, it will be autodownloaded for you if not already present
     - HiDream uses a quad-textencoder of Long-CLIP L, Long-CLIP G, T5-XXL, and LLaMA-3.1-8B (this is unhinged I'm so sorry for your RAM size)
         - These will be autodownloaded for you if not already present
+    - LoRAs cross-apply between the three variants, but best alignment between dev/fast, full tends to be more different
 - Parameters:
     - **CFG Scale:** HiDream Full uses standard standard CFG ranges (eg 6), HiDream Dev and Fast use CFG=1
     - **Steps:** HiDream Dev uses standard step counts (eg 20), HiDream Fast can use low counts (eg 8). HiDream Full requires higher than normal step counts (at least 30, maybe 50) for clean results.
