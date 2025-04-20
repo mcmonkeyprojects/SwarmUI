@@ -196,7 +196,7 @@ class GenTabLayout {
         }
         this.inputSidebar.style.width = `${barTopLeft}`;
         this.inputSidebar.style.display = this.leftShut ? 'none' : '';
-		this.inputSidebar.style.containerType="inline-size";
+        this.inputSidebar.style.containerType="inline-size";
         this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
         this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
         this.mainImageArea.scrollTop = 0;
@@ -209,7 +209,7 @@ class GenTabLayout {
             this.currentImage.style.width = `calc(${curImgWidth})`;
         }
         this.currentImageWrapbox.style.width = `calc(${curImgWidth})`;
-		this.currentImageWrapbox.style.containerType = "inline-size";
+        this.currentImageWrapbox.style.containerType = "inline-size";
         this.currentImageBatch.style.width = `calc(${barTopRight} - 6px)`;
         if (this.currentImageBatchCore.offsetWidth < 425) {
             this.currentImageBatchCore.classList.add('current_image_batch_core_small');
