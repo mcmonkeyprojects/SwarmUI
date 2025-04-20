@@ -46,6 +46,10 @@
     transition: background .2s;
 }
 
+.current-image-buttons .basic-button { @container (max-width:500px) {
+    font-size:75%;
+} }
+
 .nav-tabs, #currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar {
     background-color: var(--background-panel);
     background-image: url(imgs/noise.png);
@@ -175,6 +179,10 @@
     padding: 30px;
     transition: padding 0.2s;
 }
+
+#main_inputs_area_wrapper { @container (max-width: 350px) { 
+    padding: 30px 8px;
+} }
 
 #main_inputs_area_wrapper.main_inputs_small {
     padding: 30px 20px;
