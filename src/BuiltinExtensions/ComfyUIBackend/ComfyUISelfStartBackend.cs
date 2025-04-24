@@ -563,6 +563,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("sentencepiece", "sentencepiece"),
         ("spandrel", "spandrel"),
         ("av", "av"),
+        ("pydantic", "pydantic"),
         ("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}"),
         // Other added dependencies
         ("rembg", "rembg"),

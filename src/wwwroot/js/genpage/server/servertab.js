@@ -136,7 +136,7 @@ class UserAdminManager {
     }
 
     setRightboxDefault() {
-        this.setStaticRightBox(`<span class="translate">Welcome, admin! Select a user on the left to configure them.</span><br><br><b>THIS IS A PLACEHOLDER, IT DOES NOT WORK YET</b>`);
+        this.setStaticRightBox(`<span class="translate">Welcome, admin! Select a user on the left to configure them.</span><br><br><b>THIS IS A WORK IN PROGRESS, IT IS NOT COMPLETE YET</b>`);
     }
 
     setRightboxLoading() {
