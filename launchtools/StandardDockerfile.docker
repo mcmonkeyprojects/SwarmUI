@@ -14,6 +14,9 @@ COPY . ./SwarmUI
 
 RUN chown -R $UID:$UID ./SwarmUI
 
+# Fix permissions on Models directory as well
+RUN chown -R $UID:$UID ./SwarmUI/Models || true
+
 # Stupidproofing on git calls from inside docker
 RUN git config --global --add safe.directory '*'
 
