@@ -2,6 +2,7 @@
 let session_id = getCookie('session_id') || null;
 let user_id = null;
 let outputAppendUser = null;
+let userDisableAutomaticHoverPopups = false;
 
 function getImageOutPrefix() {
     return outputAppendUser ? `View/${user_id}` : 'Output';
@@ -206,6 +207,16 @@ function getSession(callback) {
         user_id = data.user_id;
         outputAppendUser = data.output_append_user;
         permissions.updateFrom(data.permissions);
+
+        // Get the new setting from the server response
+        userDisableAutomaticHoverPopups = data.disable_automatic_hover_popups || false; // Default to false if missing
+
+        // Add/Remove the class on the body element
+        document.body.classList.toggle('no-auto-hover-popups', userDisableAutomaticHoverPopups);
+
+        // Call the function to manage title attributes (defined below)
+        manageTitleAttributesForHover();
+
         if (lastServerVersion == null) {
             lastServerVersion = data.version;
         }
@@ -883,6 +894,39 @@ function specialDebug(message) {
     console.log(`${message} (${diff}ms since last debug)`);
 }
 
+function manageTitleAttributesForHover() {
+    // Select all elements that might have a title we want to suppress
+    document.querySelectorAll('[title]').forEach(element => {
+        const originalTitleKey = 'data-original-title'; // Key to store the original title
+
+        // Check if the element is part of a Bootstrap tooltip/popover
+        const isBootstrapTooltip = element.hasAttribute('data-bs-toggle') && (element.getAttribute('data-bs-toggle') === 'tooltip' || element.getAttribute('data-bs-toggle') === 'popover');
+        if (isBootstrapTooltip) {
+            return; // Let CSS handle Bootstrap components
+        }
+
+        if (userDisableAutomaticHoverPopups) {
+            // --- Disable Native Hovers ---
+            const currentTitle = element.getAttribute('title');
+            if (currentTitle) {
+                if (!element.hasAttribute(originalTitleKey)) {
+                    element.setAttribute(originalTitleKey, currentTitle);
+                }
+                element.removeAttribute('title');
+            }
+        } else {
+            // --- Enable Native Hovers ---
+            const originalTitle = element.getAttribute(originalTitleKey);
+            if (originalTitle) {
+                if (!element.hasAttribute('title')) {
+                    element.setAttribute('title', originalTitle);
+                }
+                // Optional: element.removeAttribute(originalTitleKey);
+            }
+        }
+    });
+}
+
 function playCompletionAudio() {
     let audioFile = getUserSetting('audio.completionsound');
     if (audioFile) {
@@ -921,3 +965,29 @@ function fixTabHeights() {
 
 fixTabHeights();
 setTimeout(fixTabHeights, 100);
+
+// Observer to re-apply title attribute changes when the DOM is modified
+const titleAttributeObserver = new MutationObserver((mutationsList) => {
+    let needsReapply = false;
+    for(const mutation of mutationsList) {
+        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            needsReapply = true;
+            break;
+        }
+        if (mutation.type === 'attributes' && mutation.attributeName === 'title') {
+           needsReapply = true;
+           break;
+        }
+    }
+    if (needsReapply) {
+        manageTitleAttributesForHover();
+    }
+});
+
+// Start observing the body for added/removed children and attribute changes in the whole subtree
+titleAttributeObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['title'] // Only observe 'title' attribute changes
+ });

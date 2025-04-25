@@ -396,6 +396,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("The delay, in seconds, for parameter hints when 'HOVER_DELAY' is selected.")]
         public float HoverDelaySeconds = 0.5f;
 
+        [ConfigComment("If true, disables automatic popups/tooltips that appear when hovering over UI elements like text boxes or model browser items.\nYou may need to refresh the page (F5) for this to fully apply.")]
+        public bool DisableAutomaticHoverPopups = false;
+
         [ConfigComment("How many lines of text to display in the standard prompt box before cutting off to a scroll bar.\nActual size in practice tends to be a few lines shorter due to browser and font variations.\nDefault is 10.")]
         public int MaxPromptLines = 10;
 

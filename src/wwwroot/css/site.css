@@ -1005,3 +1005,21 @@ input[type="range"]::-moz-range-track {
     color: var(--text-soft);
     word-break: break-all;
 }
+
+/* Disable Automatic Hover Tooltips */
+
+/* Hide Bootstrap tooltips when the global setting is enabled */
+body.no-auto-hover-popups .tooltip {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Hide Bootstrap popovers ONLY if they are triggered by hover */
+body.no-auto-hover-popups .popover[data-bs-trigger~="hover"] {
+     display: none !important;
+     visibility: hidden !important;
+     pointer-events: none !important;
+}
+
+/* Note: Native 'title' attribute tooltips are handled by JavaScript (manageTitleAttributesForHover in site.js) */

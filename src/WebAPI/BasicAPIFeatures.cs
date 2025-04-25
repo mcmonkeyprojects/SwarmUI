@@ -137,7 +137,8 @@ public static class BasicAPIFeatures
             ["output_append_user"] = Program.ServerSettings.Paths.AppendUserNameToOutputPath,
             ["version"] = Utilities.VaryID,
             ["server_id"] = Utilities.LoopPreventionID.ToString(),
-            ["permissions"] = JArray.FromObject(session.User.GetPermissions())
+            ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
+            ["disable_automatic_hover_popups"] = session.User.Settings.DisableAutomaticHoverPopups
         };
     }
 
