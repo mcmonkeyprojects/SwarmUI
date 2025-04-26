@@ -6,6 +6,7 @@ import time, io, struct
 
 SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
+TEXT_ID = 12347
 
 def send_image_to_server_raw(type_num: int, save_me: callable, id: int):
     out = io.BytesIO()
@@ -102,7 +103,7 @@ class SwarmSaveAnimatedWebpWS:
 
         def do_save(out):
             pil_images[0].save(out, save_all=True, duration=int(1000.0/fps), append_images=pil_images[1 : len(pil_images)], lossless=lossless, quality=quality, method=method, format='WEBP')
-        send_image_to_server_raw(3, do_save, 12346)
+        send_image_to_server_raw(3, do_save, VIDEO_ID)
 
         return { }
 
@@ -111,7 +112,35 @@ class SwarmSaveAnimatedWebpWS:
         return time.time()
 
 
+class SwarmAddSaveMetadataWS:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "key": ("STRING", {"tooltip": "The key to add to the metadata tracker. Must be simple A-Z plain text or underscores."}),
+                "value": ("STRING", {"tooltip": "The value to add to the metadata tracker."}),
+            }
+        }
+
+    CATEGORY = "SwarmUI/images"
+    RETURN_TYPES = ()
+    FUNCTION = "add_save_metadata"
+    OUTPUT_NODE = True
+    DESCRIPTION = "Adds a metadata key/value pair to SwarmUI's metadata tracker for this generation, which will be appended to any images saved after this node triggers. Note that keys overwrite, not add. Any key can have only one value."
+
+    def add_save_metadata(self, key, value):
+        full_text = f"{key}:{value}"
+        full_text_bytes = full_text.encode('utf-8')
+        send_image_to_server_raw(0, lambda out: out.write(full_text_bytes), TEXT_ID)
+        return {}
+
+    @classmethod
+    def IS_CHANGED(s, key, value):
+        return time.time()
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmSaveImageWS": SwarmSaveImageWS,
     "SwarmSaveAnimatedWebpWS": SwarmSaveAnimatedWebpWS,
+    "SwarmAddSaveMetadataWS": SwarmAddSaveMetadataWS,
 }
