@@ -134,3 +134,11 @@ TIPO:
     license: MIT
     tags:
     - parameters
+
+NegPip:
+    author: Hugs288
+    description: Adds a parameter group for Negpip (allows for the use of negative weights in positive prompt).
+    url: https://github.com/Hugs288/NegPipforSwarmUI
+    license: MIT
+    tags:
+    - parameters
