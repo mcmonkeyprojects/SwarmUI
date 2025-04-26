@@ -472,7 +472,9 @@ class GenPageBrowserClass {
                 });
                 div.appendChild(menu);
             }
-            div.title = stripHtmlToText(desc.description);
+            if (!this.format.includes('Cards')) {
+                div.title = stripHtmlToText(desc.description);
+            }
             div.dataset.name = file.name;
             img.classList.add('lazyload');
             img.dataset.src = desc.image;
