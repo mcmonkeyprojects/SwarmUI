@@ -1245,6 +1245,41 @@ function comfyBrowseWorkflowsNow() {
     }
 }
 
+let comfyTabBody = getRequiredElementById('comfyworkflow');
+let wasComfyTabActive = comfyTabBody.classList.contains('show');
+
+/** Hack-around for firefox bug: block the internal comfy canvas from rendering when the tab is inactive. */
+function comfyDoCanvasFreeze() {
+    if (!hasComfyLoaded) {
+        return;
+    }
+    let frame = comfyFrame();
+    let canvas = frame?.contentWindow?.comfyAPI?.app?.app?.canvas;
+    if (!canvas) {
+        return;
+    }
+    if (comfyTabBody.classList.contains('show')) {
+        canvas.startRendering();
+    }
+    else {
+        canvas.stopRendering();
+    }
+}
+
+const observer = new MutationObserver((mutations) => {
+    for (let mutation of mutations) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+            let isActive = comfyTabBody.classList.contains('show');
+            if (wasComfyTabActive != isActive) {
+                comfyDoCanvasFreeze();
+            }
+            wasComfyTabActive = isActive;
+        }
+    }
+});
+
+observer.observe(comfyTabBody, { attributes: true });
+
 /**
  * Prep-callback that can restore the last comfy workflow input you had.
  */
