@@ -501,8 +501,11 @@ public static class ModelsAPI
             if (!string.IsNullOrWhiteSpace(preview_image))
             {
                 Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-                actualModel.PreviewImage = img.AsDataString();
-                actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                if (img is not null)
+                {
+                    actualModel.PreviewImage = img.AsDataString();
+                    actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                }
             }
             actualModel.Metadata.Author = author;
             actualModel.Metadata.UsageHint = usage_hint;
