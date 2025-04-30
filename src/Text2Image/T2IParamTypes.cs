@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
+using SwarmUI.Builtin_ComfyUIBackend;
 using SwarmUI.Core;
 using SwarmUI.Utils;
 using System.IO;
@@ -292,7 +293,7 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, TorchCompile, VideoExtendFormat, ExactBackendID;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, TorchCompile, VideoExtendFormat, ExactBackendID, RefinerSampler, RefinerScheduler;
     public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
@@ -485,6 +486,14 @@ public class T2IParamTypes
         RefinerCFGScale = Register<double>(new("Refiner CFG Scale", "For the refiner model independently of the base model, how strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Turbo, expect CFG around 1.",
             "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: -3.5, ViewType: ParamViewType.SLIDER, Group: GroupRefiners, ChangeWeight: -3, Toggleable: true, IsAdvanced: true
+            ));
+        RefinerSampler = Register<string>(new("Refiner Sampler", "Alternative sampler for the refiner stage. When enabled, this sampler will replace the base sampler for the refiner stage.",
+            "euler", Toggleable: true, FeatureFlag: "refiners", Group: GroupRefiners, OrderPriority: -3.25, IsAdvanced: true,
+            GetValues: (_) => ComfyUIBackendExtension.Samplers
+            ));
+        RefinerScheduler = Register<string>(new("Refiner Scheduler", "Alternative scheduler for the refiner stage. When enabled, this scheduler will replace the base scheduler for the refiner stage.",
+            "normal", Toggleable: true, FeatureFlag: "refiners", Group: GroupRefiners, OrderPriority: -3.20, IsAdvanced: true,
+            GetValues: (_) => ComfyUIBackendExtension.Schedulers
             ));
         RefinerMethod = Register<string>(new("Refiner Method", "How to apply the refiner. Different methods create different results.\n'PostApply' runs the base in full, then runs the refiner with an Init Image.\n'StepSwap' swaps the model after x steps during generation.\n'StepSwapNoisy' is StepSwap but with first-stage noise only.",
             "PostApply", GetValues: (_) => ["PostApply///Post-Apply (Normal)", "StepSwap///Step-Swap (SDXL Refiner Model Original)", "StepSwapNoisy///Step-Swap Noisy (Modified Refiner)"], OrderPriority: -3, Group: GroupRefiners, FeatureFlag: "refiners", DoNotPreview: true, IsAdvanced: true

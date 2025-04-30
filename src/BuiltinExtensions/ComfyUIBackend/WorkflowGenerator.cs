@@ -1546,8 +1546,8 @@ public class WorkflowGenerator
             ["steps"] = steps,
             ["cfg"] = cfg,
             // TODO: proper sampler input, and intelligent default scheduler per sampler
-            ["sampler_name"] = UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler),
-            ["scheduler"] = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler),
+            ["sampler_name"] = defsampler ?? UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler),
+            ["scheduler"] = defscheduler ?? UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler),
             ["positive"] = pos,
             ["negative"] = neg,
             ["latent_image"] = latent,

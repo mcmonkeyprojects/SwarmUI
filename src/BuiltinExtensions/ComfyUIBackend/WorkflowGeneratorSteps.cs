@@ -1240,7 +1240,9 @@ public class WorkflowGeneratorSteps
                 int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps));
                 double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
                 g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
-                    g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false));
+                    g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
+                    defsampler: g.UserInput.Get(T2IParamTypes.RefinerSampler, null), 
+                    defscheduler: g.UserInput.Get(T2IParamTypes.RefinerScheduler, null));
                 g.FinalSamples = ["23", 0];
                 g.IsRefinerStage = false;
             }
