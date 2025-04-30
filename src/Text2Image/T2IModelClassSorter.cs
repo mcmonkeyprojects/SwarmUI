@@ -415,6 +415,10 @@ public class T2IModelClassSorter
         {
             return isHiDream(h);
         }});
+        Register(new() { ID = "hidream-i1-edit", CompatClass = "hidream-i1", Name = "HiDream i1 Edit", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // Must manual edit, seems undetectable?
+        }});
         Register(new() { ID = "hidream-i1/lora", CompatClass = "hidream-i1", Name = "HiDream i1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isHiDreamLora(h);

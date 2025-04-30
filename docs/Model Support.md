@@ -327,6 +327,9 @@ Parameters and usage is the same as any other normal model.
         - Comfy Org's fp8 and fat bf16 versions: <https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/tree/main/split_files/diffusion_models>
         - Goes in `(Swarm)/Models/diffusion_models`
         - All models share the same architecture identifiers. Make sure to configure parameters appropriately for the specific variant you're using (CFG and Steps).
+    - There's also "Edit", a version that does ip2p style editing (give an init image, set creativity to 1, and prompt it with a change request, eg "draw a mustache on her")
+        - BF16 raw fat file here <https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/diffusion_models/hidream_e1_full_bf16.safetensors>
+        - This model class cannot be automatically detected, and so you must manually click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to `HiDream i1 Edit`, otherwise it will not use the input image properly
     - HiDream uses the Flux VAE, it will be autodownloaded for you if not already present
     - HiDream uses a quad-textencoder of Long-CLIP L, Long-CLIP G, T5-XXL, and LLaMA-3.1-8B (this is unhinged I'm so sorry for your RAM size)
         - These will be autodownloaded for you if not already present
@@ -336,7 +339,7 @@ Parameters and usage is the same as any other normal model.
     - **Steps:** HiDream Dev uses standard step counts (eg 20), HiDream Fast can use low counts (eg 8). HiDream Full requires higher than normal step counts (at least 30, maybe 50) for clean results.
         - Official recommendation from HiDream team is: Full=50, Dev=28, Fast=16.
     - **Sampler and Scheduler:** Standard samplers/schedulers work. Defaults to `Euler` and `Normal`
-        - The dev model is more open to weirder samplers like `LCM`, but not needed
+        - The dev model is more open to weirder samplers like `LCM` and official recommendation for Full is UniPC, but these are not needed
     - **Sigma Shift:** Sigma shift defaults to 3 and does not need to be modified.
         - Officially, HiDream Full and Fast recommend Shift of 3, but for Dev they recommend 6. That 6 on dev seems to look worse though, so I don't recommend it.
 
@@ -363,7 +366,6 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
     - The detection is based on file extension.
     - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
-    - You may have to click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to the relevant correct one (it cannot be autodetected currently).
     - The first time you try to load a GGUF model, it will give you a popup asking to install support
         - This will autoinstall https://github.com/city96/ComfyUI-GGUF which is developed by city96.
         - You can accept this popup, and it will install and reload the backend

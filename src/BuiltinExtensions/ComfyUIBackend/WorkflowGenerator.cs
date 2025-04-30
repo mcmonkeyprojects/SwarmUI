@@ -1422,7 +1422,7 @@ public class WorkflowGenerator
             neg = [inpaintNode, 1];
             latent = [inpaintNode, 2];
         }
-        if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial))
+        if (classId.EndsWith("/canny") || classId.EndsWith("/depth") || FinalLoadedModelList.Any(isSpecial) || classId == "hidream-i1-edit")
         {
             if (FinalInputImage is null)
             {
