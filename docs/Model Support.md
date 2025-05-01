@@ -330,6 +330,7 @@ Parameters and usage is the same as any other normal model.
     - There's also "Edit", a version that does ip2p style editing (give an init image, set creativity to 1, and prompt it with a change request, eg "draw a mustache on her")
         - BF16 raw fat file here <https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/blob/main/split_files/diffusion_models/hidream_e1_full_bf16.safetensors>
         - This model class cannot be automatically detected, and so you must manually click the `☰` hamburger menu on a model, then `Edit Metadata`, and set the `Architecture:` field to `HiDream i1 Edit`, otherwise it will not use the input image properly
+        - Also set `Resolution:` to `768x768`, the Edit model misbehaves at high res
     - HiDream uses the Flux VAE, it will be autodownloaded for you if not already present
     - HiDream uses a quad-textencoder of Long-CLIP L, Long-CLIP G, T5-XXL, and LLaMA-3.1-8B (this is unhinged I'm so sorry for your RAM size)
         - These will be autodownloaded for you if not already present
