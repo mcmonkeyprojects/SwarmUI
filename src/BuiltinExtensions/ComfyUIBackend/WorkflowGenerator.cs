@@ -1864,7 +1864,8 @@ public class WorkflowGenerator
                     ["height"] = height,
                     ["length"] = frames,
                     ["batch_size"] = 1,
-                    ["image_noise_scale"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15)
+                    ["image_noise_scale"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15),
+                    ["strength"] = 1
                 });
                 posCond = [condNode, 0];
                 negCond = [condNode, 1];
