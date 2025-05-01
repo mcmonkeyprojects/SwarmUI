@@ -96,6 +96,7 @@ public class T2IModelClassSorter
         bool isWanflf2v(JObject h) => h.ContainsKey("model.diffusion_model.img_emb.emb_pos") || h.ContainsKey("img_emb.emb_pos");
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
         bool isHiDreamLora(JObject h) => h.ContainsKey("diffusion_model.double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
+        bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -272,7 +273,7 @@ public class T2IModelClassSorter
         Register(new() { ID = "flux.1/vae", CompatClass = "flux-1", Name = "Flux.1 Autoencoder", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "Flux.1-schnell", CompatClass = "flux-1", Name = "Flux.1 Schnell", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isFluxSchnell(h);
+            return isFluxSchnell(h) && !isChroma(h);
         }});
         Register(new() { ID = "Flux.1-dev", CompatClass = "flux-1", Name = "Flux.1 Dev", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -391,6 +392,10 @@ public class T2IModelClassSorter
             return isCosmosVae(h);
         }});
         // ====================== Random Other Models ======================
+        Register(new() { ID = "chroma", CompatClass = "chroma", Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isChroma(h);
+        }});
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
             return IsAlt(h);

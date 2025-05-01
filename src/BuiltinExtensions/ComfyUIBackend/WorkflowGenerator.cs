@@ -175,6 +175,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is Chroma.</summary>
+    public bool IsChroma()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "chroma";
+    }
+
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
     public bool IsHiDream()
     {
@@ -185,7 +192,7 @@ public class WorkflowGenerator
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
-        return IsFlux() || IsHunyuanVideo();
+        return (IsFlux() && CurrentModelClass()?.ID != "Flux.1-schnell") || IsHunyuanVideo();
     }
 
     /// <summary>Returns true if the current model is NVIDIA Sana.</summary>
@@ -1075,6 +1082,28 @@ public class WorkflowGenerator
             LoadingClip = [dualClipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
+        else if (IsChroma())
+        {
+            string loaderType = "CLIPLoader";
+            if (getT5XXLModel().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getT5XXLModel(),
+                ["type"] = "chroma"
+            });
+            LoadingClip = [clipLoader, 0];
+            string t5Patch = CreateNode("T5TokenizerOptions", new JObject() // TODO: This node is a temp patch
+            {
+                ["clip"] = LoadingClip,
+                ["min_padding"] = 1,
+                ["min_length"] = 0
+            });
+            LoadingClip = [t5Patch, 0];
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
         else if (IsHiDream())
         {
             string loaderType = "QuadrupleCLIPLoader";
@@ -1212,7 +1241,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsWanVideo() || IsHiDream())
+            else if (IsHunyuanVideo() || IsWanVideo() || IsHiDream() || IsChroma())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
@@ -1646,7 +1675,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux() || IsHiDream())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {

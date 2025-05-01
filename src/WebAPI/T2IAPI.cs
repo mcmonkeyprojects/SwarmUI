@@ -759,7 +759,7 @@ public static class T2IAPI
     {
         Logs.Verbose($"User {session.User.UserID} triggered a {(strong ? "strong" : "weak")} data refresh");
         bool botherToRun = strong && RefreshSemaphore.CurrentCount > 0; // no need to run twice at once
-        if (Environment.TickCount64 - LastRefreshed < 10000)
+        if (botherToRun && Environment.TickCount64 - LastRefreshed < 10000)
         {
             Logs.Debug($"User {session.User.UserID} requested weak refresh within 10 seconds of last refresh, ignoring as redundant.");
             botherToRun = false;

@@ -282,6 +282,14 @@ Parameters and usage is the same as any other normal model.
     - Add a Mask, draw a dot anywhere in the empty area (this is just a trick to tell the editor to automask all the empty area to the side, you don't need to mask it manually)
     - Type your prompt, hit generate
 
+### Chroma
+
+- Chroma is a derivative of Flux, and is supported in SwarmUI
+    - Downloads here <https://huggingface.co/lodestones/Chroma/tree/main>
+    - Uses standard CFG, not distilled to 1 like other Flux models
+    - Official reference workflow uses Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
+    - Probably works better with longer prompts
+
 # Lumina 2
 
 ![img](/docs/images/models/lumina-2.png)

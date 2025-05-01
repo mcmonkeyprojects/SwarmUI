@@ -1025,7 +1025,7 @@ public class WorkflowGeneratorSteps
                             ["end_percent"] = g.UserInput.Get(controlnetParams.End, 1)
                         });
                     }
-                    else if (g.IsSD3() || g.IsFlux())
+                    else if (g.IsSD3() || g.IsFlux() || g.IsChroma())
                     {
                         applyNode = g.CreateNode("ControlNetApplyAdvanced", new JObject()
                         {
