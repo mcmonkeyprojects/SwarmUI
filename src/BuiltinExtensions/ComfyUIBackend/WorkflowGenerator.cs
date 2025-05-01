@@ -918,6 +918,10 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
+                    else if (model.Metadata?.SpecialFormat == "fp8_scaled")
+                    {
+                        dtype = "default";
+                    }
                     else
                     {
                         dtype = "fp8_e4m3fn";
