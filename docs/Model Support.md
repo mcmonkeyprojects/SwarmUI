@@ -288,6 +288,7 @@ Parameters and usage is the same as any other normal model.
     - FP8 Scaled versions here: <https://huggingface.co/Clybius/Chroma-fp8-scaled/tree/main>
     - Or GGUF versions here: <https://huggingface.co/silveroxides/Chroma-GGUF>
     - Or original BF16 here (not recommended): <https://huggingface.co/lodestones/Chroma/tree/main>
+    - Model files goes in `diffusion_models`
     - Uses standard CFG, not distilled to 1 like other Flux models
     - Official reference workflow uses Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
     - Probably works better with longer prompts
