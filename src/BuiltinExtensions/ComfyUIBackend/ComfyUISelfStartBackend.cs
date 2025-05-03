@@ -553,7 +553,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// Version of Ultralytics pip package to use.
     /// This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
     /// </summary>
-    public static string UltralyticsVersion = "8.3.69";
+    public static string UltralyticsVersion = "8.3.123";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
