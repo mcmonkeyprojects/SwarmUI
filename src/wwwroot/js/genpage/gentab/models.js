@@ -1171,7 +1171,7 @@ function currentModelChanged() {
 }
 
 function doModelInstallRequiredCheck() {
-    if (curModelSpecialFormat == 'bnb_nf4' && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
+    if ((curModelSpecialFormat == 'bnb_nf4' || curModelSpecialFormat == 'bnb_fp4') && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
         $('#bnb_nf4_installer').modal('show');
         return true;
     }

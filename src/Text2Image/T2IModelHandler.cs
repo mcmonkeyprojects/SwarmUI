@@ -509,6 +509,11 @@ public class T2IModelHandler
                     specialFormat = "bnb_nf4";
                     break;
                 }
+                if (key.Contains("bitsandbytes__fp4"))
+                {
+                    specialFormat = "bnb_fp4";
+                    break;
+                }
                 if (key.EndsWith(".scale_weight"))
                 {
                     specialFormat = "fp8_scaled";

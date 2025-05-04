@@ -905,6 +905,19 @@ public class WorkflowGenerator
                 }, id);
                 LoadingModel = [modelNode, 0];
             }
+            else if (model.Metadata?.SpecialFormat == "bnb_nf4" || model.Metadata?.SpecialFormat == "bnb_fp4")
+            {
+                if (!Features.Contains("bnb_nf4"))
+                {
+                    throw new SwarmUserErrorException($"Model '{model.Name}' is in BitsAndBytes-NF4 format, but the server does not have BNB_NF4 support installed. Cannot run.");
+                }
+                string modelNode = CreateNode("UNETLoaderNF4", new JObject()
+                {
+                    ["unet_name"] = model.ToString(ModelFolderFormat),
+                    ["bnb_dtype"] = model.Metadata?.SpecialFormat == "bnb_fp4" ? "fp4" : "nf4"
+                }, id);
+                LoadingModel = [modelNode, 0];
+            }
             else
             {
                 if (model.RawFilePath.EndsWith(".gguf"))
@@ -941,7 +954,7 @@ public class WorkflowGenerator
             LoadingClip = null;
             LoadingVAE = null;
         }
-        else if (model.Metadata?.SpecialFormat == "bnb_nf4")
+        else if (model.Metadata?.SpecialFormat == "bnb_nf4" || model.Metadata?.SpecialFormat == "bnb_fp4")
         {
             if (!Features.Contains("bnb_nf4"))
             {
@@ -949,7 +962,8 @@ public class WorkflowGenerator
             }
             string modelNode = CreateNode("CheckpointLoaderNF4", new JObject()
             {
-                ["ckpt_name"] = model.ToString(ModelFolderFormat)
+                ["ckpt_name"] = model.ToString(ModelFolderFormat),
+                ["bnb_dtype"] = model.Metadata?.SpecialFormat == "bnb_fp4" ? "fp4" : "nf4"
             }, id);
             LoadingModel = [modelNode, 0];
             LoadingClip = [modelNode, 1];
