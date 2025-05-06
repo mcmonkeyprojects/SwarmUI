@@ -1041,17 +1041,21 @@ public class T2IParamInput
     /// <summary>Random instance for <see cref="T2IParamTypes.WildcardSeed"/>.</summary>
     public Random WildcardRandom = null;
 
+    /// <summary>Offset value for Wildcard Seed, to keep it unique.</summary>
+    private const int WCSeedOffset = 17;
+
     /// <summary>Gets the user's set wildcard seed.</summary>
     public int GetWildcardSeed()
     {
         long rawVal = -1;
         if (TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
         {
+            wildcardSeed += WCSeedOffset;
             rawVal = wildcardSeed;
         }
         else
         {
-            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + 17;
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + WCSeedOffset;
         }
         if (wildcardSeed > int.MaxValue)
         {
@@ -1063,7 +1067,7 @@ public class T2IParamInput
         }
         if (wildcardSeed != rawVal)
         {
-            Set(T2IParamTypes.WildcardSeed, wildcardSeed);
+            Set(T2IParamTypes.WildcardSeed, wildcardSeed - WCSeedOffset);
         }
         return (int)wildcardSeed;
     }
