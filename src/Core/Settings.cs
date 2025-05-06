@@ -466,7 +466,7 @@ public class Settings : AutoConfiguration
         public string Language = "en";
 
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
-        public string ReuseParamExcludeList = "wildcardseed";
+        public string ReuseParamExcludeList = "";
 
         /// <summary>Settings related to audio.</summary>
         public class AudioData : AutoConfiguration

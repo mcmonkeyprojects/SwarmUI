@@ -336,6 +336,13 @@ function copy_current_image_params() {
         let elem = document.getElementById(`input_${param.id}`);
         let val = metadata[param.id];
         if (elem && val !== undefined && val !== null && val !== '') {
+            // only reuse a seed parameter if it is not the same as the image gen seed.
+            if (param.id.includes('seed') && param.id !== 'seed') {
+                let mainGenSeed = metadata['seed'];
+                if (typeof mainGenSeed !== 'undefined' && val == mainGenSeed) {
+                    continue;
+                }
+            }
             setDirectParamValue(param, val);
             if (param.group && param.group.toggles) {
                 let toggle = getRequiredElementById(`input_group_content_${param.group.id}_toggle`);
@@ -407,7 +414,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
 
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
-    let isCurImgFocused = document.activeElement && 
+    let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');

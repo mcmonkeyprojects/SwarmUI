@@ -744,7 +744,7 @@ public class T2IParamInput
 
     /// <summary>Dense local time with incrementer.</summary>
     public int RequestRefTime;
-    
+
     /// <summary>If true, special early load has already ran.</summary>
     public bool EarlyLoadDone = false;
 
@@ -1051,7 +1051,7 @@ public class T2IParamInput
         }
         else
         {
-            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + 17;
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0);
         }
         if (wildcardSeed > int.MaxValue)
         {
@@ -1360,7 +1360,7 @@ public class T2IParamInput
             RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
         }
     }
-    
+
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param)
     {
