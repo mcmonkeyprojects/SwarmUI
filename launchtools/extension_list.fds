@@ -137,7 +137,7 @@ TIPO:
 
 NegPip:
     author: Hugs288
-    description: Adds a parameter group for Negpip (allows for the use of negative weights in positive prompt).
+    description: Adds a parameter group for Negpip (allows for the use of negative weights in positive prompt, works even in non-CFG models).
     url: https://github.com/Hugs288/NegPipforSwarmUI
     license: MIT
     tags:
@@ -145,10 +145,9 @@ NegPip:
 
 sDetailer:
     author: amatiramizu
-    description: Adds parameters and nodes for automatic object/face detection (YOLO) and detailed inpainting.
+    description: Adds alternative parameters and nodes for automatic object/face detection (YOLO) and detailed inpainting (similar to the built-in 'segment' syntax).
     url: https://github.com/amatiramizu/sDetailer
     license: MIT
     tags:
     - parameters
     - nodes
-
