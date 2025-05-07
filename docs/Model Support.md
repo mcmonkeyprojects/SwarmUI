@@ -292,6 +292,7 @@ Parameters and usage is the same as any other normal model.
     - Uses standard CFG, not distilled to 1 like other Flux models
     - Official reference workflow uses Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
     - Probably works better with longer prompts
+    - "Sigmoid Offset" scheduler may be useful with Chroma? You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
 
 # Lumina 2
 
