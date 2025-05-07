@@ -446,6 +446,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("numpy", "numpy>=1.25.0");
             }
+            string avVers = getVers("av");
+            if (numpyVers is not null && Version.Parse(numpyVers) < Version.Parse("14.2.0"))
+            {
+                await update("av", "av>=14.2.0");
+            }
             string frontendVersion = getVers("comfyui_frontend_package");
             if (doFixFrontend && (frontendVersion is null || frontendVersion != SwarmValidatedFrontendVersion))
             {
