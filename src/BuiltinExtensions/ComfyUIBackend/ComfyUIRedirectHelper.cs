@@ -540,7 +540,12 @@ public class ComfyUIRedirectHelper
             }
             else
             {
-                response = await webClient.SendAsync(new(new(context.Request.Method), $"{webAddress}/{path}"));
+                HttpRequestMessage request = new(new(context.Request.Method), $"{webAddress}/{path}");
+                if ((context.Request.Headers.ContentLength ?? 0) > 0)
+                {
+                    request.Content = new StreamContent(context.Request.Body);
+                }
+                response = await webClient.SendAsync(request);
             }
         }
         int code = (int)response.StatusCode;
