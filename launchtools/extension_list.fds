@@ -142,12 +142,3 @@ NegPip:
     license: MIT
     tags:
     - parameters
-
-sDetailer:
-    author: amatiramizu
-    description: Adds alternative parameters and nodes for automatic object/face detection (YOLO) and detailed inpainting (similar to the built-in 'segment' syntax).
-    url: https://github.com/amatiramizu/sDetailer
-    license: MIT
-    tags:
-    - parameters
-    - nodes
