@@ -86,6 +86,10 @@ public partial class GridGenCore
                     outList.Add($"{prefix}{outVal:0.#######}");
                 }
             }
+            else if (i == inList.Count - 1 && string.IsNullOrWhiteSpace(rawVal))
+            {
+                // Skip empty value at the end for numeric inputs
+            }
             else
             {
                 outList.Add($"{prefix}{rawVal}");
@@ -182,11 +186,11 @@ public partial class GridGenCore
                 valuesList = Mode.ParseList(valuesList);
             }
             HashSet<string> keys = [];
-            foreach (string val in valuesList)
+            for (int i = 0; i < valuesList.Count; i++)
             {
+                string valStr = valuesList[i].Trim();
                 try
                 {
-                    string valStr = val.Trim();
                     bool skip = valStr.StartsWith("SKIP:");
                     if (skip)
                     {
@@ -224,7 +228,14 @@ public partial class GridGenCore
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"value '{val}' errored: {ex.ReadableString()}");
+                    if (i == valuesList.Count - 1 && string.IsNullOrWhiteSpace(valStr))
+                    {
+                        // Skip empty values at the end for constrained types
+                    }
+                    else
+                    {
+                        throw new Exception($"value '{valStr}' errored: {ex.ReadableString()}");
+                    }
                 }
             }
         }
