@@ -65,7 +65,7 @@ public partial class GridGenCore
             {
                 if (i < 2 || i + 1 >= inList.Count)
                 {
-                    throw new Exception($"Cannot use ellipses notation at index {i}/{inList.Count} - must have at least 2 values before and 1 after.");
+                    throw new SwarmReadableErrorException($"Cannot use ellipses notation at index {i}/{inList.Count} - must have at least 2 values before and 1 after.");
                 }
                 double prior = double.Parse(outList[^1].Replace("SKIP:", ""));
                 double doublePrior = double.Parse(outList[^2].Replace("SKIP:", ""));
@@ -73,7 +73,7 @@ public partial class GridGenCore
                 double step = prior - doublePrior;
                 if ((step < 0) != ((after - prior) < 0))
                 {
-                    throw new Exception($"Ellipses notation failed for step {step} between {prior} and {after} - steps backwards.");
+                    throw new SwarmReadableErrorException($"Ellipses notation failed for step {step} between {prior} and {after} - steps backwards.");
                 }
                 int count = (int)Math.Round((after - prior) / step);
                 for (int x = 1; x < count; x++)
@@ -124,7 +124,7 @@ public partial class GridGenCore
             string[] halves = val.Split('=', 2);
             if (halves.Length != 2)
             {
-                throw new Exception($"Invalid value '{key}': '{val}': not expected format");
+                throw new SwarmReadableErrorException($"Invalid value '{key}': '{val}': not expected format");
             }
             //halves[0] = grid.ProcVariables(halves[0]);
             //halves[1] = grid.ProcVariables(halves[1]);
@@ -170,7 +170,7 @@ public partial class GridGenCore
             ModeName = T2IParamTypes.CleanNameGeneric(id);
             if (!T2IParamTypes.TryGetType(T2IParamTypes.CleanTypeName(ModeName), out Mode, grid.InitialParams))
             {
-                throw new Exception($"Invalid axis mode '{Mode}' from '{id}': unknown mode");
+                throw new SwarmReadableErrorException($"Invalid axis mode '{Mode}' from '{id}': unknown mode");
             }
             if (Mode.Type == T2IParamDataType.INTEGER)
             {
@@ -234,7 +234,7 @@ public partial class GridGenCore
                     }
                     else
                     {
-                        throw new Exception($"value '{valStr}' errored: {ex.ReadableString()}");
+                        throw new SwarmReadableErrorException($"value '{valStr}' errored: {ex.ReadableString()}");
                     }
                 }
             }
@@ -733,7 +733,7 @@ public partial class GridGenCore
                 "Just Images" => Grid.OutputyTypeEnum.JUST_IMAGES,
                 "Grid Image" => Grid.OutputyTypeEnum.GRID_IMAGE,
                 "Web Page" => Grid.OutputyTypeEnum.WEB_PAGE,
-                _ => throw new Exception($"Invalid output type '{outputType}'")
+                _ => throw new SwarmReadableErrorException($"Invalid output type '{outputType}'")
             }
         };
         if (grid.OutputType != Grid.OutputyTypeEnum.WEB_PAGE)
@@ -764,7 +764,7 @@ public partial class GridGenCore
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception($"Invalid axis '{id}': errored: {ex.ReadableString()}");
+                    throw new SwarmReadableErrorException($"Invalid axis '{id}': errored: {ex.ReadableString()}");
                 }
             }
         }
