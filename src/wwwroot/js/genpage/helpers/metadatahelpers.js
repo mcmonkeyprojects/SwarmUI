@@ -107,7 +107,13 @@ function interpretMetadata(metadata) {
         else {
             let lines = metadata.split('\n');
             if (lines.length > 1) {
-                metadata = upvertAutoWebuiMetadataToSwarm(metadata);
+                try {
+                    metadata = upvertAutoWebuiMetadataToSwarm(metadata);
+                }
+                catch (e) {
+                    console.error(`Error parsing metadata '${metadata}': ${e}`);
+                    metadata = null;
+                }
             }
             else {
                 // ???
