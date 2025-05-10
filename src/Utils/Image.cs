@@ -311,19 +311,19 @@ public class Image
                 break;
             case "WEBP_LOSSLESS":
                 ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = true, Quality = 100 });
+                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = true, FileFormat = WebpFileFormatType.Lossless, Quality = 100 });
                 break;
             case "WEBP_100":
                 ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 100 });
+                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 100 });
                 break;
             case "WEBP_90":
                 ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 90 });
+                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 90 });
                 break;
             case "WEBP_75":
                 ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, Quality = 75 });
+                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 75 });
                 break;
             default:
                 throw new SwarmReadableErrorException($"User setting for image format is '{format}', which is invalid");
