@@ -1,6 +1,5 @@
 ﻿namespace SwarmUI.Utils;
 
-using SwarmUI.Core;
 using SixLabors.ImageSharp;
 using System.IO;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
