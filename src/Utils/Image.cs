@@ -1,5 +1,6 @@
 ﻿namespace SwarmUI.Utils;
 
+using SwarmUI.Core;
 using SixLabors.ImageSharp;
 using System.IO;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
@@ -193,18 +194,10 @@ public class Image
         PNG,
         /// <summary>JPEG: Lossy, (100% quality), small file.</summary>
         JPG,
-        /// <summary>JPEG: Lossy, (90% quality), small file.</summary>
-        JPG90,
-        /// <summary>JPEG: Lossy, (bad 75% quality), small file.</summary>
-        JPG75,
         /// <summary>Webp: Lossless.</summary>
         WEBP_LOSSLESS,
         /// <summary>Webp: lossy 100% quality.</summary>
-        WEBP_100,
-        /// <summary>Webp: lossy 90% quality.</summary>
-        WEBP_90,
-        /// <summary>Webp: lossy 75% quality.</summary>
-        WEBP_75
+        WEBP
     }
 
     /// <summary>Returns the metadata from this image, or null if none.</summary>
@@ -247,18 +240,14 @@ public class Image
         {
             "PNG" => "png",
             "JPG" => "jpg",
-            "JPG90" => "jpg",
-            "JPG75" => "jpg",
             "WEBP_LOSSLESS" => "webp",
-            "WEBP_100" => "webp",
-            "WEBP_90" => "webp",
-            "WEBP_75" => "webp",
+            "WEBP" => "webp",
             _ => throw new ArgumentException("Unknown format: " + format, nameof(format)),
         };
     }
 
     /// <summary>Converts an image to the specified format, and the specific metadata text.</summary>
-    public Image ConvertTo(string format, string metadata = null, int dpi = 0)
+    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int quality = 90)
     {
         if (Type != ImageType.IMAGE)
         {
@@ -301,29 +290,15 @@ public class Image
                 ext = "png";
                 break;
             case "JPG":
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 100 });
-                break;
-            case "JPG90":
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 90 });
-                break;
-            case "JPG75":
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 75 });
+                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = quality });
                 break;
             case "WEBP_LOSSLESS":
                 ext = "webp";
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = true, FileFormat = WebpFileFormatType.Lossless, Quality = 100 });
                 break;
-            case "WEBP_100":
+            case "WEBP":
                 ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 100 });
-                break;
-            case "WEBP_90":
-                ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 90 });
-                break;
-            case "WEBP_75":
-                ext = "webp";
-                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = 75 });
+                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = quality });
                 break;
             default:
                 throw new SwarmReadableErrorException($"User setting for image format is '{format}', which is invalid");
