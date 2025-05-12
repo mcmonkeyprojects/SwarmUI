@@ -191,7 +191,7 @@ public class Image
     {
         /// <summary>PNG: Lossless, big file.</summary>
         PNG,
-        /// <summary>JPEG: Lossy, (100% quality), small file.</summary>
+        /// <summary>JPEG: Lossy, (imagequality% quality), small file.</summary>
         JPG,
         /// <summary>JPEG: Lossy, (90% quality), small file.</summary>
         JPG90,
@@ -204,7 +204,9 @@ public class Image
         /// <summary>Webp: lossy 90% quality.</summary>
         WEBP_90,
         /// <summary>Webp: lossy 75% quality.</summary>
-        WEBP_75
+        WEBP_75,
+        /// <summary>Webp: lossy imagequality% quality.</summary>
+        WEBP
     }
 
     /// <summary>Returns the metadata from this image, or null if none.</summary>
@@ -253,12 +255,13 @@ public class Image
             "WEBP_100" => "webp",
             "WEBP_90" => "webp",
             "WEBP_75" => "webp",
+            "WEBP" => "webp",
             _ => throw new ArgumentException("Unknown format: " + format, nameof(format)),
         };
     }
 
     /// <summary>Converts an image to the specified format, and the specific metadata text.</summary>
-    public Image ConvertTo(string format, string metadata = null, int dpi = 0)
+    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int quality = 100)
     {
         if (Type != ImageType.IMAGE)
         {
@@ -301,7 +304,7 @@ public class Image
                 ext = "png";
                 break;
             case "JPG":
-                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 100 });
+                img.SaveAsJpeg(ms, new JpegEncoder() { Quality = quality });
                 break;
             case "JPG90":
                 img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 90 });
@@ -312,6 +315,10 @@ public class Image
             case "WEBP_LOSSLESS":
                 ext = "webp";
                 img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = true, FileFormat = WebpFileFormatType.Lossless, Quality = 100 });
+                break;
+            case "WEBP":
+                ext = "webp";
+                img.SaveAsWebp(ms, new WebpEncoder() { NearLossless = false, FileFormat = WebpFileFormatType.Lossy, Quality = quality });
                 break;
             case "WEBP_100":
                 ext = "webp";

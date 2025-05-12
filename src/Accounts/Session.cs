@@ -168,7 +168,7 @@ public class Session : IEquatable<Session>
         }
         string metadata = user_input.GenRawMetadata();
         string format = user_input.Get(T2IParamTypes.ImageFormat, User.Settings.FileFormat.ImageFormat);
-        image = image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI);
+        image = image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100));
         return (image, metadata ?? "");
     }
 

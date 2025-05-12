@@ -332,6 +332,9 @@ public class Settings : AutoConfiguration
             [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<Image.ImageFormat>))]
             public string ImageFormat = "PNG";
 
+            [ConfigComment("Quality for JPEG and WEBP formats (1-100). Other formats are ignored.\nDefault is 100, recommended 70-90.")]
+            public int ImageQuality = 100;
+
             [ConfigComment("Whether to store metadata into saved images.\nDefaults enabled.")]
             public bool SaveMetadata = true;
 
