@@ -36,7 +36,7 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
         data.files = preFiles.concat(postFiles);
         let mapped = data.files.map(f => {
             let fullSrc = `${prefix}${f.src}`;
-            return { 'name': fullSrc, 'data': { 'src': `${getImageOutPrefix()}/${fullSrc}`, 'fullsrc': fullSrc, 'name': f.src, 'metadata': f.metadata } };
+            return { 'name': fullSrc, 'data': { 'src': `${getImageOutPrefix()}/${fullSrc}`, 'fullsrc': fullSrc, 'name': f.src, 'metadata': interpretMetadata(f.metadata) } };
         });
         callback(folders, mapped);
         if (fix) {
