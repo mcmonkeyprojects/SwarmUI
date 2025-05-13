@@ -237,6 +237,13 @@ function toggleShowLoadSpinners() {
 }
 
 function clickImageInBatch(div) {
+    // Remove 'image-block-selected' from all image-blocks in the batch
+    document.querySelectorAll('#current_image_batch .image-block-selected').forEach(function (block) {
+        block.classList.remove('image-block-selected');
+    });
+    // Add 'image-block-selected' to the clicked block
+    div.classList.add('image-block-selected');
+
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata);
@@ -244,6 +251,7 @@ function clickImageInBatch(div) {
     }
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
+
 
 function rightClickImageInBatch(e, div) {
     if (e.shiftKey || e.ctrlKey) {
@@ -369,8 +377,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
         let newIndex = index + (next ? 1 : -1);
         if (newIndex < 0) {
             newIndex = divs.length - 1;
-        }
-        else if (newIndex >= divs.length) {
+        } else if (newIndex >= divs.length) {
             newIndex = 0;
         }
         divs[newIndex].querySelector('img').click();
@@ -392,12 +399,19 @@ function shiftToNextImagePreview(next = true, expand = false) {
     let newIndex = index + (next ? 1 : -1);
     if (newIndex < 0) {
         newIndex = imgs.length - 1;
-    }
-    else if (newIndex >= imgs.length) {
+    } else if (newIndex >= imgs.length) {
         newIndex = 0;
     }
     let newImg = imgs[newIndex];
     let block = findParentOfClass(newImg, 'image-block');
+
+    // Remove 'image-block-selected' from all image-blocks
+    document.querySelectorAll('#current_image_batch .image-block-selected').forEach(function (block) {
+        block.classList.remove('image-block-selected');
+    });
+    // Add 'image-block-selected' to the new block
+    block.classList.add('image-block-selected');
+
     setCurrentImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id, newImg.dataset.previewGrow == 'true');
     if (expand) {
         imageFullView.showImage(block.dataset.src, block.dataset.metadata);
@@ -802,6 +816,26 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
+
+    // Only remove selection from image history if we're not selecting a history image
+    if (batchId !== 'history') {
+        document.querySelectorAll('#imagehistorybrowser-content .image-block-selected')
+            .forEach((selected) => {
+                selected.classList.remove('image-block-selected');
+            });
+    }
+
+    // Always remove selection from current batch
+    document.querySelectorAll('#current_image_batch .image-block-selected').forEach(function (block) {
+        block.classList.remove('image-block-selected');
+    });
+
+    // Add selection to the current image block in the batch, if applicable
+    let currentBlock = document.querySelector(`#current_image_batch .image-block[data-src="${src}"]`);
+    if (currentBlock) {
+        currentBlock.classList.add('image-block-selected');
+    }
+
 }
 
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {

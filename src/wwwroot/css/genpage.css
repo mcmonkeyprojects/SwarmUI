@@ -213,6 +213,11 @@ body {
     vertical-align: top;
     white-space: normal;
 }
+.image-block-selected {
+    outline: 2px solid var(--emphasis);
+    outline-offset: -2px;
+    z-index: 2;
+}
 .current-image-extras-wrapper {
     min-width: 20rem;
     vertical-align: top;
