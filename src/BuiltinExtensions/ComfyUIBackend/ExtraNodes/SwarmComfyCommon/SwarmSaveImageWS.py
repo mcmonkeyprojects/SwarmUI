@@ -8,7 +8,7 @@ SPECIAL_ID = 12345 # Tells swarm that the node is going to output final images
 VIDEO_ID = 12346
 TEXT_ID = 12347
 
-def send_image_to_server_raw(type_num: int, save_me: callable, id: int):
+def send_image_to_server_raw(type_num: int, save_me: callable, id: int, event_type: int = BinaryEventTypes.PREVIEW_IMAGE):
     out = io.BytesIO()
     header = struct.pack(">I", type_num)
     out.write(header)
@@ -17,7 +17,7 @@ def send_image_to_server_raw(type_num: int, save_me: callable, id: int):
     preview_bytes = out.getvalue()
     server = PromptServer.instance
     server.send_sync("progress", {"value": id, "max": id}, sid=server.client_id)
-    server.send_sync(BinaryEventTypes.PREVIEW_IMAGE, preview_bytes, sid=server.client_id)
+    server.send_sync(event_type, preview_bytes, sid=server.client_id)
 
 class SwarmSaveImageWS:
     @classmethod
@@ -131,7 +131,7 @@ class SwarmAddSaveMetadataWS:
     def add_save_metadata(self, key, value):
         full_text = f"{key}:{value}"
         full_text_bytes = full_text.encode('utf-8')
-        send_image_to_server_raw(0, lambda out: out.write(full_text_bytes), TEXT_ID)
+        send_image_to_server_raw(0, lambda out: out.write(full_text_bytes), TEXT_ID, event_type=BinaryEventTypes.TEXT)
         return {}
 
     @classmethod

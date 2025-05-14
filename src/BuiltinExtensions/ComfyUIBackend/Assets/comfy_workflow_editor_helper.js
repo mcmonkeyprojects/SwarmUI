@@ -47,11 +47,11 @@ function comfyFixMenuLocation() {
         if (logo && !logo.parentElement.querySelector('.swarm-injected-header-spacer')) {
             let space = document.createElement('span');
             space.className = 'swarm-injected-header-spacer';
-            space.style.width = swarmComfyMenu.offsetWidth + 'px';
+            space.style.width = (swarmComfyMenu.offsetWidth + 30) + 'px';
             logo.parentElement.insertBefore(space, logo.nextSibling);
         }
         swarmComfyMenu.style.top = '0rem';
-        swarmComfyMenu.style.left = `81px`;
+        swarmComfyMenu.style.left = `50px`;
     }
     else {
         swarmComfyMenu.style.left = undefined;
@@ -64,6 +64,10 @@ function comfyFixMenuLocation() {
                 menu.style.top = '150px';
             }
         }
+    }
+    let sidePanelContainer = frame.contentWindow.document.querySelector('.side-bar-panel');
+    if (sidePanelContainer) {
+        sidePanelContainer.style.paddingTop = '60px';
     }
 }
 
