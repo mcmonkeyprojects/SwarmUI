@@ -384,13 +384,17 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     {
                         (string formatLabel, int index, int eventId) = ComfyRawWebsocketOutputToFormatLabel(output);
                         Logs.Verbose($"ComfyUI Websocket sent: {output.Length} bytes of image data as event {eventId} in format {formatLabel} to index {index}");
-                        if (isExpectingText)
+                        if (isExpectingText || formatLabel == "txt")
                         {
                             string metadata = StringConversionHelper.UTF8Encoding.GetString(output[8..]);
                             int colon = metadata.IndexOf(':');
-                            if (colon < 1 || colon > 200 || metadata.Length > 1_000_000)
+                            if (metadata.Length > 1_000_000)
                             {
-                                Logs.Warning($"Invalid raw text output from Comfy backend.");
+                                Logs.Info($"Invalid raw text output from Comfy backend, skipping text len {metadata.Length}.");
+                            }
+                            if (colon < 1 || colon > 200)
+                            {
+                                Logs.Info($"Invalid raw text output from Comfy backend, skipping text: \"{Utilities.EscapeJsonString(metadata)}\"");
                             }
                             else
                             {
@@ -519,7 +523,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             index = (format >> 4) & 0xffff;
             format &= 7;
         }
-        string formatLabel = format switch { 1 => "jpg", 2 => "png", 3 => "webp", 4 => "gif", 5 => "mp4", 6 => "webm", 7 => "mov", _ => "jpg" };
+        string formatLabel = eventId == 3 ? "txt" : format switch { 1 => "jpg", 2 => "png", 3 => "webp", 4 => "gif", 5 => "mp4", 6 => "webm", 7 => "mov", _ => "jpg" };
         return (formatLabel, index, eventId);
     }
 
