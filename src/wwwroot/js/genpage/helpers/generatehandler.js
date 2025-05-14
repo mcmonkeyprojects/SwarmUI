@@ -105,7 +105,7 @@ class GenerateHandler {
         imgHolder.image = src;
         imgHolder.div.dataset.src = src;
     }
-    
+
     doGenerate(input_overrides = {}, input_preoverrides = {}) {
         if (session_id == null) {
             if (Date.now() - time_started > 1000 * 60) {
@@ -198,7 +198,8 @@ class GenerateHandler {
                     let thisBatchId = `${batch_id}_${data.gen_progress.batch_index}`;
                     if (!(data.gen_progress.batch_index in images)) {
                         let metadataRaw = data.gen_progress.metadata ?? '{}';
-                        let batch_div = this.gotImagePreview(data.gen_progress.preview ?? `DOPLACEHOLDER:${actualInput.model || ''}`, metadataRaw, thisBatchId);
+                        let metadataParsed = JSON.parse(metadataRaw);
+                        let batch_div = this.gotImagePreview(data.gen_progress.preview ?? `DOPLACEHOLDER:${metadataParsed.sui_image_params?.model || actualInput.model || ''}`, metadataRaw, thisBatchId);
                         if (batch_div) {
                             images[data.gen_progress.batch_index] = {div: batch_div, image: null, metadata: metadataRaw, overall_percent: 0, current_percent: 0};
                             let progress_bars = createDiv(null, 'image-preview-progress-wrapper', this.progressBarHtml);
