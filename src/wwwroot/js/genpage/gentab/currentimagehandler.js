@@ -249,7 +249,6 @@ function clickImageInBatch(div) {
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
-
 function rightClickImageInBatch(e, div) {
     if (e.shiftKey || e.ctrlKey) {
         return;
