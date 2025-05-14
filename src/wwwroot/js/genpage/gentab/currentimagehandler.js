@@ -237,7 +237,8 @@ function toggleShowLoadSpinners() {
 }
 
 function clickImageInBatch(div) {
-    for (let block of document.querySelectorAll('#current_image_batch .image-block-selected')) {
+    let currentImageBatchContent = document.getElementById('current_image_batch');
+    for (let block of currentImageBatchContent.querySelectorAll('.image-block-selected')) {
         block.classList.remove('image-block-selected');
     }
     div.classList.add('image-block-selected');
@@ -400,7 +401,8 @@ function shiftToNextImagePreview(next = true, expand = false) {
     }
     let newImg = imgs[newIndex];
     let block = findParentOfClass(newImg, 'image-block');
-    for (let block of document.querySelectorAll('#current_image_batch .image-block-selected')) {
+    let currentImageBatchContent = document.getRequiredElementById('current_image_batch');
+    for (let block of currentImageBatchContent.querySelectorAll('.image-block-selected')) {
         block.classList.remove('image-block-selected');
     }
     block.classList.add('image-block-selected');
@@ -808,15 +810,17 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
+    let imageHistoryBrowserContent = getRequiredElementById('imagehistorybrowser-content');
+    let currentImageBatchContent = getRequiredElementById('current_image_batch');
     if (batchId != 'history') {
-        for (let selected of document.querySelectorAll('#imagehistorybrowser-content .image-block-selected')) {
+        for (let selected of imageHistoryBrowserContent.querySelectorAll('.image-block-selected')) {
             selected.classList.remove('image-block-selected');
         }
     }
-    for (let block of document.querySelectorAll('#current_image_batch .image-block-selected')) {
+    for (let block of currentImageBatchContent.querySelectorAll('.image-block-selected')) {
         block.classList.remove('image-block-selected');
     }
-    let currentBlock = document.querySelector(`#current_image_batch .image-block[data-src="${src}"]`);
+    let currentBlock = currentImageBatchContent.querySelector(`.image-block[data-src="${src}"]`);
     if (currentBlock) {
         currentBlock.classList.add('image-block-selected');
     }
