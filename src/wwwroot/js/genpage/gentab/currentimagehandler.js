@@ -237,8 +237,7 @@ function toggleShowLoadSpinners() {
 }
 
 function clickImageInBatch(div) {
-    let currentImageBatchContent = document.getElementById('current_image_batch');
-    for (let block of currentImageBatchContent.querySelectorAll('.image-block-selected')) {
+    for (let block of getRequiredElementById('current_image_batch').querySelectorAll('.image-block-selected')) {
         block.classList.remove('image-block-selected');
     }
     div.classList.add('image-block-selected');
@@ -401,8 +400,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
     }
     let newImg = imgs[newIndex];
     let block = findParentOfClass(newImg, 'image-block');
-    let currentImageBatchContent = document.getRequiredElementById('current_image_batch');
-    for (let block of currentImageBatchContent.querySelectorAll('.image-block-selected')) {
+    for (let block of getRequiredElementById('current_image_batch').querySelectorAll('.image-block-selected')) {
         block.classList.remove('image-block-selected');
     }
     block.classList.add('image-block-selected');
@@ -810,17 +808,15 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
-    let imageHistoryBrowserContent = getRequiredElementById('imagehistorybrowser-content');
-    let currentImageBatchContent = getRequiredElementById('current_image_batch');
     if (batchId != 'history') {
-        for (let selected of imageHistoryBrowserContent.querySelectorAll('.image-block-selected')) {
+        for (let selected of getRequiredElementById('imagehistorybrowser-content').querySelectorAll('.image-block-selected')) {
             selected.classList.remove('image-block-selected');
         }
     }
-    for (let block of currentImageBatchContent.querySelectorAll('.image-block-selected')) {
+    for (let block of getRequiredElementById('current_image_batch').querySelectorAll('.image-block-selected')) {
         block.classList.remove('image-block-selected');
     }
-    let currentBlock = currentImageBatchContent.querySelector(`.image-block[data-src="${src}"]`);
+    let currentBlock = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
     if (currentBlock) {
         currentBlock.classList.add('image-block-selected');
     }
