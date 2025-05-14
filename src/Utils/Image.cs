@@ -191,21 +191,11 @@ public class Image
     {
         /// <summary>PNG: Lossless, big file.</summary>
         PNG,
-        /// <summary>JPEG: Lossy, (imagequality% quality), small file.</summary>
+        /// <summary>JPEG: Lossy, small file.</summary>
         JPG,
-        /// <summary>JPEG: Lossy, (90% quality), small file.</summary>
-        JPG90,
-        /// <summary>JPEG: Lossy, (bad 75% quality), small file.</summary>
-        JPG75,
         /// <summary>Webp: Lossless.</summary>
         WEBP_LOSSLESS,
-        /// <summary>Webp: lossy 100% quality.</summary>
-        WEBP_100,
-        /// <summary>Webp: lossy 90% quality.</summary>
-        WEBP_90,
-        /// <summary>Webp: lossy 75% quality.</summary>
-        WEBP_75,
-        /// <summary>Webp: lossy imagequality% quality.</summary>
+        /// <summary>Webp: lossy.</summary>
         WEBP
     }
 
@@ -249,7 +239,7 @@ public class Image
         {
             "PNG" => "png",
             "JPG" => "jpg",
-            "JPG90" => "jpg",
+            "JPG90" => "jpg", // NOTE: Legacy (0.9.6) format variants with built-in quality selector
             "JPG75" => "jpg",
             "WEBP_LOSSLESS" => "webp",
             "WEBP_100" => "webp",
@@ -306,7 +296,7 @@ public class Image
             case "JPG":
                 img.SaveAsJpeg(ms, new JpegEncoder() { Quality = quality });
                 break;
-            case "JPG90":
+            case "JPG90": // NOTE: Legacy (0.9.6) format variants with built-in quality selector
                 img.SaveAsJpeg(ms, new JpegEncoder() { Quality = 90 });
                 break;
             case "JPG75":
