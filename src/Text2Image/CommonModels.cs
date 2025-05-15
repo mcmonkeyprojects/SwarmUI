@@ -83,5 +83,6 @@ public static class CommonModels
         Register(new("hunyuan-video-vae", "Hunyuan Video VAE", "The VAE for Hunyuan Video", "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/vae/hunyuan_video_vae_bf16.safetensors", "e8f8553275406d84ccf22e7a47601650d8f98bdb8aa9ccfdd6506b57a9701aed", "VAE", "HunyuanVideo/hunyuan_video_vae_bf16.safetensors"));
         Register(new("cosmos-vae", "Cosmos VAE", "The VAE for Nvidia Cosmos", "https://huggingface.co/comfyanonymous/cosmos_1.0_text_encoder_and_VAE_ComfyUI/resolve/main/vae/cosmos_cv8x8x8_1.0.safetensors", "e4478fa8629160d16262276e52bdea91ecef636b005a2a29e93a3d7764e0863b", "VAE", "Cosmos/cosmos_cv8x8x8_1.0.safetensors"));
         Register(new("wan21-vae", "Wan 2.1 VAE", "The VAE for Wan 2.1", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors", "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b", "VAE", "Wan/wan_2.1_vae.safetensors"));
+        Register(new("ltxv-vae", "LTX-V VAE", "The VAE for Lightricks LTX-Video.", "https://huggingface.co/wsbagnsv1/ltxv-13b-0.9.7-dev-GGUF/resolve/c4296d06bab7719ce08e68bfa7a35042898e538b/ltxv-13b-0.9.7-vae-BF16.safetensors", "ee5ddcebc0b92d81b8aed9ee43445b7a4e66df1acf180678c5aa40e82f898dc5", "VAE", "LTXV/ltxv_vae.safetensors"));
     }
 }

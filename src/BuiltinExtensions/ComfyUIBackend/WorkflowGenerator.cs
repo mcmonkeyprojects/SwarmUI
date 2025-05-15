@@ -1167,6 +1167,7 @@ public class WorkflowGenerator
                 ["type"] = "ltxv"
             });
             LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "lightricks-ltx-video", "ltxv-vae");
         }
         else if (IsHunyuanVideo())
         {
