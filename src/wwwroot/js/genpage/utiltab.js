@@ -375,6 +375,9 @@ class ModelDownloaderUtil {
     }
 
     urlInput() {
+        this.metadataZone.innerHTML = '';
+        this.metadataZone.dataset.raw = '';
+        this.imageSide.innerHTML = '';
         let url = this.url.value.trim();
         if (url.endsWith('.pt') || url.endsWith('.pth') || url.endsWith('.ckpt') || url.endsWith('.bin')) {
             this.urlStatusArea.innerText = "URL looks to be a pickle file, cannot download. Only safetensors can be auto-downloaded. Pickle files may contain malware.";
