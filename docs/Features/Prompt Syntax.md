@@ -54,6 +54,9 @@
         - If your wildcards won't change but your seed is changing, check if you've accidentally enabled the `Wildcard Seed` parameter. Some users have done this by accident.
     - You can exclude certain values like so: `<wildcard:animals,not=cat,dog>`
         - This can be combined with [Variables](#variables), eg `a photo of a <setvar[animal]:<wildcard:animals>> playing with a <wildcard:animals,not=<var:animal>>`
+    - You can type eg `<wildcard:animals:` with a colon at the end, to then get a search in your prompt box for autocompletions of the values inside.
+        - For example, you can type `<wildcard:animals:do` and `dog` will pop up as an option.
+        - Note that is a purely frontend function: it's a UI convenience trick for users who want to grab specific lines from wildcards easily. Do not submit prompts with a stray `:`.
 
 ## Variables
 
