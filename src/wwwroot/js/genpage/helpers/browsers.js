@@ -614,7 +614,9 @@ class GenPageBrowserClass {
                 else {
                     clearFilterBtn.style.display = 'none';
                 }
-                this.updateWithoutDup();
+                setTimeout(() => {
+                    this.updateWithoutDup();
+                }, 1);
             });
             if (!this.showFilter) {
                 filterInput.parentElement.style.display = 'none';
