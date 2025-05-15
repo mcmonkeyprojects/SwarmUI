@@ -206,7 +206,12 @@ public class ImageBatchToolExtension : Extension
                 }
                 int curGen = Interlocked.Increment(ref genId);
                 string diffCode = curGen == 1 ? "" : $"-{curGen}";
-                File.WriteAllBytes($"{output_folder}/{preExt}{diffCode}.{ext}", image.Img.ImageData);
+                string actualFile = $"{output_folder}/{preExt}{diffCode}";
+                File.WriteAllBytes($"{actualFile}.{ext}", image.Img.ImageData);
+                if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(ext) && !string.IsNullOrWhiteSpace(metadata))
+                {
+                    File.WriteAllBytes($"{actualFile}.swarm.json", metadata.EncodeUTF8());
+                }
                 string img = session.GetImageB64(image.Img);
                 output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                 WebhookManager.SendEveryGenWebhook(param, img, image.Img);
