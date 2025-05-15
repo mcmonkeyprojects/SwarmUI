@@ -5,140 +5,12 @@ let curModelWidth = 0, curModelHeight = 0;
 let curModelArch = '';
 let curModelCompatClass = '';
 let curModelSpecialFormat = '';
-let curWildcardMenuWildcard = null;
 let curModelMenuModel = null;
 let curModelMenuBrowser = null;
 let loraWeightPref = {};
-let allWildcards = [];
 let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 let modelIconUrlCache = {};
 let starredModels = null;
-
-function test_wildcard_again() {
-    let card = curWildcardMenuWildcard;
-    if (card == null) {
-        console.log("Wildcard do test: no wildcard");
-        return;
-    }
-    testWildcard(card);
-}
-
-function testWildcard(card) {
-    if (card == null) {
-        return;
-    }
-    curWildcardMenuWildcard = card;
-    getRequiredElementById('test_wildcard_name').innerText = card.name;
-    let choice = Math.floor(Math.random() * card.options.length);
-    let val = card.options[choice];
-    getRequiredElementById('test_wildcard_result').value = val;
-    let button = getRequiredElementById('test_wildcard_again_button');
-    if (val.includes('<')) {
-        button.disabled = true;
-        genericRequest('TestPromptFill', {'prompt': val}, data => {
-            button.disabled = false;
-            getRequiredElementById('test_wildcard_result').value = data.result;
-            $('#test_wildcard_modal').modal('show');
-        });
-    }
-    else {
-        button.disabled = false;
-        $('#test_wildcard_modal').modal('show');
-    }
-}
-
-function create_new_wildcard_button() {
-    let card = {
-        name: '',
-        raw: ''
-    };
-    editWildcard(card);
-}
-
-function editWildcard(card) {
-    if (card == null) {
-        return;
-    }
-    curWildcardMenuWildcard = card;
-    let imageInput = getRequiredElementById('edit_wildcard_image');
-    imageInput.innerHTML = '';
-    let enableImage = getRequiredElementById('edit_wildcard_enable_image');
-    enableImage.checked = false;
-    enableImage.disabled = true;
-    let curImg = document.getElementById('current_image_img');
-    if (curImg && curImg.tagName == 'IMG') {
-        let newImg = curImg.cloneNode(true);
-        newImg.id = 'edit_wildcard_image_img';
-        newImg.style.maxWidth = '100%';
-        newImg.style.maxHeight = '';
-        newImg.removeAttribute('width');
-        newImg.removeAttribute('height');
-        imageInput.appendChild(newImg);
-        if (!card.image || card.image == 'imgs/model_placeholder.jpg') {
-            enableImage.checked = true;
-        }
-        enableImage.disabled = false;
-    }
-    getRequiredElementById('edit_wildcard_name').value = card.name;
-    getRequiredElementById('edit_wildcard_contents').value = card.raw;
-    $('#edit_wildcard_modal').modal('show');
-}
-
-function save_edit_wildcard() {
-    let card = curWildcardMenuWildcard;
-    if (card == null) {
-        console.log("Wildcard do save: no wildcard");
-        return;
-    }
-    let data = {
-        'card': getRequiredElementById('edit_wildcard_name').value,
-        'options': getRequiredElementById('edit_wildcard_contents').value.trim() + '\n',
-        'preview_image': '',
-        'preview_image_metadata': null
-    };
-    function complete() {
-        if (card.name != data.card && !data['preview_image'] && card.image && card.image != 'imgs/model_placeholder.jpg') {
-            data['preview_image'] = card.image;
-        }
-        genericRequest('EditWildcard', data, resData => {
-            wildcardsBrowser.browser.refresh();
-            if (card.name && card.name != data.card) {
-                genericRequest('DeleteWildcard', { card: card.name }, data => {});
-            }
-        });
-        $('#edit_wildcard_modal').modal('hide');
-    }
-    if (getRequiredElementById('edit_wildcard_enable_image').checked) {
-        data['preview_image_metadata'] = currentMetadataVal;
-        imageToData(getRequiredElementById('edit_wildcard_image').getElementsByTagName('img')[0].src, (dataURL) => {
-            data['preview_image'] = dataURL;
-            complete();
-        }, true);
-    }
-    else {
-        complete();
-    }
-}
-
-function duplicateWildcard(card) {
-    if (card == null) {
-        return;
-    }
-    let name = card.name;
-    let i = 2;
-    while (allWildcards.includes(`${name} - ${i}`)) {
-        i++;
-    }
-    let data = {
-        'card': `${name} - ${i}`,
-        'options': card.raw,
-        'preview_image': card.image && card.image != 'imgs/model_placeholder.jpg' ? card.image : '',
-        'preview_image_metadata': null
-    }
-    genericRequest('EditWildcard', data, resData => {
-        wildcardsBrowser.browser.refresh();
-    });
-}
 
 function editModelGetHashNow() {
     if (curModelMenuModel == null) {
@@ -655,10 +527,10 @@ class ModelBrowserWrapper {
         if (this.subType == 'Wildcards') {
             buttons = [starButton];
             if (permissions.hasPermission('edit_wildcards')) {
-                buttons.push({ label: 'Edit Wildcard', onclick: () => editWildcard(model.data) });
-                buttons.push({ label: 'Duplicate Wildcard', onclick: () => duplicateWildcard(model.data) });
+                buttons.push({ label: 'Edit Wildcard', onclick: () => wildcardHelpers.editWildcard(model.data) });
+                buttons.push({ label: 'Duplicate Wildcard', onclick: () => wildcardHelpers.duplicateWildcard(model.data) });
             }
-            buttons.push({ label: 'Test Wildcard', onclick: () => testWildcard(model.data) });
+            buttons.push({ label: 'Test Wildcard', onclick: () => wildcardHelpers.testWildcard(model.data) });
             if (permissions.hasPermission('edit_wildcards')) {
                 buttons.push({ label: 'Delete Wildcard', onclick: () => {
                     if (confirm("Are you sure want to delete that wildcard?")) {
@@ -674,7 +546,7 @@ class ModelBrowserWrapper {
             }
             detail_list.push(escapeHtml(raw).replaceAll('\n', '').replaceAll('<br>', ', '));
             description = `<span class="wildcard_title">${escapeHtml(name)}</span><br>${escapeHtml(raw)}`;
-            let match = matchWildcard(this.promptBox.value, model.data.name);
+            let match = wildcardHelpers.matchWildcard(this.promptBox.value, model.data.name);
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
             let searchable = `${model.data.name}, ${description}`;
@@ -747,7 +619,7 @@ class ModelBrowserWrapper {
             }
         }
         else if (this.subType == 'Wildcards') {
-            let match = matchWildcard(this.promptBox.value, name);
+            let match = wildcardHelpers.matchWildcard(this.promptBox.value, name);
             isSelected = match && match.length > 0;
         }
         else {
@@ -827,41 +699,10 @@ let sdVAEBrowser = new ModelBrowserWrapper('VAE', ['vae'], 'vae_list', 'sdvaebro
 let sdLoraBrowser = new ModelBrowserWrapper('LoRA', ['lora', 'lora-depth', 'lora-canny'], 'lora_list', 'sdlorabrowser', (lora) => { toggleSelectLora(cleanModelName(lora.data.name)); });
 let sdEmbedBrowser = new ModelBrowserWrapper('Embedding', ['embedding', 'textual-inversion'], 'embedding_list', 'sdembedbrowser', (embed) => { selectEmbedding(embed.data); });
 let sdControlnetBrowser = new ModelBrowserWrapper('ControlNet', ['controlnet', 'control-lora', 'controlnet-alimamainpaint'], 'controlnet_list', 'sdcontrolnetbrowser', (controlnet) => { setControlNet(controlnet.data); });
-let wildcardsBrowser = new ModelBrowserWrapper('Wildcards', [], 'wildcard_list', 'wildcardsbrowser', (wildcard) => { selectWildcard(wildcard.data); }, `<button id="wildcards_list_create_new_button" class="refresh-button" onclick="create_new_wildcard_button()">Create New Wildcard</button>`);
+let wildcardsBrowser = new ModelBrowserWrapper('Wildcards', [], 'wildcard_list', 'wildcardsbrowser', (wildcard) => { wildcardHelpers.selectWildcard(wildcard.data); }, `<button id="wildcards_list_create_new_button" class="refresh-button" onclick="wildcardHelpers.createNewWildcardButton()">Create New Wildcard</button>`);
 
 let allModelBrowsers = [sdModelBrowser, sdVAEBrowser, sdLoraBrowser, sdEmbedBrowser, sdControlnetBrowser, wildcardsBrowser];
 let subModelBrowsers = [sdVAEBrowser, sdLoraBrowser, sdEmbedBrowser, sdControlnetBrowser];
-
-function matchWildcard(prompt, wildcard) {
-    let matcher = new RegExp(`<(wildcard(?:\\[\\d+(?:-\\d+)?\\])?):${regexEscape(wildcard)}>`, 'g');
-    return prompt.match(matcher);
-}
-
-function selectWildcard(model) {
-    let [promptBox, cursorPos] = uiImprover.getLastSelectedTextbox();
-    if (!promptBox) {
-        promptBox = getRequiredElementById('alt_prompt_textbox');
-        cursorPos = promptBox.value.length;
-    }
-    let prefix = promptBox.value.substring(0, cursorPos);
-    let suffix = promptBox.value.substring(cursorPos);
-    let trimmed = prefix.trim();
-    let match = matchWildcard(trimmed, model.name);
-    if (match && match.length > 0) {
-        let last = match[match.length - 1];
-        if (trimmed.endsWith(last.trim())) {
-            promptBox.value = (trimmed.substring(0, trimmed.length - last.length).trim() + ' ' + suffix).trim();
-            triggerChangeFor(promptBox);
-            return;
-        }
-    }
-    let wildcardText = `<wildcard:${model.name}>`;
-    promptBox.value = `${prefix.trim()} ${wildcardText} ${suffix.trim()}`.trim();
-    promptBox.selectionStart = cursorPos + wildcardText.length + 1;
-    promptBox.selectionEnd = cursorPos + wildcardText.length + 1;
-    promptBox.focus();
-    triggerChangeFor(promptBox);
-}
 
 function embedClearFromPrompt(model, element) {
     let box = getRequiredElementById(element);

@@ -18,12 +18,12 @@ class PromptTabCompleteClass {
         });
         this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(allWildcards, prefixLow);
+            return this.getOrderedMatches(wildcardHelpers.allWildcards, prefixLow);
         });
         this.registerAltPrefix('wc', 'wildcard');
         this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(allWildcards, prefixLow);
+            return this.getOrderedMatches(wildcardHelpers.allWildcards, prefixLow);
         });
         this.registerPrefix('repeat[3]', 'Repeat a value several times', (prefix) => {
             return ['\nUse for example like "<repeat[3]:very> big" to get "very very very big",', '\nor "<repeat[1-3]:very>" to get randomly between 1 to 3 "very"s,', '\nor <repeat[3]:<random:cat,dog>>" to get "cat" or "dog" 3 times in a row eg "cat dog cat".'];

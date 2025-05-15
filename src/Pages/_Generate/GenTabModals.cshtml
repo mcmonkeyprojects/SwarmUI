@@ -168,7 +168,7 @@
         <div id="edit_wildcard_image" class="new_preset_image"></div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-primary basic-button translate" onclick="save_edit_wildcard()">Save</button>
+        <button type="button" class="btn btn-primary basic-button translate" onclick="wildcardHelpers.saveEditWildcard()">Save</button>
         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#edit_wildcard_modal').modal('hide')">Cancel</button>
     </div>
 @WebUtil.ModalFooter()
@@ -177,7 +177,7 @@
         Result: <textarea class="auto-text auto-text-block" id="test_wildcard_result" rows="3" placeholder="Result here..."></textarea>
     </div>
     <div class="modal-footer">
-        <button type="button" id="test_wildcard_again_button" class="btn btn-primary basic-button translate" onclick="test_wildcard_again()">Test Again</button>
+        <button type="button" id="test_wildcard_again_button" class="btn btn-primary basic-button translate" onclick="wildcardHelpers.testWildcardAgain()">Test Again</button>
         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#test_wildcard_modal').modal('hide')">Cancel</button>
     </div>
 @WebUtil.ModalFooter()

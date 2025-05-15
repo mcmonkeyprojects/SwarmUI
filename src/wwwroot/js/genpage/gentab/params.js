@@ -852,7 +852,7 @@ function refreshParameterValues(strong = true, callback = null) {
             }
         }
         updateAllModels(data.models);
-        allWildcards = data.wildcards;
+        wildcardHelpers.allWildcards = data.wildcards;
         let promises = [Promise.resolve(true)];
         for (let extra of refreshParamsExtra) {
             let promise = extra();
