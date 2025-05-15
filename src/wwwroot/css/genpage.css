@@ -1553,12 +1553,21 @@ body {
     display: flex;
     position: relative;
 }
+.input_filter_container.bottom_filter {
+    display: inline;
+}
+.input_filter_container.bottom_filter input {
+    padding-right: 20px;
+}
 .clear_input_icon {
     position: absolute;
     right: 5px;
     top: 2px;
     cursor: pointer;
     display: none;
+}
+.clear_input_icon.bottom_filter {
+    top: -1px;
 }
 .swap_aspectratio_button {
     position: absolute;
