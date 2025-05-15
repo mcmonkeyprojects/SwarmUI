@@ -610,7 +610,8 @@ class GenPageBrowserClass {
                 localStorage.setItem(`browser_${this.id}_filter`, this.filter);
                 if (this.filter.length > 0) {
                     clearFilterBtn.style.display = 'block';
-                } else {
+                }
+                else {
                     clearFilterBtn.style.display = 'none';
                 }
                 this.updateWithoutDup();
@@ -620,11 +621,8 @@ class GenPageBrowserClass {
             }
             clearFilterBtn.addEventListener('click', () => {
                 filterInput.value = '';
-                this.filter = '';
-                localStorage.setItem(`browser_${this.id}_filter`, this.filter);
-                clearFilterBtn.style.display = 'none';
                 filterInput.focus();
-                this.updateWithoutDup();
+                filterInput.dispatchEvent(new Event('input'));
             });
             if (this.filter.length > 0) {
                 clearFilterBtn.style.display = 'block';
