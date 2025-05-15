@@ -41,7 +41,7 @@ Colab link if you want to try Swarm: https://colab.research.google.com/github/mc
 
 ### Runpod
 
-Runpod template (note: maintained by third party contributor [nerdylive123](https://github.com/nerdylive123)): https://runpod.io/console/deploy?template=u7mlkrmxq3&ref=c6jd6jj0
+Runpod template (note: maintained by third party contributor [nerdylive123](https://github.com/nerdylive123)): https://get.runpod.io/swarmui
 
 ### Vast.ai
 
