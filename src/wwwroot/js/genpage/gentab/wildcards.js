@@ -5,6 +5,7 @@ class WildcardHelpers {
     constructor() {
         this.curWildcardMenuWildcard = null;
         this.allWildcards = [];
+        this.wildcardDataCache = {};
     }
 
     /** Test a wildcard, opening the wildcard test modal. */
@@ -174,6 +175,32 @@ class WildcardHelpers {
         promptBox.selectionEnd = cursorPos + wildcardText.length + 1;
         promptBox.focus();
         triggerChangeFor(promptBox);
+    }
+
+    /** Async function (returns a simple object with 'isComplete' and 'data') to get the data for a wildcard, using the wildcard name. Caches results and doesn't request the same data more than once. */
+    getWildcardDataFor(name) {
+        name = name.trim().toLowerCase();
+        if (this.wildcardDataCache[name]) {
+            return { isComplete: true, data: this.wildcardDataCache[name] };
+        }
+        if (!this.allWildcards.includes(name)) {
+            return { isComplete: true, data: null };
+        }
+        if (this.wildcardDataCache[name + "____READ_NOW"]) {
+            return this.wildcardDataCache[name + "____READ_NOW"];
+        }
+        let result = { isComplete: false, data: null };
+        this.wildcardDataCache[name + "____READ_NOW"] = result;
+        let giveResult = (data) => {
+            result.data = data;
+            result.isComplete = true;
+            delete this.wildcardDataCache[name + "____READ_NOW"];
+        }
+        genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: name }, data => {
+            this.wildcardDataCache[name] = data.options;
+            giveResult(data.options);
+        }, 0, e => giveResult(null));
+        return result;
     }
 }
 

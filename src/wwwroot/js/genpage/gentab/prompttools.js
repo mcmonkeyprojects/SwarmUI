@@ -18,7 +18,20 @@ class PromptTabCompleteClass {
         });
         this.registerPrefix('wildcard', 'Select a random line from a wildcard file (presaved list of options)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(wildcardHelpers.allWildcards, prefixLow);
+            let colonInd = prefixLow.indexOf(':');
+            if (colonInd == -1) {
+                return this.getOrderedMatches(wildcardHelpers.allWildcards, prefixLow);
+            }
+            let wcName = prefixLow.substring(0, colonInd);
+            if (!wildcardHelpers.allWildcards.includes(wcName)) {
+                return ['\nWildcard not found'];
+            }
+            let dataHolder = wildcardHelpers.getWildcardDataFor(wcName);
+            if (!dataHolder.isComplete) {
+                return ['\n<AUTO-RETRY>'];
+            }
+            let searchWord = prefixLow.substring(colonInd + 1);
+            return this.getOrderedMatches(dataHolder.data, searchWord).map(p => `\t${p}`);
         });
         this.registerAltPrefix('wc', 'wildcard');
         this.registerPrefix('wildcard[2-4]', 'Select multiple random lines from a wildcard file (presaved list of options) (works same as "random" but for wildcards)', (prefix) => {
@@ -226,7 +239,15 @@ class PromptTabCompleteClass {
         if (!(prefix in this.prefixes)) {
             return [];
         }
-        return this.prefixes[prefix].completer(suffix, prompt).map(p => p.startsWith('\n') ? p : `<${prefix}:${p}>`);
+        return this.prefixes[prefix].completer(suffix, prompt).map(p => {
+            if (p.startsWith('\n')) {
+                return p;
+            }
+            if (p.startsWith('\t')) {
+                return p.substring(1);
+            }
+            return `<${prefix}:${p}>`;
+        });
     }
 
     onKeyDown(e) {
@@ -258,6 +279,12 @@ class PromptTabCompleteClass {
         }
         let possible = this.getPossibleList(box);
         if (possible.length == 0) {
+            return;
+        }
+        if (possible.length == 1 && possible[0] == '\n<AUTO-RETRY>') { // TODO: Spam limiter for in case auto-retry gets stuck on?
+            setTimeout(() => {
+                this.onInput(box);
+            }, 100);
             return;
         }
         let buttons = [];
