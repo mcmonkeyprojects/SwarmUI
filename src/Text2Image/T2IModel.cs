@@ -418,6 +418,10 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     public static JObject GetMetadataHeaderFrom(string modelPath)
     {
         using FileStream file = File.OpenRead(modelPath);
+        if (file.Length < 8)
+        {
+            throw new SwarmReadableErrorException($"Improper file {modelPath}. File too short to be valid (file length = {file.Length}. May be filesystem issue, or an incomplete download?)");
+        }
         byte[] buf = new byte[8];
         if (modelPath.EndsWith(".gguf"))
         {
