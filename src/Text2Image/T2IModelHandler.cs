@@ -25,7 +25,7 @@ public class T2IModelHandler
     public bool IsShutdown = false;
 
     /// <summary>Internal model metadata cache data (per folder).</summary>
-    public static Dictionary<string, (LiteDatabase, ILiteCollection<ModelMetadataStore>)> ModelMetadataCachePerFolder = [];
+    public static ConcurrentDictionary<string, ModelDatabase> ModelMetadataCachePerFolder = [];
 
     /// <summary>Lock for metadata processing.</summary>
     public LockObject MetadataLock = new();
@@ -41,6 +41,47 @@ public class T2IModelHandler
 
     /// <summary>Quick internal tracker for unauthorized access errors, to aggregate the warning.</summary>
     public ConcurrentQueue<string> UnathorizedAccessSet = new();
+
+    public record class ModelDatabase(string Folder, T2IModelHandler Handler, LiteDatabase Database, ILiteCollection<ModelMetadataStore> Metadata)
+    {
+        public volatile int Errors = 0;
+
+        public void HadNewError()
+        {
+            int newCount = Interlocked.Increment(ref Errors);
+            if (newCount < 10)
+            {
+                return;
+            }
+            lock (Handler.MetadataLock)
+            {
+                try
+                {
+                    Database.Dispose();
+                    Errors = -1000;
+                }
+                catch (Exception) { }
+                try
+                {
+                    File.Delete($"{Folder}/image_metadata.ldb");
+                }
+                catch (Exception) { }
+                ModelMetadataCachePerFolder.TryRemove(Folder, out _);
+            }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Database.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Error disposing image metadata database for folder '{Folder}': {ex.ReadableString()}");
+            }
+        }
+    }
 
     /// <summary>Helper, data store for model metadata.</summary>
     public class ModelMetadataStore
@@ -112,9 +153,9 @@ public class T2IModelHandler
         Program.ModelRefreshEvent -= Refresh;
         lock (MetadataLock)
         {
-            foreach ((LiteDatabase ldb, _) in ModelMetadataCachePerFolder.Values)
+            foreach (ModelDatabase db in ModelMetadataCachePerFolder.Values)
             {
-                ldb.Dispose();
+                db.Database.Dispose();
             }
             ModelMetadataCachePerFolder.Clear();
         }
@@ -126,11 +167,11 @@ public class T2IModelHandler
     {
         lock (MetadataLock)
         {
-            foreach ((LiteDatabase ldb, _) in ModelMetadataCachePerFolder.Values)
+            foreach (ModelDatabase db in ModelMetadataCachePerFolder.Values)
             {
                 try
                 {
-                    ldb.Dispose();
+                    db.Database.Dispose();
                 }
                 catch (Exception) { }
             }
@@ -241,7 +282,7 @@ public class T2IModelHandler
     }
 
     /// <summary>Get (or create) the metadata cache for a given model folder.</summary>
-    public ILiteCollection<ModelMetadataStore> GetCacheForFolder(string folder)
+    public ModelDatabase GetCacheForFolder(string folder)
     {
         lock (MetadataLock)
         {
@@ -261,8 +302,8 @@ public class T2IModelHandler
                         File.Delete(path);
                         ldb = new(path);
                     }
-                    return (ldb, ldb.GetCollection<ModelMetadataStore>("models"));
-                }).Item2;
+                    return new(folder, this, ldb, ldb.GetCollection<ModelMetadataStore>("models"));
+                });
             }
             catch (Exception ex)
             {
@@ -276,12 +317,13 @@ public class T2IModelHandler
     /// <summary>Updates the metadata cache database to the metadata assigned to this model object.</summary>
     public void ResetMetadataFrom(T2IModel model)
     {
+        ModelDatabase cache = null;
         try
         {
             bool perFolder = Program.ServerSettings.Metadata.ModelMetadataPerFolder;
             long modified = ((DateTimeOffset)File.GetLastWriteTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds();
             string folder = model.RawFilePath.Replace('\\', '/').BeforeAndAfterLast('/', out string fileName);
-            ILiteCollection<ModelMetadataStore> cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
+            cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
             if (cache is null)
             {
                 return;
@@ -299,13 +341,14 @@ public class T2IModelHandler
                 metadata.StandardHeight = model.StandardHeight;
                 lock (MetadataLock)
                 {
-                    cache.Upsert(metadata);
+                    cache.Metadata.Upsert(metadata);
                 }
             }
         }
         catch (Exception ex)
         {
             Logs.Error($"Failed to reset metadata for model '{model.RawFilePath}': {ex.ReadableString()}");
+            cache?.HadNewError();
             throw;
         }
     }
@@ -362,7 +405,7 @@ public class T2IModelHandler
         string folder = model.RawFilePath.Replace('\\', '/').BeforeAndAfterLast('/', out string fileName);
         long modified = new DateTimeOffset(File.GetLastWriteTimeUtc(model.RawFilePath)).ToUnixTimeMilliseconds();
         bool perFolder = Program.ServerSettings.Metadata.ModelMetadataPerFolder;
-        ILiteCollection<ModelMetadataStore> cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
+        ModelDatabase cache = GetCacheForFolder(perFolder ? folder : Program.DataDir);
         if (cache is null)
         {
             return;
@@ -373,7 +416,7 @@ public class T2IModelHandler
         {
             try
             {
-                metadata = cache.FindById(modelCacheId);
+                metadata = cache.Metadata.FindById(modelCacheId);
             }
             catch (Exception ex)
             {
@@ -619,11 +662,12 @@ public class T2IModelHandler
             {
                 try
                 {
-                    cache.Upsert(metadata);
+                    cache.Metadata.Upsert(metadata);
                 }
                 catch (Exception ex)
                 {
                     Logs.Warning($"Error handling metadata database for model {model.RawFilePath}: {ex.ReadableString()}");
+                    cache.HadNewError();
                 }
             }
         }
