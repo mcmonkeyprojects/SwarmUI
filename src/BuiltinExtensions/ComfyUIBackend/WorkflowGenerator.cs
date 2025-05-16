@@ -659,7 +659,7 @@ public class WorkflowGenerator
         {
             fpsDefault = 16;
         }
-        return UserInput.Get(T2IParamTypes.Text2VideoFPS, fpsDefault);
+        return UserInput.Get(T2IParamTypes.Text2VideoFPS, UserInput.Get(T2IParamTypes.VideoFPS, fpsDefault));
     }
 
     /// <summary>Creates a node to save an image output.</summary>
