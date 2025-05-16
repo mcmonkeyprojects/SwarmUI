@@ -1538,6 +1538,11 @@ public class WorkflowGeneratorSteps
                 {
                     width = imageWidth;
                     height = imageHeight;
+                    if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double scale))
+                    {
+                        width = (int)Math.Round(width * scale);
+                        height = (int)Math.Round(height * scale);
+                    }
                 }
                 (JArray, int) altLatent(JArray vae, JArray latent)
                 {
