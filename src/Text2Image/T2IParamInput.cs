@@ -425,17 +425,23 @@ public class T2IParamInput
                 return "";
             }
             WildcardsHelper.Wildcard wildcard = WildcardsHelper.GetWildcard(card);
+            if (wildcard.MaxLength is not null)
+            {
+                return wildcard.MaxLength;
+            }
+            wildcard.MaxLength = ""; // Recursion protection.
             int longest = 0;
             string longestStr = "";
             foreach (string val in wildcard.Options)
             {
                 string interp = ProcessPromptLikeForLength(val);
-                if (interp.Length > longest)
+                if (interp.Length > longest) // TODO: Tokenization length should be used rather than string length
                 {
                     longest = interp.Length;
                     longestStr = interp;
                 }
             }
+            wildcard.MaxLength = longestStr;
             return longestStr;
         };
         PromptTagLengthEstimators["wc"] = PromptTagLengthEstimators["wildcard"];

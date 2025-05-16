@@ -24,6 +24,9 @@ public class WildcardsHelper
 
         public long TimeCreated;
 
+        /// <summary>Max length cache, calculated in T2IParamInput.</summary>
+        public string MaxLength = null;
+
         public JObject GetNetObject(bool dataImgs = true)
         {
             string previewImg = Image ?? "imgs/model_placeholder.jpg";
