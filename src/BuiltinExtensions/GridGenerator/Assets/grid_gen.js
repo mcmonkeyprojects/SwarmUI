@@ -631,5 +631,7 @@ let extensionGridGen = new GridGenClass();
 
 postParamBuildSteps.push(() => extensionGridGen.rebuildAxes());
 sessionReadyCallbacks.push(() => {
-    extensionGridGen.register();
+    if (permissions.hasPermission('gridgen_generate_grids')) {
+        extensionGridGen.register();
+    }
 });

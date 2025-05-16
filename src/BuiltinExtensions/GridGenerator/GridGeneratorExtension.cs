@@ -240,7 +240,7 @@ public class GridGeneratorExtension : Extension
     public override void OnInit()
     {
         API.RegisterAPICall(GridGenRun, true, PermGenerateGrids);
-        API.RegisterAPICall(GridGenDoesExist, false, PermReadGrids);
+        API.RegisterAPICall(GridGenDoesExist, false, Permissions.ViewImageHistory);
         API.RegisterAPICall(GridGenSaveData, true, PermSaveGrids);
         API.RegisterAPICall(GridGenDeleteData, true, PermSaveGrids);
         API.RegisterAPICall(GridGenGetData, false, PermReadGrids);
