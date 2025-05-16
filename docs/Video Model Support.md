@@ -335,4 +335,6 @@ There's a full step by step guide for video model usage here: <https://github.co
         - **Advanced Video** -> **Video FPS** to `24`
         - **Steps** to `4` or `8`
             - If doing I2V, set **Video Steps** to `4` or `8`
+        - **Sampler:** can be default (Euler), but `UniPC` might be a touch better
+        - **Scheduler:** not sure what's best atm, but default usually seems alright
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
