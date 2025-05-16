@@ -321,3 +321,18 @@ There's a full step by step guide for video model usage here: <https://github.co
     - To run faster, use a "HighRes Fix" style setup, there's a guide to that here: https://www.reddit.com/r/StableDiffusion/comments/1j0znur/run_wan_faster_highres_fix_in_2025/
 - **Quality:**
     - The Wan models sometimes produce glitched content on the first or last few frames - under Advanced->`Other Fixes`->you can adjust `Trim Video Start Frames` (and `End`) to a small number (1 to 4) to cut the first/last few frames to dodge this.
+
+### Wan CausVid - High Speed 14B
+
+- Want to generate 14B videos way faster? Here's how:
+    - Download this LoRA <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors> and save it to your LoRAs folder
+        - (Despite the T2V name, this works on I2V too)
+        - If you care what "CausVid" means, here's where it's from: <https://github.com/tianweiy/CausVid>
+        - If you want a 1.3B version, <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_bidirect2_T2V_1_3B_lora_rank32.safetensors>
+    - Set up a Wan gen with 14B as normal, but also set:
+        - **CFG Scale** to `1`
+            - If doing I2V, set **Video CFG** to `1`
+        - **Advanced Video** -> **Video FPS** to `24`
+        - **Steps** to `4` or `8`
+            - If doing I2V, set **Video Steps** to `4` or `8`
+    - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
