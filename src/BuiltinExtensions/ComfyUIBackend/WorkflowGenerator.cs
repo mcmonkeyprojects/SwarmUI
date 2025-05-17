@@ -581,13 +581,19 @@ public class WorkflowGenerator
             });
             mask = [thresholded, 0];
         }
-        string composited = CreateNode("SwarmImageCompositeMaskedColorCorrecting", new JObject()
+        string nodeClass = "ImageCompositeMasked";
+        if (Features.Contains("variation_seed") && !RestrictCustomNodes)
+        {
+            nodeClass = "SwarmImageCompositeMaskedColorCorrecting";
+        }
+        string composited = CreateNode(nodeClass, new JObject()
         {
             ["destination"] = baseImage,
             ["source"] = newImage,
             ["mask"] = mask,
             ["x"] = 0,
             ["y"] = 0,
+            ["resize_source"] = false,
             ["correction_method"] = UserInput.Get(T2IParamTypes.ColorCorrectionBehavior, "None")
         });
         return [composited, 0];
@@ -613,13 +619,19 @@ public class WorkflowGenerator
             });
             croppedMask = [thresholded, 0];
         }
-        string composited = CreateNode("SwarmImageCompositeMaskedColorCorrecting", new JObject()
+        string nodeClass = "ImageCompositeMasked";
+        if (Features.Contains("variation_seed") && !RestrictCustomNodes)
+        {
+            nodeClass = "SwarmImageCompositeMaskedColorCorrecting";
+        }
+        string composited = CreateNode(nodeClass, new JObject()
         {
             ["destination"] = firstImage,
             ["source"] = new JArray() { scaledBack, 0 },
             ["mask"] = croppedMask,
             ["x"] = new JArray() { boundsNode, 0 },
             ["y"] = new JArray() { boundsNode, 1 },
+            ["resize_source"] = false,
             ["correction_method"] = UserInput.Get(T2IParamTypes.ColorCorrectionBehavior, "None")
         });
         return [composited, 0];
@@ -1524,7 +1536,6 @@ public class WorkflowGenerator
                 ["sampler_name"] = UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler)
             });
             string scheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler).ToLowerFast();
-            double denoise = 1;// 1.0 - (startStep / (double)steps); // NOTE: Edit model breaks on denoise<1
             JArray schedulerNode;
             if (scheduler == "turbo")
             {
@@ -1532,7 +1543,7 @@ public class WorkflowGenerator
                 {
                     ["model"] = model,
                     ["steps"] = steps,
-                    ["denoise"] = denoise
+                    ["denoise"] = 1
                 });
                 schedulerNode = [turboNode, 0];
             }
@@ -1546,15 +1557,6 @@ public class WorkflowGenerator
                     ["rho"] = UserInput.Get(T2IParamTypes.SamplerRho, 7)
                 });
                 schedulerNode = [karrasNode, 0];
-                if (startStep > 0)
-                {
-                    string afterStart = CreateNode("SplitSigmas", new JObject()
-                    {
-                        ["sigmas"] = schedulerNode,
-                        ["step"] = startStep
-                    });
-                    schedulerNode = [afterStart, 1];
-                }
             }
             else
             {
@@ -1563,9 +1565,18 @@ public class WorkflowGenerator
                     ["model"] = model,
                     ["steps"] = steps,
                     ["scheduler"] = scheduler,
-                    ["denoise"] = denoise
+                    ["denoise"] = 1
                 });
                 schedulerNode = [basicNode, 0];
+            }
+            if (startStep > 0)
+            {
+                string afterStart = CreateNode("SplitSigmas", new JObject()
+                {
+                    ["sigmas"] = schedulerNode,
+                    ["step"] = startStep
+                });
+                schedulerNode = [afterStart, 1];
             }
             if (endStep < steps)
             {
