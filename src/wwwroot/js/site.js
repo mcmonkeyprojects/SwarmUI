@@ -269,9 +269,15 @@ function textPromptDoCount(elem, countElem = null, prefix = '') {
     }
 }
 
+let jitterDebug = false;
+
 function textBoxSizeAdjust(elem) {
     elem.style.height = '0px';
-    elem.style.height = `max(3.4rem, min(15rem, ${elem.scrollHeight + 5}px))`;
+    let height = elem.scrollHeight;
+    elem.style.height = `max(3.4rem, min(15rem, ${height + 5}px))`;
+    if (jitterDebug) {
+        console.log(`JitterDebug textBoxSizeAdjust: ${elem.id} height adjust: ${height}, now ${elem.scrollHeight}`);
+    }
 }
 
 function textPromptInputHandle(elem) {
@@ -618,8 +624,12 @@ function makeSecretInput(featureid, id, paramid, name, description, value, place
 
 function dynamicSizeTextBox(elem, min=15) {
     let maxHeight = parseInt(getUserSetting('maxpromptlines', '10'));
-    elem.style.height = 'auto';
-    elem.style.height = `calc(min(${maxHeight}rem, ${Math.max(elem.scrollHeight, min) + 5}px))`;
+    elem.style.height = '0px';
+    let height = elem.scrollHeight;
+    elem.style.height = `calc(min(${maxHeight}rem, ${Math.max(height, min) + 5}px))`;
+    if (jitterDebug) {
+        console.log(`JitterDebug dynamicSizeTextBox: ${elem.id} height adjust: ${height} max ${maxHeight} min ${min}, now ${elem.scrollHeight}`);
+    }
 }
 
 function makeTextInput(featureid, id, paramid, name, description, value, format, placeholder, toggles = false, genPopover = false, popover_button = true) {
