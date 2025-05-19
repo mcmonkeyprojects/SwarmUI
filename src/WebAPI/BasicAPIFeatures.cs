@@ -389,10 +389,15 @@ public static class BasicAPIFeatures
         session.Interrupt();
         if (other_sessions)
         {
+            Logs.Debug($"User '{session.User.UserID}' interrupted all of their sessions.");
             foreach (Session sess in session.User.CurrentSessions.Values.ToArray())
             {
                 sess.Interrupt();
             }
+        }
+        else
+        {
+            Logs.Debug($"User '{session.User.UserID}' interrupted a single session.");
         }
         return new JObject() { ["success"] = true };
     }
