@@ -198,7 +198,7 @@ function formatMetadata(metadata) {
                         added += ' param_view_block_model';
                     }
                     if (key.includes('prompt')) {
-                        extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="navigator.clipboard.writeText('${escapeHtml(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
+                        extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="navigator.clipboard.writeText('${escapeHtmlNoBr(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
                     }
                     let param = getParamById(key);
                     if (param) {
@@ -218,7 +218,7 @@ function formatMetadata(metadata) {
                         result += `</span>, `;
                     }
                     else {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtml(keyTitle)}">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtml(title)}">${escapeHtml(`${val}`)}</span>${extras}</span>, `;
+                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtmlNoBr(keyTitle)}">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtmlNoBr(title)}">${escapeHtml(`${val}`)}</span>${extras}</span>, `;
                     }
                 }
             }
