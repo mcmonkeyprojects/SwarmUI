@@ -124,6 +124,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     public static ConcurrentDictionary<string, string> ComfyNodeGitPins = new()
     {
         //["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
+        ["ComfyUI-nunchaku"] = "4a02394d747533172a0e957e2aac58cba20a508e" // pulid error in newer commits because they updated the node but haven't released new Nunchaku pip lib version
     };
 
     public async Task EnsureNodeRepos()
