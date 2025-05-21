@@ -92,11 +92,14 @@ public class Image
     /// <summary>Gets an ImageSharp <see cref="ISImage"/> for this image.</summary>
     public ISImage ToIS => ISImage.Load(ImageData);
 
-    /// <summary>Helper to convert an ImageSharp image to png bytes.</summary>
-    public static byte[] ISImgToPngBytes(ISImage img)
+    /// <summary>Used for <see cref="ISImgToPngBytes(ISImage)"/>.</summary>
+    public static PngEncoder FastPngEncoder = new() { CompressionLevel = PngCompressionLevel.Level1 };
+
+/// <summary>Helper to convert an ImageSharp image to png bytes.</summary>
+public static byte[] ISImgToPngBytes(ISImage img)
     {
         using MemoryStream stream = new();
-        img.SaveAsPng(stream);
+        img.SaveAsPng(stream, FastPngEncoder);
         return stream.ToArray();
     }
 
