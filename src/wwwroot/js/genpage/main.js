@@ -740,8 +740,7 @@ function genpageLoad() {
         initialModelListLoad();
         genericRequest('ListT2IParams', {}, data => {
             updateAllModels(data.models);
-            wildcardHelpers.allWildcards = data.wildcards;
-            wildcardHelpers.wildcardDataCache = {};
+            wildcardHelpers.newWildcardList(data.wildcards);
             rawGenParamTypesFromServer = sortParameterList(data.list);
             gen_param_types = rawGenParamTypesFromServer;
             paramConfig.preInit();

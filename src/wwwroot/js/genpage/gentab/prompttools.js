@@ -23,12 +23,15 @@ class PromptTabCompleteClass {
                 return this.getOrderedMatches(wildcardHelpers.allWildcards, prefixLow);
             }
             let wcName = prefixLow.substring(0, colonInd);
-            if (!wildcardHelpers.allWildcards.includes(wcName)) {
+            if (!(wcName in wildcardHelpers.wildcardNameCheck)) {
                 return ['\nWildcard not found'];
             }
             let dataHolder = wildcardHelpers.getWildcardDataFor(wcName);
             if (!dataHolder.isComplete) {
                 return ['\n<AUTO-RETRY>'];
+            }
+            if (!dataHolder.data) {
+                return ['\nWildcard not found'];
             }
             let searchWord = prefixLow.substring(colonInd + 1);
             return this.getOrderedMatches(dataHolder.data, searchWord).map(p => `\t${p}`);

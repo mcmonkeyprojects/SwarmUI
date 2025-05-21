@@ -95,8 +95,8 @@ public class Image
     /// <summary>Used for <see cref="ISImgToPngBytes(ISImage)"/>.</summary>
     public static PngEncoder FastPngEncoder = new() { CompressionLevel = PngCompressionLevel.Level1 };
 
-/// <summary>Helper to convert an ImageSharp image to png bytes.</summary>
-public static byte[] ISImgToPngBytes(ISImage img)
+    /// <summary>Helper to convert an ImageSharp image to png bytes.</summary>
+    public static byte[] ISImgToPngBytes(ISImage img)
     {
         using MemoryStream stream = new();
         img.SaveAsPng(stream, FastPngEncoder);

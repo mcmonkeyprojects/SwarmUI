@@ -5,7 +5,18 @@ class WildcardHelpers {
     constructor() {
         this.curWildcardMenuWildcard = null;
         this.allWildcards = [];
+        this.wildcardNameCheck = {};
         this.wildcardDataCache = {};
+    }
+
+    /** Applies a new wildcard list from the server. */
+    newWildcardList(cards) {
+        this.allWildcards = cards;
+        this.wildcardDataCache = {};
+        this.wildcardNameCheck = {};
+        for (let card of cards) {
+            this.wildcardNameCheck[card.toLowerCase()] = card.name;
+        }
     }
 
     /** Test a wildcard, opening the wildcard test modal. */
@@ -130,7 +141,7 @@ class WildcardHelpers {
         }
         let name = card.name;
         let i = 2;
-        while (this.allWildcards.includes(`${name} - ${i}`)) {
+        while (`${name.toLowerCase()} - ${i}` in this.wildcardNameCheck) {
             i++;
         }
         let data = {
@@ -180,10 +191,10 @@ class WildcardHelpers {
     /** Async function (returns a simple object with 'isComplete' and 'data') to get the data for a wildcard, using the wildcard name. Caches results and doesn't request the same data more than once. */
     getWildcardDataFor(name) {
         name = name.trim().toLowerCase();
-        if (this.wildcardDataCache[name]) {
+        if (name in this.wildcardDataCache) {
             return { isComplete: true, data: this.wildcardDataCache[name] };
         }
-        if (!this.allWildcards.includes(name)) {
+        if (!(name in this.wildcardNameCheck)) {
             return { isComplete: true, data: null };
         }
         if (this.wildcardDataCache[name + "____READ_NOW"]) {
@@ -192,12 +203,12 @@ class WildcardHelpers {
         let result = { isComplete: false, data: null };
         this.wildcardDataCache[name + "____READ_NOW"] = result;
         let giveResult = (data) => {
+            this.wildcardDataCache[name] = data;
             result.data = data;
             result.isComplete = true;
             delete this.wildcardDataCache[name + "____READ_NOW"];
         }
         genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: name }, data => {
-            this.wildcardDataCache[name] = data.options;
             giveResult(data.options);
         }, 0, e => giveResult(null));
         return result;

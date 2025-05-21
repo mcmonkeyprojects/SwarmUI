@@ -50,7 +50,7 @@ public class WildcardsHelper
     public static string Folder => Utilities.CombinePathWithAbsolute(Program.DataDir, Program.ServerSettings.Paths.WildcardsFolder);
 
     /// <summary>Returns a list of all known wildcard files.</summary>
-    public static string[] ListFiles => [.. WildcardFiles.Keys];
+    public static string[] ListFiles => [.. WildcardFiles.Values.Select(w => w.Name)];
 
     /// <summary>Initializes the engine.</summary>
     public static void Init()
@@ -69,7 +69,7 @@ public class WildcardsHelper
             foreach (string str in Directory.EnumerateFiles(Folder, "*.txt", SearchOption.AllDirectories))
             {
                 string path = Path.GetRelativePath(Folder, str).Replace("\\", "/").TrimStart('/').BeforeLast('.');
-                newWildcards.TryAdd(path, new() { Name = path });
+                newWildcards.TryAdd(path.ToLowerFast(), new() { Name = path });
             }
             WildcardFiles = newWildcards;
         }
@@ -82,7 +82,7 @@ public class WildcardsHelper
     /// <summary>Gets the wildcard data for the specified exact wildcard name.</summary>
     public static Wildcard GetWildcard(string name)
     {
-        if (!WildcardFiles.TryGetValue(name, out Wildcard wildcard))
+        if (!WildcardFiles.TryGetValue(name.ToLowerFast(), out Wildcard wildcard))
         {
             return null;
         }

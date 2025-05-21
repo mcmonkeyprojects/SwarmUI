@@ -404,6 +404,7 @@ public static class ModelsAPI
         {
             File.Delete($"{WildcardsHelper.Folder}/{card}.jpg");
         }
+        WildcardsHelper.WildcardFiles.TryRemove(card.ToLowerFast(), out _);
         return new JObject() { ["success"] = true };
     }
 
@@ -442,8 +443,8 @@ public static class ModelsAPI
         {
             Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
             File.WriteAllBytes($"{WildcardsHelper.Folder}/{card}.jpg", img.ImageData);
-            WildcardsHelper.WildcardFiles[card] = new WildcardsHelper.Wildcard() { Name = card };
         }
+        WildcardsHelper.WildcardFiles[card.ToLowerFast()] = new WildcardsHelper.Wildcard() { Name = card };
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
     }
