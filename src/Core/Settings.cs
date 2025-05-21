@@ -330,7 +330,7 @@ public class Settings : AutoConfiguration
         {
             [ConfigComment("What format to save images in.\nDefault is '.png', but '.jpg' is recommended to save some filespace.")]
             [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<Image.ImageFormat>))]
-            public string ImageFormat = "JPG";
+            public string ImageFormat = "PNG";
 
             [ConfigComment("Quality for JPEG and WEBP formats (1-100). Other formats are ignored.\nDefault is 100, recommended 70-90.")]
             public int ImageQuality = 100;
