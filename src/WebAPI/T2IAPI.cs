@@ -291,7 +291,7 @@ public static class T2IAPI
             {
                 noSave = true;
             }
-            (string url, string filePath) = noSave ? (session.GetImageB64(image.Img), null) : session.SaveImage(image.Img, actualIndex, thisParams, metadata);
+            (string url, string filePath) = noSave ? (session.GetImageB64(image.Img), null) : session.SaveImage(image, actualIndex, thisParams, metadata);
             if (url == "ERROR")
             {
                 setError($"Server failed to save an image.");
@@ -402,8 +402,8 @@ public static class T2IAPI
             Image gridImg = new(grid);
             long genTime = Environment.TickCount64 - timeStart;
             user_input.ExtraMeta["generation_time"] = $"{genTime / 1000.0:0.00} total seconds (average {(finalTime - timeStart) / griddables.Length / 1000.0:0.00} seconds per image)";
-            (gridImg, string metadata) = user_input.SourceSession.ApplyMetadata(gridImg, user_input, imgs.Length);
-            T2IEngine.ImageOutput gridOutput = new() { Img = gridImg, GenTimeMS = genTime };
+            (Task<Image> gridImageTask, string metadata) = user_input.SourceSession.ApplyMetadata(gridImg, user_input, imgs.Length);
+            T2IEngine.ImageOutput gridOutput = new() { Img = gridImg, ActualImageTask = gridImageTask, GenTimeMS = genTime };
             saveImage(gridOutput, -1, user_input, metadata);
         }
         T2IEngine.PostBatchEvent?.Invoke(new(user_input, [.. griddables]));
@@ -455,8 +455,9 @@ public static class T2IAPI
         }
         user_input.ApplySpecialLogic();
         Logs.Info($"User {session.User.UserID} stored an image to history.");
-        (img, string metadata) = user_input.SourceSession.ApplyMetadata(img, user_input, 1);
-        (string path, _) = session.SaveImage(img, 0, user_input, metadata);
+        (Task<Image> imgTask, string metadata) = user_input.SourceSession.ApplyMetadata(img, user_input, 1);
+        T2IEngine.ImageOutput outputImage = new() { Img = img, ActualImageTask = imgTask };
+        (string path, _) = session.SaveImage(outputImage, 0, user_input, metadata);
         return new() { ["images"] = new JArray() { new JObject() { ["image"] = path, ["batch_index"] = "0", ["metadata"] = metadata } } };
     }
 

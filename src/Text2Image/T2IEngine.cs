@@ -46,6 +46,9 @@ namespace SwarmUI.Text2Image
             /// <summary>The generated image.</summary>
             public Image Img;
 
+            /// <summary>An async task to get the actual final image meant to be saved to file.</summary>
+            public Task<Image> ActualImageTask;
+
             /// <summary>The time in milliseconds it took to generate, or -1 if unknown.</summary>
             public long GenTimeMS = -1;
 
@@ -202,7 +205,8 @@ namespace SwarmUI.Text2Image
                 }
                 else
                 {
-                    (img.Img, string metadata) = copyInput.SourceSession.ApplyMetadata(img.Img, copyInput, numImagesGenned, true);
+                    (Task<Image> imgTask, string metadata) = copyInput.SourceSession.ApplyMetadata(img.Img, copyInput, numImagesGenned, true);
+                    img.ActualImageTask = imgTask;
                     saveImages(img, metadata);
                     numImagesGenned++;
                 }

@@ -195,7 +195,7 @@ public class GridGeneratorExtension : Extension
                     }
                     else
                     {
-                        (string url, string filePath) = thisParams.Get(T2IParamTypes.DoNotSave, false) ? (data.Session.GetImageB64(image.Img), null) : data.Session.SaveImage(image.Img, iteration, thisParams, metadata);
+                        (string url, string filePath) = thisParams.Get(T2IParamTypes.DoNotSave, false) ? (data.Session.GetImageB64(image.Img), null) : data.Session.SaveImage(image, iteration, thisParams, metadata);
                         if (url == "ERROR")
                         {
                             setError($"Server failed to save an image.");
@@ -553,9 +553,10 @@ public class GridGeneratorExtension : Extension
                 Image outImg = new(gridImg);
                 int batchId = (xAxis.Count * yAxis.Count * y2Axis.Count) + 1;
                 Logs.Verbose("Apply metadata...");
-                (outImg, string metadata) = session.ApplyMetadata(outImg, grid.InitialParams, batchId);
+                (Task<Image> imgTask, string metadata) = session.ApplyMetadata(outImg, grid.InitialParams, batchId);
+                T2IEngine.ImageOutput imageOut = new() { Img = outImg, ActualImageTask = imgTask };
                 Logs.Verbose("Metadata applied, save to file...");
-                (string url, string filePath) = grid.InitialParams.Get(T2IParamTypes.DoNotSave, false) ? (data.Session.GetImageB64(outImg), null) : data.Session.SaveImage(outImg, batchId, grid.InitialParams, metadata);
+                (string url, string filePath) = grid.InitialParams.Get(T2IParamTypes.DoNotSave, false) ? (data.Session.GetImageB64(outImg), null) : data.Session.SaveImage(imageOut, batchId, grid.InitialParams, metadata);
                 if (url == "ERROR")
                 {
                     data.ErrorOut = new JObject() { ["error"] = $"Server failed to save an image." };
