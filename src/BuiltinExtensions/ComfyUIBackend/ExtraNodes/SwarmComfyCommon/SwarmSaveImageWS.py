@@ -27,7 +27,7 @@ class SwarmSaveImageWS:
                 "images": ("IMAGE", ),
             },
             "optional": {
-                "bit_depth": (["8bit", "16bit"], {"default": "8bit"})
+                "bit_depth": (["8bit", "16bit", "raw"], {"default": "8bit"})
             }
         }
 
@@ -41,7 +41,13 @@ class SwarmSaveImageWS:
         pbar = comfy.utils.ProgressBar(SPECIAL_ID)
         step = 0
         for image in images:
-            if bit_depth == "16bit":
+            if bit_depth == "raw":
+                i = 255.0 * image.cpu().numpy()
+                img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                def do_save(out):
+                    img.save(out, format='BMP')
+                send_image_to_server_raw(1, do_save, SPECIAL_ID, event_type=10)
+            elif bit_depth == "16bit":
                 i = 65535.0 * image.cpu().numpy()
                 img = self.convert_img_16bit(np.clip(i, 0, 65535).astype(np.uint16))
                 send_image_to_server_raw(2, lambda out: out.write(img), SPECIAL_ID)
