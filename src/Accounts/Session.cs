@@ -152,7 +152,7 @@ public class Session : IEquatable<Session>
     }
 
     /// <summary>Applies metadata to an image and converts the filetype, following the user's preferences.</summary>
-    public (Image, string) ApplyMetadata(Image image, T2IParamInput user_input, int numImagesGenned)
+    public (Image, string) ApplyMetadata(Image image, T2IParamInput user_input, int numImagesGenned, bool maySkipConversion = false)
     {
         if (numImagesGenned > 0 && user_input.TryGet(T2IParamTypes.BatchSize, out int batchSize) && numImagesGenned < batchSize)
         {
@@ -167,8 +167,11 @@ public class Session : IEquatable<Session>
             }
         }
         string metadata = user_input.GenRawMetadata();
-        string format = user_input.Get(T2IParamTypes.ImageFormat, User.Settings.FileFormat.ImageFormat);
-        image = image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100));
+        if (!maySkipConversion || !user_input.Get(T2IParamTypes.DoNotSave, false))
+        {
+            string format = user_input.Get(T2IParamTypes.ImageFormat, User.Settings.FileFormat.ImageFormat);
+            image = image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100));
+        }
         return (image, metadata ?? "");
     }
 

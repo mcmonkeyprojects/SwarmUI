@@ -202,7 +202,7 @@ namespace SwarmUI.Text2Image
                 }
                 else
                 {
-                    (img.Img, string metadata) = copyInput.SourceSession.ApplyMetadata(img.Img, copyInput, numImagesGenned);
+                    (img.Img, string metadata) = copyInput.SourceSession.ApplyMetadata(img.Img, copyInput, numImagesGenned, true);
                     saveImages(img, metadata);
                     numImagesGenned++;
                 }
