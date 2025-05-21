@@ -178,8 +178,11 @@ public class Session : IEquatable<Session>
         return image.AsDataString();
     }
 
-    /// <summary>Special cache of recently deleted images, to prevent generating new images with exact same filenames.</summary>
-    public static ConcurrentDictionary<string, string> RecentlyDeletedFilenames = [];
+    /// <summary>Special cache of recently blocked image filenames (eg file deleted, or may be saving), to prevent generating new images with exact same filenames.</summary>
+    public static ConcurrentDictionary<string, string> RecentlyBlockedFilenames = [];
+
+    /// <summary>File data that will be saved soon, or has very recently saved.</summary>
+    public static ConcurrentDictionary<string, byte[]> StillSavingFiles = [];
 
     /// <summary>Save an image as this user, and returns the new URL. If user has disabled saving, returns a data URL.</summary>
     /// <returns>(User-Visible-WebPath, Local-FilePath)</returns>
@@ -216,7 +219,7 @@ public class Session : IEquatable<Session>
             try
             {
                 Directory.CreateDirectory(folderRoute);
-                HashSet<string> existingFiles = [.. Directory.EnumerateFiles(folderRoute).Union(RecentlyDeletedFilenames.Keys.Where(f => f.StartsWith(folderRoute))).Select(f => f.BeforeLast('.'))];
+                HashSet<string> existingFiles = [.. Directory.EnumerateFiles(folderRoute).Union(RecentlyBlockedFilenames.Keys.Where(f => f.StartsWith(folderRoute))).Select(f => f.BeforeLast('.'))];
                 int num = 0;
                 while (existingFiles.Contains(fullPathNoExt))
                 {
@@ -225,23 +228,30 @@ public class Session : IEquatable<Session>
                     fullPathNoExt = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}");
                     fullPath = $"{fullPathNoExt}.{extension}";
                 }
-                File.WriteAllBytes(fullPath, image.ImageData);
-                if (User.Settings.FileFormat.SaveTextFileMetadata && !string.IsNullOrWhiteSpace(metadata))
+                RecentlyBlockedFilenames[fullPath] = fullPath;
+                StillSavingFiles[fullPath] = image.ImageData;
+                Utilities.RunCheckedTask(async () =>
                 {
-                    File.WriteAllBytes(fullPathNoExt + ".txt", metadata.EncodeUTF8());
-                }
-                if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension) && !string.IsNullOrWhiteSpace(metadata))
-                {
-                    File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
-                }
-                if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension) && !string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
-                {
-                    Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]).Wait();
-                    if (Program.ServerSettings.UI.AllowAnimatedPreviews)
+                    File.WriteAllBytes(fullPath, image.ImageData);
+                    if (User.Settings.FileFormat.SaveTextFileMetadata && !string.IsNullOrWhiteSpace(metadata))
                     {
-                        Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
+                        File.WriteAllBytes(fullPathNoExt + ".txt", metadata.EncodeUTF8());
                     }
-                }
+                    if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension) && !string.IsNullOrWhiteSpace(metadata))
+                    {
+                        File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
+                    }
+                    if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension) && !string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
+                    {
+                        Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]).Wait();
+                        if (Program.ServerSettings.UI.AllowAnimatedPreviews)
+                        {
+                            Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
+                        }
+                    }
+                    await Task.Delay(TimeSpan.FromSeconds(10)); // (Give time for WebServer to read data from cache rather than having to reload from file for first read)
+                    StillSavingFiles.TryRemove(fullPath, out _);
+                });
             }
             catch (Exception ex)
             {

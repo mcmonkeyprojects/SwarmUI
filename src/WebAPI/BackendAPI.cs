@@ -302,7 +302,7 @@ public class BackendAPI
     {
         if (system_ram)
         {
-            Session.RecentlyDeletedFilenames.Clear();
+            Session.RecentlyBlockedFilenames.Clear();
         }
         List<Task> tasks = [];
         foreach (AbstractT2IBackend target in Program.Backends.RunningBackendsOfType<AbstractT2IBackend>())

@@ -644,7 +644,7 @@ public static class T2IAPI
             return new JObject() { ["error"] = "That file does not exist, cannot delete." };
         }
         string standardizedPath = Path.GetFullPath(path);
-        Session.RecentlyDeletedFilenames[standardizedPath] = standardizedPath;
+        Session.RecentlyBlockedFilenames[standardizedPath] = standardizedPath;
         Action<string> deleteFile = Program.ServerSettings.Paths.RecycleDeletedImages ? Utilities.SendFileToRecycle : File.Delete;
         deleteFile(path);
         string fileBase = path.BeforeLast('.');

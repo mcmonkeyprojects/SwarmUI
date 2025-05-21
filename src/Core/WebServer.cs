@@ -524,6 +524,11 @@ public class WebServer
                     contentType = "image/jpg";
                 }
             }
+            string pathNorm = Path.GetFullPath(path);
+            if (data is null && Session.StillSavingFiles.TryGetValue(pathNorm, out byte[] cacheData))
+            {
+                data = cacheData;
+            }
             data ??= await File.ReadAllBytesAsync(path);
         }
         catch (Exception ex)
