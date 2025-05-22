@@ -95,6 +95,7 @@ public class T2IModelClassSorter
         bool isWan21_14bLora(JObject h) => tryGetWanLoraTok(h, out JToken tok) && tok["shape"].ToArray()[1].Value<long>() == 5120;
         bool isWanI2v(JObject h) => h.ContainsKey("model.diffusion_model.blocks.0.cross_attn.k_img.bias") || h.ContainsKey("blocks.0.cross_attn.k_img.bias");
         bool isWanflf2v(JObject h) => h.ContainsKey("model.diffusion_model.img_emb.emb_pos") || h.ContainsKey("img_emb.emb_pos");
+        bool isWanVace(JObject h) => h.ContainsKey("model.diffusion_model.vace_blocks.0.after_proj.bias") || h.ContainsKey("vace_blocks.0.after_proj.bias");
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
         bool isHiDreamLora(JObject h) => h.ContainsKey("diffusion_model.double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
         bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
@@ -316,11 +317,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "wan-2_1-text2video/vae", CompatClass = "wan-21", Name = "Wan 2.1 VAE", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) => { return false; }});
         Register(new() { ID = "wan-2_1-text2video-1_3b", CompatClass = "wan-21-1_3b", Name = "Wan 2.1 Text2Video 1.3B", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
-            return isWan21_1_3b(h) && !isWanI2v(h);
+            return isWan21_1_3b(h) && !isWanI2v(h) && !isWanVace(h);
         }});
         Register(new() { ID = "wan-2_1-image2video-1_3b", CompatClass = "wan-21-1_3b", Name = "Wan 2.1 Image2Video 1.3B", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
-            return isWan21_1_3b(h) && isWanI2v(h);
+            return isWan21_1_3b(h) && isWanI2v(h) && !isWanVace(h);
         }});
         Register(new() { ID = "wan-2_1-text2video-1_3b/lora", CompatClass = "wan-21-1_3b", Name = "Wan 2.1 Text2Video 1.3B LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
@@ -328,7 +329,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "wan-2_1-text2video-14b", CompatClass = "wan-21-14b", Name = "Wan 2.1 Text2Video 14B", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isWan21_14b(h) && !isWanI2v(h);
+            return isWan21_14b(h) && !isWanI2v(h) && !isWanVace(h);
         }});
         Register(new() { ID = "wan-2_1-text2video-14b/lora", CompatClass = "wan-21-14b", Name = "Wan 2.1 Text2Video 14B LoRA", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
@@ -336,11 +337,19 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "wan-2_1-image2video-14b", CompatClass = "wan-21-14b", Name = "Wan 2.1 Image2Video 14B", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
-            return isWan21_14b(h) && isWanI2v(h) && !isWanflf2v(h);
+            return isWan21_14b(h) && isWanI2v(h) && !isWanflf2v(h) && !isWanVace(h);
         }});
         Register(new() { ID = "wan-2_1-flf2v-14b", CompatClass = "wan-21-14b", Name = "Wan 2.1 First/LastFrame2Video 14B", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isWan21_14b(h) && isWanI2v(h) && isWanflf2v(h);
+            return isWan21_14b(h) && isWanI2v(h) && isWanflf2v(h) && !isWanVace(h);
+        }});
+        Register(new() { ID = "wan-2_1-vace-14b", CompatClass = "wan-21-14b", Name = "Wan 2.1 Vace 14B", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isWan21_14b(h) && !isWanflf2v(h) && isWanVace(h);
+        }});
+        Register(new() { ID = "wan-2_1-vace-1_3b", CompatClass = "wan-21-1_3b", Name = "Wan 2.1 Vace 1.3B", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isWan21_1_3b(h) && !isWanflf2v(h) && isWanVace(h);
         }});
         // ====================== Hunyuan Video ======================
         Register(new() { ID = "hunyuan-video", CompatClass = "hunyuan-video", Name = "Hunyuan Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>

@@ -1062,6 +1062,25 @@ public class WorkflowGeneratorSteps
                     g.FinalNegativePrompt = [applyNode, 1];
                 }
             }
+            if (g.IsWanVace() && g.FinalInputImage is not null)
+            {
+                string vaceNode = g.CreateNode("WanVaceToVideo", new JObject()
+                {
+                    ["positive"] = g.FinalPrompt,
+                    ["negative"] = g.FinalNegativePrompt,
+                    ["vae"] = g.FinalVae,
+                    ["reference_image"] = g.FinalInputImage,
+                    ["width"] = g.UserInput.GetImageWidth(),
+                    ["height"] = g.UserInput.GetImageHeight(),
+                    ["length"] = g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 81),
+                    ["batch_size"] = g.UserInput.Get(T2IParamTypes.BatchSize, 1),
+                    ["strength"] = 1 // TODO: ? Maybe hijack and redirect the creativity param?
+                });
+                g.FinalPrompt = [vaceNode, 0];
+                g.FinalNegativePrompt = [vaceNode, 1];
+                g.FinalLatentImage = [vaceNode, 2];
+                g.FinalTrimLatent = [vaceNode, 3];
+            }
         }, -6);
         #endregion
         #region Sampler
@@ -1113,6 +1132,16 @@ public class WorkflowGeneratorSteps
                     });
                     g.FinalSamples = [fromBatch, 0];
                 }
+            }
+            if (g.FinalTrimLatent is not null)
+            {
+                string trimmed = g.CreateNode("TrimVideoLatent", new JObject()
+                {
+                    ["samples"] = g.FinalSamples,
+                    ["trim_amount"] = g.FinalTrimLatent
+                });
+                g.FinalSamples = [trimmed, 0];
+                g.FinalTrimLatent = null;
             }
         }, -5);
         JArray doMaskShrinkApply(WorkflowGenerator g, JArray imgIn)

@@ -81,6 +81,7 @@ public class WorkflowGenerator
         FinalNegativePrompt = ["7", 0],
         FinalSamples = ["10", 0],
         FinalImageOut = null,
+        FinalTrimLatent = null,
         LoadingModel = null, LoadingClip = null, LoadingVAE = null;
 
     /// <summary>If true, something has required the workflow stop now.</summary>
@@ -242,6 +243,13 @@ public class WorkflowGenerator
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz.StartsWith("wan-21");
+    }
+
+    /// <summary>Returns true if the current model is any Wan-2.1 VACE variant.</summary>
+    public bool IsWanVace()
+    {
+        string clazz = CurrentModelClass()?.ID;
+        return clazz is not null && clazz.StartsWith("wan-2_1-vace-");
     }
 
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>

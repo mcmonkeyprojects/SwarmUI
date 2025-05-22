@@ -340,3 +340,14 @@ There's a full step by step guide for video model usage here: <https://github.co
         - With Text2Video, you may want to set **Other Fixes** -> **Trim Video Start Frames** to above 4, to prevent first-frame-flash.
     - Note you still have to consider VRAM and res/frame count, as you will still get slow gens if you exceed your GPU's VRAM capacity. The net speed will still be faster, but not as impressive as compared to when you fit your GPU properly.
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
+
+### Wan VACE
+
+- Wan VACE has initial support in SwarmUI.
+    - For **Reference Image** mode:
+        - Select your VACE model as your regular text2video base model
+        - Set the reference image as your Init Image
+        - Set Creativity to 1
+        - Generate as normal
+    - For **Control Video** mode:
+        - Not yet supported in main interface, use Comfy Workflow tab
