@@ -274,7 +274,9 @@ public class WorkflowGeneratorSteps
                         ["model"] = g.LoadingModel,
                         ["model_type"] = type,
                         ["rel_l1_thresh"] = teaCacheThreshold,
-                        ["max_skip_steps"] = 3
+                        ["max_skip_steps"] = 3,
+                        ["start_percent"] = 0,
+                        ["end_percent"] = 1
                     });
                     g.LoadingModel = [teaCacheNode, 0];
                 }
