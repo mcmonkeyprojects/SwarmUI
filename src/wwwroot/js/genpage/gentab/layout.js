@@ -116,6 +116,7 @@ class GenTabLayout {
         this.inputSidebar = getRequiredElementById('input_sidebar');
         this.mainImageArea = getRequiredElementById('main_image_area');
         this.currentImage = getRequiredElementById('current_image');
+        this.mainInputsArea = getRequiredElementById('main_inputs_area_wrapper');
         this.currentImageWrapbox = getRequiredElementById('current_image_wrapbox');
         this.currentImageBatch = getRequiredElementById('current_image_batch_wrapper');
         this.currentImageBatchCore = getRequiredElementById('current_image_batch');
@@ -268,6 +269,19 @@ class GenTabLayout {
             let offset = container.getBoundingClientRect().top - parent.getBoundingClientRect().top;
             container.style.height = `calc(100% - ${offset}px)`;
         }
+        let inputsRect = this.mainInputsArea.getBoundingClientRect();
+        if (inputsRect.width < 330) {
+            this.mainInputsArea.classList.add('main_inputs_small2');
+            this.mainInputsArea.classList.remove('main_inputs_small1');
+        }
+        else if (inputsRect.width < 400) {
+            this.mainInputsArea.classList.add('main_inputs_small1');
+            this.mainInputsArea.classList.remove('main_inputs_small2');
+        }
+        else {
+            this.mainInputsArea.classList.remove('main_inputs_small1');
+            this.mainInputsArea.classList.remove('main_inputs_small2');
+        }
         browserUtil.makeVisible(document);
     }
 
@@ -349,7 +363,7 @@ class GenTabLayout {
             offX = Math.min(Math.max(offX, 100), window.innerWidth - 10);
             if (this.leftBarDrag) {
                 this.leftSectionBarPos = Math.min(offX - 3, 51 * 16);
-                this.setLeftShut(this.leftSectionBarPos < 300);
+                this.setLeftShut(this.leftSectionBarPos < 290);
                 this.reapplyPositions();
             }
             if (this.rightBarDrag) {

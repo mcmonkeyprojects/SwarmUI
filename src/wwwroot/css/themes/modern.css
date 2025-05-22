@@ -176,8 +176,12 @@
     transition: padding 0.2s;
 }
 
-#main_inputs_area_wrapper.main_inputs_small {
-    padding: 30px 20px;
+#main_inputs_area_wrapper.main_inputs_small1 {
+    padding: 30px 20px 30px 15px;
+}
+
+#main_inputs_area_wrapper.main_inputs_small2 {
+    padding: 30px 15px 30px 5px;
 }
 
 #main_inputs_filter {
