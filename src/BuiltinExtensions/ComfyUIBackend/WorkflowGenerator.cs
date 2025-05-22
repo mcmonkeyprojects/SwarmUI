@@ -815,27 +815,38 @@ public class WorkflowGenerator
         {
             string vaeFile = defaultVal;
             string nodeId = null;
+            CommonModels.ModelInfo knownFile = knownName is null ? null : CommonModels.Known[knownName];
             if (!NoVAEOverride && UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vaeModel))
             {
                 vaeFile = vaeModel.Name;
                 nodeId = "11";
             }
-            if (string.IsNullOrWhiteSpace(vaeFile) || vaeFile == "None")
+            if (vaeFile == "None")
             {
-                vaeFile = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == compatClass)?.Name;
+                vaeFile = null;
+            }
+            if (string.IsNullOrWhiteSpace(vaeFile) && knownFile is not null && Program.T2IModelSets["VAE"].Models.ContainsKey(knownFile.FileName))
+            {
+                vaeFile = knownFile.FileName;
             }
             if (string.IsNullOrWhiteSpace(vaeFile))
             {
-                if (knownName is null)
+                vaeModel = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == compatClass);
+                if (vaeModel is not null)
+                {
+                    Logs.Debug($"Auto-selected first available VAE of compat class '{compatClass}', VAE '{vaeModel.Name}' will be applied");
+                    vaeFile = vaeModel.Name;
+                }
+            }
+            if (string.IsNullOrWhiteSpace(vaeFile))
+            {
+                if (knownFile is null)
                 {
                     throw new SwarmUserErrorException("No default VAE for this model found, please download its VAE and set it as default in User Settings");
                 }
-                vaeFile = CommonModels.Known[knownName].FileName;
-                if (!Program.T2IModelSets["VAE"].Models.ContainsKey(vaeFile))
-                {
-                    CommonModels.Known[knownName].DownloadNow().Wait();
-                    Program.RefreshAllModelSets();
-                }
+                vaeFile = knownFile.FileName;
+                knownFile.DownloadNow().Wait();
+                Program.RefreshAllModelSets();
             }
             LoadingVAE = CreateVAELoader(vaeFile, nodeId);
         }
