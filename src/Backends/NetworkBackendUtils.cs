@@ -118,7 +118,7 @@ public static class NetworkBackendUtils
             }
         }
 
-        public static HashSet<string> SeenErrors = [];
+        public static ConcurrentDictionary<string, string> SeenErrors = [];
 
         public static bool ExceptionIsNonIdleable(Exception ex) => ex is FormatException;
 
@@ -161,7 +161,7 @@ public static class NetworkBackendUtils
                         return;
                     }
                     string error = $"{ex.GetType().Name}: {ex.Message}";
-                    if (SeenErrors.Add(error))
+                    if (SeenErrors.TryAdd(error, error))
                     {
                         Logs.Debug($"Backend {Backend.BackendData.ID} idling because: {error}");
                     }
