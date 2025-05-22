@@ -246,6 +246,10 @@ public class WorkflowGeneratorSteps
                     {
                         type = "ltxv";
                     }
+                    else if (g.IsHiDream())
+                    {
+                        type = "hidream_i1_full";
+                    }
                     else
                     {
                         string arch = g.CurrentModelClass()?.ID;
