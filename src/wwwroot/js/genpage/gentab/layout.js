@@ -134,6 +134,7 @@ class GenTabLayout {
         this.bottomBarDrag = false;
         this.imageEditorSizeBarDrag = false;
         this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+        this.antiDup = false;
     }
 
     /** Resets the entire page layout to default, and removes all stored browser layout state info. */
@@ -168,7 +169,12 @@ class GenTabLayout {
     /** Signal a possible update to the size of the prompt box. */
     altPromptSizeHandle() {
         this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
-        this.reapplyPositions();
+        if (!this.antiDup) {
+            this.antiDup = true;
+            setTimeout(() => {
+                this.reapplyPositions();
+            }, 1);
+        }
     }
     
     /** Does the full position update logic. */
