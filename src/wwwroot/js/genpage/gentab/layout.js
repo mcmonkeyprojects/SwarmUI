@@ -173,6 +173,7 @@ class GenTabLayout {
             this.antiDup = true;
             setTimeout(() => {
                 this.reapplyPositions();
+                this.antiDup = false;
             }, 1);
         }
     }
