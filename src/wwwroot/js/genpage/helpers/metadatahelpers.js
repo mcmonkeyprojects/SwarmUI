@@ -198,7 +198,7 @@ function formatMetadata(metadata) {
                         added += ' param_view_block_model';
                     }
                     if (key.includes('prompt')) {
-                        extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="navigator.clipboard.writeText('${escapeHtmlNoBr(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
+                        extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="copyText('${escapeHtmlNoBr(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
                     }
                     let param = getParamById(key);
                     if (param) {

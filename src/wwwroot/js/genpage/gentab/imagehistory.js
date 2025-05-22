@@ -62,7 +62,7 @@ function buttonsForImage(fullsrc, src, metadata) {
             label: 'Copy Raw Metadata',
             title: `Copies the raw form of the image's metadata to your clipboard (usually JSON text).`,
             onclick: (e) => {
-                navigator.clipboard.writeText(metadata);
+                copyText(metadata);
                 doNoticePopover('Copied!', 'notice-pop-green');
             }
         });
