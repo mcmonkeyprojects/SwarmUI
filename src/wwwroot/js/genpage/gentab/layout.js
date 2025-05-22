@@ -269,19 +269,6 @@ class GenTabLayout {
             let offset = container.getBoundingClientRect().top - parent.getBoundingClientRect().top;
             container.style.height = `calc(100% - ${offset}px)`;
         }
-        let inputsRect = this.mainInputsArea.getBoundingClientRect();
-        if (inputsRect.width < 330) {
-            this.mainInputsArea.classList.add('main_inputs_small2');
-            this.mainInputsArea.classList.remove('main_inputs_small1');
-        }
-        else if (inputsRect.width < 400) {
-            this.mainInputsArea.classList.add('main_inputs_small1');
-            this.mainInputsArea.classList.remove('main_inputs_small2');
-        }
-        else {
-            this.mainInputsArea.classList.remove('main_inputs_small1');
-            this.mainInputsArea.classList.remove('main_inputs_small2');
-        }
         browserUtil.makeVisible(document);
     }
 

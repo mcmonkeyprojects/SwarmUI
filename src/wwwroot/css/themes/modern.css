@@ -174,14 +174,8 @@
 #main_inputs_area_wrapper {
     padding: 30px;
     transition: padding 0.2s;
-}
-
-#main_inputs_area_wrapper.main_inputs_small1 {
-    padding: 30px 20px 30px 15px;
-}
-
-#main_inputs_area_wrapper.main_inputs_small2 {
-    padding: 30px 15px 30px 5px;
+    padding-left: calc(clamp(5px, (100% - 400px) / 2, 30px));
+    padding-right: calc(clamp(15px, (100% - 350px) / 2, 30px));
 }
 
 #main_inputs_filter {
