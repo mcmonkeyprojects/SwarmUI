@@ -1211,7 +1211,7 @@ function buildParameterList(params, groups) {
             param.group = groupMap[param.group];
         }
     }
-    return sortParameterList(params);
+    return [sortParameterList(params), groupMap];
 }
 
 /** Returns a copy of the parameter name, cleaned for ID format input. */

@@ -91,18 +91,19 @@ class ParamConfigurationClass {
         let lastGroup = '__none__';
         let groupDiv = null;
         for (let param of rawGenParamTypesFromServer) {
-            let groupId = param.group ? param.group.id : null;
+            let group = param.original_group || param.group;
+            let groupId = group ? group.id : null;
             if (groupId != lastGroup) {
                 lastGroup = groupId;
                 groupDiv = createDiv(null, 'param-edit-group-container');
                 if (groupId) {
-                    let groupPrefix = `user_param_config_group_${param.group.id}`;
+                    let groupPrefix = `user_param_config_group_${group.id}`;
                     let groupHtml = `
-                        <div class="param-edit-header">Group: ${param.group.name}</div>
+                        <div class="param-edit-header">Group: ${group.name}</div>
                         <div class="param-edit-part"><button id="${groupPrefix}_reset" class="basic-button">Reset</button></div>
-                        <div class="param-edit-part">Open by default: <input type="checkbox" id="${groupPrefix}__open"${param.group.open ? ` checked="true"` : ''} autocomplete="off"></div>
-                        <div class="param-edit-part">IsAdvanced: <input type="checkbox" id="${groupPrefix}__advanced"${param.group.advanced ? ` checked="true"` : ''} autocomplete="off"></div>
-                        <div class="param-edit-part">Ordering Priority: <input type="number" class="param-edit-number" id="${groupPrefix}__priority" value="${param.group.priority}" autocomplete="off"></div>`;
+                        <div class="param-edit-part">Open by default: <input type="checkbox" id="${groupPrefix}__open"${group.open ? ` checked="true"` : ''} autocomplete="off"></div>
+                        <div class="param-edit-part">IsAdvanced: <input type="checkbox" id="${groupPrefix}__advanced"${group.advanced ? ` checked="true"` : ''} autocomplete="off"></div>
+                        <div class="param-edit-part">Ordering Priority: <input type="number" class="param-edit-number" id="${groupPrefix}__priority" value="${group.priority}" autocomplete="off"></div>`;
                     groupDiv.appendChild(createDiv(null, 'param-edit-container-for-group', groupHtml));
                     this.container.appendChild(groupDiv);
                     getRequiredElementById(`${groupPrefix}_reset`).addEventListener('click', () => {
@@ -121,18 +122,18 @@ class ParamConfigurationClass {
                         let elem = getRequiredElementById(`${groupPrefix}__${opt}`);
                         elem.dataset.orig_val = getInputVal(elem);
                         elem.addEventListener('input', () => {
-                            if (!this.edited_groups[param.group.id]) {
-                                this.edited_groups[param.group.id] = { changed: {} };
+                            if (!this.edited_groups[group.id]) {
+                                this.edited_groups[group.id] = { changed: {} };
                             }
                             let val = getInputVal(elem);
                             if (`${val}` == elem.dataset.orig_val) {
-                                delete this.edited_groups[param.group.id].changed[opt];
-                                if (Object.keys(this.edited_groups[param.group.id].changed).length == 0) {
-                                    delete this.edited_groups[param.group.id];
+                                delete this.edited_groups[group.id].changed[opt];
+                                if (Object.keys(this.edited_groups[group.id].changed).length == 0) {
+                                    delete this.edited_groups[group.id];
                                 }
                             }
                             else {
-                                this.edited_groups[param.group.id].changed[opt] = val;
+                                this.edited_groups[group.id].changed[opt] = val;
                             }
                             this.updateConfirmer();
                         });
@@ -172,9 +173,14 @@ class ParamConfigurationClass {
             if (!param.values && param.type != "boolean") {
                 paramHtml += `<div class="param-edit-part">Examples: <input class="param-edit-text" type="text" id="${paramPrefix}__examples" value="${param.examples ? param.examples.join(' || ') : ''}" autocomplete="off"></div>`;
             }
+            paramHtml += `<div class="param-edit-part">Group: <select id="${paramPrefix}__group" autocomplete="off">`;
+            for (let groupOpt of Object.values(rawGroupMapFromServer)) {
+                paramHtml += `<option value="${groupOpt.id}"${groupId == groupOpt.id ? ` selected="true"` : ''}>${groupOpt.name}</option>`;
+            }
+            paramHtml += `</select></div>`;
             groupDiv.appendChild(createDiv(null, 'param-edit-container', paramHtml));
             getRequiredElementById(`${paramPrefix}_reset`).addEventListener('click', () => {
-                for (let opt of ['visible', 'do_not_save', 'advanced', 'priority', 'min', 'max', 'view_max', 'step', 'view_type', 'examples']) {
+                for (let opt of ['visible', 'do_not_save', 'advanced', 'priority', 'min', 'max', 'view_max', 'step', 'view_type', 'examples', 'group']) {
                     let elem = document.getElementById(`${paramPrefix}__${opt}`);
                     if (!elem) {
                         continue;
@@ -184,6 +190,9 @@ class ParamConfigurationClass {
                     if (opt == 'examples') {
                         val = val ? val.join(' || ') : '';
                     }
+                    if (opt == 'group') {
+                        val = val ? val.id : '';
+                    }
                     setInputVal(elem, val);
                     triggerChangeFor(elem);
                 }
@@ -192,7 +201,7 @@ class ParamConfigurationClass {
                 this.extra_count++;
                 this.updateConfirmer();
             });
-            for (let opt of ['visible', 'do_not_save', 'advanced', 'priority', 'min', 'max', 'view_max', 'step', 'view_type', 'examples']) {
+            for (let opt of ['visible', 'do_not_save', 'advanced', 'priority', 'min', 'max', 'view_max', 'step', 'view_type', 'examples', 'group']) {
                 let elem = document.getElementById(`${paramPrefix}__${opt}`);
                 if (!elem) {
                     continue;
@@ -231,11 +240,12 @@ class ParamConfigurationClass {
             return;
         }
         for (let param of rawGenParamTypesFromServer) {
-            if (param.group) {
-                let groupEdits = edits.groups[param.group.id];
+            let group = param.original_group || param.group;
+            if (group) {
+                let groupEdits = edits.groups[group.id];
                 if (groupEdits) {
                     for (let key in groupEdits) {
-                        param.group[key] = groupEdits[key];
+                        group[key] = groupEdits[key];
                     }
                 }
             }
@@ -244,6 +254,12 @@ class ParamConfigurationClass {
                 for (let key in paramEdits) {
                     if (key == 'examples') {
                         param[key] = paramEdits[key].split('||').map(s => s.trim()).filter(s => s != '');
+                    }
+                    else if (key == 'group') {
+                        if (!param.original_group) {
+                            param.original_group = param.group;
+                        }
+                        param.group = rawGroupMapFromServer[paramEdits[key]];
                     }
                     else {
                         param[key] = paramEdits[key];

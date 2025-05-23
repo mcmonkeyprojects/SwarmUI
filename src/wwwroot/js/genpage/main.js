@@ -1,4 +1,4 @@
-let gen_param_types = null, rawGenParamTypesFromServer = null;
+let gen_param_types = null, rawGenParamTypesFromServer = null, rawGroupMapFromServer = null;
 
 let lastImageDir = '';
 
@@ -739,7 +739,7 @@ function genpageLoad() {
         genericRequest('ListT2IParams', {}, data => {
             updateAllModels(data.models);
             wildcardHelpers.newWildcardList(data.wildcards);
-            rawGenParamTypesFromServer = buildParameterList(data.list, data.groups);
+            [rawGenParamTypesFromServer, rawGroupMapFromServer] = buildParameterList(data.list, data.groups);
             gen_param_types = rawGenParamTypesFromServer;
             paramConfig.preInit();
             paramConfig.applyParamEdits(data.param_edits);
