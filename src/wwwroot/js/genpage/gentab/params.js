@@ -298,15 +298,15 @@ function genInputs(delay_final = false) {
         let allParams = gen_param_types.filter(areaData[2]);
         let groupMap = {};
         let pushGroup = (group) => {
+            let map = groupMap;
             if (group.parent) {
                 let parent = pushGroup(group.parent);
-                parent.children.push(group);
-                return parent;
+                map = parent.children;
             }
-            if (!groupMap[group.id]) {
-                groupMap[group.id] = { group: group, children: [], params: [] };
+            if (!map[group.id]) {
+                map[group.id] = { group: group, children: {}, params: [] };
             }
-            return groupMap[group.id];
+            return map[group.id];
         };
         for (let param of allParams) {
             let group = param.group ?? { id: '-ungrouped-', name: '-ungrouped-', priority: -99999999, parent: null };
@@ -343,7 +343,7 @@ function genInputs(delay_final = false) {
                     presetHtml += `<div class="input-group ${openClass}"><span id="input_group_preset_${groupId}" class="input-group-header ${shrinkClass}">${symbol}${translateableHtml(escapeHtml(group.name))}</span><div class="input-group-content">`;
                 }
             }
-            for (let param of groupHolder.params) {
+            for (let param of groupHolder.params.sort((a, b) => a.priority - b.priority)) {
                 if (isPrompt(param) ? param.visible == isMain : true) {
                     let newData = getHtmlForParam(param, "input_");
                     html += newData.html;
@@ -361,7 +361,7 @@ function genInputs(delay_final = false) {
                     }
                 }
             }
-            for (let child of groupHolder.children) {
+            for (let child of Object.values(groupHolder.children).sort((a, b) => a.group.priority - b.group.priority)) {
                 appendGroup(child);
             }
             if (groupId != '-ungrouped-') {
