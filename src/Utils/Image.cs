@@ -263,7 +263,7 @@ public class Image
         using MemoryStream ms = new();
         ISImage img = ToIS;
         img.Metadata.XmpProfile = null;
-        ExifProfile prof = new();
+        ExifProfile prof = img.Metadata.ExifProfile?.DeepClone() ?? new ExifProfile();
         if (dpi > 0)
         {
             prof.SetValue(ExifTag.XResolution, new Rational((uint)dpi, 1));
