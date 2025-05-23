@@ -866,7 +866,7 @@ public static class T2IAPI
         return new JObject()
         {
             ["list"] = new JArray(types.Select(v => v.ToNet(session)).ToList()),
-            ["groups"] = new JArray(groups.Values.Select(g => g.ToNet(session)).ToList()),
+            ["groups"] = new JArray(groups.Values.OrderBy(g => g.OrderPriority).Select(g => g.ToNet(session)).ToList()),
             ["models"] = modelData,
             ["wildcards"] = new JArray(WildcardsHelper.ListFiles),
             ["param_edits"] = string.IsNullOrWhiteSpace(session.User.Data.RawParamEdits) ? null : JObject.Parse(session.User.Data.RawParamEdits)
