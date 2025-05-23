@@ -557,7 +557,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, StyleModelForRevision, TeaCacheMode;
+    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, StyleModelForRevision, TeaCacheMode;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar;
 
@@ -667,6 +667,14 @@ public class ComfyUIBackendExtension : Extension
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,
             GetValues: (_) => UpscalerModels
+            ));
+        RefinerSamplerParam = T2IParamTypes.Register<string>(new("Refiner Sampler", SamplerParam.Type.Description + "\nThis is an override to only affect the Refine/Upscale stage.",
+            "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRefinerOverrides, OrderPriority: -2,
+            GetValues: (_) => Samplers
+            ));
+        RefinerSchedulerParam = T2IParamTypes.Register<string>(new("Refiner Scheduler", SchedulerParam.Type.Description + "\nThis is an override to only affect the Refine/Upscale stage.",
+            "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRefinerOverrides, OrderPriority: -1.5,
+            GetValues: (_) => Schedulers
             ));
         for (int i = 0; i < 3; i++)
         {
