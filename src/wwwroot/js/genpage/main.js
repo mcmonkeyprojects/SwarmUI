@@ -675,7 +675,6 @@ function clearParamFilterInput() {
 }
 
 function genpageLoad() {
-    console.log('Load page...');
     $('#toptablist').on('shown.bs.tab', function (e) {
         let versionDisp = getRequiredElementById('version_display');
         if (e.target.id == 'maintab_comfyworkflow') {
@@ -735,7 +734,6 @@ function genpageLoad() {
     reviseStatusBar();
     loadHashHelper();
     getSession(() => {
-        console.log('First session loaded - prepping page.');
         imageHistoryBrowser.navigate('');
         initialModelListLoad();
         genericRequest('ListT2IParams', {}, data => {
