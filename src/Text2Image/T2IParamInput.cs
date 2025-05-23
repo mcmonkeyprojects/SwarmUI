@@ -107,6 +107,9 @@ public class T2IParamInput
     /// <summary>The underlying raw <see cref="T2IParamSet"/> backing the main inputs.</summary>
     public T2IParamSet InternalSet = new();
 
+    [Obsolete("don't access this internal value directly")] // TODO: Remove me
+    public Dictionary<string, object> ValuesInput => InternalSet.ValuesInput;
+
     /// <summary>Extra data to store in metadata.</summary>
     public Dictionary<string, object> ExtraMeta = [];
 
