@@ -819,7 +819,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 Image fixedImage = resize ? img.Resize(width, height) : img;
                 if (key.Contains("swarmloadimageb") || key.Contains("swarminputimage"))
                 {
-                    user_input.ValuesInput[key] = fixedImage;
+                    user_input.InternalSet.ValuesInput[key] = fixedImage;
                     return;
                 }
                 int index = workflow.IndexOf("${" + key);
@@ -851,7 +851,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     index = workflow.IndexOf("${" + key);
                 }
             }
-            foreach ((string key, object val) in new Dictionary<string, object>(user_input.ValuesInput))
+            foreach ((string key, object val) in new Dictionary<string, object>(user_input.InternalSet.ValuesInput))
             {
                 bool resize = !T2IParamTypes.TryGetType(key, out T2IParamType type, user_input) || type.ImageShouldResize;
                 if (val is Image img && !type.ImageAlwaysB64)

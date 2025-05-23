@@ -210,7 +210,7 @@ public class ComfyUIBackendExtension : Extension
                 }
                 //Logs.Verbose($"Failed to find param metadata for {name} in {paramMetadata.Properties().Select(p => p.Name).JoinString(", ")}");
             }
-            if (name.StartsWith("comfyrawworkflowinput") && (context.ValuesInput.ContainsKey("comfyworkflowraw") || context.ValuesInput.ContainsKey("comfyuicustomworkflow")))
+            if (name.StartsWith("comfyrawworkflowinput") && (context.InternalSet.ValuesInput.ContainsKey("comfyworkflowraw") || context.InternalSet.ValuesInput.ContainsKey("comfyuicustomworkflow")))
             {
                 string nameNoPrefix = name.After("comfyrawworkflowinput");
                 T2IParamDataType type = FakeRawInputType.Type;

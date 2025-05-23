@@ -105,9 +105,9 @@ public class GridGeneratorExtension : Extension
                 string[] parts = replacement.Split('=', 2);
                 string key = parts[0].Trim();
                 string val = parts[1].Trim();
-                foreach (string paramId in param.ValuesInput.Keys.Where(k => k.EndsWith("prompt") && param.ValuesInput[k] is string).ToArray())
+                foreach (string paramId in param.InternalSet.ValuesInput.Keys.Where(k => k.EndsWith("prompt") && param.InternalSet.ValuesInput[k] is string).ToArray())
                 {
-                    param.ValuesInput[paramId] = param.ValuesInput[paramId].ToString().Replace(key, val);
+                    param.InternalSet.ValuesInput[paramId] = param.InternalSet.ValuesInput[paramId].ToString().Replace(key, val);
                 }
             }
         };

@@ -104,10 +104,8 @@ public class T2IParamInput
         }
     ];
 
-    /// <summary>The raw values in this input. Do not use this directly, instead prefer:
-    /// <see cref="Get{T}(T2IRegisteredParam{T})"/>, <see cref="TryGet{T}(T2IRegisteredParam{T}, out T)"/>,
-    /// <see cref="Set{T}(T2IRegisteredParam{T}, string)"/>.</summary>
-    public Dictionary<string, object> ValuesInput = [];
+    /// <summary>The underlying raw <see cref="T2IParamSet"/> backing the main inputs.</summary>
+    public T2IParamSet InternalSet = new();
 
     /// <summary>Extra data to store in metadata.</summary>
     public Dictionary<string, object> ExtraMeta = [];
@@ -149,6 +147,7 @@ public class T2IParamInput
     public T2IParamInput(Session session)
     {
         SourceSession = session;
+        InternalSet.SourceSession = session;
         InterruptToken = session is null ? new CancellationTokenSource().Token : session.SessInterrupt.Token;
         ExtraMeta["date"] = $"{RequestTime:yyyy-MM-dd}";
         lock (UIDLock)
@@ -191,15 +190,7 @@ public class T2IParamInput
     public T2IParamInput Clone()
     {
         T2IParamInput toret = MemberwiseClone() as T2IParamInput;
-        toret.ValuesInput = new Dictionary<string, object>(ValuesInput.Count);
-        foreach ((string key, object val) in ValuesInput)
-        {
-            object useVal = val;
-            if (useVal is List<string> strs) { useVal = new List<string>(strs); }
-            else if (useVal is List<Image> imgs) { useVal = new List<Image>(imgs); }
-            else if (useVal is List<T2IModel> models) { useVal = new List<T2IModel>(models); }
-            toret.ValuesInput[key] = useVal;
-        }
+        toret.InternalSet = InternalSet.Clone();
         toret.ExtraMeta = new Dictionary<string, object>(ExtraMeta);
         toret.RequiredFlags = [.. RequiredFlags];
         return toret;
@@ -238,7 +229,7 @@ public class T2IParamInput
     public JObject ToJSON()
     {
         JObject result = [];
-        foreach ((string key, object val) in ValuesInput)
+        foreach ((string key, object val) in InternalSet.ValuesInput)
         {
             result[key] = JToken.FromObject(SimplifyParamVal(val));
         }
@@ -266,7 +257,7 @@ public class T2IParamInput
     public JObject GenParameterMetadata()
     {
         JObject output = [];
-        foreach ((string key, object origVal) in ValuesInput)
+        foreach ((string key, object origVal) in InternalSet.ValuesInput)
         {
             object val = origVal;
             if (val is null)
@@ -355,13 +346,13 @@ public class T2IParamInput
                     }
                 }
             }
-            foreach ((string key, object val) in ValuesInput)
+            foreach ((string key, object val) in InternalSet.ValuesInput)
             {
                 addModelsFor(key, val);
             }
             foreach ((string modelListKey, string subType) in ModelListExtraKeys)
             {
-                if (ExtraMeta.TryGetValue(modelListKey, out object val) || ValuesInput.TryGetValue(modelListKey, out val))
+                if (ExtraMeta.TryGetValue(modelListKey, out object val) || InternalSet.ValuesInput.TryGetValue(modelListKey, out val))
                 {
                     addModelsFor(modelListKey, val);
                     if (val is List<string> strlist)
@@ -401,9 +392,9 @@ public class T2IParamInput
     public void PreparsePromptLikes()
     {
         T2IPromptHandling.PromptTagContext posContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID };
-        ValuesInput["prompt"] = ProcessPromptLike(T2IParamTypes.Prompt, posContext);
+        InternalSet.ValuesInput["prompt"] = ProcessPromptLike(T2IParamTypes.Prompt, posContext);
         T2IPromptHandling.PromptTagContext negContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID, Variables = posContext.Variables };
-        ValuesInput["negativeprompt"] = ProcessPromptLike(T2IParamTypes.NegativePrompt, negContext);
+        InternalSet.ValuesInput["negativeprompt"] = ProcessPromptLike(T2IParamTypes.NegativePrompt, negContext);
     }
 
     /// <summary>Formats embeddings in a prompt string and returns the cleaned string.</summary>
@@ -420,7 +411,7 @@ public class T2IParamInput
             string val = Get(param) ?? "";
             val = generalPreproc is null ? val : generalPreproc(val);
             val = FillEmbedsInString(val, formatEmbed);
-            ValuesInput[param.Type.ID] = val;
+            InternalSet.ValuesInput[param.Type.ID] = val;
         }
         proc(T2IParamTypes.Prompt);
         proc(T2IParamTypes.NegativePrompt);
@@ -490,143 +481,27 @@ public class T2IParamInput
     }
 
     /// <summary>Gets the raw value of the parameter, if it is present, or null if not.</summary>
-    public object GetRaw(T2IParamType param)
-    {
-        return ValuesInput.GetValueOrDefault(param.ID);
-    }
+    public object GetRaw(T2IParamType param) => InternalSet.GetRaw(param);
 
     /// <summary>Gets the value of the parameter, if it is present, or default if not.</summary>
-    public T Get<T>(T2IRegisteredParam<T> param) => Get(param, default, true);
+    public T Get<T>(T2IRegisteredParam<T> param) => InternalSet.Get(param);
 
     /// <summary>Gets the value of the parameter, if it is present, or default if not.</summary>
-    public T Get<T>(T2IRegisteredParam<T> param, T defVal, bool autoFixDefault = false)
-    {
-        if (!ValuesInput.TryGetValue(param.Type.ID, out object val))
-        {
-            if (autoFixDefault && !string.IsNullOrWhiteSpace(param.Type.Default))
-            {
-                Set(param.Type, param.Type.Default);
-                T result = Get(param, defVal, false);
-                Remove(param);
-                return result;
-            }
-            return defVal;
-        }
-        if (val is long lVal && typeof(T) == typeof(int))
-        {
-            val = (int)lVal;
-        }
-        if (val is double dVal && typeof(T) == typeof(float))
-        {
-            val = (float)dVal;
-        }
-        return (T)val;
-    }
+    public T Get<T>(T2IRegisteredParam<T> param, T defVal, bool autoFixDefault = false) => InternalSet.Get(param, defVal, autoFixDefault);
 
     /// <summary>Gets the value of the parameter as a string, if it is present, or null if not.</summary>
-    public string GetString<T>(T2IRegisteredParam<T> param)
-    {
-        if (ValuesInput.TryGetValue(param.Type.ID, out object val))
-        {
-            return $"{(T)val}";
-        }
-        return null;
-    }
+    public string GetString<T>(T2IRegisteredParam<T> param) => InternalSet.GetString(param);
 
     /// <summary>Tries to get the value of the parameter. If it is present, returns true and outputs the value. If it is not present, returns false.</summary>
-    public bool TryGet<T>(T2IRegisteredParam<T> param, out T val)
-    {
-        if (ValuesInput.TryGetValue(param.Type.ID, out object valObj))
-        {
-            val = (T)valObj;
-            return true;
-        }
-        val = default;
-        return false;
-    }
+    public bool TryGet<T>(T2IRegisteredParam<T> param, out T val) => InternalSet.TryGet(param, out val);
 
     /// <summary>Tries to get the value of the parameter. If it is present, returns true and outputs the value. If it is not present, returns false.</summary>
-    public bool TryGetRaw(T2IParamType param, out object val)
-    {
-        if (ValuesInput.TryGetValue(param.ID, out object valObj))
-        {
-            val = valObj;
-            return true;
-        }
-        val = default;
-        return false;
-    }
+    public bool TryGetRaw(T2IParamType param, out object val) => InternalSet.TryGetRaw(param, out val);
 
     /// <summary>Sets the value of an input parameter to a given plaintext input. Will run the 'Clean' call if needed.</summary>
     public void Set(T2IParamType param, string val)
     {
-        if (param.Clean is not null)
-        {
-            val = param.Clean(ValuesInput.TryGetValue(param.ID, out object valObj) ? valObj.ToString() : null, val);
-        }
-        T2IModel getModel(string name)
-        {
-            T2IModelHandler handler = Program.T2IModelSets[param.Subtype ?? "Stable-Diffusion"];
-            string best = T2IParamTypes.GetBestModelInList(name.Replace('\\', '/'), [.. handler.ListModelNamesFor(SourceSession)]);
-            if (best is null)
-            {
-                return null;
-            }
-            T2IModel model = handler.GetModel(best);
-            if (model is null)
-            {
-                return null;
-            }
-            model.AutoWarn();
-            if (Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
-            {
-                model.GetOrGenerateTensorHashSha256(); // Ensure hash is preloaded early
-            }
-            return model;
-        }
-        if (param.IgnoreIf is not null && param.IgnoreIf == val)
-        {
-            ValuesInput.Remove(param.ID);
-            return;
-        }
-        Image imageFor(string val)
-        {
-            if (val.StartsWithFast("data:"))
-            {
-                return Image.FromDataString(val);
-            }
-            return new Image(val, Image.ImageType.IMAGE, "png");
-        }
-        object obj = param.Type switch
-        {
-            T2IParamDataType.INTEGER => param.SharpType == typeof(long) ? long.Parse(val) : int.Parse(val),
-            T2IParamDataType.DECIMAL => param.SharpType == typeof(double) ? double.Parse(val) : float.Parse(val),
-            T2IParamDataType.BOOLEAN => bool.Parse(val),
-            T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
-            T2IParamDataType.IMAGE => imageFor(val),
-            T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => imageFor(v)).ToList(),
-            T2IParamDataType.MODEL => getModel(val),
-            T2IParamDataType.LIST => val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
-            _ => throw new NotImplementedException()
-        };
-        if (param.SharpType == typeof(int))
-        {
-            obj = unchecked((int)(long)obj); // WTF. Yes this double-cast is needed. No I can't explain why. Ternaries are broken maybe?
-        }
-        if (param.SharpType == typeof(float))
-        {
-            obj = (float)(double)obj;
-        }
-        if (obj is null)
-        {
-            Logs.Debug($"Ignoring input to parameter '{param.ID}' of '{val}' because the value maps to null.");
-            if (param.ID == "model")
-            {
-                Logs.Warning($"Model input '{val}' appears to be null.");
-            }
-            return;
-        }
-        ValuesInput[param.ID] = obj;
+        InternalSet.Set(param, val);
         if (param.FeatureFlag is not null)
         {
             RequiredFlags.UnionWith(param.FeatureFlag.SplitFast(','));
@@ -636,17 +511,7 @@ public class T2IParamInput
     /// <summary>Sets the direct raw value of a given parameter, without processing.</summary>
     public void Set<T>(T2IRegisteredParam<T> param, T val)
     {
-        if (param.Type.Clean is not null)
-        {
-            Set(param.Type, val is List<string> list ? list.JoinString(",") : val.ToString());
-            return;
-        }
-        if (param.Type.IgnoreIf is not null && param.Type.IgnoreIf == $"{val}")
-        {
-            ValuesInput.Remove(param.Type.ID);
-            return;
-        }
-        ValuesInput[param.Type.ID] = val;
+        InternalSet.Set(param, val);
         if (param.Type.FeatureFlag is not null)
         {
             RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
@@ -656,7 +521,7 @@ public class T2IParamInput
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param)
     {
-        ValuesInput.Remove(param.Type.ID);
+        InternalSet.Remove(param);
     }
 
     /// <summary>Makes sure the input has valid seed inputs and other special parameter handlers.</summary>
@@ -681,6 +546,6 @@ public class T2IParamInput
             }
             return val;
         }
-        return $"T2IParamInput({string.Join(", ", ValuesInput.Select(x => $"{x.Key}: {stringifyVal(x.Value)}"))})";
+        return $"T2IParamInput({string.Join(", ", InternalSet.ValuesInput.Select(x => $"{x.Key}: {stringifyVal(x.Value)}"))})";
     }
 }
