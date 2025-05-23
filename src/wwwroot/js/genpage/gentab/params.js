@@ -664,6 +664,32 @@ function genInputs(delay_final = false) {
                     setDirectParamValue(param, cookie);
                 }
             }
+            let container = findParentOfClass(elem, 'auto-input');
+            let nameBlock = container.querySelector('.auto-input-name');
+            if (nameBlock) {
+                nameBlock.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    let isStarred = param.group.id == 'starred';
+                    new AdvancedPopover('param_name_context', [ { key: isStarred ? 'Unstar Parameter' : 'Star Parameter', action: () => {
+                        if (!paramConfig.param_edits.params[param.id]) {
+                            paramConfig.param_edits.params[param.id] = {};
+                        }
+                        if (isStarred) {
+                            delete paramConfig.param_edits.params[param.id].group;
+                        }
+                        else {
+                            paramConfig.param_edits.params[param.id].group = 'starred';
+                        }
+                        paramConfig.applyParamEdits(paramConfig.param_edits);
+                        genericRequest('SetParamEdits', { edits: paramConfig.param_edits }, data => {});
+                        setTimeout(() => {
+                            genInputs();
+                        }, 1);
+                    }}
+                    ], false, e.clientX, e.clientY, document.body, null);
+                });
+            }
             if (!param.do_not_save) {
                 elem.addEventListener('change', () => {
                     let val = null;
