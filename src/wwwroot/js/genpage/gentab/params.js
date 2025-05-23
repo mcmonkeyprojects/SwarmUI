@@ -677,9 +677,11 @@ function genInputs(delay_final = false) {
                         }
                         if (isStarred) {
                             delete paramConfig.param_edits.params[param.id].group;
+                            delete paramConfig.param_edits.params[param.id].advanced;
                         }
                         else {
                             paramConfig.param_edits.params[param.id].group = 'starred';
+                            paramConfig.param_edits.params[param.id].advanced = false;
                         }
                         paramConfig.applyParamEdits(paramConfig.param_edits);
                         genericRequest('SetParamEdits', { edits: paramConfig.param_edits }, data => {});
