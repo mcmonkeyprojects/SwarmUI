@@ -175,7 +175,8 @@ public class T2IRegisteredParam<T>
 /// <param name="Description">Optional description/explanation text of the group.</param>
 /// <param name="IsAdvanced">If true, this is an advanced setting group that should be hidden by a dropdown.</param>
 /// <param name="CanShrink">If true, the group can be shrunk on-page to hide it. If false, it is always open.</param>
-public record class T2IParamGroup(string Name, bool Toggles = false, bool Open = true, double OrderPriority = 10, string Description = "", bool IsAdvanced = false, bool CanShrink = true)
+/// <param name="Parent">A parent group of this group, or null if none.</param>
+public record class T2IParamGroup(string Name, bool Toggles = false, bool Open = true, double OrderPriority = 10, string Description = "", bool IsAdvanced = false, bool CanShrink = true, T2IParamGroup Parent = null)
 {
     public JObject ToNet(Session session)
     {
@@ -188,7 +189,8 @@ public record class T2IParamGroup(string Name, bool Toggles = false, bool Open =
             ["priority"] = OrderPriority,
             ["description"] = Description,
             ["advanced"] = IsAdvanced,
-            ["can_shrink"] = CanShrink
+            ["can_shrink"] = CanShrink,
+            ["parent"] = Parent?.Name
         };
     }
 }

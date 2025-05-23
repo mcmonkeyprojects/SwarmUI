@@ -284,74 +284,95 @@ function genInputs(delay_final = false) {
     let groupsEnable = [];
     let isPrompt = (p) => p.id == 'prompt' || p.id == 'negativeprompt';
     let defaultPromptVisible = rawGenParamTypesFromServer.find(p => isPrompt(p)).visible;
-    for (let areaData of [['main_inputs_area', 'new_preset_modal_inputs', (p) => (p.visible || isPrompt(p)) && !isParamAdvanced(p), true],
-            ['main_inputs_area_advanced', 'new_preset_modal_advanced_inputs', (p) => p.visible && isParamAdvanced(p), false],
+    for (let areaData of [['main_inputs_area', 'new_preset_modal_inputs', (p) => (p.visible || isPrompt(p)), true],
             ['main_inputs_area_hidden', 'new_preset_modal_hidden_inputs', (p) => (!p.visible || isPrompt(p)), false]]) {
         let area = getRequiredElementById(areaData[0]);
         area.innerHTML = '';
         let presetArea = areaData[1] ? getRequiredElementById(areaData[1]) : null;
         let html = '', presetHtml = '';
-        let lastGroup = null;
         let isMain = areaData[3];
         if (isMain && defaultPromptVisible) {
             html += `<button class="generate-button" id="generate_button" onclick="getRequiredElementById('alt_generate_button').click()" oncontextmenu="return getRequiredElementById('alt_generate_button').oncontextmenu()">Generate</button>
             <button class="interrupt-button legacy-interrupt interrupt-button-none" id="interrupt_button" onclick="getRequiredElementById('alt_interrupt_button').click()" oncontextmenu="return getRequiredElementById('alt_interrupt_button').oncontextmenu()">&times;</button>`;
         }
-        for (let param of gen_param_types.filter(areaData[2])) {
-            let groupName = param.group ? param.group.name : null;
-            if (groupName != lastGroup) {
-                if (lastGroup) {
-                    html += '</div></div>';
-                    if (presetArea) {
-                        presetHtml += '</div></div>';
-                    }
-                }
-                if (param.group) {
-                    let infoButton = '';
-                    let groupId = param.group.id;
-                    if (param.group.description) {
-                        html += `<div class="sui-popover" id="popover_group_${groupId}"><b>${translateableHtml(escapeHtml(param.group.name))}</b>:<br>&emsp;${translateableHtml(safeHtmlOnly(param.group.description))}</div>`;
-                        infoButton = `<span class="auto-input-qbutton info-popover-button" onclick="doPopover('group_${groupId}', arguments[0])">?</span>`;
-                    }
-                    let shouldOpen = getCookie(`group_open_auto-group-${groupId}`) || (param.group.open ? 'open' : 'closed');
-                    if (shouldOpen == 'closed') {
-                        groupsClose.push(groupId);
-                    }
-                    if (param.group.toggles) {
-                        let shouldToggle = getCookie(`group_toggle_auto-group-${groupId}`) || 'no';
-                        if (shouldToggle == 'yes') {
-                            groupsEnable.push(groupId);
-                        }
-                    }
-                    let symbol = param.group.can_shrink ? '<span class="auto-symbol">&#x2B9F;</span>' : '';
-                    let shrinkClass = param.group.can_shrink ? 'input-group-shrinkable' : 'input-group-noshrink';
-                    let extraSpanInfo = param.group.id == 'revision' ? ' style="display: none;"' : '';
-                    let openClass = shouldOpen == 'closed' ? 'input-group-closed' : 'input-group-open';
-                    let extraContentInfo = shouldOpen == 'closed' ? ' style="display: none;"' : '';
-                    let toggler = getToggleHtml(param.group.toggles, `input_group_content_${groupId}`, escapeHtml(param.group.name), ' group-toggler-switch', 'doToggleGroup');
-                    html += `<div class="input-group ${openClass}" id="auto-group-${groupId}"><span${extraSpanInfo} id="input_group_${groupId}" class="input-group-header ${shrinkClass}"><span class="header-label-wrap">${symbol}<span class="header-label">${translateableHtml(escapeHtml(param.group.name))}</span>${infoButton}<span class="header-label-spacer"></span><span class="header-label-counter"></span>${toggler || ''}</span></span><div${extraContentInfo} class="input-group-content" id="input_group_content_${groupId}">`;
-                    if (presetArea) {
-                        presetHtml += `<div class="input-group ${openClass}"><span id="input_group_preset_${groupId}" class="input-group-header ${shrinkClass}">${symbol}${translateableHtml(escapeHtml(param.group.name))}</span><div class="input-group-content">`;
-                    }
-                }
-                lastGroup = groupName;
+        let allParams = gen_param_types.filter(areaData[2]);
+        let groupMap = {};
+        let pushGroup = (group) => {
+            if (group.parent) {
+                let parent = pushGroup(group.parent);
+                parent.children.push(group);
+                return parent;
             }
-            if (isPrompt(param) ? param.visible == isMain : true) {
-                let newData = getHtmlForParam(param, "input_");
-                html += newData.html;
-                if (newData.runnable) {
-                    runnables.push(newData.runnable);
-                }
+            if (!groupMap[group.id]) {
+                groupMap[group.id] = { group: group, children: [], params: [] };
             }
-            if (isPrompt(param) ? isMain : true) {
-                let presetParam = JSON.parse(JSON.stringify(param));
-                presetParam.toggleable = true;
-                let presetData = getHtmlForParam(presetParam, "preset_input_");
-                presetHtml += presetData.html;
-                if (presetData.runnable) {
-                    runnables.push(presetData.runnable);
+            return groupMap[group.id];
+        };
+        for (let param of allParams) {
+            let group = param.group ?? { id: '-ungrouped-', name: '-ungrouped-', priority: -99999999, parent: null };
+            pushGroup(group).params.push(param);
+        }
+        let groups = Object.values(groupMap).sort((a, b) => a.group.priority - b.group.priority);
+        function appendGroup(groupHolder) {
+            let group = groupHolder.group;
+            let groupId = group.id;
+            if (groupId != '-ungrouped-') {
+                let infoButton = '';
+                if (group.description) {
+                    html += `<div class="sui-popover" id="popover_group_${groupId}"><b>${translateableHtml(escapeHtml(group.name))}</b>:<br>&emsp;${translateableHtml(safeHtmlOnly(group.description))}</div>`;
+                    infoButton = `<span class="auto-input-qbutton info-popover-button" onclick="doPopover('group_${groupId}', arguments[0])">?</span>`;
+                }
+                let shouldOpen = getCookie(`group_open_auto-group-${groupId}`) || (group.open ? 'open' : 'closed');
+                if (shouldOpen == 'closed') {
+                    groupsClose.push(groupId);
+                }
+                if (group.toggles) {
+                    let shouldToggle = getCookie(`group_toggle_auto-group-${groupId}`) || 'no';
+                    if (shouldToggle == 'yes') {
+                        groupsEnable.push(groupId);
+                    }
+                }
+                let symbol = group.can_shrink ? '<span class="auto-symbol">&#x2B9F;</span>' : '';
+                let shrinkClass = group.can_shrink ? 'input-group-shrinkable' : 'input-group-noshrink';
+                let extraSpanInfo = group.id == 'revision' ? ' style="display: none;"' : '';
+                let openClass = shouldOpen == 'closed' ? 'input-group-closed' : 'input-group-open';
+                let extraContentInfo = shouldOpen == 'closed' ? ' style="display: none;"' : '';
+                let toggler = getToggleHtml(group.toggles, `input_group_content_${groupId}`, escapeHtml(group.name), ' group-toggler-switch', 'doToggleGroup');
+                html += `<div class="input-group ${openClass}" id="auto-group-${groupId}"><span${extraSpanInfo} id="input_group_${groupId}" class="input-group-header ${shrinkClass}"><span class="header-label-wrap">${symbol}<span class="header-label">${translateableHtml(escapeHtml(group.name))}</span>${infoButton}<span class="header-label-spacer"></span><span class="header-label-counter"></span>${toggler || ''}</span></span><div${extraContentInfo} class="input-group-content" id="input_group_content_${groupId}">`;
+                if (presetArea) {
+                    presetHtml += `<div class="input-group ${openClass}"><span id="input_group_preset_${groupId}" class="input-group-header ${shrinkClass}">${symbol}${translateableHtml(escapeHtml(group.name))}</span><div class="input-group-content">`;
                 }
             }
+            for (let param of groupHolder.params) {
+                if (isPrompt(param) ? param.visible == isMain : true) {
+                    let newData = getHtmlForParam(param, "input_");
+                    html += newData.html;
+                    if (newData.runnable) {
+                        runnables.push(newData.runnable);
+                    }
+                }
+                if (isPrompt(param) ? isMain : true) {
+                    let presetParam = JSON.parse(JSON.stringify(param));
+                    presetParam.toggleable = true;
+                    let presetData = getHtmlForParam(presetParam, "preset_input_");
+                    presetHtml += presetData.html;
+                    if (presetData.runnable) {
+                        runnables.push(presetData.runnable);
+                    }
+                }
+            }
+            for (let child of groupHolder.children) {
+                appendGroup(child);
+            }
+            if (groupId != '-ungrouped-') {
+                html += '</div></div>';
+                if (presetArea) {
+                    presetHtml += '</div></div>';
+                }
+            }
+        }
+        for (let group of groups) {
+            appendGroup(group);
         }
         area.innerHTML = html;
         if (presetArea) {
