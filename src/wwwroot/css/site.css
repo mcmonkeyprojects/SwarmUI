@@ -394,6 +394,7 @@ textarea, input, select {
     z-index: 10000;
     transition: visibility 0s, opacity 0.3s linear;
     min-width: 10rem;
+    max-width: 40rem;
 }
 .sui-popover-visible {
     visibility: visible;
