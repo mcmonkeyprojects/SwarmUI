@@ -197,7 +197,7 @@ public class Session : IEquatable<Session>
     public static ConcurrentDictionary<string, string> RecentlyBlockedFilenames = [];
 
     /// <summary>File data that will be saved soon, or has very recently saved.</summary>
-    public static ConcurrentDictionary<string, byte[]> StillSavingFiles = [];
+    public static ConcurrentDictionary<string, Task<byte[]>> StillSavingFiles = [];
 
     [Obsolete("Use ImageOutput overload instead")]
     public (string, string) SaveImage(Image image, int batchIndex, T2IParamInput user_input, string metadata)
@@ -250,7 +250,7 @@ public class Session : IEquatable<Session>
                     fullPath = $"{fullPathNoExt}.{extension}";
                 }
                 RecentlyBlockedFilenames[fullPath] = fullPath;
-                StillSavingFiles[fullPath] = image.Img.ImageData;
+                StillSavingFiles[fullPath] = image.ActualImageTask is null ? Task.FromResult(image.Img.ImageData) : Task.Run(async () => (await image.ActualImageTask).ImageData);
                 Utilities.RunCheckedTask(async () =>
                 {
                     Image actualImage = image.ActualImageTask is null ? image.Img : await image.ActualImageTask;
