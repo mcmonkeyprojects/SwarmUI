@@ -74,7 +74,7 @@ public static class UtilAPI
                     text = text[..skippable];
                 }
             }
-            text = T2IParamInput.ProcessPromptLikeForLength(text);
+            text = T2IPromptHandling.ProcessPromptLikeForLength(text);
         }
         (JObject error, CliplikeTokenizer tokenizer) = GetTokenizerForAPI(text, tokenset);
         if (error is not null)
@@ -118,7 +118,7 @@ public static class UtilAPI
                     text = text[..skippable];
                 }
             }
-            text = T2IParamInput.ProcessPromptLikeForLength(text);
+            text = T2IPromptHandling.ProcessPromptLikeForLength(text);
         }
         (JObject error, CliplikeTokenizer tokenizer) = GetTokenizerForAPI(text, tokenset);
         if (error is not null)
