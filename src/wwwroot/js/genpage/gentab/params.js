@@ -792,7 +792,8 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         if (type.feature_missing) {
             continue;
         }
-        if (type.group && type.group.toggles && !getRequiredElementById(`input_group_content_${type.group.id}_toggle`).checked) {
+        let group = type.original_group || type.group;
+        if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
             continue;
         }
         let elem = getRequiredElementById(`input_${type.id}`);
@@ -1094,7 +1095,8 @@ function hideUnsupportableParams() {
             let show = supported && param.visible;
             let paramToggler = document.getElementById(`input_${param.id}_toggle`);
             let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != param.default;
-            if (param.group && param.group.toggles && !getRequiredElementById(`input_group_content_${param.group.id}_toggle`).checked) {
+            let group = param.original_group || param.group;
+            if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
                 isAltered = false;
             }
             if (box && box.style.display == 'none' && box.dataset.visible_controlled) {
