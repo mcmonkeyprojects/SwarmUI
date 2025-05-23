@@ -751,6 +751,7 @@ public static class T2IAPI
         """
             // see `ListT2IParams` for details
             "list": [...],
+            "groups": [...],
             "models": [...],
             "wildcards": [...],
             "param_edits": [...]
@@ -810,22 +811,26 @@ public static class T2IAPI
                 "feature_flag": "flagname", // or null
                 "toggleable": true,
                 "priority": 0,
-                "group":
-                {
-                    "name": "Group Name Here",
-                    "id": "groupidhere",
-                    "toggles": true,
-                    "open": false,
-                    "priority": 0,
-                    "description": "group description here",
-                    "advanced": false,
-                    "can_shrink": true
-                },
+                "group": "idhere", // or null
                 "always_retain": false,
                 "do_not_save": false,
                 "do_not_preview": false,
                 "view_type": "big", // dependent on type
                 "extra_hidden": false
+            }
+        ],
+        "groups":
+        [
+            {
+                "name": "Group Name Here",
+                "id": "groupidhere",
+                "toggles": true,
+                "open": false,
+                "priority": 0,
+                "description": "group description here",
+                "advanced": false,
+                "can_shrink": true,
+                "parent": "idhere" // or null
             }
         ],
         "models":
@@ -847,9 +852,21 @@ public static class T2IAPI
         {
             modelData[handler.ModelType] = new JArray(handler.ListModelNamesFor(session).Order().ToArray());
         }
+        T2IParamType[] types = [.. T2IParamTypes.Types.Values.Where(p => p.Permission is null || session.User.HasPermission(p.Permission))];
+        Dictionary<string, T2IParamGroup> groups = new(64);
+        foreach (T2IParamType type in types)
+        {
+            T2IParamGroup group = type.Group;
+            while (group is not null)
+            {
+                groups[group.ID] = group;
+                group = group.Parent;
+            }
+        }
         return new JObject()
         {
-            ["list"] = new JArray(T2IParamTypes.Types.Values.Where(p => p.Permission is null || session.User.HasPermission(p.Permission)).Select(v => v.ToNet(session)).ToList()),
+            ["list"] = new JArray(types.Select(v => v.ToNet(session)).ToList()),
+            ["groups"] = new JArray(groups.Values.Select(g => g.ToNet(session)).ToList()),
             ["models"] = modelData,
             ["wildcards"] = new JArray(WildcardsHelper.ListFiles),
             ["param_edits"] = string.IsNullOrWhiteSpace(session.User.Data.RawParamEdits) ? null : JObject.Parse(session.User.Data.RawParamEdits)

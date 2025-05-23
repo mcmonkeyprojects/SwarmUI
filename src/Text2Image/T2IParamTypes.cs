@@ -129,7 +129,7 @@ public record class T2IParamType(string Name, string Description, string Default
             ["feature_flag"] = FeatureFlag,
             ["toggleable"] = Toggleable,
             ["priority"] = OrderPriority,
-            ["group"] = Group?.ToNet(session),
+            ["group"] = Group?.ID,
             ["always_retain"] = AlwaysRetain,
             ["do_not_save"] = DoNotSave,
             ["do_not_preview"] = DoNotPreview,
@@ -178,19 +178,21 @@ public class T2IRegisteredParam<T>
 /// <param name="Parent">A parent group of this group, or null if none.</param>
 public record class T2IParamGroup(string Name, bool Toggles = false, bool Open = true, double OrderPriority = 10, string Description = "", bool IsAdvanced = false, bool CanShrink = true, T2IParamGroup Parent = null)
 {
+    public string ID => T2IParamTypes.CleanTypeName(Name);
+
     public JObject ToNet(Session session)
     {
         return new JObject()
         {
             ["name"] = Name,
-            ["id"] = T2IParamTypes.CleanTypeName(Name),
+            ["id"] = ID,
             ["toggles"] = Toggles,
             ["open"] = Open,
             ["priority"] = OrderPriority,
             ["description"] = Description,
             ["advanced"] = IsAdvanced,
             ["can_shrink"] = CanShrink,
-            ["parent"] = Parent?.ToNet(session) // TODO: Swap to just an ID, for both group parents and param groups, and then just have a registered list of groups
+            ["parent"] = Parent?.ID
         };
     }
 }

@@ -1196,6 +1196,24 @@ function sortParameterList(params, top = [], otherParams = []) {
     return first.concat(top).concat(prims).concat(otherParams).concat(others);
 }
 
+function buildParameterList(params, groups) {
+    let groupMap = {};
+    for (let group of groups) {
+        groupMap[group.id] = group;
+    }
+    for (let group of groups) {
+        if (group.parent) {
+            group.parent = groupMap[group.parent];
+        }
+    }
+    for (let param of params) {
+        if (param.group) {
+            param.group = groupMap[param.group];
+        }
+    }
+    return sortParameterList(params);
+}
+
 /** Returns a copy of the parameter name, cleaned for ID format input. */
 function cleanParamName(name) {
     return name.toLowerCase().replaceAll(/[^a-z]/g, '');
