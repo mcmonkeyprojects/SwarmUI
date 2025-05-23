@@ -48,7 +48,7 @@
 
 .nav-tabs, #currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar {
     background-color: var(--background-panel);
-    background-image: url(imgs/noise.png);
+    background-image: url('../../imgs/noise.png');
 }
 
 .auto-input-qbutton {
