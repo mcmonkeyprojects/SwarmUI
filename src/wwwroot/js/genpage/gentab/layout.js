@@ -136,7 +136,7 @@ class GenTabLayout {
         this.rightBarDrag = false;
         this.bottomBarDrag = false;
         this.imageEditorSizeBarDrag = false;
-        this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+        this.isSmallWindow = window.innerWidth < 768;
         this.antiDup = false;
         this.swipeStartX = -1;
         this.swipeStartY = -1;
@@ -191,7 +191,7 @@ class GenTabLayout {
     
     /** Does the full position update logic. */
     reapplyPositions() {
-        this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+        this.isSmallWindow = window.innerWidth < 768;
         if (this.isSmallWindow) {
             document.body.classList.add('small-window');
             document.body.classList.remove('large-window');
