@@ -27,6 +27,16 @@ You can also view the ComfyUI node graph and work with custom workflows directly
 - Swarm provides extra Comfy nodes automatically to Self-Start ComfyUI instances from folders within the ComfyUI extension folder, including `DLNodes` and `ExtraNodes` - it is highly recommended you copy these to your remote Comfy's `custom_nodes` path, or point to them with your `extra_model_paths` file.
 - If you use a Self-Start backend, it will autogenerate a valid extra model paths file into the `Data` folder, you may wish to do that to copy for your comfy API instance.
 
+### Should I Use Comfy Manager?
+
+You **can** use Manager if you want, there are no specific compatibility issues with SwarmUI.
+
+*However*, bear in mind **what Manager is:** it dynamically installs random sections of source code made by a huge variety of random non-professional developers from across the planet. In other words: Manager, by its very nature, is likely to break things. This is not an issue related to SwarmUI, this is not an insult to the developer of Manager - this is just the reality of circumstances. If you install tons of random blobs of python, not all of them will work well, and some of them will cause cascading errors. Each custom node pack will want its own python pip dependencies *(which tend to cause issues of their own)* and won't always be intercompatible. Some will be built against outdated versions of comfy, some will use bad approaches in their code *(a common issue is packages doing their own custom dependency installation, which often can destroy an entire install and require you reinstall the entire UI)*.
+
+What can you use instead of Manager? Here's a few options
+- (1) Nothing! Comfy and Swarm support quite a lot out of the box. The most valuable bits not built into Comfy, Swarm has stable installers to add those in safely.
+- (2) Manual installation. If you really want a custom node, go look at its github, look over how it works and what it requires, take the time to `git clone` the repo and `pip install` the dependencies yourself. Is this easy? No. But that added difficulty will force you to consider which nodes you actually need, and which dependencies you're willing to install. You'll end up not only with a more stable installation, but also making better comfy workflows (because when you share them, you won't have to tell people to install 500 custom nodes! And also they won't break when a custom node doesn't update or whatever).
+
 ### Basic Usage Within SwarmUI
 
 (TODO): tldr don't worry about it, it just works, follow general Swarm usage docs
