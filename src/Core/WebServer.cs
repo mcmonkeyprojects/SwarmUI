@@ -525,9 +525,9 @@ public class WebServer
                 }
             }
             string pathNorm = Path.GetFullPath(path);
-            if (data is null && Session.StillSavingFiles.TryGetValue(pathNorm, out byte[] cacheData))
+            if (data is null && Session.StillSavingFiles.TryGetValue(pathNorm, out Task<byte[]> cacheData))
             {
-                data = cacheData;
+                data = await cacheData;
             }
             data ??= await File.ReadAllBytesAsync(path);
         }
