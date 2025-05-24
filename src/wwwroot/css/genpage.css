@@ -63,7 +63,7 @@ body {
     background-color: var(--light-border);
     margin: 0px;
 }
-.splitter-bar:hover {
+.large-window .splitter-bar:hover {
     background-color: var(--emphasis);
     box-shadow:
       -0.5rem 0 0.5rem 0 color-mix(in srgb, transparent 50%, var(--emphasis)),
@@ -100,6 +100,9 @@ body {
 }
 .t2i-split-quickbutton:hover {
     background-color: var(--button-background-hover);
+}
+.small-window .t2i-split-quickbutton {
+    display: none;
 }
 .t2i-top-split-quickbutton {
     float: right;
@@ -634,7 +637,7 @@ body {
     display: inline-block;
 }
 .t2i-area-quicktools {
-    right: 3rem;
+    right: 2rem;
     top: 1.5rem;
     vertical-align: top;
     background-color: var(--background-soft);
@@ -934,6 +937,11 @@ body {
     padding: 0px 4px !important;
     border-radius: 1rem !important;
 }
+.small-window .alt-text-add-button {
+    top: -45px;
+    font-size: 1.5rem;
+    height: 2.5rem;
+}
 .alt-prompt-buttons {
     vertical-align: top;
     padding-top: 0.1rem;
@@ -941,6 +949,24 @@ body {
     height: 4rem;
     text-align: center;
     border-radius: 0.7rem;
+    margin: 0;
+}
+.alt-prompt-buttons-wrapper {
+    display: flex;
+}
+.small-window .alt-prompt-buttons-wrapper {
+    position: absolute;
+    top: -15px;
+    right: 0;
+}
+.small-window .alt-prompt-buttons {
+    height: 2.5rem;
+}
+.small-window .alt_prompt_textboxes {
+    position: relative;
+    width: 95vw;
+    left: 0vw;
+    padding: 0;
     margin: 0;
 }
 .alt-prompt-generate-button {

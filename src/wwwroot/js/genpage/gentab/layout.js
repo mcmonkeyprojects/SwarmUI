@@ -128,6 +128,8 @@ class GenTabLayout {
         this.tabCollections = document.querySelectorAll('.swarm-gen-tab-subnav');
         this.layoutConfigArea = getRequiredElementById('layoutconfigarea');
         this.toolContainer = getRequiredElementById('tool_container');
+        this.t2iRootDiv = getRequiredElementById('Text2Image');
+        this.quickToolsButton = getRequiredElementById('quicktools-button');
         this.managedTabs = [...this.tabCollections].flatMap(e => [...e.querySelectorAll('.nav-link')]).map(e => new MovableGenTab(e, this));
         this.managedTabContainers = [];
         this.leftBarDrag = false;
@@ -136,6 +138,14 @@ class GenTabLayout {
         this.imageEditorSizeBarDrag = false;
         this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
         this.antiDup = false;
+        this.swipeStartX = -1;
+        this.swipeStartY = -1;
+        this.minSwipeDelta = Math.min(100, window.innerWidth * 0.4);
+        if (this.isSmallWindow) {
+            this.bottomShut = true;
+            this.leftShut = true;
+            this.rightSectionBarPos = 0;
+        }
     }
 
     /** Resets the entire page layout to default, and removes all stored browser layout state info. */
@@ -147,8 +157,8 @@ class GenTabLayout {
         this.rightSectionBarPos = -1;
         this.bottomSectionBarPos = -1;
         this.imageEditorBarPos = -1;
-        this.bottomShut = false;
-        this.leftShut = false;
+        this.bottomShut = this.isSmallWindow;
+        this.leftShut = this.isSmallWindow;
         this.reapplyPositions();
         for (let runnable of this.layoutResets) {
             runnable();
@@ -181,29 +191,49 @@ class GenTabLayout {
     
     /** Does the full position update logic. */
     reapplyPositions() {
+        this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+        if (this.isSmallWindow) {
+            document.body.classList.add('small-window');
+            document.body.classList.remove('large-window');
+        }
+        else {
+            document.body.classList.remove('small-window');
+            document.body.classList.add('large-window');
+        }
         tweakNegativePromptBox();
         if (this.altRegion.style.display != 'none') {
             dynamicSizeTextBox(this.altText);
             dynamicSizeTextBox(this.altNegText);
             this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
         }
+        let rootTop = this.t2iRootDiv.getBoundingClientRect().top;
+        let bottomShut = this.bottomShut;
+        let leftShut = this.leftShut;
+        this.quickToolsButton.style.top = `${rootTop - 16}px`;
+        this.quickToolsButton.style.right = this.isSmallWindow ? '0.5rem' : '';
         setCookie('barspot_pageBarTop', this.leftSectionBarPos, 365);
         setCookie('barspot_pageBarTop2', this.rightSectionBarPos, 365);
         setCookie('barspot_pageBarMidPx', this.bottomSectionBarPos, 365);
         setCookie('barspot_imageEditorSizeBar', this.imageEditorBarPos, 365);
         this.toolContainer.style.minHeight = `calc(100% - ${this.toolContainer.getBoundingClientRect().top - this.toolContainer.parentElement.getBoundingClientRect().top}px - 1.5rem)`;
-        let barTopLeft = this.leftShut ? `0px` : this.leftSectionBarPos == -1 ? (this.isSmallWindow ? `14rem` : `28rem`) : `${this.leftSectionBarPos}px`;
+        let barTopLeft = leftShut ? `0px` : this.leftSectionBarPos == -1 ? (this.isSmallWindow ? `14rem` : `28rem`) : `${this.leftSectionBarPos}px`;
         let barTopRight = this.rightSectionBarPos == -1 ? (this.isSmallWindow ? `4rem` : `21rem`) : `${this.rightSectionBarPos}px`;
         let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
         // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
         let fontRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
         let curImgWidthNum = eval(curImgWidth.replace(/vw/g, `* ${window.innerWidth * 0.01}`).replace(/rem/g, `* ${fontRem}`).replace(/px/g, ''));
-        if (curImgWidthNum < 400) {
+        if (curImgWidthNum < 400 && !this.isSmallWindow) {
             barTopRight = `${barTopRight} + ${400 - curImgWidthNum}px`;
             curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
         }
+        if (this.isSmallWindow && (this.rightSectionBarPos > 0 || !this.bottomShut)) {
+            this.altRegion.style.visibility = 'hidden';
+        }
+        else {
+            this.altRegion.style.visibility = '';
+        }
         this.inputSidebar.style.width = `${barTopLeft}`;
-        this.inputSidebar.style.display = this.leftShut ? 'none' : '';
+        this.inputSidebar.style.display = leftShut ? 'none' : '';
         this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
         this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
         this.mainImageArea.scrollTop = 0;
@@ -223,12 +253,13 @@ class GenTabLayout {
         else {
             this.currentImageBatchCore.classList.remove('current_image_batch_core_small');
         }
-        this.leftSplitBarButton.innerHTML = this.leftShut ? '&#x21DB;' : '&#x21DA;';
-        this.bottomSplitBarButton.innerHTML = this.bottomShut ? '&#x290A;' : '&#x290B;';
+        this.leftSplitBarButton.innerHTML = leftShut ? '&#x21DB;' : '&#x21DA;';
+        this.bottomSplitBarButton.innerHTML = bottomShut ? '&#x290A;' : '&#x290B;';
         let altHeight = this.altRegion.style.display == 'none' ? '0px' : `${this.altRegion.offsetHeight}px`;
-        if (this.bottomSectionBarPos != -1 || this.bottomShut) {
+        if (this.bottomSectionBarPos != -1 || bottomShut) {
             let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            let fixed = this.bottomShut ? `(5rem + ${bottomBarHeight}px)` : `${this.bottomSectionBarPos}px`;
+            let addedHeight = this.isSmallWindow ? '0.4rem' : '2.8rem';
+            let fixed = bottomShut ? `(${rootTop}px + ${addedHeight} + ${bottomBarHeight}px)` : `${this.bottomSectionBarPos}px`;
             this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
             this.rightSplitBar.style.height = `calc(100vh - ${fixed} - 5px)`;
             this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
@@ -290,18 +321,30 @@ class GenTabLayout {
         }
         this.reapplyPositions();
         this.leftSplitBar.addEventListener('mousedown', (e) => {
+            if (this.isSmallWindow) {
+                return;
+            }
             this.leftBarDrag = true;
             e.preventDefault();
         }, true);
         this.rightSplitBar.addEventListener('mousedown', (e) => {
+            if (this.isSmallWindow) {
+                return;
+            }
             this.rightBarDrag = true;
             e.preventDefault();
         }, true);
         this.leftSplitBar.addEventListener('touchstart', (e) => {
+            if (this.isSmallWindow) {
+                return;
+            }
             this.leftBarDrag = true;
             e.preventDefault();
         }, true);
         this.rightSplitBar.addEventListener('touchstart', (e) => {
+            if (this.isSmallWindow) {
+                return;
+            }
             this.rightBarDrag = true;
             e.preventDefault();
         }, true);
@@ -314,6 +357,9 @@ class GenTabLayout {
             e.preventDefault();
         }, true);
         this.bottomSplitBar.addEventListener('mousedown', (e) => {
+            if (this.isSmallWindow) {
+                return;
+            }
             if (e.target == this.bottomSplitBarButton) {
                 return;
             }
@@ -322,6 +368,9 @@ class GenTabLayout {
             e.preventDefault();
         }, true);
         this.bottomSplitBar.addEventListener('touchstart', (e) => {
+            if (this.isSmallWindow) {
+                return;
+            }
             if (e.target == this.bottomSplitBarButton) {
                 return;
             }
@@ -330,18 +379,24 @@ class GenTabLayout {
             e.preventDefault();
         }, true);
         this.bottomSplitBarButton.addEventListener('click', (e) => {
+            e.preventDefault();
             this.bottomBarDrag = false;
+            if (this.isSmallWindow) {
+                return;
+            }
             this.setBottomShut(!this.bottomShut);
             this.bottomSectionBarPos = Math.max(this.bottomSectionBarPos, 400);
             this.reapplyPositions();
-            e.preventDefault();
         }, true);
         this.leftSplitBarButton.addEventListener('click', (e) => {
+            e.preventDefault();
             this.leftBarDrag = false;
+            if (this.isSmallWindow) {
+                return;
+            }
             this.setLeftShut(!this.leftShut);
             this.leftSectionBarPos = Math.max(this.leftSectionBarPos, 400);
             this.reapplyPositions();
-            e.preventDefault();
             triggerChangeFor(this.altText);
             triggerChangeFor(this.altNegText);
         }, true);
@@ -383,16 +438,81 @@ class GenTabLayout {
             this.bottomBarDrag = false;
             this.imageEditorSizeBarDrag = false;
         });
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length == 1 && !['BUTTON', 'INPUT'].includes(e.target.tagName) && !findParentOfClass(e.target, 'model-block')) {
+                this.swipeStartX = e.touches.item(0).pageX;
+                this.swipeStartY = e.touches.item(0).pageY;
+            }
+            else {
+                this.swipeStartX = -1;
+                this.swipeStartY = -1;
+            }
+        });
         document.addEventListener('touchend', (e) => {
             this.leftBarDrag = false;
             this.rightBarDrag = false;
             this.bottomBarDrag = false;
             this.imageEditorSizeBarDrag = false;
+            if (e.changedTouches.length != 1) {
+                this.swipeStartX = -1;
+                this.swipeStartY = -1;
+            }
+            if (this.swipeStartX != -1 && this.swipeStartY != -1 && this.isSmallWindow) {
+                let deltaX = e.changedTouches.item(0).pageX - this.swipeStartX;
+                let deltaY = e.changedTouches.item(0).pageY - this.swipeStartY;
+                let allShut = this.leftShut && this.rightSectionBarPos <= 0 && this.bottomShut;
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    if (Math.abs(deltaX) > this.minSwipeDelta) {
+                        // TODO: Mobile bar shuts need a smooth animation
+                        // Swipe from anywhere towards left = close left bar
+                        if (!this.leftShut && deltaX < 0) {
+                            this.setLeftShut(true);
+                            this.leftSectionBarPos = 0;
+                            this.reapplyPositions();
+                        }
+                        // Swipe from anywhere towards right = close right bar
+                        else if (this.rightSectionBarPos > 0 && deltaX > 0) {
+                            this.rightSectionBarPos = 0;
+                            this.reapplyPositions();
+                        }
+                        // Swipe from left inward = open left bar
+                        else if (this.swipeStartX < window.innerWidth / 6 && deltaX > 0 && allShut) {
+                            this.setLeftShut(false);
+                            this.leftSectionBarPos = window.innerWidth;
+                            this.reapplyPositions();
+                        }
+                        // Swipe from right inward = open right bar
+                        else if (this.swipeStartX > window.innerWidth * 5 / 6 && deltaX < 0 && allShut) {
+                            this.rightSectionBarPos = window.innerWidth;
+                            this.reapplyPositions();
+                        }
+                    }
+                }
+                else {
+                    if (Math.abs(deltaY) > this.minSwipeDelta) {
+                        // Swipe from anywhere towards bottom = close bottom bar
+                        if (!this.bottomShut && deltaY > 0) {
+                            this.setBottomShut(true);
+                            this.reapplyPositions();
+                        }
+                        // Swipe from bottom inward = open bottom bar
+                        else if (this.swipeStartY > window.innerHeight * 5 / 6 && deltaY < 0 && allShut) {
+                            this.setBottomShut(false);
+                            this.bottomSectionBarPos = window.innerHeight + 200;
+                            this.reapplyPositions();
+                        }
+                    }
+                }
+                this.swipeStartX = -1;
+                this.swipeStartY = -1;
+            }
         });
         for (let tab of getRequiredElementById('bottombartabcollection').getElementsByTagName('a')) {
             tab.addEventListener('click', (e) => {
-                this.setBottomShut(false);
-                this.reapplyPositions();
+                if (swarmHasLoaded) {
+                    this.setBottomShut(false);
+                    this.reapplyPositions();
+                }
             });
         }
         this.altText.addEventListener('keydown', (e) => {

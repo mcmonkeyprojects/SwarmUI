@@ -95,9 +95,11 @@
                         <br>
                         <textarea id="alt_negativeprompt_textbox" class="alt_prompt_textbox translate" rows="1" placeholder="Optionally, type a negative prompt here..."></textarea>
                     </div>
-                    <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate" id="alt_generate_button" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">Generate</button>
-                    <button class="alt-prompt-buttons alt-prompt-center-button basic-button" id="alt_center_button" oncontextmenu="doPopover('generate_center'); return false;" onclick="doPopover('generate_center')">&#x2B9F;</button>
-                    <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt" id="alt_interrupt_button" oncontextmenu="doPopover('interrupt'); return false;" onclick="mainGenHandler.doInterrupt()">&times;</button>
+                    <div class="alt-prompt-buttons-wrapper">
+                        <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate" id="alt_generate_button" oncontextmenu="doPopover('generate'); return false;" onclick="mainGenHandler.doGenerateButton(event)">Generate</button>
+                        <button class="alt-prompt-buttons alt-prompt-center-button basic-button" id="alt_center_button" oncontextmenu="doPopover('generate_center'); return false;" onclick="doPopover('generate_center')">&#x2B9F;</button>
+                        <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt" id="alt_interrupt_button" oncontextmenu="doPopover('interrupt'); return false;" onclick="mainGenHandler.doInterrupt()">&times;</button>
+                    </div>
                 </div>
             </div>
             <div class="sui-popover sui_popover_model" id="popover_generate_center">
@@ -120,7 +122,7 @@
                 <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
             </div>
         </div>
-        <div class="model-block-menu-button t2i-area-quicktools translate" onclick="doPopover('quicktools')">Quick Tools</div>
+        <div id="quicktools-button" class="model-block-menu-button t2i-area-quicktools translate" onclick="doPopover('quicktools')">Quick Tools &#x2B9F;</div>
         <div class="sui-popover sui_popover_model" id="popover_quicktools">
             <div class="sui_popover_model_button translate" onclick="genTabLayout.resetLayout()">Reset Page Layout</div>
             <div class="sui_popover_model_button translate" onclick="refreshParameterValues(true)">Reload Parameter Values</div>
