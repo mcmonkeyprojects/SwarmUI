@@ -340,7 +340,7 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("If not set to false, the metadata of the image will be encoded into the alpha layer.\nThis allows it to bypass things like shitty windows clipboard/sites that remove metadata.")]
             [ManualSettingsOptions(Vals = ["false", "Alpha", "RGB"])]
-            public bool StealthMetadata = false;
+            public string StealthMetadata = "false";
 
             [ConfigComment("If set to non-0, adds DPI metadata to saved images.\n'72' is a good value for compatibility with some external software.")]
             public int DPI = 0;
