@@ -133,7 +133,7 @@ public class T2IParamInput
 
     /// <summary>Dense local time with incrementer.</summary>
     public int RequestRefTime;
-    
+
     /// <summary>If true, special early load has already ran.</summary>
     public bool EarlyLoadDone = false;
 
@@ -424,7 +424,7 @@ public class T2IParamInput
     public Random WildcardRandom = null;
 
     /// <summary>Offset value for Wildcard Seed, to keep it unique.</summary>
-    private const int WCSeedOffset = 17;
+    private const int WCSeedOffset = 0;
 
     /// <summary>Gets the user's set wildcard seed.</summary>
     public int GetWildcardSeed()
@@ -520,7 +520,7 @@ public class T2IParamInput
             RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
         }
     }
-    
+
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param)
     {
