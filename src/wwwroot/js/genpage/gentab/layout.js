@@ -172,8 +172,8 @@ class GenTabLayout {
         this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
         if (!this.antiDup) {
             this.antiDup = true;
+            this.reapplyPositions();
             setTimeout(() => {
-                this.reapplyPositions();
                 this.antiDup = false;
             }, 1);
         }
