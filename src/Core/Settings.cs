@@ -338,6 +338,9 @@ public class Settings : AutoConfiguration
             [ConfigComment("Whether to store metadata into saved images.\nDefaults enabled.")]
             public bool SaveMetadata = true;
 
+            [ConfigComment("If set to true, the metadata of the image will be encoded into the alpha layer, allowing it bypass things like shitty windows clipboard/sites that remove metadata.")]
+            public bool StealthMetadata = false;
+
             [ConfigComment("If set to non-0, adds DPI metadata to saved images.\n'72' is a good value for compatibility with some external software.")]
             public int DPI = 0;
 
@@ -469,7 +472,7 @@ public class Settings : AutoConfiguration
         public string Language = "en";
 
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
-        public string ReuseParamExcludeList = "";
+        public string ReuseParamExcludeList = "wildcardseed";
 
         /// <summary>Settings related to audio.</summary>
         public class AudioData : AutoConfiguration

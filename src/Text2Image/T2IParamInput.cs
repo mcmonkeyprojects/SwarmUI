@@ -424,7 +424,7 @@ public class T2IParamInput
     public Random WildcardRandom = null;
 
     /// <summary>Offset value for Wildcard Seed, to keep it unique.</summary>
-    private const int WCSeedOffset = 0;
+    private const int WCSeedOffset = 17;
 
     /// <summary>Gets the user's set wildcard seed.</summary>
     public int GetWildcardSeed()
