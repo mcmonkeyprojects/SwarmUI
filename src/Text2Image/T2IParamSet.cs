@@ -196,4 +196,10 @@ public class T2IParamSet
     {
         ValuesInput.Remove(param.Type.ID);
     }
+
+    /// <summary>Removes a param.</summary>
+    public void Remove(T2IParamType param)
+    {
+        ValuesInput.Remove(param.ID);
+    }
 }

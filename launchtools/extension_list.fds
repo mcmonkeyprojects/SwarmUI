@@ -62,14 +62,12 @@ UniversalTab:
     - tabs
 
 WildcardImporter:
-    author: spoomples
-    description: Lets you import Wildcards from Auto1111-extension-syntax YAML cards into Swarm's standardizable format.
-    url: https://github.com/aimerib/SwarmUI-WildcardImporter
-    license: Missing
+    author: spoomples+bman654
+    description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
+    url: https://github.com/bman654/SwarmUI-WildcardImporter
+    license: MIT
     tags:
-    # Hidden due to being very early alpha
-    - hidden
-    - beta
+    - tabs
 
 PostRender:
     author: HellerCommaA

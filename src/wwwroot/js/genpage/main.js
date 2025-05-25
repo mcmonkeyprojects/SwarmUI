@@ -1,5 +1,7 @@
 let gen_param_types = null, rawGenParamTypesFromServer = null, rawGroupMapFromServer = null;
 
+let swarmHasLoaded = false;
+
 let lastImageDir = '';
 
 let lastModelDir = '';
@@ -763,6 +765,7 @@ function genpageLoad() {
             }
             automaticWelcomeMessage();
             autoTitle();
+            swarmHasLoaded = true;
         });
         reviseStatusInterval = setInterval(reviseStatusBar, 2000);
         window.resLoopInterval = setInterval(serverResourceLoop, 1000);

@@ -527,6 +527,12 @@ public class T2IParamInput
         InternalSet.Remove(param);
     }
 
+    /// <summary>Removes a param.</summary>
+    public void Remove(T2IParamType param)
+    {
+        InternalSet.Remove(param);
+    }
+
     /// <summary>Makes sure the input has valid seed inputs and other special parameter handlers.</summary>
     public void ApplySpecialLogic()
     {

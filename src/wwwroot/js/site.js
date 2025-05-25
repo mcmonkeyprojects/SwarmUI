@@ -490,7 +490,7 @@ function autoNumberWidth(elem) {
 }
 
 function makeGenericPopover(id, name, type, description, example) {
-    return `<div class="sui-popover" id="popover_${id}"><b>${escapeHtml(name)}</b> (${type}):<br>&emsp;${safeHtmlOnly(description)}${example}</div>`;
+    return `<div class="sui-popover sui-info-popover" id="popover_${id}"><b>${escapeHtml(name)}</b> (${type}):<br>&emsp;${safeHtmlOnly(description)}${example}</div>`;
 }
 
 let popoverHoverTimer = null;
@@ -626,13 +626,11 @@ function dynamicSizeTextBox(elem, min=15) {
     let maxHeight = parseInt(getUserSetting('maxpromptlines', '10'));
     elem.style.height = '0px';
     let height = elem.scrollHeight;
-    let origHeight = height;
-    if (height % 2 == 1) {
-        height++;
-    }
-    elem.style.height = `calc(min(${maxHeight}rem, ${Math.max(height, min) + 5}px))`;
+    let fontSize = parseFloat(window.getComputedStyle(elem).fontSize);
+    let roundedHeight = roundTo(height, fontSize);
+    elem.style.height = `calc(min(${maxHeight}rem, ${Math.max(roundedHeight, min) + 5}px))`;
     if (jitterDebug) {
-        console.error(`JitterDebug dynamicSizeTextBox: ${elem.id} height adjust: ${origHeight} yield ${height} max ${maxHeight} min ${min}, now ${elem.scrollHeight}`);
+        console.error(`JitterDebug dynamicSizeTextBox: ${elem.id} height adjust: ${height} yield ${roundedHeight} max ${maxHeight} min ${min}, now ${elem.scrollHeight} db ${elem.offsetHeight} and ${elem.clientHeight}`);
     }
 }
 
