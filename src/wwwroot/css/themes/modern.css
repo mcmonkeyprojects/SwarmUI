@@ -138,10 +138,13 @@
 .t2i-area-quicktools {
     margin-top: -6px;
     padding: 5px 20px 5px 15px !important;
-    font-size: 20px !important;
     border: 1px solid var(--border-color) !important;
     box-shadow: 0px 0px 1px 0px rgba(0, 0, 0, 0.5) !important;
     border-radius: 55px !important;
+}
+
+.batch-gear-button {
+    top: 0.2rem !important;
 }
 
 .splitter-bar {

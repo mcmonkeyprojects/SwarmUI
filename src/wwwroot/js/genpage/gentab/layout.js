@@ -209,7 +209,7 @@ class GenTabLayout {
         let rootTop = this.t2iRootDiv.getBoundingClientRect().top;
         let bottomShut = this.bottomShut;
         let leftShut = this.leftShut;
-        this.quickToolsButton.style.top = `${rootTop - 16}px`;
+        this.quickToolsButton.style.top = `${rootTop - 18}px`;
         this.quickToolsButton.style.right = this.isSmallWindow ? '0.5rem' : '';
         setCookie('barspot_pageBarTop', this.leftSectionBarPos, 365);
         setCookie('barspot_pageBarTop2', this.rightSectionBarPos, 365);
