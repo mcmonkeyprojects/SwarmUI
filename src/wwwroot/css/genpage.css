@@ -490,6 +490,7 @@ body {
     padding-right: 3px;
     color: var(--text);
     text-decoration: none;
+    min-height: 1.3rem;
     line-height: 1.3rem;
     margin-top: 0;
     margin-bottom: 0;
