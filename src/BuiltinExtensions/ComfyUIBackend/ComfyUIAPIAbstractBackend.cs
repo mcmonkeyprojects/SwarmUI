@@ -282,6 +282,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             }
             string promptId = $"{promptResult["prompt_id"]}";
             long firstStep = 0;
+            bool hasDeletedQueueItem = false;
             bool hasInterrupted = false;
             bool isReceivingOutputs = false;
             bool isExpectingVideo = false;
@@ -291,10 +292,16 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             // autoCanceller will be cancelled via the using to end the task and not leave it waiting when the method clears
             using CancellationTokenSource autoCanceller = new();
             using CancellationTokenSource interruptCanceller = CancellationTokenSource.CreateLinkedTokenSource(interrupt, autoCanceller.Token);
-            Task interruptTask = Task.Delay(TimeSpan.FromHours(24), interruptCanceller.Token);
+            Task interruptTask = Task.Delay(TimeSpan.FromHours(72), interruptCanceller.Token);
             async Task doInterruptNow()
             {
-                if (!hasInterrupted)
+                if (!hasDeletedQueueItem)
+                {
+                    hasDeletedQueueItem = true;
+                    Logs.Debug("ComfyUI queue-item-remove requested");
+                    await HttpClient.PostAsync($"{APIAddress}/queue", new StringContent(new JObject() { ["delete"] = new JArray() { promptId } }.ToString()), Program.GlobalProgramCancel);
+                }
+                if (!hasInterrupted && isMe)
                 {
                     hasInterrupted = true;
                     Logs.Debug("ComfyUI Interrupt requested");
