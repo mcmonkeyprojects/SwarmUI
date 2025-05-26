@@ -443,7 +443,7 @@ public class T2IParamInput
         {
             wildcardSeed %= int.MaxValue;
         }
-        if (wildcardSeed < 0)
+        if (wildcardSeed - WCSeedOffset < 0)
         {
             wildcardSeed = Random.Shared.Next(int.MaxValue);
         }
