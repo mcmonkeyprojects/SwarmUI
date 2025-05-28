@@ -87,7 +87,7 @@ let aspectRatios = [
 function getHtmlForParam(param, prefix) {
     try {
         let example = param.examples ? `<br><span class="translate">Examples</span>: <code>${param.examples.map(escapeHtmlNoBr).join(`</code>,&emsp;<code>`)}</code>` : '';
-        let pop = param.no_popover ? '' : `<div class="sui-popover" id="popover_${prefix}${param.id}"><b class="translate">${escapeHtmlNoBr(param.name)}</b> (${param.type}):<br><span class="translate slight-left-margin-block">${safeHtmlOnly(param.description)}</span>${example}</div>`;
+        let pop = param.no_popover ? '' : `<div class="sui-popover sui-info-popover" id="popover_${prefix}${param.id}"><b class="translate">${escapeHtmlNoBr(param.name)}</b> (${param.type}):<br><span class="translate slight-left-margin-block">${safeHtmlOnly(param.description)}</span>${example}</div>`;
         switch (param.type) {
             case 'text':
                 let runnable = param.view_type == 'prompt' ? () => {
@@ -319,7 +319,7 @@ function genInputs(delay_final = false) {
             if (groupId != '-ungrouped-') {
                 let infoButton = '';
                 if (group.description) {
-                    html += `<div class="sui-popover" id="popover_group_${groupId}"><b>${translateableHtml(escapeHtml(group.name))}</b>:<br>&emsp;${translateableHtml(safeHtmlOnly(group.description))}</div>`;
+                    html += `<div class="sui-popover sui-info-popover" id="popover_group_${groupId}"><b>${translateableHtml(escapeHtml(group.name))}</b>:<br>&emsp;${translateableHtml(safeHtmlOnly(group.description))}</div>`;
                     infoButton = `<span class="auto-input-qbutton info-popover-button" onclick="doPopover('group_${groupId}', arguments[0])">?</span>`;
                 }
                 let shouldOpen = getCookie(`group_open_auto-group-${groupId}`) || (group.open ? 'open' : 'closed');

@@ -443,7 +443,7 @@ public class T2IParamInput
         {
             wildcardSeed %= int.MaxValue;
         }
-        if (wildcardSeed < 0)
+        if (wildcardSeed - WCSeedOffset < 0)
         {
             wildcardSeed = Random.Shared.Next(int.MaxValue);
         }
@@ -523,6 +523,12 @@ public class T2IParamInput
 
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param)
+    {
+        InternalSet.Remove(param);
+    }
+
+    /// <summary>Removes a param.</summary>
+    public void Remove(T2IParamType param)
     {
         InternalSet.Remove(param);
     }

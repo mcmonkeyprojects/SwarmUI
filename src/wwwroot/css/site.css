@@ -394,6 +394,8 @@ textarea, input, select {
     z-index: 10000;
     transition: visibility 0s, opacity 0.3s linear;
     min-width: 10rem;
+}
+.sui-info-popover {
     max-width: 40rem;
 }
 .sui-popover-visible {
@@ -617,6 +619,9 @@ textarea, input, select {
     opacity: 0.6;
     background-color: var(--background-soft);
     pointer-events: none;
+}
+.small-window .version-display {
+    display: none;
 }
 .toast-error-box .toast-body {
     white-space: pre-wrap;

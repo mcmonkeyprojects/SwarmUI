@@ -2097,7 +2097,7 @@ public class WorkflowGenerator
             });
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
-                string endFrame = CreateLoadImageNode(videoEndFrame, T2IParamTypes.VideoEndFrame.Type.ID, true);
+                string endFrame = CreateLoadImageNode(videoEndFrame, "${videoendframe}", true);
                 JArray endFrameNode = [endFrame, 0];
                 string encodedEnd = CreateNode("CLIPVisionEncode", new JObject()
                 {

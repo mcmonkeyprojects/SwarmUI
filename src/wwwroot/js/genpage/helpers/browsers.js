@@ -95,6 +95,14 @@ class GenPageBrowserClass {
         this.rerenderPlanned = false;
         this.updatePendingSince = null;
         this.wantsReupdate = false;
+        this.checkIsSmall();
+    }
+
+    /**
+     * Checks if the window is small, setting isSmallWindow (mostly for mobile compat).
+     */
+    checkIsSmall() {
+        this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
     }
 
     /**
@@ -287,7 +295,11 @@ class GenPageBrowserClass {
             container.appendChild(spacer);
         }
         let span = createSpan(`${this.id}-foldertree-${tree.name}`, 'browser-folder-tree-part');
-        span.style.left = `${offset}px`;
+        let trueOffset = offset;
+        if (this.isSmallWindow) {
+            trueOffset /= 2;
+        }
+        span.style.left = `${trueOffset}px`;
         span.innerHTML = `<span class="browser-folder-tree-part-symbol" data-issymbol="true"></span> ${escapeHtml(tree.name || 'Root')}`;
         span.dataset.path = path;
         container.appendChild(span);
@@ -530,6 +542,7 @@ class GenPageBrowserClass {
      * Central call to build the browser content area.
      */
     build(path, folders, files) {
+        this.checkIsSmall();
         if (path.endsWith('/')) {
             path = path.substring(0, path.length - 1);
         }
@@ -649,8 +662,12 @@ class GenPageBrowserClass {
             this.fullContentDiv.appendChild(this.contentDiv);
             this.barSpot = 0;
             let setBar = () => {
-                this.folderTreeDiv.style.width = `${this.barSpot}px`;
-                this.fullContentDiv.style.width = `calc(100% - ${this.barSpot}px - 0.6rem)`;
+                let barSpot = this.barSpot;
+                if (this.isSmallWindow) {
+                    barSpot = 100; // TODO: Swipeable width
+                }
+                this.folderTreeDiv.style.width = `${barSpot}px`;
+                this.fullContentDiv.style.width = `calc(100% - ${barSpot}px - 0.6rem)`;
                 if (this.sizeChangedEvent) {
                     this.sizeChangedEvent();
                 }
@@ -662,8 +679,11 @@ class GenPageBrowserClass {
             this.lastReset();
             let isDrag = false;
             folderTreeSplitter.addEventListener('mousedown', (e) => {
-                isDrag = true;
                 e.preventDefault();
+                if (this.isSmallWindow) {
+                    return;
+                }
+                isDrag = true;
             }, true);
             this.lastListen = (e) => {
                 let offX = e.pageX - this.container.getBoundingClientRect().left;
