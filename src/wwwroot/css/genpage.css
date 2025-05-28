@@ -229,7 +229,7 @@ body {
     width: calc(100% - 10px);
 }
 .batch-gear-button {
-    height: 1.4rem;
+    height: 1.6rem;
     position: absolute;
     top: -0.2rem;
     left: 0;
@@ -490,6 +490,7 @@ body {
     padding-right: 3px;
     color: var(--text);
     text-decoration: none;
+    min-height: 1.3rem;
     line-height: 1.3rem;
     margin-top: 0;
     margin-bottom: 0;
