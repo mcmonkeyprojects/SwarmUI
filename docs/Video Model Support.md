@@ -337,7 +337,7 @@ There's a full step by step guide for video model usage here: <https://github.co
             - If doing I2V, set **Video Steps** to `4` or `8`
         - **Sampler:** can be default (Euler), but `UniPC` might be a touch better
         - **Scheduler:** not sure what's best atm, but default usually seems alright
-        - With Text2Video, you may want to set **Other Fixes** -> **Trim Video Start Frames** to above 4, to prevent first-frame-flash.
+        - With Text2Video, you may want to set **Other Fixes** -> **Trim Video Start Frames** to about 8, to prevent first-frame-flash (there tends to be 2 latent frames, ie 8 real frames, in glitched quality)
     - Note you still have to consider VRAM and res/frame count, as you will still get slow gens if you exceed your GPU's VRAM capacity. The net speed will still be faster, but not as impressive as compared to when you fit your GPU properly.
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
 
