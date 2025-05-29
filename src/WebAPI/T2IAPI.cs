@@ -563,6 +563,19 @@ public static class T2IAPI
                 }
             });
             List<ImageHistoryHelper> files = [.. filesConc.Values.SelectMany(f => f).Take(limit)];
+            HashSet<string> included = [.. files.Select(f => f.Name)];
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (!files[i].Name.StartsWith("Starred/"))
+                {
+                    string starPath = $"Starred/{(session.User.Settings.StarNoFolders ? files[i].Name.Replace("/", "") : files[i].Name)}";
+                    if (included.Contains(starPath))
+                    {
+                        files[i] = files[i] with { Name = null };
+                    }
+                }
+            }
+            files = [.. files.Where(f => f.Name is not null)];
             sortList(files);
             long timeEnd = Environment.TickCount64;
             Logs.Verbose($"Listed {files.Count} images in {(timeEnd - timeStart) / 1000.0:0.###} seconds.");
