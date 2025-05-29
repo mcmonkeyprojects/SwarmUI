@@ -87,6 +87,10 @@ public static class ImageMetadataTracker
         {
             folder = Program.DataDir;
         }
+        else
+        {
+            folder = Path.GetFullPath(folder);
+        }
         return Databases.GetOrCreate(folder, () =>
         {
             string path = $"{folder}/image_metadata.ldb";
@@ -114,13 +118,12 @@ public static class ImageMetadataTracker
     /// <summary>Deletes any tracked metadata for the given filepath.</summary>
     public static void RemoveMetadataFor(string file)
     {
-        string ext = file.AfterLast('.');
-        if (!ExtensionsWithMetadata.Contains(ext))
-        {
-            return;
-        }
         string folder = file.BeforeAndAfterLast('/', out string filename);
         ImageDatabase metadata = GetDatabaseForFolder(folder);
+        if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
+        {
+            filename = file;
+        }
         lock (metadata.Lock)
         {
             metadata.Metadata.Delete(filename);
