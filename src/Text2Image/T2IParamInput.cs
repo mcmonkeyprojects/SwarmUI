@@ -432,12 +432,11 @@ public class T2IParamInput
         long rawVal = -1;
         if (TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
         {
-            wildcardSeed += WCSeedOffset;
             rawVal = wildcardSeed;
         }
         else
         {
-            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + WCSeedOffset;
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0);
         }
         if (wildcardSeed > int.MaxValue)
         {
