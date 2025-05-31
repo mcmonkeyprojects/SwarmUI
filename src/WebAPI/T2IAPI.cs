@@ -291,7 +291,20 @@ public static class T2IAPI
             {
                 noSave = true;
             }
-            (string url, string filePath) = noSave ? (session.GetImageB64(image.Img), null) : session.SaveImage(image, actualIndex, thisParams, metadata);
+            string url, filePath;
+            if (noSave)
+            {
+                Image img = image.Img;
+                if (session.User.Settings.FileFormat.ReformatTransientImages && image.ActualImageTask is not null)
+                {
+                    img = image.ActualImageTask.Result;
+                }
+                (url, filePath) = (session.GetImageB64(img), null);
+            }
+            else
+            {
+                (url, filePath) = session.SaveImage(image, actualIndex, thisParams, metadata);
+            }
             if (url == "ERROR")
             {
                 setError($"Server failed to save an image.");

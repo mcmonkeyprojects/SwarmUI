@@ -168,7 +168,7 @@ public class Session : IEquatable<Session>
         }
         string metadata = user_input.GenRawMetadata();
         Task<Image> resultImg = Task.FromResult(image);
-        if (!maySkipConversion || !user_input.Get(T2IParamTypes.DoNotSave, false))
+        if (!maySkipConversion || !user_input.Get(T2IParamTypes.DoNotSave, false) || user_input.SourceSession.User.Settings.FileFormat.ReformatTransientImages)
         {
             string format = user_input.Get(T2IParamTypes.ImageFormat, User.Settings.FileFormat.ImageFormat);
             resultImg = Task.Run(() =>
