@@ -1390,7 +1390,7 @@ public class WorkflowGenerator
     public string DefaultPreviews = "default";
 
     /// <summary>Creates a KSampler and returns its node ID.</summary>
-    public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null)
+    public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null, JArray inpaintImg = null, JArray inpaintMask = null)
     {
         if (IsVideoModel())
         {
@@ -1473,7 +1473,10 @@ public class WorkflowGenerator
             // Not sure why, but InpaintModelConditioning is required here.
             JArray img = FinalInputImage;
             JArray mask = FinalMask;
-            if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
+            if (inpaintImg is not null && inpaintMask is not null) {
+                img = inpaintImg;
+                mask = inpaintMask;
+            } else if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
             {
                 img = [MaskShrunkInfo.ScaledImage, 0];
                 mask = [MaskShrunkInfo.CroppedMask, 0];
