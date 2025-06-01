@@ -282,7 +282,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.20.6";
+    public static string SwarmValidatedFrontendVersion = "1.21.4";
 
     public override async Task Init()
     {
@@ -464,6 +464,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers))
             {
                 await update("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
+            }
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers))
+            {
+                await update("comfyui_embedded_docs", $"comfyui-embedded-docs=={embedDocsVers}");
             }
             if (doLatestFrontend)
             {
