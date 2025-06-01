@@ -415,6 +415,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Install {pipName})", "");
                 await p.WaitForExitAsync(Program.GlobalProgramCancel);
                 AddLoadStatus($"Done installing '{pipName}' for ComfyUI.");
+                libs.Add(libFolder);
             }
             async Task update(string name, string pip)
             {
@@ -423,6 +424,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Update {name})", "");
                 await p.WaitForExitAsync(Program.GlobalProgramCancel);
                 AddLoadStatus($"Done updating '{name}' for ComfyUI.");
+                libs.Add(name);
             }
             string getVers(string package)
             {
