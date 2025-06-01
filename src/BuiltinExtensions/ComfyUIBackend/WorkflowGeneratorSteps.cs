@@ -1398,7 +1398,7 @@ public class WorkflowGeneratorSteps
                         g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                     }
                     int oversize = g.UserInput.Get(T2IParamTypes.SegmentMaskOversize, 16);
-                    (string boundsNode, string croppedMask, string masked, string scaledImage) = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, oversize, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
+                    g.MaskShrunkInfo = g.CreateImageMaskCrop([segmentNode, 0], g.FinalImageOut, oversize, vae, g.FinalLoadedModel, thresholdMax: g.UserInput.Get(T2IParamTypes.SegmentThresholdMax, 1));
                     g.EnableDifferential();
                     if (part.ContextID > 0)
                     {
@@ -1411,9 +1411,10 @@ public class WorkflowGeneratorSteps
                     int startStep = (int)Math.Round(steps * (1 - part.Strength2));
                     long seed = g.UserInput.Get(T2IParamTypes.Seed) + 2 + i;
                     double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
-                    string sampler = g.CreateKSampler(model, prompt, negPrompt, [masked, 0], cfg, steps, startStep, 10000, seed, false, true);
+                    string sampler = g.CreateKSampler(model, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true);
                     string decoded = g.CreateVAEDecode(vae, [sampler, 0]);
-                    g.FinalImageOut = g.RecompositeCropped(boundsNode, [croppedMask, 0], g.FinalImageOut, [decoded, 0]);
+                    g.FinalImageOut = g.RecompositeCropped(g.MaskShrunkInfo.BoundsNode, [g.MaskShrunkInfo.CroppedMask, 0], g.FinalImageOut, [decoded, 0]);
+                    g.MaskShrunkInfo = new(null, null, null, null);
                 }
             }
         }, 5);
