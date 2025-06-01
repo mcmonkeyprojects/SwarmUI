@@ -110,6 +110,11 @@ public class WebServer
         // it creates a persistent filewatcher which locks up hard. So, forcibly disable it. Which it should be disabled anyway. Obviously.
         Environment.SetEnvironmentVariable("ASPNETCORE_hostBuilder:reloadConfigOnChange", "false");
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { WebRootPath = "src/wwwroot" });
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.Limits.MaxRequestHeadersTotalSize = 1024 * 1024;
+            options.Limits.MaxRequestHeaderCount = 200;
+        });
         timer.Check("[Web] WebApp builder prep");
         builder.Services.AddRazorPages();
         builder.Services.AddResponseCompression();
