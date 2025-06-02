@@ -118,6 +118,9 @@ public static class ImageMetadataTracker
     /// <summary>File format extensions that require ffmpeg to process image data.</summary>
     public static HashSet<string> ExtensionsForFfmpegables = ["webm", "mp4", "mov"];
 
+    /// <summary>File format extensions that are animations in an image file format.</summary>
+    public static HashSet<string> ExtensionsForAnimatedImages = ["webp", "gif"];
+
     /// <summary>Deletes any tracked metadata for the given filepath.</summary>
     public static void RemoveMetadataFor(string file)
     {
@@ -195,26 +198,41 @@ public static class ImageMetadataTracker
         byte[] simplifiedData = null;
         try
         {
-            string altPreview = $"{file.BeforeLast('.')}.swarmpreview.webp";
+            string animPreview = $"{file.BeforeLast('.')}.swarmpreview.webp";
+            string jpegPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
+            string altPreview = animPreview;
             bool altExists = false;
-            if (ExtensionsForFfmpegables.Contains(ext))
+            if (ExtensionsForFfmpegables.Contains(ext) || ExtensionsForAnimatedImages.Contains(ext))
             {
                 altExists = Program.ServerSettings.UI.AllowAnimatedPreviews && File.Exists(altPreview);
                 if (!altExists)
                 {
-                    altPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
+                    altPreview = jpegPreview;
                     altExists = File.Exists(altPreview);
                 }
             }
             if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
-                if (ext != "webp")
+                if (!ExtensionsForAnimatedImages.Contains(ext))
                 {
                     return null;
                 }
                 byte[] data = File.ReadAllBytes(file);
+                Image img = new(data, Image.ImageType.ANIMATION, ext);
                 fileData = data;
                 simplifiedData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                File.WriteAllBytes(jpegPreview, simplifiedData);
+                Image webpAnim = img.ToWebpPreviewAnim();
+                if (webpAnim is null)
+                {
+                    fileData = simplifiedData;
+                    simplifiedData = null;
+                }
+                else
+                {
+                    fileData = webpAnim.ImageData;
+                    File.WriteAllBytes(animPreview, fileData);
+                }
             }
             if (fileData is null)
             {
@@ -226,7 +244,6 @@ public static class ImageMetadataTracker
                 if (altExists && altPreview.EndsWith(".webp"))
                 {
                     fileData = data;
-                    string jpegPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
                     if (File.Exists(jpegPreview))
                     {
                         simplifiedData = File.ReadAllBytes(jpegPreview);
