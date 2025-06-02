@@ -523,10 +523,20 @@ public class WebServer
         {
             if (context.Request.Query.TryGetValue("preview", out StringValues previewToken) && $"{previewToken}" == "true" && user.Settings.ImageHistoryUsePreviews)
             {
-                data = ImageMetadataTracker.GetOrCreatePreviewFor(path);
-                if (data is not null)
+                ImageMetadataTracker.ImagePreviewEntry entry = ImageMetadataTracker.GetOrCreatePreviewFor(path);
+                if (entry is not null)
                 {
+                    data = entry.PreviewData;
                     contentType = "image/jpg";
+                    if (entry.SimplifiedData is not null)
+                    {
+                        contentType = "image/webp";
+                        if (!Program.ServerSettings.UI.AllowAnimatedPreviews || (context.Request.Query.TryGetValue("noanim", out StringValues noanimToken) && $"{noanimToken}" == "true"))
+                        {
+                            data = entry.SimplifiedData;
+                            contentType = "image/jpg";
+                        }
+                    }
                 }
             }
             string pathNorm = Path.GetFullPath(path);
