@@ -272,17 +272,17 @@ There's a full step by step guide for video model usage here: <https://github.co
 - [Wan 2.1](https://huggingface.co/Wan-AI/Wan2.1-T2V-1.3B), a video model series from Alibaba, is supported in SwarmUI.
     - Supports separate models for Text2Video or Image2Video.
 - Download the comfy-format Wan model from <https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/tree/main/split_files/diffusion_models>
-    - Or Kijai's versions <https://huggingface.co/Kijai/WanVideo_comfy/tree/main>
-    - For I2V 1.3B, use <https://huggingface.co/alibaba-pai/Wan2.1-Fun-1.3B-InP/blob/main/diffusion_pytorch_model.safetensors>  (rename the file when you save it to avoid confusion)
     - Favor the `fp8_scaled` models as the main choice, or `fp16` for the 1.3B.
+    - Or Kijai's versions <https://huggingface.co/Kijai/WanVideo_comfy/tree/main> (has a lot of other variants)
+    - For I2V 1.3B, you can use <https://huggingface.co/alibaba-pai/Wan2.1-Fun-1.3B-InP/blob/main/diffusion_pytorch_model.safetensors>  (rename the file when you save it to avoid confusion)
     - For Text2Video, pick either 1.3B (small) model, or 14B (large) model
     - For Image2Video, pick either 480p (640x640 res) or 720p (960x960 res) model, OR the new "Fun-Inp" models (1.3B or 14B)
         - These are not autodetected separately, 480p is assumed.
         - For 720p variant, you will want to click the `☰` hamburger menu on the model, then `Edit Metadata`, and set the `Resolution` to `960x960`
-        - The 720p model isn't bigger, it just supports higher resolutions. Subjective comments say the higher resolution isn't worth the performance loss.
+        - The 720p variant is not recommended. The 480p is actually capable of high resolutions just fine, and has better compatibility.
     - the 1.3B model is very small and can run on almost any modern GPU
     - the 14B versions are 10x larger and require around 10x more VRAM, requires nvidia xx90 tier models to run at decent speed
-    - The FLF2V Model <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan2_1-FLF2V-14B-720P_fp8_e4m3fn.safetensors> is an Image-To-Video model that requires an End Frame input as well
+    - The FLF2V Model ("First-Last Frame To Video") <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan2_1-FLF2V-14B-720P_fp8_e4m3fn.safetensors> is an Image-To-Video model that requires an End Frame input as well
     - save to `diffusion_models`
 - Or GGUF format for reduced VRAM requirements
     - For T2V 14B <https://huggingface.co/city96/Wan2.1-T2V-14B-gguf/tree/main>
@@ -299,12 +299,13 @@ There's a full step by step guide for video model usage here: <https://github.co
 - **Prompt:** Standard. Supports English and Chinese text.
     - They have an official reference negative prompt in Chinese, it is not required but may help: `色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走`
         - (This is just a word spam negative "bright colors, overexposed, static, blurred details, subtitles, ..." but in Chinese. It does help though.)
-- **FPS:** The model is trained for 16 FPS.
+- **FPS:** The base model is trained for 16 FPS. Some variants, such as CausVid, are trained for 24 FPS.
+    - Swarm will default to 16 FPS for Wan. You must manually select 24 FPS when using such a variant.
 - **Resolution:** The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
     - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
     - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
         - As a vid2vid gen, the model seem to be very good at generating very high res directly.
-- **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to `81` (5 seconds).
+- **Frame Count (Length):** you can select pretty freely, different values work fine. If unspecified, will default to `81` (5 seconds if at 16 fps).
     - Use 17 for one second, 33 for two, 49 for three, 65 for 4, 81 for 5.
     - Higher frame counts above 81 seem to become distorted - still work but quality degrades and glitching appears.
     - The Text2Video models seem to favor 81 frames (5 seconds) and exhibit some signs of quality degradation at very low values, the Image2Video models are much more malleable
