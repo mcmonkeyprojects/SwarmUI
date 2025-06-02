@@ -110,6 +110,11 @@ public class WebServer
         // it creates a persistent filewatcher which locks up hard. So, forcibly disable it. Which it should be disabled anyway. Obviously.
         Environment.SetEnvironmentVariable("ASPNETCORE_hostBuilder:reloadConfigOnChange", "false");
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions() { WebRootPath = "src/wwwroot" });
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.Limits.MaxRequestHeadersTotalSize = 1024 * 1024;
+            options.Limits.MaxRequestHeaderCount = 200;
+        });
         timer.Check("[Web] WebApp builder prep");
         builder.Services.AddRazorPages();
         builder.Services.AddResponseCompression();
@@ -518,10 +523,20 @@ public class WebServer
         {
             if (context.Request.Query.TryGetValue("preview", out StringValues previewToken) && $"{previewToken}" == "true" && user.Settings.ImageHistoryUsePreviews)
             {
-                data = ImageMetadataTracker.GetOrCreatePreviewFor(path);
-                if (data is not null)
+                ImageMetadataTracker.ImagePreviewEntry entry = ImageMetadataTracker.GetOrCreatePreviewFor(path);
+                if (entry is not null)
                 {
+                    data = entry.PreviewData;
                     contentType = "image/jpg";
+                    if (entry.SimplifiedData is not null)
+                    {
+                        contentType = "image/webp";
+                        if (!Program.ServerSettings.UI.AllowAnimatedPreviews || (context.Request.Query.TryGetValue("noanim", out StringValues noanimToken) && $"{noanimToken}" == "true"))
+                        {
+                            data = entry.SimplifiedData;
+                            contentType = "image/jpg";
+                        }
+                    }
                 }
             }
             string pathNorm = Path.GetFullPath(path);

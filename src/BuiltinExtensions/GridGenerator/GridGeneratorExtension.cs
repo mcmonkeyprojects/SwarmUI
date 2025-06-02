@@ -180,7 +180,7 @@ public class GridGeneratorExtension : Extension
                         {
                             Directory.CreateDirectory(dir);
                         }
-                        File.WriteAllBytes(targetPath, image.Img.ImageData);
+                        File.WriteAllBytes(targetPath, image.ActualImageTask is not null ? image.ActualImageTask.Result.ImageData : image.Img.ImageData);
                         if (set.Grid.PublishMetadata && (!string.IsNullOrWhiteSpace(metadata) || !string.IsNullOrWhiteSpace(metaExtra)))
                         {
                             metadata ??= "{}";

@@ -34,6 +34,9 @@ public static class ImageMetadataTracker
         public long LastVerified { get; set; }
 
         public byte[] PreviewData { get; set; }
+
+        /// <summary>If PreviewData is animated, SimplifiedData is non-animated. SimplifiedData is often null.</summary>
+        public byte[] SimplifiedData { get; set; }
     }
 
     public record class ImageDatabase(string Folder, LockObject Lock, LiteDatabase Database, ILiteCollection<ImageMetadataEntry> Metadata, ILiteCollection<ImagePreviewEntry> Previews)
@@ -87,6 +90,10 @@ public static class ImageMetadataTracker
         {
             folder = Program.DataDir;
         }
+        else
+        {
+            folder = Path.GetFullPath(folder);
+        }
         return Databases.GetOrCreate(folder, () =>
         {
             string path = $"{folder}/image_metadata.ldb";
@@ -111,16 +118,18 @@ public static class ImageMetadataTracker
     /// <summary>File format extensions that require ffmpeg to process image data.</summary>
     public static HashSet<string> ExtensionsForFfmpegables = ["webm", "mp4", "mov"];
 
+    /// <summary>File format extensions that are animations in an image file format.</summary>
+    public static HashSet<string> ExtensionsForAnimatedImages = ["webp", "gif"];
+
     /// <summary>Deletes any tracked metadata for the given filepath.</summary>
     public static void RemoveMetadataFor(string file)
     {
-        string ext = file.AfterLast('.');
-        if (!ExtensionsWithMetadata.Contains(ext))
-        {
-            return;
-        }
         string folder = file.BeforeAndAfterLast('/', out string filename);
         ImageDatabase metadata = GetDatabaseForFolder(folder);
+        if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
+        {
+            filename = file;
+        }
         lock (metadata.Lock)
         {
             metadata.Metadata.Delete(filename);
@@ -129,7 +138,7 @@ public static class ImageMetadataTracker
     }
 
     /// <summary>Get the preview bytes for the given image, going through a cache manager.</summary>
-    public static byte[] GetOrCreatePreviewFor(string file)
+    public static ImagePreviewEntry GetOrCreatePreviewFor(string file)
     {
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
@@ -153,7 +162,7 @@ public static class ImageMetadataTracker
                     float chance = Program.ServerSettings.Performance.ImageDataValidationChance;
                     if (chance == 0 || Random.Shared.NextDouble() > chance)
                     {
-                        return entry.PreviewData;
+                        return entry;
                     }
                     long fTime = ((DateTimeOffset)File.GetLastWriteTimeUtc(file)).ToUnixTimeSeconds();
                     if (entry.FileTime != fTime)
@@ -171,7 +180,7 @@ public static class ImageMetadataTracker
                 }
                 if (entry is not null)
                 {
-                    return entry.PreviewData;
+                    return entry;
                 }
             }
         }
@@ -185,30 +194,66 @@ public static class ImageMetadataTracker
             return null;
         }
         long fileTime = ((DateTimeOffset)File.GetLastWriteTimeUtc(file)).ToUnixTimeSeconds();
-        byte[] fileData;
+        byte[] fileData = null;
+        byte[] simplifiedData = null;
         try
         {
-            string altPreview = $"{file.BeforeLast('.')}.swarmpreview.webp";
+            string animPreview = $"{file.BeforeLast('.')}.swarmpreview.webp";
+            string jpegPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
+            string altPreview = animPreview;
             bool altExists = false;
-            if (ExtensionsForFfmpegables.Contains(ext))
+            if (ExtensionsForFfmpegables.Contains(ext) || ExtensionsForAnimatedImages.Contains(ext))
             {
                 altExists = Program.ServerSettings.UI.AllowAnimatedPreviews && File.Exists(altPreview);
                 if (!altExists)
                 {
-                    altPreview = $"{file.BeforeLast('.')}.swarmpreview.jpg";
+                    altPreview = jpegPreview;
                     altExists = File.Exists(altPreview);
                 }
             }
             if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
-                return null;
+                if (!ExtensionsForAnimatedImages.Contains(ext))
+                {
+                    return null;
+                }
+                byte[] data = File.ReadAllBytes(file);
+                Image img = new(data, Image.ImageType.ANIMATION, ext);
+                fileData = data;
+                simplifiedData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                File.WriteAllBytes(jpegPreview, simplifiedData);
+                Image webpAnim = img.ToWebpPreviewAnim();
+                if (webpAnim is null)
+                {
+                    fileData = simplifiedData;
+                    simplifiedData = null;
+                }
+                else
+                {
+                    fileData = webpAnim.ImageData;
+                    File.WriteAllBytes(animPreview, fileData);
+                }
             }
-            byte[] data = File.ReadAllBytes(altExists ? altPreview : file);
-            if (data.Length == 0)
+            if (fileData is null)
             {
-                return null;
+                byte[] data = File.ReadAllBytes(altExists ? altPreview : file);
+                if (data.Length == 0)
+                {
+                    return null;
+                }
+                if (altExists && altPreview.EndsWith(".webp"))
+                {
+                    fileData = data;
+                    if (File.Exists(jpegPreview))
+                    {
+                        simplifiedData = File.ReadAllBytes(jpegPreview);
+                    }
+                }
+                else
+                {
+                    fileData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                }
             }
-            fileData = altExists && altPreview.EndsWith(".webp") ? data : new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
         }
         catch (Exception ex)
         {
@@ -217,12 +262,12 @@ public static class ImageMetadataTracker
         }
         try
         {
-            ImagePreviewEntry entry = new() { FileName = filename, PreviewData = fileData, LastVerified = timeNow, FileTime = fileTime };
+            ImagePreviewEntry entry = new() { FileName = filename, PreviewData = fileData, SimplifiedData = simplifiedData, LastVerified = timeNow, FileTime = fileTime };
             lock (metadata.Lock)
             {
                 metadata.Previews.Upsert(entry);
             }
-            return fileData;
+            return entry;
         }
         catch (Exception ex)
         {

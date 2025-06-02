@@ -195,7 +195,17 @@ public class Program
                 string[] parts = showOutput.SplitFast('^', 2);
                 DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
                 CurrentGitDate = $"{date:yyyy-MM-dd HH:mm:ss}";
-                Logs.Init($"Current git commit is [{parts[0]}: {parts[2]}], marked as date {CurrentGitDate}");
+                TimeSpan relative = DateTimeOffset.UtcNow - date;
+                string ago = $"{relative.Hours} hour{(relative.Hours == 1 ? "" : "s")} ago";
+                if (relative.Hours > 48)
+                {
+                    ago = $"{relative.Days} day{(relative.Days == 1 ? "" : "s")} ago";
+                }
+                else if (relative.Hours == 0)
+                {
+                    ago = $"{relative.Minutes} minute{(relative.Minutes == 1 ? "" : "s")} ago";
+                }
+                Logs.Init($"Current git commit is [{parts[0]}: {parts[2]}], marked as date {CurrentGitDate} ({ago})");
             }
             catch (Exception ex)
             {

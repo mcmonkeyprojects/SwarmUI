@@ -291,7 +291,20 @@ public static class T2IAPI
             {
                 noSave = true;
             }
-            (string url, string filePath) = noSave ? (session.GetImageB64(image.Img), null) : session.SaveImage(image, actualIndex, thisParams, metadata);
+            string url, filePath;
+            if (noSave)
+            {
+                Image img = image.Img;
+                if (session.User.Settings.FileFormat.ReformatTransientImages && image.ActualImageTask is not null)
+                {
+                    img = image.ActualImageTask.Result;
+                }
+                (url, filePath) = (session.GetImageB64(img), null);
+            }
+            else
+            {
+                (url, filePath) = session.SaveImage(image, actualIndex, thisParams, metadata);
+            }
             if (url == "ERROR")
             {
                 setError($"Server failed to save an image.");
@@ -563,6 +576,19 @@ public static class T2IAPI
                 }
             });
             List<ImageHistoryHelper> files = [.. filesConc.Values.SelectMany(f => f).Take(limit)];
+            HashSet<string> included = [.. files.Select(f => f.Name)];
+            for (int i = 0; i < files.Count; i++)
+            {
+                if (!files[i].Name.StartsWith("Starred/"))
+                {
+                    string starPath = $"Starred/{(session.User.Settings.StarNoFolders ? files[i].Name.Replace("/", "") : files[i].Name)}";
+                    if (included.Contains(starPath))
+                    {
+                        files[i] = files[i] with { Name = null };
+                    }
+                }
+            }
+            files = [.. files.Where(f => f.Name is not null)];
             sortList(files);
             long timeEnd = Environment.TickCount64;
             Logs.Verbose($"Listed {files.Count} images in {(timeEnd - timeStart) / 1000.0:0.###} seconds.");

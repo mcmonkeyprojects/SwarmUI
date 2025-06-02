@@ -13,7 +13,7 @@ class SwarmInputGroup:
                 "title": ("STRING", {"default": "My Group", "tooltip": "The title of the group."}),
                 "open_by_default": ("BOOLEAN", {"default": True, "tooltip": "Whether the group should be open by default."}),
                 "description": ("STRING", {"default": "", "multiline": True, "tooltip": "A description of the group that shows up when you click the '?' button."}),
-                "order_priority": ("FLOAT", {"default": 0, "min": -1024, "max": 1024, "step": 0.5, "round": False, "tooltip": "The order priority of the group. Higher values go further down in the list of groups."}),
+                "order_priority": ("FLOAT", {"default": 0, "min": -1024, "max": 1024, "step": 0.5, "round": 0.0000001, "tooltip": "The order priority of the group. Higher values go further down in the list of groups."}),
                 "is_advanced": ("BOOLEAN", {"default": False, "tooltip": "If true, the group will only be visible when 'Display Advanced' is clicked."}),
                 "can_shrink": ("BOOLEAN", {"default": True, "tooltip": "If true, the group can be collapsed by the user. If false, will be forced to remain open."}),
             },
@@ -30,7 +30,7 @@ class SwarmInputGroup:
 
 STANDARD_REQ_INPUTS = {
     "description": ("STRING", {"default": "", "multiline": True, "tooltip": "A description of the input that shows up when you click the '?' button."}),
-    "order_priority": ("FLOAT", {"default": 0, "min": -1024, "max": 1024, "step": 0.5, "round": False, "tooltip": "The order priority of the input. Higher values go further down in the list of inputs. This only applies within the group this node is part of."}),
+    "order_priority": ("FLOAT", {"default": 0, "min": -1024, "max": 1024, "step": 0.5, "round": 0.0000001, "tooltip": "The order priority of the input. Higher values go further down in the list of inputs. This only applies within the group this node is part of."}),
     "is_advanced": ("BOOLEAN", {"default": False, "tooltip": "If true, the input will only be visible when 'Display Advanced' is clicked."}),
     "raw_id": ("STRING", {"default": "", "tooltip": "The raw ID of the input. This can be used to customize the input for API usage, or to make use of default SwarmUI parameters. Most of the time, you don't need to touch this. By default this will autogenerate a unique ID based on the title value."}),
 }
@@ -71,11 +71,11 @@ class SwarmInputFloat:
         return {
             "required": {
                 "title": ("STRING", {"default": "My Floating-Point Number", "tooltip": "The name of the input."}),
-                "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": False, "tooltip": "The default value of the input."}),
-                "step": ("FLOAT", {"default": 0.1, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": False, "tooltip": "The step size of the input. That is, how much the value changes when you click the up/down arrows or move the slider."}),
-                "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": False, "tooltip": "The minimum value of the input."}),
-                "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": False, "tooltip": "The maximum value of the input."}),
-                "view_max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": False, "tooltip": "The maximum value of the input that is displayed in the UI when using a slider. This is useful if you want to allow a higher range of values, but don't want to clutter the UI with a huge slider."}),
+                "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The default value of the input."}),
+                "step": ("FLOAT", {"default": 0.1, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The step size of the input. That is, how much the value changes when you click the up/down arrows or move the slider."}),
+                "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The minimum value of the input."}),
+                "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input."}),
+                "view_max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input that is displayed in the UI when using a slider. This is useful if you want to allow a higher range of values, but don't want to clutter the UI with a huge slider."}),
                 "view_type": (["big", "small", "slider", "pot_slider"], {"tooltip": "The type of input control to use. 'big' is a large text input, 'small' is a small text input, 'slider' is a slider, and 'pot_slider' is a Power-Of-Two scaled slider - this is useful for large inputs like resolutions to allow a more natural feeling selection range."}),
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS

@@ -159,12 +159,12 @@ class SimpleTab {
                                 html += `<div class="sui-popover" id="popover_group_${groupId}"><b>${translateableHtml(escapeHtml(param.group.name))}</b>:<br>&emsp;${translateableHtml(safeHtmlOnly(param.group.description))}</div>`;
                                 infoButton = `<span class="auto-input-qbutton info-popover-button" onclick="doPopover('group_${groupId}', arguments[0])">?</span>`;
                             }
-                            let shouldOpen = getCookie(`group_open_auto-group-${groupId}`) || (param.group.open ? 'open' : 'closed');
+                            let shouldOpen = getCookie(`group_open_${groupId}`) || (param.group.open ? 'open' : 'closed');
                             if (shouldOpen == 'closed') {
                                 groupsClose.push(groupId);
                             }
                             if (param.group.toggles) {
-                                let shouldToggle = getCookie(`group_toggle_auto-group-${groupId}`) || 'no';
+                                let shouldToggle = getCookie(`group_toggle_${groupId}`) || 'no';
                                 if (shouldToggle == 'yes') {
                                     groupsEnable.push(groupId);
                                 }
