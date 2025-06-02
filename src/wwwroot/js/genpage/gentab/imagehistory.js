@@ -2,7 +2,7 @@
 function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     let sortBy = localStorage.getItem('image_history_sort_by') ?? 'Name';
     let reverse = localStorage.getItem('image_history_sort_reverse') == 'true';
-    let allowAnims = localStorage.getItem('image_history_allow_anims') == 'true';
+    let allowAnims = localStorage.getItem('image_history_allow_anims') != 'false';
     let sortElem = document.getElementById('image_history_sort_by');
     let sortReverseElem = document.getElementById('image_history_sort_reverse');
     let allowAnimsElem = document.getElementById('image_history_allow_anims');
@@ -137,7 +137,7 @@ function describeImage(image) {
     let formattedMetadata = formatMetadata(image.data.metadata);
     let description = image.data.name + "\n" + formattedMetadata;
     let name = image.data.name;
-    let allowAnims = localStorage.getItem('image_history_allow_anims') == 'true';
+    let allowAnims = localStorage.getItem('image_history_allow_anims') != 'false';
     let allowAnimToggle = allowAnims ? '' : '&noanim=true';
     let dragImage = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}`;
     let imageSrc = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}?preview=true${allowAnimToggle}`;
