@@ -108,8 +108,20 @@ public class WorkflowGeneratorSteps
         }, -10);
         AddModelGenStep(g =>
         {
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.SetClipDevice, out string device) && g.Features.Contains("set_clip_device"))
+            {
+                string clipDeviceNode = g.CreateNode("OverrideCLIPDevice", new JObject()
+                {
+                    ["clip"] = g.LoadingClip,
+                    ["device"] = device
+                });
+                g.LoadingClip = [clipDeviceNode, 0];
+            }
+        }, -9);
+        AddModelGenStep(g =>
+        {
             string applyTo = g.UserInput.Get(T2IParamTypes.FreeUApplyTo, null);
-            if (ComfyUIBackendExtension.FeaturesSupported.Contains("freeu") && applyTo is not null)
+            if (g.Features.Contains("freeu") && applyTo is not null)
             {
                 if (applyTo == "Both" || applyTo == g.LoadingModelType)
                 {
@@ -294,7 +306,7 @@ public class WorkflowGeneratorSteps
         }, -4);
         AddModelGenStep(g =>
         {
-            if (ComfyUIBackendExtension.FeaturesSupported.Contains("aitemplate") && g.UserInput.Get(ComfyUIBackendExtension.AITemplateParam))
+            if (g.Features.Contains("aitemplate") && g.UserInput.Get(ComfyUIBackendExtension.AITemplateParam))
             {
                 string aitLoad = g.CreateNode("AITemplateLoader", new JObject()
                 {
