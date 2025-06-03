@@ -188,7 +188,7 @@ public class GridGeneratorExtension : Extension
                         string output = $"/{set.Grid.Runner.URLBase}/{set.BaseFilepath}.{ext}";
                         if (data.ShowOutputs)
                         {
-                            data.AddOutput(new JObject() { ["image"] = output, ["metadata"] = metadata });
+                            data.AddOutput(new JObject() { ["image"] = output, ["batch_index"] = $"{iteration}", ["metadata"] = metadata });
                         }
                         WebhookManager.SendEveryGenWebhook(thisParams, output, image.Img);
                     }
