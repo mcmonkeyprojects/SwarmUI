@@ -273,14 +273,25 @@ public class Image
             {
                 return pngMetadata;
             }
+            string output = null;
             if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.Model, out var data) ?? false)
             {
-                return data.Value;
+                output = data.Value;
             }
             if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.UserComment, out var data2) ?? false)
             {
-                return data2.Value.Text;
+                output = data2.Value.Text;
             }
+            if (output is not null && output.Length > 0)
+            {
+                // Special fix for ImageSharp not parsing BigEndian unicode, so detect inverted strings (slightly hack) and flip them
+                byte[] encoded = Encoding.Unicode.GetBytes(output);
+                if (encoded[0] == 0 && encoded[1] != 0)
+                {
+                    output = Encoding.BigEndianUnicode.GetString(encoded);
+                }
+            }
+            return output;
         }
         catch (ArgumentNullException ex)
         {
