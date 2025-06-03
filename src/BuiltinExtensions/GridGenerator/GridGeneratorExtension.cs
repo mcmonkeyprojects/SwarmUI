@@ -43,6 +43,10 @@ public class GridGeneratorExtension : Extension
                     return list;
                 }
                 string first = list[0];
+                if (first.StartsWith("SKIP:"))
+                {
+                    first = first["SKIP:".Length..].Trim();
+                }
                 return [.. list.Select(v =>
                 {
                     bool skip = v.StartsWith("SKIP:");
