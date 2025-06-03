@@ -463,11 +463,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 Logs.Warning($"(Developer Notice) ComfyUI Frontend target version is {frontVers}, but validated version is {SwarmValidatedFrontendVersion}");
             }
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers))
+            string actualTemplateVers = getVers("comfyui_workflow_templates");
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers) && (actualTemplateVers is null || templateVers < Version.Parse(actualTemplateVers)))
             {
                 await update("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
             }
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers))
+            string actualEmbedVers = getVers("comfyui_embedded_docs");
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers) && (actualEmbedVers is null || embedDocsVers < Version.Parse(actualEmbedVers)))
             {
                 await update("comfyui_embedded_docs", $"comfyui-embedded-docs=={embedDocsVers}");
             }
