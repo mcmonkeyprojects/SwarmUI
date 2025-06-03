@@ -106,7 +106,7 @@ class GenerateHandler {
         imgHolder.div.dataset.src = src;
     }
     
-    internalHandleData(data, images, discardable, batch_id, timeLastGenHit, actualInput, socketId, socket, isPreview) {
+    internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview) {
         if ('socket_intention' in data && data.socket_intention == 'close' && socket) {
             if (this.sockets[socketId] == socket) {
                 this.sockets[socketId] = null;
@@ -122,7 +122,7 @@ class GenerateHandler {
         }
         if (isPreview) {
             if (data.image) {
-                this.setCurrentImage(data.image, data.metadata, `${batch_id}_${data.batch_index}`, false, true);
+                this.setCurrentImage(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, false, true);
             }
             return;
         }
@@ -132,7 +132,7 @@ class GenerateHandler {
             timeLastGenHit[0] = timeNow;
             this.appendGenTimeFrom(timeDiff / 1000);
             if (!(data.batch_index in images)) {
-                let batch_div = this.gotImageResult(data.image, data.metadata, `${batch_id}_${data.batch_index}`);
+                let batch_div = this.gotImageResult(data.image, data.metadata, `${data.request_id}_${data.batch_index}`);
                 if (batch_div) {
                     images[data.batch_index] = {div: batch_div, image: data.image, metadata: data.metadata, overall_percent: 0, current_percent: 0};
                 }
@@ -140,8 +140,8 @@ class GenerateHandler {
             else {
                 let imgHolder = images[data.batch_index];
                 let curImgElem = document.getElementById(this.imageId);
-                if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == `${batch_id}_${data.batch_index}`) {
-                    this.setCurrentImage(data.image, data.metadata, `${batch_id}_${data.batch_index}`, false, true);
+                if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == `${data.request_id}_${data.batch_index}`) {
+                    this.setCurrentImage(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, false, true);
                     if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
                         imageFullView.showImage(data.image, data.metadata);
                     }
@@ -158,7 +158,7 @@ class GenerateHandler {
                 if (progress_bars) {
                     progress_bars.remove();
                 }
-                this.gotProgress(-1, -1, `${batch_id}_${data.batch_index}`);
+                this.gotProgress(-1, -1, `${data.request_id}_${data.batch_index}`);
             }
             if (data.batch_index in images) {
                 images[data.batch_index].image = data.image;
@@ -170,7 +170,7 @@ class GenerateHandler {
             }
         }
         if (data.gen_progress) {
-            let thisBatchId = `${batch_id}_${data.gen_progress.batch_index}`;
+            let thisBatchId = `${data.gen_progress.request_id}_${data.gen_progress.batch_index}`;
             if (!(data.gen_progress.batch_index in images)) {
                 let metadataRaw = data.gen_progress.metadata ?? '{}';
                 let metadataParsed = JSON.parse(metadataRaw);
@@ -251,7 +251,7 @@ class GenerateHandler {
             let actualInput = this.getGenInput(input_overrides, input_preoverrides);
             let socket = null;
             let handleError = e => {
-                console.log(`Error in GenerateText2ImageWS: ${e}, ${this.interrupted}, ${batch_id}`);
+                console.log(`Error in GenerateText2ImageWS:`, e, this.interrupted, batch_id);
                 setTimeout(() => {
                     for (let imgHolder of Object.values(images)) {
                         let spinner = imgHolder.div.querySelector('.loading-spinner-parent');
@@ -275,7 +275,7 @@ class GenerateHandler {
                 this.sockets[socketId].send(JSON.stringify(actualInput));
             }
             else {
-                socket = makeWSRequestT2I('GenerateText2ImageWS', actualInput, data => this.internalHandleData(data, images, discardable, batch_id, timeLastGenHit, actualInput, socketId, socket, isPreview), handleError);
+                socket = makeWSRequestT2I('GenerateText2ImageWS', actualInput, data => this.internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview), handleError);
                 this.sockets[socketId] = socket;
             }
         };
