@@ -236,6 +236,14 @@ function toggleShowLoadSpinners() {
     localStorage.setItem('showLoadSpinners', `${showLoadSpinnersElem.checked}`);
 }
 
+/** Reference to the separate-batches toggle checkbox. */
+let separateBatchesElem = getRequiredElementById('separate_batches_checkbox');
+separateBatchesElem.checked = localStorage.getItem('separateBatches') == 'true';
+/** Called when the user changes separate-batches toggle to update local storage. */
+function toggleSeparateBatches() {
+    localStorage.setItem('separateBatches', `${separateBatchesElem.checked}`);
+}
+
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
@@ -804,6 +812,21 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
 }
 
+/** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
+function getPreferredBatchContainer(batchId) {
+    let mainContainer = getRequiredElementById('current_image_batch');
+    if (separateBatchesElem.checked) {
+        let reqId = batchId.split('_')[0];
+        let batchContainer = document.getElementById(`current_image_batch_${reqId}`);
+        if (!batchContainer) {
+            batchContainer = createDiv(`current_image_batch_${reqId}`, null);
+            mainContainer.prepend(batchContainer);
+        }
+        return batchContainer;
+    }
+    return mainContainer;
+}
+
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
@@ -869,7 +892,7 @@ function gotImageResult(image, metadata, batchId) {
     updateGenCount();
     let src = image;
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
-    let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch');
+    let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch');
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
@@ -885,7 +908,7 @@ function gotImagePreview(image, metadata, batchId) {
     updateGenCount();
     let src = image;
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
-    let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch', true);
+    let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
