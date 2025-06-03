@@ -545,10 +545,17 @@ public class WorkflowGenerator
             });
             mask = [thresholded, 0];
         }
+        string targetRes = UserInput.Get(T2IParamTypes.SegmentTargetResolution, "0x0");
+        (string targetWidth, string targetHeight) = targetRes.BeforeAndAfter('x');
+        int targetX = int.Parse(targetWidth);
+        int targetY = int.Parse(targetHeight);
+        bool isCustomRes = targetX > 0 && targetY > 0;
         string boundsNode = CreateNode("SwarmMaskBounds", new JObject()
         {
             ["mask"] = mask,
-            ["grow"] = growBy
+            ["grow"] = growBy,
+            ["aspect_x"] = isCustomRes ? targetX : 0,
+            ["aspect_y"] = isCustomRes ? targetY : 0
         });
         string croppedImage = CreateNode("SwarmImageCrop", new JObject()
         {
@@ -569,8 +576,8 @@ public class WorkflowGenerator
         string scaledImage = CreateNode("SwarmImageScaleForMP", new JObject()
         {
             ["image"] = new JArray() { croppedImage, 0 },
-            ["width"] = model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth,
-            ["height"] = model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
+            ["width"] = isCustomRes ? targetX : model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth,
+            ["height"] = isCustomRes ? targetY : model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
             ["can_shrink"] = true
         });
         JArray encoded = DoMaskedVAEEncode(vae, [scaledImage, 0], [croppedMask, 0], null);
