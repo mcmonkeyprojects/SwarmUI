@@ -213,7 +213,7 @@ public class ImageBatchToolExtension : Extension
                     File.WriteAllBytes($"{actualFile}.swarm.json", metadata.EncodeUTF8());
                 }
                 string img = session.GetImageB64(image.Img);
-                output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
+                output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["request_id"] = $"{baseParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                 WebhookManager.SendEveryGenWebhook(param, img, image.Img);
             }));
         }

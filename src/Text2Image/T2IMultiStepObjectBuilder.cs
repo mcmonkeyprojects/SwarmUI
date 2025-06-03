@@ -108,7 +108,7 @@ public class T2IMultiStepObjectBuilder
             using ISImage objISImg = objImg.ToIS;
             objISImg.Mutate(i => i.Resize(extraWidth, extraHeight));
             liveImg.Mutate(i => i.DrawImage(objISImg, new Point(extraX, extraY), 1));
-            output(new JObject() { ["image"] = "data:image/png;base64," + new Image(liveImg).AsBase64, ["batch_index"] = $"{batchId}{obj++}", ["metadata"] = null });
+            output(new JObject() { ["image"] = "data:image/png;base64," + new Image(liveImg).AsBase64, ["batch_index"] = $"{batchId}{obj++}", ["request_id"] = $"{user_input.UserRequestId}", ["metadata"] = null });
         }
         return new(liveImg);
     }

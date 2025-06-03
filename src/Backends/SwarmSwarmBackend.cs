@@ -539,6 +539,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                             actualId = $"{localInd + batchIndRemoteParsed}";
                         }
                         objVal["batch_index"] = actualId;
+                        objVal["request_id"] = $"{user_input.UserRequestId}";
                         takeOutput(objVal);
                     }
                     else if (response.TryGetValue("image", out val))

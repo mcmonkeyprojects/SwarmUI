@@ -188,7 +188,7 @@ public class GridGeneratorExtension : Extension
                         string output = $"/{set.Grid.Runner.URLBase}/{set.BaseFilepath}.{ext}";
                         if (data.ShowOutputs)
                         {
-                            data.AddOutput(new JObject() { ["image"] = output, ["batch_index"] = $"{iteration}", ["metadata"] = metadata });
+                            data.AddOutput(new JObject() { ["image"] = output, ["batch_index"] = $"{iteration}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = metadata });
                         }
                         WebhookManager.SendEveryGenWebhook(thisParams, output, image.Img);
                     }
@@ -202,7 +202,7 @@ public class GridGeneratorExtension : Extension
                         }
                         if (data.ShowOutputs)
                         {
-                            data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
+                            data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                         }
                         WebhookManager.SendEveryGenWebhook(thisParams, url, image.Img);
                         if (set.Grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE)
@@ -562,7 +562,7 @@ public class GridGeneratorExtension : Extension
                     throw new SwarmReadableErrorException("Server failed to save an image.");
                 }
                 Logs.Verbose("Saved to file, send over websocket...");
-                await socket.SendJson(new JObject() { ["image"] = url, ["batch_index"] = $"{batchId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata }, API.WebsocketTimeout);
+                await socket.SendJson(new JObject() { ["image"] = url, ["batch_index"] = $"{batchId}", ["request_id"] = $"{grid.InitialParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata }, API.WebsocketTimeout);
             }
         }
         catch (Exception ex)
