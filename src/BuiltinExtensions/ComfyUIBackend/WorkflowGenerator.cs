@@ -1047,7 +1047,7 @@ public class WorkflowGenerator
                 LoadingVAE = null;
             }
         }
-        string predType = model.Metadata?.PredictionType;
+        string predType = UserInput.Get(T2IParamTypes.OverridePredictionType, model.Metadata?.PredictionType);
         if (IsSD3())
         {
             string sd3Node = CreateNode("ModelSamplingSD3", new JObject()
