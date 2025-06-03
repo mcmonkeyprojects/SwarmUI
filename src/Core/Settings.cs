@@ -341,7 +341,7 @@ public class Settings : AutoConfiguration
             [ConfigComment("If set to non-0, adds DPI metadata to saved images.\n'72' is a good value for compatibility with some external software.")]
             public int DPI = 0;
 
-            [ConfigComment("If set to true, a '.txt' file will be saved alongside images with the image metadata easily viewable.\nThis can work even if saving in the image is disabled. Defaults disabled.")]
+            [ConfigComment("If set to true, a '.swarm.json' file will be saved alongside images with the image metadata easily viewable.\nThis can work even if saving in the image is disabled. Defaults disabled.")]
             public bool SaveTextFileMetadata = false;
 
             [ConfigComment("Images that are transient/temporary (not saved to file) generally are better off not being converted between image formats, or having metadata added.\nHowever, if you want to make the conversion and metadata apply anyway, you can enable this option.\nIf you use 'Do Not Save' param frequently but manually save images, you may want this.")]

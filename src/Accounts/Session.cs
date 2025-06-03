@@ -255,11 +255,7 @@ public class Session : IEquatable<Session>
                 {
                     Image actualImage = image.ActualImageTask is null ? image.Img : await image.ActualImageTask;
                     File.WriteAllBytes(fullPath, actualImage.ImageData);
-                    if (User.Settings.FileFormat.SaveTextFileMetadata && !string.IsNullOrWhiteSpace(metadata))
-                    {
-                        File.WriteAllBytes(fullPathNoExt + ".txt", metadata.EncodeUTF8());
-                    }
-                    if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension) && !string.IsNullOrWhiteSpace(metadata))
+                    if ((User.Settings.FileFormat.SaveTextFileMetadata || !ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
                         File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
                     }
