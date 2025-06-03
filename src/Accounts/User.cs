@@ -420,7 +420,7 @@ public class User
             data = Utilities.StrictFilenameClean(data.Replace('\\', '/').Replace("/", ""));
             return data;
         }
-        string path = Settings.OutPathBuilder.Format;
+        string path = user_input.Get(T2IParamTypes.OverrideOutpathFormat, Settings.OutPathBuilder.Format);
         path = StringConversionHelper.QuickSimpleTagFiller(path, "[", "]", buildPathPart, false);
         if (CalculatedRole.Data.AllowUnsafeOutpaths)
         {
