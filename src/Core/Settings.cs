@@ -157,10 +157,10 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, max t2i simultaneous value is not limited by backend count.\nIe, users may queue as many gens as they want directly to backends, with no overload prevention.\nThis may be preferable on personal instances of Swarm to enforce stricter queue ordering.\nUser role max t2i simultaneous value is still applied.")]
         public bool UnrestrictedMaxT2iSimultaneous = false;
 
-        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up VRAM (to prevent issues with other programs).\nThis has the downside of a small added bit of time to load back onto VRAM at next usage.\nUse a decimal number to free after seconds.\nDefaults to 10 minutes.")]
+        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up VRAM (to prevent issues with other programs).\nThis has the downside of a small added bit of time to load back onto VRAM at next usage.\nUse a decimal number to free after seconds.\nDefaults to 10 minutes.\nSet to -1 to disable.")]
         public double ClearVRAMAfterMinutes = 10;
 
-        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up system RAM (to prevent issues with other programs).\nThis has the downside of causing models to fully load from data drive at next usage.\nUse a decimal number to free after seconds.\nDefaults to 60 minutes (one hour).")]
+        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up system RAM (to prevent issues with other programs).\nThis has the downside of causing models to fully load from data drive at next usage.\nUse a decimal number to free after seconds.\nDefaults to 60 minutes (one hour).\nSet to -1 to disable.")]
         public double ClearSystemRAMAfterMinutes = 60;
 
         [ConfigComment("If true, any time you load the UI, trigger a server refresh.\nIf false, only triggers a refresh if you restart Swarm or trigger a refresh manually from the Quick Tools menu.\nDefaults to true.")]
