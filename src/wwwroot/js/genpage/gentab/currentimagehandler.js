@@ -76,8 +76,8 @@ class ImageFullViewHelper {
         let newTop = this.getImgTop() + yDiff;
         let overWidth = img.parentElement.offsetWidth / 2;
         let overHeight = img.parentElement.offsetHeight / 2;
-        newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.width - overWidth));
-        newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.height - overHeight));
+        newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.offsetWidth - overWidth));
+        newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.offsetHeight - overHeight));
         img.style.left = `${newLeft}px`;
         img.style.top = `${newTop}px`;
     }
@@ -102,7 +102,9 @@ class ImageFullViewHelper {
         if (wrap.style.textAlign == 'center') {
             let img = this.getImg();
             wrap.style.textAlign = 'left';
-            let imgAspectRatio = img.naturalWidth / img.naturalHeight;
+            let width = img.naturalWidth ?? img.videoWidth;
+            let height = img.naturalHeight ?? img.videoHeight;
+            let imgAspectRatio = width / height;
             let wrapAspectRatio = wrap.offsetWidth / wrap.offsetHeight;
             let targetWidth = wrap.offsetHeight * imgAspectRatio;
             if (targetWidth > wrap.offsetWidth) {
@@ -148,7 +150,9 @@ class ImageFullViewHelper {
         let img = this.getImg();
         let origHeight = this.getHeightPercent();
         let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
-        let maxHeight = Math.sqrt(img.naturalWidth * img.naturalHeight) * 2;
+        let width = img.naturalWidth ?? img.videoWidth;
+        let height = img.naturalHeight ?? img.videoHeight;
+        let maxHeight = Math.sqrt(width * height) * 2;
         let newHeight = Math.max(10, Math.min(origHeight * zoom, maxHeight));
         if (newHeight > maxHeight / 5) {
             img.style.imageRendering = 'pixelated';
