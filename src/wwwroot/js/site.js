@@ -344,10 +344,10 @@ function textPromptAddKeydownHandler(elem) {
         }
         triggerChangeFor(elem);
     }
-
     function moveCommaSeparatedElement(left) {
         let value = elem.value;
         let cursor = elem.selectionStart;
+        let cursorEnd = elem.selectionEnd;
         // Split into comma-separated parts
         let parts = [];
         let regex = /[^,]+/g;
@@ -390,7 +390,8 @@ function textPromptAddKeydownHandler(elem) {
             newValue += newParts[i].text;
         }
         elem.value = newValue;
-        elem.selectionStart = elem.selectionEnd = newCursor;
+        elem.selectionStart = newCursor;
+        elem.selectionEnd = newCursor + (cursorEnd - cursor);
         triggerChangeFor(elem);
     }
     elem.addEventListener('keydown', (e) => {
