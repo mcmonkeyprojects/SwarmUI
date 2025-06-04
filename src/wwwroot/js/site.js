@@ -390,7 +390,7 @@ function textPromptAddKeydownHandler(elem) {
             return false;
         }
         if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
-            moveCommaSeparatedElement(e.key === 'ArrowLeft');
+            moveCommaSeparatedElement(e.key == 'ArrowLeft');
             e.preventDefault();
             e.stopPropagation();
             return false;
