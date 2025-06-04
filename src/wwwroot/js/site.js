@@ -344,9 +344,73 @@ function textPromptAddKeydownHandler(elem) {
         }
         triggerChangeFor(elem);
     }
+
+    function moveCommaSeparatedElement(left) {
+        const value = elem.value;
+        const cursor = elem.selectionStart;
+
+        // Split into comma-separated parts
+        let parts = [];
+        let regex = /[^,]+/g;
+        let match;
+
+        while ((match = regex.exec(value)) !== null) {
+            parts.push({
+                text: match[0],
+                start: match.index,
+                end: match.index + match[0].length,
+            });
+        }
+
+        // Find the element the cursor is in
+        const index = parts.findIndex(p => cursor >= p.start && cursor <= p.end);
+        if (index === -1) return;
+
+        const swapIndex = left ? index - 1 : index + 1;
+        if (swapIndex < 0 || swapIndex >= parts.length) return;
+
+        const originalPart = parts[index];
+        const offsetInElement = cursor - originalPart.start;
+
+        // Swap elements
+        const newParts = [...parts];
+        [newParts[index], newParts[swapIndex]] = [newParts[swapIndex], newParts[index]];
+
+        // Rebuild string and find new cursor position
+        let newValue = '';
+        let newCursor = 0;
+        let foundMovedPart = false;
+
+        for (let i = 0; i < newParts.length; i++) {
+            if (i > 0) newValue += ','; // Add comma between parts
+
+            if (!foundMovedPart && newParts[i].text === originalPart.text) {
+                // Make sure we match the right instance if duplicates exist
+                const isOriginalIndexNow = i === swapIndex;
+                foundMovedPart = true;
+                newCursor = newValue.length + Math.min(offsetInElement, newParts[i].text.length);
+            }
+
+            newValue += newParts[i].text;
+        }
+
+        elem.value = newValue;
+        elem.selectionStart = elem.selectionEnd = newCursor;
+
+        triggerChangeFor(elem);
+    }
+
+
     elem.addEventListener('keydown', (e) => {
         if (e.ctrlKey && (e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
             shiftText(e.key == 'ArrowUp');
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+
+         if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+            moveCommaSeparatedElement(e.key === 'ArrowLeft');
             e.preventDefault();
             e.stopPropagation();
             return false;
