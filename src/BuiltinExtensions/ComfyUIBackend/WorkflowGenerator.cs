@@ -675,7 +675,7 @@ public class WorkflowGenerator
 
     public int T2VFPSOverride = -1;
 
-    public List<Func<WorkflowGenerator, int, int>> T2VFPSOverrides = [];
+    public static List<Func<WorkflowGenerator, int, int>> AltT2VFPSDefaulters = [];
 
     public int Text2VideoFPS()
     {
@@ -688,7 +688,7 @@ public class WorkflowGenerator
         {
             fpsDefault = 16;
         }
-        foreach (Func<WorkflowGenerator, int, int> fpsOverride in T2VFPSOverrides)
+        foreach (Func<WorkflowGenerator, int, int> fpsOverride in AltT2VFPSDefaulters)
         {
             fpsDefault = fpsOverride(this, fpsDefault);
         }
