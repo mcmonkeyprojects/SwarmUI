@@ -1616,7 +1616,25 @@ public class WorkflowGeneratorSteps
                     }
                     return (latent, startStep);
                 }
-                g.CreateImageToVideo(vidModel, ref frames, videoCfg, ref videoFps, width, height, prompt, negPrompt, steps, seed, altLatent, batchInd, batchLen);
+                WorkflowGenerator.ImageToVideoGenInfo genInfo = new()
+                {
+                    Generator = g,
+                    VideoModel = vidModel,
+                    Frames = frames,
+                    VideoCFG = videoCfg,
+                    VideoFPS = videoFps,
+                    Width = width,
+                    Height = height,
+                    Prompt = prompt,
+                    NegativePrompt = negPrompt,
+                    Steps = steps,
+                    Seed = seed,
+                    AltLatent = altLatent,
+                    BatchIndex = batchInd,
+                    BatchLen = batchLen
+                };
+                g.CreateImageToVideo(genInfo);
+                videoFps = genInfo.VideoFPS;
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
@@ -1713,13 +1731,30 @@ public class WorkflowGeneratorSteps
                     });
                     JArray partialBatch = [partialBatchNode, 0];
                     g.FinalImageOut = partialBatch;
-                    g.CreateImageToVideo(extendModel, ref frames, cfg, ref videoFps, width, height, prompt, negPrompt, steps, seed, null, 0, frameExtendOverlap);
+                    WorkflowGenerator.ImageToVideoGenInfo genInfo = new()
+                    {
+                        Generator = g,
+                        VideoModel = extendModel,
+                        Frames = frames,
+                        VideoCFG = cfg,
+                        VideoFPS = videoFps,
+                        Width = width,
+                        Height = height,
+                        Prompt = prompt,
+                        NegativePrompt = negPrompt,
+                        Steps = steps,
+                        Seed = seed,
+                        BatchIndex = 0,
+                        BatchLen = frameExtendOverlap
+                    };
+                    g.CreateImageToVideo(genInfo);
+                    videoFps = genInfo.VideoFPS;
                     if (saveIntermediate)
                     {
                         g.CreateNode("SwarmSaveAnimationWS", new JObject()
                         {
                             ["images"] = g.FinalImageOut,
-                            ["fps"] = videoFps,
+                            ["fps"] = genInfo.VideoFPS,
                             ["lossless"] = false,
                             ["quality"] = 95,
                             ["method"] = "default",

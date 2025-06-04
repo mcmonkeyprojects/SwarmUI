@@ -675,6 +675,8 @@ public class WorkflowGenerator
 
     public int T2VFPSOverride = -1;
 
+    public List<Func<WorkflowGenerator, int, int>> T2VFPSOverrides = [];
+
     public int Text2VideoFPS()
     {
         if (T2VFPSOverride > 0)
@@ -682,9 +684,13 @@ public class WorkflowGenerator
             return T2VFPSOverride;
         }
         int fpsDefault = 24;
-        if (IsWanVideo())
+        if (IsWanVideo()) // TODO: Detect CausVid (24 fps LoRA) somehow?
         {
             fpsDefault = 16;
+        }
+        foreach (Func<WorkflowGenerator, int, int> fpsOverride in T2VFPSOverrides)
+        {
+            fpsDefault = fpsOverride(this, fpsDefault);
         }
         return UserInput.Get(T2IParamTypes.Text2VideoFPS, UserInput.Get(T2IParamTypes.VideoFPS, fpsDefault));
     }
@@ -1908,30 +1914,53 @@ public class WorkflowGenerator
         return imageIn;
     }
 
+    public static List<Action<ImageToVideoGenInfo>> AltImageToVideoPreHandlers = [], AltImageToVideoPostHandlers = [];
+
+    public class ImageToVideoGenInfo
+    {
+        public WorkflowGenerator Generator;
+        public T2IModel VideoModel;
+        public int? Frames, VideoFPS;
+        public double? VideoCFG;
+        public JToken Width, Height;
+        public string Prompt, NegativePrompt;
+        public int Steps;
+        public long Seed;
+        public Func<JArray, JArray, (JArray, int)> AltLatent;
+        public int BatchIndex = -1;
+        public int BatchLen = -1;
+        public bool HasMatchedModelData = false;
+        public JArray PosCond, NegCond, Latent, Model, Vae;
+        public string DefaultSampler = null, DefaultScheduler = null;
+        public double DefaultCFG = 7;
+    }
+
     /// <summary>Creates the execution logic for an Image-To-Video model.</summary>
-    public void CreateImageToVideo(T2IModel vidModel, ref int? frames, double? videoCfg, ref int? videoFps, JToken width, JToken height, string prompt, string negPrompt, int steps, long seed, Func<JArray, JArray, (JArray, int)> altLatent = null, int batchInd = -1, int batchLen = -1)
+    public void CreateImageToVideo(ImageToVideoGenInfo genInfo)
     {
         bool hadSpecialCond = false;
-        string defSampler = null, defScheduler = null;
-        double defCfg = 7;
         string scaled = CreateNode("ImageScale", new JObject()
         {
             ["image"] = FinalImageOut,
-            ["width"] = width,
-            ["height"] = height,
+            ["width"] = genInfo.Width,
+            ["height"] = genInfo.Height,
             ["upscale_method"] = "lanczos",
             ["crop"] = "disabled"
         });
         FinalImageOut = [scaled, 0];
-        JArray posCond, negCond, latent, model, vae;
-        if (vidModel.ModelClass?.CompatClass == "lightricks-ltx-video")
+        foreach (Action<ImageToVideoGenInfo> altHandler in AltImageToVideoPreHandlers)
         {
-            videoFps ??= 24;
-            frames ??= 97;
-            FinalLoadedModel = vidModel;
-            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
-            posCond = CreateConditioning(prompt, clip, vidModel, true);
-            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            altHandler(genInfo);
+        }
+        if (genInfo.HasMatchedModelData) { }
+        else if (genInfo.VideoModel.ModelClass?.CompatClass == "lightricks-ltx-video")
+        {
+            genInfo.VideoFPS ??= 24;
+            genInfo.Frames ??= 97;
+            FinalLoadedModel = genInfo.VideoModel;
+            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
                 throw new SwarmReadableErrorException("LTX-V end-frame is TODO");
@@ -1940,42 +1969,42 @@ public class WorkflowGenerator
             {
                 string condNode = CreateNode("LTXVImgToVideo", new JObject()
                 {
-                    ["positive"] = posCond,
-                    ["negative"] = negCond,
-                    ["vae"] = vae,
+                    ["positive"] = genInfo.PosCond,
+                    ["negative"] = genInfo.NegCond,
+                    ["vae"] = genInfo.Vae,
                     ["image"] = FinalImageOut,
-                    ["width"] = width,
-                    ["height"] = height,
-                    ["length"] = frames,
+                    ["width"] = genInfo.Width,
+                    ["height"] = genInfo.Height,
+                    ["length"] = genInfo.Frames,
                     ["batch_size"] = 1,
                     ["image_noise_scale"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15),
                     ["strength"] = 1
                 });
-                posCond = [condNode, 0];
-                negCond = [condNode, 1];
-                latent = [condNode, 2];
+                genInfo.PosCond = [condNode, 0];
+                genInfo.NegCond = [condNode, 1];
+                genInfo.Latent = [condNode, 2];
             }
-            defCfg = 3;
+            genInfo.DefaultCFG = 3;
             string ltxvcond = CreateNode("LTXVConditioning", new JObject()
             {
-                ["positive"] = posCond,
-                ["negative"] = negCond,
-                ["frame_rate"] = videoFps
+                ["positive"] = genInfo.PosCond,
+                ["negative"] = genInfo.NegCond,
+                ["frame_rate"] = genInfo.VideoFPS
             });
-            posCond = [ltxvcond, 0];
-            negCond = [ltxvcond, 1];
+            genInfo.PosCond = [ltxvcond, 0];
+            genInfo.NegCond = [ltxvcond, 1];
             hadSpecialCond = true;
-            defSampler = "euler";
-            defScheduler = "ltxv-image";
+            genInfo.DefaultSampler = "euler";
+            genInfo.DefaultScheduler = "ltxv-image";
         }
-        else if (vidModel.ModelClass?.CompatClass == "nvidia-cosmos-1")
+        else if (genInfo.VideoModel.ModelClass?.CompatClass == "nvidia-cosmos-1")
         {
-            videoFps ??= 24;
-            frames ??= 121;
-            FinalLoadedModel = vidModel;
-            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
-            posCond = CreateConditioning(prompt, clip, vidModel, true);
-            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            genInfo.VideoFPS ??= 24;
+            genInfo.Frames ??= 121;
+            FinalLoadedModel = genInfo.VideoModel;
+            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
                 throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
@@ -1984,89 +2013,89 @@ public class WorkflowGenerator
             {
                 string latentNode = CreateNode("CosmosImageToVideoLatent", new JObject()
                 {
-                    ["vae"] = vae,
+                    ["vae"] = genInfo.Vae,
                     ["start_image"] = FinalImageOut,
-                    ["width"] = width,
-                    ["height"] = height,
-                    ["length"] = frames,
+                    ["width"] = genInfo.Width,
+                    ["height"] = genInfo.Height,
+                    ["length"] = genInfo.Frames,
                     ["batch_size"] = 1
                 });
-                latent = [latentNode, 0];
+                genInfo.Latent = [latentNode, 0];
             }
             string ltxvcond = CreateNode("LTXVConditioning", new JObject() // (Despite the name, this is just setting the framerate)
             {
-                ["positive"] = posCond,
-                ["negative"] = negCond,
-                ["frame_rate"] = videoFps
+                ["positive"] = genInfo.PosCond,
+                ["negative"] = genInfo.NegCond,
+                ["frame_rate"] = genInfo.VideoFPS
             });
-            posCond = [ltxvcond, 0];
-            negCond = [ltxvcond, 1];
-            defCfg = 7;
-            defSampler = "res_multistep";
-            defScheduler = "karras";
+            genInfo.PosCond = [ltxvcond, 0];
+            genInfo.NegCond = [ltxvcond, 1];
+            genInfo.DefaultCFG = 7;
+            genInfo.DefaultSampler = "res_multistep";
+            genInfo.DefaultScheduler = "karras";
         }
-        else if (vidModel.ModelClass?.ID == "hunyuan-video-i2v" || vidModel.ModelClass?.ID == "hunyuan-video-i2v-v2")
+        else if (genInfo.VideoModel.ModelClass?.ID == "hunyuan-video-i2v" || genInfo.VideoModel.ModelClass?.ID == "hunyuan-video-i2v-v2")
         {
-            videoFps ??= 24;
-            frames ??= 53;
-            FinalLoadedModel = vidModel;
-            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
-            posCond = CreateConditioning($"<image:{FinalImageOut[0]},{FinalImageOut[1]}>{prompt}", clip, vidModel, true);
-            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            genInfo.VideoFPS ??= 24;
+            genInfo.Frames ??= 53;
+            FinalLoadedModel = genInfo.VideoModel;
+            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
+            genInfo.PosCond = CreateConditioning($"<image:{FinalImageOut[0]},{FinalImageOut[1]}>{genInfo.Prompt}", clip, genInfo.VideoModel, true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
             string i2vnode = CreateNode("HunyuanImageToVideo", new JObject()
             {
-                ["positive"] = posCond,
-                ["vae"] = vae,
-                ["width"] = width,
-                ["height"] = height,
-                ["length"] = frames,
+                ["positive"] = genInfo.PosCond,
+                ["vae"] = genInfo.Vae,
+                ["width"] = genInfo.Width,
+                ["height"] = genInfo.Height,
+                ["length"] = genInfo.Frames,
                 ["batch_size"] = 1,
                 ["start_image"] = FinalImageOut,
-                ["guidance_type"] = vidModel.ModelClass?.ID == "hunyuan-video-i2v-v2" ? "v2 (replace)" : "v1 (concat)"
+                ["guidance_type"] = genInfo.VideoModel.ModelClass?.ID == "hunyuan-video-i2v-v2" ? "v2 (replace)" : "v1 (concat)"
             });
-            posCond = [i2vnode, 0];
-            defCfg = 1;
-            latent = [i2vnode, 1];
-            defSampler = "euler";
-            defScheduler = "simple";
+            genInfo.PosCond = [i2vnode, 0];
+            genInfo.DefaultCFG = 1;
+            genInfo.Latent = [i2vnode, 1];
+            genInfo.DefaultSampler = "euler";
+            genInfo.DefaultScheduler = "simple";
         }
-        else if (vidModel.ModelClass?.CompatClass == "hunyuan-video") // skyreels
+        else if (genInfo.VideoModel.ModelClass?.CompatClass == "hunyuan-video") // skyreels
         {
-            videoFps ??= 24;
-            frames ??= 73;
-            FinalLoadedModel = vidModel;
-            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
-            posCond = CreateConditioning(prompt, clip, vidModel, true);
-            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            genInfo.VideoFPS ??= 24;
+            genInfo.Frames ??= 73;
+            FinalLoadedModel = genInfo.VideoModel;
+            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
             string latentNode = CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
-                ["width"] = width,
-                ["height"] = height,
-                ["length"] = frames,
+                ["width"] = genInfo.Width,
+                ["height"] = genInfo.Height,
+                ["length"] = genInfo.Frames,
                 ["batch_size"] = 1
             });
             string ip2pNode = CreateNode("InstructPixToPixConditioning", new JObject()
             {
-                ["positive"] = posCond,
-                ["negative"] = negCond,
-                ["vae"] = vae,
+                ["positive"] = genInfo.PosCond,
+                ["negative"] = genInfo.NegCond,
+                ["vae"] = genInfo.Vae,
                 ["pixels"] = FinalImageOut
             });
-            posCond = [ip2pNode, 0];
-            negCond = [ip2pNode, 1];
-            defCfg = 6;
-            latent = [latentNode, 0];
-            defSampler = "dpmpp_2m";
-            defScheduler = "beta";
+            genInfo.PosCond = [ip2pNode, 0];
+            genInfo.NegCond = [ip2pNode, 1];
+            genInfo.DefaultCFG = 6;
+            genInfo.Latent = [latentNode, 0];
+            genInfo.DefaultSampler = "dpmpp_2m";
+            genInfo.DefaultScheduler = "beta";
         }
-        else if (vidModel.ModelClass?.CompatClass == "wan-21-14b" || vidModel.ModelClass?.CompatClass == "wan-21-1_3b")
+        else if (genInfo.VideoModel.ModelClass?.CompatClass == "wan-21-14b" || genInfo.VideoModel.ModelClass?.CompatClass == "wan-21-1_3b")
         {
-            videoFps ??= 16;
-            frames ??= 81;
-            FinalLoadedModel = vidModel;
-            (vidModel, model, JArray clip, vae) = CreateStandardModelLoader(vidModel, "image2video", null, true);
-            posCond = CreateConditioning(prompt, clip, vidModel, true);
-            negCond = CreateConditioning(negPrompt, clip, vidModel, false);
+            genInfo.VideoFPS ??= 16;
+            genInfo.Frames ??= 81;
+            FinalLoadedModel = genInfo.VideoModel;
+            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
             string targetName = "clip_vision_h.safetensors";
             RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161");
             string clipLoader = CreateNode("CLIPVisionLoader", new JObject()
@@ -2075,23 +2104,23 @@ public class WorkflowGenerator
             });
             JArray clipLoaderNode = [clipLoader, 0];
             JArray imageIn = FinalImageOut;
-            if (batchInd != -1 && batchLen != -1)
+            if (genInfo.BatchIndex != -1 && genInfo.BatchLen != -1)
             {
                 string fromBatch = CreateNode("ImageFromBatch", new JObject()
                 {
                     ["image"] = imageIn,
-                    ["batch_index"] = batchInd,
-                    ["length"] = batchLen
+                    ["batch_index"] = genInfo.BatchIndex,
+                    ["length"] = genInfo.BatchLen
                 });
                 imageIn = [fromBatch, 0];
             }
             JArray encodeIn = imageIn;
-            if (batchLen > 1)
+            if (genInfo.BatchLen > 1)
             {
                 string fromBatch = CreateNode("ImageFromBatch", new JObject()
                 {
                     ["image"] = imageIn,
-                    ["batch_index"] = batchInd,
+                    ["batch_index"] = genInfo.BatchIndex,
                     ["length"] = 1
                 });
                 encodeIn = [fromBatch, 0];
@@ -2114,60 +2143,60 @@ public class WorkflowGenerator
                 });
                 string img2vidNode = CreateNode("WanFirstLastFrameToVideo", new JObject()
                 {
-                    ["width"] = width,
-                    ["height"] = height,
-                    ["length"] = frames,
-                    ["positive"] = posCond,
-                    ["negative"] = negCond,
-                    ["vae"] = vae,
+                    ["width"] = genInfo.Width,
+                    ["height"] = genInfo.Height,
+                    ["length"] = genInfo.Frames,
+                    ["positive"] = genInfo.PosCond,
+                    ["negative"] = genInfo.NegCond,
+                    ["vae"] = genInfo.Vae,
                     ["start_image"] = imageIn,
                     ["clip_vision_start_image"] = new JArray() { encoded, 0 },
                     ["end_image"] = endFrameNode,
                     ["clip_vision_end_image"] = new JArray() { encodedEnd, 0 },
                     ["batch_size"] = 1
                 });
-                posCond = [img2vidNode, 0];
-                negCond = [img2vidNode, 1];
-                latent = [img2vidNode, 2];
+                genInfo.PosCond = [img2vidNode, 0];
+                genInfo.NegCond = [img2vidNode, 1];
+                genInfo.Latent = [img2vidNode, 2];
             }
             else
             {
                 string img2vidNode = CreateNode("WanImageToVideo", new JObject()
                 {
-                    ["width"] = width,
-                    ["height"] = height,
-                    ["length"] = frames,
-                    ["positive"] = posCond,
-                    ["negative"] = negCond,
-                    ["vae"] = vae,
+                    ["width"] = genInfo.Width,
+                    ["height"] = genInfo.Height,
+                    ["length"] = genInfo.Frames,
+                    ["positive"] = genInfo.PosCond,
+                    ["negative"] = genInfo.NegCond,
+                    ["vae"] = genInfo.Vae,
                     ["start_image"] = imageIn,
                     ["clip_vision_output"] = new JArray() { encoded, 0 },
                     ["batch_size"] = 1
                 });
-                posCond = [img2vidNode, 0];
-                negCond = [img2vidNode, 1];
-                latent = [img2vidNode, 2];
+                genInfo.PosCond = [img2vidNode, 0];
+                genInfo.NegCond = [img2vidNode, 1];
+                genInfo.Latent = [img2vidNode, 2];
             }
-            defCfg = 6;
-            defSampler = "euler";
-            defScheduler = "simple";
+            genInfo.DefaultCFG = 6;
+            genInfo.DefaultSampler = "euler";
+            genInfo.DefaultScheduler = "simple";
         }
         else
         {
-            videoFps ??= 6; // SVD
-            frames ??= 25;
-            defCfg = 2.5;
-            defSampler = "dpmpp_2m_sde_gpu";
-            defScheduler = "karras";
+            genInfo.VideoFPS ??= 6; // SVD
+            genInfo.Frames ??= 25;
+            genInfo.DefaultCFG = 2.5;
+            genInfo.DefaultSampler = "dpmpp_2m_sde_gpu";
+            genInfo.DefaultScheduler = "karras";
             JArray clipVision;
-            if (vidModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
+            if (genInfo.VideoModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
             {
                 string trtloader = CreateNode("TensorRTLoader", new JObject()
                 {
-                    ["unet_name"] = vidModel.ToString(ModelFolderFormat),
+                    ["unet_name"] = genInfo.VideoModel.ToString(ModelFolderFormat),
                     ["model_type"] = "svd"
                 });
-                model = [trtloader, 0];
+                genInfo.Model = [trtloader, 0];
                 string fname = "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors";
                 RequireVisionModel(fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030");
                 string cliploader = CreateNode("CLIPVisionLoader", new JObject()
@@ -2184,54 +2213,58 @@ public class WorkflowGenerator
                 {
                     throw new SwarmUserErrorException("No default SVD VAE found, please download an SVD VAE (any SDv1 VAE will do) and set it as default in User Settings");
                 }
-                vae = CreateVAELoader(svdVae, HasNode("11") ? null : "11");
+                genInfo.Vae = CreateVAELoader(svdVae, HasNode("11") ? null : "11");
             }
             else
             {
                 string loader = CreateNode("ImageOnlyCheckpointLoader", new JObject()
                 {
-                    ["ckpt_name"] = vidModel.ToString()
+                    ["ckpt_name"] = genInfo.VideoModel.ToString()
                 });
-                model = [loader, 0];
+                genInfo.Model = [loader, 0];
                 clipVision = [loader, 1];
-                vae = [loader, 2];
+                genInfo.Vae = [loader, 2];
             }
             double minCfg = UserInput.Get(T2IParamTypes.VideoMinCFG, 1);
             if (minCfg >= 0)
             {
                 string cfgGuided = CreateNode("VideoLinearCFGGuidance", new JObject()
                 {
-                    ["model"] = model,
+                    ["model"] = genInfo.Model,
                     ["min_cfg"] = minCfg
                 });
-                model = [cfgGuided, 0];
+                genInfo.Model = [cfgGuided, 0];
             }
             string conditioning = CreateNode("SVD_img2vid_Conditioning", new JObject()
             {
                 ["clip_vision"] = clipVision,
                 ["init_image"] = FinalImageOut,
-                ["vae"] = vae,
-                ["width"] = width,
-                ["height"] = height,
-                ["video_frames"] = frames,
+                ["vae"] = genInfo.Vae,
+                ["width"] = genInfo.Width,
+                ["height"] = genInfo.Height,
+                ["video_frames"] = genInfo.Frames,
                 ["motion_bucket_id"] = UserInput.Get(T2IParamTypes.VideoMotionBucket, 127),
-                ["fps"] = videoFps,
+                ["fps"] = genInfo.VideoFPS,
                 ["augmentation_level"] = UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0)
             });
-            posCond = [conditioning, 0];
-            negCond = [conditioning, 1];
-            latent = [conditioning, 2];
+            genInfo.PosCond = [conditioning, 0];
+            genInfo.NegCond = [conditioning, 1];
+            genInfo.Latent = [conditioning, 2];
         }
         int startStep = 0;
-        if (altLatent is not null)
+        if (genInfo.AltLatent is not null)
         {
-            (latent, startStep) = altLatent(vae, latent);
+            (genInfo.Latent, startStep) = genInfo.AltLatent(genInfo.Vae, genInfo.Latent);
         }
-        videoCfg ??= defCfg;
+        genInfo.VideoCFG ??= genInfo.DefaultCFG;
+        foreach (Action<ImageToVideoGenInfo> altHandler in AltImageToVideoPostHandlers)
+        {
+            altHandler(genInfo);
+        }
         string previewType = UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
-        string samplered = CreateKSampler(model, posCond, negCond, latent, videoCfg.Value, steps, startStep, 10000, seed, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: defSampler, defscheduler: defScheduler, hadSpecialCond: hadSpecialCond);
+        string samplered = CreateKSampler(genInfo.Model, genInfo.PosCond, genInfo.NegCond, genInfo.Latent, genInfo.VideoCFG.Value, genInfo.Steps, startStep, 10000, genInfo.Seed, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: hadSpecialCond);
         FinalLatentImage = [samplered, 0];
-        string decoded = CreateVAEDecode(vae, FinalLatentImage);
+        string decoded = CreateVAEDecode(genInfo.Vae, FinalLatentImage);
         FinalImageOut = [decoded, 0];
         if (UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
         {
