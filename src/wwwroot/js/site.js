@@ -346,61 +346,53 @@ function textPromptAddKeydownHandler(elem) {
     }
 
     function moveCommaSeparatedElement(left) {
-        const value = elem.value;
-        const cursor = elem.selectionStart;
-
+        let value = elem.value;
+        let cursor = elem.selectionStart;
         // Split into comma-separated parts
         let parts = [];
         let regex = /[^,]+/g;
         let match;
-
-        while ((match = regex.exec(value)) !== null) {
+        while ((match = regex.exec(value)) != null) {
             parts.push({
                 text: match[0],
                 start: match.index,
                 end: match.index + match[0].length,
             });
         }
-
         // Find the element the cursor is in
-        const index = parts.findIndex(p => cursor >= p.start && cursor <= p.end);
-        if (index === -1) return;
-
-        const swapIndex = left ? index - 1 : index + 1;
-        if (swapIndex < 0 || swapIndex >= parts.length) return;
-
-        const originalPart = parts[index];
-        const offsetInElement = cursor - originalPart.start;
-
+        let index = parts.findIndex(p => cursor >= p.start && cursor <= p.end);
+        if (index == -1) {
+            return;
+        }
+        let swapIndex = left ? index - 1 : index + 1;
+        if (swapIndex < 0 || swapIndex >= parts.length) {
+            return;
+        }
+        let originalPart = parts[index];
+        let offsetInElement = cursor - originalPart.start;
         // Swap elements
-        const newParts = [...parts];
+        let newParts = [...parts];
         [newParts[index], newParts[swapIndex]] = [newParts[swapIndex], newParts[index]];
-
         // Rebuild string and find new cursor position
         let newValue = '';
         let newCursor = 0;
         let foundMovedPart = false;
-
         for (let i = 0; i < newParts.length; i++) {
-            if (i > 0) newValue += ','; // Add comma between parts
-
+            if (i > 0) {
+                newValue += ',';
+            } // Add comma between parts
             if (!foundMovedPart && newParts[i].text === originalPart.text) {
                 // Make sure we match the right instance if duplicates exist
-                const isOriginalIndexNow = i === swapIndex;
+                let isOriginalIndexNow = i == swapIndex;
                 foundMovedPart = true;
                 newCursor = newValue.length + Math.min(offsetInElement, newParts[i].text.length);
             }
-
             newValue += newParts[i].text;
         }
-
         elem.value = newValue;
         elem.selectionStart = elem.selectionEnd = newCursor;
-
         triggerChangeFor(elem);
     }
-
-
     elem.addEventListener('keydown', (e) => {
         if (e.ctrlKey && (e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
             shiftText(e.key == 'ArrowUp');
@@ -408,8 +400,7 @@ function textPromptAddKeydownHandler(elem) {
             e.stopPropagation();
             return false;
         }
-
-         if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
             moveCommaSeparatedElement(e.key === 'ArrowLeft');
             e.preventDefault();
             e.stopPropagation();
