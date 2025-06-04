@@ -344,9 +344,53 @@ function textPromptAddKeydownHandler(elem) {
         }
         triggerChangeFor(elem);
     }
+    function moveCommaSeparatedElement(left) {
+        let cursor = elem.selectionStart, cursorEnd = elem.selectionEnd;
+        let parts = elem.value.split(',');
+        let textIndex = 0;
+        let index = -1;
+        for (let i = 0; i < parts.length; i++) {
+            let len = parts[i].length + 1;
+            if (cursor >= textIndex && cursor < textIndex + len) {
+                index = i;
+                break;
+            }
+            textIndex += len;
+        }
+        if (index == -1) {
+            return;
+        }
+        let swapIndex = left ? index - 1 : index + 1;
+        if (swapIndex < 0 || swapIndex >= parts.length) {
+            return;
+        }
+        let originalPart = parts[index];
+        [parts[index], parts[swapIndex]] = [parts[swapIndex], parts[index]];
+        let newValue = '';
+        let newCursor = 0;
+        for (let i = 0; i < parts.length; i++) {
+            if (i > 0) {
+                newValue += ',';
+            }
+            if (i == swapIndex) {
+                newCursor = newValue.length + (cursor - textIndex);
+            }
+            newValue += parts[i];
+        }
+        elem.value = newValue;
+        elem.selectionStart = newCursor;
+        elem.selectionEnd = newCursor + (cursorEnd - cursor);
+        triggerChangeFor(elem);
+    }
     elem.addEventListener('keydown', (e) => {
         if (e.ctrlKey && (e.key == 'ArrowUp' || e.key == 'ArrowDown')) {
             shiftText(e.key == 'ArrowUp');
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }
+        if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
+            moveCommaSeparatedElement(e.key === 'ArrowLeft');
             e.preventDefault();
             e.stopPropagation();
             return false;
