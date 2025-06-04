@@ -345,22 +345,18 @@ function textPromptAddKeydownHandler(elem) {
         triggerChangeFor(elem);
     }
     function moveCommaSeparatedElement(left) {
-        let value = elem.value;
-        let cursor = elem.selectionStart;
-        let cursorEnd = elem.selectionEnd;
-        // Split into comma-separated parts
-        let parts = [];
-        let regex = /[^,]+/g;
-        let match;
-        while ((match = regex.exec(value)) != null) {
-            parts.push({
-                text: match[0],
-                start: match.index,
-                end: match.index + match[0].length,
-            });
+        let cursor = elem.selectionStart, cursorEnd = elem.selectionEnd;
+        let parts = elem.value.split(',');
+        let textIndex = 0;
+        let index = -1;
+        for (let i = 0; i < parts.length; i++) {
+            let len = parts[i].length + 1;
+            if (cursor >= textIndex && cursor < textIndex + len) {
+                index = i;
+                break;
+            }
+            textIndex += len;
         }
-        // Find the element the cursor is in
-        let index = parts.findIndex(p => cursor >= p.start && cursor <= p.end);
         if (index == -1) {
             return;
         }
@@ -369,25 +365,17 @@ function textPromptAddKeydownHandler(elem) {
             return;
         }
         let originalPart = parts[index];
-        let offsetInElement = cursor - originalPart.start;
-        // Swap elements
-        let newParts = [...parts];
-        [newParts[index], newParts[swapIndex]] = [newParts[swapIndex], newParts[index]];
-        // Rebuild string and find new cursor position
+        [parts[index], parts[swapIndex]] = [parts[swapIndex], parts[index]];
         let newValue = '';
         let newCursor = 0;
-        let foundMovedPart = false;
-        for (let i = 0; i < newParts.length; i++) {
+        for (let i = 0; i < parts.length; i++) {
             if (i > 0) {
                 newValue += ',';
-            } // Add comma between parts
-            if (!foundMovedPart && newParts[i].text === originalPart.text) {
-                // Make sure we match the right instance if duplicates exist
-                let isOriginalIndexNow = i == swapIndex;
-                foundMovedPart = true;
-                newCursor = newValue.length + Math.min(offsetInElement, newParts[i].text.length);
             }
-            newValue += newParts[i].text;
+            if (i == swapIndex) {
+                newCursor = newValue.length + (cursor - textIndex);
+            }
+            newValue += parts[i];
         }
         elem.value = newValue;
         elem.selectionStart = newCursor;
