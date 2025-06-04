@@ -327,7 +327,7 @@ public static class T2IAPI
                 imageSet.Add(image);
             }
             WebhookManager.SendEveryGenWebhook(thisParams, url, image.Img);
-            output(new JObject() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
+            output(new JObject() { ["image"] = url, ["batch_index"] = $"{actualIndex}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
         }
         for (int i = 0; i < images && !claim.ShouldCancel; i++)
         {
@@ -471,7 +471,7 @@ public static class T2IAPI
         (Task<Image> imgTask, string metadata) = user_input.SourceSession.ApplyMetadata(img, user_input, 1);
         T2IEngine.ImageOutput outputImage = new() { Img = img, ActualImageTask = imgTask };
         (string path, _) = session.SaveImage(outputImage, 0, user_input, metadata);
-        return new() { ["images"] = new JArray() { new JObject() { ["image"] = path, ["batch_index"] = "0", ["metadata"] = metadata } } };
+        return new() { ["images"] = new JArray() { new JObject() { ["image"] = path, ["batch_index"] = "0", ["request_id"] = $"{user_input.UserRequestId}", ["metadata"] = metadata } } };
     }
 
     public static HashSet<string> ImageExtensions = ["png", "jpg", "html", "gif", "webm", "mp4", "webp", "mov"];

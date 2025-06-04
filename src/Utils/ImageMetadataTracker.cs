@@ -347,7 +347,7 @@ public static class ImageMetadataTracker
                 }
                 fileData = new Image(data, Image.ImageType.IMAGE, ext).GetMetadata();
             }
-            else if (File.Exists(altMetaPath))
+            if (string.IsNullOrWhiteSpace(fileData) && File.Exists(altMetaPath))
             {
                 fileData = File.ReadAllText(altMetaPath);
             }

@@ -282,7 +282,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.21.4";
+    public static string SwarmValidatedFrontendVersion = "1.21.6";
 
     public override async Task Init()
     {
@@ -463,11 +463,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 Logs.Warning($"(Developer Notice) ComfyUI Frontend target version is {frontVers}, but validated version is {SwarmValidatedFrontendVersion}");
             }
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers))
+            string actualTemplateVers = getVers("comfyui_workflow_templates");
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers) && (actualTemplateVers is null || templateVers < Version.Parse(actualTemplateVers)))
             {
                 await update("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
             }
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers))
+            string actualEmbedVers = getVers("comfyui_embedded_docs");
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-embedded-docs", out Version embedDocsVers) && (actualEmbedVers is null || embedDocsVers < Version.Parse(actualEmbedVers)))
             {
                 await update("comfyui_embedded_docs", $"comfyui-embedded-docs=={embedDocsVers}");
             }
@@ -487,7 +489,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
             {
                 // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
-                await install("Cython", "cython");
+                await install("cython", "cython");
                 if (File.Exists($"{lib}/../../python311.dll"))
                 {
                     // TODO: This is deeply cursed. This is published by the comfyui-ReActor-node developer so at least it's not a complete rando, but, jeesh. Insightface please fix your pip package.

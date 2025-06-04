@@ -260,6 +260,15 @@ public class User
     /// <summary><see cref="Environment.TickCount64"/> value for the last time this user triggered a generation, updated a setting, or other 'core action'.</summary>
     public long LastUsedTime = Environment.TickCount64;
 
+    /// <summary>Incrementing counter of request IDs.</summary>
+    public long RequestIdCounter = 1000;
+
+    /// <summary>Gets the next request ID for this user, incrementing the counter.</summary>
+    public long GetNextRequestId()
+    {
+        return Interlocked.Increment(ref RequestIdCounter);
+    }
+
     /// <summary>Updates the <see cref="LastTickedPresent"/> to the current time.</summary>
     public void TickIsPresent()
     {
@@ -411,7 +420,7 @@ public class User
             data = Utilities.StrictFilenameClean(data.Replace('\\', '/').Replace("/", ""));
             return data;
         }
-        string path = Settings.OutPathBuilder.Format;
+        string path = user_input.Get(T2IParamTypes.OverrideOutpathFormat, Settings.OutPathBuilder.Format);
         path = StringConversionHelper.QuickSimpleTagFiller(path, "[", "]", buildPathPart, false);
         if (CalculatedRole.Data.AllowUnsafeOutpaths)
         {

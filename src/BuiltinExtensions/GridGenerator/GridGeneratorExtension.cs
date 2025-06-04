@@ -43,6 +43,10 @@ public class GridGeneratorExtension : Extension
                     return list;
                 }
                 string first = list[0];
+                if (first.StartsWith("SKIP:"))
+                {
+                    first = first["SKIP:".Length..].Trim();
+                }
                 return [.. list.Select(v =>
                 {
                     bool skip = v.StartsWith("SKIP:");
@@ -158,7 +162,6 @@ public class GridGeneratorExtension : Extension
                     match.ApplyTo(thisParams);
                 }
             }
-            thisParams.Set(T2IParamTypes.NoPreviews, true);
             int iteration = runner.Iteration;
             Task t = Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{iteration}", data.Claim, data.AddOutput, setError, true, Program.ServerSettings.Backends.PerRequestTimeoutMinutes,
                 (image, metadata) =>
@@ -189,7 +192,7 @@ public class GridGeneratorExtension : Extension
                         string output = $"/{set.Grid.Runner.URLBase}/{set.BaseFilepath}.{ext}";
                         if (data.ShowOutputs)
                         {
-                            data.AddOutput(new JObject() { ["image"] = output, ["metadata"] = metadata });
+                            data.AddOutput(new JObject() { ["image"] = output, ["batch_index"] = $"{iteration}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = metadata });
                         }
                         WebhookManager.SendEveryGenWebhook(thisParams, output, image.Img);
                     }
@@ -203,7 +206,7 @@ public class GridGeneratorExtension : Extension
                         }
                         if (data.ShowOutputs)
                         {
-                            data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
+                            data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                         }
                         WebhookManager.SendEveryGenWebhook(thisParams, url, image.Img);
                         if (set.Grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE)
@@ -563,7 +566,7 @@ public class GridGeneratorExtension : Extension
                     throw new SwarmReadableErrorException("Server failed to save an image.");
                 }
                 Logs.Verbose("Saved to file, send over websocket...");
-                await socket.SendJson(new JObject() { ["image"] = url, ["batch_index"] = $"{batchId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata }, API.WebsocketTimeout);
+                await socket.SendJson(new JObject() { ["image"] = url, ["batch_index"] = $"{batchId}", ["request_id"] = $"{grid.InitialParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata }, API.WebsocketTimeout);
             }
         }
         catch (Exception ex)

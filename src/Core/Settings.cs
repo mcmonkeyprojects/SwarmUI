@@ -157,10 +157,10 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, max t2i simultaneous value is not limited by backend count.\nIe, users may queue as many gens as they want directly to backends, with no overload prevention.\nThis may be preferable on personal instances of Swarm to enforce stricter queue ordering.\nUser role max t2i simultaneous value is still applied.")]
         public bool UnrestrictedMaxT2iSimultaneous = false;
 
-        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up VRAM (to prevent issues with other programs).\nThis has the downside of a small added bit of time to load back onto VRAM at next usage.\nUse a decimal number to free after seconds.\nDefaults to 10 minutes.")]
+        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up VRAM (to prevent issues with other programs).\nThis has the downside of a small added bit of time to load back onto VRAM at next usage.\nUse a decimal number to free after seconds.\nDefaults to 10 minutes.\nSet to -1 to disable.")]
         public double ClearVRAMAfterMinutes = 10;
 
-        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up system RAM (to prevent issues with other programs).\nThis has the downside of causing models to fully load from data drive at next usage.\nUse a decimal number to free after seconds.\nDefaults to 60 minutes (one hour).")]
+        [ConfigComment("How many minutes to wait after the last generation before automatically freeing up system RAM (to prevent issues with other programs).\nThis has the downside of causing models to fully load from data drive at next usage.\nUse a decimal number to free after seconds.\nDefaults to 60 minutes (one hour).\nSet to -1 to disable.")]
         public double ClearSystemRAMAfterMinutes = 60;
 
         [ConfigComment("If true, any time you load the UI, trigger a server refresh.\nIf false, only triggers a refresh if you restart Swarm or trigger a refresh manually from the Quick Tools menu.\nDefaults to true.")]
@@ -345,7 +345,7 @@ public class Settings : AutoConfiguration
             [ConfigComment("If set to non-0, adds DPI metadata to saved images.\n'72' is a good value for compatibility with some external software.")]
             public int DPI = 0;
 
-            [ConfigComment("If set to true, a '.txt' file will be saved alongside images with the image metadata easily viewable.\nThis can work even if saving in the image is disabled. Defaults disabled.")]
+            [ConfigComment("If set to true, a '.swarm.json' file will be saved alongside images with the image metadata easily viewable.\nThis can work even if saving in the image is disabled. Defaults disabled.")]
             public bool SaveTextFileMetadata = false;
 
             [ConfigComment("Images that are transient/temporary (not saved to file) generally are better off not being converted between image formats, or having metadata added.\nHowever, if you want to make the conversion and metadata apply anyway, you can enable this option.\nIf you use 'Do Not Save' param frequently but manually save images, you may want this.")]

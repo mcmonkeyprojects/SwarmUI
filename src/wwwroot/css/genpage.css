@@ -300,7 +300,7 @@ body {
     display: inline-block;
     overflow: hidden;
 }
-.image-block-batch img {
+.image-block-batch img, .image-block-batch video {
     max-height: 100%;
     width: 100%;
 }

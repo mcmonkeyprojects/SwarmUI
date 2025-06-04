@@ -353,7 +353,7 @@ class GridGenClass {
         let getOpt = (o) => getRequiredElementById('grid-gen-opt-' + o).checked;
         let type = this.outputType.value;
         this.updateOutputInfo();
-        let data = {
+        let inData = {
             'baseParams': getGenInput(),
             'outputFolderName': this.lastPath,
             'doOverwrite': getOpt('do-overwrite'),
@@ -379,16 +379,14 @@ class GridGenClass {
             showError('No axes defined.');
             return;
         }
-        data['gridAxes'] = axisData;
-        let timeLastGenHit = Date.now();
+        inData['gridAxes'] = axisData;
+        let timeLastGenHit = [Date.now()];
         let path = this.lastPath;
-        makeWSRequestT2I('GridGenRun', data, data => {
+        let images = {};
+        let discardable = {};
+        makeWSRequestT2I('GridGenRun', inData, data => {
+            mainGenHandler.internalHandleData(data, images, discardable, timeLastGenHit, inData.baseParams, null, null, false);
             if (data.image) {
-                let timeNow = Date.now();
-                let timeDiff = timeNow - timeLastGenHit;
-                timeLastGenHit = timeNow;
-                mainGenHandler.appendGenTimeFrom(timeDiff / 1000);
-                gotImageResult(data.image, data.metadata, `${batch_id}_${data.batch_index}`);
                 generatedCount++;
                 let timeProgress = Math.round((Date.now() - startTime) / 1000);
                 let rate = Math.round(generatedCount / timeProgress * 100) / 100;

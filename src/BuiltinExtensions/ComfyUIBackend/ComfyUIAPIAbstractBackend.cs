@@ -253,6 +253,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             JObject toSend = new()
             {
                 ["batch_index"] = batchId,
+                ["request_id"] = $"{user_input.UserRequestId}",
                 ["overall_percent"] = nodesDone / (float)expectedNodes,
                 ["current_percent"] = curPercent
             };
@@ -471,6 +472,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                             takeOutput(new JObject()
                             {
                                 ["batch_index"] = index == 0 || !int.TryParse(batchId, out int batchInt) ? batchId : batchInt + index,
+                                ["request_id"] = $"{user_input.UserRequestId}",
                                 ["preview"] = $"data:{dataType};base64," + Convert.ToBase64String(output, 8, output.Length - 8),
                                 ["overall_percent"] = nodesDone / (float)expectedNodes,
                                 ["current_percent"] = curPercent

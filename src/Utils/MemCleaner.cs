@@ -23,12 +23,12 @@ public static class MemCleaner
         {
             TimeSinceLastGen = Environment.TickCount64;
         }
-        else if (Environment.TickCount64 - TimeSinceLastGen > Program.ServerSettings.Backends.ClearVRAMAfterMinutes * 60 * 1000 && !HasClearedVRAM)
+        else if (Environment.TickCount64 - TimeSinceLastGen > Program.ServerSettings.Backends.ClearVRAMAfterMinutes * 60 * 1000 && !HasClearedVRAM && Program.ServerSettings.Backends.ClearVRAMAfterMinutes >= 0)
         {
             BackendAPI.FreeBackendMemory(null, false).Wait();
             HasClearedVRAM = true;
         }
-        else if (Environment.TickCount64 - TimeSinceLastGen > Program.ServerSettings.Backends.ClearSystemRAMAfterMinutes * 60 * 1000 && !HasClearedSysRAM)
+        else if (Environment.TickCount64 - TimeSinceLastGen > Program.ServerSettings.Backends.ClearSystemRAMAfterMinutes * 60 * 1000 && !HasClearedSysRAM && Program.ServerSettings.Backends.ClearSystemRAMAfterMinutes >= 0)
         {
             BackendAPI.FreeBackendMemory(null, false).Wait();
             HasClearedSysRAM = true;

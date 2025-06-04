@@ -46,11 +46,31 @@ public class WebServer
     /// <summary>Minimum ASP.NET Log Level.</summary>
     public static LogLevel LogLevel;
 
+    /// <summary>Like a <see cref="Lazy{T}"/>, but lets you dynamically re-call the getter if you need to.</summary>
+    public class LazyOrReusable<T>(Func<T> getter)
+    {
+        public Func<T> Getter = getter;
+
+        public T Value;
+
+        public T GetLazy()
+        {
+            if (Value is null)
+            {
+                lock (this)
+                {
+                    Value ??= Getter();
+                }
+            }
+            return Value;
+        }
+    }
+
     /// <summary>Extra file content added by extensions.</summary>
-    public Dictionary<string, string> ExtensionSharedFiles = [];
+    public Dictionary<string, LazyOrReusable<string>> ExtensionSharedFiles = [];
 
     /// <summary>Extra binary file content added by extensions.</summary>
-    public Dictionary<string, Lazy<byte[]>> ExtensionAssets = [];
+    public Dictionary<string, LazyOrReusable<byte[]>> ExtensionAssets = [];
 
     /// <summary>Extra content for the page header. Automatically set based on extensions.</summary>
     public static HtmlString PageHeaderExtra = new("");
@@ -289,13 +309,13 @@ public class WebServer
             foreach (string script in e.ScriptFiles)
             {
                 string fname = $"ExtensionFile/{e.ExtensionName}/{script}";
-                ExtensionSharedFiles.Add(fname, File.ReadAllText($"{e.FilePath}{script}"));
+                ExtensionSharedFiles.Add(fname, new (() => File.ReadAllText($"{e.FilePath}{script}")));
                 scripts.Append($"<script src=\"{fname}?vary={Utilities.VaryID}\"></script>\n");
             }
             foreach (string css in e.StyleSheetFiles)
             {
                 string fname = $"ExtensionFile/{e.ExtensionName}/{css}";
-                ExtensionSharedFiles.Add(fname, File.ReadAllText($"{e.FilePath}{css}"));
+                ExtensionSharedFiles.Add(fname, new (() => File.ReadAllText($"{e.FilePath}{css}")));
                 stylesheets.Append($"<link rel=\"stylesheet\" href=\"{fname}?vary={Utilities.VaryID}\" />");
             }
             foreach (string file in e.OtherAssets)
@@ -386,17 +406,25 @@ public class WebServer
     public async Task ViewExtensionScript(HttpContext context)
     {
         string requested = context.Request.Path.Value[1..];
-        if (ExtensionSharedFiles.TryGetValue(requested, out string script))
+        if (ExtensionSharedFiles.TryGetValue(requested, out LazyOrReusable<string> script))
         {
             context.Response.ContentType = Utilities.GuessContentType(requested);
             context.Response.StatusCode = 200;
-            await context.Response.WriteAsync(script);
+#if DEBUG
+            await context.Response.WriteAsync(script.Getter());
+#else
+            await context.Response.WriteAsync(script.GetLazy());
+#endif
         }
-        else if (ExtensionAssets.TryGetValue(requested, out Lazy<byte[]> data))
+        else if (ExtensionAssets.TryGetValue(requested, out LazyOrReusable<byte[]> data))
         {
             context.Response.ContentType = Utilities.GuessContentType(requested);
             context.Response.StatusCode = 200;
-            await context.Response.Body.WriteAsync(data.Value);
+#if DEBUG
+            await context.Response.Body.WriteAsync(data.Getter());
+#else
+            await context.Response.Body.WriteAsync(data.GetLazy());
+#endif
         }
         else
         {

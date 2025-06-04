@@ -138,6 +138,10 @@ class SwarmMaskBounds:
             "required": {
                 "mask": ("MASK",),
                 "grow": ("INT", {"default": 0, "min": 0, "max": 1024, "tooltip": "Number of pixels to grow the mask by."}),
+            },
+            "optional": {
+                "aspect_x": ("INT", {"default": 0, "min": 0, "max": 4096, "tooltip": "An X width value, used to indicate a target aspect ratio. 0 to allow any aspect."}),
+                "aspect_y": ("INT", {"default": 0, "min": 0, "max": 4096, "tooltip": "A Y height value, used to indicate a target aspect ratio. 0 to allow any aspect."}),
             }
         }
 
@@ -147,7 +151,7 @@ class SwarmMaskBounds:
     FUNCTION = "get_bounds"
     DESCRIPTION = "Returns the bounding box of the mask (as pixel coordinates x,y,width,height), optionally grown by the number of pixels specified in 'grow'."
 
-    def get_bounds(self, mask, grow):
+    def get_bounds(self, mask, grow, aspect_x=0, aspect_y=0):
         if len(mask.shape) == 3:
             mask = mask[0]
         sum_x = (torch.sum(mask, dim=0) != 0).to(dtype=torch.int)
@@ -161,6 +165,19 @@ class SwarmMaskBounds:
         x_end = mask.shape[1] - getval(sum_x.flip(0), -1)
         y_start = getval(sum_y, -1)
         y_end = mask.shape[0] - getval(sum_y.flip(0), -1)
+        if aspect_x > 0 and aspect_y > 0:
+            actual_aspect = aspect_x / aspect_y
+            width = x_end - x_start
+            height = y_end - y_start
+            found_aspect = width / height
+            if found_aspect > actual_aspect:
+                desired_height = width / actual_aspect
+                y_start = max(0, y_start - (desired_height - height) / 2)
+                y_end = min(mask.shape[0], y_start + desired_height)
+            else:
+                desired_width = height * actual_aspect
+                x_start = max(0, x_start - (desired_width - width) / 2)
+                x_end = min(mask.shape[1], x_start + desired_width)
         return (int(x_start), int(y_start), int(x_end - x_start), int(y_end - y_start))
 
 

@@ -76,8 +76,8 @@ class ImageFullViewHelper {
         let newTop = this.getImgTop() + yDiff;
         let overWidth = img.parentElement.offsetWidth / 2;
         let overHeight = img.parentElement.offsetHeight / 2;
-        newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.width - overWidth));
-        newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.height - overHeight));
+        newLeft = Math.min(overWidth, Math.max(newLeft, img.parentElement.offsetWidth - img.offsetWidth - overWidth));
+        newTop = Math.min(overHeight, Math.max(newTop, img.parentElement.offsetHeight - img.offsetHeight - overHeight));
         img.style.left = `${newLeft}px`;
         img.style.top = `${newTop}px`;
     }
@@ -102,7 +102,9 @@ class ImageFullViewHelper {
         if (wrap.style.textAlign == 'center') {
             let img = this.getImg();
             wrap.style.textAlign = 'left';
-            let imgAspectRatio = img.naturalWidth / img.naturalHeight;
+            let width = img.naturalWidth ?? img.videoWidth;
+            let height = img.naturalHeight ?? img.videoHeight;
+            let imgAspectRatio = width / height;
             let wrapAspectRatio = wrap.offsetWidth / wrap.offsetHeight;
             let targetWidth = wrap.offsetHeight * imgAspectRatio;
             if (targetWidth > wrap.offsetWidth) {
@@ -148,7 +150,9 @@ class ImageFullViewHelper {
         let img = this.getImg();
         let origHeight = this.getHeightPercent();
         let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
-        let maxHeight = Math.sqrt(img.naturalWidth * img.naturalHeight) * 2;
+        let width = img.naturalWidth ?? img.videoWidth;
+        let height = img.naturalHeight ?? img.videoHeight;
+        let maxHeight = Math.sqrt(width * height) * 2;
         let newHeight = Math.max(10, Math.min(origHeight * zoom, maxHeight));
         if (newHeight > maxHeight / 5) {
             img.style.imageRendering = 'pixelated';
@@ -234,6 +238,14 @@ showLoadSpinnersElem.checked = localStorage.getItem('showLoadSpinners') != 'fals
 /** Called when the user changes show-load-spinners toggle to update local storage. */
 function toggleShowLoadSpinners() {
     localStorage.setItem('showLoadSpinners', `${showLoadSpinnersElem.checked}`);
+}
+
+/** Reference to the separate-batches toggle checkbox. */
+let separateBatchesElem = getRequiredElementById('separate_batches_checkbox');
+separateBatchesElem.checked = localStorage.getItem('separateBatches') == 'true';
+/** Called when the user changes separate-batches toggle to update local storage. */
+function toggleSeparateBatches() {
+    localStorage.setItem('separateBatches', `${separateBatchesElem.checked}`);
 }
 
 function clickImageInBatch(div) {
@@ -811,6 +823,21 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
 }
 
+/** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
+function getPreferredBatchContainer(batchId) {
+    let mainContainer = getRequiredElementById('current_image_batch');
+    if (separateBatchesElem.checked) {
+        let reqId = batchId.split('_')[0];
+        let batchContainer = document.getElementById(`current_image_batch_${reqId}`);
+        if (!batchContainer) {
+            batchContainer = createDiv(`current_image_batch_${reqId}`, null);
+            mainContainer.prepend(batchContainer);
+        }
+        return batchContainer;
+    }
+    return mainContainer;
+}
+
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
@@ -876,7 +903,7 @@ function gotImageResult(image, metadata, batchId) {
     updateGenCount();
     let src = image;
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
-    let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch');
+    let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch');
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
@@ -892,7 +919,7 @@ function gotImagePreview(image, metadata, batchId) {
     updateGenCount();
     let src = image;
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
-    let batch_div = appendImage('current_image_batch', src, batchId, fname, metadata, 'batch', true);
+    let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));

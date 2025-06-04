@@ -932,6 +932,12 @@ function refreshParameterValues(strong = true, callback = null) {
                 }
                 if ((param.type == "dropdown" || param.type == "model") && values) {
                     let val = elem.value;
+                    let triggerChange = false;
+                    if (elem.dataset.wantsValue && values.includes(elem.dataset.wantsValue)) {
+                        val = elem.dataset.wantsValue;
+                        triggerChange = true;
+                        delete elem.dataset.wantsValue;
+                    }
                     let html = '';
                     let alt_names = param['value_names'];
                     for (let i = 0; i < values.length; i++) {
@@ -944,6 +950,9 @@ function refreshParameterValues(strong = true, callback = null) {
                     elem.innerHTML = html;
                     elem.value = val;
                     presetElem.innerHTML = html;
+                    if (triggerChange) {
+                        triggerChangeFor(elem);
+                    }
                 }
                 else if (param.type == "list" && values) {
                     let listOpts = [...elem.options].map(o => o.value);
@@ -985,6 +994,7 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
     else if (paramElem.tagName == "SELECT") {
         if (![...paramElem.querySelectorAll('option')].map(o => o.value).includes(value)) {
             if (!forceDropdowns) {
+                paramElem.dataset.wantsValue = value;
                 return;
             }
             paramElem.add(new Option(`${value} (Invalid)`, value, false, false));

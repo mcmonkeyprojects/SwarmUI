@@ -296,7 +296,7 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, TorchCompile, VideoExtendFormat, ExactBackendID;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat;
     public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
@@ -309,7 +309,7 @@ public class T2IParamTypes
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
-        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupAdvancedSampling, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
+        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupAdvancedSampling, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
         GroupStarred, GroupUser1, GroupUser2, GroupUser3;
 
     public class ControlNetParamHolder
@@ -633,6 +633,9 @@ public class T2IParamTypes
         TorchCompile = Register<string>(new("Torch Compile", "Torch.Compile is a way to dynamically accelerate AI models.\nIt wastes a bit of time (around a minute) on the first call compiling a graph of the generation, and then all subsequent generations run faster thanks to the compiled graph.\nTorch.Compile depends on Triton, which is difficult to install on Windows, easier on Linux.",
             "Disabled", IgnoreIf: "Disabled", GetValues: _ => ["Disabled", "inductor", "cudagraphs"], OrderPriority: 40, Group: GroupAdvancedModelAddons
             ));
+        OverridePredictionType = Register<string>(new("Override Prediction Type", "Override the prediction type set in the model.\nThis is almost never a good idea to touch.",
+            "epsilon", Toggleable: true, GetValues: _ => ["v///V Prediction", "z-zsnr///V Prediction (ZSNR)", "epsilon///Epsilon-Pred", "x0", "lcm"], OrderPriority: 50, Group: GroupAdvancedModelAddons
+            ));
         // ================================================ Swarm Internal ================================================
         GroupSwarmInternal = new("Swarm Internal", Open: false, OrderPriority: 0, IsAdvanced: true);
         BatchSize = Register<int>(new("Batch Size", "Batch size - generates more images at once on a single GPU.\nThis increases VRAM usage.\nMay in some cases increase overall speed by a small amount (runs slower to get the images, but slightly faster per-image).",
@@ -694,8 +697,11 @@ public class T2IParamTypes
         BitDepth = Register<string>(new("Color Depth", "Specifies the color depth (in bits per channel) to use.\nOnly works for 'PNG' image file format currently.\n'8-bit' is normal (8 bits per red, 8 for green, 8 for blue, making 24 bits total per pixel).\nand '16-bit' encodes additional high-precision (HDR-like) data.\nNote that overprecision data is unlikely to be meaningful, as currently available models haven't been trained for that.",
             "8bit", IgnoreIf: "8bit", GetValues: (_) => ["8bit///8-bit per channel (24-bit total)", "16bit///16-bit per channel (48-bit total)"], IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 1.5
             ));
+        OverrideOutpathFormat = Register<string>(new("Override Outpath Format", $"Override the Outpath-Format user setting.\nFull details in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}User%20Settings.md#path-format\">the docs here</a>.",
+            "raw/[year]-[month]-[day]/[hour][minute][request_time_inc]-[prompt]-[model]", Toggleable: true, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3
+            ));
         ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nIf unchecked, will prefer more 'raw' behavior.",
-            "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 2
+            "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 5
             ));
         // ================================================ FreeU (TODO: remove/extensionize?) ================================================
         GroupFreeU = new("FreeU", Open: false, OrderPriority: 10, IsAdvanced: true, Toggles: true, Description: "<a class=\"translate\" href=\"https://arxiv.org/abs/2309.11497\">Implements 'FreeU: Free Lunch in Diffusion U-Net'</a>\nThis is a minor adjustment to legacy Unet models (eg SDv1, SDXL).\nIt does not apply to newer DiT models, and even for Unet models it's not recommended.");
@@ -728,32 +734,34 @@ public class T2IParamTypes
         RegionalObjectInpaintingModel = Register<T2IModel>(new("Regional Object Inpainting Model", "When using regionalized prompts with distinct 'object' values, this overrides the model used to inpaint those objects.",
             "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupRegionalPrompting, OrderPriority: -3, IsAdvanced: true
             ));
-        SegmentModel = Register<T2IModel>(new("Segment Model", "Optionally specify a distinct model to use for 'segment' values.",
-            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupRegionalPrompting, OrderPriority: 2, IsAdvanced: true
-            ));
         MaskCompositeUnthresholded = Register<bool>(new("Mask Composite Unthresholded", "If checked, when masks are recomposited (eg from a '<segment:>'), it will be recomposited with the exact raw mask.\nIf false, it will boolean threshold the mask first.\nThe boolean threshold is 'more correct' and leads to better content replacement, whereas disabling threshold (by checking this option) may lead to better looking refinements.",
             "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 3, IsAdvanced: true
             ));
+        // ================================================ Segment Refining ================================================
+        GroupSegmentRefining = new("Segment Refining", Open: false, OrderPriority: 9.5, IsAdvanced: true);
+        SegmentModel = Register<T2IModel>(new("Segment Model", "Optionally specify a distinct model to use for 'segment' values.",
+            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupSegmentRefining, OrderPriority: 2, IsAdvanced: true
+            ));
         SaveSegmentMask = Register<bool>(new("Save Segment Mask", "If checked, any usage of '<segment:>' syntax in prompts will save the generated mask in output.",
-            "false", IgnoreIf: "false", Group: GroupRegionalPrompting, OrderPriority: 3
+            "false", IgnoreIf: "false", Group: GroupSegmentRefining, OrderPriority: 3
             ));
         SegmentMaskBlur = Register<int>(new("Segment Mask Blur", "Amount of blur to apply to the segment mask before using it.\nThis is for '<segment:>' syntax usage.\nDefaults to 10.",
-            "10", Min: 0, Max: 64, Group: GroupRegionalPrompting, Examples: ["0", "4", "8", "16"], Toggleable: true, OrderPriority: 4
+            "10", Min: 0, Max: 64, Group: GroupSegmentRefining, Examples: ["0", "4", "8", "16"], Toggleable: true, OrderPriority: 4
             ));
         SegmentMaskGrow = Register<int>(new("Segment Mask Grow", "Number of pixels of grow the segment mask by.\nThis is for '<segment:>' syntax usage.\nDefaults to 16.",
-            "16", Min: 0, Max: 512, Group: GroupRegionalPrompting, Examples: ["0", "4", "8", "16", "32"], Toggleable: true, OrderPriority: 5
+            "16", Min: 0, Max: 512, Group: GroupSegmentRefining, Examples: ["0", "4", "8", "16", "32"], Toggleable: true, OrderPriority: 5
             ));
         SegmentMaskOversize = Register<int>(new("Segment Mask Oversize", "How wide a segment mask should be oversized by.\nLarger values include more context to get more accurate inpaint,\nand smaller values get closer to get better details.",
-            "16", Min: 0, Max: 512, Toggleable: true, OrderPriority: 5.5, Group: GroupRegionalPrompting, Examples: ["0", "8", "32"]
+            "16", Min: 0, Max: 512, Toggleable: true, OrderPriority: 5.5, Group: GroupSegmentRefining, Examples: ["0", "8", "32"]
             ));
         SegmentThresholdMax = Register<double>(new("Segment Threshold Max", "Maximum mask match value of a segment before clamping.\nLower values force more of the mask to be counted as maximum masking.\nToo-low values may include unwanted areas of the image.\nHigher values may soften the mask.",
-            "1", Min: 0, Max: 1, Step: 0.05, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupRegionalPrompting, OrderPriority: 6
+            "1", Min: 0, Max: 1, Step: 0.05, Toggleable: true, ViewType: ParamViewType.SLIDER, Group: GroupSegmentRefining, OrderPriority: 6
             ));
         SegmentSortOrder = Register<string>(new("Segment Sort Order", "How to sort segments when using '<segment:yolo->' syntax with indices.\nFor example: <segment:yolo-face_yolov8m-seg_60.pt-2> with largest-smallest, will select the second largest face segment.",
-            "left-right", IgnoreIf: "left-right", GetValues: _ => ["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], Group: GroupRegionalPrompting, OrderPriority: 7
+            "left-right", IgnoreIf: "left-right", GetValues: _ => ["left-right", "right-left", "top-bottom", "bottom-top", "largest-smallest", "smallest-largest"], Group: GroupSegmentRefining, OrderPriority: 7
             ));
-        EndStepsEarly = Register<double>(new("End Steps Early", "Percentage of steps to cut off before the image is done generation.",
-            "0", Toggleable: true, IgnoreIf: "0", VisibleNormally: false, Min: 0, Max: 1, FeatureFlag: "endstepsearly"
+        SegmentTargetResolution = Register<string>(new("Segment Target Resolution", "Optional specific target resolution for segment.\nThis controls both aspect ratio, and size.\nThis is just a target, the system may fail to exactly hit it.\nIf the mask is on the edge of an image, the aspect may be squished.\nIf unspecified, the aspect ratio of the detection will be used, and the resolution of the model.",
+            "1024x1024", Toggleable: true, Group: GroupSegmentRefining, OrderPriority: 20
             ));
         // ================================================ Advanced Sampling ================================================
         GroupAdvancedSampling = new("Advanced Sampling", Open: false, OrderPriority: 15, IsAdvanced: true);
@@ -793,6 +801,9 @@ public class T2IParamTypes
         RemoveBackground = Register<bool>(new("Remove Background", "If enabled, removes the background from the generated image.\nThis internally uses RemBG.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -2
              ));
+        EndStepsEarly = Register<double>(new("End Steps Early", "Percentage of steps to cut off before the image is done generation.",
+            "0", Toggleable: true, IgnoreIf: "0", VisibleNormally: false, Min: 0, Max: 1, Group: GroupAdvancedSampling, FeatureFlag: "endstepsearly"
+            ));
         // ================================================ Other Fixes ================================================
         GroupOtherFixes = new("Other Fixes", Open: false, OrderPriority: 20, IsAdvanced: true);
         TrimVideoStartFrames = Register<int>(new("Trim Video Start Frames", "Trim this many frames from the start of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt start frames (such as Wan).",
