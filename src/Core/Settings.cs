@@ -351,6 +351,15 @@ public class Settings : AutoConfiguration
         [ConfigComment("Settings related to saved file format.")]
         public FileFormatData FileFormat = new();
 
+        public class UserUIData : AutoConfiguration
+        {
+            [ConfigComment("If true, hold ALT and press left/right arrows to move 'tags' in a prompt - that is, your currently selected comma-separated section will be moved left or right relative to other comma-separated sections.")]
+            public bool TagMoveHotkeyEnabled = false;
+        }
+
+        [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
+        public UserUIData UI = new();
+
         [ConfigComment("Whether your image output files save to server data drive or not.\nDisabling this can make some systems misbehave, and makes the Image History do nothing.")]
         public bool SaveFiles = true;
 
@@ -370,18 +379,18 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("What theme to use. Default is 'modern_dark'.")]
         [SettingsOptions(Impl = typeof(ThemesImpl))]
-        public string Theme = "modern_dark";
+        public string Theme = "modern_dark"; // TODO: UserUI
 
         [ConfigComment("If true, images in the main center area will always grow to better fill the screen.")]
-        public bool CenterImageAlwaysGrow = false;
+        public bool CenterImageAlwaysGrow = false; // TODO: UserUI
 
         [ConfigComment("If true, when 'Auto Swap To Images' is enabled, and you have FullView open, the FullView will also be swapped.\nIf false, the FullView will not change.")]
-        public bool AutoSwapImagesIncludesFullView = false;
+        public bool AutoSwapImagesIncludesFullView = false; // TODO: UserUI
 
         [ConfigComment("A list of what buttons to include directly under images in the main prompt area of the Generate tab.\nOther buttons will be moved into the 'More' dropdown.\nThis should be a comma separated list."
             + "\nThe following options are available: \"Use As Init\", \"Use As Image Prompt\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"Download\" \"View In History\", \"Refine Image\""
             + "\nThe default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'")]
-        public string ButtonsUnderMainImages = "";
+        public string ButtonsUnderMainImages = ""; // TODO: UserUI
 
         [ConfigComment("How to format image metadata on the Generate tab when looking at an image.\n'below' means put the metadata below the image.\n'side' means put the image in a vertical column to the side.\n'auto' means switch to whichever fits better depending on the page width.\nDefault is 'auto'.")]
         [ManualSettingsOptions(Vals = ["auto", "below", "side"])]
@@ -397,13 +406,13 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("The format for parameter hints to display as.\nDefault is 'BUTTON'.")]
         [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<HintFormatOptions>))]
-        public string HintFormat = "BUTTON";
+        public string HintFormat = "BUTTON"; // TODO: UserUI
 
         [ConfigComment("The delay, in seconds, for parameter hints when 'HOVER_DELAY' is selected.")]
-        public float HoverDelaySeconds = 0.5f;
+        public float HoverDelaySeconds = 0.5f; // TODO: UserUI
 
         [ConfigComment("How many lines of text to display in the standard prompt box before cutting off to a scroll bar.\nActual size in practice tends to be a few lines shorter due to browser and font variations.\nDefault is 10.")]
-        public int MaxPromptLines = 10;
+        public int MaxPromptLines = 10; // TODO: UserUI
 
         public class VAEsData : AutoConfiguration
         {
@@ -451,7 +460,7 @@ public class Settings : AutoConfiguration
         public int MaxSimulPreviews = 1;
 
         [ConfigComment("If true, hitting enter while in the prompt box starts generation.\nIf false, hitting enter will insert a newline.")]
-        public bool EnterKeyGenerates = true;
+        public bool EnterKeyGenerates = true; // TODO: UserUI
 
         [ConfigComment("Delay, in seconds, between Generate Forever updates.\nIf the delay hits and a generation is still waiting, it will be skipped.\nDefault is 0.1 seconds.")]
         public double GenerateForeverDelay = 0.1;
@@ -460,7 +469,7 @@ public class Settings : AutoConfiguration
         public int GenerateForeverQueueSize = 1;
 
         [ConfigComment("How long to remember your last parameters for, in hours, inside browser cookies.\nDefault is 6 hours (long enough that you can close+reopen and get same params, but short enough that if you close for the day and come back you get a fresh UI).")]
-        public double ParameterMemoryDurationHours = 6;
+        public double ParameterMemoryDurationHours = 6; // TODO: UserUI
 
         public class LanguagesImpl : SettingsOptionsAttribute.AbstractImpl
         {
@@ -469,7 +478,7 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("What language to display the UI in.\nDefault is 'en' (English).")]
         [SettingsOptions(Impl = typeof(LanguagesImpl))]
-        public string Language = "en";
+        public string Language = "en"; // TODO: UserUI
 
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
         public string ReuseParamExcludeList = "wildcardseed";
