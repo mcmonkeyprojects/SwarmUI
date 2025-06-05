@@ -389,7 +389,7 @@ function textPromptAddKeydownHandler(elem) {
             e.stopPropagation();
             return false;
         }
-        if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight')) {
+        if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight') && getUserSetting('ui.tagmovehotkeyenabled', false)) {
             moveCommaSeparatedElement(e.key == 'ArrowLeft');
             e.preventDefault();
             e.stopPropagation();
