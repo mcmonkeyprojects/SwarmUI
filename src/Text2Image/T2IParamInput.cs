@@ -407,6 +407,10 @@ public class T2IParamInput
     /// <summary>Formats embeddings in a prompt string and returns the cleaned string.</summary>
     public static string FillEmbedsInString(string str, Func<string, string> format)
     {
+        while (str.Contains("\0swarmembed\\"))
+        {
+            str = str.Replace("\0swarmembed\\", "\0swarmembed");
+        }
         return StringConversionHelper.QuickSimpleTagFiller(str, "\0swarmembed:", "\0end", format, false);
     }
 

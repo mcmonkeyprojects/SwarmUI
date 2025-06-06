@@ -80,13 +80,14 @@ class SwarmClipTextEncodeAdvanced:
 
         chunks = []
         any = [False]
+        escapable = ["\\", "[", "]", ":", "|", "(", ")", "<", ">"]
 
         def append_chunk(text: str, applies_to: list[int], can_subprocess: bool, limit_to: list[int]):
             applies_to = [i for i in applies_to if i in limit_to]
             fixed_text = ""
             do_skip = False
             for i in range(len(text)):
-                if text[i] == "\\" and not do_skip:
+                if text[i] == "\\" and not do_skip and i + 1 < len(text) and text[i + 1] in escapable:
                     do_skip = True
                 else:
                     do_skip = False
@@ -94,7 +95,7 @@ class SwarmClipTextEncodeAdvanced:
             if can_subprocess and '[' in fixed_text:
                 get_chunks(fixed_text, applies_to)
             else:
-                chunks.append({'text': fixed_text, 'applies_to': applies_to})
+                chunks.append({'text': text, 'applies_to': applies_to})
 
         def get_chunks(remaining: str, limit_to: list[int] = [i for i in range(steps)]):
             while True:
@@ -110,7 +111,7 @@ class SwarmClipTextEncodeAdvanced:
                 pipe_indices = []
                 for i in range(start + 1, len(remaining)):
                     char = remaining[i]
-                    if char == "\\":
+                    if char == "\\" and not do_skip and i + 1 < len(remaining) and remaining[i + 1] in escapable:
                         do_skip = True
                     elif do_skip:
                         do_skip = False
