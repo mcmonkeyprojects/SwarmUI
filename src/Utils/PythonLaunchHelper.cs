@@ -32,6 +32,7 @@ public class PythonLaunchHelper
         start.Environment["YOLO_OFFLINE"] = "true"; // Tell ultralytics not to attempt telemetry
         start.Environment["DISABLE_TELEMETRY"] = "true"; // Tell HF no telemetry
         start.Environment["DO_NOT_TRACK"] = "true"; // Generic telemetry disable
+        start.Environment["PYTHONUTF8"] = "1"; // Python is a silly program, remind it to use the only possibly relevant character encoding
     }
 
     /// <summary>Helper to fix up python paths in environment PATH var.</summary>
