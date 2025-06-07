@@ -279,8 +279,9 @@ public class ComfyUIRedirectHelper
                                                 {
                                                     client.LastNode = nodeTok.ToString();
                                                 }
-                                                JToken queueRemTok = dataObj["status"]?["exec_info"]?["queue_remaining"];
-                                                if (queueRemTok is not null)
+                                                if (dataObj.TryGetValue("status", out JToken statusTok) && statusTok is JObject status
+                                                    && status.TryGetValue("exec_info", out JToken execTok) && execTok is JObject exec
+                                                    && exec.TryGetValue("queue_remaining", out JToken queueRemTok))
                                                 {
                                                     client.QueueRemaining = queueRemTok.Value<int>();
                                                     dataObj["status"]["exec_info"]["queue_remaining"] = user.TotalQueue;
