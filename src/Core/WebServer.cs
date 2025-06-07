@@ -227,7 +227,7 @@ public class WebServer
             string path = context.Request.Path.Value.ToLowerFast();
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
             {
-                Logs.Debug($"ComfyBackendDirect call was misrouted, rerouting to '{context.Request.Path}'");
+                Logs.Debug($"ComfyBackendDirect call via Referrer '{referrer}' was misrouted, rerouting to 'ComfyBackendDirect{context.Request.Path}'");
                 context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
                 return;
             }

@@ -234,9 +234,11 @@ public class ComfyUIRedirectHelper
                                     bool isJson = received.MessageType == WebSocketMessageType.Text && received.EndOfMessage && received.Count < 8192 * 10 && recvBuf[0] == '{';
                                     if (isJson)
                                     {
+                                        string rawText = null;
                                         try
                                         {
-                                            JObject parsed = StringConversionHelper.UTF8Encoding.GetString(recvBuf[0..received.Count]).ParseToJson();
+                                            rawText = StringConversionHelper.UTF8Encoding.GetString(recvBuf[0..received.Count]);
+                                            JObject parsed = rawText.ParseToJson();
                                             JToken typeTok = parsed["type"];
                                             if (typeTok is not null)
                                             {
@@ -287,7 +289,7 @@ public class ComfyUIRedirectHelper
                                         }
                                         catch (Exception ex)
                                         {
-                                            Logs.Error($"Failed to parse ComfyUI message: {ex.ReadableString()}");
+                                            Logs.Error($"Failed to parse ComfyUI message \"{rawText.Replace('\n', ' ')}\": {ex.ReadableString()}");
                                         }
                                     }
                                     if (!isJson)
