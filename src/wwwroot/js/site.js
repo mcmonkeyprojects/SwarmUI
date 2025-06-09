@@ -285,6 +285,13 @@ function textPromptInputHandle(elem) {
     textPromptDoCount(elem);
 }
 
+function internalSiteJsGetUserSetting(name, defaultValue) {
+    if (typeof getUserSetting == 'function') {
+        return getUserSetting(name, defaultValue);
+    }
+    return defaultValue;
+}
+
 function textPromptAddKeydownHandler(elem) {
     let shiftText = (up) => {
         let selStart = elem.selectionStart;
@@ -389,7 +396,7 @@ function textPromptAddKeydownHandler(elem) {
             e.stopPropagation();
             return false;
         }
-        if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight') && getUserSetting('ui.tagmovehotkeyenabled', false)) {
+        if (e.altKey && (e.key == 'ArrowLeft' || e.key == 'ArrowRight') && internalSiteJsGetUserSetting('ui.tagmovehotkeyenabled', false)) {
             moveCommaSeparatedElement(e.key == 'ArrowLeft');
             e.preventDefault();
             e.stopPropagation();
@@ -667,7 +674,7 @@ function makeSecretInput(featureid, id, paramid, name, description, value, place
 }
 
 function dynamicSizeTextBox(elem, min=15) {
-    let maxHeight = parseInt(getUserSetting('maxpromptlines', '10'));
+    let maxHeight = parseInt(internalSiteJsGetUserSetting('maxpromptlines', '10'));
     elem.style.height = '0px';
     let height = elem.scrollHeight;
     let fontSize = parseFloat(window.getComputedStyle(elem).fontSize);
@@ -940,10 +947,10 @@ function specialDebug(message) {
 }
 
 function playCompletionAudio() {
-    let audioFile = getUserSetting('audio.completionsound');
+    let audioFile = internalSiteJsGetUserSetting('audio.completionsound', null);
     if (audioFile) {
         let audio = new Audio(`/Audio/${audioFile}`);
-        audio.volume = parseFloat(getUserSetting('audio.volume', '0.5'));
+        audio.volume = parseFloat(internalSiteJsGetUserSetting('audio.volume', '0.5'));
         audio.play();
     }
 }
