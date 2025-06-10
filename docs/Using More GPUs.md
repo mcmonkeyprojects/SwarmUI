@@ -7,6 +7,8 @@ There are two primary ways to use more GPUs:
 ## More GPUs In Your Machine
 
 To use more GPUs in your machine, simply add more self-start backends (interface -> `Server` -> `Backends`), and increment the `GPU_ID` setting for each added backend.
+    - Note, if you have mixed different GPUs, the IDs are not necessarily predictable, but they are consistent. Nvidia has acknowledged that the hardware order doesn't match the smi order: <https://forums.developer.nvidia.com/t/cuda-visible-devices-being-ignored/41808> *(This is annoying and I wish they'd fix it)*
+        - So, test what GPU is actually used for each ID by triggering generations on each backend and watching usage. It will be consistent as long as you don't change pcie hardware.
 
 ## More Machines With GPUs
 
