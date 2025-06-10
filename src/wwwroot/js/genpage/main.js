@@ -354,7 +354,7 @@ function loadUserData(callback) {
         else {
             autoCompletionsList = null;
         }
-        allPresets = data.presets;
+        allPresetsUnsorted = data.presets;
         if (!language) {
             language = data.language;
         }
