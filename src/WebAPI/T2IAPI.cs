@@ -388,7 +388,7 @@ public static class T2IAPI
         }
         long finalTime = Environment.TickCount64;
         T2IEngine.ImageOutput[] griddables = [.. imageSet.Where(i => i.IsReal)];
-        if (griddables.Length < session.User.Settings.MaxImagesInMiniGrid && griddables.Length > 1 && griddables.All(i => i.Img.Type == Image.ImageType.IMAGE))
+        if (griddables.Length <= session.User.Settings.MaxImagesInMiniGrid && griddables.Length > 1 && griddables.All(i => i.Img.Type == Image.ImageType.IMAGE))
         {
             ISImage[] imgs = [.. griddables.Select(i => i.Img.ToIS)];
             int columns = (int)Math.Ceiling(Math.Sqrt(imgs.Length));

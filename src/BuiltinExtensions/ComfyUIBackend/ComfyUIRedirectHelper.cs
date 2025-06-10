@@ -234,9 +234,11 @@ public class ComfyUIRedirectHelper
                                     bool isJson = received.MessageType == WebSocketMessageType.Text && received.EndOfMessage && received.Count < 8192 * 10 && recvBuf[0] == '{';
                                     if (isJson)
                                     {
+                                        string rawText = null;
                                         try
                                         {
-                                            JObject parsed = StringConversionHelper.UTF8Encoding.GetString(recvBuf[0..received.Count]).ParseToJson();
+                                            rawText = StringConversionHelper.UTF8Encoding.GetString(recvBuf[0..received.Count]);
+                                            JObject parsed = rawText.ParseToJson();
                                             JToken typeTok = parsed["type"];
                                             if (typeTok is not null)
                                             {
@@ -277,8 +279,9 @@ public class ComfyUIRedirectHelper
                                                 {
                                                     client.LastNode = nodeTok.ToString();
                                                 }
-                                                JToken queueRemTok = dataObj["status"]?["exec_info"]?["queue_remaining"];
-                                                if (queueRemTok is not null)
+                                                if (dataObj.TryGetValue("status", out JToken statusTok) && statusTok is JObject status
+                                                    && status.TryGetValue("exec_info", out JToken execTok) && execTok is JObject exec
+                                                    && exec.TryGetValue("queue_remaining", out JToken queueRemTok))
                                                 {
                                                     client.QueueRemaining = queueRemTok.Value<int>();
                                                     dataObj["status"]["exec_info"]["queue_remaining"] = user.TotalQueue;
@@ -287,7 +290,7 @@ public class ComfyUIRedirectHelper
                                         }
                                         catch (Exception ex)
                                         {
-                                            Logs.Error($"Failed to parse ComfyUI message: {ex.ReadableString()}");
+                                            Logs.Error($"Failed to parse ComfyUI message \"{rawText.Replace('\n', ' ')}\": {ex.ReadableString()}");
                                         }
                                     }
                                     if (!isJson)
