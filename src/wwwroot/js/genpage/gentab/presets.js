@@ -1,5 +1,6 @@
 
 let allPresets = [];
+let allPresetsUnsorted = [];
 let currentPresets = [];
 
 let preset_to_edit = null;
@@ -292,9 +293,83 @@ function editPreset(preset) {
     fixPresetParamClickables();
 }
 
+let presetSortByElement;
+let presetSortReverseElement;
+let presetSortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
+let presetSortReverse = localStorage.getItem('preset_list_sort_reverse') === 'true';
+
+
+function onPresetSortByChanged(ev) {
+    localStorage.setItem('preset_list_sort_by', presetSortBy = ev.target.value);
+    presetBrowser.update();
+}
+
+function onPresetSortReverseChanged(ev) {
+    localStorage.setItem('preset_list_sort_reverse', presetSortReverse = ev.target.checked);
+    presetBrowser.update();
+}
+
+function getSortInfo() {
+    const sortByElem = document.getElementById("preset_list_sort_by");
+    const reverseElem = document.getElementById("preset_list_sort_reverse");
+
+    if (sortByElem !== presetSortByElement) {
+        presetSortByElement?.removeEventListener("change", onPresetSortByChanged);
+        presetSortByElement = sortByElem;
+        if (sortByElem) {
+            sortByElem.value = presetSortBy;
+            sortByElem.addEventListener("change", onPresetSortByChanged);
+        }
+    }
+
+    if (reverseElem !== presetSortReverseElement) {
+        presetSortReverseElement?.removeEventListener("change", onPresetSortReverseChanged);
+        presetSortReverseElement = reverseElem;
+        if (reverseElem) {
+            reverseElem.checked = presetSortReverse;
+            reverseElem.addEventListener("change", onPresetSortReverseChanged);
+        }
+    }
+    
+    return {sortBy: presetSortBy, reverse: presetSortReverse};
+}
+
+function getSortCompareFunc(sortBy, reverse) {
+    const getValue = preset => {
+        if (preset.title.toLowerCase() === "default") {
+            return "          default";
+        }
+        if (preset.title.toLowerCase() === "preview") {
+            return "          preview";
+        }
+        
+        switch (sortBy) {
+            // for Name, use title, but strip off the path part
+            case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
+            case 'Title': return preset.title;
+            case 'Default':
+            default: return 'z'; // stable sort will basically do nothing
+        }
+    };
+    
+    const multiplier = reverse ? -1 : 1;
+    return (a, b) => {
+        const valueA = getValue(a);
+        const valueB = getValue(b);
+        if (valueA < valueB) {
+            return -1 * multiplier;
+        }
+        if (valueA > valueB) {
+            return 1 * multiplier;
+        }
+        return 0;
+    }
+}
+
+    
 function sortPresets() {
-    let preList = allPresets.filter(p => p.title.toLowerCase() == "default" || p.title.toLowerCase() == "preview");
-    allPresets = preList.concat(allPresets.filter(p => p.title.toLowerCase() != "default" && p.title.toLowerCase() != "preview"));
+    const {sortBy, reverse} = getSortInfo();
+    allPresets = allPresetsUnsorted.toSorted(getSortCompareFunc(sortBy, reverse));
 }
 
 function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
@@ -302,6 +377,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         let folders = [];
         let files = [];
+        sortPresets();
         for (let preset of allPresets) {
             if (preset.title.startsWith(prefix)) {
                 let subPart = preset.title.substring(prefix.length);
@@ -325,8 +401,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     };
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
-            allPresets = data.presets;
-            sortPresets();
+            allPresetsUnsorted = data.presets;
             proc();
         });
     }
@@ -381,7 +456,8 @@ function clearPresets() {
 }
 
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
-    `<button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
+    `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Title</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
+    <button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
     <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>
     <button id="preset_list_export_button translate" class="refresh-button" onclick="exportPresetsButton()">Export All Presets</button>
     <button id="preset_list_apply_button translate" class="refresh-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply Presets</button>`);
