@@ -579,6 +579,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("av", "av"),
         ("pydantic", "pydantic"),
         ("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}"),
+        ("alembic", "alembic"),
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
