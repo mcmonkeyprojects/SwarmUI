@@ -56,6 +56,10 @@ public static class SystemStatusMonitor
                     HardwareInfoQueue.TryDequeue(out _);
                 }
             }
+            catch (Exception ex)
+            {
+                Logs.Error($"SystemStatusMonitor.Tick: {ex.ReadableString()}");
+            }
             finally
             {
                 DeDuplicator.Release();
