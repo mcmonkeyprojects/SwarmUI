@@ -17,6 +17,7 @@
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Modern, High Quality |
 [Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Decent Quality |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
+[Nvidia Cosmos Predict2](#cosmos-predict2) | ? | NVIDIA | 2B/14B | ? | Modern but bad |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -355,6 +356,23 @@ Parameters and usage is the same as any other normal model.
         - The dev model is more open to weirder samplers like `LCM` and official recommendation for Full is UniPC, but these are not needed
     - **Sigma Shift:** Sigma shift defaults to 3 and does not need to be modified.
         - Officially, HiDream Full and Fast recommend Shift of 3, but for Dev they recommend 6. That 6 on dev seems to look worse though, so I don't recommend it.
+
+# Cosmos Predict2
+
+![img](/docs/images/models/cosmos-predict2-14b.jpg)
+*(Nvidia Cosmos Predict2 14B Text2Image)*
+
+- Nvidia Cosmos Predict2 Text2Image models are natively supported in SwarmUI.
+    - Do not recommend, generally just worse than other contemporary models.
+    - There is a 2B and a 14B variant.
+        - Proper safetensors links pending.
+        - 14B GGUFs here <https://huggingface.co/city96/Cosmos-Predict2-14B-Text2Image-gguf/tree/main>
+    - **Resolution:** ? 1024-ish.
+    - **CFG and Steps:** Default recommends CFG=4 and Steps=35
+    - **Performance:** Oddly slower than similar sized models by a fair margin. It does not make up for this in quality.
+    - The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
+        - It will be automatically downloaded.
+    - The VAE is the Wan VAE, and will be automatically downloaded.
 
 # Video Models
 

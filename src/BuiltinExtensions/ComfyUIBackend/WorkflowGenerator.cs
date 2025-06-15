@@ -231,11 +231,18 @@ public class WorkflowGenerator
         return clazz is not null && (clazz == "hunyuan-video-skyreels" || clazz == "hunyuan-video-skyreels-i2v");
     }
 
-    /// <summary>Returns true if the current model is Hunyuan Video.</summary>
-    public bool IsNvidiaCosmos()
+    /// <summary>Returns true if the current model is Nvidia Cosmos v1.</summary>
+    public bool IsNvidiaCosmos1()
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz == "nvidia-cosmos-1";
+    }
+
+    /// <summary>Returns true if the current model is Nvidia Cosmos v2.</summary>
+    public bool IsNvidiaCosmos2()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz.StartsWith("nvidia-cosmos-predict2");
     }
 
     /// <summary>Returns true if the current model is any Wan-2.1 variant.</summary>
@@ -255,7 +262,7 @@ public class WorkflowGenerator
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos() || IsWanVideo();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsWanVideo();
     }
 
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
@@ -979,6 +986,10 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
+                    else if (IsNvidiaCosmos2())
+                    {
+                        dtype = "default";
+                    }
                     else
                     {
                         dtype = "fp8_e4m3fn";
@@ -1229,7 +1240,7 @@ public class WorkflowGenerator
             LoadingClip = [dualClipLoader, 0];
             doVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
         }
-        else if (IsNvidiaCosmos())
+        else if (IsNvidiaCosmos1())
         {
             string clipLoader = CreateNode("CLIPLoader", new JObject()
             {
@@ -1238,6 +1249,16 @@ public class WorkflowGenerator
             });
             LoadingClip = [clipLoader, 0];
             doVaeLoader(null, "nvidia-cosmos-1", "cosmos-vae");
+        }
+        else if (IsNvidiaCosmos2())
+        {
+            string clipLoader = CreateNode("CLIPLoader", new JObject()
+            {
+                ["clip_name"] = getOldT5XXLModel(),
+                ["type"] = "cosmos"
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "wan-21", "wan21-vae");
         }
         else if (IsWanVideo())
         {
@@ -1424,7 +1445,7 @@ public class WorkflowGenerator
             }
             defscheduler ??= "ltxv";
         }
-        else if (IsNvidiaCosmos())
+        else if (IsNvidiaCosmos1())
         {
             if (!hadSpecialCond)
             {
@@ -1789,7 +1810,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsNvidiaCosmos())
+        else if (IsNvidiaCosmos1())
         {
 
             return CreateNode("EmptyCosmosLatentVideo", new JObject()
