@@ -244,7 +244,8 @@ public class WorkflowGeneratorSteps
                             ["rel_l1_thresh"] = teaCacheThreshold,
                             ["max_skip_steps"] = 3,
                             ["start_percent"] = 0,
-                            ["end_percent"] = 1
+                            ["end_percent"] = 1,
+                            ["cache_device"] = "cuda"
                         });
                         g.LoadingModel = [teaCacheNode, 0];
                     }
@@ -294,7 +295,8 @@ public class WorkflowGeneratorSteps
                         ["rel_l1_thresh"] = teaCacheThreshold,
                         ["max_skip_steps"] = 3,
                         ["start_percent"] = 0,
-                        ["end_percent"] = 1
+                        ["end_percent"] = 1,
+                        ["cache_device"] = "cuda"
                     });
                     g.LoadingModel = [teaCacheNode, 0];
                 }
