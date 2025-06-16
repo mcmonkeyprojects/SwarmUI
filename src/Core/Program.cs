@@ -679,7 +679,7 @@ public class Program
                 Path = GetCommandLineFlag("ngrok-path", null),
                 Region = GetCommandLineFlag("proxy-region", null),
                 BasicAuth = GetCommandLineFlag("ngrok-basic-auth", null),
-                Args = GetCommandLineFlag("proxy-added-args", "").Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                Args = GetCommandLineFlag("proxy-added-args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             };
         }
         string cloudflared = ServerSettings.Network.CloudflaredPath;
@@ -690,7 +690,7 @@ public class Program
                 Name = "Cloudflare",
                 Path = GetCommandLineFlag("cloudflared-path", cloudflared).Trim('"'),
                 Region = GetCommandLineFlag("proxy-region", null),
-                Args = GetCommandLineFlag("proxy-added-args", "").Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                Args = GetCommandLineFlag("proxy-added-args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             };
         }
         LaunchMode = GetCommandLineFlag("launch_mode", ServerSettings.LaunchMode);
