@@ -69,7 +69,7 @@ public class PublicProxyHandler
         }
         Process = new() { StartInfo = start };
         Process.Start();
-        Logs.Debug($"{Name} launched as process #{Process.Id}.");
+        Logs.Debug($"{Name} launched as process #{Process.Id}, with arguments = \"{start.ArgumentList.JoinString("\", \"")}\"");
         foreach ((string type, StreamReader sr) in new[] { ("out", Process.StandardOutput), ("err", Process.StandardError) })
         {
             new Thread(() =>
