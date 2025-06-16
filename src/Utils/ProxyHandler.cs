@@ -33,14 +33,7 @@ public class PublicProxyHandler
     public void Start()
     {
         ProcessStartInfo start = new() { FileName = Path, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
-        if (Args is not null)
-        {
-            foreach (string arg in Args)
-            {
-                start.ArgumentList.Add(arg);
-            }
-        }
-        else if (Name == "Ngrok")
+        if (Name == "Ngrok")
         {
             start.ArgumentList.Add("http");
             start.ArgumentList.Add($"http://localhost:{WebServer.Port}");
@@ -67,9 +60,16 @@ public class PublicProxyHandler
                 start.ArgumentList.Add($"--region={Region}");
             }
         }
+        if (Args is not null)
+        {
+            foreach (string arg in Args)
+            {
+                start.ArgumentList.Add(arg);
+            }
+        }
         Process = new() { StartInfo = start };
         Process.Start();
-        Logs.Debug($"{Name} launched as process #{Process.Id}.");
+        Logs.Debug($"{Name} launched as process #{Process.Id}, with arguments = \"{start.ArgumentList.JoinString("\", \"")}\"");
         foreach ((string type, StreamReader sr) in new[] { ("out", Process.StandardOutput), ("err", Process.StandardError) })
         {
             new Thread(() =>
