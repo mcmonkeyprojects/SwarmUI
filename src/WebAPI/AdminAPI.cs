@@ -100,7 +100,14 @@ public static class AdminAPI
         if (t == typeof(float)) { return (float)val; }
         if (t == typeof(bool)) { return (bool)val; }
         if (t == typeof(string)) { return (string)val; }
-        if (t == typeof(List<string>)) { return ((JArray)val).Select(v => (string)v).ToList(); }
+        if (t == typeof(List<string>))
+        {
+            if (val is JArray jarr)
+            {
+                return jarr.Select(v => (string)v).ToList();
+            }
+            return ((string)val).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        }
         return null;
     }
     [API.APIDescription("Returns a list of the server settings, will full metadata.",
