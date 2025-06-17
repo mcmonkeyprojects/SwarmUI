@@ -106,7 +106,7 @@ public static class AdminAPI
             {
                 return jarr.Select(v => (string)v).ToList();
             }
-            return ((string)val).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            return ((string)val).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
         }
         return null;
     }
