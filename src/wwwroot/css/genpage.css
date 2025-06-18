@@ -587,6 +587,21 @@ body {
 .modal_success_bottom {
     color: #00ff00;
 }
+#add_preset_modal {
+    max-height: calc(95vh - var(--bs-modal-margin));
+    margin-top: var(--bs-modal-margin);
+}
+#add_preset_modal .modal-dialog {
+    margin-top: 0;
+    margin-bottom: 0;
+    height: 100%;
+}
+#add_preset_modal .modal-content {
+    height: 100%;
+}
+#add_preset_modal .modal-body {
+    overflow-y: auto;
+}
 .preset-block-selected {
     border: 1px solid var(--box-selected-border);
     background-color: var(--box-selected-background);
