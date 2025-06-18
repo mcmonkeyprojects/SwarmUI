@@ -365,7 +365,8 @@ Parameters and usage is the same as any other normal model.
 - Nvidia Cosmos Predict2 Text2Image models are natively supported in SwarmUI.
     - Do not recommend, generally just worse than other contemporary models.
     - There is a 2B and a 14B variant.
-        - Proper safetensors links pending.
+        - 2B: <https://huggingface.co/Comfy-Org/Cosmos_Predict2_repackaged/blob/main/cosmos_predict2_2B_t2i.safetensors>
+        - 14B: <https://huggingface.co/Comfy-Org/Cosmos_Predict2_repackaged/blob/main/cosmos_predict2_14B_t2i.safetensors>
         - 14B GGUFs here <https://huggingface.co/city96/Cosmos-Predict2-14B-Text2Image-gguf/tree/main>
     - **Resolution:** ? 1024-ish.
     - **CFG and Steps:** Default recommends CFG=4 and Steps=35
