@@ -16,6 +16,7 @@ services:
       - swarmdata:/SwarmUI/Data
       - swarmbackend:/SwarmUI/dlbackend
       - swarmdlnodes:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes
+      - swarmextensions:/SwarmUI/src/Extensions
       - ./Models:/SwarmUI/Models
       - ./Output:/SwarmUI/Output
       - ./src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows
@@ -36,3 +37,5 @@ volumes:
     name: swarmbackend
   swarmdlnodes:
     name: swarmdlnodes
+  swarmextensions:
+    name: swarmextensions
