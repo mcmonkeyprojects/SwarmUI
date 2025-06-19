@@ -284,6 +284,10 @@ public class T2IPromptHandling
                 context.TrackWarning($"Wildcard input '{data}' does not match any wildcard file and will be ignored.");
                 return null;
             }
+            if (data.Length < card.Length)
+            {
+                Logs.Warning($"Wildcard input '{data}' is not a valid wildcard name, but appears to match '{card}', will use that instead.");
+            }
             WildcardsHelper.Wildcard wildcard = WildcardsHelper.GetWildcard(card);
             List<string> usedWildcards = context.Input.ExtraMeta.GetOrCreate("used_wildcards", () => new List<string>()) as List<string>;
             usedWildcards.Add(card);
@@ -437,6 +441,11 @@ public class T2IPromptHandling
                 context.TrackWarning($"Embedding '{want}' does not exist and will be ignored.");
                 return "";
             }
+            string shortMatch = matched.Replace(".safetensors", "");
+            if (want.Length < shortMatch.Length)
+            {
+                Logs.Warning($"Embed input '{data}' is not a valid embedding name, but appears to match '{shortMatch}', will use that instead.");
+            }
             T2IModel embedModel = Program.T2IModelSets["Embedding"].GetModel(matched);
             if (embedModel is not null && Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
             {
@@ -483,6 +492,11 @@ public class T2IPromptHandling
             {
                 context.TrackWarning($"Lora '{lora}' does not exist and will be ignored.");
                 return null;
+            }
+            string shortMatch = matched.Replace(".safetensors", "");
+            if (lora.Length < shortMatch.Length)
+            {
+                Logs.Warning($"LoRA input '{lora}' is not a valid LoRA model name, but appears to match '{shortMatch}', will use that instead.");
             }
             T2IModel loraModel = Program.T2IModelSets["LoRA"].GetModel(matched);
             if (loraModel is not null && Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
