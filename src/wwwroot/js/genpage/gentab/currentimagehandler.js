@@ -758,11 +758,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             togglerRefine.checked = true;
             triggerChangeFor(togglerInit);
             triggerChangeFor(togglerRefine);
-            mainGenHandler.doGenerate(input_overrides);
-            togglerInit.checked = togglerInitOriginal;
-            togglerRefine.checked = togglerRefineOriginal;
-            triggerChangeFor(togglerInit);
-            triggerChangeFor(togglerRefine);
+            mainGenHandler.doGenerate(input_overrides, {}, () => {
+                togglerInit.checked = togglerInitOriginal;
+                togglerRefine.checked = togglerRefineOriginal;
+                triggerChangeFor(togglerInit);
+                triggerChangeFor(togglerRefine);
+            });
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
     let metaParsed = { is_starred: false };
