@@ -14,15 +14,15 @@ public class APICallReflectBuilder
 {
     public static Dictionary<Type, Func<JToken, (bool, object)>> TypeCoercerMap = new()
     {
-        [typeof(string)] = (JToken input) => (true, input.ToString()),
-        [typeof(int)] = (JToken input) => (int.TryParse(input.ToString(), out int output), output),
-        [typeof(long)] = (JToken input) => (long.TryParse(input.ToString(), out long output), output),
-        [typeof(float)] = (JToken input) => (float.TryParse(input.ToString(), out float output), output),
-        [typeof(double)] = (JToken input) => (double.TryParse(input.ToString(), out double output), output),
-        [typeof(bool)] = (JToken input) => (bool.TryParse(input.ToString(), out bool output), output),
-        [typeof(byte)] = (JToken input) => (byte.TryParse(input.ToString(), out byte output), output),
-        [typeof(char)] = (JToken input) => (char.TryParse(input.ToString(), out char output), output),
-        [typeof(string[])] = (JToken input) => (true, input.ToList().Select(j => j.ToString()).ToArray())
+        [typeof(string)] = input => (true, input.ToString()),
+        [typeof(int)] = input => (int.TryParse(input.ToString(), out int output), output),
+        [typeof(long)] = input => (long.TryParse(input.ToString(), out long output), output),
+        [typeof(float)] = input => (float.TryParse(input.ToString(), out float output), output),
+        [typeof(double)] = input => (double.TryParse(input.ToString(), out double output), output),
+        [typeof(bool)] = input => (bool.TryParse(input.ToString(), out bool output), output),
+        [typeof(byte)] = input => (byte.TryParse(input.ToString(), out byte output), output),
+        [typeof(char)] = input => (char.TryParse(input.ToString(), out char output), output),
+        [typeof(string[])] = input => (true, input.ToList().Select(j => j.ToString()).ToArray())
     };
 
     public static APICall BuildFor(object obj, MethodInfo method, bool isUserUpdate, PermInfo permission)

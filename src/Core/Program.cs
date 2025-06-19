@@ -270,7 +270,7 @@ public class Program
         };
         Sessions = new();
         Web = new();
-        timer.Check("Prep Objects");
+        timer.Check("Prep Options");
         Web.PreInit();
         timer.Check("Web PreInit");
         Extensions.RunOnAllExtensions(e => e.OnInit());
