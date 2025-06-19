@@ -108,7 +108,7 @@ public static class SwarmAPI
 
     public static async Task GetSession()
     {
-        JObject sessData = await Client.PostJson($"{Address}/API/GetNewSession", new());
+        JObject sessData = await Client.PostJson($"{Address}/API/GetNewSession", []);
         Session = sessData["session_id"].ToString();
     }
 
@@ -134,6 +134,10 @@ public static class SwarmAPI
             if (generated.TryGetValue("error_id", out JToken errorId) && errorId.ToString() == "invalid_session_id")
             {
                 throw new SessionInvalidException();
+            }
+            else if (generated.TryGetValue("error", out JToken errorMessage))
+            {
+                throw new Exception($"Swarm API error: {errorMessage}");
             }
             return $"{generated["images"].First()}";
         });
