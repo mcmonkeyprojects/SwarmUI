@@ -771,5 +771,3 @@ function genpageLoad() {
         window.resLoopInterval = setInterval(serverResourceLoop, 1000);
     });
 }
-
-setTimeout(genpageLoad, 1);
