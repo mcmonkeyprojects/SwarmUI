@@ -225,7 +225,7 @@ class GenerateHandler {
         }
     }
 
-    doGenerate(input_overrides = {}, input_preoverrides = {}) {
+    doGenerate(input_overrides = {}, input_preoverrides = {}, postCollectRun = null) {
         if (session_id == null) {
             if (Date.now() - time_started > 1000 * 60) {
                 this.hadError("Cannot generate, session not started. Did the server crash?");
@@ -271,6 +271,9 @@ class GenerateHandler {
                 }
                 this.hadError(e);
             };
+            if (postCollectRun) {
+                postCollectRun(actualInput);
+            }
             if (this.sockets[socketId] && this.sockets[socketId].readyState == WebSocket.OPEN) {
                 this.sockets[socketId].send(JSON.stringify(actualInput));
             }

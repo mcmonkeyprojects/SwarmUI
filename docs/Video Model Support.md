@@ -332,6 +332,8 @@ There's a full step by step guide for video model usage here: <https://github.co
         - (Despite the T2V name, this works on I2V too)
         - If you care what "CausVid" means, here's where it's from: <https://github.com/tianweiy/CausVid>
         - If you want a 1.3B version, <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_bidirect2_T2V_1_3B_lora_rank32.safetensors>
+        - There's also "FusionX", a merge of multiple accel loras, that works the same in concept (but expressly favors higher res, eg 720p), find files here: <https://huggingface.co/vrgamedevgirl84/Wan14BT2VFusioniX/tree/main/FusionX_LoRa>
+        - There's also the "Lightx2v" LoRA, a newer causvid variant <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors>
     - Set up a Wan gen with 14B as normal, but also set:
         - **CFG Scale** to `1`
             - If doing I2V, set **Video CFG** to `1`

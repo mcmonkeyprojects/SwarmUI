@@ -163,6 +163,8 @@ public class Program
         {
             Logs.Warning($"Experimental Features are enabled. Issue reports will not be accepted until you turn them off in Server Configuration.");
         }
+        Logs.Init($"Swarm base path is: {Environment.CurrentDirectory}");
+        Logs.Init($"Running on OS: {RuntimeInformation.OSDescription}");
         Logs.StartLogSaving();
         timer.Check("Initial settings load");
         if (ServerSettings.Maintenance.CheckForUpdates)
@@ -270,7 +272,7 @@ public class Program
         };
         Sessions = new();
         Web = new();
-        timer.Check("Prep Objects");
+        timer.Check("Prep Options");
         Web.PreInit();
         timer.Check("Web PreInit");
         Extensions.RunOnAllExtensions(e => e.OnInit());

@@ -534,7 +534,7 @@ function check_for_updates() {
     genericRequest('CheckForUpdates', {}, data => {
         let text = '';
         if (data.server_updates_count > 0) {
-            text += `${data.server_updates_count} ${updatesAvailableText.get()} "${data.server_updates_preview.join('", "')}"`;
+            text += `${data.server_updates_count} ${updatesAvailableText.get()} "${data.server_updates_preview.join('",\n "')}"`;
         }
         if (data.extension_updates.length > 0) {
             text += `\n${data.extension_updates.length} ${extensionsAvailableText.get()} ${data.extension_updates.join(', ')}`;

@@ -26,6 +26,7 @@ docker run -it \
     --mount source=swarmdata,target=/SwarmUI/Data \
     --mount source=swarmbackend,target=/SwarmUI/dlbackend \
     --mount source=swarmdlnodes,target=/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes \
+    --mount source=swarmextensions,target=/SwarmUI/src/Extensions \
     -v "$PWD/Models:/SwarmUI/Models" \
     -v "$PWD/Output:/SwarmUI/Output" \
     -v "$PWD/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows" \

@@ -101,7 +101,14 @@ public class API
             if (!APIHandlers.TryGetValue(path, out APICall handler))
             {
                 Error("Unknown API route");
-                context.Response.Redirect("/Error/404");
+                if (socket is not null)
+                {
+                    await context.YieldJsonOutput(socket, 404, Utilities.ErrorObj("Unknown API route.", "bad_route"));
+                }
+                else
+                {
+                    context.Response.Redirect("/Error/404");
+                }
                 return;
             }
             // TODO: Authorization check
@@ -114,7 +121,7 @@ public class API
             if (!handler.IsWebSocket && socket is not null)
             {
                 Error("API route is not a websocket but request is");
-                context.Response.Redirect("/Error/BasicAPI");
+                await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("Route is HTTP, not websocket.", "bad_request_method"));
                 return;
             }
             if (session is not null)
@@ -127,13 +134,28 @@ public class API
                 if (handler.Permission is not null && !session.User.HasPermission(handler.Permission))
                 {
                     Error($"User lacks required permission '{handler.Permission.ID}' ('{handler.Permission.DisplayName}' in group '{handler.Permission.Group.DisplayName}')");
-                    context.Response.Redirect("/Error/Permissions");
+                    if (socket is not null)
+                    {
+                        await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("You lack permissions for this route.", "bad_permissions"));
+                    }
+                    else
+                    {
+                        context.Response.Redirect("/Error/Permissions");
+                    }
                     return;
                 }
             }
             JObject output = await handler.Call(context, session, socket, input);
+            if (output is not null && output.TryGetValue("error", out JToken errorTok))
+            {
+                Error($"{errorTok}");
+            }
             if (socket is not null)
             {
+                if (output is not null)
+                {
+                    await socket.SendJson(output, WebsocketTimeout);
+                }
                 using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
                 await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
                 return;

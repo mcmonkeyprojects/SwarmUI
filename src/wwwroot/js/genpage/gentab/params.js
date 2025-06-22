@@ -1019,7 +1019,7 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
     }
 }
 
-function resetParamsToDefault(exclude = []) {
+function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     for (let cookie of listCookies('lastparam_')) {
         deleteCookie(cookie);
     }
@@ -1077,7 +1077,7 @@ function resetParamsToDefault(exclude = []) {
     currentModelChanged();
     clearPresets();
     let defaultPreset = getPresetByTitle('default');
-    if (defaultPreset) {
+    if (defaultPreset && doDefaultPreset) {
         applyOnePreset(defaultPreset);
     }
     hideUnsupportableParams();

@@ -292,8 +292,10 @@ Parameters and usage is the same as any other normal model.
     - Model files goes in `diffusion_models`
     - Uses standard CFG, not distilled to 1 like other Flux models
     - Official reference workflow uses Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
-    - Probably works better with longer prompts
-    - "Sigmoid Offset" scheduler may be useful with Chroma? You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
+        - (It's named `Optimal Steps` in their workflow, but Swarm's AYS scheduler is equivalent to that)
+    - Generally works better with longer prompts. Adding some "prompt fluff" on the end can help clean it up. This is likely related to it being a beta model with an odd training dataset.
+    - "Sigmoid Offset" scheduler is their newer recommendation, it requires a custom node
+        - You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
 
 # Lumina 2
 
@@ -365,7 +367,8 @@ Parameters and usage is the same as any other normal model.
 - Nvidia Cosmos Predict2 Text2Image models are natively supported in SwarmUI.
     - Do not recommend, generally just worse than other contemporary models.
     - There is a 2B and a 14B variant.
-        - Proper safetensors links pending.
+        - 2B: <https://huggingface.co/Comfy-Org/Cosmos_Predict2_repackaged/blob/main/cosmos_predict2_2B_t2i.safetensors>
+        - 14B: <https://huggingface.co/Comfy-Org/Cosmos_Predict2_repackaged/blob/main/cosmos_predict2_14B_t2i.safetensors>
         - 14B GGUFs here <https://huggingface.co/city96/Cosmos-Predict2-14B-Text2Image-gguf/tree/main>
     - **Resolution:** ? 1024-ish.
     - **CFG and Steps:** Default recommends CFG=4 and Steps=35

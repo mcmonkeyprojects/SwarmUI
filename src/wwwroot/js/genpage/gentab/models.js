@@ -294,6 +294,9 @@ function isModelArchCorrect(model) {
             if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('flux-1') && curModelCompatClass.startsWith('hidream-i1')) {
                 return true;
             }
+            if (model.architecture.endsWith('/lora') && model.compat_class.startsWith('flux-1') && curModelCompatClass.startsWith('chroma')) {
+                return true;
+            }
             return model.compat_class == curModelCompatClass;
         }
     }

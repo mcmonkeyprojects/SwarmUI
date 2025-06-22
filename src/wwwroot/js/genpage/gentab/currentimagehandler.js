@@ -340,7 +340,7 @@ function copy_current_image_params() {
         metadata.aspectratio = 'Custom';
     }
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
-    resetParamsToDefault(exclude);
+    resetParamsToDefault(exclude, false);
     for (let param of gen_param_types) {
         if (param.nonreusable || exclude.includes(param.id)) {
             continue;
@@ -441,6 +441,9 @@ window.addEventListener('keydown', function(kbevent) {
     }
     else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('main_image_area'))) {
         getRequiredElementById('alt_generate_button').click();
+    }
+    else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('simple_generate_button'))) {
+        getRequiredElementById('simple_generate_button').click();
     }
     else {
         return;
@@ -765,11 +768,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             togglerRefine.checked = true;
             triggerChangeFor(togglerInit);
             triggerChangeFor(togglerRefine);
-            mainGenHandler.doGenerate(input_overrides);
-            togglerInit.checked = togglerInitOriginal;
-            togglerRefine.checked = togglerRefineOriginal;
-            triggerChangeFor(togglerInit);
-            triggerChangeFor(togglerRefine);
+            mainGenHandler.doGenerate(input_overrides, {}, () => {
+                togglerInit.checked = togglerInitOriginal;
+                togglerRefine.checked = togglerRefineOriginal;
+                triggerChangeFor(togglerInit);
+                triggerChangeFor(togglerRefine);
+            });
         }));
     }, '', 'Runs an instant generation with Refine / Upscale turned on');
     let metaParsed = { is_starred: false };

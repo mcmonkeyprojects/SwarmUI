@@ -267,6 +267,7 @@ public class Session : IEquatable<Session>
                             Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
                         }
                     }
+                    Logs.Debug($"Saved an output file as '{fullPath}'");
                     await Task.Delay(TimeSpan.FromSeconds(10)); // (Give time for WebServer to read data from cache rather than having to reload from file for first read)
                     StillSavingFiles.TryRemove(fullPath, out _);
                 });
