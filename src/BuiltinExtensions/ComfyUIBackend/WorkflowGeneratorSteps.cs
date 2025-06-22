@@ -250,7 +250,7 @@ public class WorkflowGeneratorSteps
                         g.LoadingModel = [teaCacheNode, 0];
                     }
                 }
-                else if (g.IsHunyuanVideo() || g.IsLTXV() || g.IsWanVideo())
+                else if (g.IsHunyuanVideo() || g.IsLTXV() || g.IsWanVideo() || g.IsHiDream())
                 {
                     string type = "";
                     if (g.IsHunyuanVideo())
@@ -263,7 +263,7 @@ public class WorkflowGeneratorSteps
                     }
                     else if (g.IsHiDream())
                     {
-                        type = "hidream_i1_full";
+                        type = "hidream_i1_dev";
                     }
                     else
                     {
