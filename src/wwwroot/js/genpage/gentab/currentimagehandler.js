@@ -340,7 +340,7 @@ function copy_current_image_params() {
         metadata.aspectratio = 'Custom';
     }
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
-    resetParamsToDefault(exclude);
+    resetParamsToDefault(exclude, false);
     for (let param of gen_param_types) {
         if (param.nonreusable || exclude.includes(param.id)) {
             continue;
