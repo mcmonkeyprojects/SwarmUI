@@ -435,6 +435,9 @@ window.addEventListener('keydown', function(kbevent) {
     else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('main_image_area'))) {
         getRequiredElementById('alt_generate_button').click();
     }
+    else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('simple_generate_button'))) {
+        getRequiredElementById('simple_generate_button').click();
+    }
     else {
         return;
     }
