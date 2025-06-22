@@ -102,7 +102,11 @@ class GenTabLayout {
     /** Position of the bottom section bar. -1 if unset. */
     bottomSectionBarPos = parseInt(getCookie('barspot_pageBarMidPx') || '-1');
 
+    /** Tabs to hide. */
     hideTabs = (getCookie('layout_hidetabs') || '').split(',');
+
+    /** Layout to use as mobile/desktop/auto. */
+    mobileDesktopLayout = localStorage.getItem('layout_mobileDesktop') || 'auto';
 
     constructor() {
         this.leftSplitBar = getRequiredElementById('t2i-top-split-bar');
@@ -136,7 +140,7 @@ class GenTabLayout {
         this.rightBarDrag = false;
         this.bottomBarDrag = false;
         this.imageEditorSizeBarDrag = false;
-        this.isSmallWindow = window.innerWidth < 768;
+        this.isSmallWindow = this.mobileDesktopLayout == 'auto' ? window.innerWidth < 768 : this.mobileDesktopLayout == 'mobile';
         this.antiDup = false;
         this.swipeStartX = -1;
         this.swipeStartY = -1;
@@ -191,7 +195,7 @@ class GenTabLayout {
     
     /** Does the full position update logic. */
     reapplyPositions() {
-        this.isSmallWindow = window.innerWidth < 768;
+        this.isSmallWindow = this.mobileDesktopLayout == 'auto' ? window.innerWidth < 768 : this.mobileDesktopLayout == 'mobile';
         if (this.isSmallWindow) {
             document.body.classList.add('small-window');
             document.body.classList.remove('large-window');
@@ -615,6 +619,12 @@ class GenTabLayout {
             this.reapplyPositions();
             this.buildConfigArea();
         }
+    }
+
+    onMobileDesktopLayoutChange() {
+        this.mobileDesktopLayout = getRequiredElementById('mobile_desktop_layout_selector').value;
+        localStorage.setItem('layout_mobileDesktop', this.mobileDesktopLayout);
+        this.reapplyPositions();
     }
 }
 

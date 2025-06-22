@@ -126,6 +126,12 @@
                     <br><button class="basic-button translate" onclick="genTabLayout.resetSubTabs()">Reset to Default</button>
                     <br>
                     <br>
+                    <b><span class="translate">Mobile/Desktop Layout</span></b>: <select id="mobile_desktop_layout_selector" onchange="genTabLayout.onMobileDesktopLayoutChange()">
+                        <option value="auto" selected>Auto</option>
+                        <option value="mobile">Mobile</option>
+                        <option value="desktop">Desktop</option>
+                    </select>
+                    <br>
                     <div id="layoutconfigarea">
                     </div>
                 </p>
