@@ -296,9 +296,29 @@ function textPromptAddKeydownHandler(elem) {
     let shiftText = (up) => {
         let selStart = elem.selectionStart;
         let selEnd = elem.selectionEnd;
+        if (selStart == selEnd) {
+            let simpleText = elem.value.replaceAll('\n', ' ').replaceAll('\t', ' ');
+            let lastSpace = simpleText.lastIndexOf(" ", selStart - 1);
+            if (lastSpace != -1) {
+                selStart = lastSpace + 1;
+            }
+            else {
+                selStart = 0;
+            }
+            let nextSpace = simpleText.indexOf(" ", selStart);
+            if (nextSpace != -1) {
+                selEnd = nextSpace;
+            }
+            else {
+                selEnd = simpleText.length;
+            }
+        }
         let before = elem.value.substring(0, selStart);
         let after = elem.value.substring(selEnd);
         let mid = elem.value.substring(selStart, selEnd);
+        if (mid.trim() == "") {
+            return;
+        }
         let strength = 1;
         while (mid.startsWith(" ")) {
             mid = mid.substring(1);
