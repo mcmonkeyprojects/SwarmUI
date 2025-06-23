@@ -556,6 +556,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 // Late-added requirements of nunchaku
                 await install("filterpy", "git+https://github.com/rodjjo/filterpy.git"); // compile dependency, utterly broken, I hate python developers omg
                 await install("facexlib", "facexlib");
+                await install("timm", "timm");
             }
             foreach (string req in reqs.Keys)
             {
