@@ -123,8 +123,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>Mapping of node folder names to exact git commits to maintain.</summary>
     public static ConcurrentDictionary<string, string> ComfyNodeGitPins = new()
     {
-        //["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
-        ["ComfyUI-nunchaku"] = "4a02394d747533172a0e957e2aac58cba20a508e" // pulid error in newer commits because they updated the node but haven't released new Nunchaku pip lib version
+        // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
     public async Task EnsureNodeRepos()
@@ -434,7 +433,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     return null;
                 }
-                return dir[prefix.Length..].Before(".dist-info");
+                return dir[prefix.Length..].Before(".dist-info").Before('+');
             }
             if (!libs.Contains("pip"))
             {
@@ -554,6 +553,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         await install("nunchaku", url);
                     }
                 }
+                // Late-added requirements of nunchaku
+                await install("filterpy", "git+https://github.com/rodjjo/filterpy.git"); // compile dependency, utterly broken, I hate python developers omg
+                await install("facexlib", "facexlib");
             }
             foreach (string req in reqs.Keys)
             {
