@@ -210,6 +210,12 @@ Parameters and usage is the same as any other normal model.
 ### Install
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
+    - **Recommended:** for best performance on modern nvidia cards, use Nunchaku models.
+        - These run twice as fast as the next best speed option (fp8) while using less memory too (close to gguf q4)
+        - Flux dev <https://huggingface.co/mit-han-lab/nunchaku-flux.1-dev/tree/main>
+        - Flux Schnell <https://huggingface.co/mit-han-lab/nunchaku-flux.1-schnell/tree/main>
+        - Use "fp4" for Blackwell (eg RTX 5090) or newer cards, use "int4" for anything older (4090, 3090, etc.)
+        - See the [Nunchaku Support](#nunchaku-mit-han-lab) section for more info on this format
     - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models) (best for most graphics cards)
         - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main>
         - Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
@@ -413,9 +419,10 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
     - Nunchaku is a very dense quantization of models (eg 6GiB for Flux models) that runs very fast (4.4 seconds for a 20 step Flux Dev image on Windows RTX 4090)
     - They go in `(Swarm)/Models/diffusion_models` and have to have their own folder (eg `(Swarm)/Models/diffusion_models/myfluxmodel`) and work similar to other `diffusion_models` format models
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
-    - The detection is based on the folder structure, you need the files `transformer_blocks.safetensors` and `comfy_config.json` inside the folder. You cannot have unrelated files in the folder.
+    - For the older "SVDQuant" Folder Models <https://huggingface.co/collections/mit-han-lab/svdquant-67493c2c2e62a1fc6e93f45c>, The detection is based on the folder structure, you need the files `transformer_blocks.safetensors` and `comfy_config.json` inside the folder. You cannot have unrelated files in the folder.
+    - For "Nunchaku" singlefile models <https://huggingface.co/collections/mit-han-lab/nunchaku-6837e7498f680552f7bbb5ad>, there's no trick, they work just like any other model automatically.
     - The first time you try to load a Nunchaku model, it will give you a popup asking to install support
-        - This will autoinstall https://github.com/mit-han-lab/ComfyUI-nunchaku
+        - This will autoinstall <https://github.com/mit-han-lab/ComfyUI-nunchaku> and its dependencies
         - You can accept this popup, and it will install and reload the backend
         - Then try to generate again, and it should just work
     - Nunchaku has various compatibility limitations due to hacks in the custom nodes. Not all lora, textenc, etc. features will work as intended.
