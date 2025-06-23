@@ -540,11 +540,19 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.8]).");
                     isValid = false;
                 }
-                // eg https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch2.5-cp310-cp310-linux_x86_64.whl
-                string url = $"https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
+                // eg https://github.com/mit-han-lab/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch2.5-cp310-cp310-linux_x86_64.whl
+                string url = $"https://github.com/mit-han-lab/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)
                 {
-                    await install("nunchaku", url);
+                    string nunchakuVers = getVers("nunchaku");
+                    if (nunchakuVers is not null && Version.Parse(nunchakuVers) < Version.Parse("0.3.1"))
+                    {
+                        await update("nunchaku", url);
+                    }
+                    else
+                    {
+                        await install("nunchaku", url);
+                    }
                 }
             }
             foreach (string req in reqs.Keys)

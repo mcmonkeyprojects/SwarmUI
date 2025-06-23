@@ -562,6 +562,11 @@ public class T2IModelHandler
                     specialFormat = "fp8_scaled";
                     break;
                 }
+                if (key.EndsWith(".mlp_context_fc1.wscales"))
+                {
+                    specialFormat = "nunchaku";
+                    break;
+                }
             }
             if (model.Name.EndsWith(".gguf"))
             {
