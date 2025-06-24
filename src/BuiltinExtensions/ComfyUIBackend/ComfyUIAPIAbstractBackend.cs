@@ -30,6 +30,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 
     public JObject RawObjectInfo;
 
+    public HashSet<string> NodeTypes = [];
+
     public string ModelFolderFormat = null;
 
     public record class ReusableSocket(string ID, ClientWebSocket Socket);
@@ -53,6 +55,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         RawObjectInfo = result;
         ConcurrentDictionary<string, List<string>> newModels = [];
         string firstBackSlash = null;
+        NodeTypes = [.. RawObjectInfo.Properties().Select(p => p.Name)];
         void trackModels(string subtype, string node, string param)
         {
             if (RawObjectInfo.TryGetValue(node, out JToken loaderNode))
