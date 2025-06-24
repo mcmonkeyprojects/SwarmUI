@@ -1237,7 +1237,7 @@ public static class Utilities
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
         // 10k is low enough that the swarm server won't thrash its CPU if it has to hash passwords often (eg somebody spamming bad auth requests), but high enough to at least be a bit of a barrier to somebody that yoinks the raw hashes
         byte[] hashed = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
-        return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hashed);
+        return "swarmpw_v1:" + Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hashed);
     }
 
     /// <summary>Returns whether the given password matches the stored hash.</summary>
@@ -1248,12 +1248,43 @@ public static class Utilities
             password = password["__swarmdoprehash:".Length..];
             password = BytesToHex(SHA256.HashData(password.EncodeUTF8())).ToLowerFast();
         }
+        int version = 1; // Legacy version had no prefix, so presume v1
+        if (hashed.StartsWith("swarmpw_"))
+        {
+            string prefix = hashed.BeforeAndAfter(':', out string rest);
+            if (prefix == "swarmpw_v1")
+            {
+                version = 1;
+            }
+            else
+            {
+                throw new Exception("$Unknown password hash version: " + prefix);
+            }
+            hashed = rest;
+        }
         string saltRaw = hashed.BeforeAndAfter(':', out string hashRaw);
         byte[] salt = Convert.FromBase64String(saltRaw);
         byte[] hash = Convert.FromBase64String(hashRaw);
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
-        byte[] hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
-        return hashedAttempt.SequenceEqual(hash);
+        byte[] hashedAttempt;
+        if (version == 1)
+        {
+            hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
+        }
+        else
+        {
+            throw new UnreachableException();
+        }
+        if (hashedAttempt.Length != hash.Length)
+        {
+            throw new SwarmReadableErrorException("Password hash length mismatch, impl issue?");
+        }
+        uint diff = 0; // Slow equals check
+        for (int i = 0; i < hash.Length; i++)
+        {
+            diff |= (uint)(hash[i] ^ hashedAttempt[i]);
+        }
+        return diff == 0;
     }
 
     /// <summary>Splits a standard CSV file - that is, comma separated values that allow for quoted chunks with commas inside.</summary>
