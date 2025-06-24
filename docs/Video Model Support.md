@@ -326,7 +326,8 @@ There's a full step by step guide for video model usage here: <https://github.co
 ### Wan CausVid - High Speed 14B
 
 - Want to generate 14B videos way faster? Here's how:
-    - Download this LoRA <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors> and save it to your LoRAs folder
+    - Pick one of the options below, and save it to your LoRAs folder. "Lightx2v" is the current best recommendation.
+        - Here's the v2 version <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors>
         - Or the V1 version <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors>
             - V1 has some visual side effects (noise pattern on the video), whereas V2 seems to have motion delay (the first couple seconds of a video have little motion, requiring longer video gens)
         - (Despite the T2V name, this works on I2V too)
