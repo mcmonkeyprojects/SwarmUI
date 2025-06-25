@@ -345,7 +345,7 @@ There's a full step by step guide for video model usage here: <https://github.co
         - **Scheduler:** not sure what's best atm, but default usually seems alright
         - **Frame Count (Length):** supports the same ranges as regular Wan, but seems to extend happily to at least 96 frames (4 seconds at 24 fps), and possibly also 120 frames (5 seconds).
             - Wan defaults to 81 in Swarm (3.3 seconds) so you may want to tweak this manually.
-            - Use 24 for one second, 48 for two, 72 for three, 96 for four.
+            - Use 25 for one second, 49 for two, 73 for three, 97 for four, 121 for five, 145 for six.
         - With Text2Video, you may want to set **Other Fixes** -> **Trim Video Start Frames** to about 8, to prevent first-frame-flash (there tends to be 2 latent frames, ie 8 real frames, in glitched quality)
     - Note you still have to consider VRAM and res/frame count, as you will still get slow gens if you exceed your GPU's VRAM capacity. The net speed will still be faster, but not as impressive as compared to when you fit your GPU properly.
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
