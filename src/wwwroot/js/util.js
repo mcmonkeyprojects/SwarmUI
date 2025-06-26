@@ -65,10 +65,12 @@ function createSpan(id, classes, html = null) {
  */
 function createDiv(id, classes, html = null) {
     let div = document.createElement('div');
-    if (id != null) {
+    if (id) {
         div.id = id;
     }
-    div.className = classes;
+    if (classes) {
+        div.className = classes;
+    }
     if (html) {
         div.innerHTML = html;
     }
