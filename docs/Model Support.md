@@ -279,6 +279,12 @@ Parameters and usage is the same as any other normal model.
     - Creativity `1` works well.
     - Larger masks recommended. Small ones may not replace content.
     - Boosting the `Flux Guidance Scale` way up to eg `30` may improve quality
+- For "**Kontext**" (edit model), it works like other edit models.
+    - Model download here <https://huggingface.co/Comfy-Org/flux1-kontext-dev_ComfyUI/blob/main/split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors>
+    - It's a regular model file, it goes in the regular `diffusion_models` folder same as other flux models.
+    - You will have to manually edit the architecture to be `Flux.1 Kontext Dev`, it misdetects by default
+    - Set an init image, and creativity at 1. No masking.
+    - Prompt should describe a *change* to make to the image.
 - If you want to use the **ACE Plus** Models (Character consistency)
     - Download the LoRAs from https://huggingface.co/ali-vilab/ACE_Plus/tree/main and save as normal loras
     - Enable the Flux Fill model, enable the LoRA you chose
