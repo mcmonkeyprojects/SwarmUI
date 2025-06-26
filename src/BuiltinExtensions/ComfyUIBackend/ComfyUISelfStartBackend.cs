@@ -485,9 +485,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("ultralytics", $"ultralytics=={UltralyticsVersion}");
             }
-            if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
+            if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus") || Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
-                // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
+                // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so... (nunchaku needs it too)
                 await install("cython", "cython");
                 if (File.Exists($"{lib}/../../python311.dll"))
                 {
