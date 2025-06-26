@@ -293,27 +293,35 @@ function editPreset(preset) {
     fixPresetParamClickables();
 }
 
+/** keeps track of the sortBy elements we've bound event listeners to */
 let presetSortByElement;
 let presetSortReverseElement;
-let presetSortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
-let presetSortReverse = localStorage.getItem('preset_list_sort_reverse') === 'true';
 
+/** keeps track of the currently selected sort options (initialized from localStorage) */
+let presetSortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
+let presetSortReverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
 
 function onPresetSortByChanged(ev) {
-    localStorage.setItem('preset_list_sort_by', presetSortBy = ev.target.value);
+    presetSortBy = ev.target.value
+    localStorage.setItem('preset_list_sort_by', presetSortBy);
     presetBrowser.update();
 }
 
 function onPresetSortReverseChanged(ev) {
-    localStorage.setItem('preset_list_sort_reverse', presetSortReverse = ev.target.checked);
+    presetSortReverse = ev.target.checked
+    localStorage.setItem('preset_list_sort_reverse', presetSortReverse);
     presetBrowser.update();
 }
 
-function getSortInfo() {
-    const sortByElem = document.getElementById("preset_list_sort_by");
-    const reverseElem = document.getElementById("preset_list_sort_reverse");
+/** Ensures the preset sort options are up to date and UI elements are bound */
+function initializePresetSortInfo() {
+    let sortByElem = document.getElementById("preset_list_sort_by");
+    let reverseElem = document.getElementById("preset_list_sort_reverse");
 
-    if (sortByElem !== presetSortByElement) {
+    // check if the sortBy elements have changed since we were last invoked
+    // if they have, remove the event listeners from the old elements and add them to the new one
+    // and initialize the values of the new elements
+    if (sortByElem != presetSortByElement) {
         presetSortByElement?.removeEventListener("change", onPresetSortByChanged);
         presetSortByElement = sortByElem;
         if (sortByElem) {
@@ -322,7 +330,7 @@ function getSortInfo() {
         }
     }
 
-    if (reverseElem !== presetSortReverseElement) {
+    if (reverseElem != presetSortReverseElement) {
         presetSortReverseElement?.removeEventListener("change", onPresetSortReverseChanged);
         presetSortReverseElement = reverseElem;
         if (reverseElem) {
@@ -334,42 +342,62 @@ function getSortInfo() {
     return {sortBy: presetSortBy, reverse: presetSortReverse};
 }
 
-function getSortCompareFunc(sortBy, reverse) {
-    const getValue = preset => {
-        if (preset.title.toLowerCase() === "default") {
-            return "          default";
-        }
-        if (preset.title.toLowerCase() === "preview") {
-            return "          preview";
-        }
-        
-        switch (sortBy) {
-            // for Name, use title, but strip off the path part
-            case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
-            case 'Title': return preset.title;
-            case 'Default':
-            default: return 'z'; // stable sort will basically do nothing
-        }
-    };
-    
-    const multiplier = reverse ? -1 : 1;
-    return (a, b) => {
-        const valueA = getValue(a);
-        const valueB = getValue(b);
-        if (valueA < valueB) {
-            return -1 * multiplier;
-        }
-        if (valueA > valueB) {
-            return 1 * multiplier;
-        }
-        return 0;
+function getPresetSortValue(preset) {
+    switch (presetSortBy) {
+        // sort by the leaf name
+        case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
+        // sort by the full path
+        case 'Path':
+        default: return preset.title;
     }
 }
 
-    
+/** A preset comparison function which can be used to sort presets */
+function presetSortCompare(a, b) {
+    let multiplier = presetSortReverse ? -1 : 1;
+    let valueA = getPresetSortValue(a);
+    let valueB = getPresetSortValue(b);
+    if (valueA < valueB) {
+        return -1 * multiplier;
+    }
+    if (valueA > valueB) {
+        return 1 * multiplier;
+    }
+    return 0;
+}
+
+/** Sorts the presets based on the current sort options */    
 function sortPresets() {
-    const {sortBy, reverse} = getSortInfo();
-    allPresets = allPresetsUnsorted.toSorted(getSortCompareFunc(sortBy, reverse));
+    initializePresetSortInfo();
+    // partition the presets into the special list (default, preview) and the normal list.
+    // we will sort the normal list, then prepend the special list to the front (or back, if reversed)
+    let [specialPresets, normalPresets] = allPresetsUnsorted.reduce(([special, normal], preset) => {
+        if (preset.title.toLowerCase() == "default" || preset.title.toLowerCase() == "preview") {
+            special.push(preset);
+        }
+        else {
+            normal.push(preset);
+        }
+        return [special, normal];
+    }, [[], []]);
+    if (presetSortBy == 'Default') {
+        // do not need to sort.  Just prepend the specials and then possibly reverse
+        normalPresets.unshift(...specialPresets);
+        if (presetSortReverse) {
+            normalPresets.reverse();
+        }
+    }
+    else {
+        normalPresets.sort(presetSortCompare);
+        // prepend the specials (append if reversed)
+        if (presetSortReverse) {
+            normalPresets.push(...specialPresets.reverse());
+        }
+        else {
+            normalPresets.unshift(...specialPresets);
+        }
+    }
+    allPresets = normalPresets;
 }
 
 function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
@@ -456,7 +484,7 @@ function clearPresets() {
 }
 
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
-    `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Title</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
+    `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Path</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
     <button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
     <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>
     <button id="preset_list_export_button translate" class="refresh-button" onclick="exportPresetsButton()">Export All Presets</button>
