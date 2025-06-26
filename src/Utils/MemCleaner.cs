@@ -30,7 +30,7 @@ public static class MemCleaner
         }
         else if (Environment.TickCount64 - TimeSinceLastGen > Program.ServerSettings.Backends.ClearSystemRAMAfterMinutes * 60 * 1000 && !HasClearedSysRAM && Program.ServerSettings.Backends.ClearSystemRAMAfterMinutes >= 0)
         {
-            BackendAPI.FreeBackendMemory(null, false).Wait();
+            BackendAPI.FreeBackendMemory(null, true).Wait();
             HasClearedSysRAM = true;
         }
     }
