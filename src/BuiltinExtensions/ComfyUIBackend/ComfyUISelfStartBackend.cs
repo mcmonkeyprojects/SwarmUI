@@ -95,6 +95,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         path = $"\"{path}\"";
                     }
                     string cacheOption = skipPipCache ? " --no-cache-dir" : "";
+                    await DoLibFixes(false, false); // Some nodes have cursed deps, so we hack-around a pre-fix here
                     Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install{cacheOption} -r {path}");
                     NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Requirements Install - {folderName})", "");
                     await p.WaitForExitAsync(Program.GlobalProgramCancel);
@@ -388,6 +389,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             await Task.WhenAll(tasks);
             AddLoadStatus($"All tasks done.");
         }
+        await DoLibFixes(doFixFrontend, doLatestFrontend);
+        AddLoadStatus("Starting self-start ComfyUI process...");
+        await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart);
+    }
+
+    public async Task DoLibFixes(bool doFixFrontend, bool doLatestFrontend)
+    {
         string lib = NetworkBackendUtils.GetProbableLibFolderFor(Settings.StartScript);
         if (lib is null || lib.Length < 3)
         {
@@ -567,8 +575,6 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             AddLoadStatus("Done validating required libs.");
         }
-        AddLoadStatus("Starting self-start ComfyUI process...");
-        await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart);
     }
 
     /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>
