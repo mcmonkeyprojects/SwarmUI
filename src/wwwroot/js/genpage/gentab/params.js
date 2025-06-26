@@ -703,7 +703,7 @@ function genInputs(delay_final = false) {
                 });
             }
             if (!param.do_not_save) {
-                elem.addEventListener('change', () => {
+                function getParamValue(param, elem) {
                     let val = null;
                     if (param.type == "boolean") {
                         val = elem.checked;
@@ -715,6 +715,10 @@ function genInputs(delay_final = false) {
                     else if (param.type != "image") {
                         val = elem.value;
                     }
+                    return val;
+                }
+                elem.addEventListener('change', () => {
+                    let val = getParamValue(param, elem);
                     if (val !== null) {
                         if (val == param.default) {
                             deleteCookie(`lastparam_input_${param.id}`);
@@ -724,24 +728,28 @@ function genInputs(delay_final = false) {
                         }
                     }
                 });
-            }
-            if (param.toggleable) {
-                let toggler = getRequiredElementById(`input_${param.id}_toggle`);
-                let cookie = getCookie(`lastparam_input_${param.id}_toggle`);
-                if (cookie) {
-                    toggler.checked = cookie == "true";
-                }
-                doToggleEnable(`input_${param.id}`);
-                if (!param.do_not_save) {
-                    toggler.addEventListener('change', () => {
-                        if (!toggler.checked) {
-                            deleteCookie(`lastparam_input_${param.id}`);
-                            deleteCookie(`lastparam_input_${param.id}_toggle`);
-                        }
-                        else {
-                            setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
-                        }
-                    });
+                if (param.toggleable) {
+                    let toggler = getRequiredElementById(`input_${param.id}_toggle`);
+                    let cookie = getCookie(`lastparam_input_${param.id}_toggle`);
+                    if (cookie) {
+                        toggler.checked = cookie == "true";
+                    }
+                    doToggleEnable(`input_${param.id}`);
+                    if (!param.do_not_save) {
+                        toggler.addEventListener('change', () => {
+                            if (!toggler.checked) {
+                                deleteCookie(`lastparam_input_${param.id}`);
+                                deleteCookie(`lastparam_input_${param.id}_toggle`);
+                            }
+                            else {
+                                setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
+                                let val = getParamValue(param, elem);
+                                if (val !== null && val != param.default) {
+                                    setCookie(`lastparam_input_${param.id}`, val, getParamMemoryDays());
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }
