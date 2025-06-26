@@ -102,7 +102,8 @@ class GenPageBrowserClass {
      * Checks if the window is small, setting isSmallWindow (mostly for mobile compat).
      */
     checkIsSmall() {
-        this.isSmallWindow = window.innerWidth < 768 || window.innerHeight < 768;
+        let mobileDesktopLayout = localStorage.getItem('layout_mobileDesktop') || 'auto';
+        this.isSmallWindow = mobileDesktopLayout == 'auto' ? window.innerWidth < 768 : mobileDesktopLayout == 'mobile';
     }
 
     /**
