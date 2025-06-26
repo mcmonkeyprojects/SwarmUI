@@ -736,6 +736,7 @@ function genInputs(delay_final = false) {
                     toggler.addEventListener('change', () => {
                         if (!toggler.checked) {
                             deleteCookie(`lastparam_input_${param.id}`);
+                            deleteCookie(`lastparam_input_${param.id}_toggle`);
                         }
                         else {
                             setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
