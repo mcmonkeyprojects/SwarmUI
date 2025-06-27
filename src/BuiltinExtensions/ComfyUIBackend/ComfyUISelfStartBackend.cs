@@ -461,6 +461,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("av", "av>=14.2.0");
             }
+            string spandrelVers = getVers("spandrel");
+            if (spandrelVers is not null && Version.Parse(spandrelVers) < Version.Parse("0.4.1"))
+            {
+                await update("spandrel", "spandrel>=0.4.1");
+            }
             string frontendVersion = getVers("comfyui_frontend_package");
             if (doFixFrontend && (frontendVersion is null || frontendVersion != SwarmValidatedFrontendVersion))
             {
