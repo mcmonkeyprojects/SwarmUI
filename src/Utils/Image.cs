@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 using SixLabors.ImageSharp;
 using System.IO;
@@ -26,7 +26,8 @@ public class Image
         IMAGE = 0,
         /// <summary>ie animated gif</summary>
         ANIMATION = 1,
-        VIDEO = 2
+        VIDEO = 2,
+        AUDIO = 3
     }
 
     /// <summary>The type of image data this image holds.</summary>
@@ -42,6 +43,11 @@ public class Image
         {
             string ext = data.Before(";base64,").After("data:video/");
             return new Image(data.After(";base64,"), ImageType.VIDEO, ext);
+        }
+        if (data.StartsWith("data:audio/"))
+        {
+            string ext = data.Before(";base64,").After("data:audio/");
+            return new Image(data.After(";base64,"), ImageType.AUDIO, ext);
         }
         if (data.StartsWith("data:image/gif;"))
         {
@@ -79,7 +85,7 @@ public class Image
         }
         else if (data.Length == 0)
         {
-              throw new ArgumentException("Data is empty!", nameof(data));
+            throw new ArgumentException("Data is empty!", nameof(data));
         }
         ImageData = data;
     }
@@ -123,15 +129,31 @@ public class Image
     /// <summary>Gets the correct mime type for this image, eg 'image/png'.</summary>
     public string MimeType()
     {
-        if (Type == ImageType.ANIMATION)
+        switch (Type)
         {
-            return "image/gif";
+            case ImageType.ANIMATION:
+                {
+                    return "image/gif";
+                }
+            case ImageType.VIDEO:
+                {
+                    return $"video/{Extension}";
+                }
+            case ImageType.IMAGE:
+                {
+                    return $"image/{(Extension == "jpg" ? "jpeg" : Extension)}";
+                }
+            case ImageType.AUDIO:
+                {
+                    return $"audio/{Extension}";
+                }
+            default:
+                {
+                    return $"image/{(Extension == "jpg" ? "jpeg" : Extension)}";
+                    // TODO: Should we throw an error here or just return image?
+                    //throw new ArgumentOutOfRangeException(nameof(Type), Type, "Unknown image type: " + Type);
+                }
         }
-        else if (Type == ImageType.VIDEO)
-        {
-            return $"video/{Extension}";
-        }
-        return $"image/{(Extension == "jpg" ? "jpeg" : Extension)}";
     }
 
     /// <summary>Returns a metadata-format of the image.</summary>

@@ -947,6 +947,12 @@ function isVideoExt(filename) {
     return ['mp4', 'mpeg', 'mov', 'webm'].includes(ext);
 }
 
+/** Returns true if the given filename is for an audio file based on the extension, or false if it is not. */
+function isAudioExt(filename) {
+    let ext = filename.split('.').pop();
+    return ['mp3', 'wav', 'ogg', 'flac', 'opus'].includes(ext);
+}
+
 /** 'string.split' with a count limit, and without the stupid misbehavior of the default JS 'string.split'. */
 function splitWithTail(str, splitter, limit) {
     let parts = str.split(splitter);

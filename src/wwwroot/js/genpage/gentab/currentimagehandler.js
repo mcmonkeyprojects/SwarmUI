@@ -537,14 +537,15 @@ function getImageFullSrc(src) {
     return fullSrc;
 }
 
-function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
+function setCurrentImage(src, metadata = '', filename = null, batchId = '', previewGrow = false, smoothAdd = false, canReparse = true, isPlaceholder = false) {
     currentImgSrc = src;
     if (metadata) {
         metadata = interpretMetadata(metadata);
     }
     currentMetadataVal = metadata;
-    let isVideo = isVideoExt(src);
-    if ((smoothAdd || !metadata) && canReparse && !isVideo) {
+    let isVideo = filename && isVideoExt(filename);
+    let isAudio = filename && isAudioExt(filename);
+    if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
         let image = new Image();
         image.onload = () => {
             if (!metadata) {
@@ -575,10 +576,17 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         img.loop = true;
         img.autoplay = true;
         img.muted = true;
-        let sourceObj = document.createElement('source');
-        srcTarget = sourceObj;
-        sourceObj.type = `video/${src.substring(src.lastIndexOf('.') + 1)}`;
-        img.appendChild(sourceObj);
+        img.controls = true;
+        srcTarget = img;
+        curImg.appendChild(img);
+    }
+    else if (isAudio) {
+        curImg.innerHTML = '';
+        img = document.createElement('audio');
+        img.autoplay = true;
+        img.controls = true;
+        srcTarget = img;
+        curImg.appendChild(img);
     }
     else {
         img = document.getElementById('current_image_img');
@@ -598,25 +606,32 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         if (isVideo) {
             return [img.videoWidth, img.videoHeight];
         }
+        else if (isAudio) {
+            return [0, 0];
+        }
         else {
             return [img.naturalWidth, img.naturalHeight];
         }
     }
-    img.onload = () => {
-        let [width, height] = naturalDim();
-        if (previewGrow || getUserSetting('centerimagealwaysgrow')) {
-            img.width = width * 8;
-            img.height = height * 8;
-            img.dataset.previewGrow = 'true';
+    if (!isAudio) {
+        img.onload = () => {
+            let [width, height] = naturalDim();
+            if (previewGrow || getUserSetting('centerimagealwaysgrow')) {
+                img.width = width * 8;
+                img.height = height * 8;
+                img.dataset.previewGrow = 'true';
+            }
+            alignImageDataFormat();
         }
-        alignImageDataFormat();
     }
     srcTarget.src = src;
     img.className = 'current-image-img';
     img.id = 'current_image_img';
     img.dataset.src = src;
     img.dataset.batch_id = batchId;
-    img.onclick = () => imageFullView.showImage(src, metadata);
+    if (!isAudio) {
+        img.onclick = () => imageFullView.showImage(src, metadata);
+    }
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
@@ -942,14 +957,20 @@ function imageInputHandler() {
             e.preventDefault();
             e.stopPropagation();
             let file = e.dataTransfer.files[0];
-            if (file.type.startsWith('image/')) {
+            if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
                 let reader = new FileReader();
                 reader.onload = (e) => {
-                    try {
-                        parseMetadata(e.target.result, (data, metadata) => { setCurrentImage(data, metadata); });
+                    let data = e.target.result;
+                    if (file.type.startsWith('image/')) {
+                        try {
+                            parseMetadata(data, (d, metadata) => { setCurrentImage(d, metadata, file.name); });
+                        }
+                        catch (e) {
+                            setCurrentImage(data, null, file.name);
+                        }
                     }
-                    catch (e) {
-                        setCurrentImage(e.target.result, null);
+                    else {
+                        setCurrentImage(data, null, file.name);
                     }
                 }
                 reader.readAsDataURL(file);
