@@ -259,6 +259,13 @@ public static class Utilities
         await socket.SendAsync(JsonToByteArray(obj), WebSocketMessageType.Text, true, cancel.Token);
     }
 
+    /// <summary>Send JSON data to a WebSocket.</summary>
+    public static async Task SendAndReportError(this WebSocket socket, string context, string message, TimeSpan maxDuration)
+    {
+        Logs.Error($"{context}: {message}");
+        await socket.SendJson(new JObject() { ["error"] = message }, maxDuration);
+    }
+
     /// <summary>Equivalent to <see cref="Task.WhenAny(IEnumerable{Task})"/> but doesn't break on an empty list.</summary>
     public static Task WhenAny(IEnumerable<Task> tasks)
     {

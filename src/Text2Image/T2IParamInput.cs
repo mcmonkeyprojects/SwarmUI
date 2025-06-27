@@ -169,12 +169,32 @@ public class T2IParamInput
         }
     }
 
+    /// <summary>Reference sheet of 512x512 aspect ratio approximations for custom Aspect Ratio selection.</summary>
+    public static Dictionary<string, (int, int)> ResolutionAspectReferences = new()
+    {
+        ["1:1"] = (512, 512),
+        ["4:3"] = (576, 448),
+        ["3:2"] = (608, 416),
+        ["8:5"] = (608, 384),
+        ["16:9"] = (672, 384),
+        ["21:9"] = (768, 320),
+        ["2:3"] = (416, 608),
+        ["5:8"] = (384, 608),
+        ["9:16"] = (384, 672),
+        ["9:21"] = (320, 768)
+    };
+
     /// <summary>Gets the desired image width.</summary>
     public int GetImageWidth(int def = 512)
     {
         if (TryGet(T2IParamTypes.RawResolution, out string res))
         {
             return int.Parse(res.Before('x'));
+        }
+        if (TryGet(T2IParamTypes.SideLength, out int sideLen) && TryGet(T2IParamTypes.AspectRatio, out string aspect) && ResolutionAspectReferences.TryGetValue(aspect, out (int, int) resRef))
+        {
+            // NOTE: This math must match params.js AspectRatio
+            return (int)Utilities.RoundToPrecision(resRef.Item1 * (sideLen / 512.0), 16);
         }
         return Get(T2IParamTypes.Width, def);
     }
@@ -189,6 +209,10 @@ public class T2IParamInput
         if (TryGet(T2IParamTypes.AltResolutionHeightMult, out double val) && TryGet(T2IParamTypes.Width, out int width))
         {
             return (int)(val * width);
+        }
+        if (TryGet(T2IParamTypes.SideLength, out int sideLen) && TryGet(T2IParamTypes.AspectRatio, out string aspect) && ResolutionAspectReferences.TryGetValue(aspect, out (int, int) resRef))
+        {
+            return (int)Utilities.RoundToPrecision(resRef.Item2 * (sideLen / 512.0), 16);
         }
         return Get(T2IParamTypes.Height, def);
     }

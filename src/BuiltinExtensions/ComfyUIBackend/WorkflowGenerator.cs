@@ -1553,7 +1553,22 @@ public class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        if (classId == "stable-diffusion-xl-v1-edit")
+        else if (classId.EndsWith("/kontext"))
+        {
+            if (FinalInputImage is null)
+            {
+                string decoded = CreateVAEDecode(FinalVae, latent);
+                FinalInputImage = [decoded, 0];
+            }
+            string vaeEncode = CreateVAEEncode(FinalVae, FinalInputImage);
+            string refLatentNode = CreateNode("ReferenceLatent", new JObject()
+            {
+                ["conditioning"] = pos,
+                ["latent"] = new JArray() { vaeEncode, 0 }
+            });
+            pos = [refLatentNode, 0];
+        }
+        else if (classId == "stable-diffusion-xl-v1-edit")
         {
             // TODO: SamplerCustomAdvanced logic should be used for *all* models, not just ip2p
             if (FinalInputImage is null)

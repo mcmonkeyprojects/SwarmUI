@@ -527,6 +527,9 @@ let extensionsAvailableText = translatable("extensions can be updated:");
 let hasEverCheckedForUpdates = false;
 
 function check_for_updates() {
+    if (!permissions.hasPermission('restart')) {
+        return;
+    }
     let updatesCard = getRequiredElementById('server_updates_card');
     let noticeArea = getRequiredElementById('updates_available_notice_area');
     noticeArea.innerText = checkingForUpdatesText.get();
