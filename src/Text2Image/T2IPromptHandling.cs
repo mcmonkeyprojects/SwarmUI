@@ -20,6 +20,8 @@ public class T2IPromptHandling
 
         public Dictionary<string, string> Variables = [];
 
+        public Dictionary<string, string> Macros = [];
+
         public int SectionID = 0;
 
         public int Depth = 0;
@@ -578,6 +580,35 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["embed"] = estimateEmpty;
         PromptTagLengthEstimators["embedding"] = estimateEmpty;
         PromptTagLengthEstimators["lora"] = estimateEmpty;
+        PromptTagProcessors["setmacro"] = (data, context) =>
+        {
+            string name = context.PreData;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                context.TrackWarning($"A macro name is required when using setmacro.");
+                return null;
+            }
+            context.Variables[name] = data;
+            return "";
+        };
+        PromptTagLengthEstimators["setmacro"] = estimateEmpty;
+        PromptTagProcessors["macro"] = (data, context) =>
+        {
+            if (!context.Variables.TryGetValue(data, out string val))
+            {
+                context.TrackWarning($"Macro '{data}' is not recognized.");
+                return "";
+            }
+            return context.Parse(val);
+        };
+        PromptTagLengthEstimators["macro"] = (data, context) =>
+        {
+            if (!context.Variables.TryGetValue(data, out string val))
+            {
+                return "";
+            }
+            return ProcessPromptLikeForLength(val);
+        };
         PromptTagProcessors["setvar"] = (data, context) =>
         {
             string name = context.PreData;

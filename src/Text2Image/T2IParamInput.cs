@@ -424,7 +424,7 @@ public class T2IParamInput
     {
         T2IPromptHandling.PromptTagContext posContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID };
         InternalSet.ValuesInput["prompt"] = ProcessPromptLike(T2IParamTypes.Prompt, posContext);
-        T2IPromptHandling.PromptTagContext negContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID, Variables = posContext.Variables };
+        T2IPromptHandling.PromptTagContext negContext = new() { Input = this, Param = T2IParamTypes.Prompt.Type.ID, Variables = posContext.Variables, Macros = posContext.Macros };
         InternalSet.ValuesInput["negativeprompt"] = ProcessPromptLike(T2IParamTypes.NegativePrompt, negContext);
     }
 
