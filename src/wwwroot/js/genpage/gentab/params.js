@@ -34,8 +34,8 @@ class AspectRatio {
         this.altLogic = altLogic;
     }
 
-    read(inWidth, inHeight) {
-        if (this.altLogic) {
+    read(inWidth, inHeight, doAltLogic = true) {
+        if (this.altLogic && doAltLogic) {
             let [newWidth, newHeight] = this.altLogic(inWidth, inHeight);
             if (newWidth && newHeight) {
                 return [newWidth, newHeight];
@@ -45,6 +45,7 @@ class AspectRatio {
             inWidth = roundTo(Math.sqrt(inWidth * inHeight), 16);
             inHeight = inWidth;
         }
+        // NOTE: This math must match T2IParamInput GetImageWidth
         let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
         let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
         return [width, height];
@@ -436,11 +437,15 @@ function genInputs(delay_final = false) {
         let inputAspectRatio = document.getElementById('input_aspectratio');
         let inputWidth = document.getElementById('input_width');
         let inputHeight = document.getElementById('input_height');
-        if (inputAspectRatio && inputWidth && inputHeight) {
+        let inputSideLength = document.getElementById('input_sidelength');
+        if (inputAspectRatio && inputWidth && inputHeight && inputSideLength) {
             let inputWidthParent = findParentOfClass(inputWidth, 'auto-slider-box');
             let inputWidthSlider = getRequiredElementById('input_width_rangeslider');
             let inputHeightParent = findParentOfClass(inputHeight, 'auto-slider-box');
             let inputHeightSlider = getRequiredElementById('input_height_rangeslider');
+            let inputSideLengthParent = findParentOfClass(inputSideLength, 'auto-slider-box');
+            let inputSideLengthSlider = getRequiredElementById('input_sidelength_rangeslider');
+            let inputSideLengthToggle = getRequiredElementById('input_sidelength_toggle');
             let resGroupLabel = findParentOfClass(inputWidth, 'input-group').querySelector('.header-label');
             let inputAspectRatioParent = findParentOfClass(inputAspectRatio, 'auto-dropdown-box');
             let inputAspectRatioParentStyles = window.getComputedStyle(inputAspectRatioParent);
@@ -461,6 +466,8 @@ function genInputs(delay_final = false) {
                     swapAspectRatioButton.style.display = 'block';
                     delete inputWidthParent.dataset.visible_controlled;
                     delete inputHeightParent.dataset.visible_controlled;
+                    inputSideLengthParent.style.display = 'none';
+                    inputSideLengthParent.dataset.visible_controlled = 'true';
                     aspect = describeAspectRatio(inputWidth.value, inputHeight.value);
                 }
                 else {
@@ -469,6 +476,8 @@ function genInputs(delay_final = false) {
                     swapAspectRatioButton.style.display = 'none';
                     inputWidthParent.dataset.visible_controlled = 'true';
                     inputHeightParent.dataset.visible_controlled = 'true';
+                    inputSideLengthParent.style.display = 'block';
+                    delete inputSideLengthParent.dataset.visible_controlled;
                     aspect = inputAspectRatio.value;
                 }
                 resGroupLabel.innerText = `${translate('Resolution')}: ${aspect} (${inputWidth.value}x${inputHeight.value})`;
@@ -479,10 +488,18 @@ function genInputs(delay_final = false) {
             inputAspectRatio.addEventListener('change', () => {
                 if (inputAspectRatio.value != "Custom") {
                     let aspectRatio = inputAspectRatio.value;
+                    let targetWidth = curModelWidth;
+                    let targetHeight = curModelHeight;
+                    let doAltLogic = true;
+                    if (inputSideLength.value && inputSideLengthToggle.checked) {
+                        targetWidth = inputSideLength.value;
+                        targetHeight = inputSideLength.value;
+                        doAltLogic = false;
+                    }
                     let width, height;
                     for (let ratio of aspectRatios) {
                         if (ratio.id == aspectRatio) {
-                            [width, height] = ratio.read(curModelWidth, curModelHeight);
+                            [width, height] = ratio.read(targetWidth, targetHeight, doAltLogic);
                             break;
                         }
                     }
@@ -493,6 +510,11 @@ function genInputs(delay_final = false) {
                 }
                 resTrick();
             });
+            for (let target of [inputSideLength, inputSideLengthSlider, inputSideLengthToggle]) {
+                target.addEventListener('change', () => {
+                    triggerChangeFor(inputAspectRatio);
+                });
+            }
             swapAspectRatioButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 let tmpWidth = inputWidth.value;
