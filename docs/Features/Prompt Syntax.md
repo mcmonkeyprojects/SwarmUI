@@ -63,12 +63,19 @@
 ![img](/docs/images/setvar-cat.jpg)
 
 - You can store and reuse variables within a prompt. This is primarily intended for repeating randoms & wildcards.
-    - Store with the syntax: `<setvar[var_name]:data>`
+    - Store with the syntax: `<setvar[var_name]:data>` or `<setvarq[var_name]:data>`
         - For example: `<setvar[color]:<random:red, blue, purple>>`
+        - `<setvar[var_name]:data>` will set `var_name=data` and also immediately add `data` to the prompt
+        - `<setvarq[var_name]:data>` will _quietly_ set `var_name=data` without adding `data` to the prompt
+        - `<setvar[var_name]:data>` is equivalent to `<setvarq[var_name]:data><var:var_name>`
     - Call back with the syntax: `<var:var_name>`
         - For example: `<var:color>`
     - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
         - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
+    - Here is a practical use case for `setvarq`: `1girl, <setvarq[style]:<random:scifi|fantasy|modern>><wildcard:headgear/<var:style>>, <wildcard:clothing/<var:style>>, <wildcard:locations/<var:style>>`
+        - This will produce a prompt like: `1girl, steel visor-less helmet, leather armor, majestic castle in background`
+        - Notice how we pick a random style (scifi, fantasy, or modern) then use that choice to load specific wildcards in that style for headgear, clothing, and locations.
+        - We do not want to actually put the style into the main prompt, so we use the quiet version of `setvarq` to set the style.
 
 ## Trigger Phrase
 

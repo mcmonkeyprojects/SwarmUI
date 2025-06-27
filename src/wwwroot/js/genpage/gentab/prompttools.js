@@ -81,20 +81,23 @@ class PromptTabCompleteClass {
         this.registerPrefix('setvar[var_name]', 'Store text for reference later in the prompt', (prefix) => { 
             return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>", then use like "<var:colors>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag'];
         });
+        this.registerPrefix('setvarq[var_name]', 'Quietly store text for reference later in the prompt', (prefix) => {
+            return ['\nSave the content of the tag into the named variable without immediately emitting it into the prompt. eg "<setvarq[colors]: red and blue>", then use like "<var:colors>"', '\nVariables can include the results of other tags. eg "<setvarq[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag'];
+        });
         this.registerPrefix('var', 'Reference a previously saved variable later', (prefix, prompt) => {
             let prefixLow = prefix.toLowerCase();
             let possible = [];
-            let matches = prompt.match(/<setvar\[(.*?)\]:/g);
+            let matches = prompt.matchAll(/<setvarq?\[(?<varname>.*?)\]:/g);
             if (matches) {
                 for (let match of matches) {
-                    let varName = match.substring('<setvar['.length, match.length - ']:'.length);
+                    let varName = match.groups.varname;
                     if (varName.toLowerCase().includes(prefixLow)) {
                         possible.push(varName);
                     }
                 }
             }
             if (possible.length == 0) {
-                return ['\nRecall a value previously saved with <setvar[name]:...>, use like "<var:name>"','\n"setvar" must be used earlier in the prompt, then "var" later'];
+                return ['\nRecall a value previously saved with <setvar[name]:...> or <setvarq[name]:...>, use like "<var:name>"','\n"setvar" must be used earlier in the prompt, then "var" later'];
             }
             return possible;
         });

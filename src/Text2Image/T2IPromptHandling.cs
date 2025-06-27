@@ -594,6 +594,19 @@ public class T2IPromptHandling
         {
             return ProcessPromptLikeForLength(data);
         };
+        PromptTagProcessors["setvarq"] = (data, context) =>
+        {
+            string name = context.PreData;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                context.TrackWarning($"A variable name is required when using setvarq.");
+                return null;
+            }
+            data = context.Parse(data);
+            context.Variables[name] = data;
+            return ""; // quiet-mode: do not render anything to the prompt
+        };
+        PromptTagLengthEstimators["setvarq"] = estimateEmpty;
         PromptTagProcessors["var"] = (data, context) =>
         {
             if (!context.Variables.TryGetValue(data, out string val))
