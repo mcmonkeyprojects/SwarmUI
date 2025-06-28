@@ -193,7 +193,12 @@ class ImageFullViewHelper {
         let subDiv = createDiv(null, null, '<br>');
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
             if (added.href) {
-                subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}">${added.label}</a><br>`));
+                if (added.is_download) {
+                    subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}" download>${added.label}</a><br>`));
+                }
+                else {
+                    subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}">${added.label}</a><br>`));
+                }
             }
             else {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), '', added.title);
