@@ -287,6 +287,8 @@ Parameters and usage is the same as any other normal model.
     - You will have to manually edit the architecture to be `Flux.1 Kontext Dev`, it misdetects by default
     - Set an init image, and creativity at 1. No masking.
     - Prompt should describe a *change* to make to the image.
+    - Kontext only takes one image at a time normally, but people have have some success simply gluing multiple images together side by side ("stitching" images) and using it that way, which Kontext somewhat recognizes and responds to, but that often doesn't seem to work in practice.
+        - To use this in Swarm, add the extra images to your prompt input.
 - If you want to use the **ACE Plus** Models (Character consistency)
     - Download the LoRAs from https://huggingface.co/ali-vilab/ACE_Plus/tree/main and save as normal loras
     - Enable the Flux Fill model, enable the LoRA you chose

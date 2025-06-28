@@ -1560,7 +1560,25 @@ public class WorkflowGenerator
                 string decoded = CreateVAEDecode(FinalVae, latent);
                 FinalInputImage = [decoded, 0];
             }
-            string vaeEncode = CreateVAEEncode(FinalVae, FinalInputImage);
+            JArray img = FinalInputImage;
+            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+            {
+                for (int i = 0; i < images.Count; i++)
+                {
+                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", true);
+                    string stitched = CreateNode("ImageStitch", new JObject()
+                    {
+                        ["image1"] = img,
+                        ["image2"] = new JArray() { img2, 0 },
+                        ["direction"] = "right",
+                        ["match_image_size"] = true,
+                        ["spacing_width"] = 0,
+                        ["spacing_color"] = "white"
+                    });
+                    img = [stitched, 0];
+                }
+            }
+            string vaeEncode = CreateVAEEncode(FinalVae, img);
             string refLatentNode = CreateNode("ReferenceLatent", new JObject()
             {
                 ["conditioning"] = pos,
