@@ -28,6 +28,8 @@ class ImageFullViewHelper {
         this.content.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
+        this.fixButtonDelay = null;
+        this.lastClosed = 0;
     }
 
     getImg() {
@@ -206,6 +208,25 @@ class ImageFullViewHelper {
             }
             subDiv.appendChild(document.createElement('br'));
         }
+        if (this.fixButtonDelay) {
+            clearTimeout(this.fixButtonDelay);
+        }
+        if (Date.now() - this.lastClosed > 200) {
+            subDiv.style.pointerEvents = 'none';
+            for (let button of subDiv.getElementsByTagName('button')) {
+                button.disabled = true;
+                button.classList.add('simpler-button-disable');
+            }
+            this.fixButtonDelay = setTimeout(() => {
+                if (subDiv && subDiv.parentElement) {
+                    subDiv.style.pointerEvents = 'auto';
+                    for (let button of subDiv.getElementsByTagName('button')) {
+                        button.disabled = false;
+                    }
+                }
+                this.fixButtonDelay = null;
+            }, 500);
+        }
         this.extraButtons.appendChild(subDiv);
     }
 
@@ -213,6 +234,7 @@ class ImageFullViewHelper {
         this.isDragging = false;
         this.didDrag = false;
         this.modalJq.modal('hide');
+        this.lastClosed = Date.now();
     }
 
     isOpen() {
