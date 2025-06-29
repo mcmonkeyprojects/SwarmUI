@@ -675,14 +675,22 @@ public static class Utilities
     public static HttpClient UtilWebClient = NetworkBackendUtils.MakeHttpClient();
 
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
-    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null)
+    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null, Dictionary<string, string> headers = null)
     {
         altUrl ??= url;
         cancel ??= new();
         using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
         Directory.CreateDirectory(Path.GetDirectoryName(filepath));
         using FileStream writer = File.OpenWrite(filepath);
-        using HttpResponseMessage response = await UtilWebClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
+        HttpRequestMessage request = new(HttpMethod.Get, url);
+        if (headers is not null)
+        {
+            foreach ((string key, string value) in headers)
+            {
+                request.Headers.Add(key, value);
+            }
+        }
+        using HttpResponseMessage response = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;
         ConcurrentQueue<byte[]> chunks = new();
         ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
