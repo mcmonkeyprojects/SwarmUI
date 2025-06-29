@@ -374,16 +374,9 @@ public class ComfyUIBackendExtension : Extension
             Logs.Verbose($"Error refreshing ComfyUI: {ex.ReadableString()}");
             Utilities.RunCheckedTask(() =>
             {
-                try
-                {
-                    using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(5));
-                    Task.WaitAll([.. tasks], cancel.Token);
-                }
-                catch (Exception ex2)
-                {
-                    Logs.Error($"Error refreshing ComfyUI: {ex2}");
-                }
-            });
+                using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(5));
+                Task.WaitAll([.. tasks], cancel.Token);
+            }, "refreshing ComfyUI");
         }
     }
 

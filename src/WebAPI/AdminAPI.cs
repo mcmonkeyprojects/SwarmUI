@@ -512,7 +512,7 @@ public static class AdminAPI
                 }
             }
             updatesPreview = [.. commits];
-        }));
+        }, "check for core update"));
         foreach (Extension extension in Program.Extensions.Extensions.Where(e => !e.IsCore))
         {
             Extension ext = extension; // lambda capture
@@ -530,7 +530,7 @@ public static class AdminAPI
                         extensions.Add(ext.ExtensionName);
                     }
                 }
-            }));
+            }, "check for extension update"));
         }
         await Task.WhenAll(fetchTasks);
         Logs.Debug($"Update check complete - {serverUpdates} Swarm commits, {extensions.Count} extensions, {backendUpdates.Count} backends.");

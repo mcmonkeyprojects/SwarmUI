@@ -518,7 +518,7 @@ public static class ModelsAPI
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
         }
         handler.ResetMetadataFrom(actualModel);
-        _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel());
+        _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
     }

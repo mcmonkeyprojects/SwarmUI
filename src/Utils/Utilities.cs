@@ -606,7 +606,7 @@ public static class Utilities
     }
 
     /// <summary>Runs a task async with an exception check.</summary>
-    public static Task RunCheckedTask(Action action)
+    public static Task RunCheckedTask(Action action, string sourceId = "unlabeled")
     {
         return Task.Run(() =>
         {
@@ -616,12 +616,12 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Internal error in async task: {ex.ReadableString()}");
+                Logs.Error($"Internal error in async task ({sourceId}): {ex.ReadableString()}");
             }
         });
     }
 
-    public static Task RunCheckedTask(Func<Task> action)
+    public static Task RunCheckedTask(Func<Task> action, string sourceId = "unlabeled")
     {
         return Task.Run(async () =>
         {
@@ -631,7 +631,7 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Internal error in async task: {ex.ReadableString()}");
+                Logs.Error($"Internal error in async task ({sourceId}): {ex.ReadableString()}");
             }
         });
     }
