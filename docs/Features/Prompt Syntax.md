@@ -69,11 +69,12 @@
         - For example: `<var:color>`
     - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
         - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
+
 ## Macros
 
 ![img](/docs/images/setmacro-cat.jpg)
 
-- Similar to variables, you can store and reuse chunks of prompt syntax as a macro.  This is useful for repeating complicated randoms & wildcards
+- Similar to variables, you can store and reuse chunks of prompt syntax as a macro. This is useful for repeating complicated randoms & wildcards
     - Store with the syntax: `<setmacro[macro_name]:data>`
         - For example: `<setmacro[color]:<random:red, blue, purple>>`
     - Call back with the syntax: `<macro:macro_name>`

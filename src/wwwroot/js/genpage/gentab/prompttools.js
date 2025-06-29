@@ -84,10 +84,10 @@ class PromptTabCompleteClass {
         this.registerPrefix('macro', 'Reference a previously saved macro', (prefix, prompt) => {
             let prefixLow = prefix.toLowerCase();
             let possible = [];
-            let matches = prompt.matchAll(/<setmacro\[(?<varname>.*?)\]:/g);
+            let matches = prompt.matchAll(/<setmacro\[(.*?)\]:/g);
             if (matches) {
                 for (let match of matches) {
-                    let varName = match.groups.varname;
+                    let varName = match.substring('<setmacro['.length, match.length - ']:'.length);
                     if (varName.toLowerCase().includes(prefixLow)) {
                         possible.push(varName);
                     }
