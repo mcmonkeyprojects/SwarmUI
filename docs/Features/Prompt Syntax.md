@@ -74,14 +74,14 @@
 
 ![img](/docs/images/setmacro-cat.jpg)
 
-- Similar to variables, you can store and reuse chunks of prompt syntax as a macro. This is useful for repeating complicated randoms & wildcards
+- Similar to variables, you can store and reuse chunks of prompt syntax as a macro. This is useful for dynamically repeating complicated randoms.
     - Store with the syntax: `<setmacro[macro_name]:data>`
         - For example: `<setmacro[color]:<random:red, blue, purple>>`
     - Call back with the syntax: `<macro:macro_name>`
-        - For example: `room with <macro:color> walls, <macro:color> floors and <macro:color> carpet`
+        - For example: `in a room with <macro:color> walls, <macro:color> floors, and <macro:color> carpet`
     - Unlike Variables, macros are not evaluated when being set, but instead are evaluated when used via `<macro:...>`
-    - Here's a full example: `<setmacro[color]:<random:red|white|green|blue|purple|orange|black|brown>>Photo of a woman with <macro:color> hair, <macro:color> shirt, <macro:color> pants`
-        - A separate random color will be chosen for hair, shirt and pants.
+    - Here's a full example: `Photo of a woman with <setmacro[color]:<random:red|white|green|blue|purple|orange|black|brown>> hair, <macro:color> shirt, <macro:color> pants`
+        - A separate random color will be chosen for hair, shirt, and pants.
 
 ## Trigger Phrase
 

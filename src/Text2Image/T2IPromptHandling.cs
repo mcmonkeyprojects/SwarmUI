@@ -615,9 +615,12 @@ public class T2IPromptHandling
                 return null;
             }
             context.Macros[name] = data;
-            return "";
+            return context.Parse(data);
         };
-        PromptTagLengthEstimators["setmacro"] = estimateEmpty;
+        PromptTagLengthEstimators["setmacro"] = (data, context) =>
+        {
+            return ProcessPromptLikeForLength(data);
+        };
         PromptTagProcessors["macro"] = (data, context) =>
         {
             if (!context.Macros.TryGetValue(data, out string val))
