@@ -134,9 +134,9 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Status = BackendStatus.RUNNING;
             LoadStatusReport = null;
         }
-        catch (HttpRequestException e)
+        catch (Exception e)
         {
-            if (!ignoreWebError)
+            if (!ignoreWebError || (e is not HttpRequestException && e is not TaskCanceledException) || Program.GlobalProgramCancel.IsCancellationRequested)
             {
                 throw;
             }
