@@ -580,28 +580,6 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["embed"] = estimateEmpty;
         PromptTagLengthEstimators["embedding"] = estimateEmpty;
         PromptTagLengthEstimators["lora"] = estimateEmpty;
-        PromptTagProcessors["setmacro"] = (data, context) =>
-        {
-            string name = context.PreData;
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                context.TrackWarning($"A macro name is required when using setmacro.");
-                return null;
-            }
-            context.Macros[name] = data;
-            return "";
-        };
-        PromptTagLengthEstimators["setmacro"] = estimateEmpty;
-        PromptTagProcessors["macro"] = (data, context) =>
-        {
-            if (!context.Macros.TryGetValue(data, out string val))
-            {
-                context.TrackWarning($"Macro '{data}' is not recognized.");
-                return "";
-            }
-            return context.Parse(val);
-        };
-        PromptTagLengthEstimators["macro"] = estimateEmpty;
         PromptTagProcessors["setvar"] = (data, context) =>
         {
             string name = context.PreData;
@@ -628,6 +606,28 @@ public class T2IPromptHandling
             return val;
         };
         PromptTagLengthEstimators["var"] = estimateEmpty;
+        PromptTagProcessors["setmacro"] = (data, context) =>
+        {
+            string name = context.PreData;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                context.TrackWarning($"A macro name is required when using setmacro.");
+                return null;
+            }
+            context.Macros[name] = data;
+            return "";
+        };
+        PromptTagLengthEstimators["setmacro"] = estimateEmpty;
+        PromptTagProcessors["macro"] = (data, context) =>
+        {
+            if (!context.Macros.TryGetValue(data, out string val))
+            {
+                context.TrackWarning($"Macro '{data}' is not recognized.");
+                return "";
+            }
+            return context.Parse(val);
+        };
+        PromptTagLengthEstimators["macro"] = estimateEmpty;
         PromptTagBasicProcessors["trigger"] = (data, context) =>
         {
             List<string> phrases = [];
