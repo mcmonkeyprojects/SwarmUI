@@ -70,6 +70,19 @@
     - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
         - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
 
+## Macros
+
+![img](/docs/images/setmacro-cat.jpg)
+
+- Similar to variables, you can store and reuse chunks of prompt syntax as a macro. This is useful for dynamically repeating complicated randoms.
+    - Store with the syntax: `<setmacro[macro_name]:data>`
+        - For example: `<setmacro[color]:<random:red, blue, purple>>`
+    - Call back with the syntax: `<macro:macro_name>`
+        - For example: `in a room with <macro:color> walls, <macro:color> floors, and <macro:color> carpet`
+    - Unlike Variables, macros are not evaluated when being set, but instead are evaluated when used via `<macro:...>`
+    - Here's a full example: `Photo of a woman with <setmacro[color]:<random:red|white|green|blue|purple|orange|black|brown>> hair, <macro:color> shirt, <macro:color> pants`
+        - A separate random color will be chosen for hair, shirt, and pants.
+
 ## Trigger Phrase
 
 ![img](/docs/images/trigger-arcane-cat.jpg)

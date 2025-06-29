@@ -20,6 +20,8 @@ public class T2IPromptHandling
 
         public Dictionary<string, string> Variables = [];
 
+        public Dictionary<string, string> Macros = [];
+
         public int SectionID = 0;
 
         public int Depth = 0;
@@ -604,6 +606,31 @@ public class T2IPromptHandling
             return val;
         };
         PromptTagLengthEstimators["var"] = estimateEmpty;
+        PromptTagProcessors["setmacro"] = (data, context) =>
+        {
+            string name = context.PreData;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                context.TrackWarning($"A macro name is required when using setmacro.");
+                return null;
+            }
+            context.Macros[name] = data;
+            return context.Parse(data);
+        };
+        PromptTagLengthEstimators["setmacro"] = (data, context) =>
+        {
+            return ProcessPromptLikeForLength(data);
+        };
+        PromptTagProcessors["macro"] = (data, context) =>
+        {
+            if (!context.Macros.TryGetValue(data, out string val))
+            {
+                context.TrackWarning($"Macro '{data}' is not recognized.");
+                return "";
+            }
+            return context.Parse(val);
+        };
+        PromptTagLengthEstimators["macro"] = estimateEmpty;
         PromptTagBasicProcessors["trigger"] = (data, context) =>
         {
             List<string> phrases = [];

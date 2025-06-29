@@ -98,6 +98,26 @@ class PromptTabCompleteClass {
             }
             return possible;
         });
+        this.registerPrefix('setmacro[macro_name]', 'Store raw text for reference later in the prompt', (prefix) => {
+            return ['\nSave the raw content of the tag into the named macro. eg "<setmacro[color]:<random:red|blue|green>>", then use like "<macro:color>"', '\nMacro content will be re-evaluated each time it is used eg "<macro:color> hair, <macro:color> eyes" might produce "red hair, blue eyes', '\nReference macros later in the prompt with the <macro:> tag'];
+        });
+        this.registerPrefix('macro', 'Reference a previously saved macro', (prefix, prompt) => {
+            let prefixLow = prefix.toLowerCase();
+            let possible = [];
+            let matches = prompt.matchAll(/<setmacro\[(.*?)\]:/g);
+            if (matches) {
+                for (let match of matches) {
+                    let varName = match.substring('<setmacro['.length, match.length - ']:'.length);
+                    if (varName.toLowerCase().includes(prefixLow)) {
+                        possible.push(varName);
+                    }
+                }
+            }
+            if (possible.length == 0) {
+                return ['\nRecall a macro previously saved with <setmacro[name]:...>, use like "<macro:name>"','\n"setmacro" must be used earlier in the prompt, then "macro" later'];
+            }
+            return possible;
+        });
         this.registerPrefix('clear', 'Automatically clear part of the image to transparent (by CLIP segmentation matching) (iffy quality, prefer the Remove Background parameter over this)', (prefix) => {
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:background>"'];
         });
