@@ -152,6 +152,10 @@ function describeImage(image) {
 function selectImageInHistory(image, div) {
     lastHistoryImage = image.data.src;
     lastHistoryImageDiv = div;
+    for (let selected of document.querySelectorAll('.browser-list-entry.image-block-selected, .browser-details-list-entry.image-block-selected, .image-block.image-block-selected, .model-block.image-block-selected')) {
+        selected.classList.remove('image-block-selected');
+    }
+    div.classList.add('image-block-selected');
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.dataset.src == image.data.src) {
         curImg.dataset.batch_id = 'history';
@@ -160,8 +164,7 @@ function selectImageInHistory(image, div) {
     }
     if (image.data.name.endsWith('.html')) {
         window.open(image.data.src, '_blank');
-    }
-    else {
+    } else {
         if (!div.dataset.metadata) {
             div.dataset.metadata = image.data.metadata;
             div.dataset.src = image.data.src;
