@@ -1555,17 +1555,14 @@ public class WorkflowGenerator
         }
         else if (classId.EndsWith("/kontext"))
         {
-            if (FinalInputImage is null)
-            {
-                string decoded = CreateVAEDecode(FinalVae, latent);
-                FinalInputImage = [decoded, 0];
-            }
-            JArray img = FinalInputImage;
+            JArray img = null;
             if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
             {
-                for (int i = 0; i < images.Count; i++)
+                string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
+                img = [img1, 0];
+                for (int i = 1; i < images.Count; i++)
                 {
-                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", true);
+                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
                     string stitched = CreateNode("ImageStitch", new JObject()
                     {
                         ["image1"] = img,
@@ -1577,6 +1574,10 @@ public class WorkflowGenerator
                     });
                     img = [stitched, 0];
                 }
+            }
+            else if (FinalInputImage is not null)
+            {
+                img = FinalInputImage;
             }
             string vaeEncode = CreateVAEEncode(FinalVae, img);
             string refLatentNode = CreateNode("ReferenceLatent", new JObject()

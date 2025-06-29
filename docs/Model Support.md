@@ -285,10 +285,12 @@ Parameters and usage is the same as any other normal model.
     - Or some GGUFs here <https://huggingface.co/QuantStack/FLUX.1-Kontext-dev-GGUF/tree/main>
     - It's a regular model file, it goes in the regular `diffusion_models` folder same as other flux models.
     - You will have to manually edit the architecture to be `Flux.1 Kontext Dev`, it misdetects by default
-    - Set an init image, and creativity at 1. No masking.
+    - Paste images into the prompt box to serve as the reference images it will use to generate.
+        - If you have an init image and no reference images, the init image will be used.
+        - Be aware that the first image used will be the resolution control of the input. You will want to keep the image between 1024 and 2048 pixels wide.
+    - Kontext can take as many images as you want, but the way this works on the inside is a bit hacky and limited quality.
     - Prompt should describe a *change* to make to the image.
-    - Kontext only takes one image at a time normally, but people have have some success simply gluing multiple images together side by side ("stitching" images) and using it that way, which Kontext somewhat recognizes and responds to, but that often doesn't seem to work in practice.
-        - To use this in Swarm, add the extra images to your prompt input.
+    - BFL published an official prompting guide here, following it carefully is recommended: <https://docs.bfl.ai/guides/prompting_guide_kontext_i2i>
 - If you want to use the **ACE Plus** Models (Character consistency)
     - Download the LoRAs from https://huggingface.co/ali-vilab/ACE_Plus/tree/main and save as normal loras
     - Enable the Flux Fill model, enable the LoRA you chose
