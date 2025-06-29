@@ -490,7 +490,7 @@ public class WorkflowGeneratorSteps
         {
             if (g.UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Any())
             {
-                if (g.UserInput.TryGet(ComfyUIBackendExtension.StyleModelForRevision, out string styleModelName))
+                if (g.UserInput.TryGet(ComfyUIBackendExtension.UseStyleModel, out string styleModelName))
                 {
                     g.RequireVisionModel("sigclip_vision_patch14_384.safetensors", "https://huggingface.co/Comfy-Org/sigclip_vision_384/resolve/main/sigclip_vision_patch14_384.safetensors", "1fee501deabac72f0ed17610307d7131e3e9d1e838d0363aa3c2b97a6e03fb33");
                     string styleModelClipLoader = g.CreateNode("CLIPVisionLoader", new JObject()

@@ -88,6 +88,7 @@ public enum ParamViewType
 /// <param name="ImageAlwaysB64">(For Image-type params) If true, always use B64 (never file).</param>
 /// <param name="DoNotPreview">If this is true, the parameter is unfit for previewing (eg long generation addons or unnecessary refinements).</param>
 /// <param name="Nonreusable">If this is true, the parameter can never be 'reused'.</param>
+/// <param name="DependNonDefault">If non-null, the name of another parameter. This parameter is only visible if that other parameter is enabled and non-default value.</param>
 /// <param name="Subtype">The sub-type of the type - for models, this might be eg "Stable-Diffusion".</param>
 /// <param name="ID">The raw ID of this parameter (will be set when registering).</param>
 /// <param name="SharpType">The C# datatype.</param>
@@ -95,7 +96,7 @@ public record class T2IParamType(string Name, string Description, string Default
     Func<string, string, string> Clean = null, Func<Session, List<string>> GetValues = null, string[] Examples = null, Func<List<string>, List<string>> ParseList = null, bool ValidateValues = true,
     bool VisibleNormally = true, bool IsAdvanced = false, string FeatureFlag = null, PermInfo Permission = null, bool Toggleable = false, double OrderPriority = 10, T2IParamGroup Group = null, string IgnoreIf = null,
     ParamViewType ViewType = ParamViewType.SMALL, bool HideFromMetadata = false, Func<string, string> MetadataFormat = null, bool AlwaysRetain = false, double ChangeWeight = 0, bool ExtraHidden = false,
-    T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false,
+    T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false, string DependNonDefault = null,
     string Subtype = null, string ID = null, Type SharpType = null)
 {
     public JObject ToNet(Session session)
@@ -135,7 +136,8 @@ public record class T2IParamType(string Name, string Description, string Default
             ["do_not_preview"] = DoNotPreview,
             ["view_type"] = ViewType.ToString().ToLowerFast(),
             ["extra_hidden"] = ExtraHidden,
-            ["nonreusable"] = Nonreusable
+            ["nonreusable"] = Nonreusable,
+            ["depend_non_default"] = DependNonDefault
         };
     }
 
@@ -450,16 +452,16 @@ public class T2IParamTypes
             null, OrderPriority: -4, Group: GroupInitImage, ChangeWeight: 2
             ));
         MaskShrinkGrow = Register<int>(new("Mask Shrink Grow", "If enabled, the image will be shrunk to just the mask, and then grow by this value many pixels.\nAfter that, the generation process will run in full, and the image will be composited back into the original image at the end.\nThis allows for refining small details of an image more effectively.\nThis is also known as 'Inpaint Only Masked'.\nLarger values increase the surrounding context the generation receives, lower values contain it tighter and allow the AI to create more detail.",
-            "8", Toggleable: true, Min: 0, Max: 512, OrderPriority: -3.7, Group: GroupInitImage, Examples: ["0", "8", "32"]
+            "8", Toggleable: true, Min: 0, Max: 512, OrderPriority: -3.7, Group: GroupInitImage, Examples: ["0", "8", "32"], DependNonDefault: MaskImage.Type.ID
             ));
         MaskBlur = Register<int>(new("Mask Blur", "If enabled, the mask will be blurred by this blur factor.\nThis makes the transition for the new image smoother.\nSet to 0 to disable.",
-            "4", IgnoreIf: "0", Min: 0, Max: 64, OrderPriority: -3.6, Group: GroupInitImage, Examples: ["0", "4", "8", "16"]
+            "4", IgnoreIf: "0", Min: 0, Max: 64, OrderPriority: -3.6, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], DependNonDefault: MaskImage.Type.ID
             ));
         MaskGrow = Register<int>(new("Mask Grow", "If enabled, the mask will be grown by this size (approx equivalent to length in pixels).\nThis helps improve overlap with generated masks.\nSet to 0 to disable.",
-            "0", IgnoreIf: "0", Min: 0, Max: 256, OrderPriority: -3.5, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], IsAdvanced: true
+            "0", IgnoreIf: "0", Min: 0, Max: 256, OrderPriority: -3.5, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], IsAdvanced: true, DependNonDefault: MaskImage.Type.ID
             ));
         MaskBehavior = Register<string>(new("Mask Behavior", "How to process the mask.\n'Differential' = 'Differential Diffusion' technique, wherein the mask values are used as offsets for timestep of when to apply the mask or not.\n'Simple Latent' = the most basic latent masking technique.",
-            "Differential", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["Differential", "Simple Latent"], OrderPriority: -3.5, Group: GroupInitImage
+            "Differential", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["Differential", "Simple Latent"], OrderPriority: -3.5, Group: GroupInitImage, DependNonDefault: MaskImage.Type.ID
             ));
         InitImageRecompositeMask = Register<bool>(new("Init Image Recomposite Mask", "If enabled and a mask is in use, this will recomposite the masked generated onto the original image for a cleaner result.\nIf disabled, VAE artifacts may build up across repeated inpaint operations.\nDefaults enabled.",
             "true", IgnoreIf: "true", Group: GroupInitImage, OrderPriority: -3.4, IsAdvanced: true

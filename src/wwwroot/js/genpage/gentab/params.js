@@ -890,6 +890,14 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             }
         }
     }
+    for (let type of gen_param_types) {
+        if (type.depend_non_default) {
+            let otherParam = gen_param_types.find(p => p.id == type.depend_non_default);
+            if (otherParam && (!(otherParam.id in input) || input[otherParam.id] == otherParam.default)) {
+                delete input[type.id];
+            }
+        }
+    }
     if (!input['vae'] || input['vae'] == 'Automatic') {
         input['automaticvae'] = true;
         delete input['vae'];
@@ -1193,6 +1201,27 @@ function hideUnsupportableParams() {
             }
             if (!filterShow) {
                 show = false;
+            }
+            if (param.depend_non_default) {
+                let otherParam = gen_param_types.find(p => p.id == param.depend_non_default);
+                let other = document.getElementById(`input_${param.depend_non_default}`);
+                if (other) {
+                    if (getInputVal(other) == otherParam.default) {
+                        show = false;
+                    }
+                    else {
+                        let otherToggler = document.getElementById(`input_${otherParam.id}_toggle`);
+                        if (otherToggler && !otherToggler.checked) {
+                            show = false;
+                        }
+                        else {
+                            let otherGroup = otherParam.original_group || otherParam.group;
+                            if (otherGroup && otherGroup.toggles && !getRequiredElementById(`input_group_content_${otherGroup.id}_toggle`).checked) {
+                                show = false;
+                            }
+                        }
+                    }
+                }
             }
             if (param.advanced && supported && filterShow) {
                 advancedCount++;

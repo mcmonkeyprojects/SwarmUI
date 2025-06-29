@@ -40,7 +40,7 @@ public class DynamicThresholdingExtension : Extension
             GetValues: (_) => ["Constant", "Linear Down", "Half Cosine Down", "Cosine Down", "Linear Up", "Half Cosine Up", "Cosine Up", "Power Up", "Power Down", "Linear Repeating", "Cosine Repeating"]
             ));
         CFGScaleMin = T2IParamTypes.Register<double>(new("[DT] CFG Scale Minimum", "[Dynamic Thresholding]\nCFG Scale minimum value (for non-constant CFG mode).",
-            "0", Min: 0, Max: 100, Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 4,
+            "0", Min: 0, Max: 100, Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 4, DependNonDefault: CFGScaleMode.Type.ID,
             Examples: ["0", "1", "2", "5"]
             ));
         MimicScaleMode = T2IParamTypes.Register<string>(new("[DT] Mimic Scale Mode", "[Dynamic Thresholding]\nMode for the Mimic Scale scheduler.",
@@ -48,7 +48,7 @@ public class DynamicThresholdingExtension : Extension
             GetValues: (_) => ["Constant", "Linear Down", "Half Cosine Down", "Cosine Down", "Linear Up", "Half Cosine Up", "Cosine Up", "Power Up", "Power Down", "Linear Repeating", "Cosine Repeating"]
             ));
         MimicScaleMin = T2IParamTypes.Register<double>(new("[DT] Mimic Scale Minimum", "[Dynamic Thresholding]\nMimic Scale minimum value (for non-constant mimic mode).",
-            "0", Min: 0, Max: 100, Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 6,
+            "0", Min: 0, Max: 100, Group: DynThreshGroup, FeatureFlag: "dynamic_thresholding", OrderPriority: 6, DependNonDefault: MimicScaleMode.Type.ID,
             Examples: ["0", "1", "2", "5"]
             ));
         SchedulerValue = T2IParamTypes.Register<double>(new("[DT] Scheduler Value", "[Dynamic Thresholding]\nIf either scale scheduler is 'Power', this is the power factor.\nIf using 'repeating', this is the number of repeats per image. Otherwise, it does nothing.",
@@ -82,16 +82,16 @@ public class DynamicThresholdingExtension : Extension
                 {
                     ["model"] = g.FinalModel,
                     ["mimic_scale"] = mimicScale,
-                    ["threshold_percentile"] = g.UserInput.Get(ThresholdPercentile),
-                    ["mimic_mode"] = g.UserInput.Get(MimicScaleMode),
-                    ["mimic_scale_min"] = g.UserInput.Get(MimicScaleMin),
-                    ["cfg_mode"] = g.UserInput.Get(CFGScaleMode),
-                    ["cfg_scale_min"] = g.UserInput.Get(CFGScaleMin),
-                    ["sched_val"] = g.UserInput.Get(SchedulerValue),
-                    ["separate_feature_channels"] = g.UserInput.Get(SeparateFeatureChannels) ? "enable" : "disable",
-                    ["scaling_startpoint"] = g.UserInput.Get(ScalingStartpoint),
-                    ["variability_measure"] = g.UserInput.Get(VariabilityMeasure),
-                    ["interpolate_phi"] = g.UserInput.Get(InterpolatePhi)
+                    ["threshold_percentile"] = g.UserInput.Get(ThresholdPercentile, 1),
+                    ["mimic_mode"] = g.UserInput.Get(MimicScaleMode, "Constant"),
+                    ["mimic_scale_min"] = g.UserInput.Get(MimicScaleMin, 0),
+                    ["cfg_mode"] = g.UserInput.Get(CFGScaleMode, "Constant"),
+                    ["cfg_scale_min"] = g.UserInput.Get(CFGScaleMin, 0),
+                    ["sched_val"] = g.UserInput.Get(SchedulerValue, 4),
+                    ["separate_feature_channels"] = g.UserInput.Get(SeparateFeatureChannels, true) ? "enable" : "disable",
+                    ["scaling_startpoint"] = g.UserInput.Get(ScalingStartpoint, "MEAN"),
+                    ["variability_measure"] = g.UserInput.Get(VariabilityMeasure, "AD"),
+                    ["interpolate_phi"] = g.UserInput.Get(InterpolatePhi, 1)
                 });
                 // Workflow additions generally only do anything if a key passthrough field is updated.
                 // In our case, we're replacing the Model node, so update FinalModel to point at our node's output.
