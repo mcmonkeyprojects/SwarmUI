@@ -598,9 +598,10 @@ public class T2IPromptHandling
         };
         PromptTagProcessors["var"] = (data, context) =>
         {
-            if (!context.Variables.TryGetValue(data, out string val))
+            string name = string.IsNullOrWhiteSpace(data) ? context.PreData : data;
+            if (!context.Variables.TryGetValue(name, out string val))
             {
-                context.TrackWarning($"Variable '{data}' is not recognized.");
+                context.TrackWarning($"Variable '{name}' is not recognized.");
                 return "";
             }
             return val;
@@ -623,9 +624,10 @@ public class T2IPromptHandling
         };
         PromptTagProcessors["macro"] = (data, context) =>
         {
-            if (!context.Macros.TryGetValue(data, out string val))
+            string name = string.IsNullOrWhiteSpace(data) ? context.PreData : data;
+            if (!context.Macros.TryGetValue(name, out string val))
             {
-                context.TrackWarning($"Macro '{data}' is not recognized.");
+                context.TrackWarning($"Macro '{name}' is not recognized.");
                 return "";
             }
             return context.Parse(val);
