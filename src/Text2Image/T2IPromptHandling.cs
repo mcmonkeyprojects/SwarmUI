@@ -582,7 +582,7 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["lora"] = estimateEmpty;
         PromptTagProcessors["setvar"] = (data, context) =>
         {
-            string name = context.PreData;
+            string name = context.PreData.BeforeAndAfter(',', out string mode);
             if (string.IsNullOrWhiteSpace(name))
             {
                 context.TrackWarning($"A variable name is required when using setvar.");
@@ -590,7 +590,7 @@ public class T2IPromptHandling
             }
             data = context.Parse(data);
             context.Variables[name] = data;
-            return data;
+            return mode.ToLowerFast().Trim() == "false" ? "" : data;
         };
         PromptTagLengthEstimators["setvar"] = (data, context) =>
         {
@@ -608,14 +608,14 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["var"] = estimateEmpty;
         PromptTagProcessors["setmacro"] = (data, context) =>
         {
-            string name = context.PreData;
+            string name = context.PreData.BeforeAndAfter(',', out string mode);
             if (string.IsNullOrWhiteSpace(name))
             {
                 context.TrackWarning($"A macro name is required when using setmacro.");
                 return null;
             }
             context.Macros[name] = data;
-            return context.Parse(data);
+            return mode.ToLowerFast().Trim() == "false" ? "" : context.Parse(data);
         };
         PromptTagLengthEstimators["setmacro"] = (data, context) =>
         {

@@ -63,25 +63,31 @@
 ![img](/docs/images/setvar-cat.jpg)
 
 - You can store and reuse variables within a prompt. This is primarily intended for repeating randoms & wildcards.
-    - Store with the syntax: `<setvar[var_name]:data>`
+    - Store with the syntax: `<setvar[var_name,emit]:data>` where `emit` is `true` or `false` (defaults true)
         - For example: `<setvar[color]:<random:red, blue, purple>>`
     - Call back with the syntax: `<var:var_name>`
         - For example: `<var:color>`
     - Here's a practical full example: `a photo of a woman with <setvar[color]:<random:blonde, black, red, blue, green, rainbow>> hair standing in the middle of a wide open street. She is smiling and waving at the camera, with beautiful sunlight glinting through her <var:color> hair. <segment:face and hair> extremely detailed close up shot of a woman with shiny <var:color> hair`
         - Notice how the var is called back, even in the segment, to allow for selecting a random hair color but keeping it consistent within the generation
+    - If you want to avoid the `setvar` emitting a copy of the value, you can use eg `<setvar[color,false]:x y z>`
+        - For example, `a <setvar[color]:red> dog with <var[color]> eyes` becomes `a red dog with red eyes`,
+        - but `<setvar[color,false]:red> a dog with <var[color]> eyes` becomes `a dog with red eyes`
 
 ## Macros
 
 ![img](/docs/images/setmacro-cat.jpg)
 
 - Similar to variables, you can store and reuse chunks of prompt syntax as a macro. This is useful for dynamically repeating complicated randoms.
-    - Store with the syntax: `<setmacro[macro_name]:data>`
+    - Store with the syntax: `<setmacro[macro_name,emit]:data>` where `emit` is `true` or `false` (defaults true)
         - For example: `<setmacro[color]:<random:red, blue, purple>>`
     - Call back with the syntax: `<macro:macro_name>`
         - For example: `in a room with <macro:color> walls, <macro:color> floors, and <macro:color> carpet`
     - Unlike Variables, macros are not evaluated when being set, but instead are evaluated when used via `<macro:...>`
     - Here's a full example: `Photo of a woman with <setmacro[color]:<random:red|white|green|blue|purple|orange|black|brown>> hair, <macro:color> shirt, <macro:color> pants`
         - A separate random color will be chosen for hair, shirt, and pants.
+    - If you want to avoid the `setmacro` emitting a copy of the value, you can use eg `<setmacro[color,false]:x y z>`
+        - For example, `a <setmacro[color]:red> dog with <macro[color]> eyes` becomes `a red dog with red eyes`,
+        - but `<setmacro[color,false]:red> a dog with <macro[color]> eyes` becomes `a dog with red eyes`
 
 ## Trigger Phrase
 
