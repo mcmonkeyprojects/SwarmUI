@@ -893,7 +893,8 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     for (let type of gen_param_types) {
         if (type.depend_non_default) {
             let otherParam = gen_param_types.find(p => p.id == type.depend_non_default);
-            if (otherParam && (!(otherParam.id in input) || input[otherParam.id] == otherParam.default)) {
+            let otherElem = document.getElementById(`input_${otherParam.id}`);
+            if (otherParam && otherElem && !otherElem.dataset.has_data && !(otherParam.id in input_overrides) && (!(otherParam.id in input) || input[otherParam.id] == otherParam.default)) {
                 delete input[type.id];
             }
         }
@@ -1205,7 +1206,7 @@ function hideUnsupportableParams() {
             if (param.depend_non_default) {
                 let otherParam = gen_param_types.find(p => p.id == param.depend_non_default);
                 let other = document.getElementById(`input_${param.depend_non_default}`);
-                if (other) {
+                if (other && !other.dataset.has_data) {
                     if (getInputVal(other) == otherParam.default) {
                         show = false;
                     }
