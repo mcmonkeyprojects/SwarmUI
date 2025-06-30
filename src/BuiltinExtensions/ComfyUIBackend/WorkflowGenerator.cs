@@ -1560,6 +1560,20 @@ public class WorkflowGenerator
             {
                 string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
                 img = [img1, 0];
+                (int width, int height) = images[0].GetResolution();
+                if (width * height < 960 * 960 || width * height > 4096 * 4096) // Kontext wonks out below 1024x1024 so add a scale fix check, with a bit of margin for close-enough
+                {
+                    (width, height) = Utilities.ResToModelFit(width, height, 1024 * 1024);
+                    string scaleFix = CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = img,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["crop"] = "disabled",
+                        ["upscale_method"] = "lanczos"
+                    });
+                    img = [scaleFix, 0];
+                }
                 for (int i = 1; i < images.Count; i++)
                 {
                     string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
