@@ -109,6 +109,14 @@ function escapeJsString(text) {
     return text.replaceAll('\\', '\\\\').replaceAll('"', '\\"').replaceAll("'", "\\'").replaceAll('\n', '\\n').replaceAll('\r', '\\r').replaceAll('\t', '\\t');
 }
 
+/** Escapes a string for use in a URL. */
+function escapeHtmlForUrl(text) {
+    if (text == null) {
+        return '';
+    }
+    return text.replaceAll('&', '%26').replaceAll('<', '%3C').replaceAll('>', '%3E').replaceAll('"', '%22').replaceAll("'", '%27').replaceAll('\n', '%0A').replaceAll('\r', '%0D').replaceAll('\t', '%09');
+}
+
 function isHtmlSpanStyleAllowed(text) {
     if (text.startsWith('"') && text.endsWith('"')) {
         text = text.substring(1, text.length - 1);

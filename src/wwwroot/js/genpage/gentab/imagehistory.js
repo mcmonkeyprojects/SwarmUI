@@ -87,7 +87,7 @@ function buttonsForImage(fullsrc, src, metadata) {
     buttons.push({
         label: 'Download',
         title: 'Downloads this image to your PC.',
-        href: src,
+        href: escapeHtmlForUrl(src),
         is_download: true
     });
     if (permissions.hasPermission('user_delete_image') && !isDataImage) {

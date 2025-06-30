@@ -176,9 +176,10 @@ class ImageFullViewHelper {
         this.currentSrc = src;
         this.currentMetadata = metadata;
         let isVideo = isVideoExt(src);
-        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">`;
+        let encodedSrc = escapeHtmlForUrl(src);
+        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
-            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${src}" type="video/${src.substring(src.lastIndexOf('.') + 1)}"></video>`;
+            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="video/${encodedSrc.substring(encodedSrc.lastIndexOf('.') + 1)}"></video>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
