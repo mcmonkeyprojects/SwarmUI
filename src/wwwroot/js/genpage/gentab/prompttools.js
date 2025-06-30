@@ -482,6 +482,19 @@ class PromptPlusButton {
             this.regionModalProcessChanges();
             $('#text_prompt_region_modal').modal('show');
         }});
+        buttons.push({ key: 'image', key_html: 'Upload Prompt Image', title: "Upload an image to use as an image-prompt", action: () => {
+            this.autoHideMenu();
+            let input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                let file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    imagePromptAddImage(file);
+                }
+            };
+            input.click();
+        }});
         buttons.push({ key: 'other', key_html: 'Other...', title: "Add some other prompt syntax (that doesn't have its own menu)", action: () => {
             let text = this.altTextBox.value.trim();
             if (!text.endsWith('<')) {
