@@ -34,8 +34,8 @@ class AspectRatio {
         this.altLogic = altLogic;
     }
 
-    read(inWidth, inHeight) {
-        if (this.altLogic) {
+    read(inWidth, inHeight, doAltLogic = true) {
+        if (this.altLogic && doAltLogic) {
             let [newWidth, newHeight] = this.altLogic(inWidth, inHeight);
             if (newWidth && newHeight) {
                 return [newWidth, newHeight];
@@ -45,6 +45,7 @@ class AspectRatio {
             inWidth = roundTo(Math.sqrt(inWidth * inHeight), 16);
             inHeight = inWidth;
         }
+        // NOTE: This math must match T2IParamInput GetImageWidth
         let width = roundTo(this.width * (inWidth <= 0 ? 512 : inWidth) / 512, 16);
         let height = roundTo(this.height * (inHeight <= 0 ? 512 : inHeight) / 512, 16);
         return [width, height];
@@ -436,11 +437,15 @@ function genInputs(delay_final = false) {
         let inputAspectRatio = document.getElementById('input_aspectratio');
         let inputWidth = document.getElementById('input_width');
         let inputHeight = document.getElementById('input_height');
-        if (inputAspectRatio && inputWidth && inputHeight) {
+        let inputSideLength = document.getElementById('input_sidelength');
+        if (inputAspectRatio && inputWidth && inputHeight && inputSideLength) {
             let inputWidthParent = findParentOfClass(inputWidth, 'auto-slider-box');
             let inputWidthSlider = getRequiredElementById('input_width_rangeslider');
             let inputHeightParent = findParentOfClass(inputHeight, 'auto-slider-box');
             let inputHeightSlider = getRequiredElementById('input_height_rangeslider');
+            let inputSideLengthParent = findParentOfClass(inputSideLength, 'auto-slider-box');
+            let inputSideLengthSlider = getRequiredElementById('input_sidelength_rangeslider');
+            let inputSideLengthToggle = getRequiredElementById('input_sidelength_toggle');
             let resGroupLabel = findParentOfClass(inputWidth, 'input-group').querySelector('.header-label');
             let inputAspectRatioParent = findParentOfClass(inputAspectRatio, 'auto-dropdown-box');
             let inputAspectRatioParentStyles = window.getComputedStyle(inputAspectRatioParent);
@@ -461,6 +466,8 @@ function genInputs(delay_final = false) {
                     swapAspectRatioButton.style.display = 'block';
                     delete inputWidthParent.dataset.visible_controlled;
                     delete inputHeightParent.dataset.visible_controlled;
+                    inputSideLengthParent.style.display = 'none';
+                    inputSideLengthParent.dataset.visible_controlled = 'true';
                     aspect = describeAspectRatio(inputWidth.value, inputHeight.value);
                 }
                 else {
@@ -469,6 +476,8 @@ function genInputs(delay_final = false) {
                     swapAspectRatioButton.style.display = 'none';
                     inputWidthParent.dataset.visible_controlled = 'true';
                     inputHeightParent.dataset.visible_controlled = 'true';
+                    inputSideLengthParent.style.display = 'block';
+                    delete inputSideLengthParent.dataset.visible_controlled;
                     aspect = inputAspectRatio.value;
                 }
                 resGroupLabel.innerText = `${translate('Resolution')}: ${aspect} (${inputWidth.value}x${inputHeight.value})`;
@@ -479,10 +488,18 @@ function genInputs(delay_final = false) {
             inputAspectRatio.addEventListener('change', () => {
                 if (inputAspectRatio.value != "Custom") {
                     let aspectRatio = inputAspectRatio.value;
+                    let targetWidth = curModelWidth;
+                    let targetHeight = curModelHeight;
+                    let doAltLogic = true;
+                    if (inputSideLength.value && inputSideLengthToggle.checked) {
+                        targetWidth = inputSideLength.value;
+                        targetHeight = inputSideLength.value;
+                        doAltLogic = false;
+                    }
                     let width, height;
                     for (let ratio of aspectRatios) {
                         if (ratio.id == aspectRatio) {
-                            [width, height] = ratio.read(curModelWidth, curModelHeight);
+                            [width, height] = ratio.read(targetWidth, targetHeight, doAltLogic);
                             break;
                         }
                     }
@@ -493,6 +510,11 @@ function genInputs(delay_final = false) {
                 }
                 resTrick();
             });
+            for (let target of [inputSideLength, inputSideLengthSlider, inputSideLengthToggle]) {
+                target.addEventListener('change', () => {
+                    triggerChangeFor(inputAspectRatio);
+                });
+            }
             swapAspectRatioButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 let tmpWidth = inputWidth.value;
@@ -703,7 +725,7 @@ function genInputs(delay_final = false) {
                 });
             }
             if (!param.do_not_save) {
-                elem.addEventListener('change', () => {
+                function getParamValue(param, elem) {
                     let val = null;
                     if (param.type == "boolean") {
                         val = elem.checked;
@@ -715,6 +737,10 @@ function genInputs(delay_final = false) {
                     else if (param.type != "image") {
                         val = elem.value;
                     }
+                    return val;
+                }
+                elem.addEventListener('change', () => {
+                    let val = getParamValue(param, elem);
                     if (val !== null) {
                         if (val == param.default) {
                             deleteCookie(`lastparam_input_${param.id}`);
@@ -724,23 +750,28 @@ function genInputs(delay_final = false) {
                         }
                     }
                 });
-            }
-            if (param.toggleable) {
-                let toggler = getRequiredElementById(`input_${param.id}_toggle`);
-                let cookie = getCookie(`lastparam_input_${param.id}_toggle`);
-                if (cookie) {
-                    toggler.checked = cookie == "true";
-                }
-                doToggleEnable(`input_${param.id}`);
-                if (!param.do_not_save) {
-                    toggler.addEventListener('change', () => {
-                        if (!toggler.checked) {
-                            deleteCookie(`lastparam_input_${param.id}`);
-                        }
-                        else {
-                            setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
-                        }
-                    });
+                if (param.toggleable) {
+                    let toggler = getRequiredElementById(`input_${param.id}_toggle`);
+                    let cookie = getCookie(`lastparam_input_${param.id}_toggle`);
+                    if (cookie) {
+                        toggler.checked = cookie == "true";
+                    }
+                    doToggleEnable(`input_${param.id}`);
+                    if (!param.do_not_save) {
+                        toggler.addEventListener('change', () => {
+                            if (!toggler.checked) {
+                                deleteCookie(`lastparam_input_${param.id}`);
+                                deleteCookie(`lastparam_input_${param.id}_toggle`);
+                            }
+                            else {
+                                setCookie(`lastparam_input_${param.id}_toggle`, toggler.checked, getParamMemoryDays());
+                                let val = getParamValue(param, elem);
+                                if (val !== null && val != param.default) {
+                                    setCookie(`lastparam_input_${param.id}`, val, getParamMemoryDays());
+                                }
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -856,6 +887,15 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
                 if (imgs.length > 0) {
                     input["promptimages"] = imgs.map(img => img.dataset.filedata).join('|');
                 }
+            }
+        }
+    }
+    for (let type of gen_param_types) {
+        if (type.depend_non_default) {
+            let otherParam = gen_param_types.find(p => p.id == type.depend_non_default);
+            let otherElem = document.getElementById(`input_${otherParam.id}`);
+            if (otherParam && otherElem && !otherElem.dataset.has_data && !(otherParam.id in input_overrides) && (!(otherParam.id in input) || input[otherParam.id] == otherParam.default)) {
+                delete input[type.id];
             }
         }
     }
@@ -1162,6 +1202,27 @@ function hideUnsupportableParams() {
             }
             if (!filterShow) {
                 show = false;
+            }
+            if (param.depend_non_default) {
+                let otherParam = gen_param_types.find(p => p.id == param.depend_non_default);
+                let other = document.getElementById(`input_${param.depend_non_default}`);
+                if (other && !other.dataset.has_data) {
+                    if (getInputVal(other) == otherParam.default) {
+                        show = false;
+                    }
+                    else {
+                        let otherToggler = document.getElementById(`input_${otherParam.id}_toggle`);
+                        if (otherToggler && !otherToggler.checked) {
+                            show = false;
+                        }
+                        else {
+                            let otherGroup = otherParam.original_group || otherParam.group;
+                            if (otherGroup && otherGroup.toggles && !getRequiredElementById(`input_group_content_${otherGroup.id}_toggle`).checked) {
+                                show = false;
+                            }
+                        }
+                    }
+                }
             }
             if (param.advanced && supported && filterShow) {
                 advancedCount++;

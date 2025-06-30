@@ -88,6 +88,7 @@ public enum ParamViewType
 /// <param name="ImageAlwaysB64">(For Image-type params) If true, always use B64 (never file).</param>
 /// <param name="DoNotPreview">If this is true, the parameter is unfit for previewing (eg long generation addons or unnecessary refinements).</param>
 /// <param name="Nonreusable">If this is true, the parameter can never be 'reused'.</param>
+/// <param name="DependNonDefault">If non-null, the name of another parameter. This parameter is only visible if that other parameter is enabled and non-default value.</param>
 /// <param name="Subtype">The sub-type of the type - for models, this might be eg "Stable-Diffusion".</param>
 /// <param name="ID">The raw ID of this parameter (will be set when registering).</param>
 /// <param name="SharpType">The C# datatype.</param>
@@ -95,7 +96,7 @@ public record class T2IParamType(string Name, string Description, string Default
     Func<string, string, string> Clean = null, Func<Session, List<string>> GetValues = null, string[] Examples = null, Func<List<string>, List<string>> ParseList = null, bool ValidateValues = true,
     bool VisibleNormally = true, bool IsAdvanced = false, string FeatureFlag = null, PermInfo Permission = null, bool Toggleable = false, double OrderPriority = 10, T2IParamGroup Group = null, string IgnoreIf = null,
     ParamViewType ViewType = ParamViewType.SMALL, bool HideFromMetadata = false, Func<string, string> MetadataFormat = null, bool AlwaysRetain = false, double ChangeWeight = 0, bool ExtraHidden = false,
-    T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false,
+    T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false, string DependNonDefault = null,
     string Subtype = null, string ID = null, Type SharpType = null)
 {
     public JObject ToNet(Session session)
@@ -135,7 +136,8 @@ public record class T2IParamType(string Name, string Description, string Default
             ["do_not_preview"] = DoNotPreview,
             ["view_type"] = ViewType.ToString().ToLowerFast(),
             ["extra_hidden"] = ExtraHidden,
-            ["nonreusable"] = Nonreusable
+            ["nonreusable"] = Nonreusable,
+            ["depend_non_default"] = DependNonDefault
         };
     }
 
@@ -297,12 +299,12 @@ public class T2IParamTypes
     }
 
     public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, FluxGuidanceScale;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
-    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, ReVisionModel, RegionalObjectInpaintingModel, SegmentModel, VideoModel, RefinerVAE, ClipLModel, ClipGModel, T5XXLModel, LLaVAModel, VideoExtendModel;
+    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, ReVisionModel, RegionalObjectInpaintingModel, SegmentModel, VideoModel, RefinerVAE, ClipLModel, ClipGModel, T5XXLModel, LLaVAModel, LLaMAModel, VideoExtendModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
     public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang, FluxDisableGuidance,
@@ -409,6 +411,9 @@ public class T2IParamTypes
         Height = Register<int>(new("Height", "Image height, in pixels.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
             "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -9, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution
             ));
+        SideLength = Register<int>(new("Side Length", "Image Side Length, in pixels.\nThis value is only used with Aspect Ratio not set to 'Custom'.\nIf unchecked, the model native size is used.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
+            "1024", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 4096, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -8, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution, Toggleable: true
+            ));
         // ================================================ Sampling ================================================
         GroupSampling = new("Sampling", Toggles: false, Open: false, OrderPriority: -8);
         CascadeLatentCompression = Register<int>(new("Cascade Latent Compression", "How deeply to compress latents when using Stable Cascade.\nDefault is 32, you can get slightly faster but lower quality results by using 42.",
@@ -447,16 +452,16 @@ public class T2IParamTypes
             null, OrderPriority: -4, Group: GroupInitImage, ChangeWeight: 2
             ));
         MaskShrinkGrow = Register<int>(new("Mask Shrink Grow", "If enabled, the image will be shrunk to just the mask, and then grow by this value many pixels.\nAfter that, the generation process will run in full, and the image will be composited back into the original image at the end.\nThis allows for refining small details of an image more effectively.\nThis is also known as 'Inpaint Only Masked'.\nLarger values increase the surrounding context the generation receives, lower values contain it tighter and allow the AI to create more detail.",
-            "8", Toggleable: true, Min: 0, Max: 512, OrderPriority: -3.7, Group: GroupInitImage, Examples: ["0", "8", "32"]
+            "8", Toggleable: true, Min: 0, Max: 512, OrderPriority: -3.7, Group: GroupInitImage, Examples: ["0", "8", "32"], DependNonDefault: MaskImage.Type.ID
             ));
         MaskBlur = Register<int>(new("Mask Blur", "If enabled, the mask will be blurred by this blur factor.\nThis makes the transition for the new image smoother.\nSet to 0 to disable.",
-            "4", IgnoreIf: "0", Min: 0, Max: 64, OrderPriority: -3.6, Group: GroupInitImage, Examples: ["0", "4", "8", "16"]
+            "4", IgnoreIf: "0", Min: 0, Max: 64, OrderPriority: -3.6, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], DependNonDefault: MaskImage.Type.ID
             ));
         MaskGrow = Register<int>(new("Mask Grow", "If enabled, the mask will be grown by this size (approx equivalent to length in pixels).\nThis helps improve overlap with generated masks.\nSet to 0 to disable.",
-            "0", IgnoreIf: "0", Min: 0, Max: 256, OrderPriority: -3.5, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], IsAdvanced: true
+            "0", IgnoreIf: "0", Min: 0, Max: 256, OrderPriority: -3.5, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], IsAdvanced: true, DependNonDefault: MaskImage.Type.ID
             ));
         MaskBehavior = Register<string>(new("Mask Behavior", "How to process the mask.\n'Differential' = 'Differential Diffusion' technique, wherein the mask values are used as offsets for timestep of when to apply the mask or not.\n'Simple Latent' = the most basic latent masking technique.",
-            "Differential", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["Differential", "Simple Latent"], OrderPriority: -3.5, Group: GroupInitImage
+            "Differential", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["Differential", "Simple Latent"], OrderPriority: -3.5, Group: GroupInitImage, DependNonDefault: MaskImage.Type.ID
             ));
         InitImageRecompositeMask = Register<bool>(new("Init Image Recomposite Mask", "If enabled and a mask is in use, this will recomposite the masked generated onto the original image for a cleaner result.\nIf disabled, VAE artifacts may build up across repeated inpaint operations.\nDefaults enabled.",
             "true", IgnoreIf: "true", Group: GroupInitImage, OrderPriority: -3.4, IsAdvanced: true
@@ -618,17 +623,20 @@ public class T2IParamTypes
         LoraSectionConfinement = Register<List<string>>(new("LoRA Section Confinement", "Optional internal parameter used to confine LoRAs to certain sections of generation (eg a 'segment' block).\nComma separated list of section IDs (0 to mean global).\nMust match the length of the LoRAs input.",
             "", IgnoreIf: "", IsAdvanced: true, Group: GroupAdvancedModelAddons, VisibleNormally: false
             ));
-        ClipLModel = Register<T2IModel>(new("CLIP-L Model", "Which CLIP-L model to use, for SD3/Flux style 'diffusion_models' folder models.",
+        ClipLModel = Register<T2IModel>(new("CLIP-L Model", "Which CLIP-L model to use as a text encoder, for SD3/Flux style 'diffusion_models' folder models.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 15, ChangeWeight: 7
             ));
-        ClipGModel = Register<T2IModel>(new("CLIP-G Model", "Which CLIP-G model to use, for SD3 style 'diffusion_models' folder models.",
+        ClipGModel = Register<T2IModel>(new("CLIP-G Model", "Which CLIP-G model to use as a text encoder, for SD3 style 'diffusion_models' folder models.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 16, ChangeWeight: 7
             ));
-        T5XXLModel = Register<T2IModel>(new("T5-XXL Model", "Which T5-XXL model to use, for SD3/Flux style 'diffusion_models' folder models.",
+        T5XXLModel = Register<T2IModel>(new("T5-XXL Model", "Which T5-XXL model to use as a text encoder, for SD3/Flux style 'diffusion_models' folder models.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 17, ChangeWeight: 7
             ));
-        LLaVAModel = Register<T2IModel>(new("LLaVA Model", "Which LLaVA model to use, for Hunyuan Video 'diffusion_models' folder models.",
-            "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 15, ChangeWeight: 7
+        LLaVAModel = Register<T2IModel>(new("LLaVA Model", "Which LLaVA model to use as a text encoder, for Hunyuan Video 'diffusion_models' folder models.",
+            "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 18, ChangeWeight: 7
+            ));
+        LLaMAModel = Register<T2IModel>(new("LLaMA Model", "Which LLaMA model to use as a text encoder, for HiDream-style 'diffusion_models' folder models.",
+            "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 19, ChangeWeight: 7
             ));
         TorchCompile = Register<string>(new("Torch Compile", "Torch.Compile is a way to dynamically accelerate AI models.\nIt wastes a bit of time (around a minute) on the first call compiling a graph of the generation, and then all subsequent generations run faster thanks to the compiled graph.\nTorch.Compile depends on Triton, which is difficult to install on Windows, easier on Linux.",
             "Disabled", IgnoreIf: "Disabled", GetValues: _ => ["Disabled", "inductor", "cudagraphs"], OrderPriority: 40, Group: GroupAdvancedModelAddons
@@ -769,7 +777,7 @@ public class T2IParamTypes
             "0", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -23
             ));
         SamplerSigmaMax = Register<double>(new("Sampler Sigma Max", "Maximum sigma value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
-            "10", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, FeatureFlag: "sd3", OrderPriority: -22
+            "10", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -22
             ));
         SigmaShift = Register<double>(new("Sigma Shift", "Sigma shift is used for modern rectified flow models (like SD3) specifically.\nThis shifts the balance of steps between low-frequency steps (structural/compositional steps), and high-frequency steps (detail steps).\nThis value only works within ranges a model was trained for, so for most models you should leave this param disabled to use the default, but fiddling it can sometimes work to adjust results.\nFor SD3, this value is recommended to be in the range of 1.5 to 3, normally 3.\nFor AuraFlow, 1.73 (square root of 3) is recommended.\nFor Flux, Schnell uses 0, 1.15 may be good for Dev.\nHiDream uses 3, but HiDream Dev also likes 6.",
             "3", Min: 0, Max: 100, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -21

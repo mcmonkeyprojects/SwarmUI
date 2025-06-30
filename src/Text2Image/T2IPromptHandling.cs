@@ -20,6 +20,8 @@ public class T2IPromptHandling
 
         public Dictionary<string, string> Variables = [];
 
+        public Dictionary<string, string> Macros = [];
+
         public int SectionID = 0;
 
         public int Depth = 0;
@@ -580,7 +582,7 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["lora"] = estimateEmpty;
         PromptTagProcessors["setvar"] = (data, context) =>
         {
-            string name = context.PreData;
+            string name = context.PreData.BeforeAndAfter(',', out string mode);
             if (string.IsNullOrWhiteSpace(name))
             {
                 context.TrackWarning($"A variable name is required when using setvar.");
@@ -588,7 +590,7 @@ public class T2IPromptHandling
             }
             data = context.Parse(data);
             context.Variables[name] = data;
-            return data;
+            return mode.ToLowerFast().Trim() == "false" ? "" : data;
         };
         PromptTagLengthEstimators["setvar"] = (data, context) =>
         {
@@ -596,14 +598,41 @@ public class T2IPromptHandling
         };
         PromptTagProcessors["var"] = (data, context) =>
         {
-            if (!context.Variables.TryGetValue(data, out string val))
+            string name = string.IsNullOrWhiteSpace(data) ? context.PreData : data;
+            if (!context.Variables.TryGetValue(name, out string val))
             {
-                context.TrackWarning($"Variable '{data}' is not recognized.");
+                context.TrackWarning($"Variable '{name}' is not recognized.");
                 return "";
             }
             return val;
         };
         PromptTagLengthEstimators["var"] = estimateEmpty;
+        PromptTagProcessors["setmacro"] = (data, context) =>
+        {
+            string name = context.PreData.BeforeAndAfter(',', out string mode);
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                context.TrackWarning($"A macro name is required when using setmacro.");
+                return null;
+            }
+            context.Macros[name] = data;
+            return mode.ToLowerFast().Trim() == "false" ? "" : context.Parse(data);
+        };
+        PromptTagLengthEstimators["setmacro"] = (data, context) =>
+        {
+            return ProcessPromptLikeForLength(data);
+        };
+        PromptTagProcessors["macro"] = (data, context) =>
+        {
+            string name = string.IsNullOrWhiteSpace(data) ? context.PreData : data;
+            if (!context.Macros.TryGetValue(name, out string val))
+            {
+                context.TrackWarning($"Macro '{name}' is not recognized.");
+                return "";
+            }
+            return context.Parse(val);
+        };
+        PromptTagLengthEstimators["macro"] = estimateEmpty;
         PromptTagBasicProcessors["trigger"] = (data, context) =>
         {
             List<string> phrases = [];

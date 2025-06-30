@@ -297,7 +297,10 @@ function textPromptAddKeydownHandler(elem) {
         let selStart = elem.selectionStart;
         let selEnd = elem.selectionEnd;
         if (selStart == selEnd) {
-            let simpleText = elem.value.replaceAll('\n', ' ').replaceAll('\t', ' ');
+            let simpleText = elem.value;
+            for (let char of ['\n', '\t', ',', '.']) {
+                simpleText = simpleText.replaceAll(char, ' ');
+            }
             let lastSpace = simpleText.lastIndexOf(" ", selStart - 1);
             if (lastSpace != -1) {
                 selStart = lastSpace + 1;

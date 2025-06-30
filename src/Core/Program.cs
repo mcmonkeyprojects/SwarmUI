@@ -183,11 +183,15 @@ public class Program
                     VersionUpdateMessageShort = $"Update available: {newer[0]} (you are running {Utilities.Version}, this is {newer.Length} release(s) behind):\nSee release notes at <a target=\"_blank\" href=\"{url}\">{url}</a>";
                     VersionUpdateMessage = $"{VersionUpdateMessageShort}\nThere is a button available to automatically apply the update on the <a href=\"#Settings-Server\" onclick=\"getRequiredElementById('servertabbutton').click();getRequiredElementById('serverinfotabbutton').click();\">Server Info Tab</a>.";
                 }
+                else if (tags.IsEmpty())
+                {
+                    Logs.Error($"Swarm failed to check for updates! Tag list empty?!");
+                }
                 else
                 {
                     Logs.Init($"Swarm is up to date! You have version {Utilities.Version}, and {tags[0]} is the latest.");
                 }
-            }));
+            }, "check for updates"));
         }
         waitFor.Add(Utilities.RunCheckedTask(async () =>
         {
@@ -214,7 +218,7 @@ public class Program
                 Logs.Error($"Failed to get git commit date: {ex.ReadableString()}");
                 CurrentGitDate = "Git failed to load";
             }
-        }));
+        }, "check current git commit"));
         waitFor.Add(Utilities.RunCheckedTask(async () =>
         {
             NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
@@ -258,7 +262,7 @@ public class Program
                     Logs.Init($"Will use GPU accelerations specific to NVIDIA GeForce RTX 30xx series and newer.");
                 }
             }
-        }));
+        }, "load gpu info"));
         T2IModelClassSorter.Init();
         Extensions.RunOnAllExtensions(e => e.OnPreInit());
         timer.Check("Extension PreInit");
@@ -365,6 +369,10 @@ public class Program
         }
         Logs.Init($"SwarmUI v{Utilities.Version} - {ServerSettings.UserAuthorization.InstanceTitle} is now running.");
         WebhookManager.SendWebhook("Startup", ServerSettings.WebHooks.ServerStartWebhook, ServerSettings.WebHooks.ServerShutdownWebhook);
+        if (Environment.CurrentDirectory.Contains("StableSwarmUI"))
+        {
+            Logs.Warning("You are running SwarmUI in a folder labeled 'StableSwarmUI', indicating you may have ran from an extremely outdated legacy version of SwarmUI (Swarm split from Stability in June 2024). You should probably reinstall fresh from https://github.com/mcmonkeyprojects/SwarmUI");
+        }
         WebServer.WebApp.WaitForShutdown();
         Shutdown();
     }
@@ -473,7 +481,7 @@ public class Program
     /// <summary>Tell the server to shutdown and restart. This call is not blocking, other code will continue momentarily.</summary>
     public static void RequestRestart()
     {
-        _ = Utilities.RunCheckedTask(() => Shutdown(42));
+        _ = Utilities.RunCheckedTask(() => Shutdown(42), "shutdown");
     }
 
     /// <summary>Main shutdown handler. Tells everything to stop.</summary>

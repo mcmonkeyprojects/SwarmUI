@@ -79,7 +79,7 @@ class PromptTabCompleteClass {
             return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.', '\n Additionally, you can apply a class filter by appending "yolo-<model>:<class_ids>:" where <class_ids> is a comma-separated list of class IDs or names to filter the detection results.'];
         });
         this.registerPrefix('setvar[var_name]', 'Store text for reference later in the prompt', (prefix) => { 
-            return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>", then use like "<var:colors>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag'];
+            return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>", then use like "<var:colors>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag', '\nThe setvar tag emits a copy the variable value in place. You can not do this with eg "<setvar[colors,false]: red and blue>"'];
         });
         this.registerPrefix('var', 'Reference a previously saved variable later', (prefix, prompt) => {
             let prefixLow = prefix.toLowerCase();
@@ -95,6 +95,26 @@ class PromptTabCompleteClass {
             }
             if (possible.length == 0) {
                 return ['\nRecall a value previously saved with <setvar[name]:...>, use like "<var:name>"','\n"setvar" must be used earlier in the prompt, then "var" later'];
+            }
+            return possible;
+        });
+        this.registerPrefix('setmacro[macro_name]', 'Store raw text for reference later in the prompt', (prefix) => {
+            return ['\nSave the raw content of the tag into the named macro. eg "<setmacro[color]:<random:red|blue|green>>", then use like "<macro:color>"', '\nMacro content will be re-evaluated each time it is used eg "<macro:color> hair, <macro:color> eyes" might produce "red hair, blue eyes', '\nReference macros later in the prompt with the <macro:> tag', '\nThe setmacro tag emits a copy the variable value in place. You can not do this with eg "<setmacro[colors,false]: red and blue>"'];
+        });
+        this.registerPrefix('macro', 'Reference a previously saved macro', (prefix, prompt) => {
+            let prefixLow = prefix.toLowerCase();
+            let possible = [];
+            let matches = prompt.matchAll(/<setmacro\[(.*?)\]:/g);
+            if (matches) {
+                for (let match of matches) {
+                    let varName = match.substring('<setmacro['.length, match.length - ']:'.length);
+                    if (varName.toLowerCase().includes(prefixLow)) {
+                        possible.push(varName);
+                    }
+                }
+            }
+            if (possible.length == 0) {
+                return ['\nRecall a macro previously saved with <setmacro[name]:...>, use like "<macro:name>"','\n"setmacro" must be used earlier in the prompt, then "macro" later'];
             }
             return possible;
         });
@@ -461,6 +481,19 @@ class PromptPlusButton {
             this.regionModalClear();
             this.regionModalProcessChanges();
             $('#text_prompt_region_modal').modal('show');
+        }});
+        buttons.push({ key: 'image', key_html: 'Upload Prompt Image', title: "Upload an image to use as an image-prompt", action: () => {
+            this.autoHideMenu();
+            let input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                let file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    imagePromptAddImage(file);
+                }
+            };
+            input.click();
         }});
         buttons.push({ key: 'other', key_html: 'Other...', title: "Add some other prompt syntax (that doesn't have its own menu)", action: () => {
             let text = this.altTextBox.value.trim();

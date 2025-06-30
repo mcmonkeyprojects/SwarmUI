@@ -259,6 +259,13 @@ public static class Utilities
         await socket.SendAsync(JsonToByteArray(obj), WebSocketMessageType.Text, true, cancel.Token);
     }
 
+    /// <summary>Send JSON data to a WebSocket.</summary>
+    public static async Task SendAndReportError(this WebSocket socket, string context, string message, TimeSpan maxDuration)
+    {
+        Logs.Error($"{context}: {message}");
+        await socket.SendJson(new JObject() { ["error"] = message }, maxDuration);
+    }
+
     /// <summary>Equivalent to <see cref="Task.WhenAny(IEnumerable{Task})"/> but doesn't break on an empty list.</summary>
     public static Task WhenAny(IEnumerable<Task> tasks)
     {
@@ -599,7 +606,7 @@ public static class Utilities
     }
 
     /// <summary>Runs a task async with an exception check.</summary>
-    public static Task RunCheckedTask(Action action)
+    public static Task RunCheckedTask(Action action, string sourceId = "unlabeled")
     {
         return Task.Run(() =>
         {
@@ -609,12 +616,12 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Internal error in async task: {ex.ReadableString()}");
+                Logs.Error($"Internal error in async task ({sourceId}): {ex.ReadableString()}");
             }
         });
     }
 
-    public static Task RunCheckedTask(Func<Task> action)
+    public static Task RunCheckedTask(Func<Task> action, string sourceId = "unlabeled")
     {
         return Task.Run(async () =>
         {
@@ -624,7 +631,7 @@ public static class Utilities
             }
             catch (Exception ex)
             {
-                Logs.Error($"Internal error in async task: {ex.ReadableString()}");
+                Logs.Error($"Internal error in async task ({sourceId}): {ex.ReadableString()}");
             }
         });
     }
@@ -668,14 +675,22 @@ public static class Utilities
     public static HttpClient UtilWebClient = NetworkBackendUtils.MakeHttpClient();
 
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
-    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null)
+    public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null, Dictionary<string, string> headers = null)
     {
         altUrl ??= url;
         cancel ??= new();
         using CancellationTokenSource combinedCancel = CancellationTokenSource.CreateLinkedTokenSource(Program.GlobalProgramCancel, cancel.Token);
         Directory.CreateDirectory(Path.GetDirectoryName(filepath));
         using FileStream writer = File.OpenWrite(filepath);
-        using HttpResponseMessage response = await UtilWebClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
+        HttpRequestMessage request = new(HttpMethod.Get, url);
+        if (headers is not null)
+        {
+            foreach ((string key, string value) in headers)
+            {
+                request.Headers.Add(key, value);
+            }
+        }
+        using HttpResponseMessage response = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;
         ConcurrentQueue<byte[]> chunks = new();
         ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
@@ -1237,7 +1252,7 @@ public static class Utilities
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
         // 10k is low enough that the swarm server won't thrash its CPU if it has to hash passwords often (eg somebody spamming bad auth requests), but high enough to at least be a bit of a barrier to somebody that yoinks the raw hashes
         byte[] hashed = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
-        return Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hashed);
+        return "swarmpw_v1:" + Convert.ToBase64String(salt) + ":" + Convert.ToBase64String(hashed);
     }
 
     /// <summary>Returns whether the given password matches the stored hash.</summary>
@@ -1248,12 +1263,43 @@ public static class Utilities
             password = password["__swarmdoprehash:".Length..];
             password = BytesToHex(SHA256.HashData(password.EncodeUTF8())).ToLowerFast();
         }
+        int version = 1; // Legacy version had no prefix, so presume v1
+        if (hashed.StartsWith("swarmpw_"))
+        {
+            string prefix = hashed.BeforeAndAfter(':', out string rest);
+            if (prefix == "swarmpw_v1")
+            {
+                version = 1;
+            }
+            else
+            {
+                throw new Exception("$Unknown password hash version: " + prefix);
+            }
+            hashed = rest;
+        }
         string saltRaw = hashed.BeforeAndAfter(':', out string hashRaw);
         byte[] salt = Convert.FromBase64String(saltRaw);
         byte[] hash = Convert.FromBase64String(hashRaw);
         string borkedPw = $"*SwarmHashedPw:{username}:{password}*";
-        byte[] hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
-        return hashedAttempt.SequenceEqual(hash);
+        byte[] hashedAttempt;
+        if (version == 1)
+        {
+            hashedAttempt = KeyDerivation.Pbkdf2(password: borkedPw, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10_000, numBytesRequested: 256 / 8);
+        }
+        else
+        {
+            throw new UnreachableException();
+        }
+        if (hashedAttempt.Length != hash.Length)
+        {
+            throw new SwarmReadableErrorException("Password hash length mismatch, impl issue?");
+        }
+        uint diff = 0; // Slow equals check
+        for (int i = 0; i < hash.Length; i++)
+        {
+            diff |= (uint)(hash[i] ^ hashedAttempt[i]);
+        }
+        return diff == 0;
     }
 
     /// <summary>Splits a standard CSV file - that is, comma separated values that allow for quoted chunks with commas inside.</summary>

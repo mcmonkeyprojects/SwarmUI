@@ -518,11 +518,12 @@ public static class ModelsAPI
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
         }
         handler.ResetMetadataFrom(actualModel);
-        _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel());
+        _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
     }
 
+    public static AsciiMatcher TokenTextLimiter = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + " -_.,/");
 
     [API.APIDescription("Downloads a model to the server, with websocket progress updates.\nNote that this does not trigger a model refresh itself, you must do that after a 'success' reply.", "")]
     public static async Task<JObject> DoModelDownloadWS(Session session, WebSocket ws,
@@ -549,6 +550,7 @@ public static class ModelsAPI
         }
         string originalUrl = url;
         url = url.Before('#');
+        Dictionary<string, string> headers = [];
         if (url.StartsWith("https://civitai.com/"))
         {
             string civitaiApiKey = session.User.GetGenericData("civitai_api", "key");
@@ -556,9 +558,18 @@ public static class ModelsAPI
             {
                 if (!url.Contains("?token=") && !url.Contains("&token="))
                 {
-                    url += (url.Contains('?') ? "&token=" : "?token=") + civitaiApiKey;
+                    url += (url.Contains('?') ? "&token=" : "?token=") + TokenTextLimiter.TrimToMatches(civitaiApiKey);
                     Logs.Debug($"Added Civitai API Key to download request. Original URL: {originalUrl}");
                 }
+            }
+        }
+        else if (url.StartsWith("https://huggingface.co/"))
+        {
+            string hfApiKey = session.User.GetGenericData("huggingface_api", "key");
+            if (!string.IsNullOrEmpty(hfApiKey))
+            {
+                headers["Authorization"] = $"Bearer {TokenTextLimiter.TrimToMatches(hfApiKey)}";
+                Logs.Debug($"Added HuggingFace API Key to download request.");
             }
         }
         try
@@ -584,7 +595,7 @@ public static class ModelsAPI
                     ["overall_percent"] = 0.2,
                     ["per_second"] = perSec
                 }, API.WebsocketTimeout).Wait();
-            }, canceller, originalUrl);
+            }, canceller, originalUrl, headers: headers);
             Task listenForSignal = Utilities.RunCheckedTask(async () =>
             {
                 while (true)

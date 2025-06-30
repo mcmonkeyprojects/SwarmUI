@@ -7,11 +7,12 @@ class ImageFullViewHelper {
         this.content = getRequiredElementById('image_fullview_modal_content');
         this.modalJq = $('#image_fullview_modal');
         this.noClose = false;
+        this.extraButtons = getRequiredElementById('image_fullview_extra_buttons');
         document.addEventListener('click', (e) => {
             if (e.target.tagName == 'BODY') {
                 return; // it's impossible on the genpage to actually click body, so this indicates a bugged click, so ignore it
             }
-            if (!this.noClose && this.modal.style.display == 'block' && !findParentOfClass(e.target, 'imageview_popup_modal_undertext')) {
+            if (!this.noClose && this.modal.style.display == 'block' && !findParentOfClass(e.target, 'imageview_popup_modal_undertext') && !findParentOfClass(e.target, 'image_fullview_extra_buttons')) {
                 this.close();
                 e.preventDefault();
                 e.stopPropagation();
@@ -27,6 +28,8 @@ class ImageFullViewHelper {
         this.content.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onGlobalMouseUp.bind(this));
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
+        this.fixButtonDelay = null;
+        this.lastClosed = 0;
     }
 
     getImg() {
@@ -170,10 +173,13 @@ class ImageFullViewHelper {
     }
 
     showImage(src, metadata) {
+        this.currentSrc = src;
+        this.currentMetadata = metadata;
         let isVideo = isVideoExt(src);
-        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${src}">`;
+        let encodedSrc = escapeHtmlForUrl(src);
+        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
-            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${src}" type="video/${src.substring(src.lastIndexOf('.') + 1)}"></video>`;
+            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="video/${encodedSrc.substring(encodedSrc.lastIndexOf('.') + 1)}"></video>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
@@ -186,12 +192,50 @@ class ImageFullViewHelper {
             </div>
         </div>`;
         this.modalJq.modal('show');
+        this.extraButtons.innerHTML = '';
+        let subDiv = createDiv(null, null, '<br>');
+        for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
+            if (added.href) {
+                if (added.is_download) {
+                    subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}" download>${added.label}</a><br>`));
+                }
+                else {
+                    subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}">${added.label}</a><br>`));
+                }
+            }
+            else {
+                quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), '', added.title);
+                subDiv.appendChild(document.createElement('br'));
+            }
+            subDiv.appendChild(document.createElement('br'));
+        }
+        if (this.fixButtonDelay) {
+            clearTimeout(this.fixButtonDelay);
+        }
+        if (Date.now() - this.lastClosed > 200) {
+            subDiv.style.pointerEvents = 'none';
+            for (let button of subDiv.getElementsByTagName('button')) {
+                button.disabled = true;
+                button.classList.add('simpler-button-disable');
+            }
+            this.fixButtonDelay = setTimeout(() => {
+                if (subDiv && subDiv.parentElement) {
+                    subDiv.style.pointerEvents = 'auto';
+                    for (let button of subDiv.getElementsByTagName('button')) {
+                        button.disabled = false;
+                    }
+                }
+                this.fixButtonDelay = null;
+            }, 500);
+        }
+        this.extraButtons.appendChild(subDiv);
     }
 
     close() {
         this.isDragging = false;
         this.didDrag = false;
         this.modalJq.modal('hide');
+        this.lastClosed = Date.now();
     }
 
     isOpen() {
@@ -498,6 +542,9 @@ function toggleStar(path, rawSrc) {
     genericRequest('ToggleImageStarred', {'path': path}, data => {
         let curImgImg = document.getElementById('current_image_img');
         if (curImgImg && curImgImg.dataset.src == rawSrc) {
+            let oldMetadata = JSON.parse(curImgImg.dataset.metadata);
+            let newMetadata = { ...oldMetadata, is_starred: data.new_state };
+            curImgImg.dataset.metadata = JSON.stringify(newMetadata);
             let button = getRequiredElementById('current_image').querySelector('.star-button');
             if (data.new_state) {
                 button.classList.add('button-starred-image');
@@ -517,6 +564,11 @@ function toggleStar(path, rawSrc) {
         if (historyDiv) {
             historyDiv.dataset.metadata = JSON.stringify({ ...(JSON.parse(historyDiv.dataset.metadata ?? '{}') ?? {}), is_starred: data.new_state });
             historyDiv.classList.toggle('image-block-starred', data.new_state);
+        }
+        if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
+            let oldMetadata = JSON.parse(imageFullView.currentMetadata);
+            let newMetadata = { ...oldMetadata, is_starred: data.new_state };
+            imageFullView.showImage(rawSrc, JSON.stringify(newMetadata));
         }
     });
 }
@@ -622,8 +674,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.className = 'current-image-img';
     img.id = 'current_image_img';
     img.dataset.src = src;
+    img.dataset.metadata = metadata || '{}';
     img.dataset.batch_id = batchId;
-    img.onclick = () => imageFullView.showImage(src, metadata);
+    img.onclick = () => imageFullView.showImage(img.dataset.src, img.dataset.metadata);
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');

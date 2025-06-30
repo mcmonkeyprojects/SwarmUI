@@ -326,7 +326,8 @@ There's a full step by step guide for video model usage here: <https://github.co
 ### Wan CausVid - High Speed 14B
 
 - Want to generate 14B videos way faster? Here's how:
-    - Download this LoRA <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors> and save it to your LoRAs folder
+    - Pick one of the options below, and save it to your LoRAs folder. "Lightx2v" is the current best recommendation.
+        - Here's the v2 version <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32_v2.safetensors>
         - Or the V1 version <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Wan21_CausVid_14B_T2V_lora_rank32.safetensors>
             - V1 has some visual side effects (noise pattern on the video), whereas V2 seems to have motion delay (the first couple seconds of a video have little motion, requiring longer video gens)
         - (Despite the T2V name, this works on I2V too)
@@ -344,7 +345,7 @@ There's a full step by step guide for video model usage here: <https://github.co
         - **Scheduler:** not sure what's best atm, but default usually seems alright
         - **Frame Count (Length):** supports the same ranges as regular Wan, but seems to extend happily to at least 96 frames (4 seconds at 24 fps), and possibly also 120 frames (5 seconds).
             - Wan defaults to 81 in Swarm (3.3 seconds) so you may want to tweak this manually.
-            - Use 24 for one second, 48 for two, 72 for three, 96 for four.
+            - Use 25 for one second, 49 for two, 73 for three, 97 for four, 121 for five, 145 for six.
         - With Text2Video, you may want to set **Other Fixes** -> **Trim Video Start Frames** to about 8, to prevent first-frame-flash (there tends to be 2 latent frames, ie 8 real frames, in glitched quality)
     - Note you still have to consider VRAM and res/frame count, as you will still get slow gens if you exceed your GPU's VRAM capacity. The net speed will still be faster, but not as impressive as compared to when you fit your GPU properly.
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.

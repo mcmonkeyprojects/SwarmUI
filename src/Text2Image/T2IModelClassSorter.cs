@@ -51,8 +51,8 @@ public class T2IModelClassSorter
         bool isFluxSchnell(JObject h) => (h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("guidance_in.in_layer.bias")) // 'diffusion_models'
                 || (h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("model.diffusion_model.guidance_in.in_layer.bias")); // 'checkpoints'
         bool isFluxDev(JObject h) => (h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("guidance_in.in_layer.bias")) // 'diffusion_models'
-                || (h.ContainsKey("single_transformer_blocks.0.norm.linear.qweight") && h.ContainsKey("transformer_blocks.0.mlp_context_fc1.bias") && h.ContainsKey("transformer_blocks.0.mlp_context_fc1.wscales")) // Nunchaku
-                || (h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("model.diffusion_model.guidance_in.in_layer.bias")); // 'checkpoints'
+                || (h.ContainsKey("single_transformer_blocks.0.norm.linear.qweight") && h.ContainsKey("transformer_blocks.0.mlp_context_fc1.bias") && (h.ContainsKey("transformer_blocks.0.mlp_context_fc1.wscales") || h.ContainsKey("transformer_blocks.0.mlp_context_fc1.wtscale")) // Nunchaku
+                || (h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("model.diffusion_model.guidance_in.in_layer.bias"))); // 'checkpoints'
         bool isFluxLora(JObject h)
         {
             // some models only have some but not all blocks, so...
@@ -298,6 +298,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "Flux.1-dev/inpaint", CompatClass = "flux-1", Name = "Flux.1 Fill/Inpaint", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return false;
+        }});
+        Register(new() { ID = "Flux.1-dev/kontext", CompatClass = "flux-1", Name = "Flux.1 Kontext Dev", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // ???
         }});
         Register(new() { ID = "Flux.1-dev/lora-depth", CompatClass = "flux-1", Name = "Flux.1 Depth LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {

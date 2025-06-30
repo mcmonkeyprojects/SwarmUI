@@ -95,6 +95,13 @@ public class Image
     /// <summary>Gets an ImageSharp <see cref="ISImage"/> for this image.</summary>
     public ISImage ToIS => ISImage.Load(ImageData);
 
+    /// <summary>Returns the (width, height) of the image.</summary>
+    public (int, int) GetResolution()
+    {
+        Size size = ToIS.Size;
+        return (size.Width, size.Height);
+    }
+
     /// <summary>Used for <see cref="ISImgToPngBytes(ISImage)"/>.</summary>
     public static PngEncoder FastPngEncoder = new() { CompressionLevel = PngCompressionLevel.Level1 };
 

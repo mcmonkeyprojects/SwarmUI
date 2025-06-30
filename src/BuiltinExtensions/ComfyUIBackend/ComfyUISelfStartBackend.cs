@@ -95,6 +95,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         path = $"\"{path}\"";
                     }
                     string cacheOption = skipPipCache ? " --no-cache-dir" : "";
+                    await DoLibFixes(false, false); // Some nodes have cursed deps, so we hack-around a pre-fix here
                     Process p = backends.FirstOrDefault().DoPythonCall($"-s -m pip install{cacheOption} -r {path}");
                     NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Requirements Install - {folderName})", "");
                     await p.WaitForExitAsync(Program.GlobalProgramCancel);
@@ -123,8 +124,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>Mapping of node folder names to exact git commits to maintain.</summary>
     public static ConcurrentDictionary<string, string> ComfyNodeGitPins = new()
     {
-        //["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
-        ["ComfyUI-nunchaku"] = "4a02394d747533172a0e957e2aac58cba20a508e" // pulid error in newer commits because they updated the node but haven't released new Nunchaku pip lib version
+        // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
     public async Task EnsureNodeRepos()
@@ -282,7 +282,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.21.7";
+    public static string SwarmValidatedFrontendVersion = "1.23.4";
 
     public override async Task Init()
     {
@@ -389,6 +389,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             await Task.WhenAll(tasks);
             AddLoadStatus($"All tasks done.");
         }
+        await DoLibFixes(doFixFrontend, doLatestFrontend);
+        AddLoadStatus("Starting self-start ComfyUI process...");
+        await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart);
+    }
+
+    public async Task DoLibFixes(bool doFixFrontend, bool doLatestFrontend)
+    {
         string lib = NetworkBackendUtils.GetProbableLibFolderFor(Settings.StartScript);
         if (lib is null || lib.Length < 3)
         {
@@ -434,7 +441,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     return null;
                 }
-                return dir[prefix.Length..].Before(".dist-info");
+                return dir[prefix.Length..].Before(".dist-info").Before('+');
             }
             if (!libs.Contains("pip"))
             {
@@ -453,6 +460,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             if (avVers is not null && Version.Parse(avVers) < Version.Parse("14.2.0"))
             {
                 await update("av", "av>=14.2.0");
+            }
+            string spandrelVers = getVers("spandrel");
+            if (spandrelVers is not null && Version.Parse(spandrelVers) < Version.Parse("0.4.1"))
+            {
+                await update("spandrel", "spandrel>=0.4.1");
             }
             string frontendVersion = getVers("comfyui_frontend_package");
             if (doFixFrontend && (frontendVersion is null || frontendVersion != SwarmValidatedFrontendVersion))
@@ -486,9 +498,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("ultralytics", $"ultralytics=={UltralyticsVersion}");
             }
-            if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus"))
+            if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus") || Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
-                // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so...
+                // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so... (nunchaku needs it too)
                 await install("cython", "cython");
                 if (File.Exists($"{lib}/../../python311.dll"))
                 {
@@ -540,12 +552,24 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.8]).");
                     isValid = false;
                 }
-                // eg https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch2.5-cp310-cp310-linux_x86_64.whl
-                string url = $"https://github.com/mit-han-lab/nunchaku/releases/download/v0.2.0/nunchaku-0.2.0+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
+                // eg https://github.com/mit-han-lab/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch2.5-cp310-cp310-linux_x86_64.whl
+                string url = $"https://github.com/mit-han-lab/nunchaku/releases/download/v0.3.1/nunchaku-0.3.1+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)
                 {
-                    await install("nunchaku", url);
+                    string nunchakuVers = getVers("nunchaku");
+                    if (nunchakuVers is not null && Version.Parse(nunchakuVers) < Version.Parse("0.3.1"))
+                    {
+                        await update("nunchaku", url);
+                    }
+                    else
+                    {
+                        await install("nunchaku", url);
+                    }
                 }
+                // Late-added requirements of nunchaku
+                await install("filterpy", "git+https://github.com/rodjjo/filterpy.git"); // compile dependency, utterly broken, I hate python developers omg
+                await install("facexlib", "facexlib");
+                await install("timm", "timm");
             }
             foreach (string req in reqs.Keys)
             {
@@ -556,8 +580,6 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             AddLoadStatus("Done validating required libs.");
         }
-        AddLoadStatus("Starting self-start ComfyUI process...");
-        await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart);
     }
 
     /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>

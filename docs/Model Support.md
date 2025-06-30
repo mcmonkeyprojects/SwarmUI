@@ -210,6 +210,12 @@ Parameters and usage is the same as any other normal model.
 ### Install
 
 - Black Forest Labs' Flux.1 model is fully supported in Swarm <https://blackforestlabs.ai/announcing-black-forest-labs/>
+    - **Recommended:** for best performance on modern nvidia cards, use Nunchaku models.
+        - These run twice as fast as the next best speed option (fp8) while using less memory too (close to gguf q4)
+        - Flux dev <https://huggingface.co/mit-han-lab/nunchaku-flux.1-dev/tree/main>
+        - Flux Schnell <https://huggingface.co/mit-han-lab/nunchaku-flux.1-schnell/tree/main>
+        - Use "fp4" for Blackwell (eg RTX 5090) or newer cards, use "int4" for anything older (4090, 3090, etc.)
+        - See the [Nunchaku Support](#nunchaku-mit-han-lab) section for more info on this format
     - **Recommended:** use the [GGUF Format Files](#gguf-quantized-models) (best for most graphics cards)
         - Flux Schnell <https://huggingface.co/city96/FLUX.1-schnell-gguf/tree/main>
         - Flux Dev <https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main>
@@ -273,6 +279,19 @@ Parameters and usage is the same as any other normal model.
     - Creativity `1` works well.
     - Larger masks recommended. Small ones may not replace content.
     - Boosting the `Flux Guidance Scale` way up to eg `30` may improve quality
+- For "**Kontext**" (edit model), it works like other edit models.
+    - Model download here <https://huggingface.co/Comfy-Org/flux1-kontext-dev_ComfyUI/blob/main/split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors>
+    - Or the official BFL 16 bit upload <https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev>
+    - Or some GGUFs here <https://huggingface.co/QuantStack/FLUX.1-Kontext-dev-GGUF/tree/main>
+    - It's a regular model file, it goes in the regular `diffusion_models` folder same as other flux models.
+    - You will have to manually edit the architecture to be `Flux.1 Kontext Dev`, it misdetects by default
+    - Paste images into the prompt box to serve as the reference images it will use to generate.
+        - If you have an init image and no reference images, the init image will be used.
+        - Be aware that the first image used will be the resolution control of the input. You will want to keep the image between 1024 and 2048 pixels wide.
+            - (If the image is significantly out of scale range, eg 512x512, it will be automatically rescaled for you)
+    - Kontext can take as many images as you want, but the way this works on the inside is a bit hacky and limited quality.
+    - Prompt should describe a *change* to make to the image.
+    - BFL published an official prompting guide here, following it carefully is recommended: <https://docs.bfl.ai/guides/prompting_guide_kontext_i2i>
 - If you want to use the **ACE Plus** Models (Character consistency)
     - Download the LoRAs from https://huggingface.co/ali-vilab/ACE_Plus/tree/main and save as normal loras
     - Enable the Flux Fill model, enable the LoRA you chose
@@ -413,9 +432,10 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
     - Nunchaku is a very dense quantization of models (eg 6GiB for Flux models) that runs very fast (4.4 seconds for a 20 step Flux Dev image on Windows RTX 4090)
     - They go in `(Swarm)/Models/diffusion_models` and have to have their own folder (eg `(Swarm)/Models/diffusion_models/myfluxmodel`) and work similar to other `diffusion_models` format models
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
-    - The detection is based on the folder structure, you need the files `transformer_blocks.safetensors` and `comfy_config.json` inside the folder. You cannot have unrelated files in the folder.
+    - For the older "SVDQuant" Folder Models <https://huggingface.co/collections/mit-han-lab/svdquant-67493c2c2e62a1fc6e93f45c>, The detection is based on the folder structure, you need the files `transformer_blocks.safetensors` and `comfy_config.json` inside the folder. You cannot have unrelated files in the folder.
+    - For "Nunchaku" singlefile models <https://huggingface.co/collections/mit-han-lab/nunchaku-6837e7498f680552f7bbb5ad>, there's no trick, they work just like any other model automatically.
     - The first time you try to load a Nunchaku model, it will give you a popup asking to install support
-        - This will autoinstall https://github.com/mit-han-lab/ComfyUI-nunchaku
+        - This will autoinstall <https://github.com/mit-han-lab/ComfyUI-nunchaku> and its dependencies
         - You can accept this popup, and it will install and reload the backend
         - Then try to generate again, and it should just work
     - Nunchaku has various compatibility limitations due to hacks in the custom nodes. Not all lora, textenc, etc. features will work as intended.

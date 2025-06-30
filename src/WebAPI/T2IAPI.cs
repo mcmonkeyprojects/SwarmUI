@@ -524,7 +524,7 @@ public static class T2IAPI
                             }
                         }
                     }
-                }));
+                }, "t2i getlist add dir"));
             }
             addDirs("", depth);
             while (tasks.Any(t => !t.Value.IsCompleted))

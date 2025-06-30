@@ -1674,11 +1674,13 @@ class ImageEditor {
         let initImage = document.getElementById('input_initimage');
         let maskImage = document.getElementById('input_maskimage');
         if (initImage) {
+            initImage.dataset.has_data = 'true';
             let parent = findParentOfClass(initImage, 'auto-input');
             parent.style.display = 'none';
             parent.dataset.visible_controlled = 'true';
         }
         if (maskImage) {
+            maskImage.dataset.has_data = 'true';
             let parent = findParentOfClass(maskImage, 'auto-input');
             parent.style.display = 'none';
             parent.dataset.visible_controlled = 'true';
@@ -1689,11 +1691,13 @@ class ImageEditor {
         let initImage = document.getElementById('input_initimage');
         let maskImage = document.getElementById('input_maskimage');
         if (initImage) {
+            delete initImage.dataset.has_data;
             let parent = findParentOfClass(initImage, 'auto-input');
             parent.style.display = '';
             delete parent.dataset.visible_controlled;
         }
         if (maskImage) {
+            delete maskImage.dataset.has_data;
             let parent = findParentOfClass(maskImage, 'auto-input');
             parent.style.display = '';
             delete parent.dataset.visible_controlled;

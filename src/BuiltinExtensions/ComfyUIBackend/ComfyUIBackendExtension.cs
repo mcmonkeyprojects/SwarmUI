@@ -374,16 +374,9 @@ public class ComfyUIBackendExtension : Extension
             Logs.Verbose($"Error refreshing ComfyUI: {ex.ReadableString()}");
             Utilities.RunCheckedTask(() =>
             {
-                try
-                {
-                    using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(5));
-                    Task.WaitAll([.. tasks], cancel.Token);
-                }
-                catch (Exception ex2)
-                {
-                    Logs.Error($"Error refreshing ComfyUI: {ex2}");
-                }
-            });
+                using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(5));
+                Task.WaitAll([.. tasks], cancel.Token);
+            }, "refreshing ComfyUI");
         }
     }
 
@@ -562,7 +555,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, StyleModelForRevision, TeaCacheMode, SetClipDevice;
+    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, SetClipDevice;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar;
 
@@ -606,28 +599,28 @@ public class ComfyUIBackendExtension : Extension
             "None", IgnoreIf: "None", FeatureFlag: "ipadapter", GetValues: _ => IPAdapterModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 15, ChangeWeight: 1
             ));
         IPAdapterWeight = T2IParamTypes.Register<double>(new("IP-Adapter Weight", "Weight to use with IP-Adapter (if enabled).",
-            "1", Min: -1, Max: 3, Step: 0.05, IgnoreIf: "1", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 16
+            "1", Min: -1, Max: 3, Step: 0.05, IgnoreIf: "1", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 16, DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
         IPAdapterStart = T2IParamTypes.Register<double>(new("IP-Adapter Start", "When to start applying IP-Adapter, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through. Must be less than IP-Adapter End.",
-            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 17, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
+            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 17, IsAdvanced: true, Examples: ["0", "0.2", "0.5"], DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
         IPAdapterEnd = T2IParamTypes.Register<double>(new("IP-Adapter End", "When to stop applying IP-Adapter, as a fraction of steps (if enabled).\nFor example, 0.5 stops applying halfway (50%) through. Must be greater than IP-Adapter Start.",
-            "1", IgnoreIf: "1",  Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"]
+            "1", IgnoreIf: "1",  Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"], DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
         IPAdapterWeightType = T2IParamTypes.Register<string>(new("IP-Adapter Weight Type", "How to shift the weighting of the IP-Adapter.\nThis can produce subtle but useful different effects.",
-            "standard", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 19, IsAdvanced: true, GetValues: _ => IPAdapterWeightTypes
+            "standard", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 19, IsAdvanced: true, GetValues: _ => IPAdapterWeightTypes, DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
-        StyleModelForRevision = T2IParamTypes.Register<string>(new("Use Style Model", $"Select a Style model to use it for image-prompt input handling.\nFlux.1 Redux is an example of a style model.\nPlace these models in `(Swarm)/Models/style_models`.",
+        UseStyleModel = T2IParamTypes.Register<string>(new("Use Style Model", $"Select a Style model to use it for image-prompt input handling.\nFlux.1 Redux is an example of a style model.\nPlace these models in `(Swarm)/Models/style_models`.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", GetValues: _ => StyleModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 14, ChangeWeight: 1
             ));
         StyleModelMergeStrength = T2IParamTypes.Register<double>(new("Style Model Merge Strength", "How strongly to merge in the effects of the style model.\nAt 1, the style model is fully used.\nAt 0, the style model is ignored.\nFor Flux Redux, very low values (eg 0.1) are recommended.",
-            "1", IgnoreIf: "1", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1"]
+            "1", IgnoreIf: "1", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1"], DependNonDefault: UseStyleModel.Type.ID
             ));
         StyleModelMultiplyStrength = T2IParamTypes.Register<double>(new("Style Model Multiply Strength", "How strongly to multiply the effects of the style model.\nAt 1, the style model is fully used.\nAt 0, the style model is ignored.\nFor Flux Redux, very low values (eg 0.1) are recommended.",
-            "1", IgnoreIf: "1", Min: 0.0, Max: 10.0, ViewMax: 2, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.6, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1", "2"]
+            "1", IgnoreIf: "1", Min: 0.0, Max: 10.0, ViewMax: 2, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.6, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1", "2"], DependNonDefault: UseStyleModel.Type.ID
             ));
         StyleModelApplyStart = T2IParamTypes.Register<double>(new("Style Model Apply Start", "When to start applying the Style Model, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through.\nThis is probably off-scale due to scheduler behavior in ComfyUI internals. Very low values are recommend for practical usage.",
-            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.7, IsAdvanced: true, Examples: ["0", "0.2", "0.5"]
+            "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.7, IsAdvanced: true, Examples: ["0", "0.2", "0.5"], DependNonDefault: UseStyleModel.Type.ID
             ));
         ComfyGroup = new("ComfyUI", Toggles: false, Open: false);
         ComfyAdvancedGroup = new("ComfyUI Advanced", Toggles: false, IsAdvanced: true, Open: false);
@@ -671,7 +664,7 @@ public class ComfyUIBackendExtension : Extension
             ));
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,
-            GetValues: (_) => UpscalerModels
+            GetValues: (_) => UpscalerModels, DependNonDefault: T2IParamTypes.RefinerUpscale.Type.ID
             ));
         RefinerSamplerParam = T2IParamTypes.Register<string>(new("Refiner Sampler", SamplerParam.Type.Description + "\nThis is an override to only affect the Refine/Upscale stage.",
             "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRefinerOverrides, OrderPriority: -2,
@@ -697,20 +690,20 @@ public class ComfyUIBackendExtension : Extension
             "256", Min: 64, Max: 2048, Step: 32, Toggleable: true, IsAdvanced: true, FeatureFlag: "comfyui", ViewType: ParamViewType.POT_SLIDER, Group: T2IParamTypes.GroupAdvancedSampling, OrderPriority: 20
             ));
         List<string> interpolators = ["RIFE", "FILM", "GIMM-VFI"];
-        Text2VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Text2Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
-            "RIFE", FeatureFlag: "frameinterps,text2video", Group: T2IParamTypes.GroupText2Video, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 32
-            ));
         Text2VideoFrameInterpolationMultiplier = T2IParamTypes.Register<int>(new("Text2Video Frame Interpolation Multiplier", "How many frames to interpolate between each frame in the video.\nHigher values are smoother, but make take significant time to save the output, and may have quality artifacts.",
-            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps,text2video", Group: T2IParamTypes.GroupText2Video, Permission: Permissions.ParamVideo, OrderPriority: 33
+            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps,text2video", Group: T2IParamTypes.GroupText2Video, Permission: Permissions.ParamVideo, OrderPriority: 32
+            ));
+        Text2VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Text2Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
+            "RIFE", FeatureFlag: "frameinterps,text2video", Group: T2IParamTypes.GroupText2Video, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 33, DependNonDefault: Text2VideoFrameInterpolationMultiplier.Type.ID
             ));
         VideoPreviewType = T2IParamTypes.Register<string>(new("Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",
             "animate", IgnoreIf: "animate", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, GetValues: (_) => ["animate", "iterate", "one", "none"]
             ));
-        VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
-            "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 32
-            ));
         VideoFrameInterpolationMultiplier = T2IParamTypes.Register<int>(new("Video Frame Interpolation Multiplier", "How many frames to interpolate between each frame in the video.\nHigher values are smoother, but make take significant time to save the output, and may have quality artifacts.",
-            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, OrderPriority: 33
+            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, OrderPriority: 32
+            ));
+        VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
+            "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 33, DependNonDefault: VideoFrameInterpolationMultiplier.Type.ID
             ));
         GligenModel = T2IParamTypes.Register<string>(new("GLIGEN Model", "Optionally use a GLIGEN model.\nGLIGEN is only compatible with SDv1 at time of writing.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRegionalPrompting, GetValues: (_) => GligenModels, IsAdvanced: true
@@ -725,7 +718,7 @@ public class ComfyUIBackendExtension : Extension
             "disabled", IgnoreIf: "disabled", FeatureFlag: "teacache", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, GetValues: (_) => ["disabled", "all", "base gen only///base gen only (no refiner or video)", "video only"], OrderPriority: 15
             ));
         TeaCacheThreshold = T2IParamTypes.Register<double>(new("TeaCache Threshold", "What threshold to use with TeaCache.\nSee 'TeaCache Mode' parameter above.\n0.4 might work well with Flux image generation, and 0.15 might work well with video generation.\n0.25 is a good stable default for most purposes - decent acceleration but little visual change.",
-            "0.25", IgnoreIf: "0.25", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "teacache", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 15.5
+            "0.25", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "teacache", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 15.5, DependNonDefault: TeaCacheMode.Type.ID
             ));
         NunchakuCacheThreshold = T2IParamTypes.Register<double>(new("Nunchaku Cache Threshold", "What threshold to use with Nunchaku block caching.\nThis makes Nunchaku gens faster at the cost of quality.\nOnly applicable to Nunchaku models.\nGenerally 0 to 0.2 is the reasonable range, above that you can start noticing quality drop.",
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "nunchaku", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 16

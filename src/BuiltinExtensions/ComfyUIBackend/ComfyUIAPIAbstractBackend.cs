@@ -30,6 +30,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 
     public JObject RawObjectInfo;
 
+    public HashSet<string> NodeTypes = [];
+
     public string ModelFolderFormat = null;
 
     public record class ReusableSocket(string ID, ClientWebSocket Socket);
@@ -53,6 +55,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         RawObjectInfo = result;
         ConcurrentDictionary<string, List<string>> newModels = [];
         string firstBackSlash = null;
+        NodeTypes = [.. RawObjectInfo.Properties().Select(p => p.Name)];
         void trackModels(string subtype, string node, string param)
         {
             if (RawObjectInfo.TryGetValue(node, out JToken loaderNode))
@@ -131,9 +134,9 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Status = BackendStatus.RUNNING;
             LoadStatusReport = null;
         }
-        catch (HttpRequestException e)
+        catch (Exception e)
         {
-            if (!ignoreWebError)
+            if (!ignoreWebError || (e is not HttpRequestException && e is not TaskCanceledException) || Program.GlobalProgramCancel.IsCancellationRequested)
             {
                 throw;
             }
@@ -951,6 +954,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             copyParam(T2IParamTypes.ClipGModel);
             copyParam(T2IParamTypes.ClipLModel);
             copyParam(T2IParamTypes.T5XXLModel);
+            copyParam(T2IParamTypes.LLaVAModel);
+            copyParam(T2IParamTypes.LLaMAModel);
         }
         WorkflowGenerator wg = new() { UserInput = input, ModelFolderFormat = ModelFolderFormat, Features = [.. SupportedFeatures] };
         JObject workflow = wg.Generate();

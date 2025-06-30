@@ -766,7 +766,7 @@ function comfyBuildParams(callback) {
             claimOnce('SwarmLoraLoader', 'loraweights', 'lora_weights', false);
             if (doAutoClaim) {
                 if (claimOnce('EmptyLatentImage', 'width', 'width', true) && claimOnce('EmptyLatentImage', 'height', 'height', true) && claimOnce('EmptyLatentImage', 'batchsize', 'batch_size', true)) {
-                    defaultParamsRetain.push('aspectratio');
+                    defaultParamsRetain.push('aspectratio', 'sidelength');
                     defaultParamValue['aspectratio'] = 'Custom';
                     continue;
                 }
@@ -839,8 +839,8 @@ function comfyBuildParams(callback) {
         if (defaultParamValue['model']) {
             coreRetain.push('model');
         }
-        if (defaultParamsRetain.includes('width') && defaultParamsRetain.includes('height') && !defaultParamsRetain.includes('aspectratio')) {
-            defaultParamsRetain.push('aspectratio');
+        if (defaultParamsRetain.includes('width') && defaultParamsRetain.includes('height') && (!defaultParamsRetain.includes('aspectratio') || !defaultParamsRetain.includes('sidelength'))) {
+            defaultParamsRetain.push('aspectratio', 'sidelength');
             defaultParamValue['aspectratio'] = 'Custom';
         }
         for (let param of defaultParamsRetain) {

@@ -825,8 +825,7 @@ public class WorkflowGenerator
         }
         string getLlama31_8b_Model()
         {
-            // TODO: Selector param?
-            return requireClipModel("llama_3.1_8b_instruct_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors", "9f86897bbeb933ef4fd06297740edb8dd962c94efcd92b373a11460c33765ea6", null);
+            return requireClipModel("llama_3.1_8b_instruct_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors", "9f86897bbeb933ef4fd06297740edb8dd962c94efcd92b373a11460c33765ea6", T2IParamTypes.LLaMAModel);
         }
         string getGemma2Model()
         {
@@ -1554,7 +1553,55 @@ public class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        if (classId == "stable-diffusion-xl-v1-edit")
+        else if (classId.EndsWith("/kontext"))
+        {
+            JArray img = null;
+            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+            {
+                string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
+                img = [img1, 0];
+                (int width, int height) = images[0].GetResolution();
+                if (width * height < 960 * 960 || width * height > 4096 * 4096) // Kontext wonks out below 1024x1024 so add a scale fix check, with a bit of margin for close-enough
+                {
+                    (width, height) = Utilities.ResToModelFit(width, height, 1024 * 1024);
+                    string scaleFix = CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = img,
+                        ["width"] = width,
+                        ["height"] = height,
+                        ["crop"] = "disabled",
+                        ["upscale_method"] = "lanczos"
+                    });
+                    img = [scaleFix, 0];
+                }
+                for (int i = 1; i < images.Count; i++)
+                {
+                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
+                    string stitched = CreateNode("ImageStitch", new JObject()
+                    {
+                        ["image1"] = img,
+                        ["image2"] = new JArray() { img2, 0 },
+                        ["direction"] = "right",
+                        ["match_image_size"] = true,
+                        ["spacing_width"] = 0,
+                        ["spacing_color"] = "white"
+                    });
+                    img = [stitched, 0];
+                }
+            }
+            else if (FinalInputImage is not null)
+            {
+                img = FinalInputImage;
+            }
+            string vaeEncode = CreateVAEEncode(FinalVae, img);
+            string refLatentNode = CreateNode("ReferenceLatent", new JObject()
+            {
+                ["conditioning"] = pos,
+                ["latent"] = new JArray() { vaeEncode, 0 }
+            });
+            pos = [refLatentNode, 0];
+        }
+        else if (classId == "stable-diffusion-xl-v1-edit")
         {
             // TODO: SamplerCustomAdvanced logic should be used for *all* models, not just ip2p
             if (FinalInputImage is null)
