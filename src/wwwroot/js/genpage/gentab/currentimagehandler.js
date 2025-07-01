@@ -232,6 +232,9 @@ class ImageFullViewHelper {
     }
 
     close() {
+        if (!this.isOpen()) {
+            return;
+        }
         this.isDragging = false;
         this.didDrag = false;
         this.modalJq.modal('hide');
