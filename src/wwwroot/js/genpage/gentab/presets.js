@@ -293,57 +293,8 @@ function editPreset(preset) {
     fixPresetParamClickables();
 }
 
-/** keeps track of the sortBy elements we've bound event listeners to */
-let presetSortByElement;
-let presetSortReverseElement;
-
-/** keeps track of the currently selected sort options (initialized from localStorage) */
-let presetSortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
-let presetSortReverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
-
-function onPresetSortByChanged(ev) {
-    presetSortBy = ev.target.value
-    localStorage.setItem('preset_list_sort_by', presetSortBy);
-    presetBrowser.update();
-}
-
-function onPresetSortReverseChanged(ev) {
-    presetSortReverse = ev.target.checked
-    localStorage.setItem('preset_list_sort_reverse', presetSortReverse);
-    presetBrowser.update();
-}
-
-/** Ensures the preset sort options are up to date and UI elements are bound */
-function initializePresetSortInfo() {
-    let sortByElem = document.getElementById("preset_list_sort_by");
-    let reverseElem = document.getElementById("preset_list_sort_reverse");
-
-    // check if the sortBy elements have changed since we were last invoked
-    // if they have, remove the event listeners from the old elements and add them to the new one
-    // and initialize the values of the new elements
-    if (sortByElem != presetSortByElement) {
-        presetSortByElement?.removeEventListener("change", onPresetSortByChanged);
-        presetSortByElement = sortByElem;
-        if (sortByElem) {
-            sortByElem.value = presetSortBy;
-            sortByElem.addEventListener("change", onPresetSortByChanged);
-        }
-    }
-
-    if (reverseElem != presetSortReverseElement) {
-        presetSortReverseElement?.removeEventListener("change", onPresetSortReverseChanged);
-        presetSortReverseElement = reverseElem;
-        if (reverseElem) {
-            reverseElem.checked = presetSortReverse;
-            reverseElem.addEventListener("change", onPresetSortReverseChanged);
-        }
-    }
-    
-    return {sortBy: presetSortBy, reverse: presetSortReverse};
-}
-
-function getPresetSortValue(preset) {
-    switch (presetSortBy) {
+function getPresetSortValue(sortBy, preset) {
+    switch (sortBy) {
         // sort by the leaf name
         case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
         // sort by the full path
@@ -353,10 +304,10 @@ function getPresetSortValue(preset) {
 }
 
 /** A preset comparison function which can be used to sort presets */
-function presetSortCompare(a, b) {
-    let multiplier = presetSortReverse ? -1 : 1;
-    let valueA = getPresetSortValue(a);
-    let valueB = getPresetSortValue(b);
+function presetSortCompare(sortBy, reverse, a, b) {
+    let multiplier = reverse ? -1 : 1;
+    let valueA = getPresetSortValue(sortBy, a);
+    let valueB = getPresetSortValue(sortBy, b);
     if (valueA < valueB) {
         return -1 * multiplier;
     }
@@ -367,8 +318,7 @@ function presetSortCompare(a, b) {
 }
 
 /** Sorts the presets based on the current sort options */    
-function sortPresets() {
-    initializePresetSortInfo();
+function sortPresets(sortBy, reverse) {
     // partition the presets into the special list (default, preview) and the normal list.
     // we will sort the normal list, then prepend the special list to the front (or back, if reversed)
     let [specialPresets, normalPresets] = allPresetsUnsorted.reduce(([special, normal], preset) => {
@@ -380,17 +330,17 @@ function sortPresets() {
         }
         return [special, normal];
     }, [[], []]);
-    if (presetSortBy == 'Default') {
+    if (sortBy == 'Default') {
         // do not need to sort.  Just prepend the specials and then possibly reverse
         normalPresets.unshift(...specialPresets);
-        if (presetSortReverse) {
+        if (reverse) {
             normalPresets.reverse();
         }
     }
     else {
-        normalPresets.sort(presetSortCompare);
+        normalPresets.sort(presetSortCompare.bind(null, sortBy, reverse));
         // prepend the specials (append if reversed)
-        if (presetSortReverse) {
+        if (reverse) {
             normalPresets.push(...specialPresets.reverse());
         }
         else {
@@ -400,12 +350,45 @@ function sortPresets() {
     allPresets = normalPresets;
 }
 
+// so we can track if we still need to wire up the sort element events.
+let presetSortFix = null;
+
 function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
+    let sortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
+    let reverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
+    let sortElem = document.getElementById('preset_list_sort_by');
+    let sortReverseElem = document.getElementById('preset_list_sort_reverse');
+    // first call happens before headers are built atm
+    // setup a fix function that we'll call later
+    if (!sortElem) {
+        presetSortFix = () => {
+            let sortElem = document.getElementById('preset_list_sort_by');
+            let sortReverseElem = document.getElementById('preset_list_sort_reverse');
+            // presetbrowser does not have the same lifecycle as imagehistory or model browser.
+            // we need this check to handle the different lifecycle
+            if (sortElem && sortReverseElem) {
+                presetSortFix = null;
+                sortElem.value = sortBy;
+                sortReverseElem.checked = reverse;
+                sortElem.addEventListener('change', () => {
+                    localStorage.setItem('preset_list_sort_by', sortElem.value);
+                    presetBrowser.update();
+                });
+                sortReverseElem.addEventListener('change', () => {
+                    localStorage.setItem('preset_list_sort_reverse', sortReverseElem.checked);
+                    presetBrowser.update();
+                });
+            }
+        }
+    }
     let proc = () => {
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         let folders = [];
         let files = [];
-        sortPresets();
+        if (presetSortFix) {
+            presetSortFix();
+        }
+        sortPresets(sortBy, reverse);
         for (let preset of allPresets) {
             if (preset.title.startsWith(prefix)) {
                 let subPart = preset.title.substring(prefix.length);

@@ -358,7 +358,6 @@ function loadUserData(callback) {
         if (!language) {
             language = data.language;
         }
-        sortPresets();
         presetBrowser.update();
         if (shouldApplyDefault) {
             shouldApplyDefault = false;
