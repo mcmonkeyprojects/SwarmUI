@@ -225,7 +225,6 @@ class ImageFullViewHelper {
                 this.fixButtonDelay = null;
             }, 500);
         }
-        this.extraButtons.appendChild(subDiv);
     }
 
     close() {

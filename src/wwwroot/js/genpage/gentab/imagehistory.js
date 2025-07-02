@@ -95,6 +95,9 @@ function buttonsForImage(fullsrc, src, metadata) {
             label: 'Delete',
             title: 'Deletes this image from the server.',
             onclick: (e) => {
+                if (!uiImprover.lastShift && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
+                    return;
+                }
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
                     if (e) {
                         e.remove();
