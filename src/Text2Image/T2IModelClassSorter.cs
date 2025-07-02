@@ -86,7 +86,7 @@ public class T2IModelClassSorter
         bool isCosmos7b(JObject h) => h.TryGetValue("net.blocks.block0.blocks.0.adaLN_modulation.1.weight", out JToken jtok) && jtok["shape"].ToArray()[^1].Value<long>() == 4096;
         bool isCosmos14b(JObject h) => h.TryGetValue("net.blocks.block0.blocks.0.adaLN_modulation.1.weight", out JToken jtok) && jtok["shape"].ToArray()[^1].Value<long>() == 5120;
         bool isCosmosVae(JObject h) => h.ContainsKey("decoder.unpatcher3d._arange");
-        bool isCosmosPredict2_2B(JObject h) => h.ContainsKey("norm_out.linear_1.weight");
+        bool isCosmosPredict2_2B(JObject h) => h.ContainsKey("norm_out.linear_1.weight") && h.ContainsKey("time_embed.t_embedder.linear_1.weight");
         bool isCosmosPredict2_14B(JObject h) => h.ContainsKey("net.blocks.0.adaln_modulation_cross_attn.1.weight");
         bool isLumina2(JObject h) => h.ContainsKey("model.diffusion_model.cap_embedder.0.weight") || h.ContainsKey("cap_embedder.0.weight");
         bool tryGetWanTok(JObject h, out JToken tok) => h.TryGetValue("model.diffusion_model.blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("lora_unet_blocks_0_cross_attn_k.lora_down.weight", out tok);
@@ -101,6 +101,7 @@ public class T2IModelClassSorter
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
         bool isHiDreamLora(JObject h) => h.ContainsKey("diffusion_model.double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
         bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
+        bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -456,6 +457,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "hidream-i1/lora", CompatClass = "hidream-i1", Name = "HiDream i1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isHiDreamLora(h);
+        }});
+        Register(new() { ID = "omnigen-2", CompatClass = "omnigen-2", Name = "OmniGen 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isOmniGen(h);
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
