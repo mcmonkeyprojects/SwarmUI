@@ -731,7 +731,7 @@ body {
     background-color: rgb(50, 50, 50, 0.7);
 }
 .imageview_modal_imagewrap {
-    height: calc(min(100vw, 100vh - 5em));
+    height: calc(min(100vw, 100vh - 7em));
     max-width: 95vw;
     overflow: hidden;
 }
@@ -743,7 +743,7 @@ body {
 .imageview_popup_modal_undertext {
     background-color: var(--background);
     overflow-wrap: break-word;
-    height: 5em;
+    height: 7em;
     overflow-y: auto;
     text-align: center;
 }

@@ -7,7 +7,6 @@ class ImageFullViewHelper {
         this.content = getRequiredElementById('image_fullview_modal_content');
         this.modalJq = $('#image_fullview_modal');
         this.noClose = false;
-        this.extraButtons = getRequiredElementById('image_fullview_extra_buttons');
         document.addEventListener('click', (e) => {
             if (e.target.tagName == 'BODY') {
                 return; // it's impossible on the genpage to actually click body, so this indicates a bugged click, so ignore it
@@ -188,27 +187,25 @@ class ImageFullViewHelper {
                 ${imgHtml}
             </div>
             <div class="imageview_popup_modal_undertext">
-            ${formatMetadata(metadata)}
+                <span class="image_fullview_extra_buttons"></span>
+                ${formatMetadata(metadata)}
             </div>
         </div>`;
-        this.modalJq.modal('show');
-        this.extraButtons.innerHTML = '';
-        let subDiv = createDiv(null, null, '<br>');
+        let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
             if (added.href) {
                 if (added.is_download) {
-                    subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}" download>${added.label}</a><br>`));
+                    subDiv.appendChild(createDiv(null, 'inline-block', `<a class="text_button basic-button translate" href="${added.href}" title="${added.title}" download>${added.label}</a>`));
                 }
                 else {
-                    subDiv.appendChild(createDiv(null, null, `<a class="text_button translate" href="${added.href}" title="${added.title}">${added.label}</a><br>`));
+                    subDiv.appendChild(createDiv(null, 'inline-block', `<a class="text_button basic-button translate" href="${added.href}" title="${added.title}">${added.label}</a>`));
                 }
             }
             else {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), '', added.title);
-                subDiv.appendChild(document.createElement('br'));
             }
-            subDiv.appendChild(document.createElement('br'));
         }
+        this.modalJq.modal('show');
         if (this.fixButtonDelay) {
             clearTimeout(this.fixButtonDelay);
         }
