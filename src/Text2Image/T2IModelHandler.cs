@@ -235,7 +235,8 @@ public class T2IModelHandler
         {
             return model;
         }
-        if (ModelsAPI.InternalExtraModels(ModelType).TryGetValue(name, out JObject extraModelData))
+        Dictionary<string, JObject> extra = ModelsAPI.InternalExtraModels(ModelType);
+        if (extra.TryGetValue(name, out JObject extraModelData) || extra.TryGetValue(name + ".safetensors", out extraModelData))
         {
             return T2IModel.FromNetObject(extraModelData);
         }

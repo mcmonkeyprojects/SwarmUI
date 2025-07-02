@@ -360,6 +360,15 @@ public class Settings : AutoConfiguration
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
         public UserUIData UI = new();
 
+        public class ParamParsingData : AutoConfiguration
+        {
+            [ConfigComment("Whether LoRAs can be added to a generation multiple times.\nIf false, the firstmost usage of a LoRA will be kept and others will be discarded.")]
+            public bool AllowLoraStacking = true;
+        }
+
+        [ConfigComment("Settings related to the parsing of generation parameters.")]
+        public ParamParsingData ParamParsing = new();
+
         [ConfigComment("Whether your image output files save to server data drive or not.\nDisabling this can make some systems misbehave, and makes the Image History do nothing.")]
         public bool SaveFiles = true;
 

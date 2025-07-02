@@ -495,10 +495,13 @@ public class T2IPromptHandling
                 context.TrackWarning($"Lora '{lora}' does not exist and will be ignored.");
                 return null;
             }
-            string shortMatch = matched.Replace(".safetensors", "");
-            if (lora.Length < shortMatch.Length)
+            if (matched.EndsWith(".safetensors"))
             {
-                Logs.Warning($"LoRA input '{lora}' is not a valid LoRA model name, but appears to match '{shortMatch}', will use that instead.");
+                matched = matched.BeforeLast('.');
+            }
+            if (lora.Length < matched.Length)
+            {
+                Logs.Warning($"LoRA input '{lora}' is not a valid LoRA model name, but appears to match '{matched}', will use that instead.");
             }
             T2IModel loraModel = Program.T2IModelSets["LoRA"].GetModel(matched);
             if (loraModel is not null && Program.ServerSettings.Metadata.ImageMetadataIncludeModelHash)
@@ -509,6 +512,11 @@ public class T2IPromptHandling
             List<string> weights = context.Input.Get(T2IParamTypes.LoraWeights) ?? [];
             List<string> tencWeights = context.Input.Get(T2IParamTypes.LoraTencWeights) ?? [];
             List<string> confinements = context.Input.Get(T2IParamTypes.LoraSectionConfinement);
+            if (!(context.Input.SourceSession?.User?.Settings?.ParamParsing?.AllowLoraStacking ?? true) && loraList.Contains(matched))
+            {
+                context.TrackWarning($"LoRA '{matched}' is already applied and will not be added again.");
+                return "";
+            }
             if (confinements is not null && confinements.Count > loraList.Count)
             {
                 context.Input.Remove(T2IParamTypes.LoraSectionConfinement);
