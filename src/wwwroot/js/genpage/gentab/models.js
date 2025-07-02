@@ -320,13 +320,15 @@ class ModelBrowserWrapper {
     }
 
     sortModelLocal(a, b, files) {
-        let aCorrect = isModelArchCorrect(a);
-        let bCorrect = isModelArchCorrect(b);
-        if (aCorrect && !bCorrect) {
-            return -1;
-        }
-        if (!aCorrect && bCorrect) {
-            return 1;
+        if (this.subType != 'Stable-Diffusion') {
+            let aCorrect = isModelArchCorrect(a);
+            let bCorrect = isModelArchCorrect(b);
+            if (aCorrect && !bCorrect) {
+                return -1;
+            }
+            if (!aCorrect && bCorrect) {
+                return 1;
+            }
         }
         let aStarred = this.isStarred(a.name);
         let bStarred = this.isStarred(b.name);

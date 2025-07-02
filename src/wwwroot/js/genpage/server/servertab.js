@@ -537,10 +537,10 @@ function check_for_updates() {
     genericRequest('CheckForUpdates', {}, data => {
         let text = '';
         if (data.server_updates_count > 0) {
-            text += `${data.server_updates_count} ${updatesAvailableText.get()} "${data.server_updates_preview.join('",\n "')}"`;
+            text += `${data.server_updates_count} ${updatesAvailableText.get()}\n"${data.server_updates_preview.join('",\n "')}"`;
         }
         if (data.extension_updates.length > 0) {
-            text += `\n${data.extension_updates.length} ${extensionsAvailableText.get()} ${data.extension_updates.join(', ')}`;
+            text += `\n${data.extension_updates.length} ${extensionsAvailableText.get()}\n"${data.extension_updates.join('",\n "')}"`;
         }
         // TODO: Backend updates
         updatesCard.classList.remove('border-secondary');

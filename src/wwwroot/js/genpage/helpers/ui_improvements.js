@@ -253,7 +253,7 @@ class AdvancedPopover {
 class UIImprovementHandler {
     constructor() {
         this.lastPopover = null;
-        let lastShift = false;
+        this.lastShift = false;
         this.lastSelectedTextbox = null;
         this.timeOfLastTextboxSelectTrack = 0;
         this.lastTextboxCursorPos = -1;
@@ -265,9 +265,9 @@ class UIImprovementHandler {
             }
         }, true);
         document.addEventListener('mousedown', (e) => {
+            this.lastShift = e.shiftKey;
             if (e.target.tagName == 'SELECT') {
-                lastShift = e.shiftKey;
-                if (!lastShift && this.shouldAlterSelect(e.target)) {
+                if (!this.lastShift && this.shouldAlterSelect(e.target)) {
                     e.preventDefault();
                     e.stopPropagation();
                     return false;
@@ -275,7 +275,7 @@ class UIImprovementHandler {
             }
         }, true);
         document.addEventListener('click', (e) => {
-            if (e.target.tagName == 'SELECT' && !lastShift && this.shouldAlterSelect(e.target)) { // e.shiftKey doesn't work in click for some reason
+            if (e.target.tagName == 'SELECT' && !this.lastShift && this.shouldAlterSelect(e.target)) { // e.shiftKey doesn't work in click for some reason
                 // The tiny delay is to try to fight broken browser extensions that spazz out when elements are spawned from a click
                 // (eg 1Password, Eno Capital One, iCloud Passwords are known offenders)
                 setTimeout(() => {

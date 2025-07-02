@@ -18,6 +18,7 @@
 [Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Decent Quality |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Modern but bad |
+[OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -395,6 +396,22 @@ Parameters and usage is the same as any other normal model.
     - The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
         - It will be automatically downloaded.
     - The VAE is the Wan VAE, and will be automatically downloaded.
+
+# OmniGen 2
+
+- [OmniGen 2](https://github.com/VectorSpaceLab/OmniGen2) is natively partially supported in SwarmUI.
+    - It is technically an LLM, and the LLM features are not supported, only the direct raw image features.
+    - Download the model here <https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/blob/main/split_files/diffusion_models/omnigen2_fp16.safetensors>
+        - Save it to `diffusion_models`
+    - The text encoder is Qwen 2.5 VL (LLM), and will be automatically downloaded.
+    - The VAE is the Flux VAE, and will be automatically downloaded.
+    - Add images to the prompt box to use them as input images for the model. If no input images are given, but you have an Init Image, that will be used as the input image.
+    - **CFG:** Use around CFG=5
+        - You can use advanced param `IP2P CFG 2` to control the secondary CFG, defaults to 2.
+    - **Steps:** normal ~20
+    - **Resolution:** Normal 1024x1024-ish.
+    - **Performance:** Pretty terribly slow. Incompatible with fp8, incompatible with sage attention.
+    - **Prompts:** their demo page has some prompt tips and examples <https://huggingface.co/spaces/OmniGen2/OmniGen2>
 
 # Video Models
 

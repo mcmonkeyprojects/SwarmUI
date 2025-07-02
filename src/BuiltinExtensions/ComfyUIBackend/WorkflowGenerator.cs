@@ -210,6 +210,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "lumina-2";
     }
 
+    /// <summary>Returns true if the current model is an OmniGen.</summary>
+    public bool IsOmniGen()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz.StartsWith("omnigen-");
+    }
+
     /// <summary>Returns true if the current model is Hunyuan Video.</summary>
     public bool IsHunyuanVideo()
     {
@@ -787,6 +794,10 @@ public class WorkflowGenerator
         {
             return requireClipModel("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors", "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68", T2IParamTypes.T5XXLModel);
         }
+        string getOmniQwenModel()
+        {
+            return requireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", null);
+        }
         string getClipLModel()
         {
             if (UserInput.TryGet(T2IParamTypes.ClipLModel, out T2IModel model))
@@ -985,7 +996,7 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2())
+                    else if (IsNvidiaCosmos2() || IsOmniGen())
                     {
                         dtype = "default";
                     }
@@ -1189,6 +1200,20 @@ public class WorkflowGenerator
                 ["clip_name2"] = getHiDreamClipGModel(),
                 ["clip_name3"] = getT5XXLModel(),
                 ["clip_name4"] = getLlama31_8b_Model()
+            });
+            LoadingClip = [quadClipLoader, 0];
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsOmniGen())
+        {
+            string loaderType = "CLIPLoader";
+            if (getOmniQwenModel().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string quadClipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getOmniQwenModel(),
             });
             LoadingClip = [quadClipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
@@ -1460,7 +1485,7 @@ public class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
-        else if (IsWanVideo())
+        else if (IsFlux() || IsWanVideo() || IsOmniGen())
         {
             defscheduler ??= "simple";
         }
@@ -1477,10 +1502,6 @@ public class WorkflowGenerator
                 willCascadeFix = false;
                 model = cascadeModel;
             }
-        }
-        if (IsFlux())
-        {
-            defscheduler ??= "simple";
         }
         string classId = FinalLoadedModel?.ModelClass?.ID ?? "";
         static bool isSpecial(T2IModel model)
@@ -1553,9 +1574,34 @@ public class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        else if (classId.EndsWith("/kontext"))
+        else if (classId.EndsWith("/kontext") || IsOmniGen())
         {
             JArray img = null;
+            JArray imgNeg = null;
+            bool doLatentChain = IsOmniGen();
+            if (IsOmniGen())
+            {
+                imgNeg = neg;
+            }
+            void makeRefLatent(JArray image)
+            {
+                string vaeEncode = CreateVAEEncode(FinalVae, image);
+                string refLatentNode = CreateNode("ReferenceLatent", new JObject()
+                {
+                    ["conditioning"] = pos,
+                    ["latent"] = new JArray() { vaeEncode, 0 }
+                });
+                pos = [refLatentNode, 0];
+                if (imgNeg is not null)
+                {
+                    string refLatentNodeNeg = CreateNode("ReferenceLatent", new JObject()
+                    {
+                        ["conditioning"] = imgNeg,
+                        ["latent"] = new JArray() { vaeEncode, 0 }
+                    });
+                    imgNeg = [refLatentNodeNeg, 0];
+                }
+            }
             if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
             {
                 string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
@@ -1574,62 +1620,64 @@ public class WorkflowGenerator
                     });
                     img = [scaleFix, 0];
                 }
+                if (doLatentChain)
+                {
+                    makeRefLatent(img);
+                }
                 for (int i = 1; i < images.Count; i++)
                 {
                     string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
-                    string stitched = CreateNode("ImageStitch", new JObject()
+                    if (doLatentChain)
                     {
-                        ["image1"] = img,
-                        ["image2"] = new JArray() { img2, 0 },
-                        ["direction"] = "right",
-                        ["match_image_size"] = true,
-                        ["spacing_width"] = 0,
-                        ["spacing_color"] = "white"
-                    });
-                    img = [stitched, 0];
+                        makeRefLatent([img2, 0]);
+                    }
+                    else
+                    {
+                        string stitched = CreateNode("ImageStitch", new JObject()
+                        {
+                            ["image1"] = img,
+                            ["image2"] = new JArray() { img2, 0 },
+                            ["direction"] = "right",
+                            ["match_image_size"] = true,
+                            ["spacing_width"] = 0,
+                            ["spacing_color"] = "white"
+                        });
+                        img = [stitched, 0];
+                    }
+                }
+                if (!doLatentChain)
+                {
+                    makeRefLatent(img);
                 }
             }
             else if (FinalInputImage is not null)
             {
                 img = FinalInputImage;
+                makeRefLatent(img);
             }
-            string vaeEncode = CreateVAEEncode(FinalVae, img);
-            string refLatentNode = CreateNode("ReferenceLatent", new JObject()
+            if (img is not null)
             {
-                ["conditioning"] = pos,
-                ["latent"] = new JArray() { vaeEncode, 0 }
-            });
-            pos = [refLatentNode, 0];
+                if (IsOmniGen())
+                {
+                    string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
+                    {
+                        ["model"] = model,
+                        ["cond1"] = pos,
+                        ["cond2"] = imgNeg,
+                        ["negative"] = neg,
+                        ["cfg_conds"] = cfg,
+                        ["cfg_cond2_negative"] = UserInput.Get(T2IParamTypes.IP2PCFG2, 2)
+                    });
+                    return emitAsCustomAdvanced([cfgGuiderNode, 0], latent);
+                }
+            }
         }
-        else if (classId == "stable-diffusion-xl-v1-edit")
+        string emitAsCustomAdvanced(JArray guider, JArray latentImage)
         {
             // TODO: SamplerCustomAdvanced logic should be used for *all* models, not just ip2p
-            if (FinalInputImage is null)
-            {
-                // TODO: Get the correct image (eg if edit is used as a refiner or something silly it should still work)
-                string decoded = CreateVAEDecode(FinalVae, latent);
-                FinalInputImage = [decoded, 0];
-            }
-            string ip2p2condNode = CreateNode("InstructPixToPixConditioning", new JObject()
-            {
-                ["positive"] = pos,
-                ["negative"] = neg,
-                ["vae"] = FinalVae,
-                ["pixels"] = FinalInputImage
-            });
             string noiseNode = CreateNode("RandomNoise", new JObject()
             {
                 ["noise_seed"] = seed
-            });
-            // TODO: VarSeed, batching, etc. seed logic
-            string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
-            {
-                ["model"] = model,
-                ["cond1"] = new JArray() { ip2p2condNode, 0 },
-                ["cond2"] = new JArray() { ip2p2condNode, 1 },
-                ["negative"] = neg,
-                ["cfg_conds"] = cfg,
-                ["cfg_cond2_negative"] = UserInput.Get(T2IParamTypes.IP2PCFG2, 1.5)
             });
             string samplerNode = CreateNode("KSamplerSelect", new JObject()
             {
@@ -1687,15 +1735,42 @@ public class WorkflowGenerator
                 });
                 schedulerNode = [beforeEnd, 0];
             }
+            // TODO: VarSeed, batching, etc. seed logic
             string finalSampler = CreateNode("SamplerCustomAdvanced", new JObject()
             {
                 ["sampler"] = new JArray() { samplerNode, 0 },
-                ["guider"] = new JArray() { cfgGuiderNode, 0 },
+                ["guider"] = guider,
                 ["sigmas"] = schedulerNode,
-                ["latent_image"] = new JArray() { ip2p2condNode, 2 },
+                ["latent_image"] = latentImage,
                 ["noise"] = new JArray() { noiseNode, 0 }
             }, id);
             return finalSampler;
+        }
+        if (classId == "stable-diffusion-xl-v1-edit")
+        {
+            if (FinalInputImage is null)
+            {
+                // TODO: Get the correct image (eg if edit is used as a refiner or something silly it should still work)
+                string decoded = CreateVAEDecode(FinalVae, latent);
+                FinalInputImage = [decoded, 0];
+            }
+            string ip2p2condNode = CreateNode("InstructPixToPixConditioning", new JObject()
+            {
+                ["positive"] = pos,
+                ["negative"] = neg,
+                ["vae"] = FinalVae,
+                ["pixels"] = FinalInputImage
+            });
+            string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
+            {
+                ["model"] = model,
+                ["cond1"] = new JArray() { ip2p2condNode, 0 },
+                ["cond2"] = new JArray() { ip2p2condNode, 1 },
+                ["negative"] = neg,
+                ["cfg_conds"] = cfg,
+                ["cfg_cond2_negative"] = UserInput.Get(T2IParamTypes.IP2PCFG2, 1.5)
+            });
+            return emitAsCustomAdvanced([cfgGuiderNode, 0], [ip2p2condNode, 2]);
         }
         string firstId = willCascadeFix ? null : id;
         JObject inputs = new()
@@ -1804,7 +1879,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {

@@ -476,7 +476,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 Logs.Warning($"(Developer Notice) ComfyUI Frontend target version is {frontVers}, but validated version is {SwarmValidatedFrontendVersion}");
             }
             string actualTemplateVers = getVers("comfyui_workflow_templates");
-            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers) && (actualTemplateVers is null || templateVers < Version.Parse(actualTemplateVers)))
+            if ((doFixFrontend || doLatestFrontend) && reqs.TryGetValue("comfyui-workflow-templates", out Version templateVers) && (actualTemplateVers is null || Version.Parse(actualTemplateVers) < templateVers))
             {
                 await update("comfyui_workflow_templates", $"comfyui-workflow-templates=={templateVers}");
             }
