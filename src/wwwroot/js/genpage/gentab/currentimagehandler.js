@@ -187,7 +187,7 @@ class ImageFullViewHelper {
                 ${imgHtml}
             </div>
             <div class="imageview_popup_modal_undertext">
-                <span class="image_fullview_extra_buttons"></span>
+                <div class="image_fullview_extra_buttons"></div>
                 ${formatMetadata(metadata)}
             </div>
         </div>`;
