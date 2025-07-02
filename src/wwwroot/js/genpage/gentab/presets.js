@@ -350,16 +350,31 @@ function describePreset(preset) {
             }
         } }
     ];
-    let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
-    let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
-    let detail_list = [escapeHtml(preset.data.title), escapeHtml(preset.data.description), escapeHtmlNoBr(paramText.join('\n').replaceAll('\n', '&emsp;'))];
-    let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
     let name = preset.data.title;
     let index = name.lastIndexOf('/');
     if (index != -1) {
         name = name.substring(index + 1);
     }
-    let searchable = description;
+    let displayFields = new Set((getUserSetting('ui.presetlistdisplayfields') || 'path,description').split(',').map(s => cleanParamName(s)));
+    let displayParams = Array.from(displayFields).map(field => {
+        if (field == 'path') {
+            return {name: field, value: preset.data.title};
+        } else if (field == 'name') {
+            return {name: field, value: name};
+        }
+        else if (field == 'description') {
+            return {name: field, value: preset.data.description || ''};
+        }
+        else {
+            return {name: field, value: `${preset.data.param_map[field] ?? ''}`};
+        }
+    });
+    let remainingParams = Object.keys(preset.data.param_map).filter(key => !displayFields.has(key) && preset.data.param_map[key] != null).map(key => `${key}: ${preset.data.param_map[key]}`);
+    let allParamText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`); // used for search, not display
+    let description = `${displayParams.map(p => `${p.name}: ${p.value}`).join('\n')}\n\n${remainingParams.join('\n')}`;
+    let detail_list = displayParams.map(p => escapeHtmlNoBr(p.value.replaceAll('\n', '&emsp;')));
+    let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
+    let searchable = `${preset.data.title}:\n${preset.data.description}\n\n${allParamText.join('\n')}`;
     return { name, description: escapeHtml(description), buttons, 'image': preset.data.preview_image, className, searchable, detail_list };
 }
 
