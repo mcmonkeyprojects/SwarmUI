@@ -302,6 +302,7 @@ def color_correct_linear2(source_section: torch.Tensor, dest_section: torch.Tens
         source_v = linear_fit(source_hsv[:, 2:3, :, :], dest_hsv[:, 2:3, :, :], thresholded)
         source_s = torch.zeros_like(source_sv_mul)
         source_s[source_v != 0] = source_sv_mul[source_v != 0] / source_v[source_v != 0]
+        source_s = source_s.clamp(0, 1)
         source_hsv = torch.cat([source_h, source_s, source_v], dim=1)
         source_section = hsv2rgb(source_hsv)
     return source_section
