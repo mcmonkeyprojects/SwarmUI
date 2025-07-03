@@ -452,17 +452,17 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await install(libFolder, pipName);
             }
             string numpyVers = getVers("numpy");
-            if (numpyVers is not null && Version.Parse(numpyVers) < Version.Parse("1.25"))
+            if (numpyVers is null || Version.Parse(numpyVers) < Version.Parse("1.25"))
             {
                 await update("numpy", "numpy>=1.25.0");
             }
             string avVers = getVers("av");
-            if (avVers is not null && Version.Parse(avVers) < Version.Parse("14.2.0"))
+            if (avVers is null || Version.Parse(avVers) < Version.Parse("14.2.0"))
             {
                 await update("av", "av>=14.2.0");
             }
             string spandrelVers = getVers("spandrel");
-            if (spandrelVers is not null && Version.Parse(spandrelVers) < Version.Parse("0.4.1"))
+            if (spandrelVers is null || Version.Parse(spandrelVers) < Version.Parse("0.4.1"))
             {
                 await update("spandrel", "spandrel>=0.4.1");
             }
