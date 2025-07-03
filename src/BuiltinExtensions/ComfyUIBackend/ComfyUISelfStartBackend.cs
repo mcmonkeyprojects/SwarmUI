@@ -411,26 +411,26 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             string[] dirs = [.. Directory.GetDirectories($"{lib}").Select(f => f.Replace('\\', '/').AfterLast('/'))];
             string[] distinfos = [.. dirs.Where(d => d.EndsWith(".dist-info"))];
             HashSet<string> libs = [.. dirs.Select(d => d.Before('-').ToLowerFast())];
+            async Task pipCall(string reason, string call)
+            {
+                AddLoadStatus($"{reason} for ComfyUI...");
+                Process p = DoPythonCall($"-s -m pip {call}");
+                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI ({reason})", "");
+                await p.WaitForExitAsync(Program.GlobalProgramCancel);
+                AddLoadStatus($"Done {reason} for ComfyUI.");
+            }
             async Task install(string libFolder, string pipName)
             {
                 if (libs.Contains(libFolder))
                 {
                     return;
                 }
-                AddLoadStatus($"Installing '{pipName}' for ComfyUI...");
-                Process p = DoPythonCall($"-s -m pip install {pipName}");
-                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Install {pipName})", "");
-                await p.WaitForExitAsync(Program.GlobalProgramCancel);
-                AddLoadStatus($"Done installing '{pipName}' for ComfyUI.");
+                await pipCall($"Installing '{pipName}'", $"install {pipName}");
                 libs.Add(libFolder);
             }
             async Task update(string name, string pip)
             {
-                AddLoadStatus($"Updating '{name}' for ComfyUI...");
-                Process p = DoPythonCall($"-s -m pip install -U {pip}");
-                NetworkBackendUtils.ReportLogsFromProcess(p, $"ComfyUI (Update {name})", "");
-                await p.WaitForExitAsync(Program.GlobalProgramCancel);
-                AddLoadStatus($"Done updating '{name}' for ComfyUI.");
+                await pipCall($"Updating '{name}'", $"install {pip}");
                 libs.Add(name);
             }
             string getVers(string package)
@@ -454,7 +454,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             string numpyVers = getVers("numpy");
             if (numpyVers is null || Version.Parse(numpyVers) < Version.Parse("1.25"))
             {
-                await update("numpy", "numpy>=1.25.0");
+                await update("numpy", "numpy==1.26.4");
             }
             string avVers = getVers("av");
             if (avVers is null || Version.Parse(avVers) < Version.Parse("14.2.0"))
@@ -522,6 +522,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 else
                 {
                     await install("insightface", "insightface");
+                }
+                if (numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2")) // Patch-hack because numpy v2 has incompatibilities with insightface
+                {
+                    await pipCall($"Remove numpy2+", $"uninstall numpy");
+                    await update("numpy", "numpy==1.26.4");
                 }
             }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
