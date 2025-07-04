@@ -525,7 +525,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 }
                 if (numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2.0")) // Patch-hack because numpy v2 has incompatibilities with insightface
                 {
-                    await pipCall($"Remove numpy2+", $"uninstall numpy");
+                    await pipCall($"Remove numpy2+", $"uninstall -y numpy");
                     await update("numpy", "numpy==1.26.4");
                 }
             }
