@@ -1432,3 +1432,21 @@ function getParamById(id) {
     }
     return param;
 }
+
+/** Adds a button to the given group to install a feature. */
+function addInstallButton(groupId, featureId, installId, buttonText) {
+    postParamBuildSteps.push(() => {
+        let targetGroup = document.getElementById(`input_group_content_${groupId}`);
+        if (targetGroup && !currentBackendFeatureSet.includes(featureId)) {
+            targetGroup.append(createDiv(`${groupId}_${installId}_install_button`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('${installId}', '${groupId}_${installId}_install_button')">${buttonText}</button>`));
+        }
+    });
+    hideParamCallbacks.push(() => {
+        if (currentBackendFeatureSet.includes(featureId)) {
+            let installButton = document.getElementById(`${groupId}_${installId}_install_button`);
+            if (installButton) {
+                installButton.remove();
+            }
+        }
+    });
+}
