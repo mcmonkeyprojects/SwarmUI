@@ -299,10 +299,10 @@ public class T2IParamTypes
     }
 
     public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentSteps, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
-        FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, FluxGuidanceScale;
+        FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, ReVisionModel, RegionalObjectInpaintingModel, SegmentModel, VideoModel, RefinerVAE, ClipLModel, ClipGModel, T5XXLModel, LLaVAModel, LLaMAModel, VideoExtendModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
@@ -311,7 +311,7 @@ public class T2IParamTypes
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
-        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupAdvancedSampling, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
+        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupSegmentOverrides, GroupAdvancedSampling, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
         GroupStarred, GroupUser1, GroupUser2, GroupUser3;
 
     public class ControlNetParamHolder
@@ -747,9 +747,6 @@ public class T2IParamTypes
             ));
         // ================================================ Segment Refining ================================================
         GroupSegmentRefining = new("Segment Refining", Open: false, OrderPriority: 9.5, IsAdvanced: true);
-        SegmentModel = Register<T2IModel>(new("Segment Model", "Optionally specify a distinct model to use for 'segment' values.",
-            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupSegmentRefining, OrderPriority: 2, IsAdvanced: true
-            ));
         SaveSegmentMask = Register<bool>(new("Save Segment Mask", "If checked, any usage of '<segment:>' syntax in prompts will save the generated mask in output.",
             "false", IgnoreIf: "false", Group: GroupSegmentRefining, OrderPriority: 3
             ));
@@ -770,6 +767,17 @@ public class T2IParamTypes
             ));
         SegmentTargetResolution = Register<string>(new("Segment Target Resolution", "Optional specific target resolution for segment.\nThis controls both aspect ratio, and size.\nThis is just a target, the system may fail to exactly hit it.\nIf the mask is on the edge of an image, the aspect may be squished.\nIf unspecified, the aspect ratio of the detection will be used, and the resolution of the model.",
             "1024x1024", Toggleable: true, Group: GroupSegmentRefining, OrderPriority: 20
+            ));
+        GroupSegmentOverrides = new("Segment Param Overrides", Toggles: false, Open: false, OrderPriority: 50, IsAdvanced: true, Description: "This sub-group of the Segmentation group contains core-parameter overrides, such as replacing the base Step count or CFG Scale, unique to the segment generation stage.", Parent: GroupSegmentRefining);
+        SegmentModel = Register<T2IModel>(new("Segment Model", "Optionally specify a distinct model to use for 'segment' values.",
+            "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupSegmentOverrides, OrderPriority: 2, IsAdvanced: true
+            ));
+        SegmentSteps = Register<int>(new("Segment Steps", "Alternate Steps value for when calculating the segment stage.\nThis replaces the 'Steps' total count before calculating the Segment Creativity.",
+            "40", Min: 1, Max: 200, ViewMax: 100, Step: 1, Examples: ["20", "40", "60"], OrderPriority: 4, Toggleable: true, IsAdvanced: true, Group: GroupSegmentOverrides, ViewType: ParamViewType.SLIDER
+            ));
+        SegmentCFGScale = Register<double>(new("Segment CFG Scale", "For the segment model independently of the base model, how strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
+            + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Turbo, expect CFG around 1.",
+            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: 5, ViewType: ParamViewType.SLIDER, Group: GroupSegmentOverrides, ChangeWeight: -3, Toggleable: true, IsAdvanced: true
             ));
         // ================================================ Advanced Sampling ================================================
         GroupAdvancedSampling = new("Advanced Sampling", Open: false, OrderPriority: 15, IsAdvanced: true);
