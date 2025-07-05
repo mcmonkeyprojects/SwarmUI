@@ -509,19 +509,36 @@ function load_image_file(elem) {
         let reader = new FileReader();
         reader.addEventListener("load", () => {
             elem.dataset.filedata = reader.result;
-            preview.innerHTML = `<button class="interrupt-button auto-input-image-remove-button" title="Remove image">&times;</button><img alt="Image preview" />`;
-            let img = preview.querySelector('img');
-            img.onload = () => {
-                label.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight}, ${describeAspectRatio(img.naturalWidth, img.naturalHeight)})`;
-                elem.dataset.width = img.naturalWidth;
-                elem.dataset.height = img.naturalHeight;
+            let mediaPreviewHtml;
+            if (file.type.startsWith('video/')) {
+                mediaPreviewHtml = `<video src="${reader.result}" controls alt="Video preview" style="max-width: 100%; max-height: 100%;"></video>`;
+            }
+            else if (file.type.startsWith('audio/')) {
+                mediaPreviewHtml = `<audio src="${reader.result}" controls alt="Audio preview"></audio>`;
+            }
+            else {
+                mediaPreviewHtml = `<img src="${reader.result}" alt="Image preview" />`;
+            }
+            preview.innerHTML = `<button class="interrupt-button auto-input-image-remove-button" title="Remove image">&times;</button>${mediaPreviewHtml}`;
+            
+            let media = preview.querySelector('video, audio, img');
+            media.onload = media.onloadeddata = () => {
+                let width = media.naturalWidth || media.videoWidth;
+                let height = media.naturalHeight || media.videoHeight;
+                if (width && height) {
+                    label.textContent = `${name} (${width}x${height}, ${describeAspectRatio(width, height)})`;
+                    elem.dataset.width = width;
+                    elem.dataset.height = height;
+                    elem.dataset.resolution = `${width}x${height}`;
+                }
+                else {
+                    label.textContent = name;
+                }
                 elem.dataset.filename = file.name.length > 500 ? file.name.substring(0, 150) + '...' : file.name;
-                elem.dataset.resolution = `${img.naturalWidth}x${img.naturalHeight}`;
                 loadImageFileDedup = true;
                 triggerChangeFor(elem);
                 loadImageFileDedup = false;
             };
-            img.src = reader.result;
             preview.firstChild.addEventListener('click', () => {
                 delete elem.dataset.filedata;
                 label.textContent = "";
@@ -809,7 +826,7 @@ function makeMultiselectInput(featureid, id, paramid, name, description, values,
 function onImageInputPaste(e) {
     let element = findParentOfClass(e.target, 'auto-input').querySelector('input[type="file"]');
     let files = e.clipboardData.files;
-    if (files.length > 0 && files[0].type.startsWith('image/')) {
+    if (files.length > 0 && files[0].type.startsWith('image/') || files[0].type.startsWith('video/') || files[0].type.startsWith('audio/')) {
         element.files = files;
         triggerChangeFor(element);
     }
@@ -827,7 +844,7 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
             <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onImageInputPaste(arguments[0])">
         </label>
         <label for="${id}" class="auto-file-label drag_image_target">
-            <input class="auto-file" type="file" accept="image/png, image/jpeg, image/webp, image/gif" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
+            <input class="auto-file" type="file" accept="*/*" id="${id}" data-param_id="${paramid}" onchange="load_image_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
             <div class="auto-file-input">
                 <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
                 <span class="auto-file-input-filename"></span>
