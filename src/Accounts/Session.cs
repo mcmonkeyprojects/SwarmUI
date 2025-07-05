@@ -175,7 +175,7 @@ public class Session : IEquatable<Session>
             {
                 try
                 {
-                    return image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100));
+                    return image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100), User.Settings.FileFormat.StealthMetadata);
                 }
                 catch (Exception ex)
                 {
