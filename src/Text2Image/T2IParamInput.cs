@@ -133,7 +133,7 @@ public class T2IParamInput
 
     /// <summary>Dense local time with incrementer.</summary>
     public int RequestRefTime;
-
+    
     /// <summary>If true, special early load has already ran.</summary>
     public bool EarlyLoadDone = false;
 
@@ -455,29 +455,33 @@ public class T2IParamInput
     /// <summary>Random instance for <see cref="T2IParamTypes.WildcardSeed"/>.</summary>
     public Random WildcardRandom = null;
 
+    /// <summary>Offset value for Wildcard Seed, to keep it unique.</summary>
+    private const int WCSeedOffset = 17;
+
     /// <summary>Gets the user's set wildcard seed.</summary>
     public int GetWildcardSeed()
     {
         long rawVal = -1;
         if (TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
         {
+            wildcardSeed += WCSeedOffset;
             rawVal = wildcardSeed;
         }
         else
         {
-            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0);
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + WCSeedOffset;
         }
         if (wildcardSeed > int.MaxValue)
         {
             wildcardSeed %= int.MaxValue;
         }
-        if (wildcardSeed < 0)
+        if (wildcardSeed - WCSeedOffset < 0)
         {
             wildcardSeed = Random.Shared.Next(int.MaxValue);
         }
         if (wildcardSeed != rawVal)
         {
-            Set(T2IParamTypes.WildcardSeed, wildcardSeed);
+            Set(T2IParamTypes.WildcardSeed, wildcardSeed - WCSeedOffset);
         }
         return (int)wildcardSeed;
     }
@@ -548,7 +552,7 @@ public class T2IParamInput
             RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
         }
     }
-
+    
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param)
     {
