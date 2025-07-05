@@ -467,9 +467,10 @@ class GenPageBrowserClass {
                     detail_list = [escapeHtml(desc.display || desc.name), desc.description.replaceAll('<br>', '&emsp;')];
                 }
                 let percent = 98 / detail_list.length;
+                let imgAdj = 1.3 / detail_list.length;
                 for (let detail of detail_list) {
                     let textBlock = createSpan(null, 'browser-details-list-entry-text');
-                    textBlock.style.width = `${percent}%`;
+                    textBlock.style.width = `calc(${percent}% - ${imgAdj}rem)`;
                     textBlock.innerHTML = detail;
                     textBlock.addEventListener('click', () => {
                         this.select(file, div);

@@ -355,6 +355,9 @@ public class Settings : AutoConfiguration
         {
             [ConfigComment("If true, hold ALT and press left/right arrows to move 'tags' in a prompt - that is, your currently selected comma-separated section will be moved left or right relative to other comma-separated sections.")]
             public bool TagMoveHotkeyEnabled = false;
+
+            [ConfigComment("Comma-separated list of fields to display in the preset list.  Use 'name' for the preset name, 'path' for the full preset path, 'description' for the description.")]
+            public string PresetListDisplayFields = "path,description";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
