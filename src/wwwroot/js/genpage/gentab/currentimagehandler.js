@@ -383,7 +383,8 @@ function copy_current_image_params() {
         metadata.aspectratio = 'Custom';
     }
     let exclude = getUserSetting('reuseparamexcludelist').split(',').map(s => cleanParamName(s));
-    resetParamsToDefault(exclude, false);
+    let resetExclude = [...exclude, ...Object.keys(metadata), ...Object.keys(extra).map(e => e.endsWith('_filename') ? e.substring(0, e.length - '_filename'.length) : null).filter(e => e != null)];
+    resetParamsToDefault(resetExclude, false);
     for (let param of gen_param_types) {
         if (param.nonreusable || exclude.includes(param.id)) {
             continue;
@@ -399,7 +400,7 @@ function copy_current_image_params() {
                 }
             }
         }
-        else if (elem && param.toggleable && param.visible) {
+        else if (elem && param.toggleable && param.visible && !resetExclude.includes(param.id)) {
             let toggle = getRequiredElementById(`input_${param.id}_toggle`);
             toggle.checked = false;
             doToggleEnable(elem.id);

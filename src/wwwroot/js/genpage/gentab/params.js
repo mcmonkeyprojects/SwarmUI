@@ -1061,7 +1061,9 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
 
 function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     for (let cookie of listCookies('lastparam_')) {
-        deleteCookie(cookie);
+        if (!exclude.includes(cookie.substring('lastparam_'.length))) {
+            deleteCookie(cookie);
+        }
     }
     for (let cookie of listCookies('group_toggle_')) {
         deleteCookie(cookie);
@@ -1103,11 +1105,6 @@ function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
                 }
                 triggerChangeFor(elem);
             }
-        }
-    }
-    for (let param of gen_param_types) {
-        let id = `input_${param.id}`;
-        if (param.id != 'model' && !exclude.includes(param.id) && document.getElementById(id) != null) {
         }
     }
     let aspect = document.getElementById('input_aspectratio');
