@@ -956,7 +956,7 @@ public class WorkflowGenerator
                 // TODO: Configuration of these params?
                 string modelNode = CreateNode("NunchakuFluxDiTLoader", new JObject()
                 {
-                    ["model_path"] = model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}"),
+                    ["model_path"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
                     ["cache_threshold"] = UserInput.Get(ComfyUIBackendExtension.NunchakuCacheThreshold, 0),
                     ["attention"] = "nunchaku-fp16",
                     ["cpu_offload"] = "auto",
