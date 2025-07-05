@@ -51,6 +51,12 @@ function showPromptTokenizen(box) {
     triggerChangeFor(target);
 }
 
+function disableSelectedTool() {
+    let target = document.querySelector('#Tools-Tab #tool_selector');
+    target.value = "";
+    triggerChangeFor(target)
+}
+
 /** Preloads conversion data. */
 function pickle2safetensor_load(mapping = null) {
     if (mapping == null) {
