@@ -996,7 +996,7 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen())
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma())
                     {
                         dtype = "default";
                     }
