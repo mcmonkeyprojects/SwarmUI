@@ -338,7 +338,7 @@ public class Settings : AutoConfiguration
             [ConfigComment("Whether to store metadata into saved images.\nDefaults enabled.")]
             public bool SaveMetadata = true;
 
-            [ConfigComment("If not set to false, the metadata of the image will be encoded into the alpha layer.\nThis allows it to bypass things like shitty windows clipboard/sites that remove metadata.")]
+            [ConfigComment("If not set to 'false', encodes metadata into the pixels of the image itself.\nThis can bypass services that strip normal metadata.\n'Alpha' uses the alpha channel. 'RGB' uses color channels.\n Noticeably increases file size, currently only PNG is supported.")]
             [ManualSettingsOptions(Vals = ["false", "Alpha", "RGB"])]
             public string StealthMetadata = "false";
 
@@ -494,7 +494,7 @@ public class Settings : AutoConfiguration
         public string Language = "en"; // TODO: UserUI
 
         [ConfigComment("Comma-separated list of parameters to exclude from 'Reuse Parameters'.\nFor example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.")]
-        public string ReuseParamExcludeList = "";
+        public string ReuseParamExcludeList = "wildcardseed";
 
         /// <summary>Settings related to audio.</summary>
         public class AudioData : AutoConfiguration
