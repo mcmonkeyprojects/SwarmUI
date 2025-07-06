@@ -13,6 +13,10 @@ function resetWelcomeMessage(override = null) {
     automaticWelcomeMessage(override);
 }
 
+let extraWelcomeDiv = getRequiredElementById('extra_welcome_message');
+let extraWelcomeHtml = extraWelcomeDiv.innerHTML.trim();
+extraWelcomeDiv.remove();
+
 /** (Only if there is no pre-existing welcome message and the current_image area is empty) automatically chooses a welcome message to display and applies it. */
 function automaticWelcomeMessage(override = null) {
     let div = document.getElementById('welcome_message');
@@ -22,7 +26,7 @@ function automaticWelcomeMessage(override = null) {
     if (div.innerHTML.trim() != '') {
         return;
     }
-    let prefix = `Welcome to <b>${getRequiredElementById('version_display').innerText} - ${window.instanceTitle}</b>!\n`;
+    let prefix = `Welcome to <b>${getRequiredElementById('version_display').innerText} - ${window.instanceTitle}</b>!\n${extraWelcomeHtml}`;
     let curModelElem = getRequiredElementById('current_model');
     if (!curModelElem.value) {
         if (allModels.length == 0) {
