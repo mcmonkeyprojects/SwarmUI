@@ -341,7 +341,7 @@ public class Settings : AutoConfiguration
             [ConfigComment("If set to non-0, adds DPI metadata to saved images.\n'72' is a good value for compatibility with some external software.")]
             public int DPI = 0;
 
-            [ConfigComment("If set to true, a '.swarm.json' file will be saved alongside images with the image metadata easily viewable.\nThis can work even if saving in the image is disabled. Defaults disabled.")]
+            [ConfigComment("If enabled, a '.swarm.json' file will be saved alongside images with the image metadata easily viewable.\nThis can work even if saving in the image is disabled. Defaults disabled.")]
             public bool SaveTextFileMetadata = false;
 
             [ConfigComment("Images that are transient/temporary (not saved to file) generally are better off not being converted between image formats, or having metadata added.\nHowever, if you want to make the conversion and metadata apply anyway, you can enable this option.\nIf you use 'Do Not Save' param frequently but manually save images, you may want this.")]
@@ -353,8 +353,11 @@ public class Settings : AutoConfiguration
 
         public class UserUIData : AutoConfiguration
         {
-            [ConfigComment("If true, hold ALT and press left/right arrows to move 'tags' in a prompt - that is, your currently selected comma-separated section will be moved left or right relative to other comma-separated sections.")]
+            [ConfigComment("If enabled, you can hold ALT and press left/right arrows to move 'tags' in a prompt - that is, your currently selected comma-separated section will be moved left or right relative to other comma-separated sections.")]
             public bool TagMoveHotkeyEnabled = false;
+
+            [ConfigComment("If enabled, when pressing delete on an image, ask if you're sure before doing that (bypass by holding shift).\nIf unchecked, there won't be any check.\nDefaults enabled.")]
+            public bool CheckIfSureBeforeDelete = true;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
@@ -372,7 +375,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Whether your image output files save to server data drive or not.\nDisabling this can make some systems misbehave, and makes the Image History do nothing.")]
         public bool SaveFiles = true;
 
-        [ConfigComment("If true, folders will be discarded from starred image paths.")]
+        [ConfigComment("If enabled, folders will be discarded from starred image paths.\nIf disabled, entire original image path will be replicated beneath the star folder.")]
         public bool StarNoFolders = false;
 
         [ConfigComment("List of role IDs applied to this user. Defaults to owner (for local/accountless usage).")]
