@@ -136,11 +136,14 @@ function makeWSRequest(url, in_data, callback, depth = 0, errorHandle = null, on
     return socket;
 }
 
-let failedCrash = translatable(`Failed to send request to server. Did the server crash?`);
+let genericAjaxError = translatable(`Failed to send request to server (generic ProgressEvent). Did the server crash?`);
 
 function genericRequest(url, in_data, callback, depth = 0, errorHandle = null) {
     in_data['session_id'] = session_id;
     function fail(e) {
+        if (e instanceof ProgressEvent) {
+            e = genericAjaxError.get();
+        }
         if (errorHandle) {
             errorHandle(e);
             return;
@@ -151,7 +154,7 @@ function genericRequest(url, in_data, callback, depth = 0, errorHandle = null) {
     sendJsonToServer(`API/${url}`, in_data, (status, data) => {
         if (!data) {
             console.log(`Tried making generic request ${url} but failed.`);
-            fail(failedCrash.get());
+            fail(genericServerErrorMsg.get());
             return;
         }
         if (data.error_id && data.error_id == 'invalid_session_id') {
