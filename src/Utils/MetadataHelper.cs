@@ -6,9 +6,11 @@ using System.Text;
 
 namespace SwarmUI.Utils;
 
-/// <summary>the stealth info implementation of reforge was used as a reference for this file.</summary>
-public static class SwarmMetadataHelper
+/// <summary>Helper for metadata handling, especially "stealth metadata".</summary>
+public static class MetadataHelper
 {
+    // The stealth info implementation of reforge was used as a reference for this file.
+
     /// <summary>Encodes the given metadata string into the LSBs of the image's pixels.</summary>
     /// <param name="image">The image to modify. Must be in Rgba32 format.</param>
     /// <param name="metadata">The metadata string to embed.</param>
@@ -32,7 +34,6 @@ public static class SwarmMetadataHelper
         string signature = $"stealth_{(mode == "alpha" ? "png" : "rgb")}{(compressed ? "comp" : "info")}";
         byte[] signatureBytes = Encoding.UTF8.GetBytes(signature);
         string binarySignature = BytesToBinaryString(signatureBytes);
-
         byte[] paramBytes = Encoding.UTF8.GetBytes(metadata);
         if (compressed)
         {
@@ -44,9 +45,7 @@ public static class SwarmMetadataHelper
             paramBytes = ms.ToArray();
         }
         string binaryParam = BytesToBinaryString(paramBytes);
-
         string binaryParamLen = Convert.ToString(binaryParam.Length, 2).PadLeft(32, '0');
-
         return binarySignature + binaryParamLen + binaryParam;
     }
 

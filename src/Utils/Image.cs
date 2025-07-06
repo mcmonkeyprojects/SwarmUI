@@ -332,7 +332,7 @@ public class Image
     }
 
     /// <summary>Converts an image to the specified format, and the specific metadata text.</summary>
-    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int quality = 100, string stealthMode = "false")
+    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int quality = 100, string stealthMetadata = "false")
     {
         if (Type != ImageType.IMAGE)
         {
@@ -340,13 +340,12 @@ public class Image
         }
         using MemoryStream ms = new();
         ISImage img = ToIS;
-        // Stealth metadata is encoded into the LSBs of pixel data.
-        if (metadata is not null && stealthMode.ToLowerFast() != "false" && format == "PNG")
+        if (metadata is not null && stealthMetadata.ToLowerFast() != "false" && format == "PNG")
         {
-            string actualStealthMode = stealthMode.ToLowerInvariant();
+            string actualStealthMode = stealthMetadata.ToLowerInvariant();
             ISImage32 rgbaImage = img.CloneAs<Rgba32>();
             SwarmMetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode);
-            img.Dispose();  // Dispose the original image as it's no longer needed
+            img.Dispose();
             img = rgbaImage;
         }
         img.Metadata.XmpProfile = null;
@@ -375,7 +374,7 @@ public class Image
         switch (format)
         {
             case "PNG":
-                if (stealthMode.ToLowerFast() == "alpha")
+                if (stealthMetadata.ToLowerFast() == "alpha")
                 {
                     PngEncoder encoder = new()
                     {

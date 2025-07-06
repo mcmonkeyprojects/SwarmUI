@@ -338,7 +338,7 @@ public class Settings : AutoConfiguration
             [ConfigComment("Whether to store metadata into saved images.\nDefaults enabled.")]
             public bool SaveMetadata = true;
 
-            [ConfigComment("If not set to 'false', encodes metadata into the pixels of the image itself.\nThis can bypass services that strip normal metadata.\n'Alpha' uses the alpha channel. 'RGB' uses color channels.\n Alpha method Noticeably increases file size, currently only PNG is supported.")]
+            [ConfigComment("If not set to 'false', encodes metadata into the pixels of the image itself.\nThis can bypass services that strip normal metadata.\n'Alpha' uses the alpha channel. 'RGB' uses color channels.\nAlpha method Noticeably increases file size, currently only PNG is supported.")]
             [ManualSettingsOptions(Vals = ["false", "Alpha", "RGB"])]
             public string StealthMetadata = "false";
 
