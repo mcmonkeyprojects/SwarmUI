@@ -344,7 +344,7 @@ public class Image
         {
             string actualStealthMode = stealthMetadata.ToLowerInvariant();
             ISImage32 rgbaImage = img.CloneAs<Rgba32>();
-            SwarmMetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode);
+            MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode);
             img.Dispose();
             img = rgbaImage;
         }

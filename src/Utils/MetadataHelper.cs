@@ -92,7 +92,6 @@ public static class MetadataHelper
                 }
                 Rgba32 pixel = image[x, y];
                 pixel.R = (byte)((pixel.R & 0xFE) | (binaryData[dataIndex] - '0'));
-
                 if (dataIndex + 1 < binaryData.Length)
                 {
                     pixel.G = (byte)((pixel.G & 0xFE) | (binaryData[dataIndex + 1] - '0'));
