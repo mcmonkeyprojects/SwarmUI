@@ -1659,16 +1659,23 @@ public class WorkflowGenerator
             {
                 if (IsOmniGen())
                 {
-                    string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
+                    if (UserInput.TryGet(T2IParamTypes.IP2PCFG2, out double cfg2))
                     {
-                        ["model"] = model,
-                        ["cond1"] = pos,
-                        ["cond2"] = imgNeg,
-                        ["negative"] = neg,
-                        ["cfg_conds"] = cfg,
-                        ["cfg_cond2_negative"] = UserInput.Get(T2IParamTypes.IP2PCFG2, 2)
-                    });
-                    return emitAsCustomAdvanced([cfgGuiderNode, 0], latent);
+                        string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
+                        {
+                            ["model"] = model,
+                            ["cond1"] = pos,
+                            ["cond2"] = imgNeg,
+                            ["negative"] = neg,
+                            ["cfg_conds"] = cfg,
+                            ["cfg_cond2_negative"] = cfg2
+                        });
+                        return emitAsCustomAdvanced([cfgGuiderNode, 0], latent);
+                    }
+                    else
+                    {
+                        neg = imgNeg;
+                    }
                 }
             }
         }
