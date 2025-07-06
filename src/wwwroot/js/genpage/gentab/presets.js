@@ -1,5 +1,6 @@
 
 let allPresets = [];
+let allPresetsUnsorted = [];
 let currentPresets = [];
 
 let preset_to_edit = null;
@@ -292,16 +293,58 @@ function editPreset(preset) {
     fixPresetParamClickables();
 }
 
+function getPresetSortValue(sortBy, preset) {
+    switch (sortBy) {
+        case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
+        case 'Path': return preset.title;
+        default: return preset.title;
+    }
+}
+
+/** A preset comparison function which can be used to sort presets. */
+function presetSortCompare(sortBy, a, b) {
+    let valueA = getPresetSortValue(sortBy, a);
+    let valueB = getPresetSortValue(sortBy, b);
+    return valueA.localeCompare(valueB);
+}
+
+/** Sorts the presets based on the current sort options. */
 function sortPresets() {
-    let preList = allPresets.filter(p => p.title.toLowerCase() == "default" || p.title.toLowerCase() == "preview");
-    allPresets = preList.concat(allPresets.filter(p => p.title.toLowerCase() != "default" && p.title.toLowerCase() != "preview"));
+    let sortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
+    let reverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
+    let preList = allPresetsUnsorted.filter(p => p.title.toLowerCase() == "default" || p.title.toLowerCase() == "preview");
+    let mainList = allPresetsUnsorted.filter(p => p.title.toLowerCase() != "default" && p.title.toLowerCase() != "preview");
+    if (sortBy != 'Default') {
+        mainList.sort((a, b) => presetSortCompare(sortBy, a, b));
+    }
+    if (reverse) {
+        mainList.reverse();
+    }
+    allPresets = preList.concat(mainList);
 }
 
 function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
+    let sortElem = document.getElementById('preset_list_sort_by');
+    let fix = null;
+    if (!sortElem) { // first call happens before headers are built atm
+        fix = () => {
+            let sortElem = document.getElementById('preset_list_sort_by');
+            let sortReverseElem = document.getElementById('preset_list_sort_reverse');
+            sortElem.addEventListener('change', () => {
+                localStorage.setItem('preset_list_sort_by', sortElem.value);
+                presetBrowser.update();
+            });
+            sortReverseElem.addEventListener('change', () => {
+                localStorage.setItem('preset_list_sort_reverse', sortReverseElem.checked);
+                presetBrowser.update();
+            });
+        }
+    }
     let proc = () => {
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         let folders = [];
         let files = [];
+        sortPresets();
         for (let preset of allPresets) {
             if (preset.title.startsWith(prefix)) {
                 let subPart = preset.title.substring(prefix.length);
@@ -322,11 +365,13 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
             }
         }
         callback(folders, files);
+        if (fix) {
+            fix();
+        }
     };
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
-            allPresets = data.presets;
-            sortPresets();
+            allPresetsUnsorted = data.presets;
             proc();
         });
     }
@@ -399,7 +444,8 @@ function clearPresets() {
 }
 
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
-    `<button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
+    `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Path</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
+    <button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
     <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>
     <button id="preset_list_export_button translate" class="refresh-button" onclick="exportPresetsButton()">Export All Presets</button>
     <button id="preset_list_apply_button translate" class="refresh-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply Presets</button>`);

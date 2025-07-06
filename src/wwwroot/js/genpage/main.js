@@ -354,10 +354,10 @@ function loadUserData(callback) {
         else {
             autoCompletionsList = null;
         }
-        allPresets = data.presets;
         if (!language) {
             language = data.language;
         }
+        allPresetsUnsorted = data.presets;
         sortPresets();
         presetBrowser.update();
         if (shouldApplyDefault) {
