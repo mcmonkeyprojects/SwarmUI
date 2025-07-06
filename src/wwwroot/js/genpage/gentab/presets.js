@@ -359,7 +359,7 @@ function describePreset(preset) {
         name = name.substring(index + 1);
     }
     let searchable = description;
-    let displayFields = new Set((getUserSetting('ui.presetlistdisplayfields') || 'path,description,params').split(',').map(s => cleanParamName(s)));
+    let displayFields = new Set((getUserSetting('ui.presetlistdetailsfields') || 'path,description,params').split(',').map(s => cleanParamName(s)));
     let displayParams = Array.from(displayFields).map(field => {
         if (field == 'path') {
             return {name: field, value: preset.data.title};

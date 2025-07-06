@@ -359,8 +359,8 @@ public class Settings : AutoConfiguration
             [ConfigComment("If enabled, when pressing delete on an image, ask if you're sure before doing that (bypass by holding shift).\nIf unchecked, there won't be any check.\nDefaults enabled.")]
             public bool CheckIfSureBeforeDelete = true;
 
-            [ConfigComment("Comma-separated list of fields to display in the preset list.\nUse 'name' for the preset name, 'path' for the full preset path, 'description' for the description, or 'params' for the param list.\nIf unset, will act as 'path,description,params'")]
-            public string PresetListDisplayFields = "";
+            [ConfigComment("Comma-separated list of fields to display in the preset Details view.\nUse 'name' for the preset name, 'path' for the full preset path, 'description' for the description, or 'params' for the param list.\nIf unset, will act as 'path,description,params'")]
+            public string PresetListDetailsFields = "";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
