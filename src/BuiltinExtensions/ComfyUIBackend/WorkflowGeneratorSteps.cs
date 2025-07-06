@@ -225,6 +225,7 @@ public class WorkflowGeneratorSteps
             if (g.UserInput.TryGet(ComfyUIBackendExtension.TeaCacheMode, out string teaCacheMode) && teaCacheMode != "disabled")
             {
                 double teaCacheThreshold = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheThreshold, 0.25);
+                double teaCacheStart = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheStart, 0);
                 if (teaCacheMode == "base gen only" && g.LoadingModelType != "Base")
                 {
                     // wrong step, skip
@@ -243,7 +244,7 @@ public class WorkflowGeneratorSteps
                             ["model_type"] = "flux",
                             ["rel_l1_thresh"] = teaCacheThreshold,
                             ["max_skip_steps"] = 3,
-                            ["start_percent"] = 0,
+                            ["start_percent"] = teaCacheStart,
                             ["end_percent"] = 1,
                             ["cache_device"] = "cuda"
                         });
@@ -294,7 +295,7 @@ public class WorkflowGeneratorSteps
                         ["model_type"] = type,
                         ["rel_l1_thresh"] = teaCacheThreshold,
                         ["max_skip_steps"] = 3,
-                        ["start_percent"] = 0,
+                        ["start_percent"] = teaCacheStart,
                         ["end_percent"] = 1,
                         ["cache_device"] = "cuda"
                     });
