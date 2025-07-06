@@ -295,32 +295,23 @@ function editPreset(preset) {
 
 function getPresetSortValue(sortBy, preset) {
     switch (sortBy) {
-        // sort by the leaf name
         case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
-        // sort by the full path
-        case 'Path':
+        case 'Path': return preset.title;
         default: return preset.title;
     }
 }
 
-/** A preset comparison function which can be used to sort presets */
-function presetSortCompare(sortBy, reverse, a, b) {
-    let multiplier = reverse ? -1 : 1;
+/** A preset comparison function which can be used to sort presets. */
+function presetSortCompare(sortBy, a, b) {
     let valueA = getPresetSortValue(sortBy, a);
     let valueB = getPresetSortValue(sortBy, b);
-    if (valueA < valueB) {
-        return -1 * multiplier;
-    }
-    if (valueA > valueB) {
-        return 1 * multiplier;
-    }
-    return 0;
+    return valueA.localeCompare(valueB);
 }
 
-/** Sorts the presets based on the current sort options */    
-function sortPresets(sortBy, reverse) {
-    // partition the presets into the special list (default, preview) and the normal list.
-    // we will sort the normal list, then prepend the special list to the front (or back, if reversed)
+/** Sorts the presets based on the current sort options. */
+function sortPresets() {
+    let sortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
+    let reverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
     let [specialPresets, normalPresets] = allPresetsUnsorted.reduce(([special, normal], preset) => {
         if (preset.title.toLowerCase() == "default" || preset.title.toLowerCase() == "preview") {
             special.push(preset);
@@ -331,16 +322,15 @@ function sortPresets(sortBy, reverse) {
         return [special, normal];
     }, [[], []]);
     if (sortBy == 'Default') {
-        // do not need to sort.  Just prepend the specials and then possibly reverse
         normalPresets.unshift(...specialPresets);
         if (reverse) {
             normalPresets.reverse();
         }
     }
     else {
-        normalPresets.sort(presetSortCompare.bind(null, sortBy, reverse));
-        // prepend the specials (append if reversed)
+        normalPresets.sort((a, b) => presetSortCompare(sortBy, a, b));
         if (reverse) {
+            normalPresets = normalPresets.reverse();
             normalPresets.push(...specialPresets.reverse());
         }
         else {
@@ -350,45 +340,29 @@ function sortPresets(sortBy, reverse) {
     allPresets = normalPresets;
 }
 
-// so we can track if we still need to wire up the sort element events.
-let presetSortFix = null;
-
 function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
-    let sortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
-    let reverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
     let sortElem = document.getElementById('preset_list_sort_by');
     let sortReverseElem = document.getElementById('preset_list_sort_reverse');
-    // first call happens before headers are built atm
-    // setup a fix function that we'll call later
-    if (!sortElem) {
-        presetSortFix = () => {
+    let fix = null;
+    if (!sortElem) { // first call happens before headers are built atm
+        fix = () => {
             let sortElem = document.getElementById('preset_list_sort_by');
             let sortReverseElem = document.getElementById('preset_list_sort_reverse');
-            // presetbrowser does not have the same lifecycle as imagehistory or model browser.
-            // we need this check to handle the different lifecycle
-            if (sortElem && sortReverseElem) {
-                presetSortFix = null;
-                sortElem.value = sortBy;
-                sortReverseElem.checked = reverse;
-                sortElem.addEventListener('change', () => {
-                    localStorage.setItem('preset_list_sort_by', sortElem.value);
-                    presetBrowser.update();
-                });
-                sortReverseElem.addEventListener('change', () => {
-                    localStorage.setItem('preset_list_sort_reverse', sortReverseElem.checked);
-                    presetBrowser.update();
-                });
-            }
+            sortElem.addEventListener('change', () => {
+                localStorage.setItem('preset_list_sort_by', sortElem.value);
+                presetBrowser.update();
+            });
+            sortReverseElem.addEventListener('change', () => {
+                localStorage.setItem('preset_list_sort_reverse', sortReverseElem.checked);
+                presetBrowser.update();
+            });
         }
     }
     let proc = () => {
         let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
         let folders = [];
         let files = [];
-        if (presetSortFix) {
-            presetSortFix();
-        }
-        sortPresets(sortBy, reverse);
+        sortPresets();
         for (let preset of allPresets) {
             if (preset.title.startsWith(prefix)) {
                 let subPart = preset.title.substring(prefix.length);
@@ -409,6 +383,9 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
             }
         }
         callback(folders, files);
+        if (fix) {
+            fix();
+        }
     };
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
