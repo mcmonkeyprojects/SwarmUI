@@ -312,37 +312,19 @@ function presetSortCompare(sortBy, a, b) {
 function sortPresets() {
     let sortBy = localStorage.getItem('preset_list_sort_by') || 'Default';
     let reverse = localStorage.getItem('preset_list_sort_reverse') == 'true';
-    let [specialPresets, normalPresets] = allPresetsUnsorted.reduce(([special, normal], preset) => {
-        if (preset.title.toLowerCase() == "default" || preset.title.toLowerCase() == "preview") {
-            special.push(preset);
-        }
-        else {
-            normal.push(preset);
-        }
-        return [special, normal];
-    }, [[], []]);
-    if (sortBy == 'Default') {
-        normalPresets.unshift(...specialPresets);
-        if (reverse) {
-            normalPresets.reverse();
-        }
+    let preList = allPresetsUnsorted.filter(p => p.title.toLowerCase() == "default" || p.title.toLowerCase() == "preview");
+    let mainList = allPresetsUnsorted.filter(p => p.title.toLowerCase() != "default" && p.title.toLowerCase() != "preview");
+    if (sortBy != 'Default') {
+        mainList.sort((a, b) => presetSortCompare(sortBy, a, b));
     }
-    else {
-        normalPresets.sort((a, b) => presetSortCompare(sortBy, a, b));
-        if (reverse) {
-            normalPresets = normalPresets.reverse();
-            normalPresets.push(...specialPresets.reverse());
-        }
-        else {
-            normalPresets.unshift(...specialPresets);
-        }
+    if (reverse) {
+        mainList.reverse();
     }
-    allPresets = normalPresets;
+    allPresets = preList.concat(mainList);
 }
 
 function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     let sortElem = document.getElementById('preset_list_sort_by');
-    let sortReverseElem = document.getElementById('preset_list_sort_reverse');
     let fix = null;
     if (!sortElem) { // first call happens before headers are built atm
         fix = () => {
