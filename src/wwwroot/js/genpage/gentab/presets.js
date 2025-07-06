@@ -371,13 +371,13 @@ function describePreset(preset) {
             return {name: field, value: preset.data.description || ''};
         }
         else if (field == 'params') {
-            return {name: field, value: paramText.join('\n').replaceAll('\n', '&emsp;') };
+            return {name: field, value: paramText.join('\n') };
         }
         else {
             return {name: field, value: `${preset.data.param_map[field] ?? ''}`};
         }
     });
-    let detail_list = displayParams.map(p => escapeHtmlNoBr(p.value.replaceAll('\n', '&emsp;')));
+    let detail_list = displayParams.map(p => escapeHtmlNoBr(p.value).replaceAll('\n', '&emsp;'));
     return { name, description: escapeHtml(description), buttons, 'image': preset.data.preview_image, className, searchable, detail_list };
 }
 
