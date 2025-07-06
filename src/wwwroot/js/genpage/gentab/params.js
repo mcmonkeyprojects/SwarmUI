@@ -1061,7 +1061,9 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
 
 function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     for (let cookie of listCookies('lastparam_')) {
-        deleteCookie(cookie);
+        if (!exclude.includes(cookie.substring('lastparam_'.length))) {
+            deleteCookie(cookie);
+        }
     }
     for (let cookie of listCookies('group_toggle_')) {
         deleteCookie(cookie);
@@ -1103,11 +1105,6 @@ function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
                 }
                 triggerChangeFor(elem);
             }
-        }
-    }
-    for (let param of gen_param_types) {
-        let id = `input_${param.id}`;
-        if (param.id != 'model' && !exclude.includes(param.id) && document.getElementById(id) != null) {
         }
     }
     let aspect = document.getElementById('input_aspectratio');
@@ -1431,4 +1428,22 @@ function getParamById(id) {
         param = rawGenParamTypesFromServer.find(p => p.id == id);
     }
     return param;
+}
+
+/** Adds a button to the given group to install a feature. */
+function addInstallButton(groupId, featureId, installId, buttonText) {
+    postParamBuildSteps.push(() => {
+        let targetGroup = document.getElementById(`input_group_content_${groupId}`);
+        if (targetGroup && !currentBackendFeatureSet.includes(featureId)) {
+            targetGroup.append(createDiv(`${groupId}_${installId}_install_button`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('${installId}', '${groupId}_${installId}_install_button')">${buttonText}</button>`));
+        }
+    });
+    hideParamCallbacks.push(() => {
+        if (currentBackendFeatureSet.includes(featureId)) {
+            let installButton = document.getElementById(`${groupId}_${installId}_install_button`);
+            if (installButton) {
+                installButton.remove();
+            }
+        }
+    });
 }
