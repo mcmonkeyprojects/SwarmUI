@@ -456,20 +456,26 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("numpy", "numpy==1.26.4");
             }
-            string avVers = getVers("av");
-            if (avVers is null || Version.Parse(avVers) < Version.Parse("14.2.0"))
+            foreach ((string libFolder, string pipName, string rel, string version) in RequiredVersionPythonPackages)
             {
-                await update("av", "av>=14.2.0");
-            }
-            string spandrelVers = getVers("spandrel");
-            if (spandrelVers is null || Version.Parse(spandrelVers) < Version.Parse("0.4.1"))
-            {
-                await update("spandrel", "spandrel>=0.4.1");
-            }
-            string transformersVers = getVers("transformers");
-            if (transformersVers is null || Version.Parse(transformersVers) < Version.Parse("4.37.2"))
-            {
-                await update("transformers", "transformers>=4.37.2");
+                string curVersRaw = getVers(libFolder);
+                Version curVers = curVersRaw is null ? null : Version.Parse(curVersRaw);
+                Version actualVers = Version.Parse(version);
+                bool doUpdate = curVers is null;
+                if (!doUpdate)
+                {
+                    doUpdate = rel switch
+                    {
+                        ">=" => curVers < actualVers,
+                        "<=" => curVers > actualVers,
+                        "==" => curVers < actualVers,
+                        _ => throw new ArgumentException($"Invalid version relation '{rel}' for package '{libFolder}' with version '{version}'.")
+                    };
+                }
+                if (doUpdate)
+                {
+                    await update(libFolder, $"{pipName}{rel}{version}");
+                }
             }
             string frontendVersion = getVers("comfyui_frontend_package");
             if (doFixFrontend && (frontendVersion is null || frontendVersion != SwarmValidatedFrontendVersion))
@@ -497,11 +503,6 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             else if (!doFixFrontend)
             {
                 await install("comfyui_frontend_package", "comfyui-frontend-package");
-            }
-            string ultralyticsVers = getVers("ultralytics");
-            if (ultralyticsVers is not null && Version.Parse(ultralyticsVers) < Version.Parse(UltralyticsVersion))
-            {
-                await update("ultralytics", $"ultralytics=={UltralyticsVersion}");
             }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus") || Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
@@ -595,12 +596,6 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>
     public static AsciiMatcher RequirementPartMatcher = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + ".-_");
 
-    /// <summary>
-    /// Version of Ultralytics pip package to use.
-    /// This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
-    /// </summary>
-    public static string UltralyticsVersion = "8.3.155";
-
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
     [
@@ -620,8 +615,16 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
-        ("ultralytics", $"ultralytics=={UltralyticsVersion}"),
         ("omegaconf", "omegaconf") // some yolo models require this but ultralytics itself doesn't? wut?
+    ];
+
+    /// <summary>List of required python packages that need a specific version, in structure (string libFolder, string pipName, string rel, string version).</summary>
+    public static List<(string, string, string, string)> RequiredVersionPythonPackages =
+    [
+        ("av", "av", ">=", "14.2.0"),
+        ("spandrel", "spandrel", ">=", "0.4.1"),
+        ("transformers", "transformers", ">=", "4.37.2"),
+        ("ultralytics", "ultralytics", "==", "8.3.155") // This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
     ];
 
     public override async Task Shutdown()
