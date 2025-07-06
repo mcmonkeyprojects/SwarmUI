@@ -235,6 +235,7 @@ public class T2IParamInput
         toret.InternalSet = InternalSet.Clone();
         toret.ExtraMeta = new Dictionary<string, object>(ExtraMeta);
         toret.RequiredFlags = [.. RequiredFlags];
+        toret.PendingPresets = [.. PendingPresets];
         return toret;
     }
 
