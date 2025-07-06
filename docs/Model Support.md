@@ -406,7 +406,7 @@ Parameters and usage is the same as any other normal model.
     - The text encoder is Qwen 2.5 VL (LLM), and will be automatically downloaded.
     - The VAE is the Flux VAE, and will be automatically downloaded.
     - Add images to the prompt box to use them as input images for the model. If no input images are given, but you have an Init Image, that will be used as the input image.
-    - **CFG:** Use around CFG=7
+    - **CFG:** Usual CFG rules, around 5 to 7 is a good baseline
         - The reference workflows for comfy used dual-CFG guidance, IP2P style. If you want to do this, you can use advanced param `IP2P CFG 2` to control the secondary CFG, defaults to 2, and set regular CFG to around 5.
     - **Steps:** normal ~20
     - **Resolution:** Normal 1024x1024-ish.
