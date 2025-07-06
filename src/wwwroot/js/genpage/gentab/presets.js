@@ -359,7 +359,8 @@ function describePreset(preset) {
     let displayParams = Array.from(displayFields).map(field => {
         if (field == 'path') {
             return {name: field, value: preset.data.title};
-        } else if (field == 'name') {
+        }
+        else if (field == 'name') {
             return {name: field, value: name};
         }
         else if (field == 'description') {

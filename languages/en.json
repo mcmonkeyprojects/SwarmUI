@@ -396,8 +396,6 @@
         "PortCanChange": "",
         "Prefix a line with # to make it a comment (ie won't be counted as an option).": "",
         "Preset description text...": "",
-        "PresetListDisplayFields": "",
-        "Comma-separated list of fields to display in the preset list.  Use 'name' for the preset name, 'path' for the full preset path, 'description' for the description.": "",
         "Presets": "",
         "Prompt": "",
         "Prompt Images": "",
