@@ -332,7 +332,7 @@ public class Image
     }
 
     /// <summary>Converts an image to the specified format, and the specific metadata text.</summary>
-    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int quality = 100)
+    public Image ConvertTo(string format, string metadata = null, int dpi = 0, int quality = 100, string stealthMetadata = "false")
     {
         if (Type != ImageType.IMAGE)
         {
@@ -340,6 +340,14 @@ public class Image
         }
         using MemoryStream ms = new();
         ISImage img = ToIS;
+        if (metadata is not null && stealthMetadata.ToLowerFast() != "false" && format == "PNG")
+        {
+            string actualStealthMode = stealthMetadata.ToLowerInvariant();
+            ISImage32 rgbaImage = img.CloneAs<Rgba32>();
+            MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode);
+            img.Dispose();
+            img = rgbaImage;
+        }
         img.Metadata.XmpProfile = null;
         ExifProfile prof = new();
         if (dpi > 0)
@@ -366,13 +374,28 @@ public class Image
         switch (format)
         {
             case "PNG":
-                PngEncoder encoder = new()
+                if (stealthMetadata.ToLowerFast() == "alpha")
                 {
-                    TextCompressionThreshold = int.MaxValue,
-                    BitDepth = img.PixelType.BitsPerPixel > 32 ? PngBitDepth.Bit16 : PngBitDepth.Bit8,
-                    CompressionLevel = PngCompressionLevel.Level1
-                };
-                img.SaveAsPng(ms, encoder);
+                    PngEncoder encoder = new()
+                    {
+                        TextCompressionThreshold = int.MaxValue,
+                        BitDepth = img.PixelType.BitsPerPixel > 32 ? PngBitDepth.Bit16 : PngBitDepth.Bit8,
+                        CompressionLevel = PngCompressionLevel.Level1,
+                        ColorType = PngColorType.RgbWithAlpha,
+                        TransparentColorMode = PngTransparentColorMode.Preserve
+                    };
+                    img.SaveAsPng(ms, encoder);
+                }
+                else
+                {
+                    PngEncoder encoder = new()
+                    {
+                        TextCompressionThreshold = int.MaxValue,
+                        BitDepth = img.PixelType.BitsPerPixel > 32 ? PngBitDepth.Bit16 : PngBitDepth.Bit8,
+                        CompressionLevel = PngCompressionLevel.Level1
+                    };
+                    img.SaveAsPng(ms, encoder);
+                }
                 ext = "png";
                 break;
             case "JPG":

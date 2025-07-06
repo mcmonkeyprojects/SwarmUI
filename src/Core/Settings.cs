@@ -338,6 +338,10 @@ public class Settings : AutoConfiguration
             [ConfigComment("Whether to store metadata into saved images.\nDefaults enabled.")]
             public bool SaveMetadata = true;
 
+            [ConfigComment("If not set to 'false', encodes metadata into the pixels of the image itself.\nThis can bypass services that strip normal metadata.\n'Alpha' uses the alpha channel. 'RGB' uses color channels.\nAlpha method Noticeably increases file size.\nCurrently only PNG is supported.")]
+            [ManualSettingsOptions(Vals = ["false", "Alpha", "RGB"])]
+            public string StealthMetadata = "false";
+
             [ConfigComment("If set to non-0, adds DPI metadata to saved images.\n'72' is a good value for compatibility with some external software.")]
             public int DPI = 0;
 
