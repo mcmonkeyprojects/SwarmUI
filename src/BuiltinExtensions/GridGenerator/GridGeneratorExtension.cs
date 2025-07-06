@@ -408,7 +408,7 @@ public class GridGeneratorExtension : Extension
         T2IParamInput baseParams;
         try
         {
-            baseParams = T2IAPI.RequestToParams(session, raw["baseParams"] as JObject);
+            baseParams = T2IAPI.RequestToParams(session, raw["baseParams"] as JObject, false);
             outputFolderName = CleanFolderName(outputFolderName);
         }
         catch (SwarmReadableErrorException ex)
@@ -423,7 +423,6 @@ public class GridGeneratorExtension : Extension
         baseParams.Remove(T2IParamTypes.BatchSize);
         baseParams.Remove(T2IParamTypes.Images);
         baseParams.Remove(T2IParamTypes.OutputIntermediateImages);
-        baseParams.ApplySpecialLogic();
         await sendStatus();
         SwarmUIGridData data = new()
         {

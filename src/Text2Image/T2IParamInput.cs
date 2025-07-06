@@ -19,6 +19,14 @@ public class T2IParamInput
     [
         input =>
         {
+            foreach (T2IPreset preset in input.PendingPresets)
+            {
+                preset.ApplyTo(input);
+            }
+            input.PendingPresets.Clear();
+        },
+        input =>
+        {
             if (!input.RawOriginalSeed.HasValue)
             {
                 input.RawOriginalSeed = input.Get(T2IParamTypes.Seed, -1);
@@ -115,6 +123,9 @@ public class T2IParamInput
 
     /// <summary>A set of feature flags required for this input.</summary>
     public HashSet<string> RequiredFlags = [];
+
+    /// <summary>A list of any user requested presets not yet applied.</summary>
+    public List<T2IPreset> PendingPresets = [];
 
     /// <summary>The session this input came from.</summary>
     public Session SourceSession;

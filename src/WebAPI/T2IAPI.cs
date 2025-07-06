@@ -187,7 +187,7 @@ public static class T2IAPI
     public static HashSet<string> AlwaysTopKeys = [];
 
     /// <summary>Helper util to take a user-supplied JSON object of parameter data and turn it into a valid T2I request object.</summary>
-    public static T2IParamInput RequestToParams(Session session, JObject rawInput)
+    public static T2IParamInput RequestToParams(Session session, JObject rawInput, bool applyPresets = true)
     {
         T2IParamInput user_input = new(session);
         List<string> keys = [.. rawInput.Properties().Select(p => p.Name)];
@@ -224,7 +224,14 @@ public static class T2IAPI
                     Logs.Warning($"User {session.User.UserID} tried to use preset '{presetName}', but it does not exist!");
                     continue;
                 }
-                presetObj.ApplyTo(user_input);
+                if (applyPresets)
+                {
+                    presetObj.ApplyTo(user_input);
+                }
+                else
+                {
+                    user_input.PendingPresets.Add(presetObj);
+                }
             }
             user_input.ExtraMeta["presets_used"] = presets.Values().Select(v => v.ToString()).ToList();
         }
