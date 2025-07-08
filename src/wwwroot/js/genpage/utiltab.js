@@ -388,7 +388,7 @@ class ModelDownloaderUtil {
             let parts = splitWithTail(url.substring(this.hfPrefix.length), '/', 5); // org, repo, 'blob', branch, filepath
             if (parts.length < 5) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a specific file. Please use the path of a specific file inside the repo.";
-                this.button.disabled = false;
+                this.button.disabled = true;
                 return;
             }
             if (parts[4].endsWith('?download=true')) {
@@ -397,7 +397,7 @@ class ModelDownloaderUtil {
             }
             if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft')) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a safetensors file. Only safetensors can be auto-downloaded.";
-                this.button.disabled = false;
+                this.button.disabled = true;
                 return;
             }
             if (parts[2] == 'blob') {
