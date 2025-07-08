@@ -616,7 +616,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
         ("omegaconf", "omegaconf"), // some yolo models require this but ultralytics itself doesn't? wut?
-        ("mesonpy", "meson-python") // Build requirement sometimes. Only seen one case of it being inexplicably missing-but-needed, but better safe than sorry.
+        //("mesonpy", "meson-python") // Build requirement sometimes. Probably will be required when python 3.13 is stably supported.
     ];
 
     /// <summary>List of required python packages that need a specific version, in structure (string libFolder, string pipName, string rel, string version).</summary>
