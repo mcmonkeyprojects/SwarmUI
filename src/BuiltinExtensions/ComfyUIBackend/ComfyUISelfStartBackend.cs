@@ -529,14 +529,14 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     await install("insightface", "insightface");
                 }
-                if (numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2.0")) // Patch-hack because numpy v2 has incompatibilities with insightface
-                {
-                    //await pipCall($"Remove numpy2+", $"uninstall -y numpy");
-                    //await update("numpy", "numpy==1.26.4");
-                }
             }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
+                if (!libs.Contains("nunchaku") && numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2.0")) // Patch-hack because numpy v2 has incompatibilities with insightface
+                { // Note: sometimes 2+ is needed, so we carefully only remove for the first install of nunchaku, and allow it to be manually shifted back to 2+ after without undoing it
+                    await pipCall($"Remove numpy2+", $"uninstall -y numpy");
+                    await update("numpy", "numpy==1.26.4");
+                }
                 // Nunchaku devs seem very confused how to python package. So we gotta do some cursed install for them.
                 bool isValid = true;
                 string pyVers = "310";
