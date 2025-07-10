@@ -293,6 +293,7 @@ public static class T2IAPI
         int batchSizeExpected = user_input.Get(T2IParamTypes.BatchSize, 1);
         void saveImage(T2IEngine.ImageOutput image, int actualIndex, T2IParamInput thisParams, string metadata)
         {
+            Logs.Verbose($"T2IAPI received save request for index {actualIndex} for gen request id {thisParams.UserRequestId}, isreal={image.IsReal}");
             bool noSave = thisParams.Get(T2IParamTypes.DoNotSave, false);
             if (!image.IsReal && thisParams.Get(T2IParamTypes.DoNotSaveIntermediates, false))
             {
