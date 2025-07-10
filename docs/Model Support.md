@@ -446,11 +446,14 @@ Video models are documented in [Video Model Support](/docs/Video%20Model%20Suppo
 ## Nunchaku (MIT Han Lab)
 
 - MIT Han Lab's "[Nunchaku](https://github.com/mit-han-lab/ComfyUI-nunchaku)" / 4-bit SVDQuant models are a unusual quant format that is supported in SwarmUI.
-    - Nunchaku is a very dense quantization of models (eg 6GiB for Flux models) that runs very fast (4.4 seconds for a 20 step Flux Dev image on Windows RTX 4090)
-    - They go in `(Swarm)/Models/diffusion_models` and have to have their own folder (eg `(Swarm)/Models/diffusion_models/myfluxmodel`) and work similar to other `diffusion_models` format models
+    - Nunchaku is a very dense quantization of models (eg 6GiB for Flux models) that runs very fast (4.4 seconds for a 20 step Flux Dev image on Windows RTX 4090, vs fp8 is ~11 seconds on the same)
+    - It is optimized for modern nvidia GPUs, with different optimizations per gpu generation
+        - RTX 30xx and 40xx cards need "int4" format nunchaku models
+        - RTX 50xx or newer cards need "fp4" format nunchaku models
+    - They go in `(Swarm)/Models/diffusion_models` and work similar to other `diffusion_models` format models
+        - Make sure you download a "singlefile" nunchaku file, not a legacy "SVDQuant" folder
         - Required VAE & TextEncoders will be autodownloaded if you do not already have them.
     - For the older "SVDQuant" Folder Models <https://huggingface.co/collections/mit-han-lab/svdquant-67493c2c2e62a1fc6e93f45c>, The detection is based on the folder structure, you need the files `transformer_blocks.safetensors` and `comfy_config.json` inside the folder. You cannot have unrelated files in the folder.
-    - For "Nunchaku" singlefile models <https://huggingface.co/collections/mit-han-lab/nunchaku-6837e7498f680552f7bbb5ad>, there's no trick, they work just like any other model automatically.
     - The first time you try to load a Nunchaku model, it will give you a popup asking to install support
         - This will autoinstall <https://github.com/mit-han-lab/ComfyUI-nunchaku> and its dependencies
         - You can accept this popup, and it will install and reload the backend
