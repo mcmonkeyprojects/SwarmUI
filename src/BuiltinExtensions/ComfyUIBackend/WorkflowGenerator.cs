@@ -1682,6 +1682,51 @@ public class WorkflowGenerator
                 }
             }
         }
+        else if (IsWanVideo()) // TODO: Somehow check if this is actually a phantom model?
+        {
+            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+            {
+                string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
+                JArray img = [img1, 0];
+                for (int i = 1; i < images.Count; i++)
+                {
+                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
+                    string batched = CreateNode("ImageBatch", new JObject()
+                    {
+                        ["image1"] = img,
+                        ["image2"] = new JArray() { img2, 0 }
+                    });
+                    img = [batched, 0];
+                }
+                double width = UserInput.GetImageWidth();
+                double height = UserInput.GetImageHeight();
+                if (IsRefinerStage)
+                {
+                    width *= UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                    height *= UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                }
+                // TODO: This node asking for latent info is wacky. Maybe have a reader node that grabs it from the current actual latent, so it's more plug-n-play-ish
+                string phantomNode = CreateNode("WanPhantomSubjectToVideo", new JObject()
+                {
+                    ["positive"] = pos,
+                    ["negative"] = neg,
+                    ["vae"] = FinalVae,
+                    ["images"] = img,
+                    ["width"] = (int)width,
+                    ["height"] = (int)height,
+                    ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 81),
+                    ["batch_size"] = 1
+                });
+                string negCombine = CreateNode("ConditioningCombine", new JObject()
+                {
+                    ["conditioning_1"] = new JArray() { phantomNode, 1 },
+                    ["conditioning_2"] = new JArray() { phantomNode, 2 }
+                });
+                pos = [phantomNode, 0];
+                neg = [negCombine, 0];
+                //latent = [phantomNode, 3]; // This latent is actually pretty stupid, it's just inline generating an empty latent for some reason? Ignore it.
+            }
+        }
         string emitAsCustomAdvanced(JArray guider, JArray latentImage)
         {
             // TODO: SamplerCustomAdvanced logic should be used for *all* models, not just ip2p

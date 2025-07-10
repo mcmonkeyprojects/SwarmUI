@@ -350,6 +350,16 @@ There's a full step by step guide for video model usage here: <https://github.co
     - Note you still have to consider VRAM and res/frame count, as you will still get slow gens if you exceed your GPU's VRAM capacity. The net speed will still be faster, but not as impressive as compared to when you fit your GPU properly.
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
 
+### Wan Phantom
+
+- Wan Phantom is supported in SwarmUI.
+    - It lets you add reference images to a video generation.
+    - Download the phantom 14B base model here <https://huggingface.co/Kijai/WanVideo_comfy/blob/main/Phantom-Wan-14B_fp8_e4m3fn.safetensors>
+        - Or as a gguf <https://huggingface.co/QuantStack/Phantom_Wan_14B-GGUF/blob/main/Phantom_Wan_14B-Q4_K_M.gguf>
+        - Save to `diffusion_models`
+    - It works like Wan-14B-Text2Video, but with image inputs.
+    - Add images to the prompt box (drag in or paste in). You can use just one, or multiple (up to 6 supposedly).
+
 ### Wan VACE
 
 - Wan VACE has initial support in SwarmUI.
