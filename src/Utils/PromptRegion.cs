@@ -11,6 +11,8 @@ public class PromptRegion
 
     public string RefinerPrompt = "";
 
+    public string VideoPrompt = "";
+
     public enum PartType
     {
         Region, Object, Segment, ClearSegment, Extend
@@ -41,7 +43,7 @@ public class PromptRegion
 
     public PromptRegion(string prompt)
     {
-        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:") && !prompt.Contains("<refiner"))
+        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:") && !prompt.Contains("<refiner") && !prompt.Contains("<video"))
         {
             GlobalPrompt = prompt;
             return;
@@ -94,6 +96,12 @@ public class PromptRegion
             {
                 RefinerPrompt += content;
                 addMore = s => RefinerPrompt += s;
+                continue;
+            }
+            else if (prefix == "video")
+            {
+                VideoPrompt += content;
+                addMore = s => VideoPrompt += s;
                 continue;
             }
             else if (prefix == "object")

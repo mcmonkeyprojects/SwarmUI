@@ -127,6 +127,9 @@ class PromptTabCompleteClass {
         this.registerPrefix('refiner', 'Add a section of prompt text that is only used for the Refine/Upscale pass.', (prefix) => {
             return [];
         }, true);
+        this.registerPrefix('video', 'Add a section of prompt text that replaces the prompt for the image-to-video generation pass.', (prefix) => {
+            return [];
+        }, true);
         this.registerPrefix('trigger', "Automatically fills with the current model or LoRA's trigger phrase(s), if any.", (prefix) => {
             return [];
         }, true);

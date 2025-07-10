@@ -430,6 +430,10 @@ public class T2IPromptHandling
         {
             return "";
         }
+        static string estimateAsSectionBreak(string data, PromptTagContext context)
+        {
+            return "<break>";
+        }
         PromptTagLengthEstimators["preset"] = estimateEmpty;
         PromptTagLengthEstimators["p"] = estimateEmpty;
         PromptTagProcessors["embed"] = (data, context) =>
@@ -559,10 +563,13 @@ public class T2IPromptHandling
             context.SectionID = 1;
             return "<refiner//cid=1>";
         };
-        PromptTagLengthEstimators["refiner"] = (data, context) =>
+        PromptTagLengthEstimators["refiner"] = estimateAsSectionBreak;
+        PromptTagPostProcessors["video"] = (data, context) =>
         {
-            return "<refiner>";
+            context.SectionID = 2;
+            return "<video//cid=2>";
         };
+        PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
         string autoConfine(string data, PromptTagContext context)
         {
             if (context.SectionID < 10)
@@ -581,10 +588,7 @@ public class T2IPromptHandling
         {
             return "<break>";
         };
-        PromptTagLengthEstimators["break"] = (data, context) =>
-        {
-            return "<break>";
-        };
+        PromptTagLengthEstimators["break"] = estimateAsSectionBreak;
         PromptTagLengthEstimators["embed"] = estimateEmpty;
         PromptTagLengthEstimators["embedding"] = estimateEmpty;
         PromptTagLengthEstimators["lora"] = estimateEmpty;

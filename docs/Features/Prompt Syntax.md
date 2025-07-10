@@ -199,9 +199,15 @@
     - The automatic inpaint can be helpful for improving quality of objects, especially for small regions, but also might produce unexpected results.
     - Objects may use global feature changes, such as `<lora:` syntax input to apply a lora to the object in the inpaint phase.
 
+## Video
+
+- When using image2video, you can use `<video>` to supply an alternate prompt for the image-to-video generation.
+    - For example, `a photo of a cat <video> the cat walks forward`
+
 ## Video Extend
 
 - You can use `<extend:frames>` to extend a video by a given number of frames using an Image-To-Video model.
+    - Note: This is not a very advanced or capable system currently. This is an experimental feature that only some models will respond decently to, and it will almost always have quality issues.
     - For example, `<extend:33>` will extend the video by 33 frames.
     - Use the `Video Extend` parameter group to configure values for this. At least `Video Extend Model` must be set.
     - Must set Overlap less than 1/3rd of the extend frame count.
