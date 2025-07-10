@@ -56,6 +56,7 @@ if [ -z "${SWARM_NO_VENV}" ]; then
     $python -s -m venv venv
     source venv/bin/activate
     python=python3
+    python3 -m ensurepip --upgrade
 else
     echo "swarm_no_venv set, will not create venv"
 fi
