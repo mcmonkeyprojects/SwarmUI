@@ -359,6 +359,7 @@ There's a full step by step guide for video model usage here: <https://github.co
         - Save to `diffusion_models`
     - It works like Wan-14B-Text2Video, but with image inputs.
     - Add images to the prompt box (drag in or paste in). You can use just one, or multiple (up to 6 supposedly).
+    - Your first input image determines the resolution of the input image set. 512x512 seems to be fine, 1024 is good too. Avoid very high res inputs as it will cost extra VRAM.
 
 ### Wan VACE
 
