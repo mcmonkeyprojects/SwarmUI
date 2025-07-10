@@ -111,6 +111,9 @@ public class WorkflowGenerator
     /// <summary>If true, the generator is currently working on the refiner stage.</summary>
     public bool IsRefinerStage = false;
 
+    /// <summary>If true, the generator is currently working on Image2Video.</summary>
+    public bool IsImageToVideo = false;
+
     /// <summary>If true, the main sampler should add noise. If false, it shouldn't.</summary>
     public bool MainSamplerAddNoise = true;
 
@@ -2088,6 +2091,7 @@ public class WorkflowGenerator
     /// <summary>Creates the execution logic for an Image-To-Video model.</summary>
     public void CreateImageToVideo(ImageToVideoGenInfo genInfo)
     {
+        IsImageToVideo = true;
         bool hadSpecialCond = false;
         string scaled = CreateNode("ImageScale", new JObject()
         {
@@ -2426,6 +2430,7 @@ public class WorkflowGenerator
             });
             FinalImageOut = [trimNode, 0];
         }
+        IsImageToVideo = false;
     }
 
     /// <summary>Creates an image preprocessor node.</summary>
