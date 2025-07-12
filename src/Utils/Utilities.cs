@@ -1138,6 +1138,7 @@ public static class Utilities
     /// <summary>Launch, run, and return the text output of, a 'git' command input.</summary>
     public static async Task<string> RunGitProcess(string args, string dir = null, bool canRetry = true)
     {
+        int timeout = Math.Clamp(Program.ServerSettings.Maintenance.GitTimeoutMinutes, 1, 999);
         dir ??= Environment.CurrentDirectory;
         dir = Path.GetFullPath(dir);
         ProcessStartInfo start = new("git", args)
@@ -1177,7 +1178,7 @@ public static class Utilities
                 return result;
             }
             Task exitTask = p.WaitForExitAsync(Program.GlobalProgramCancel);
-            Task finished = await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromMinutes(1)));
+            Task finished = await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromMinutes(timeout)));
             if (finished == exitTask)
             {
                 return await result();
@@ -1187,7 +1188,7 @@ public static class Utilities
             {
                 return await result();
             }
-            Logs.Warning($"Git process '{args}' in '{dir}' has been running for over a minute, something may have gone wrong, allowing 1 more minute to finish...");
+            Logs.Warning($"Git process '{args}' in '{dir}' has been running for over {timeout} minute{(timeout == 1 ? "" : "s")}, something may have gone wrong, allowing 1 more minute to finish...");
             finished = await Task.WhenAny(exitTask, Task.Delay(TimeSpan.FromMinutes(1)));
             if (finished == exitTask)
             {
@@ -1198,7 +1199,7 @@ public static class Utilities
             {
                 return await result();
             }
-            Logs.Error($"Git process '{args}' in '{dir}' has been running for over 2 minutes - something has gone wrong. Will background.");
+            Logs.Error($"Git process '{args}' in '{dir}' has been running for over {timeout + 1} minutes - something has gone wrong. Will background.");
             NetworkBackendUtils.ReportLogsFromProcess(p, "failed git process", "failed-git");
             return "Failed - process never finished in time";
         }
