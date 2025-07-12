@@ -1204,20 +1204,12 @@ function hideUnsupportableParams() {
                 let otherParam = gen_param_types.find(p => p.id == param.depend_non_default);
                 let other = document.getElementById(`input_${param.depend_non_default}`);
                 if (other && !other.dataset.has_data) {
-                    if (getInputVal(other) == otherParam.default) {
+                    let otherToggler = document.getElementById(`input_${otherParam.id}_toggle`);
+                    if (otherToggler && !otherToggler.checked) {
                         show = false;
                     }
-                    else {
-                        let otherToggler = document.getElementById(`input_${otherParam.id}_toggle`);
-                        if (otherToggler && !otherToggler.checked) {
-                            show = false;
-                        }
-                        else {
-                            let otherGroup = otherParam.original_group || otherParam.group;
-                            if (otherGroup && otherGroup.toggles && !getRequiredElementById(`input_group_content_${otherGroup.id}_toggle`).checked) {
-                                show = false;
-                            }
-                        }
+                    if (!otherToggler && getInputVal(other) == otherParam.default) {
+                        show = false;
                     }
                 }
             }

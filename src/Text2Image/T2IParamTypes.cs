@@ -311,7 +311,7 @@ public class T2IParamTypes
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
-        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupSegmentOverrides, GroupAdvancedSampling, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
+        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupSegmentOverrides, GroupAdvancedSampling, GroupAlternateGuidance, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
         GroupStarred, GroupUser1, GroupUser2, GroupUser3;
 
     public class ControlNetParamHolder
@@ -461,7 +461,7 @@ public class T2IParamTypes
             "0", IgnoreIf: "0", Min: 0, Max: 256, OrderPriority: -3.5, Group: GroupInitImage, Examples: ["0", "4", "8", "16"], IsAdvanced: true, DependNonDefault: MaskImage.Type.ID
             ));
         InitImageRecompositeMask = Register<bool>(new("Init Image Recomposite Mask", "If enabled and a mask is in use, this will recomposite the masked generated onto the original image for a cleaner result.\nIf disabled, VAE artifacts may build up across repeated inpaint operations.\nDefaults enabled.",
-            "true", IgnoreIf: "true", Group: GroupInitImage, OrderPriority: -3.4, IsAdvanced: true
+            "true", IgnoreIf: "true", Group: GroupInitImage, OrderPriority: -3.4, IsAdvanced: true, DependNonDefault: MaskImage.Type.ID
             ));
         UseInpaintingEncode = Register<bool>(new("Use Inpainting Encode", "Uses VAE Encode logic specifically designed for certain inpainting models.\nNotably this includes the RunwayML Stable-Diffusion-v1 Inpainting model.\nThis covers the masked area with gray.",
             "false", IgnoreIf: "false", Group: GroupInitImage, OrderPriority: -3.2, IsAdvanced: true
@@ -800,13 +800,13 @@ public class T2IParamTypes
             "256", Min: 128, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -5
             ));
         VAETileOverlap = Register<int>(new("VAE Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between tiles there should be.\nHigher overlap improves quality but takes longer.",
-            "64", Min: 0, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.8
+            "64", Min: 0, Max: 4096, Step: 32, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.8, DependNonDefault: VAETileSize.Type.ID
             ));
         VAETemporalTileSize = Register<int>(new("VAE Temporal Tile Size", "If VAE Tile Size is enabled, decodes videos through the VAE using video frame tiles of this size.\nVAE Tiling reduces VRAM consumption, but takes longer and may impact quality.",
-            "64", Min: 8, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.6
+            "64", Min: 8, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.6, DependNonDefault: VAETileSize.Type.ID
             ));
         VAETemporalTileOverlap = Register<int>(new("VAE Temporal Tile Overlap", "If VAE Tile Size is enabled, this controls how much overlap between video frames there should be.\nHigher overlap improves quality but takes longer.",
-            "8", Min: 4, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.4
+            "8", Min: 4, Max: 4096, Step: 4, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -4.4, DependNonDefault: VAETileSize.Type.ID
             ));
         ColorCorrectionBehavior = Register<string>(new("Color Correction Behavior", "Experimental: How to correct color when compositing a masked image.\n'None' = Do not attempt color correction.\n'Uniform' = Compute a fixed offset HSV correction for all pixels.\n'Linear' = Compute a linear correction that depends on each pixel's S and V.\nThis is useful for example when doing inpainting with Flux models, as the Flux VAE does not retain consistent colors - 'Linear' may help correct for this misbehavior.",
             "None", IgnoreIf: "None", IsAdvanced: true, GetValues: (_) => ["None", "Uniform", "Linear", "Linear2"], Group: GroupAdvancedSampling, OrderPriority: -3
@@ -820,6 +820,7 @@ public class T2IParamTypes
         MaskBehavior = Register<string>(new("Mask Behavior", "How to process the mask, for masked-generation such as Init Image with a Mask Image, or Segment blocks.\n'Differential' = 'Differential Diffusion' technique, wherein the mask values are used as offsets for timestep of when to apply the mask or not.\n'Simple Latent' = the most basic latent masking technique.",
             "Differential", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["Differential", "Simple Latent"], OrderPriority: -3.5, Group: GroupAdvancedSampling
             ));
+        GroupAlternateGuidance = new("Alternate Guidance", Open: false, OrderPriority: 50, IsAdvanced: true, Parent: GroupAdvancedSampling, Description: "Alternative guidance methods.\nThese replace CFG or sampling with alternative systems that claim to yield better results.\nThese are often highly contextual (eg work on some models but not others), and can be known to add more trouble than they're worth.\nThese generally cannot stack: pick one to use, not multiple, unless documented otherwise.");
         // ================================================ Other Fixes ================================================
         GroupOtherFixes = new("Other Fixes", Open: false, OrderPriority: 20, IsAdvanced: true);
         TrimVideoStartFrames = Register<int>(new("Trim Video Start Frames", "Trim this many frames from the start of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt start frames (such as Wan).",
