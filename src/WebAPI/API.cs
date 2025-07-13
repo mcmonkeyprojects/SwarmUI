@@ -271,7 +271,7 @@ public class API
             APIDescriptionAttribute methodDesc = call.Original.GetCustomAttribute<APIDescriptionAttribute>();
             string perm = call.Permission is null ? "(MISSING)" : $"`{call.Permission.ID}` - `{call.Permission.DisplayName}` in group `{call.Permission.Group.DisplayName}`";
             docText.Append($"#### Description\n\n{methodDesc?.Description ?? "(ROUTE DESCRIPTION NOT SET)"}\n\n#### Permission Flag\n\n{perm}\n\n#### Parameters\n\n");
-            ParameterInfo[] paramInf = [.. call.Original.GetParameters().Where(m => m.ParameterType != typeof(Session) && m.ParameterType != typeof(WebSocket))];
+            ParameterInfo[] paramInf = [.. call.Original.GetParameters().Where(m => m.ParameterType != typeof(Session) && m.ParameterType != typeof(WebSocket) && m.ParameterType != typeof(HttpContext))];
             if (paramInf.Length == 0)
             {
                 docText.Append("**None.**\n\n");
