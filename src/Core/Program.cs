@@ -373,6 +373,10 @@ public class Program
         {
             Logs.Warning("You are running SwarmUI in a folder labeled 'StableSwarmUI', indicating you may have ran from an extremely outdated legacy version of SwarmUI (Swarm split from Stability in June 2024). You should probably reinstall fresh from https://github.com/mcmonkeyprojects/SwarmUI");
         }
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HTTP_PROXY")))
+        {
+            Logs.Warning("You have the environment variable 'HTTP_PROXY' set. This may cause network issues. If Swarm cannot connect to its own backends, remove this env var.");
+        }
         WebServer.WebApp.WaitForShutdown();
         Shutdown();
     }
