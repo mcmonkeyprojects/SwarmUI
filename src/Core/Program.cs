@@ -232,6 +232,10 @@ public class Program
             {
                 Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, unknown virtual/swap");
             }
+            else if ((long)memStatus.TotalVirtual < (long)memStatus.TotalPhysical)
+            {
+                Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalVirtual)} virtual, unknown swap");
+            }
             else
             {
                 Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalVirtual)} virtual, {new MemoryNum((long)memStatus.TotalVirtual - (long)memStatus.TotalPhysical)} swap");
