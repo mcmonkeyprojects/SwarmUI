@@ -76,7 +76,16 @@ class PromptTabCompleteClass {
                     return this.getOrderedMatches(yolomodels.map(m => `yolo-${m}`), prefixLow);
                 }
             }
-            return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.', '\n Additionally, you can apply a class filter by appending "yolo-<model>:<class_ids>:" where <class_ids> is a comma-separated list of class IDs or names to filter the detection results.'];
+            return [
+                '\nSpecify before the ">" some text to match against in the image, like "<segment:face>".',
+                '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', 
+                '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.',
+                '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', 
+                '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.',
+                '\n Additionally, you can apply a class filter by appending "yolo-<model>:<class_ids>:" where <class_ids> is a comma-separated list of class IDs or names to filter the detection results.',
+                '\n Multiple masks can be combined by separating them with "||", like "<segment:face || hair>".',
+                '\n Threshold can be assigned to each individual mask component by appending a ";" and the threshold value, like "<segment:face;0.6 || hair>".',
+            ];
         });
         this.registerPrefix('setvar[var_name]', 'Store text for reference later in the prompt', (prefix) => { 
             return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>", then use like "<var:colors>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag', '\nThe setvar tag emits a copy the variable value in place. You can not do this with eg "<setvar[colors,false]: red and blue>"'];
@@ -393,14 +402,42 @@ class PromptPlusButton {
         this.noOverlap = false;
         this.segmentModalOther = getRequiredElementById('text_prompt_segment_other_inputs');
         this.segmentModalOther.innerHTML =
-            makeGenericPopover('text_prompt_segment_model', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
-            + makeDropdownInput(null, 'text_prompt_segment_model', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
-            + makeGenericPopover('text_prompt_segment_textmatch', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
-            + makeTextInput(null, 'text_prompt_segment_textmatch', '', 'Text Match', '', '', 'normal', '', false, false, true)
-            + makeGenericPopover('text_prompt_segment_yoloid', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
-            + makeNumberInput(null, 'text_prompt_segment_yoloid', '', 'YOLO ID', '', 0, 0, 100, 1, 'big', false, true)
-            + makeGenericPopover('text_prompt_segment_classids', 'Prompt Syntax: Segment Class IDs', 'Text', "If using a YOLO model with multiple classes, optionally specify a comma-separated list of class IDs.\nClass IDs can be numeric (eg 0, 1, 2) or text labels.", '')
-            + makeTextInput(null, 'text_prompt_segment_classids', '', 'Class IDs', '', '', 'normal', 'Optional class IDs here...', false, false, true)
+            "<div style=' margin-bottom: 1rem;'><div style='font-weight: bold;'>Mask 1</div><div style='padding-left: 10px; margin-top: 0;' class='input-group'>"
+            + makeGenericPopover('text_prompt_segment_model0', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
+            + makeDropdownInput(null, 'text_prompt_segment_model0', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
+            + makeGenericPopover('text_prompt_segment_textmatch0', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
+            + makeTextInput(null, 'text_prompt_segment_textmatch0', '', 'Text Match', '', '', 'normal', '', false, false, true)
+            + makeGenericPopover('text_prompt_segment_yoloid0', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
+            + makeNumberInput(null, 'text_prompt_segment_yoloid0', '', 'YOLO ID', '', 0, 0, 100, 1, 'big', false, true)
+            + makeGenericPopover('text_prompt_segment_classids0', 'Prompt Syntax: Segment Class IDs', 'Text', "If using a YOLO model with multiple classes, optionally specify a comma-separated list of class IDs.\nClass IDs can be numeric (eg 0, 1, 2) or text labels.", '')
+            + makeTextInput(null, 'text_prompt_segment_classids0', '', 'Class IDs', '', '', 'normal', 'Optional class IDs here...', false, false, true)
+            + makeGenericPopover('text_prompt_segment_threshold0', 'Prompt Syntax: Override Threshold', 'Number', 'Override the Segment Threshold for this mask.', '')
+            + makeSliderInput(null, 'text_prompt_segment_threshold0', '', 'Threshold', '', 0.5, 0, 1, 0, 1, 0.05, false, true, true)
+            + "</div></div>"
+            + "<div style=' margin-bottom: 1rem;'><div style='font-weight: bold;'>Mask 2</div><div style='padding-left: 10px; margin-top: 0;' class='input-group'>"
+            + makeGenericPopover('text_prompt_segment_model1', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
+            + makeDropdownInput(null, 'text_prompt_segment_model1', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
+            + makeGenericPopover('text_prompt_segment_textmatch1', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
+            + makeTextInput(null, 'text_prompt_segment_textmatch1', '', 'Text Match', '', '', 'normal', '', false, false, true)
+            + makeGenericPopover('text_prompt_segment_yoloid1', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
+            + makeNumberInput(null, 'text_prompt_segment_yoloid1', '', 'YOLO ID', '', 0, 0, 100, 1, 'big', false, true)
+            + makeGenericPopover('text_prompt_segment_classids1', 'Prompt Syntax: Segment Class IDs', 'Text', "If using a YOLO model with multiple classes, optionally specify a comma-separated list of class IDs.\nClass IDs can be numeric (eg 0, 1, 2) or text labels.", '')
+            + makeTextInput(null, 'text_prompt_segment_classids1', '', 'Class IDs', '', '', 'normal', 'Optional class IDs here...', false, false, true)
+            + makeGenericPopover('text_prompt_segment_threshold1', 'Prompt Syntax: Override Threshold', 'Number', 'Override the Segment Threshold for this mask.', '')
+            + makeSliderInput(null, 'text_prompt_segment_threshold1', '', 'Threshold', '', 0.5, 0, 1, 0, 1, 0.05, false, true, true)
+            + "</div></div>"
+            + "<div style=' margin-bottom: 1rem;'><div style='font-weight: bold;'>Mask 3</div><div style='padding-left: 10px; margin-top: 0;' class='input-group'>"
+            + makeGenericPopover('text_prompt_segment_model2', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
+            + makeDropdownInput(null, 'text_prompt_segment_model2', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
+            + makeGenericPopover('text_prompt_segment_textmatch2', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
+            + makeTextInput(null, 'text_prompt_segment_textmatch2', '', 'Text Match', '', '', 'normal', '', false, false, true)
+            + makeGenericPopover('text_prompt_segment_yoloid2', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
+            + makeNumberInput(null, 'text_prompt_segment_yoloid2', '', 'YOLO ID', '', 0, 0, 100, 1, 'big', false, true)
+            + makeGenericPopover('text_prompt_segment_classids2', 'Prompt Syntax: Segment Class IDs', 'Text', "If using a YOLO model with multiple classes, optionally specify a comma-separated list of class IDs.\nClass IDs can be numeric (eg 0, 1, 2) or text labels.", '')
+            + makeTextInput(null, 'text_prompt_segment_classids2', '', 'Class IDs', '', '', 'normal', 'Optional class IDs here...', false, false, true)
+            + makeGenericPopover('text_prompt_segment_threshold2', 'Prompt Syntax: Override Threshold', 'Number', 'Override the Segment Threshold for this mask.', '')
+            + makeSliderInput(null, 'text_prompt_segment_threshold2', '', 'Threshold', '', 0.5, 0, 1, 0, 1, 0.05, false, true, true)
+            + "</div></div>"
             + makeGenericPopover('text_prompt_segment_creativity', 'Prompt Syntax: Segment Creativity', 'Number', 'How creative the model should be when rebuilding this segment.\nAlso known as denoising strength.\n0 makes no changes, 1 completely replaces the area.', '')
             + makeSliderInput(null, 'text_prompt_segment_creativity', '', 'Creativity', '', 0.6, 0, 1, 0, 1, 0.05, false, false, true)
             + makeGenericPopover('text_prompt_segment_threshold', 'Prompt Syntax: Segment Threshold', 'Number', 'The limit that defines that "minimum match quality" for the model to consider this segment matched.\nAt 0 this will include too much, at 1 this will include too little or nothing.', '')
@@ -409,11 +446,14 @@ class PromptPlusButton {
             + makeCheckboxInput(null, 'text_prompt_segment_invert_mask', '', 'Invert Mask', '', false, false, false, true)
             + makeGenericPopover('text_prompt_segment_gentext', 'Prompt Syntax: Segment Generation Prompt', 'text', 'The prompt to use when regenerating the matched area.\nShould be a full text on its own, can use a subset of general prompting syntax.', '')
             + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
-        this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
-        this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
-        this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
-        this.segmentModalClassIds = getRequiredElementById('text_prompt_segment_classids');
-        this.segmentModalYoloId = getRequiredElementById('text_prompt_segment_yoloid');
+        let segments = Array(3).fill(0);
+        this.segmentModalModelSelect = segments.map((_, i) => getRequiredElementById(`text_prompt_segment_model${i}`));
+        this.segmentModalModelSelect.forEach((select, i) => select.addEventListener('change', () => this.segmentModalProcessChanges(i)));
+        this.segmentModalTextMatch = segments.map((_, i) => getRequiredElementById(`text_prompt_segment_textmatch${i}`));
+        this.segmentModalClassIds = segments.map((_, i) => getRequiredElementById(`text_prompt_segment_classids${i}`));
+        this.segmentModalYoloId = segments.map((_, i) => getRequiredElementById(`text_prompt_segment_yoloid${i}`));
+        this.segmentModalThresholdOverrideEnabled = segments.map((_, i) => getRequiredElementById(`text_prompt_segment_threshold${i}_toggle`));
+        this.segmentModalThresholdOverride = segments.map((_, i) => getRequiredElementById(`text_prompt_segment_threshold${i}`));
         this.segmentModalCreativity = getRequiredElementById('text_prompt_segment_creativity');
         this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
         this.segmentModalInvertMask = getRequiredElementById('text_prompt_segment_invert_mask');
@@ -476,7 +516,9 @@ class PromptPlusButton {
         buttons.push({ key: 'segment', key_html: 'Auto Segment Refinement', title: "Automatically segment and refine part of an image (eg clean up a face)", action: () => {
             this.autoHideMenu();
             this.segmentModalClear();
-            this.segmentModalProcessChanges();
+            for (let i = 0; i < this.segmentModalModelSelect.length; i++) {
+                this.segmentModalProcessChanges(i);
+            }
             $('#text_prompt_segment_modal').modal('show');
         }});
         buttons.push({ key: 'region', key_html: 'Regional Prompt', title: "Supply a different prompt for a sub-region of an image", action: () => {
@@ -522,51 +564,68 @@ class PromptPlusButton {
                 html += `<option value="yolo-${model}">${model} (YOLOv8)</option>\n`;
             }
         }
-        this.segmentModalModelSelect.innerHTML = html;
-        this.segmentModalModelSelect.value = 'CLIP-Seg';
+        for (let i = 0; i < this.segmentModalModelSelect.length; i++) {
+            this.segmentModalModelSelect[i].innerHTML = html;
+            this.segmentModalModelSelect[i].value = 'CLIP-Seg';
+            this.segmentModalTextMatch[i].value = '';
+            this.segmentModalYoloId[i].value = 0;
+            this.segmentModalClassIds[i].value = '';
+            this.segmentModalThresholdOverride[i].value = 0.5;
+            this.segmentModalThresholdOverrideEnabled[i].checked = false;
+        }
         this.segmentModalMainText.value = '';
         this.segmentModalCreativity.value = 0.6;
         this.segmentModalThreshold.value = 0.5;
-        this.segmentModalTextMatch.value = '';
-        this.segmentModalYoloId.value = 0;
-        this.segmentModalClassIds.value = '';
         this.segmentModalInvertMask.checked = false;
         triggerChangeFor(this.segmentModalCreativity);
         triggerChangeFor(this.segmentModalThreshold);
     }
 
-    segmentModalProcessChanges() {
-        if (this.segmentModalModelSelect.value == 'CLIP-Seg') {
-            findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = '';
-            findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = 'none';
-            findParentOfClass(this.segmentModalClassIds, 'auto-input').style.display = 'none';
+    segmentModalProcessChanges(i) {
+        if (this.segmentModalModelSelect[i].value == 'CLIP-Seg') {
+            findParentOfClass(this.segmentModalTextMatch[i], 'auto-input').style.display = '';
+            findParentOfClass(this.segmentModalYoloId[i], 'auto-input').style.display = 'none';
+            findParentOfClass(this.segmentModalClassIds[i], 'auto-input').style.display = 'none';
             let text = translate("Text to match against in the image");
-            this.segmentModalTextMatch.placeholder = text;
-            this.segmentModalTextMatch.title = text;
+            this.segmentModalTextMatch[i].placeholder = text;
+            this.segmentModalTextMatch[i].title = text;
         }
         else {
-            findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = 'none';
-            findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = '';
-            findParentOfClass(this.segmentModalClassIds, 'auto-input').style.display = '';
+            findParentOfClass(this.segmentModalTextMatch[i], 'auto-input').style.display = 'none';
+            findParentOfClass(this.segmentModalYoloId[i], 'auto-input').style.display = '';
+            findParentOfClass(this.segmentModalClassIds[i], 'auto-input').style.display = '';
         }
+        doToggleEnable(this.segmentModalThresholdOverride[i].id);
     }
 
     segmentModalSubmit() {
-        let modelText = this.segmentModalModelSelect.value;
-        if (modelText == "CLIP-Seg") {
-            modelText = this.segmentModalTextMatch.value.trim();
-        }
-        else { // YOLO
-            if (parseInt(this.segmentModalYoloId.value) > 0) {
-                modelText += `-${this.segmentModalYoloId.value}`;
+        let parts = [];
+        for (let i = 0; i < this.segmentModalModelSelect.length; i++) {
+            let modelText = this.segmentModalModelSelect[i].value;
+            if (modelText == "CLIP-Seg") {
+                modelText = this.segmentModalTextMatch[i].value.trim();
             }
-            let classIds = this.segmentModalClassIds.value.trim();
-            if (classIds) {
-                modelText += `:${classIds}:`;
+            else { // YOLO
+                if (parseInt(this.segmentModalYoloId[i].value) > 0) {
+                    modelText += `-${this.segmentModalYoloId[i].value}`;
+                }
+                let classIds = this.segmentModalClassIds[i].value.trim();
+                if (classIds) {
+                    modelText += `:${classIds}:`;
+                }
+            }
+            if (modelText) {
+                if (this.segmentModalThresholdOverrideEnabled[i].checked) {
+                    modelText += `; ${this.segmentModalThresholdOverride[i].value}`;
+                }
+                parts.push(modelText);
             }
         }
         $('#text_prompt_segment_modal').modal('hide');
-        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+        if (parts.length > 0) {
+            let modelText = parts.join(' || ');
+            this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+        }
     }
 
     regionModalClear() {
