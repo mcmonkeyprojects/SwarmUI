@@ -1342,45 +1342,87 @@ public class WorkflowGeneratorSteps
                 for (int i = 0; i < parts.Length; i++)
                 {
                     PromptRegion.Part part = parts[i];
-                    string segmentNode;
-                    if (part.DataText.StartsWith("yolo-"))
+                    string[] segmentSections = part.DataText.Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    string segmentNode = null;
+                    for (int isection = 0; isection < segmentSections.Length; isection++)
                     {
-                        string fullname = part.DataText.After("yolo-");
-                        string[] modelParts = fullname.Split(':');
-                        fullname = modelParts[0];
-                        string classFilter = modelParts.Length > 1 ? modelParts[1] : "";
-                        (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
-                        if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
+                        string rawDataText = segmentSections[isection];
+                        string newSegmentNode = null;
+                        double strength = part.Strength;
+                        // Look for an optional ';0.5' suffix to apply a strength override
+                        string dataText = rawDataText;
+                        if (rawDataText.Split(';', 2, StringSplitOptions.TrimEntries) is [string dt, string localStrengthSpecifier])
                         {
-                            fullname = mname;
+                            dataText = dt;
+                            if (!double.TryParse(localStrengthSpecifier, out strength))
+                            {
+                                strength = part.Strength;
+                            }
+                        }
+                        if (dataText.StartsWith("yolo-"))
+                        {
+                            string fullname = dataText.After("yolo-");
+                            string[] modelParts = fullname.Split(':');
+                            fullname = modelParts[0];
+                            string classFilter = modelParts.Length > 1 ? modelParts[1] : "";
+                            (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
+                            if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
+                            {
+                                fullname = mname;
+                            }
+                            else
+                            {
+                                index = 0;
+                            }
+
+                            if (strength > 0.999)
+                            {
+                                Logs.Warning($"Yolo confidence threshold is set to 1. This was recommended syntax before yolo thresholds were supported, but is no longer valid. Swarm will automatically reset the value to default (0.25) instead.");
+                                strength = 0.25;
+                            }
+
+                            newSegmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
+                            {
+                                ["image"] = g.FinalImageOut,
+                                ["model_name"] = fullname,
+                                ["index"] = index,
+                                ["class_filter"] = classFilter,
+                                ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
+                                ["threshold"] = Math.Abs(strength)
+                            });
                         }
                         else
                         {
-                            index = 0;
+                            newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                            {
+                                ["images"] = g.FinalImageOut,
+                                ["match_text"] = dataText,
+                                ["threshold"] = Math.Abs(strength)
+                            });
                         }
-                        if (part.Strength > 0.999)
+                        if (segmentSections.Length > 1 && g.UserInput.Get(T2IParamTypes.SaveSegmentMask, false))
                         {
-                            Logs.Warning($"Yolo confidence threshold is set to 1. This was recommended syntax before yolo thresholds were supported, but is no longer valid. Swarm will automatically reset the value to default (0.25) instead.");
-                            part.Strength = 0.25;
+                            string imageNode = g.CreateNode("MaskToImage", new JObject()
+                            {
+                                ["mask"] = new JArray() { newSegmentNode, 0 }
+                            });
+                            g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                         }
-                        segmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
+                        if (segmentNode == null)
                         {
-                            ["image"] = g.FinalImageOut,
-                            ["model_name"] = fullname,
-                            ["index"] = index,
-                            ["class_filter"] = classFilter,
-                            ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
-                            ["threshold"] = Math.Abs(part.Strength)
-                        });
-                    }
-                    else
-                    {
-                        segmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                            segmentNode = newSegmentNode;
+                        }
+                        else
                         {
-                            ["images"] = g.FinalImageOut,
-                            ["match_text"] = part.DataText,
-                            ["threshold"] = Math.Abs(part.Strength)
-                        });
+                            segmentNode = g.CreateNode("MaskComposite", new JObject()
+                            {
+                                ["destination"] = new JArray() { segmentNode, 0 },
+                                ["source"] = new JArray() { newSegmentNode, 0 },
+                                ["operation"] = "add", // "or" removes float values (< 0.5 => 0, > 0.5 => 1) which destroys the mask detail
+                                ["x"] = 0,
+                                ["y"] = 0
+                            });
+                        }
                     }
                     if (part.Strength < 0)
                     {
