@@ -1829,6 +1829,7 @@ public class WorkflowGeneratorSteps
             g.RunOnNodesOfClass("VAEDecode", fixDecode);
             g.RunOnNodesOfClass("VAEDecodeTiled", fixDecode);
             g.RemoveClassIfUnused("VAEEncode");
+            g.RemoveClassIfUnused("LTXVConditioning");
             g.RemoveClassIfUnused("CLIPTextEncode");
             g.RemoveClassIfUnused("CLIPTextEncodeSDXL");
             g.RemoveClassIfUnused("SwarmClipTextEncodeAdvanced");
