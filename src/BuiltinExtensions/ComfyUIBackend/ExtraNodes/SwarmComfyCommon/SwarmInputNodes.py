@@ -1,6 +1,7 @@
 from . import SwarmLoadImageB64
 import folder_paths
-from nodes import CheckpointLoaderSimple
+from nodes import CheckpointLoaderSimple, LoadImage
+import os
 
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
@@ -187,15 +188,21 @@ class SwarmInputBoolean:
         return (value, )
 
 
-class SwarmInputImage:
+class SwarmInputImage(LoadImage):
     @classmethod
     def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["image"])
         return {
             "required": {
-                "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),
-                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+                "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),                
+                "image": (sorted(files), {"image_upload": True}),
                 "auto_resize": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be resized to match the current generation resolution. If false, the image will be kept at whatever size the user input it at."}),
             } | STANDARD_REQ_INPUTS,
+            "hidden":{
+                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+            },
         } | STANDARD_OTHER_INPUTS
 
     CATEGORY = "SwarmUI/inputs"
@@ -203,8 +210,11 @@ class SwarmInputImage:
     FUNCTION = "do_input"
     DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Image lets you input an image. Internally this node uses a Base64 string as input, so may not be the most friendly to use on the Comfy Workflow tab, but is very convenient to use on the Generate tab."
 
-    def do_input(self, value, **kwargs):
-        return SwarmLoadImageB64.b64_to_img_and_mask(value)
+    def do_input(self, image, value=None, **kwargs):
+        if (not value) or (value=="") or (value=="(Do Not Set Me)"):
+            return self.load_image(image)
+        else:
+            return SwarmLoadImageB64.b64_to_img_and_mask(value)
 
 
 NODE_CLASS_MAPPINGS = {
