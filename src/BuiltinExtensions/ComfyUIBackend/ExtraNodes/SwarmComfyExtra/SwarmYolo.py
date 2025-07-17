@@ -83,9 +83,9 @@ class SwarmYoloDetection:
             result = masks[0]
             for i in range(1, len(masks)):
                 result = torch.max(result, masks[i])
-            return (result, )
+            return (result.unsqueeze(0), )
         elif index > len(masks):
-            return (torch.zeros_like(masks[0]), )
+            return (torch.zeros_like(masks[0]).unsqueeze(0), )
         else:
             sortedindices = []
             for mask in masks:

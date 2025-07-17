@@ -63,7 +63,7 @@ class SwarmClipSeg:
             mask /= max
         while mask.ndim < 4:
             mask = mask.unsqueeze(0)
-        mask = torch.nn.functional.interpolate(mask, size=(images.shape[1], images.shape[2]), mode="bilinear").squeeze(0).squeeze(0)
+        mask = torch.nn.functional.interpolate(mask, size=(images.shape[1], images.shape[2]), mode="bilinear").squeeze(0)
         return (mask,)
 
 NODE_CLASS_MAPPINGS = {
