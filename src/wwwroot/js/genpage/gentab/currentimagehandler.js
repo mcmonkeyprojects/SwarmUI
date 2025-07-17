@@ -292,6 +292,10 @@ function toggleSeparateBatches() {
 }
 
 function clickImageInBatch(div) {
+    for (let block of getRequiredElementById('current_image_batch').querySelectorAll('.image-block-selected')) {
+        block.classList.remove('image-block-selected');
+    }
+    div.classList.add('image-block-selected');
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
         imageFullView.showImage(div.dataset.src, div.dataset.metadata);
@@ -425,8 +429,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
         let newIndex = index + (next ? 1 : -1);
         if (newIndex < 0) {
             newIndex = divs.length - 1;
-        }
-        else if (newIndex >= divs.length) {
+        } else if (newIndex >= divs.length) {
             newIndex = 0;
         }
         divs[newIndex].querySelector('img').click();
@@ -448,12 +451,15 @@ function shiftToNextImagePreview(next = true, expand = false) {
     let newIndex = index + (next ? 1 : -1);
     if (newIndex < 0) {
         newIndex = imgs.length - 1;
-    }
-    else if (newIndex >= imgs.length) {
+    } else if (newIndex >= imgs.length) {
         newIndex = 0;
     }
     let newImg = imgs[newIndex];
     let block = findParentOfClass(newImg, 'image-block');
+    for (let block of getRequiredElementById('current_image_batch').querySelectorAll('.image-block-selected')) {
+        block.classList.remove('image-block-selected');
+    }
+    block.classList.add('image-block-selected');
     setCurrentImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id, newImg.dataset.previewGrow == 'true');
     if (expand) {
         imageFullView.showImage(block.dataset.src, block.dataset.metadata);
@@ -870,6 +876,18 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     if (!isReuse) {
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
+    }
+    if (batchId != 'history') {
+        for (let selected of getRequiredElementById('imagehistorybrowser-content').querySelectorAll('.image-block-selected')) {
+            selected.classList.remove('image-block-selected');
+        }
+    }
+    for (let block of getRequiredElementById('current_image_batch').querySelectorAll('.image-block-selected')) {
+        block.classList.remove('image-block-selected');
+    }
+    let currentBlock = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
+    if (currentBlock) {
+        currentBlock.classList.add('image-block-selected');
     }
 }
 
