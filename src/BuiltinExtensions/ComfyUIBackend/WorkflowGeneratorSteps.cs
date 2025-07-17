@@ -1344,21 +1344,9 @@ public class WorkflowGeneratorSteps
                     PromptRegion.Part part = parts[i];
                     string[] segmentSections = part.DataText.Split("||", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     string segmentNode = null;
-                    for (int isection = 0; isection < segmentSections.Length; isection++)
+                    foreach (string dataText in segmentSections)
                     {
-                        string rawDataText = segmentSections[isection];
                         string newSegmentNode = null;
-                        double strength = part.Strength;
-                        // Look for an optional ';0.5' suffix to apply a strength override
-                        string dataText = rawDataText;
-                        if (rawDataText.Split(';', 2, StringSplitOptions.TrimEntries) is [string dt, string localStrengthSpecifier])
-                        {
-                            dataText = dt;
-                            if (!double.TryParse(localStrengthSpecifier, out strength))
-                            {
-                                strength = part.Strength;
-                            }
-                        }
                         if (dataText.StartsWith("yolo-"))
                         {
                             string fullname = dataText.After("yolo-");
@@ -1374,13 +1362,11 @@ public class WorkflowGeneratorSteps
                             {
                                 index = 0;
                             }
-
-                            if (strength > 0.999)
+                            if (part.Strength > 0.999)
                             {
                                 Logs.Warning($"Yolo confidence threshold is set to 1. This was recommended syntax before yolo thresholds were supported, but is no longer valid. Swarm will automatically reset the value to default (0.25) instead.");
-                                strength = 0.25;
+                                part.Strength = 0.25;
                             }
-
                             newSegmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
                             {
                                 ["image"] = g.FinalImageOut,
@@ -1388,7 +1374,7 @@ public class WorkflowGeneratorSteps
                                 ["index"] = index,
                                 ["class_filter"] = classFilter,
                                 ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
-                                ["threshold"] = Math.Abs(strength)
+                                ["threshold"] = Math.Abs(part.Strength)
                             });
                         }
                         else
@@ -1397,7 +1383,7 @@ public class WorkflowGeneratorSteps
                             {
                                 ["images"] = g.FinalImageOut,
                                 ["match_text"] = dataText,
-                                ["threshold"] = Math.Abs(strength)
+                                ["threshold"] = Math.Abs(part.Strength)
                             });
                         }
                         if (segmentSections.Length > 1 && g.UserInput.Get(T2IParamTypes.SaveSegmentMask, false))
@@ -1408,7 +1394,7 @@ public class WorkflowGeneratorSteps
                             });
                             g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                         }
-                        if (segmentNode == null)
+                        if (segmentNode is null)
                         {
                             segmentNode = newSegmentNode;
                         }
@@ -1418,7 +1404,7 @@ public class WorkflowGeneratorSteps
                             {
                                 ["destination"] = new JArray() { segmentNode, 0 },
                                 ["source"] = new JArray() { newSegmentNode, 0 },
-                                ["operation"] = "add", // "or" removes float values (< 0.5 => 0, > 0.5 => 1) which destroys the mask detail
+                                ["operation"] = "add",
                                 ["x"] = 0,
                                 ["y"] = 0
                             });

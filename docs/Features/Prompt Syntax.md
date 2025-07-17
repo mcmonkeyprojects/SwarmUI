@@ -155,10 +155,6 @@
         - For example, `<segment: face || hair>` will find all the faces and hair in the image and refine them as a single group.
         - This works with YOLOv8 models as well.
             - `<segment: yolo-face_yolov8m-seg_60.pt || yolo-hair_yolov8m-seg_60.pt || fingers>` will refine the group of faces and hair (found by YOLO) and fingers (found by CLIPSeg) as a single group.
-        - Individual areas within the segment can be given their own threshold to have fine control over the matching.
-            - You do this by appending a ; followed by the threshold value.
-            - `<segment:face;0.5 || hair;0.5 || fingers;0.3>` will refine the faces and hair with a threshold of 0.5 and the fingers with a threshold of 0.3.
-            - `<segment:face || hair;0.2,0.3,0.4>` will refine hair with a threshold of 0.2.  Faces will use the overall threshold of the segment (0.4 in this example).  The creativity will be 0.3. 
     - There's an advanced parameter under `Segment Refining` named `Segment Model` to customize the base model used for segment processing
     - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask
 
