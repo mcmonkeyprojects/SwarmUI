@@ -373,7 +373,6 @@ class GenPageBrowserClass {
                 while (remainingFiles.length > 0) {
                     let chunkSize = Math.min(this.maxPreBuild / 2, remainingFiles.length, 100);
                     let chunk = remainingFiles.splice(0, chunkSize);
-                    remainingFiles = remainingFiles.slice(chunkSize);
                     let sectionDiv = createDiv(null, 'lazyload browser-section-loader');
                     sectionDiv.onclick = () => {
                         this.buildContentList(container, chunk, sectionDiv, id);
