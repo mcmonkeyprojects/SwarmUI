@@ -432,11 +432,8 @@ class GenPageBrowserClass {
                 if (this.format.startsWith('Big')) { factor = 15; div.classList.add('image-block-big'); }
                 else if (this.format.startsWith('Giant')) { factor = 25; div.classList.add('image-block-giant'); }
                 else if (this.format.startsWith('Small')) { factor = 5; div.classList.add('image-block-small'); }
-                div.style.width = `${factor + 1}rem`;
-                img.addEventListener('load', () => {
-                    let ratio = img.width / img.height;
-                    div.style.width = `${(ratio * factor) + 1}rem`;
-                });
+                // use the aspect ratio based on image metadata we know and then automatically switch to actual image aspect ratio when the image loads.
+                img.style.aspectRatio = `auto ${desc.aspectRatio || 1}`;
                 let textBlock = createDiv(null, 'image-preview-text');
                 textBlock.innerText = desc.display || desc.name;
                 if (this.format == "Small Thumbnails" || textBlock.innerText.length > 40) {
