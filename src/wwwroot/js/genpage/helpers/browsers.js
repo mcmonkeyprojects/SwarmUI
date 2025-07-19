@@ -5,11 +5,16 @@ class BrowserUtil {
      * Make any visible images within a container actually load now.
      */
     makeVisible(elem) {
-        for (let subElem of elem.querySelectorAll('.lazyload')) {
-            let top = subElem.getBoundingClientRect().top;
-            if (top >= window.innerHeight + 512 || top == 0) { // Note top=0 means not visible
-                continue;
-            }
+        // collect list of lazyload elements we want to load first
+        // then trigger their loading second.
+        // this avoids repetitive reflows and just causes 1 reflow at first measurement
+        let elementsToLoad = Array.from(elem.querySelectorAll('.lazyload'))
+            .filter(e => {
+                let top = e.getBoundingClientRect().top;
+                // Note top=0 means not visible
+                return top > 0 && top < window.innerHeight + 512;
+            });
+        for (let subElem of elementsToLoad) {
             subElem.classList.remove('lazyload');
             if (subElem.tagName == 'IMG') {
                 if (!subElem.dataset.src) {
