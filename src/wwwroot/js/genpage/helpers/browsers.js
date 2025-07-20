@@ -722,7 +722,9 @@ class GenPageBrowserClass {
         this.headerBar.appendChild(this.headerCount);
         this.buildTreeElements(this.folderTreeDiv, '', this.tree);
         this.buildContentList(this.contentDiv, files);
-        this.folderTreeDiv.scrollTop = folderScroll;
+        if (folderScroll) {
+            this.folderTreeDiv.scrollTop = folderScroll;
+        }
         browserUtil.makeVisible(this.contentDiv);
         if (scrollOffset) {
             this.contentDiv.scrollTop = scrollOffset;
