@@ -854,7 +854,7 @@ function toggle_advanced_checkbox_manual() {
 function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let input = JSON.parse(JSON.stringify(input_preoverrides));
     let extraMetadata = {};
-    for (let type of gen_param_types) {
+    paramLoop: for (let type of gen_param_types) {
         if (type.toggleable && !getRequiredElementById(`input_${type.id}_toggle`).checked) {
             continue;
         }
@@ -862,8 +862,11 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             continue;
         }
         let group = type.original_group || type.group;
-        if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
-            continue;
+        while (group) {
+            if (group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
+                continue paramLoop;
+            }
+            group = group.parent;
         }
         let elem = getRequiredElementById(`input_${type.id}`);
         let parent = findParentOfClass(elem, 'auto-input');
