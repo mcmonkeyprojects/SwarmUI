@@ -489,7 +489,8 @@ class GenPageBrowserClass {
                 div.appendChild(menu);
             }
             if (!this.format.includes('Cards')) {
-                div.title = stripHtmlToText(desc.description);
+                // stripping HTML is very expensive.  Only do it the first time the mouse enters the div
+                div.addEventListener('mouseenter', () => div.title = stripHtmlToText(desc.description), { once: true });
             }
             div.dataset.name = file.name;
             img.classList.add('lazyload');
