@@ -655,6 +655,8 @@ public static class Utilities
         }
         try
         {
+            sys_kill(proc.Id, 2); // try CTRL+C super-graceful exit (SIGINT=2)
+            proc.WaitForExit(TimeSpan.FromSeconds(graceSeconds));
             sys_kill(proc.Id, 15); // try graceful exit (SIGTERM=15)
             proc.WaitForExit(TimeSpan.FromSeconds(graceSeconds));
         }
