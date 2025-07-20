@@ -146,16 +146,16 @@ class GenPageBrowserClass {
     /**
      * Clicks repeatedly into a path to fully open it.
      */
-    clickPath(path) {
+    clickPath(path, callback) {
         let tree = this.tree;
         if (!tree.isOpen) {
             tree.clickme(() => {
-                this.clickPath(path);
+                this.clickPath(path, callback);
             });
             return;
         }
         if (path.length == 0) {
-            return;
+            return callback?.();
         }
         let split = path.split('/');
         for (let part of split) {
@@ -163,16 +163,17 @@ class GenPageBrowserClass {
                 continue;
             }
             if (!(part in tree.children)) {
-                return;
+                return callback?.();
             }
             tree = tree.children[part];
             if (!tree.isOpen) {
                 tree.clickme(() => {
-                    this.clickPath(path);
+                    this.clickPath(path, callback);
                 });
                 return;
             }
         }
+        callback?.();
     }
 
     /**
@@ -182,16 +183,41 @@ class GenPageBrowserClass {
         refreshParameterValues(true, () => {
             this.chunksRendered = 0;
             let path = this.folder;
+            this.folder = '';
+            let depth = this.depth;
             this.update(true, () => {
-                this.clickPath(path);
+                // intercept nested update() calls so we can avoid needlessly getting file/folder list repeatedly
+                this.update = (isRefresh, callback) => {
+                    // only do real update if we've gone through the depth of folders we've already fetched
+                    if (--depth > 0) {
+                        this.build(this.folder, null, this.lastFiles, true);
+                        callback?.();
+                    }
+                    else {
+                        depth = this.depth;
+                        Object.getPrototypeOf(this).update.call(this, false, callback, true);
+                    }
+                }
+                this.clickPath(path, () => {
+                    // restore update
+                    delete this.update;
+                    // re-update if path moved from "" so we can get correct list of files
+                    if (this.folder != '') {
+                        this.update();
+                    }
+                    // else just re-build with treeOnly=false to build the file list
+                    else {
+                        this.build(this.folder, null, this.lastFiles);
+                    }
+                });
             });
-        });
+        }, true);
     }
 
     /**
      * Updates/refreshes the browser view.
      */
-    update(isRefresh = false, callback = null) {
+    update(isRefresh = false, callback = null, treeOnly = false) {
         this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
             this.tree = new BrowserTreePart('', {}, false, null, null, '');
@@ -199,7 +225,7 @@ class GenPageBrowserClass {
         }
         let folder = this.folder;
         this.listFoldersAndFiles(folder, isRefresh, (folders, files) => {
-            this.build(folder, folders, files);
+            this.build(folder, folders, files, treeOnly);
             this.updatePendingSince = null;
             if (callback) {
                 setTimeout(() => callback(), 100);
@@ -331,7 +357,7 @@ class GenPageBrowserClass {
             span.onclick = (e) => {
                 this.select(tree.fileData, null);
             };
-            tree.clickme = (callback) => span.onclick(null);
+            tree.clickme = (callback) => this.select(tree.fileData, callback);
         }
         else {
             let clicker = (isSymbol, callback) => {
@@ -546,7 +572,7 @@ class GenPageBrowserClass {
     /**
      * Central call to build the browser content area.
      */
-    build(path, folders, files) {
+    build(path, folders, files, treeOnly = false) {
         this.checkIsSmall();
         if (path.endsWith('/')) {
             path = path.substring(0, path.length - 1);
@@ -721,15 +747,19 @@ class GenPageBrowserClass {
         this.headerCount.innerText = files.length;
         this.headerBar.appendChild(this.headerCount);
         this.buildTreeElements(this.folderTreeDiv, '', this.tree);
-        this.buildContentList(this.contentDiv, files);
+        if (!treeOnly) {
+            this.buildContentList(this.contentDiv, files);
+        }
         if (folderScroll) {
             this.folderTreeDiv.scrollTop = folderScroll;
         }
-        browserUtil.makeVisible(this.contentDiv);
-        if (scrollOffset) {
-            this.contentDiv.scrollTop = scrollOffset;
-        }
         applyTranslations(this.headerBar);
+        if (!treeOnly) {
+            browserUtil.makeVisible(this.contentDiv);
+            if (scrollOffset) {
+                this.contentDiv.scrollTop = scrollOffset;
+            }
+        }
         applyTranslations(this.contentDiv);
         this.everLoaded = true;
         if (this.builtEvent) {
