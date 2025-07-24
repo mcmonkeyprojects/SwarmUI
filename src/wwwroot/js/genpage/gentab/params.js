@@ -1223,15 +1223,17 @@ function hideUnsupportableParams() {
                 box.style.display = show ? '' : 'none';
             }
             box.dataset.disabled = supported ? 'false' : 'true';
-            if (param.group) {
-                let groupData = groups[param.group.id] || { visible: 0, data: param.group, altered: 0 };
-                groups[param.group.id] = groupData;
+            group = param.group;
+            while (group) {
+                let groupData = groups[group.id] || { visible: 0, data: group, altered: 0 };
+                groups[group.id] = groupData;
                 if (show) {
                     groupData.visible++;
                     if (isAltered) {
                         groupData.altered++;
                     }
                 }
+                group = group.parent;
             }
         }
     }
