@@ -23,6 +23,7 @@ class ServerLogsHelper {
         this.lastBounce = 0;
         this.levels = ['Verbose', 'Debug', 'Info', 'Init', 'Warning', 'Error'];
         this.mayLoop = true;
+        this.logLoopRate = 500;
     }
 
     doPastebinModal() {
@@ -71,7 +72,7 @@ class ServerLogsHelper {
     onTabButtonClick() {
         if (!this.loaded) {
             this.loadTypeList(() => {
-                setInterval(() => this.updateLoop(), 1000);
+                setInterval(() => this.updateLoop(), this.logLoopRate);
                 this.loaded = true;
             });
         }

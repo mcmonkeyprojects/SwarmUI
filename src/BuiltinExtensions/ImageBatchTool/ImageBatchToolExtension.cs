@@ -187,7 +187,8 @@ public class ImageBatchToolExtension : Extension
             tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, (image, metadata) =>
             {
                 (string preExt, string ext) = fname.BeforeAndAfterLast('.');
-                string properExt = image.Img.Extension;
+                Image finalImage = image.ActualImageTask.Result;
+                string properExt = finalImage.Extension;
                 if (properExt == "png" && ext != "png")
                 {
                     ext = "png";
@@ -207,14 +208,14 @@ public class ImageBatchToolExtension : Extension
                 int curGen = Interlocked.Increment(ref genId);
                 string diffCode = curGen == 1 ? "" : $"-{curGen}";
                 string actualFile = $"{output_folder}/{preExt}{diffCode}";
-                File.WriteAllBytes($"{actualFile}.{ext}", image.Img.ImageData);
+                File.WriteAllBytes($"{actualFile}.{ext}", finalImage.ImageData);
                 if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(ext) && !string.IsNullOrWhiteSpace(metadata))
                 {
                     File.WriteAllBytes($"{actualFile}.swarm.json", metadata.EncodeUTF8());
                 }
-                string img = session.GetImageB64(image.Img);
+                string img = session.GetImageB64(finalImage);
                 output(new JObject() { ["image"] = img, ["batch_index"] = $"{imageIndex}", ["request_id"] = $"{baseParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
-                WebhookManager.SendEveryGenWebhook(param, img, image.Img);
+                WebhookManager.SendEveryGenWebhook(param, img, finalImage);
             }));
         }
         while (tasks.Any())

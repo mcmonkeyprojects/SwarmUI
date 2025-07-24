@@ -416,7 +416,10 @@ Parameters and usage is the same as any other normal model.
 
 # Video Models
 
-Video models are documented in [Video Model Support](/docs/Video%20Model%20Support.md)
+- Video models are documented in [Video Model Support](/docs/Video%20Model%20Support.md).
+- You can use some (not all) Text2Video models as Text2Image models.
+    - Generally, just set **Text2Video Frames** to `1` and it will be treated as image gen.
+    - Some models may favor different parameters (CFG, Steps, Shift, etc.) for images vs videos.
 
 # Alternative Model Formats
 

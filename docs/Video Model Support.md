@@ -350,6 +350,14 @@ There's a full step by step guide for video model usage here: <https://github.co
     - Note you still have to consider VRAM and res/frame count, as you will still get slow gens if you exceed your GPU's VRAM capacity. The net speed will still be faster, but not as impressive as compared to when you fit your GPU properly.
     - Then generate as normal. You'll get a completed video in a fraction of the time with higher framerate quality, thanks to the CausVid lora.
 
+### Wan For Image Generation
+
+- You can use Wan T2V as an image generation model too!
+- Just set **Text2Video Frames** to `1`
+- This is compatible with Lightx2v LoRAs.
+- Some parameter adjustments may be needed
+    - Notably, setting **Sigma Shift** to `1` or `2` seems to improve quality significantly.
+
 ### Wan Phantom
 
 - Wan Phantom is supported in SwarmUI.
