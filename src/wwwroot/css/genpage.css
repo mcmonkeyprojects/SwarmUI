@@ -252,8 +252,6 @@ body {
 .image-block img, .img-block video {
     display: block;
     margin: auto;
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
 }
 .image-block-placeholder img {
     filter: blur(5px);
@@ -264,6 +262,7 @@ body {
 .image-block-legacy {
     position: relative;
     height: 11.5rem;
+    width: 10rem;
     padding-top: 0.1rem;
     padding-left: 0.1rem;
     padding-right: 0.1rem;
@@ -273,12 +272,15 @@ body {
 }
 .image-block-small {
     height: 7rem;
+    width: 7rem;
 }
 .image-block-big {
     height: 17.5rem;
+    width: 16rem;
 }
 .image-block-giant {
     height: 27.5rem;
+    width: 26rem;
 }
 .image-block-legacy img {
     height: 8rem;
