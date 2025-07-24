@@ -320,7 +320,7 @@ class ModelDownloaderUtil {
                 callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url), null);
             }
             if (imgs.length > 0) {
-                imageToData(imgs[0].url, img => applyMetadata(img));
+                imageToData(imgs[0].url, img => applyMetadata(img), true);
             }
             else {
                 let videos = rawVersion.images ? rawVersion.images.filter(img => img.type == 'video') : [];
@@ -481,7 +481,7 @@ class ModelDownloaderUtil {
                                         imgs[ind] = img;
                                         this.metadataZone.dataset.image = img;
                                         imgElem.src = img;
-                                    });
+                                    }, true);
                                 }
                             };
                             prevButton.onclick = () => { imgIndex--; updateImage(); };
