@@ -366,6 +366,8 @@ body {
 }
 .image-preview-text {
     font-family: var(--font-monospace);
+    min-width: 100%;
+    max-width: 0;
 }
 .current_model_view {
     display: inline-block;
