@@ -364,7 +364,6 @@ body {
 }
 .image-preview-text {
     font-family: var(--font-monospace);
-    /* this dark magic will make the text grow as big as the parent container is and then wrap (instead of growing the container even more) */
     min-width: 100%;
     max-width: 0;
 }

@@ -5,15 +5,10 @@ class BrowserUtil {
      * Make any visible images within a container actually load now.
      */
     makeVisible(elem) {
-        // collect list of lazyload elements we want to load first
-        // then trigger their loading second.
-        // this avoids repetitive reflows and just causes 1 reflow at first measurement
-        let elementsToLoad = Array.from(elem.querySelectorAll('.lazyload'))
-            .filter(e => {
-                let top = e.getBoundingClientRect().top;
-                // Note top=0 means not visible
-                return top > 0 && top < window.innerHeight + 512;
-            });
+        let elementsToLoad = Array.from(elem.querySelectorAll('.lazyload')).filter(e => {
+            let top = e.getBoundingClientRect().top;
+            return top != 0 && top < window.innerHeight + 512; // Note top=0 means not visible
+        });
         for (let subElem of elementsToLoad) {
             subElem.classList.remove('lazyload');
             if (subElem.tagName == 'IMG') {
@@ -100,6 +95,7 @@ class GenPageBrowserClass {
         this.rerenderPlanned = false;
         this.updatePendingSince = null;
         this.wantsReupdate = false;
+        this.noContentUpdates = false;
         this.checkIsSmall();
     }
 
@@ -146,16 +142,19 @@ class GenPageBrowserClass {
     /**
      * Clicks repeatedly into a path to fully open it.
      */
-    clickPath(path, callback) {
+    clickPath(path) {
+        this.noContentUpdates = true;
         let tree = this.tree;
         if (!tree.isOpen) {
             tree.clickme(() => {
-                this.clickPath(path, callback);
+                this.clickPath(path);
             });
             return;
         }
         if (path.length == 0) {
-            return callback?.();
+            this.noContentUpdates = false;
+            this.rerender();
+            return;
         }
         let split = path.split('/');
         for (let part of split) {
@@ -163,17 +162,20 @@ class GenPageBrowserClass {
                 continue;
             }
             if (!(part in tree.children)) {
-                return callback?.();
+                this.noContentUpdates = false;
+                this.rerender();
+                return;
             }
             tree = tree.children[part];
             if (!tree.isOpen) {
                 tree.clickme(() => {
-                    this.clickPath(path, callback);
+                    this.clickPath(path);
                 });
                 return;
             }
         }
-        callback?.();
+        this.noContentUpdates = false;
+        this.rerender();
     }
 
     /**
@@ -185,39 +187,17 @@ class GenPageBrowserClass {
             let path = this.folder;
             this.folder = '';
             let depth = this.depth;
+            this.noContentUpdates = true;
             this.update(true, () => {
-                // intercept nested update() calls so we can avoid needlessly getting file/folder list repeatedly
-                this.update = (isRefresh, callback) => {
-                    // only do real update if we've gone through the depth of folders we've already fetched
-                    if (--depth > 0) {
-                        this.build(this.folder, null, this.lastFiles, true);
-                        callback?.();
-                    }
-                    else {
-                        depth = this.depth;
-                        Object.getPrototypeOf(this).update.call(this, false, callback, true);
-                    }
-                }
-                this.clickPath(path, () => {
-                    // restore update
-                    delete this.update;
-                    // re-update if path moved from "" so we can get correct list of files
-                    if (this.folder != '') {
-                        this.update();
-                    }
-                    // else just re-build with treeOnly=false to build the file list
-                    else {
-                        this.build(this.folder, null, this.lastFiles);
-                    }
-                });
+                this.clickPath(path);
             });
-        }, true);
+        });
     }
 
     /**
      * Updates/refreshes the browser view.
      */
-    update(isRefresh = false, callback = null, treeOnly = false) {
+    update(isRefresh = false, callback = null) {
         this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
             this.tree = new BrowserTreePart('', {}, false, null, null, '');
@@ -225,7 +205,7 @@ class GenPageBrowserClass {
         }
         let folder = this.folder;
         this.listFoldersAndFiles(folder, isRefresh, (folders, files) => {
-            this.build(folder, folders, files, treeOnly);
+            this.build(folder, folders, files);
             this.updatePendingSince = null;
             if (callback) {
                 setTimeout(() => callback(), 100);
@@ -462,8 +442,16 @@ class GenPageBrowserClass {
                 if (this.format.startsWith('Big')) { factor = 15; div.classList.add('image-block-big'); }
                 else if (this.format.startsWith('Giant')) { factor = 25; div.classList.add('image-block-giant'); }
                 else if (this.format.startsWith('Small')) { factor = 5; div.classList.add('image-block-small'); }
-                // use the aspect ratio based on image metadata we know and then automatically switch to actual image aspect ratio when the image loads.
-                img.style.aspectRatio = `auto ${desc.aspectRatio || 1}`;
+                if (desc.aspectRatio) {
+                    div.style.width = `${(desc.aspectRatio * factor) + 1}rem`;
+                }
+                else {
+                    div.style.width = `${factor + 1}rem`;
+                    img.addEventListener('load', () => {
+                        let ratio = img.width / img.height;
+                        div.style.width = `${(ratio * factor) + 1}rem`;
+                    });
+                }
                 let textBlock = createDiv(null, 'image-preview-text');
                 textBlock.innerText = desc.display || desc.name;
                 if (this.format == "Small Thumbnails" || textBlock.innerText.length > 40) {
@@ -514,7 +502,6 @@ class GenPageBrowserClass {
                 div.appendChild(menu);
             }
             if (!this.format.includes('Cards')) {
-                // stripping HTML is very expensive.  Only do it the first time the mouse enters the div
                 div.addEventListener('mouseenter', () => div.title = stripHtmlToText(desc.description), { once: true });
             }
             div.dataset.name = file.name;
@@ -571,7 +558,7 @@ class GenPageBrowserClass {
     /**
      * Central call to build the browser content area.
      */
-    build(path, folders, files, treeOnly = false) {
+    build(path, folders, files) {
         this.checkIsSmall();
         if (path.endsWith('/')) {
             path = path.substring(0, path.length - 1);
@@ -746,20 +733,18 @@ class GenPageBrowserClass {
         this.headerCount.innerText = files.length;
         this.headerBar.appendChild(this.headerCount);
         this.buildTreeElements(this.folderTreeDiv, '', this.tree);
-        if (!treeOnly) {
-            this.buildContentList(this.contentDiv, files);
-        }
-        if (folderScroll) {
-            this.folderTreeDiv.scrollTop = folderScroll;
-        }
         applyTranslations(this.headerBar);
-        if (!treeOnly) {
+        if (!this.noContentUpdates) {
+            this.buildContentList(this.contentDiv, files);
             browserUtil.makeVisible(this.contentDiv);
             if (scrollOffset) {
                 this.contentDiv.scrollTop = scrollOffset;
             }
+            applyTranslations(this.contentDiv);
         }
-        applyTranslations(this.contentDiv);
+        if (folderScroll) {
+            this.folderTreeDiv.scrollTop = folderScroll;
+        }
         this.everLoaded = true;
         if (this.builtEvent) {
             this.builtEvent();
