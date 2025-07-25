@@ -21,6 +21,7 @@ SwarmUI metadata on an image is available when:
         - Slack strips from everything
     - You can often zip an image and send it that way to preserve metadata
     - Image editing software will often lose metadata or replace it with its own
+- Or, if server setting `StealthMetadata` is enabled on a pixel-perfect format (primarily just png for now), the metadata is encoded in the low-value bits of color or alpha data. See <https://github.com/mcmonkeyprojects/SwarmUI/pull/871> for specifics.
 
 ## Format Explanation
 
