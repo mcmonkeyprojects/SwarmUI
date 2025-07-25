@@ -166,6 +166,7 @@ public static class WebUtil
         {
             if (pythonVersion.StartsWith("Python 3."))
             {
+                Logs.Warning($"Found python version '{pythonVersion}', which is not in the acceptable range from 3.10 to 3.12.");
                 return "You have a python version installed, but it is not 3.11. Please install Python 3.11 before installing SwarmUI. 3.10 and 3.12 are relatively stable as well. Older versions will not work, and newer versions will have compatibility issues.";
             }
             return "Python does not appear to be installed on your system. You must install Python 3.11 before installing SwarmUI.";

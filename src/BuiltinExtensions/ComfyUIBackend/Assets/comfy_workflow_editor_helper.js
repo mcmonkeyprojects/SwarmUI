@@ -47,7 +47,7 @@ function comfyFixMenuLocation() {
         if (logo && !logo.parentElement.querySelector('.swarm-injected-header-spacer')) {
             let space = document.createElement('span');
             space.className = 'swarm-injected-header-spacer';
-            space.style.width = (swarmComfyMenu.offsetWidth + 30) + 'px';
+            space.style.width = ((swarmComfyMenu.offsetWidth < 5 ? 296 : swarmComfyMenu.offsetWidth) + 30) + 'px';
             logo.parentElement.insertBefore(space, logo.nextSibling);
         }
         swarmComfyMenu.style.top = '0rem';

@@ -86,6 +86,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, critical GPU errors (eg CUDA operation not permitted, or nvidia-smi crash) will cause SwarmUI to entirely restart itself.\nThis primarily exists as a workaround for an nvidia-docker bug (docker randomly uses GPU, so do full restart to get the GPU back)\nbut may be useful to other configs.\nIf false, GPU errors will be logged and nothing further will happen.")]
         public bool RestartOnGpuCriticalError = false;
+
+        [ConfigComment("Number of minutes to silently wait for git operations to run.\nIf this duration is reached, a warning is logged and 1 more minute is allowed.\nAfter that final minute runs out, the git process is backgrounded and ignored (it may still be running, but Swarm will stop waiting for it).\nSetting this timeout too low may cause still-running slow processes to glitch or conflict.\nSetting this timeout too high may cause Swarm to freeze up any time git doesn't properly shut down.\nFor most users, the default (1 minute before warn, 1 minute extra) is more than enough, as git extremely rarely needs more than a minute to run.")]
+        public int GitTimeoutMinutes = 1;
     }
 
     /// <summary>Settings related to authorization.</summary>

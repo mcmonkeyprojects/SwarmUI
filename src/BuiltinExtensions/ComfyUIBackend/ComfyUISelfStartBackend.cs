@@ -529,14 +529,14 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     await install("insightface", "insightface");
                 }
-                if (numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2.0")) // Patch-hack because numpy v2 has incompatibilities with insightface
-                {
-                    await pipCall($"Remove numpy2+", $"uninstall -y numpy");
-                    await update("numpy", "numpy==1.26.4");
-                }
             }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
+                if (!libs.Contains("nunchaku") && numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2.0")) // Patch-hack because numpy v2 has incompatibilities with insightface
+                { // Note: sometimes 2+ is needed, so we carefully only remove for the first install of nunchaku, and allow it to be manually shifted back to 2+ after without undoing it
+                    await pipCall($"Remove numpy2+", $"uninstall -y numpy");
+                    await update("numpy", "numpy==1.26.4");
+                }
                 // Nunchaku devs seem very confused how to python package. So we gotta do some cursed install for them.
                 bool isValid = true;
                 string pyVers = "310";
@@ -615,7 +615,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("opencv_python_headless", "opencv-python-headless"),
         ("imageio_ffmpeg", "imageio-ffmpeg"),
         ("dill", "dill"),
-        ("omegaconf", "omegaconf") // some yolo models require this but ultralytics itself doesn't? wut?
+        ("omegaconf", "omegaconf"), // some yolo models require this but ultralytics itself doesn't? wut?
+        //("mesonpy", "meson-python") // Build requirement sometimes. Probably will be required when python 3.13 is stably supported.
     ];
 
     /// <summary>List of required python packages that need a specific version, in structure (string libFolder, string pipName, string rel, string version).</summary>
@@ -624,7 +625,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("av", "av", ">=", "14.2.0"),
         ("spandrel", "spandrel", ">=", "0.4.1"),
         ("transformers", "transformers", ">=", "4.37.2"),
-        ("ultralytics", "ultralytics", "==", "8.3.155") // This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
+        ("ultralytics", "ultralytics", "==", "8.3.155"), // This is hard-pinned due to the malicious 8.3.41 incident, only manual updates when needed until security practices are improved.
+        ("pip", "pip", ">=", "25.0") // Don't need latest, just can't be too old, this is mostly just here for a sanity check.
     ];
 
     public override async Task Shutdown()

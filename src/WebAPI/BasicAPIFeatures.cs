@@ -108,7 +108,7 @@ public static class BasicAPIFeatures
         return new JObject() { ["success"] = "true" };
     }
 
-    [API.APIDescription("Special route to create a new session ID. Must be called before any other API route. Also returns other fundamental user and server data.",
+    [API.APIDescription("Special route to create a new session ID. Must be called before any other API route. Also returns other fundamental user and server data.\nIntentionally no permission flag required, as permissions are not defined until you create a session.",
         """
             "session_id": "session_id",
             "user_id": "username",

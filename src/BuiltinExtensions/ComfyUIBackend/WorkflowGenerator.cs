@@ -111,6 +111,9 @@ public class WorkflowGenerator
     /// <summary>If true, the generator is currently working on the refiner stage.</summary>
     public bool IsRefinerStage = false;
 
+    /// <summary>If true, the generator is currently working on Image2Video.</summary>
+    public bool IsImageToVideo = false;
+
     /// <summary>If true, the main sampler should add noise. If false, it shouldn't.</summary>
     public bool MainSamplerAddNoise = true;
 
@@ -1684,6 +1687,51 @@ public class WorkflowGenerator
                 }
             }
         }
+        else if (IsWanVideo()) // TODO: Somehow check if this is actually a phantom model?
+        {
+            if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+            {
+                string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
+                JArray img = [img1, 0];
+                for (int i = 1; i < images.Count; i++)
+                {
+                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
+                    string batched = CreateNode("ImageBatch", new JObject()
+                    {
+                        ["image1"] = img,
+                        ["image2"] = new JArray() { img2, 0 }
+                    });
+                    img = [batched, 0];
+                }
+                double width = UserInput.GetImageWidth();
+                double height = UserInput.GetImageHeight();
+                if (IsRefinerStage)
+                {
+                    width *= UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                    height *= UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
+                }
+                // TODO: This node asking for latent info is wacky. Maybe have a reader node that grabs it from the current actual latent, so it's more plug-n-play-ish
+                string phantomNode = CreateNode("WanPhantomSubjectToVideo", new JObject()
+                {
+                    ["positive"] = pos,
+                    ["negative"] = neg,
+                    ["vae"] = FinalVae,
+                    ["images"] = img,
+                    ["width"] = (int)width,
+                    ["height"] = (int)height,
+                    ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 81),
+                    ["batch_size"] = 1
+                });
+                string negCombine = CreateNode("ConditioningCombine", new JObject()
+                {
+                    ["conditioning_1"] = new JArray() { phantomNode, 1 },
+                    ["conditioning_2"] = new JArray() { phantomNode, 2 }
+                });
+                pos = [phantomNode, 0];
+                neg = [negCombine, 0];
+                //latent = [phantomNode, 3]; // This latent is actually pretty stupid, it's just inline generating an empty latent for some reason? Ignore it.
+            }
+        }
         string emitAsCustomAdvanced(JArray guider, JArray latentImage)
         {
             // TODO: SamplerCustomAdvanced logic should be used for *all* models, not just ip2p
@@ -2093,6 +2141,7 @@ public class WorkflowGenerator
     /// <summary>Creates the execution logic for an Image-To-Video model.</summary>
     public void CreateImageToVideo(ImageToVideoGenInfo genInfo)
     {
+        IsImageToVideo = true;
         bool hadSpecialCond = false;
         string scaled = CreateNode("ImageScale", new JObject()
         {
@@ -2114,8 +2163,8 @@ public class WorkflowGenerator
             genInfo.Frames ??= 97;
             FinalLoadedModel = genInfo.VideoModel;
             (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
                 throw new SwarmReadableErrorException("LTX-V end-frame is TODO");
@@ -2158,8 +2207,8 @@ public class WorkflowGenerator
             genInfo.Frames ??= 121;
             FinalLoadedModel = genInfo.VideoModel;
             (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
                 throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
@@ -2195,8 +2244,8 @@ public class WorkflowGenerator
             genInfo.Frames ??= 53;
             FinalLoadedModel = genInfo.VideoModel;
             (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning($"<image:{FinalImageOut[0]},{FinalImageOut[1]}>{genInfo.Prompt}", clip, genInfo.VideoModel, true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
+            genInfo.PosCond = CreateConditioning($"<image:{FinalImageOut[0]},{FinalImageOut[1]}>{genInfo.Prompt}", clip, genInfo.VideoModel, true, isVideo: true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
             string i2vnode = CreateNode("HunyuanImageToVideo", new JObject()
             {
                 ["positive"] = genInfo.PosCond,
@@ -2220,8 +2269,8 @@ public class WorkflowGenerator
             genInfo.Frames ??= 73;
             FinalLoadedModel = genInfo.VideoModel;
             (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
             string latentNode = CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
                 ["width"] = genInfo.Width,
@@ -2249,8 +2298,8 @@ public class WorkflowGenerator
             genInfo.Frames ??= 81;
             FinalLoadedModel = genInfo.VideoModel;
             (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
             string targetName = "clip_vision_h.safetensors";
             RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161");
             string clipLoader = CreateNode("CLIPVisionLoader", new JObject()
@@ -2431,6 +2480,7 @@ public class WorkflowGenerator
             });
             FinalImageOut = [trimNode, 0];
         }
+        IsImageToVideo = false;
     }
 
     /// <summary>Creates an image preprocessor node.</summary>
@@ -2712,11 +2762,15 @@ public class WorkflowGenerator
     public record struct RegionHelper(JArray PartCond, JArray Mask);
 
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
-    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false)
+    public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false)
     {
         PromptRegion regionalizer = new(prompt);
         string globalPromptText = regionalizer.GlobalPrompt;
-        if (isRefiner && !string.IsNullOrWhiteSpace(regionalizer.RefinerPrompt))
+        if (isVideo && !string.IsNullOrWhiteSpace(regionalizer.VideoPrompt))
+        {
+            globalPromptText = regionalizer.VideoPrompt;
+        }
+        else if (isRefiner && !string.IsNullOrWhiteSpace(regionalizer.RefinerPrompt))
         {
             globalPromptText = $"{globalPromptText} {regionalizer.RefinerPrompt}";
         }

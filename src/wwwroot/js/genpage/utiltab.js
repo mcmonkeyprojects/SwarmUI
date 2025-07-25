@@ -320,7 +320,7 @@ class ModelDownloaderUtil {
                 callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url), null);
             }
             if (imgs.length > 0) {
-                imageToData(imgs[0].url, img => applyMetadata(img));
+                imageToData(imgs[0].url, img => applyMetadata(img), true);
             }
             else {
                 let videos = rawVersion.images ? rawVersion.images.filter(img => img.type == 'video') : [];
@@ -388,7 +388,7 @@ class ModelDownloaderUtil {
             let parts = splitWithTail(url.substring(this.hfPrefix.length), '/', 5); // org, repo, 'blob', branch, filepath
             if (parts.length < 5) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a specific file. Please use the path of a specific file inside the repo.";
-                this.button.disabled = false;
+                this.button.disabled = true;
                 return;
             }
             if (parts[4].endsWith('?download=true')) {
@@ -397,7 +397,7 @@ class ModelDownloaderUtil {
             }
             if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft')) {
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a safetensors file. Only safetensors can be auto-downloaded.";
-                this.button.disabled = false;
+                this.button.disabled = true;
                 return;
             }
             if (parts[2] == 'blob') {
@@ -481,7 +481,7 @@ class ModelDownloaderUtil {
                                         imgs[ind] = img;
                                         this.metadataZone.dataset.image = img;
                                         imgElem.src = img;
-                                    });
+                                    }, true);
                                 }
                             };
                             prevButton.onclick = () => { imgIndex--; updateImage(); };

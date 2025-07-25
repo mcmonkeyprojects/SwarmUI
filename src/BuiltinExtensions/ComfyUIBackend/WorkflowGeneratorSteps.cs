@@ -105,6 +105,10 @@ public class WorkflowGeneratorSteps
             {
                 (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(1, g.LoadingModel, g.LoadingClip);
             }
+            else if (g.IsImageToVideo)
+            {
+                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(2, g.LoadingModel, g.LoadingClip);
+            }
         }, -10);
         AddModelGenStep(g =>
         {
@@ -225,6 +229,7 @@ public class WorkflowGeneratorSteps
             if (g.UserInput.TryGet(ComfyUIBackendExtension.TeaCacheMode, out string teaCacheMode) && teaCacheMode != "disabled")
             {
                 double teaCacheThreshold = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheThreshold, 0.25);
+                double teaCacheStart = g.UserInput.Get(ComfyUIBackendExtension.TeaCacheStart, 0);
                 if (teaCacheMode == "base gen only" && g.LoadingModelType != "Base")
                 {
                     // wrong step, skip
@@ -243,7 +248,7 @@ public class WorkflowGeneratorSteps
                             ["model_type"] = "flux",
                             ["rel_l1_thresh"] = teaCacheThreshold,
                             ["max_skip_steps"] = 3,
-                            ["start_percent"] = 0,
+                            ["start_percent"] = teaCacheStart,
                             ["end_percent"] = 1,
                             ["cache_device"] = "cuda"
                         });
@@ -294,7 +299,7 @@ public class WorkflowGeneratorSteps
                         ["model_type"] = type,
                         ["rel_l1_thresh"] = teaCacheThreshold,
                         ["max_skip_steps"] = 3,
-                        ["start_percent"] = 0,
+                        ["start_percent"] = teaCacheStart,
                         ["end_percent"] = 1,
                         ["cache_device"] = "cuda"
                     });
@@ -1337,45 +1342,73 @@ public class WorkflowGeneratorSteps
                 for (int i = 0; i < parts.Length; i++)
                 {
                     PromptRegion.Part part = parts[i];
-                    string segmentNode;
-                    if (part.DataText.StartsWith("yolo-"))
+                    string[] segmentSections = part.DataText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    string segmentNode = null;
+                    foreach (string dataText in segmentSections)
                     {
-                        string fullname = part.DataText.After("yolo-");
-                        string[] modelParts = fullname.Split(':');
-                        fullname = modelParts[0];
-                        string classFilter = modelParts.Length > 1 ? modelParts[1] : "";
-                        (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
-                        if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
+                        string newSegmentNode = null;
+                        if (dataText.StartsWith("yolo-"))
                         {
-                            fullname = mname;
+                            string fullname = dataText.After("yolo-");
+                            string[] modelParts = fullname.Split(':');
+                            fullname = modelParts[0];
+                            string classFilter = modelParts.Length > 1 ? modelParts[1] : "";
+                            (string mname, string indexText) = fullname.BeforeAndAfterLast('-');
+                            if (!string.IsNullOrWhiteSpace(indexText) && int.TryParse(indexText, out int index))
+                            {
+                                fullname = mname;
+                            }
+                            else
+                            {
+                                index = 0;
+                            }
+                            if (part.Strength > 0.999)
+                            {
+                                Logs.Warning($"Yolo confidence threshold is set to 1. This was recommended syntax before yolo thresholds were supported, but is no longer valid. Swarm will automatically reset the value to default (0.25) instead.");
+                                part.Strength = 0.25;
+                            }
+                            newSegmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
+                            {
+                                ["image"] = g.FinalImageOut,
+                                ["model_name"] = fullname,
+                                ["index"] = index,
+                                ["class_filter"] = classFilter,
+                                ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
+                                ["threshold"] = Math.Abs(part.Strength)
+                            });
                         }
                         else
                         {
-                            index = 0;
+                            newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                            {
+                                ["images"] = g.FinalImageOut,
+                                ["match_text"] = dataText,
+                                ["threshold"] = Math.Abs(part.Strength)
+                            });
                         }
-                        if (part.Strength > 0.999)
+                        if (segmentSections.Length > 1 && g.UserInput.Get(T2IParamTypes.SaveSegmentMask, false))
                         {
-                            Logs.Warning($"Yolo confidence threshold is set to 1. This was recommended syntax before yolo thresholds were supported, but is no longer valid. Swarm will automatically reset the value to default (0.25) instead.");
-                            part.Strength = 0.25;
+                            string imageNode = g.CreateNode("MaskToImage", new JObject()
+                            {
+                                ["mask"] = new JArray() { newSegmentNode, 0 }
+                            });
+                            g.CreateImageSaveNode([imageNode, 0], g.GetStableDynamicID(50000, 0));
                         }
-                        segmentNode = g.CreateNode("SwarmYoloDetection", new JObject()
+                        if (segmentNode is null)
                         {
-                            ["image"] = g.FinalImageOut,
-                            ["model_name"] = fullname,
-                            ["index"] = index,
-                            ["class_filter"] = classFilter,
-                            ["sort_order"] = g.UserInput.Get(T2IParamTypes.SegmentSortOrder, "left-right"),
-                            ["threshold"] = Math.Abs(part.Strength)
-                        });
-                    }
-                    else
-                    {
-                        segmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                            segmentNode = newSegmentNode;
+                        }
+                        else
                         {
-                            ["images"] = g.FinalImageOut,
-                            ["match_text"] = part.DataText,
-                            ["threshold"] = Math.Abs(part.Strength)
-                        });
+                            segmentNode = g.CreateNode("MaskComposite", new JObject()
+                            {
+                                ["destination"] = new JArray() { segmentNode, 0 },
+                                ["source"] = new JArray() { newSegmentNode, 0 },
+                                ["operation"] = "add",
+                                ["x"] = 0,
+                                ["y"] = 0
+                            });
+                        }
                     }
                     if (part.Strength < 0)
                     {
@@ -1824,6 +1857,7 @@ public class WorkflowGeneratorSteps
             g.RunOnNodesOfClass("VAEDecode", fixDecode);
             g.RunOnNodesOfClass("VAEDecodeTiled", fixDecode);
             g.RemoveClassIfUnused("VAEEncode");
+            g.RemoveClassIfUnused("LTXVConditioning");
             g.RemoveClassIfUnused("CLIPTextEncode");
             g.RemoveClassIfUnused("CLIPTextEncodeSDXL");
             g.RemoveClassIfUnused("SwarmClipTextEncodeAdvanced");

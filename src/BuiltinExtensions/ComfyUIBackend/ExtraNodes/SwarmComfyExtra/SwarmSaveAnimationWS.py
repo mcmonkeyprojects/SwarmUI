@@ -1,10 +1,10 @@
+import comfy, folder_paths, io, struct, subprocess, os, random, sys, time
 from PIL import Image
 import numpy as np
 from server import PromptServer, BinaryEventTypes
-import io, struct, subprocess, os, random, sys, time
 from imageio_ffmpeg import get_ffmpeg_exe
-import folder_paths
 
+SPECIAL_ID = 12345
 VIDEO_ID = 12346
 FFMPEG_PATH = get_ffmpeg_exe()
 
@@ -33,6 +33,12 @@ class SwarmSaveAnimationWS:
     def save_images(self, images, fps, lossless, quality, method, format):
         method = self.methods.get(method)
         if images.shape[0] == 0:
+            return { }
+        if images.shape[0] == 1:
+            pbar = comfy.utils.ProgressBar(SPECIAL_ID)
+            i = 255.0 * images[0].cpu().numpy()
+            img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+            pbar.update_absolute(0, SPECIAL_ID, ("PNG", img, None))
             return { }
 
         out_img = io.BytesIO()

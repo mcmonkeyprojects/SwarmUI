@@ -14,6 +14,23 @@ public class T2IParamInput
     /// <summary>Parameter IDs that must be loaded early on, eg extracted from presets in prompts early. Primarily things that affect backend selection.</summary>
     public static readonly string[] ParamsMustLoadEarly = ["model", "images", "internalbackendtype", "exactbackendid"];
 
+    /// <summary>Lock in valid seeds to this input (ie remove '-1' seed values).</summary>
+    public void LockSeeds()
+    {
+        if (!RawOriginalSeed.HasValue)
+        {
+            RawOriginalSeed = Get(T2IParamTypes.Seed, -1);
+        }
+        if (!TryGet(T2IParamTypes.Seed, out long seed) || seed == -1)
+        {
+            Set(T2IParamTypes.Seed, Random.Shared.Next());
+        }
+        if (TryGet(T2IParamTypes.VariationSeed, out long varSeed) && varSeed == -1)
+        {
+            Set(T2IParamTypes.VariationSeed, Random.Shared.Next());
+        }
+    }
+
     /// <summary>Special handlers for any special logic to apply post-loading a param input.</summary>
     public static List<Action<T2IParamInput>> SpecialParameterHandlers =
     [
@@ -27,21 +44,7 @@ public class T2IParamInput
         },
         input =>
         {
-            if (!input.RawOriginalSeed.HasValue)
-            {
-                input.RawOriginalSeed = input.Get(T2IParamTypes.Seed, -1);
-            }
-            if (!input.TryGet(T2IParamTypes.Seed, out long seed) || seed == -1)
-            {
-                input.Set(T2IParamTypes.Seed, Random.Shared.Next());
-            }
-        },
-        input =>
-        {
-            if (input.TryGet(T2IParamTypes.VariationSeed, out long seed) && seed == -1)
-            {
-                input.Set(T2IParamTypes.VariationSeed, Random.Shared.Next());
-            }
+            input.LockSeeds();
         },
         input =>
         {

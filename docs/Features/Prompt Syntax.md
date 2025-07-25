@@ -144,14 +144,19 @@
         - store your models in `(Swarm)/Models/yolov8`
         - Examples of valid YOLOv8 Segmentation models here: https://github.com/hben35096/assets/releases/
         - You can also do `yolo-modelnamehere-1` to grab exactly match #1, and `-2` for match #2, and etc.
-            - You can do this all in one prompt to individual refine specific faces separately
-            - Without this, if there are multiple people, it will do a bulk segmented refine on all faces combined
-            - Note the index order is sorted from leftmost detection to right
+            - You can do this all in one prompt to individual refine specific faces separately.
+            - Without this, if there are multiple people, it will do a bulk segmented refine on all faces combined.
+            - Note the index order is sorted from leftmost detection to right.
         - To control the creativity/threshold with a yolo model just append `,<creativity>,<threshold>`, for example `<segment:yolo-face_yolov8m-seg_60.pt-1,0.8,0.25>` sets a `0.8` creativity and `0.25` threshold.
             - Note the default "confidence threshold" for Yolo models is `0.25`, which is different than is often used with ClipSeg, and does not have a "max threshold" like ClipSeg does.
         - If you have a yolo model with multiple supported classes, you can filter specific classes by appending `:<classes>:` to the model name where `<classes>` is a comma-separated list of class IDs or names, e.g., `<segment:yolo-modelnamehere:0,apple,2:,0.8,0.25>`
-    - There's an advanced parameter under `Segment Refining` named `Segment Model` to customize the base model used for segment processing
-    - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask
+    - You can also combine multiple areas into a single segment to refine them as a single group.
+        - Separate the areas with `|` in `texthere`.
+        - For example, `<segment:face|hair>` will find all the faces and hair in the image and refine them as a single group.
+        - This works with YOLOv8 models as well.
+            - `<segment:yolo-face_yolov8m-seg_60.pt | yolo-hair_yolov8m-seg_60.pt | fingers>` will refine the group of faces and hair (found by YOLO) and fingers (found by CLIPSeg) as a single group.
+    - There's an advanced parameter under `Segment Refining` named `Segment Model` to customize the base model used for segment processing.
+    - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask.
 
 ## Clear (Transparency)
 
@@ -199,9 +204,15 @@
     - The automatic inpaint can be helpful for improving quality of objects, especially for small regions, but also might produce unexpected results.
     - Objects may use global feature changes, such as `<lora:` syntax input to apply a lora to the object in the inpaint phase.
 
+## Video
+
+- When using image2video, you can use `<video>` to supply an alternate prompt for the image-to-video generation.
+    - For example, `a photo of a cat <video> the cat walks forward`
+
 ## Video Extend
 
 - You can use `<extend:frames>` to extend a video by a given number of frames using an Image-To-Video model.
+    - Note: This is not a very advanced or capable system currently. This is an experimental feature that only some models will respond decently to, and it will almost always have quality issues.
     - For example, `<extend:33>` will extend the video by 33 frames.
     - Use the `Video Extend` parameter group to configure values for this. At least `Video Extend Model` must be set.
     - Must set Overlap less than 1/3rd of the extend frame count.

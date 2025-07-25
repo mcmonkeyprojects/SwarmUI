@@ -76,7 +76,7 @@ class PromptTabCompleteClass {
                     return this.getOrderedMatches(yolomodels.map(m => `yolo-${m}`), prefixLow);
                 }
             }
-            return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nor format "yolo-<model>-1" to get specifically the first result from a YOLOv8 match list.', '\n Additionally, you can apply a class filter by appending "yolo-<model>:<class_ids>:" where <class_ids> is a comma-separated list of class IDs or names to filter the detection results.'];
+            return ['\nSpecify before the ">" some text to match against in the image, like "<segment:face>".', '\nCan also do "<segment:text,creativity,threshold>" eg "face,0.6,0.5" where creativity is InitImageCreativity, and threshold is mask matching threshold for CLIP-Seg.', '\nYou can use a negative threshold value like "<segment:face,0.6,-0.5>" to invert the mask.', '\nYou may use the "yolo-" prefix to use a YOLOv8 seg model,', '\nFor more advanced usages and a link to relevant docs, click the "+" button next to the prompt box, then "Auto Segment Refinement".'];
         });
         this.registerPrefix('setvar[var_name]', 'Store text for reference later in the prompt', (prefix) => { 
             return ['\nSave the content of the tag into the named variable. eg "<setvar[colors]: red and blue>", then use like "<var:colors>"', '\nVariables can include the results of other tags. eg "<setvar[expression]: <random: smiling|frowning|crying>>"', '\nReference stored values later in the prompt with the <var:> tag', '\nThe setvar tag emits a copy the variable value in place. You can not do this with eg "<setvar[colors,false]: red and blue>"'];
@@ -125,6 +125,9 @@ class PromptTabCompleteClass {
             return [];
         }, true);
         this.registerPrefix('refiner', 'Add a section of prompt text that is only used for the Refine/Upscale pass.', (prefix) => {
+            return [];
+        }, true);
+        this.registerPrefix('video', 'Add a section of prompt text that replaces the prompt for the image-to-video generation pass.', (prefix) => {
             return [];
         }, true);
         this.registerPrefix('trigger', "Automatically fills with the current model or LoRA's trigger phrase(s), if any.", (prefix) => {

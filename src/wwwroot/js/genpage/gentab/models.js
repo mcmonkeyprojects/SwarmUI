@@ -554,7 +554,7 @@ class ModelBrowserWrapper {
             let match = wildcardHelpers.matchWildcard(this.promptBox.value, model.data.name);
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
-            let searchable = `${model.data.name}, ${description}`;
+            let searchable = `${model.data.name}, ${name}, ${raw}`;
             return { name, description, buttons, className, searchable, 'image': model.data.image, display, detail_list };
         }
         let isCorrect = this.subType == 'Stable-Diffusion' || isModelArchCorrect(model.data);
@@ -562,6 +562,7 @@ class ModelBrowserWrapper {
         if (!isCorrect && this.subType != 'Stable-Diffusion') {
             interject = `<b>(Incompatible with current model!)</b><br>`;
         }
+        let searchableAdded = '';
         if (model.data.is_supported_model_format) {
             let getLine = (label, val) => `<b>${label}:</b> <span>${val == null ? "(Unset)" : safeHtmlOnly(val)}</span><br>`;
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
@@ -572,6 +573,7 @@ class ModelBrowserWrapper {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
             }
             description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
+            searchableAdded = `${display}, ${isStarred ? 'starred' : 'unstarred'}, Title: ${model.data.title}, Resolution: ${model.data.standard_width}x${model.data.standard_height}, Author: ${model.data.author}, Type: ${model.data.class}, Usage Hint: ${model.data.usage_hint}, Trigger Phrase: ${model.data.trigger_phrase}, Description: ${model.data.description}`;
             let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
             detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
             if (model.data.local && permissions.hasPermission('edit_model_metadata')) {
@@ -592,7 +594,7 @@ class ModelBrowserWrapper {
             detail_list.push(`(Metadata only available for 'safetensors' models.)`, `<b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.`);
         }
         let className = this.getClassFor(model, isCorrect);
-        let searchable = `${model.data.name}, ${description}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
+        let searchable = `${model.data.name}, ${searchableAdded}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
         return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display, detail_list };
     }
 
