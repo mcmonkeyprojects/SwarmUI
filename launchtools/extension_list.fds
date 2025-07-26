@@ -140,3 +140,11 @@ NegPip:
     license: MIT
     tags:
     - parameters
+
+DAAMSwarm:
+    author: jakstein
+    description: Provides cross-attention heatmap visualization for Stable Diffusion models.
+    url: https://github.com/jakstein/DAAMSwarm
+    license: MIT
+    tags:
+    - parameters
