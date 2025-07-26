@@ -2058,15 +2058,20 @@ public class WorkflowGenerator
         });
         FinalModel = [diffNode, 0];
     }
-    public void RequireVisionModel(string name, string url, string hash)
+    public string RequireVisionModel(string name, string url, string hash, T2IRegisteredParam<T2IModel> param = null)
     {
+        if (param is not null && UserInput.TryGet(param, out T2IModel visModel))
+        {
+            return visModel.Name;
+        }
         if (VisionModelsValid.ContainsKey(name))
         {
-            return;
+            return name;
         }
         string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0], name);
         DownloadModel(name, filePath, url, hash);
         VisionModelsValid.TryAdd(name, name);
+        return name;
     }
 
     /// <summary>Do a video frame interpolation.</summary>
@@ -2301,7 +2306,7 @@ public class WorkflowGenerator
             genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
             genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
             string targetName = "clip_vision_h.safetensors";
-            RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161");
+            targetName = RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161", T2IParamTypes.ClipVisionModel);
             string clipLoader = CreateNode("CLIPVisionLoader", new JObject()
             {
                 ["clip_name"] = targetName
@@ -2402,7 +2407,7 @@ public class WorkflowGenerator
                 });
                 genInfo.Model = [trtloader, 0];
                 string fname = "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors";
-                RequireVisionModel(fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030");
+                fname = RequireVisionModel(fname, "https://huggingface.co/h94/IP-Adapter/resolve/main/models/image_encoder/model.safetensors", "6ca9667da1ca9e0b0f75e46bb030f7e011f44f86cbfb8d5a36590fcd7507b030", T2IParamTypes.ClipVisionModel);
                 string cliploader = CreateNode("CLIPVisionLoader", new JObject()
                 {
                     ["clip_name"] = fname
@@ -2653,7 +2658,7 @@ public class WorkflowGenerator
             (string prefix, string content) = prompt.BeforeAndAfter('>');
             (string imgNodeId, string imgNodePart) = prefix.After(':').BeforeAndAfter(',');
             string targetName = "llava_llama3_vision.safetensors";
-            RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors", "7d0f89bf7860815f3a994b9bdae8ebe3a29c161825d03ca9262cb13b0c973aa6");
+            targetName = RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors", "7d0f89bf7860815f3a994b9bdae8ebe3a29c161825d03ca9262cb13b0c973aa6", T2IParamTypes.ClipVisionModel);
             string clipLoader = CreateNode("CLIPVisionLoader", new JObject()
             {
                 ["clip_name"] = targetName
