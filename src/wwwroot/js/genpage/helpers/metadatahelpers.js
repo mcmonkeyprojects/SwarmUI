@@ -163,6 +163,7 @@ function parseMetadata(data, callback) {
 }
 
 let metadataKeyFormatCleaners = [];
+let promptCidMatcher = new RegExp('\<(.*)//cid=\\d+>', 'g');
 
 function formatMetadata(metadata) {
     if (!metadata) {
@@ -229,7 +230,15 @@ function formatMetadata(metadata) {
         delete data.sui_image_params.swarm_version;
     }
     if ('prompt' in data.sui_image_params && data.sui_image_params.prompt) {
-        appendObject({ 'prompt': data.sui_image_params.prompt });
+        let prompt = data.sui_image_params.prompt;
+        if ('sui_extra_data' in data && 'original_prompt' in data.sui_extra_data) {
+            let originalPrompt = data.sui_extra_data.original_prompt;
+            if (prompt.replaceAll(promptCidMatcher, '<$1>') == originalPrompt) {
+                prompt = originalPrompt;
+                delete data.sui_extra_data.original_prompt;
+            }
+        }
+        appendObject({ 'prompt': prompt });
         result += '\n<br>';
         delete data.sui_image_params.prompt;
     }
