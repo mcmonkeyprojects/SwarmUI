@@ -163,7 +163,7 @@ function parseMetadata(data, callback) {
 }
 
 let metadataKeyFormatCleaners = [];
-let promptCidMatcher = new RegExp('\<(.*)//cid=\\d+>', 'g');
+let promptCidMatcher = new RegExp('\<(.*?)//cid=\\d+>', 'g');
 
 function formatMetadata(metadata) {
     if (!metadata) {
