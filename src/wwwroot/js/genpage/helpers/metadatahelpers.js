@@ -213,14 +213,14 @@ function formatMetadata(metadata) {
                             }
                         }
                     }
+                    result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtmlNoBr(keyTitle)}">${escapeHtml(key)}</span>: `;
                     if (typeof val == 'object') {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name">${escapeHtml(key)}</span>: `;
                         appendObject(val);
-                        result += `</span>, `;
                     }
                     else {
-                        result += `<span class="param_view_block tag-text tag-type-${hash}${added}"><span class="param_view_name" title="${escapeHtmlNoBr(keyTitle)}">${escapeHtml(key)}</span>: <span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtmlNoBr(title)}">${escapeHtml(`${val}`)}</span>${extras}</span>, `;
+                        result += `<span class="param_view tag-text-soft tag-type-${hash}" title="${escapeHtmlNoBr(title)}">${escapeHtml(`${val}`)}</span>`;
                     }
+                    result += `${extras}</span>, `;
                 }
             }
         }
@@ -246,6 +246,20 @@ function formatMetadata(metadata) {
         appendObject({ 'negativeprompt': data.sui_image_params.negativeprompt });
         result += '\n<br>';
         delete data.sui_image_params.negativeprompt;
+    }
+    if ('loras' in data.sui_image_params && 'loraweights' in data.sui_image_params) {
+        let loras = data.sui_image_params.loras;
+        let loraWeights = data.sui_image_params.loraweights;
+        let simpleLoras = [];
+        // TODO: Maybe look up some metadata on the models here?
+        for (let i = 0; i < loras.length; i++) {
+            let lora = loras[i];
+            let weight = loraWeights[i];
+            simpleLoras.push(`${lora} : ${weight}`);
+        }
+        delete data.sui_image_params.loras;
+        delete data.sui_image_params.loraweights;
+        data.sui_image_params['loras'] = simpleLoras;
     }
     appendObject(data.sui_image_params);
     result += '\n<br>';
