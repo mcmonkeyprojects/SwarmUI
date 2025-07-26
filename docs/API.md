@@ -16,7 +16,7 @@ Some API routes, designated with a `WS` suffix, take WebSocket connections. Usua
 
 All API routes, with the exception of `GetNewSession`, require a `session_id` input in the JSON. Naturally, call `GetNewSession` to get a session ID to use.
 
-If the Swarm instance is configured to require accounts, you must feed a `cookie` named `swarm_user_token` with the value of a token associated with a valid SwarmUI account gotten from the UI (or direct API calls from an admin API handler).
+If the Swarm instance is configured to require accounts, you must feed a `cookie` named `swarm_token` with the value of a token associated with a valid SwarmUI account gotten from the UI (or direct API calls from an admin API handler).
 
 ### Errors
 
