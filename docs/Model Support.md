@@ -282,8 +282,9 @@ Parameters and usage is the same as any other normal model.
     - Boosting the `Flux Guidance Scale` way up to eg `30` may improve quality
 - For "**Kontext**" (edit model), it works like other edit models.
     - Model download here <https://huggingface.co/Comfy-Org/flux1-kontext-dev_ComfyUI/blob/main/split_files/diffusion_models/flux1-dev-kontext_fp8_scaled.safetensors>
-    - Or the official BFL 16 bit upload <https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev>
-    - Or some GGUFs here <https://huggingface.co/QuantStack/FLUX.1-Kontext-dev-GGUF/tree/main>
+        - Or the nunchaku version here <https://huggingface.co/mit-han-lab/nunchaku-flux.1-kontext-dev/tree/main>
+        - Or the official BFL 16 bit upload <https://huggingface.co/black-forest-labs/FLUX.1-Kontext-dev>
+        - Or some GGUFs here <https://huggingface.co/QuantStack/FLUX.1-Kontext-dev-GGUF/tree/main>
     - It's a regular model file, it goes in the regular `diffusion_models` folder same as other flux models.
     - You will have to manually edit the architecture to be `Flux.1 Kontext Dev`, it misdetects by default
         - Click the `☰` hamburger menu on the model, then `Edit Metadata`, then select the `Architecture` as `Flux.1 Kontext Dev`, then hit save
