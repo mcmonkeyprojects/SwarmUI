@@ -73,9 +73,11 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 # Installing on Linux
 
 - Install `git`, `python3` via your OS package manager if they are not already installed (make sure to include `pip` and `venv` on distros that do not include them in python directly)
-    - For example, on recent Ubuntu versions, `sudo apt install git python3-pip python3-venv`
+    - For example, on some Ubuntu versions, `sudo apt install git python3-pip python3-venv`, or you may need <https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa>
+    - You'll want Python 3.11. Things should also work fine with 3.10 or 3.12. Do not use 3.13.
+    - Make sure `python3.11 -m pip --version` returns a valid package
 - Download [the install-linux.sh file](https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh), store it somewhere you want to install at, and run it
-    - If you like terminals, you can open a terminal to the folder and run the following commands:
+    - If you like terminals, you can open a terminal to the folder and run the following commands: (Yes this link is still current):
         - `wget https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh -O install-linux.sh`
         - `chmod +x install-linux.sh`
 - Run the `./install-linux.sh` script, it will install everything for you and eventually open the webpage in your browser.
@@ -87,8 +89,9 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 # Alternate Manual Linux Install
 
 - Install `git`, `python3` via your OS package manager if they are not already installed (make sure to include `pip` and `venv` on distros that do not include them in python directly)
-    - For example, on recent Ubuntu versions, `sudo apt install git python3-pip python3-venv`
+    - For example, on some Ubuntu versions, `sudo apt install git python3-pip python3-venv`, or you may need <https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa>
     - You'll want Python 3.11. Things should also work fine with 3.10 or 3.12. Do not use 3.13.
+    - Make sure `python3.11 -m pip --version` returns a valid package
 - Install DotNET 8 using the instructions at https://dotnet.microsoft.com/en-us/download/dotnet/8.0 (you need `dotnet-sdk-8.0`, as that includes all relevant sub-packages)
     - Some users [have said](https://github.com/Stability-AI/StableSwarmUI/pull/6) that certain Linux distros expect `aspnet-runtime` to be installed separately
 - Open a shell terminal and `cd` to a directory you want to install into
