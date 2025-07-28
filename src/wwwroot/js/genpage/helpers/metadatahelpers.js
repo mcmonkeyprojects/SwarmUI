@@ -71,6 +71,9 @@ function remapMetadataKeys(metadata, keymap) {
 const imageMetadataKeys = ['parameters', 'Parameters', 'userComment', 'UserComment', 'model', 'Model', 'prompt', 'Prompt'];
 
 function interpretMetadata(metadata) {
+    if (Array.isArray(metadata)) {
+        metadata = new Uint8Array(metadata);
+    }
     if (metadata instanceof Uint8Array) {
         let prefix = metadata.slice(0, 8);
         let data = metadata.slice(8);
@@ -125,17 +128,15 @@ function interpretMetadata(metadata) {
 }
 
 function parseMetadata(data, callback) {
-    exifr.parse(data).then(parsed => {
-        if (parsed && imageMetadataKeys.some(key => key in parsed)) {
-            return parsed;
-        }
-        return exifr.parse(data, imageMetadataKeys);
-    }).then(parsed => {
+    if (data instanceof Image) {
+        data = data.src;
+    }
+    fetch(data).then(r => r.blob()).then(b => b.arrayBuffer()).then(buffer => ExifReader.load(buffer, {async: true})).then(parsed => {
         let metadata = null;
         if (parsed) {
             for (let key of imageMetadataKeys) {
                 if (key in parsed) {
-                    metadata = parsed[key];
+                    metadata = parsed[key].value;
                     break;
                 }
             }
