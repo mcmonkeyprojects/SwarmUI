@@ -1189,8 +1189,20 @@ public class WorkflowGeneratorSteps
                 if (g.UserInput.TryGet(T2IParamTypes.RefinerModel, out T2IModel altRefineModel) && altRefineModel is not null)
                 {
                     refineModel = altRefineModel;
-                    modelMustReencode = refineModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1-refiner" || baseModel.ModelClass?.CompatClass != "stable-diffusion-xl-v1";
+                    modelMustReencode = true;
+                    if (refineModel.ModelClass?.CompatClass == baseModel.ModelClass?.CompatClass)
+                    {
+                        modelMustReencode = false;
+                    }
+                    if (refineModel.ModelClass?.CompatClass == "stable-diffusion-xl-v1-refiner" && baseModel.ModelClass?.CompatClass == "stable-diffusion-xl-v1")
+                    {
+                        modelMustReencode = false;
+                    }
                     loaderNodeId = "20";
+                }
+                if (g.UserInput.TryGet(T2IParamTypes.RefinerVAE, out _))
+                {
+                    modelMustReencode = true;
                 }
                 g.NoVAEOverride = refineModel.ModelClass?.CompatClass != baseModel.ModelClass?.CompatClass;
                 g.FinalLoadedModel = refineModel;

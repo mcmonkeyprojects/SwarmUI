@@ -708,7 +708,7 @@ public class WorkflowGenerator
             return T2VFPSOverride;
         }
         int fpsDefault = 24;
-        if (IsWanVideo()) // TODO: Detect CausVid (24 fps LoRA) somehow?
+        if (IsWanVideo()) // TODO: Detect CausVid (24 fps LoRA) and/or Wan 2.2 (also 24fps) somehow?
         {
             fpsDefault = 16;
         }
