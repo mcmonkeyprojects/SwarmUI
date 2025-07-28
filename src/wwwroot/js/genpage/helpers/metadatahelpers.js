@@ -68,8 +68,6 @@ function remapMetadataKeys(metadata, keymap) {
     return metadata;
 }
 
-const imageMetadataKeys = ['prompt', 'Prompt', 'parameters', 'Parameters', 'userComment', 'UserComment', 'model', 'Model'];
-
 function interpretMetadata(metadata) {
     if (metadata instanceof Uint8Array) {
         let prefix = metadata.slice(0, 8);
@@ -125,41 +123,41 @@ function interpretMetadata(metadata) {
 }
 
 function parseMetadata(data, callback) {
-    exifr.parse(data).then(parsed => {
-        if (parsed && imageMetadataKeys.some(key => key in parsed)) {
-            return parsed;
-        }
-        return exifr.parse(data, imageMetadataKeys);
-    }).then(parsed => {
+    try {
+        const parsed = ExifReader.load(data);
         let metadata = null;
         if (parsed) {
-            if (parsed.parameters) {
-                metadata = parsed.parameters;
+            if (parsed.parameters && parsed.parameters.description) {
+                metadata = parsed.parameters.description;
             }
-            else if (parsed.Parameters) {
-                metadata = parsed.Parameters;
+            else if (parsed.Parameters && parsed.Parameters.description) {
+                metadata = parsed.Parameters.description;
             }
-            else if (parsed.prompt) {
-                metadata = parsed.prompt;
+            else if (parsed.prompt && parsed.prompt.description) {
+                metadata = parsed.prompt.description;
             }
-            else if (parsed.UserComment) {
-                metadata = parsed.UserComment;
+            else if (parsed.Prompt && parsed.Prompt.description) {
+                metadata = parsed.Prompt.description;
             }
-            else if (parsed.userComment) {
-                metadata = parsed.userComment;
+            else if (parsed.UserComment && parsed.UserComment.value) {
+                metadata = new Uint8Array(parsed.UserComment.value);
             }
-            else if (parsed.model) {
-                metadata = parsed.model;
+            else if (parsed.userComment && parsed.userComment.value) {
+                metadata = new Uint8Array(parsed.userComment.value);
             }
-            else if (parsed.Model) {
-                metadata = parsed.Model;
+            else if (parsed.model && parsed.model.description) {
+                metadata = parsed.model.description;
+            }
+            else if (parsed.Model && parsed.Model.description) {
+                metadata = parsed.Model.description;
             }
         }
         metadata = interpretMetadata(metadata);
         callback(data, metadata);
-    }).catch(err => {
+    }
+    catch (err) {
         callback(data, null);
-    });
+    }
 }
 
 let metadataKeyFormatCleaners = [];

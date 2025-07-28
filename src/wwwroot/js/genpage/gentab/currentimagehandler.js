@@ -463,7 +463,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
 
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
-    let isCurImgFocused = document.activeElement && 
+    let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');
@@ -600,7 +600,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         let image = new Image();
         image.onload = () => {
             if (!metadata) {
-                parseMetadata(image, (data, parsedMetadata) => {
+                parseMetadata(buffer, (data, parsedMetadata) => {
                     setCurrentImage(src, parsedMetadata, batchId, previewGrow, false, false);
                 });
             }
@@ -997,15 +997,20 @@ function imageInputHandler() {
             let file = e.dataTransfer.files[0];
             if (file.type.startsWith('image/')) {
                 let reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = (loadEvent) => {
+                    const buffer = loadEvent.target.result;
+                    const blob = new Blob([buffer], { type: file.type });
+                    const url = URL.createObjectURL(blob);
                     try {
-                        parseMetadata(e.target.result, (data, metadata) => { setCurrentImage(data, metadata); });
+                        parseMetadata(buffer, (data, metadata) => {
+                            setCurrentImage(url, metadata);
+                        });
                     }
-                    catch (e) {
-                        setCurrentImage(e.target.result, null);
+                    catch (err) {
+                        setCurrentImage(url, null);
                     }
                 }
-                reader.readAsDataURL(file);
+                reader.readAsArrayBuffer(file);
             }
         }
     });
