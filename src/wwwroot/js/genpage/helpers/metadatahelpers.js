@@ -68,7 +68,7 @@ function remapMetadataKeys(metadata, keymap) {
     return metadata;
 }
 
-const imageMetadataKeys = ['prompt', 'Prompt', 'parameters', 'Parameters', 'userComment', 'UserComment', 'model', 'Model'];
+const imageMetadataKeys = ['parameters', 'Parameters', 'userComment', 'UserComment', 'model', 'Model', 'prompt', 'Prompt'];
 
 function interpretMetadata(metadata) {
     if (metadata instanceof Uint8Array) {
@@ -133,26 +133,11 @@ function parseMetadata(data, callback) {
     }).then(parsed => {
         let metadata = null;
         if (parsed) {
-            if (parsed.parameters) {
-                metadata = parsed.parameters;
-            }
-            else if (parsed.Parameters) {
-                metadata = parsed.Parameters;
-            }
-            else if (parsed.prompt) {
-                metadata = parsed.prompt;
-            }
-            else if (parsed.UserComment) {
-                metadata = parsed.UserComment;
-            }
-            else if (parsed.userComment) {
-                metadata = parsed.userComment;
-            }
-            else if (parsed.model) {
-                metadata = parsed.model;
-            }
-            else if (parsed.Model) {
-                metadata = parsed.Model;
+            for (let key of imageMetadataKeys) {
+                if (key in parsed) {
+                    metadata = parsed[key];
+                    break;
+                }
             }
         }
         metadata = interpretMetadata(metadata);
