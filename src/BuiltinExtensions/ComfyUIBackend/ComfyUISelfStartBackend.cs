@@ -348,8 +348,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     string path = Path.GetFullPath(Settings.StartScript).Replace('\\', '/').BeforeLast('/');
                     AddLoadStatus("Running git pull in comfy folder...");
-                    string response = await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", path);
-                    AddLoadStatus($"Comfy git pull response: {response.Trim()}");
+                    string response = (await Utilities.RunGitProcess(autoUpd == "aggressive" ? "pull --autostash" : "pull", path)).Trim();
+                    AddLoadStatus($"Comfy git pull response: {response}");
                     if (autoUpd == "aggressive")
                     {
                         // Backup because multiple users have wound up off master branch sometimes, aggressive should push back to master so it's repaired by next startup
@@ -370,6 +370,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                             string repullResponse = await Utilities.RunGitProcess("pull --autostash", path);
                             AddLoadStatus($"Comfy git re-pull response: {repullResponse.Trim()}");
                         }
+                    }
+                    else if (response.Contains("You are not currently on a branch"))
+                    {
+                        Logs.Warning($"ComfyUI auto-update git pulled failed with a 'not currently on a branch' message. You will be stuck on an outdated ComfyUI version. To fix this, please go to Server->Backends->Edit your comfy backend->change AutoUpdate to Aggressive, then save.");
                     }
                     if (response.Contains("error: Your local changes to the following files"))
                     {

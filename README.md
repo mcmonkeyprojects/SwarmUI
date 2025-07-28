@@ -106,7 +106,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - You can at any time in the future run the `launch-linux.sh` script to re-launch Swarm.
 - If the page doesn't open itself, you can manually open `http://localhost:7801`
 
-(TODO): Maybe outlink a dedicated document with per-distro details and whatever. Maybe also make a one-click installer for Linux?
+(TODO): Maybe outlink a dedicated document with per-distro details and whatever. Maybe also make a one-click installer for Linux? Can we remove the global python install prereq?
 
 # Installing on Mac
 
