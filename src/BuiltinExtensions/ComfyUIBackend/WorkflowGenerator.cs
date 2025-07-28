@@ -262,6 +262,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz.StartsWith("wan-21");
     }
 
+    /// <summary>Returns true if the current model is any Wan-2.2 variant.</summary>
+    public bool IsWanVideo22()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz.StartsWith("wan-22");
+    }
+
     /// <summary>Returns true if the current model is any Wan-2.1 VACE variant.</summary>
     public bool IsWanVace()
     {
@@ -272,7 +279,7 @@ public class WorkflowGenerator
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsWanVideo();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsWanVideo() || IsWanVideo22();
     }
 
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
@@ -1297,6 +1304,16 @@ public class WorkflowGenerator
             LoadingClip = [clipLoader, 0];
             doVaeLoader(null, "wan-21", "wan21-vae");
         }
+        else if (IsWanVideo22())
+        {
+            string clipLoader = CreateNode("CLIPLoader", new JObject()
+            {
+                ["clip_name"] = getUniMaxT5XXLModel(),
+                ["type"] = "wan"
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "wan-22", "wan22-vae");
+        }
         else if (CurrentCompatClass() == "auraflow-v1")
         {
             string auraNode = CreateNode("ModelSamplingAuraFlow", new JObject()
@@ -1352,7 +1369,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsWanVideo() || IsHiDream() || IsChroma())
+            else if (IsHunyuanVideo() || IsWanVideo() || IsWanVideo22() || IsHiDream() || IsChroma())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
@@ -1488,7 +1505,7 @@ public class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
-        else if (IsFlux() || IsWanVideo() || IsOmniGen())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen())
         {
             defscheduler ??= "simple";
         }
@@ -1977,10 +1994,10 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsHunyuanVideo() || IsWanVideo())
+        else if (IsHunyuanVideo() || IsWanVideo() || IsWanVideo22())
         {
             int frames = 73;
-            if (IsWanVideo())
+            if (IsWanVideo() || IsWanVideo22())
             {
                 frames = 81;
             }
@@ -2386,6 +2403,50 @@ public class WorkflowGenerator
                 genInfo.NegCond = [img2vidNode, 1];
                 genInfo.Latent = [img2vidNode, 2];
             }
+            genInfo.DefaultCFG = 6;
+            genInfo.DefaultSampler = "euler";
+            genInfo.DefaultScheduler = "simple";
+        }
+        else if (genInfo.VideoModel.ModelClass?.CompatClass == "wan-22-5b")
+        {
+            genInfo.VideoFPS ??= 22;
+            genInfo.Frames ??= 49;
+            FinalLoadedModel = genInfo.VideoModel;
+            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
+            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
+            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
+            JArray imageIn = FinalImageOut;
+            if (genInfo.BatchIndex != -1 && genInfo.BatchLen != -1)
+            {
+                string fromBatch = CreateNode("ImageFromBatch", new JObject()
+                {
+                    ["image"] = imageIn,
+                    ["batch_index"] = genInfo.BatchIndex,
+                    ["length"] = genInfo.BatchLen
+                });
+                imageIn = [fromBatch, 0];
+            }
+            JArray encodeIn = imageIn;
+            if (genInfo.BatchLen > 1)
+            {
+                string fromBatch = CreateNode("ImageFromBatch", new JObject()
+                {
+                    ["image"] = imageIn,
+                    ["batch_index"] = genInfo.BatchIndex,
+                    ["length"] = 1
+                });
+                encodeIn = [fromBatch, 0];
+            }
+            string img2vidNode = CreateNode("Wan22ImageToVideoLatent", new JObject()
+            {
+                ["width"] = genInfo.Width,
+                ["height"] = genInfo.Height,
+                ["length"] = genInfo.Frames,
+                ["vae"] = genInfo.Vae,
+                ["start_image"] = imageIn,
+                ["batch_size"] = 1
+            });
+            genInfo.Latent = [img2vidNode, 0];
             genInfo.DefaultCFG = 6;
             genInfo.DefaultSampler = "euler";
             genInfo.DefaultScheduler = "simple";
