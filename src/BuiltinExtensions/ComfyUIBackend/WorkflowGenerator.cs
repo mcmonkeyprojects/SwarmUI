@@ -2447,7 +2447,7 @@ public class WorkflowGenerator
                 ["batch_size"] = 1
             });
             genInfo.Latent = [img2vidNode, 0];
-            genInfo.DefaultCFG = 6;
+            genInfo.DefaultCFG = 5;
             genInfo.DefaultSampler = "euler";
             genInfo.DefaultScheduler = "simple";
         }
