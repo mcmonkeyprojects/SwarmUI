@@ -1,7 +1,12 @@
 from . import SwarmLoadImageB64
 import folder_paths
-from nodes import CheckpointLoaderSimple, LoadImage
+from nodes import CheckpointLoaderSimple
 import os
+
+import node_helpers
+from PIL import Image, ImageOps, ImageSequence
+import numpy as np
+import torch
 
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
@@ -187,22 +192,15 @@ class SwarmInputBoolean:
     def do_input(self, value, **kwargs):
         return (value, )
 
-
-class SwarmInputImage(LoadImage):
+class SwarmInputImage:
     @classmethod
     def INPUT_TYPES(s):
-        input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
-        files = folder_paths.filter_files_content_types(files, ["image"])
         return {
             "required": {
-                "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),                
-                "image": (sorted(files), {"image_upload": True}),
+                "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),
+                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
                 "auto_resize": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be resized to match the current generation resolution. If false, the image will be kept at whatever size the user input it at."}),
             } | STANDARD_REQ_INPUTS,
-            "hidden":{
-                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
-            },
         } | STANDARD_OTHER_INPUTS
 
     CATEGORY = "SwarmUI/inputs"
@@ -210,9 +208,82 @@ class SwarmInputImage(LoadImage):
     FUNCTION = "do_input"
     DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Image lets you input an image. Internally this node uses a Base64 string as input, so may not be the most friendly to use on the Comfy Workflow tab, but is very convenient to use on the Generate tab."
 
-    def do_input(self, image, value=None, **kwargs):
-        if (not value) or (value=="") or (value=="(Do Not Set Me)"):
-            return self.load_image(image)
+    def do_input(self, value, **kwargs):
+        return SwarmLoadImageB64.b64_to_img_and_mask(value)
+
+def load_image(image):
+    image_path = folder_paths.get_annotated_filepath(image)
+
+    img = node_helpers.pillow(Image.open, image_path)
+
+    output_images = []
+    output_masks = []
+    w, h = None, None
+
+    excluded_formats = ['MPO']
+
+    for i in ImageSequence.Iterator(img):
+        i = node_helpers.pillow(ImageOps.exif_transpose, i)
+
+        if i.mode == 'I':
+            i = i.point(lambda i: i * (1 / 255))
+        image = i.convert("RGB")
+
+        if len(output_images) == 0:
+            w = image.size[0]
+            h = image.size[1]
+
+        if image.size[0] != w or image.size[1] != h:
+            continue
+
+        image = np.array(image).astype(np.float32) / 255.0
+        image = torch.from_numpy(image)[None,]
+        if 'A' in i.getbands():
+            mask = np.array(i.getchannel('A')).astype(np.float32) / 255.0
+            mask = 1. - torch.from_numpy(mask)
+        elif i.mode == 'P' and 'transparency' in i.info:
+            mask = np.array(i.convert('RGBA').getchannel('A')).astype(np.float32) / 255.0
+            mask = 1. - torch.from_numpy(mask)
+        else:
+            mask = torch.zeros((64,64), dtype=torch.float32, device="cpu")
+        output_images.append(image)
+        output_masks.append(mask.unsqueeze(0))
+
+    if len(output_images) > 1 and img.format not in excluded_formats:
+        output_image = torch.cat(output_images, dim=0)
+        output_mask = torch.cat(output_masks, dim=0)
+    else:
+        output_image = output_images[0]
+        output_mask = output_masks[0]
+
+    return (output_image, output_mask)
+
+class SwarmInputImageWithSelector:
+    DEFAULT_VALUE_TEXT = "(Do Not Set Me)"
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["image"])
+        return {
+            "required": {
+                "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),
+                "auto_resize": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be resized to match the current generation resolution. If false, the image will be kept at whatever size the user input it at."}),
+                "image": (sorted(files), {"image_upload": True}),
+            } | STANDARD_REQ_INPUTS,
+            "hidden":{
+                "value": ("STRING", {"default": s.DEFAULT_VALUE_TEXT, "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+            },
+        } | STANDARD_OTHER_INPUTS
+
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ("IMAGE","MASK",)
+    FUNCTION = "do_input"
+    DESCRIPTION = "SwarmInputImageWithSelector nodes let you define custom input controls in Swarm-Comfy Workflows. Internally SwarmInputImage only uses a Base64 string as input. this node use Image in Comfy Workflow tab, and also support Base64 string on the Generate tab."
+
+    def do_input(self, value=None, image=None, **kwargs):
+        if not value or value==self.DEFAULT_VALUE_TEXT:
+            return load_image(image)
         else:
             return SwarmLoadImageB64.b64_to_img_and_mask(value)
 
@@ -227,4 +298,5 @@ NODE_CLASS_MAPPINGS = {
     "SwarmInputDropdown": SwarmInputDropdown,
     "SwarmInputBoolean": SwarmInputBoolean,
     "SwarmInputImage": SwarmInputImage,
+    "SwarmInputImageWithSelector": SwarmInputImageWithSelector,
 }
