@@ -383,6 +383,7 @@ There's a full step by step guide for video model usage here: <https://github.co
 ### Wan 2.2
 
 - Wan 2.2 is natively supported in SwarmUI
+    - At current time, it is not particularly recommended. Use Wan 2.1 with Lightx2v and you'll have a much better time. It remains to be seen if community efforts can fix up 2.2 to be worth using.
     - You can download the standard version of the model(s) from here <https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/tree/main/split_files/diffusion_models>
         - There's a 14B T2V and I2V, in a high+low noise pair
             - You're expected to run the high noise as a base and the low noise as a refiner, with RefinerMethod=StepSwap and RefinerControlPercentage=0.5
