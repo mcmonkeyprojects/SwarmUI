@@ -708,9 +708,10 @@ public class WorkflowGenerator
             return T2VFPSOverride;
         }
         int fpsDefault = 24;
-        if (IsWanVideo()) // TODO: Detect CausVid (24 fps LoRA) and/or Wan 2.2 (also 24fps) somehow?
+        if (IsWanVideo())
         {
-            fpsDefault = 16;
+            // TODO: Detect CausVid (24 fps LoRA) and/or Wan 2.2 (also 24fps) somehow, to be able to set the base to 16 and leave the rest at 24.
+            //fpsDefault = 16;
         }
         foreach (Func<WorkflowGenerator, int, int> fpsOverride in AltT2VFPSDefaulters)
         {
@@ -2351,7 +2352,7 @@ public class WorkflowGenerator
         }
         else if (genInfo.VideoModel.ModelClass?.CompatClass == "wan-21-14b" || genInfo.VideoModel.ModelClass?.CompatClass == "wan-21-1_3b")
         {
-            genInfo.VideoFPS ??= 16;
+            genInfo.VideoFPS ??= 24;
             genInfo.Frames ??= 81;
             genInfo.PrepModelAndCond(this);
             string targetName = "clip_vision_h.safetensors";

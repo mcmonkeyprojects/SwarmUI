@@ -299,8 +299,8 @@ There's a full step by step guide for video model usage here: <https://github.co
 - **Prompt:** Standard. Supports English and Chinese text.
     - They have an official reference negative prompt in Chinese, it is not required but may help: `色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走`
         - (This is just a word spam negative "bright colors, overexposed, static, blurred details, subtitles, ..." but in Chinese. It does help though.)
-- **FPS:** The base model is trained for 16 FPS. Some variants, such as CausVid, are trained for 24 FPS.
-    - Swarm will default to 16 FPS for Wan. You must manually select 24 FPS when using such a variant.
+- **FPS:** The original Wan 2.1 base model is trained for 16 FPS. Most variants, including Wan 2.2, CausVid, Lightx2v, etc, are trained for 24 FPS.
+    - Swarm will default to 24 FPS for Wan. You must manually select 2164 FPS when using the original Wan 2.1 base.
 - **Resolution:** The models are trained for `832x480`, which is a 16:9 equivalent for `640x640`
     - the 14B models can also do `1280x720`, which is a 16:9 equivalent for `960x960`
     - Other resolutions seem to work fine. Even the 1.3B, which is not trained for 960, can technically still do 960 just with a quality drop as it gets too large.
@@ -338,7 +338,6 @@ There's a full step by step guide for video model usage here: <https://github.co
     - Set up a Wan gen with 14B as normal, but also set:
         - **CFG Scale** to `1`
             - If doing I2V, set **Video CFG** to `1`
-        - **Advanced Video** -> **Video FPS** to `24`
         - **Steps** to `4` for fastest generation, `8` for high quality while still fast, or `12` if you really want to ensure max quality by letting the gen take a while
             - If doing I2V, set **Video Steps** to `4`, `8`, or `12`
         - **Sampler:** can be default (Euler), but `UniPC` might be a touch better
@@ -385,15 +384,20 @@ There's a full step by step guide for video model usage here: <https://github.co
 - Wan 2.2 is natively supported in SwarmUI
     - At current time, it is not particularly recommended. Use Wan 2.1 with Lightx2v and you'll have a much better time. It remains to be seen if community efforts can fix up 2.2 to be worth using.
     - You can download the standard version of the model(s) from here <https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/tree/main/split_files/diffusion_models>
-        - There's a 14B T2V, in a high+low noise pair
-            - You're expected to run the high noise as a base and the low noise as a refiner, with **RefinerMethod**=`StepSwap` and **RefinerControlPercentage**=`0.5`
-            - Reference CF**G range is `5`
-        - There's a 14B I2V, in a high+low noise pair
+        - There's a **14B T2V (Text To Video)**, in a high+low noise pair
+            - You're expected to run the high noise as a base and the low noise as a refiner, with:
+                - **RefinerMethod** as `StepSwap`, and
+                - **RefinerControlPercentage** as `0.5`
+            - Reference **CFG** range is `5`
+        - There's a **14B I2V (Image To Video)**, in a high+low noise pair
             - You're expected to run the high noise as a base and the low noise as a refiner
-                - In the **Image To Video** params: Set the regular **Video Model** to the high noise model, and set the advanced **Video Swap Model** to the low noise model, and leave **Video Swap Percent** at `0.5`
+                - In the **Image To Video** params:
+                    - Set the regular **Video Model** to the high noise model,
+                    - and set the advanced **Video Swap Model** to the low noise model,
+                    - and leave **Video Swap Percent** at `0.5`
             - Reference **CFG** range is `3.5`
-        - There's a 5B T/I2V (single model that does both) as well
+        - There's a **5B T/I2V (single model that does both text and image to video)** as well
             - It has its own VAE. Will be autodownloaded.
-            - No funky pair, just a straight single model
+            - No funky model pair like the 14b has, just a straight single model
             - Reference **CFG** is `3.5`
-    - Native FPS=`24`
+    - Native **Video FPS** `24`
