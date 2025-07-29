@@ -382,7 +382,7 @@ There's a full step by step guide for video model usage here: <https://github.co
 ### Wan 2.2
 
 - Wan 2.2 is natively supported in SwarmUI
-    - At current time, it is not particularly recommended. Use Wan 2.1 with Lightx2v and you'll have a much better time. It remains to be seen if community efforts can fix up 2.2 to be worth using.
+    - At current time, it is not particularly recommended. Use Wan 2.1 with Lightx2v and you'll have a much better time. Consider 2.2 to be "bleeding edge testing" for now until the community has figured out how to get the most out of the new models.
     - You can download the standard version of the model(s) from here <https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/tree/main/split_files/diffusion_models>
         - Or, there's a collection of GGUF files here: <https://huggingface.co/collections/QuantStack/wan22-ggufs-6887ec891bdea453a35b95f3>
         - There's a **14B T2V (Text To Video)**, in a high+low noise pair
@@ -401,4 +401,7 @@ There's a full step by step guide for video model usage here: <https://github.co
             - It has its own VAE. Will be autodownloaded.
             - No funky model pair like the 14b has, just a straight single model
             - Reference **CFG** is `3.5`
+        - You can use Lightx2v or other causvid-likes (see [CausVid Section Above](#wan-causvid---high-speed-14b)) on the Wan 2.2 14B (not on the 5B)
+            - For I2V, this seems to "just work" other than some sped up feeling motion
+            - For T2V, this has some visual oddities but does still mostly work
     - Native **Video FPS** `24`
