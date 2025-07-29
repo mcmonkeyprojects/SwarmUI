@@ -192,25 +192,6 @@ class SwarmInputBoolean:
     def do_input(self, value, **kwargs):
         return (value, )
 
-class SwarmInputImage:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),
-                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
-                "auto_resize": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be resized to match the current generation resolution. If false, the image will be kept at whatever size the user input it at."}),
-            } | STANDARD_REQ_INPUTS,
-        } | STANDARD_OTHER_INPUTS
-
-    CATEGORY = "SwarmUI/inputs"
-    RETURN_TYPES = ("IMAGE","MASK",)
-    FUNCTION = "do_input"
-    DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Image lets you input an image. Internally this node uses a Base64 string as input, so may not be the most friendly to use on the Comfy Workflow tab, but is very convenient to use on the Generate tab."
-
-    def do_input(self, value, **kwargs):
-        return SwarmLoadImageB64.b64_to_img_and_mask(value)
-
 def load_image(image):
     image_path = folder_paths.get_annotated_filepath(image)
 
@@ -258,7 +239,7 @@ def load_image(image):
 
     return (output_image, output_mask)
 
-class SwarmInputImageWithSelector:
+class SwarmInputImage:
     DEFAULT_VALUE_TEXT = "(Do Not Set Me)"
     @classmethod
     def INPUT_TYPES(s):
@@ -268,18 +249,19 @@ class SwarmInputImageWithSelector:
         return {
             "required": {
                 "title": ("STRING", {"default": "My Image", "tooltip": "The name of the input."}),
-                "auto_resize": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be resized to match the current generation resolution. If false, the image will be kept at whatever size the user input it at."}),
-                "image": (sorted(files), {"image_upload": True}),
-            } | STANDARD_REQ_INPUTS,
-            "hidden":{
                 "value": ("STRING", {"default": s.DEFAULT_VALUE_TEXT, "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+                "auto_resize": ("BOOLEAN", {"default": True, "tooltip": "If true, the image will be resized to match the current generation resolution. If false, the image will be kept at whatever size the user input it at."}),
+            } |
+            STANDARD_REQ_INPUTS |
+            {
+                "image": (sorted(files), {"image_upload": True}),
             },
         } | STANDARD_OTHER_INPUTS
 
     CATEGORY = "SwarmUI/inputs"
     RETURN_TYPES = ("IMAGE","MASK",)
     FUNCTION = "do_input"
-    DESCRIPTION = "SwarmInputImageWithSelector nodes let you define custom input controls in Swarm-Comfy Workflows. Internally SwarmInputImage only uses a Base64 string as input. this node use Image in Comfy Workflow tab, and also support Base64 string on the Generate tab."
+    DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Image lets you input an image. Internally this node uses a Base64 string as input when value is set by SwarmUI server (Generate tab), otherwise use select Image (Comfy Workflow tab)."
 
     def do_input(self, value=None, image=None, **kwargs):
         if not value or value==self.DEFAULT_VALUE_TEXT:
@@ -298,5 +280,4 @@ NODE_CLASS_MAPPINGS = {
     "SwarmInputDropdown": SwarmInputDropdown,
     "SwarmInputBoolean": SwarmInputBoolean,
     "SwarmInputImage": SwarmInputImage,
-    "SwarmInputImageWithSelector": SwarmInputImageWithSelector,
 }

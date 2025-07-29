@@ -502,7 +502,6 @@ function comfyBuildParams(callback) {
                     break;
                     case 'SwarmInputBoolean': type = 'boolean'; doFixMe = true; break;
                     case 'SwarmInputImage': type = 'image'; break;
-                    case 'SwarmInputImageWithSelector': type = 'image'; break;
                     default: throw new Error(`Unknown SwarmInput type ${node.class_type}`);
                 }
                 let inputIdDirect = node.inputs['raw_id'] || cleanParamName(node.inputs['title']);
@@ -547,7 +546,7 @@ function comfyBuildParams(callback) {
                     no_popover: node.inputs['description'].length == 0,
                     group: groupObj
                 };
-                if (node.class_type == 'SwarmInputImage' || node.class_type == 'SwarmInputImageWithSelector') {
+                if (node.class_type == 'SwarmInputImage') {
                     params[inputId].image_should_resize = node.inputs['auto_resize'];
                     params[inputId].image_always_b64 = true;
                 }
