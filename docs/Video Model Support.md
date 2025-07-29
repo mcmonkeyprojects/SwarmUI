@@ -397,11 +397,15 @@ There's a full step by step guide for video model usage here: <https://github.co
                     - and set the advanced **Video Swap Model** to the low noise model,
                     - and leave **Video Swap Percent** at `0.5`
             - Reference **CFG** range is `3.5`
+        - For both 14B types:
+            - **FPS** is either `24` or `16`, ideal value not entirely clear. The Wan 2.1 base model was 16.
+            - Sigma shift may be worth experimenting with. The default is 8, but a wide range of values are functional.
+                - Some users recommend `1.5` for T2V
         - There's a **5B T/I2V (single model that does both text and image to video)** as well
             - It has its own VAE. Will be autodownloaded.
             - No funky model pair like the 14b has, just a straight single model
             - Reference **CFG** is `3.5`
+            - Native **FPS** of `24`
         - You can use Lightx2v or other causvid-likes (see [CausVid Section Above](#wan-causvid---high-speed-14b)) on the Wan 2.2 14B (not on the 5B)
-            - For I2V, this seems to "just work" other than some sped up feeling motion
+            - For I2V, this seems to "just work"
             - For T2V, this has some visual oddities but does still mostly work
-    - Native **Video FPS** `24`
