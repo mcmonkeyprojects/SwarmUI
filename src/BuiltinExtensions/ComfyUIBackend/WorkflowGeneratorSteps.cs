@@ -1636,31 +1636,31 @@ public class WorkflowGeneratorSteps
                         height = (int)Math.Round(height * scale);
                     }
                 }
-                (JArray, int) altLatent(JArray vae, JArray latent)
+                void altLatent(WorkflowGenerator.ImageToVideoGenInfo genInfo)
                 {
-                    int startStep = 0;
                     if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
                     {
                         string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
                         {
                             ["image"] = g.FinalImageOut,
                             ["batch_index"] = 0,
-                            ["length"] = frames.Value
+                            ["length"] = genInfo.Frames.Value
                         });
-                        startStep = (int)Math.Floor(steps * (1 - v2vCreativity));
+                        genInfo.StartStep = (int)Math.Floor(steps * (1 - v2vCreativity));
                         string reEncode = g.CreateNode("VAEEncode", new JObject()
                         {
-                            ["vae"] = vae,
+                            ["vae"] = genInfo.Vae,
                             ["pixels"] = new JArray() { fromBatch, 0 }
                         });
-                        latent = [reEncode, 0];
+                        genInfo.Latent = [reEncode, 0];
                     }
-                    return (latent, startStep);
                 }
                 WorkflowGenerator.ImageToVideoGenInfo genInfo = new()
                 {
                     Generator = g,
                     VideoModel = vidModel,
+                    VideoSwapModel = g.UserInput.Get(T2IParamTypes.VideoSwapModel, null),
+                    VideoSwapPercent = g.UserInput.Get(T2IParamTypes.VideoSwapPercent, 0.5),
                     Frames = frames,
                     VideoCFG = videoCfg,
                     VideoFPS = videoFps,

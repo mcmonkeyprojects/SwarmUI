@@ -488,7 +488,11 @@ class ModelBrowserWrapper {
                 if (!refinerInput) {
                     return;
                 }
-                forceSetDropdownValue(refinerInput, model.data.name);
+                let name = model.data.name;
+                if (name.endsWith('.safetensors')) {
+                    name = name.substring(0, name.length - '.safetensors'.length);
+                }
+                forceSetDropdownValue(refinerInput, name);
                 let toggler = document.getElementById('input_group_content_refiner_toggle');
                 if (toggler && !toggler.checked) {
                     toggler.click();
@@ -500,7 +504,11 @@ class ModelBrowserWrapper {
                 if (!input) {
                     return;
                 }
-                forceSetDropdownValue(input, model.data.name);
+                let name = model.data.name;
+                if (name.endsWith('.safetensors')) {
+                    name = name.substring(0, name.length - '.safetensors'.length);
+                }
+                forceSetDropdownValue(input, name);
                 triggerChangeFor(input);
                 let toggler = document.getElementById('input_group_content_imagetovideo_toggle');
                 if (toggler && !toggler.checked) {

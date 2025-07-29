@@ -2144,14 +2144,16 @@ public class WorkflowGenerator
     public class ImageToVideoGenInfo
     {
         public WorkflowGenerator Generator;
-        public T2IModel VideoModel;
+        public T2IModel VideoModel, VideoSwapModel;
         public int? Frames, VideoFPS;
         public double? VideoCFG;
+        public double VideoSwapPercent = 0.5;
         public JToken Width, Height;
         public string Prompt, NegativePrompt;
         public int Steps;
+        public int StartStep = 0;
         public long Seed;
-        public Func<JArray, JArray, (JArray, int)> AltLatent;
+        public Action<ImageToVideoGenInfo> AltLatent;
         public int BatchIndex = -1;
         public int BatchLen = -1;
         public bool HasMatchedModelData = false;
@@ -2537,10 +2539,9 @@ public class WorkflowGenerator
             genInfo.NegCond = [conditioning, 1];
             genInfo.Latent = [conditioning, 2];
         }
-        int startStep = 0;
         if (genInfo.AltLatent is not null)
         {
-            (genInfo.Latent, startStep) = genInfo.AltLatent(genInfo.Vae, genInfo.Latent);
+            genInfo.AltLatent(genInfo);
         }
         genInfo.VideoCFG ??= genInfo.DefaultCFG;
         foreach (Action<ImageToVideoGenInfo> altHandler in AltImageToVideoPostHandlers)
@@ -2548,8 +2549,22 @@ public class WorkflowGenerator
             altHandler(genInfo);
         }
         string previewType = UserInput.Get(ComfyUIBackendExtension.VideoPreviewType, "animate");
-        string samplered = CreateKSampler(genInfo.Model, genInfo.PosCond, genInfo.NegCond, genInfo.Latent, genInfo.VideoCFG.Value, genInfo.Steps, startStep, 10000, genInfo.Seed, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: hadSpecialCond);
+        int endStep = 10000;
+        bool returnLeftoverNoise = false;
+        if (genInfo.VideoSwapModel is not null)
+        {
+            endStep = genInfo.Steps / 2;
+            returnLeftoverNoise = true;
+        }
+        string samplered = CreateKSampler(genInfo.Model, genInfo.PosCond, genInfo.NegCond, genInfo.Latent, genInfo.VideoCFG.Value, genInfo.Steps, genInfo.StartStep, endStep, genInfo.Seed, returnLeftoverNoise, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: hadSpecialCond);
         FinalLatentImage = [samplered, 0];
+        if (genInfo.VideoSwapModel is not null)
+        {
+            (T2IModel _swapModel, JArray swapVideoModel, JArray _clip, JArray _vae) = CreateStandardModelLoader(genInfo.VideoSwapModel, "image2video", null, true);
+            // TODO: Should class-changes be allowed (must re-emit all the model-specific cond logic, maybe a vae reencoder - this is basically a refiner run)
+            samplered = CreateKSampler(swapVideoModel, genInfo.PosCond, genInfo.NegCond, FinalLatentImage, genInfo.VideoCFG.Value, genInfo.Steps, endStep, 10000, genInfo.Seed + 1, false, false, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: hadSpecialCond);
+            FinalLatentImage = [samplered, 0];
+        }
         string decoded = CreateVAEDecode(genInfo.Vae, FinalLatentImage);
         FinalImageOut = [decoded, 0];
         if (UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))
