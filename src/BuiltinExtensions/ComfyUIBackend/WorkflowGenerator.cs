@@ -2158,6 +2158,14 @@ public class WorkflowGenerator
         public JArray PosCond, NegCond, Latent, Model, Vae;
         public string DefaultSampler = null, DefaultScheduler = null;
         public double DefaultCFG = 7;
+
+        public void PrepModelAndCond(WorkflowGenerator g)
+        {
+            g.FinalLoadedModel = VideoModel;
+            (VideoModel, Model, JArray clip, Vae) = g.CreateStandardModelLoader(VideoModel, "image2video", null, true);
+            PosCond = g.CreateConditioning(Prompt, clip, VideoModel, true, isVideo: true);
+            NegCond = g.CreateConditioning(NegativePrompt, clip, VideoModel, false, isVideo: true);
+        }
     }
 
     /// <summary>Creates the execution logic for an Image-To-Video model.</summary>
@@ -2183,10 +2191,7 @@ public class WorkflowGenerator
         {
             genInfo.VideoFPS ??= 24;
             genInfo.Frames ??= 97;
-            FinalLoadedModel = genInfo.VideoModel;
-            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
+            genInfo.PrepModelAndCond(this);
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
                 throw new SwarmReadableErrorException("LTX-V end-frame is TODO");
@@ -2227,10 +2232,7 @@ public class WorkflowGenerator
         {
             genInfo.VideoFPS ??= 24;
             genInfo.Frames ??= 121;
-            FinalLoadedModel = genInfo.VideoModel;
-            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
+            genInfo.PrepModelAndCond(this);
             if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
                 throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
@@ -2289,10 +2291,7 @@ public class WorkflowGenerator
         {
             genInfo.VideoFPS ??= 24;
             genInfo.Frames ??= 73;
-            FinalLoadedModel = genInfo.VideoModel;
-            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
+            genInfo.PrepModelAndCond(this);
             string latentNode = CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
                 ["width"] = genInfo.Width,
@@ -2318,10 +2317,7 @@ public class WorkflowGenerator
         {
             genInfo.VideoFPS ??= 16;
             genInfo.Frames ??= 81;
-            FinalLoadedModel = genInfo.VideoModel;
-            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
+            genInfo.PrepModelAndCond(this);
             string targetName = "clip_vision_h.safetensors";
             targetName = RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161", T2IParamTypes.ClipVisionModel);
             string clipLoader = CreateNode("CLIPVisionLoader", new JObject()
@@ -2411,10 +2407,7 @@ public class WorkflowGenerator
         {
             genInfo.VideoFPS ??= 22;
             genInfo.Frames ??= 49;
-            FinalLoadedModel = genInfo.VideoModel;
-            (genInfo.VideoModel, genInfo.Model, JArray clip, genInfo.Vae) = CreateStandardModelLoader(genInfo.VideoModel, "image2video", null, true);
-            genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, genInfo.VideoModel, true, isVideo: true);
-            genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, genInfo.VideoModel, false, isVideo: true);
+            genInfo.PrepModelAndCond(this);
             JArray imageIn = FinalImageOut;
             if (genInfo.BatchIndex != -1 && genInfo.BatchLen != -1)
             {
@@ -2425,17 +2418,6 @@ public class WorkflowGenerator
                     ["length"] = genInfo.BatchLen
                 });
                 imageIn = [fromBatch, 0];
-            }
-            JArray encodeIn = imageIn;
-            if (genInfo.BatchLen > 1)
-            {
-                string fromBatch = CreateNode("ImageFromBatch", new JObject()
-                {
-                    ["image"] = imageIn,
-                    ["batch_index"] = genInfo.BatchIndex,
-                    ["length"] = 1
-                });
-                encodeIn = [fromBatch, 0];
             }
             string img2vidNode = CreateNode("Wan22ImageToVideoLatent", new JObject()
             {
