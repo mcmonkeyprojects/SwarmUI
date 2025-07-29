@@ -501,6 +501,7 @@ class ModelBrowserWrapper {
                     return;
                 }
                 forceSetDropdownValue(input, model.data.name);
+                triggerChangeFor(input);
                 let toggler = document.getElementById('input_group_content_imagetovideo_toggle');
                 if (toggler && !toggler.checked) {
                     toggler.click();

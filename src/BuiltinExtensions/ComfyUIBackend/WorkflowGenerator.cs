@@ -2313,6 +2313,40 @@ public class WorkflowGenerator
             genInfo.DefaultSampler = "dpmpp_2m";
             genInfo.DefaultScheduler = "beta";
         }
+        else if (genInfo.VideoModel.ModelClass?.ID == "wan-2_2-image2video-14b")
+        {
+            genInfo.VideoFPS ??= 24;
+            genInfo.Frames ??= 49;
+            genInfo.PrepModelAndCond(this);
+            JArray imageIn = FinalImageOut;
+            if (genInfo.BatchIndex != -1 && genInfo.BatchLen != -1)
+            {
+                string fromBatch = CreateNode("ImageFromBatch", new JObject()
+                {
+                    ["image"] = imageIn,
+                    ["batch_index"] = genInfo.BatchIndex,
+                    ["length"] = genInfo.BatchLen
+                });
+                imageIn = [fromBatch, 0];
+            }
+            string img2vidNode = CreateNode("WanImageToVideo", new JObject()
+            {
+                ["width"] = genInfo.Width,
+                ["height"] = genInfo.Height,
+                ["length"] = genInfo.Frames,
+                ["positive"] = genInfo.PosCond,
+                ["negative"] = genInfo.NegCond,
+                ["vae"] = genInfo.Vae,
+                ["start_image"] = imageIn,
+                ["batch_size"] = 1
+            });
+            genInfo.PosCond = [img2vidNode, 0];
+            genInfo.NegCond = [img2vidNode, 1];
+            genInfo.Latent = [img2vidNode, 2];
+            genInfo.DefaultCFG = 3.5;
+            genInfo.DefaultSampler = "euler";
+            genInfo.DefaultScheduler = "simple";
+        }
         else if (genInfo.VideoModel.ModelClass?.CompatClass == "wan-21-14b" || genInfo.VideoModel.ModelClass?.CompatClass == "wan-21-1_3b")
         {
             genInfo.VideoFPS ??= 16;
