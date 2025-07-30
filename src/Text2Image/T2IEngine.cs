@@ -239,6 +239,7 @@ namespace SwarmUI.Text2Image
             try
             {
                 user_input.PreparsePromptLikes();
+                await user_input.ApplyPreparsePromptLikesFinalizationHandlers();
                 PreGenerateEvent?.Invoke(new(user_input));
                 claim.Extend(backendWaits: 1);
                 sendStatus();

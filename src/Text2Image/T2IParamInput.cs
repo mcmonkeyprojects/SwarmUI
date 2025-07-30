@@ -30,6 +30,9 @@ public class T2IParamInput
             Set(T2IParamTypes.VariationSeed, Random.Shared.Next());
         }
     }
+    
+    /// <summary>Extension point for injecting code to examine or modify inputs after the prompt has been parsed but before it is sent to the backend.</summary>
+    public static List<Func<T2IParamInput, Task>> PreparsePromptLikesFinalizationHandlers = [];
 
     /// <summary>Special handlers for any special logic to apply post-loading a param input.</summary>
     public static List<Action<T2IParamInput>> SpecialParameterHandlers =
@@ -578,6 +581,14 @@ public class T2IParamInput
     public void Remove(T2IParamType param)
     {
         InternalSet.Remove(param);
+    }
+    
+    public async Task ApplyPreparsePromptLikesFinalizationHandlers()
+    {
+        foreach (Func<T2IParamInput, Task> handler in PreparsePromptLikesFinalizationHandlers)
+        {
+            await handler(this);
+        }
     }
 
     /// <summary>Makes sure the input has valid seed inputs and other special parameter handlers.</summary>
