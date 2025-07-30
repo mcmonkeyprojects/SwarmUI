@@ -200,8 +200,8 @@ public class ComfyUIBackendExtension : Extension
                             long parsed = long.Parse(newVal);
                             if (parsed == -1)
                             {
-                                long max = (long)type.Max;
-                                parsed = Random.Shared.NextInt64(0, max <= 0 ? long.MaxValue : max);
+                                int max = (int)type.Max;
+                                parsed = Random.Shared.Next(0, max <= 0 ? int.MaxValue : max);
                             }
                             return parsed.ToString();
                         }
@@ -227,7 +227,7 @@ public class ComfyUIBackendExtension : Extension
                         long parsed = long.Parse(newVal);
                         if (parsed == -1)
                         {
-                            parsed = Random.Shared.NextInt64(0, long.MaxValue);
+                            parsed = Random.Shared.Next(0, int.MaxValue);
                         }
                         return parsed.ToString();
                     }
@@ -417,7 +417,7 @@ public class ComfyUIBackendExtension : Extension
     }
 
     public static LockObject ValueAssignmentLocker = new();
-
+    
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 
