@@ -398,7 +398,8 @@ There's a full step by step guide for video model usage here: <https://github.co
                     - and leave **Video Swap Percent** at `0.5`
             - Reference **CFG** range is `3.5`
         - For both 14B types:
-            - **FPS** is either `24` or `16`, ideal value not entirely clear. The Wan 2.1 base model was 16.
+            - **FPS** is `16`, but loras or even parameter adjustments can change it to a more normal-looking `24`.
+                - Swarm will default to `24`, but if your videos "feel sped up", change the FPS parameter to `16`.
             - Sigma shift may be worth experimenting with. The default is 8, but a wide range of values are functional.
                 - Some users recommend `1.5` for T2V
         - There's a **5B T/I2V (single model that does both text and image to video)** as well
