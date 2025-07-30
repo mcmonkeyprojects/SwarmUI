@@ -197,11 +197,11 @@ public class ComfyUIBackendExtension : Extension
                     {
                         string seedClean(string prior, string newVal)
                         {
-                            int parsed = int.Parse(newVal);
+                            long parsed = long.Parse(newVal);
                             if (parsed == -1)
                             {
-                                int max = (int)type.Max;
-                                parsed = Random.Shared.Next(0, max <= 0 ? int.MaxValue : max);
+                                long max = (long)type.Max;
+                                parsed = Random.Shared.NextInt64(0, max <= 0 ? long.MaxValue : max);
                             }
                             return parsed.ToString();
                         }
@@ -224,10 +224,10 @@ public class ComfyUIBackendExtension : Extension
                     nameNoPrefix = nameNoPrefix.After("seed");
                     string seedClean(string prior, string newVal)
                     {
-                        int parsed = int.Parse(newVal);
+                        long parsed = long.Parse(newVal);
                         if (parsed == -1)
                         {
-                            parsed = Random.Shared.Next(0, int.MaxValue);
+                            parsed = Random.Shared.NextInt64(0, long.MaxValue);
                         }
                         return parsed.ToString();
                     }
@@ -417,7 +417,7 @@ public class ComfyUIBackendExtension : Extension
     }
 
     public static LockObject ValueAssignmentLocker = new();
-    
+
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 
