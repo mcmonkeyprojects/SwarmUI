@@ -197,7 +197,7 @@ public class ComfyUIBackendExtension : Extension
                     {
                         string seedClean(string prior, string newVal)
                         {
-                            int parsed = int.Parse(newVal);
+                            long parsed = long.Parse(newVal);
                             if (parsed == -1)
                             {
                                 int max = (int)type.Max;
@@ -224,7 +224,7 @@ public class ComfyUIBackendExtension : Extension
                     nameNoPrefix = nameNoPrefix.After("seed");
                     string seedClean(string prior, string newVal)
                     {
-                        int parsed = int.Parse(newVal);
+                        long parsed = long.Parse(newVal);
                         if (parsed == -1)
                         {
                             parsed = Random.Shared.Next(0, int.MaxValue);

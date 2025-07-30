@@ -67,10 +67,10 @@ public partial class GridGenCore
                 {
                     throw new SwarmReadableErrorException($"Cannot use ellipses notation at index {i}/{inList.Count} - must have at least 2 values before and 1 after.");
                 }
-                double prior = double.Parse(outList[^1].Replace("SKIP:", ""));
-                double doublePrior = double.Parse(outList[^2].Replace("SKIP:", ""));
-                double after = double.Parse(inList[i + 1]);
-                double step = prior - doublePrior;
+                decimal prior = decimal.Parse(outList[^1].Replace("SKIP:", ""));
+                decimal doublePrior = decimal.Parse(outList[^2].Replace("SKIP:", ""));
+                decimal after = decimal.Parse(inList[i + 1]);
+                decimal step = prior - doublePrior;
                 if ((step < 0) != ((after - prior) < 0))
                 {
                     throw new SwarmReadableErrorException($"Ellipses notation failed for step {step} between {prior} and {after} - steps backwards.");
@@ -78,10 +78,14 @@ public partial class GridGenCore
                 int count = (int)Math.Round((after - prior) / step);
                 for (int x = 1; x < count; x++)
                 {
-                    double outVal = prior + x * step;
+                    decimal outVal = prior + x * step;
                     if (numType == typeof(int))
                     {
                         outVal = (int)Math.Round(outVal);
+                    }
+                    else if (numType == typeof(long))
+                    {
+                        outVal = (long)Math.Round(outVal);
                     }
                     outList.Add($"{prefix}{outVal:0.#######}");
                 }
@@ -174,7 +178,7 @@ public partial class GridGenCore
             }
             if (Mode.Type == T2IParamDataType.INTEGER)
             {
-                valuesList = ExpandNumericListRanges(valuesList, typeof(int));
+                valuesList = ExpandNumericListRanges(valuesList, typeof(long));
             }
             else if (Mode.Type == T2IParamDataType.DECIMAL)
             {
