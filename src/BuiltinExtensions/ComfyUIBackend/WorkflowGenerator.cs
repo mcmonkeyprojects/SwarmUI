@@ -2554,7 +2554,7 @@ public class WorkflowGenerator
         bool returnLeftoverNoise = false;
         if (genInfo.VideoSwapModel is not null)
         {
-            endStep = genInfo.Steps / 2;
+            endStep = (int)Math.Round(genInfo.Steps * genInfo.VideoSwapPercent);
             returnLeftoverNoise = true;
         }
         string samplered = CreateKSampler(genInfo.Model, genInfo.PosCond, genInfo.NegCond, genInfo.Latent, genInfo.VideoCFG.Value, genInfo.Steps, genInfo.StartStep, endStep, genInfo.Seed, returnLeftoverNoise, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: hadSpecialCond);
