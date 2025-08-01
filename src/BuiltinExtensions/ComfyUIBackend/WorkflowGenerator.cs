@@ -1995,10 +1995,21 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsHunyuanVideo() || IsWanVideo() || IsWanVideo22())
+        else if (IsWanVideo22())
+        {
+            return CreateNode("Wan22ImageToVideoLatent", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 81),
+                ["height"] = height,
+                ["width"] = width,
+                ["vae"] = FinalVae
+            }, id);
+        }
+        else if (IsHunyuanVideo() || IsWanVideo())
         {
             int frames = 73;
-            if (IsWanVideo() || IsWanVideo22())
+            if (IsWanVideo())
             {
                 frames = 81;
             }
