@@ -914,6 +914,7 @@ body {
 .alt_prompt_textbox {
     border-radius: 0.2rem;
     width: 100%;
+    resize: none;
 }
 #alt_negativeprompt_textbox {
     margin-top: 6px;
