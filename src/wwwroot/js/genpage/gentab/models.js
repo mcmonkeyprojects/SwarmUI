@@ -597,6 +597,13 @@ class ModelBrowserWrapper {
             if (model.data.local && this.subType == 'Stable-Diffusion' && !model.data.name.endsWith('.engine') && permissions.hasPermission('create_tensorrt')) {
                 buttons.push({ label: 'Create TensorRT Engine', onclick: () => showTrtMenu(model.data) });
             }
+            if (this.subType == 'LoRA') {
+                buttons.push({ label: 'Add To Prompt', onclick: () => {
+                    let promptBox = getRequiredElementById('alt_prompt_textbox');
+                    promptBox.value += ` <lora:${model.data.name}>`;
+                    triggerChangeFor(promptBox);
+                }});
+            }
         }
         else {
             description = `${escapeHtml(name)}<br>(Metadata only available for 'safetensors' models.)<br><b>WARNING:</b> 'ckpt' pickle files can contain malicious code! Use with caution.<br>`;
