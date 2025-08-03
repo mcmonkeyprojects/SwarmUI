@@ -493,7 +493,7 @@ class ModelBrowserWrapper {
                     name = name.substring(0, name.length - '.safetensors'.length);
                 }
                 forceSetDropdownValue(refinerInput, name);
-                let toggler = document.getElementById('input_group_content_refiner_toggle');
+                let toggler = document.getElementById('input_group_content_refineupscale_toggle');
                 if (toggler && !toggler.checked) {
                     toggler.click();
                     toggleGroupOpen(toggler, true);
@@ -532,6 +532,17 @@ class ModelBrowserWrapper {
                 { label: 'Add To Negative', onclick: () => embedAddToPrompt(model.data, 'alt_negativeprompt_textbox') },
                 { label: 'Remove All Usages', onclick: () => { embedClearFromPrompt(model.data, 'alt_prompt_textbox'); embedClearFromPrompt(model.data, 'alt_negativeprompt_textbox'); } }
             ];
+        }
+        else if (this.subType == 'LoRA') {
+            buttons = [{ label: 'Add To Prompt', onclick: () => {
+                let promptBox = getRequiredElementById('alt_prompt_textbox');
+                let name = model.data.name;
+                if (name.endsWith('.safetensors')) {
+                    name = name.substring(0, name.length - '.safetensors'.length);
+                }
+                promptBox.value += ` <lora:${name}>`;
+                triggerChangeFor(promptBox);
+            }}];
         }
         let isStarred = this.isStarred(model.data.name);
         let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); } };
@@ -596,13 +607,6 @@ class ModelBrowserWrapper {
             }
             if (model.data.local && this.subType == 'Stable-Diffusion' && !model.data.name.endsWith('.engine') && permissions.hasPermission('create_tensorrt')) {
                 buttons.push({ label: 'Create TensorRT Engine', onclick: () => showTrtMenu(model.data) });
-            }
-            if (this.subType == 'LoRA') {
-                buttons.push({ label: 'Add To Prompt', onclick: () => {
-                    let promptBox = getRequiredElementById('alt_prompt_textbox');
-                    promptBox.value += ` <lora:${model.data.name}>`;
-                    triggerChangeFor(promptBox);
-                }});
             }
         }
         else {

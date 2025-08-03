@@ -124,10 +124,16 @@ class PromptTabCompleteClass {
         this.registerPrefix('break', 'Split this prompt across multiple lines of conditioning to the model (helps separate concepts for long prompts).', (prefix) => {
             return [];
         }, true);
+        this.registerPrefix('base', 'Add a section of prompt text that is only used for the Base pass (excluding refiner/i2v/etc).', (prefix) => {
+            return [];
+        }, true);
         this.registerPrefix('refiner', 'Add a section of prompt text that is only used for the Refine/Upscale pass.', (prefix) => {
             return [];
         }, true);
         this.registerPrefix('video', 'Add a section of prompt text that replaces the prompt for the image-to-video generation pass.', (prefix) => {
+            return [];
+        }, true);
+        this.registerPrefix('videoswap', 'Add a section of prompt text that replaces the prompt for the image-to-video Swap pass (eg Wan 2.2 lownoise).', (prefix) => {
             return [];
         }, true);
         this.registerPrefix('trigger', "Automatically fills with the current model or LoRA's trigger phrase(s), if any.", (prefix) => {

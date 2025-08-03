@@ -105,9 +105,17 @@ public class WorkflowGeneratorSteps
             {
                 (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(1, g.LoadingModel, g.LoadingClip);
             }
+            else if (g.IsImageToVideoSwap && g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<videoswap"))
+            {
+                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(3, g.LoadingModel, g.LoadingClip);
+            }
             else if (g.IsImageToVideo)
             {
                 (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(2, g.LoadingModel, g.LoadingClip);
+            }
+            else // Base
+            {
+                (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(5, g.LoadingModel, g.LoadingClip);
             }
         }, -10);
         AddModelGenStep(g =>

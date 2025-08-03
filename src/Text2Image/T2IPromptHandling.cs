@@ -558,6 +558,12 @@ public class T2IPromptHandling
             context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
             return "";
         };
+        PromptTagPostProcessors["base"] = (data, context) =>
+        {
+            context.SectionID = 5;
+            return "<base//cid=5>";
+        };
+        PromptTagLengthEstimators["base"] = estimateAsSectionBreak;
         PromptTagPostProcessors["refiner"] = (data, context) =>
         {
             context.SectionID = 1;
@@ -568,6 +574,12 @@ public class T2IPromptHandling
         {
             context.SectionID = 2;
             return "<video//cid=2>";
+        };
+        PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
+        PromptTagPostProcessors["videoswap"] = (data, context) =>
+        {
+            context.SectionID = 3;
+            return "<videoswap//cid=3>";
         };
         PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
         string autoConfine(string data, PromptTagContext context)

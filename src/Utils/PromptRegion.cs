@@ -9,9 +9,13 @@ public class PromptRegion
 
     public string BackgroundPrompt = "";
 
+    public string BasePrompt = "";
+
     public string RefinerPrompt = "";
 
     public string VideoPrompt = "";
+
+    public string VideoSwapPrompt = "";
 
     public enum PartType
     {
@@ -43,7 +47,7 @@ public class PromptRegion
 
     public PromptRegion(string prompt)
     {
-        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:") && !prompt.Contains("<refiner") && !prompt.Contains("<video"))
+        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:") && !prompt.Contains("<refiner") && !prompt.Contains("<base") && !prompt.Contains("<video"))
         {
             GlobalPrompt = prompt;
             return;
@@ -92,6 +96,12 @@ public class PromptRegion
                     continue;
                 }
             }
+            else if (prefix == "base")
+            {
+                BasePrompt += content;
+                addMore = s => BasePrompt += s;
+                continue;
+            }
             else if (prefix == "refiner")
             {
                 RefinerPrompt += content;
@@ -102,6 +112,12 @@ public class PromptRegion
             {
                 VideoPrompt += content;
                 addMore = s => VideoPrompt += s;
+                continue;
+            }
+            else if (prefix == "videoswap")
+            {
+                VideoSwapPrompt += content;
+                addMore = s => VideoSwapPrompt += s;
                 continue;
             }
             else if (prefix == "object")

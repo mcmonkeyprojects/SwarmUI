@@ -204,10 +204,24 @@
     - The automatic inpaint can be helpful for improving quality of objects, especially for small regions, but also might produce unexpected results.
     - Objects may use global feature changes, such as `<lora:` syntax input to apply a lora to the object in the inpaint phase.
 
+## Base
+
+- You can use `<base>` to add prompt text that only goes to the base model, excluding refiner/i2v/etc. models
+    - This includes being able to use `<lora:>` to add loras specific to the base model.
+
+## Refiner
+
+- You can use `<refiner>` to add prompt text that only goes to the refine/upscale model
+    - This includes being able to use `<lora:>` to add loras specific to the refiner model.
+
 ## Video
 
 - When using image2video, you can use `<video>` to supply an alternate prompt for the image-to-video generation.
     - For example, `a photo of a cat <video> the cat walks forward`
+    - This includes being able to use `<lora:>` to add loras specific to the video model.
+- When using image2video with a swap model (eg Wan 2.2), you can use `<videoswap>` to supply an alternate prompt for the swap stage.
+    - The `<video>` input will only go to the main i2v model, and the videoswap only to the swap model.
+    - This includes being able to use `<lora:>` to add loras specific to the video swap model.
 
 ## Video Extend
 
