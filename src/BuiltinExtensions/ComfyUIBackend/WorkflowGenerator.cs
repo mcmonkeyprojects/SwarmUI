@@ -2343,20 +2343,45 @@ public class WorkflowGenerator
                 });
                 imageIn = [fromBatch, 0];
             }
-            string img2vidNode = CreateNode("WanImageToVideo", new JObject()
+            if (UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
             {
-                ["width"] = genInfo.Width,
-                ["height"] = genInfo.Height,
-                ["length"] = genInfo.Frames,
-                ["positive"] = genInfo.PosCond,
-                ["negative"] = genInfo.NegCond,
-                ["vae"] = genInfo.Vae,
-                ["start_image"] = imageIn,
-                ["batch_size"] = 1
-            });
-            genInfo.PosCond = [img2vidNode, 0];
-            genInfo.NegCond = [img2vidNode, 1];
-            genInfo.Latent = [img2vidNode, 2];
+                string endFrame = CreateLoadImageNode(videoEndFrame, "${videoendframe}", true);
+                JArray endFrameNode = [endFrame, 0];
+                string img2vidNode = CreateNode("WanFirstLastFrameToVideo", new JObject()
+                {
+                    ["width"] = genInfo.Width,
+                    ["height"] = genInfo.Height,
+                    ["length"] = genInfo.Frames,
+                    ["positive"] = genInfo.PosCond,
+                    ["negative"] = genInfo.NegCond,
+                    ["vae"] = genInfo.Vae,
+                    ["start_image"] = imageIn,
+                    ["end_image"] = endFrameNode,
+                    ["clip_vision_start_image"] = null,
+                    ["clip_vision_end_image"] = null,
+                    ["batch_size"] = 1
+                });
+                genInfo.PosCond = [img2vidNode, 0];
+                genInfo.NegCond = [img2vidNode, 1];
+                genInfo.Latent = [img2vidNode, 2];
+            }
+            else
+            {
+                string img2vidNode = CreateNode("WanImageToVideo", new JObject()
+                {
+                    ["width"] = genInfo.Width,
+                    ["height"] = genInfo.Height,
+                    ["length"] = genInfo.Frames,
+                    ["positive"] = genInfo.PosCond,
+                    ["negative"] = genInfo.NegCond,
+                    ["vae"] = genInfo.Vae,
+                    ["start_image"] = imageIn,
+                    ["batch_size"] = 1
+                });
+                genInfo.PosCond = [img2vidNode, 0];
+                genInfo.NegCond = [img2vidNode, 1];
+                genInfo.Latent = [img2vidNode, 2];
+            }
             genInfo.DefaultCFG = 3.5;
             genInfo.DefaultSampler = "euler";
             genInfo.DefaultScheduler = "simple";

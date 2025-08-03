@@ -356,6 +356,8 @@ There's a full step by step guide for video model usage here: <https://github.co
 - This is compatible with Lightx2v LoRAs.
 - Some parameter adjustments may be needed
     - Notably, setting **Sigma Shift** to `1` or `2` seems to improve quality significantly.
+    - Wan may be overly resolution and aspect sensitive when generating images
+        - For example, 3:4 or 2:3 at side length 1280 might make pretty great portraits on some Wan variants, but swap to 9:16 or to default side length on the same model and it looks terrible.
 
 ### Wan Phantom
 
@@ -397,6 +399,7 @@ There's a full step by step guide for video model usage here: <https://github.co
                     - and set the advanced **Video Swap Model** to the low noise model,
                     - and leave **Video Swap Percent** at `0.5`
             - Reference **CFG** range is `3.5`
+            - This also supports the `Video End Frame` input to create a video that moves between two known places
         - For both 14B types:
             - **FPS** is `16`, but loras or even parameter adjustments can change it to a more normal-looking `24`.
                 - Swarm will default to `24`, but if your videos "feel sped up", change the FPS parameter to `16`.
