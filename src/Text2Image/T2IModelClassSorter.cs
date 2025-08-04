@@ -97,7 +97,7 @@ public class T2IModelClassSorter
         bool isWan21_1_3bLora(JObject h) => tryGetWanLoraTok(h, out JToken tok) && tok["shape"].ToArray()[1].Value<long>() == 1536;
         bool isWan21_14bLora(JObject h) => tryGetWanLoraTok(h, out JToken tok) && tok["shape"].ToArray()[1].Value<long>() == 5120;
         bool isWanI2v(JObject h) => h.ContainsKey("model.diffusion_model.blocks.0.cross_attn.k_img.bias") || h.ContainsKey("blocks.0.cross_attn.k_img.bias");
-        bool isWan22I2v(JObject h) => h.TryGetValue("patch_embedding.weight", out JToken tok) && tok["shape"].ToArray()[1].Value<long>() == 36;
+        bool isWan22I2v(JObject h) => h.TryGetValue("patch_embedding.weight", out JToken tok) && (tok["shape"].ToArray()[1].Value<long>() == 36 || tok["shape"].ToArray()[^2].Value<long>() == 36); // gguf convs have a reversed shape? wtf?
         bool isWanflf2v(JObject h) => h.ContainsKey("model.diffusion_model.img_emb.emb_pos") || h.ContainsKey("img_emb.emb_pos");
         bool isWanVace(JObject h) => h.ContainsKey("model.diffusion_model.vace_blocks.0.after_proj.bias") || h.ContainsKey("vace_blocks.0.after_proj.bias");
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
