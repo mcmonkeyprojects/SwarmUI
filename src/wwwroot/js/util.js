@@ -482,18 +482,30 @@ function getCookie(name) {
 
 /** Lists all cookies that start with the given prefix. */
 function listCookies(prefix) {
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    let result = [];
-    for(let i = 0; i < ca.length; i++) {
-        let c = ca[i].trim();
-        let equal = c.indexOf('=');
-        let name = c.substring(0, equal);
-        if (name.startsWith(prefix)) {
-            result.push(name);
+    try {
+        let decodedCookie = decodeURIComponent(document.cookie);
+        let ca = decodedCookie.split(';');
+        let result = [];
+        for(let i = 0; i < ca.length; i++) {
+            let c = ca[i].trim();
+            let equal = c.indexOf('=');
+            let name = c.substring(0, equal);
+            if (name.startsWith(prefix)) {
+                result.push(name);
+            }
         }
+        return result;
     }
-    return result;
+    catch (e) {
+        console.error('Error listing cookies:', e);
+        if (e instanceof URIError) { // Malformed cookie data, try to nuke em
+            for (let cookie of document.cookie.split(';')) {
+                let name = cookie.trim().split('=')[0];
+                deleteCookie(name);
+            }
+        }
+        return [];
+    }
 }
 
 /** Deletes the cookie with the given name. */
