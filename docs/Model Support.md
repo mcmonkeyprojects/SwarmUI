@@ -19,7 +19,7 @@
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Modern but bad |
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality |
-[Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | No | Modern, Great Quality, very memory intense |
+[Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | Minimal | Modern, Great Quality, very memory intense |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -417,6 +417,9 @@ Parameters and usage is the same as any other normal model.
     - **Prompts:** their demo page has some prompt tips and examples <https://huggingface.co/spaces/OmniGen2/OmniGen2>
 
 # Qwen Image
+
+![img](/docs/images/models/qwen-image.jpg)
+*(Qwen Image ran at CFG=4, Steps=50, Res=1328x1328. This took me about 3 minutes per image. This comparison is unfair to the other models, but this model seems intended to be a 'slow but smart' model, so this is the way to run it for now. The test prompt seems to be particular hard on Qwen Image, I promise it's smarter than this makes it look lol.)*
 
 - [Qwen Image](https://huggingface.co/Qwen/Qwen-Image) is natively supported in SwarmUI.
     - Just the image gen part, they haven't released the other bits at time of writing.
