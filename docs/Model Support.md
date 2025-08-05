@@ -424,10 +424,10 @@ Parameters and usage is the same as any other normal model.
 - [Qwen Image](https://huggingface.co/Qwen/Qwen-Image) is natively supported in SwarmUI.
     - Just the image gen part, they haven't released the other bits at time of writing.
     - At time of writing the underlying comfy impl is considered an initial/wip impl and may have further work before it's quite right.
+        - SageAttention has compatibility issues
     - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
         - Save it to `diffusion_models`
         - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
-        - At time of writing, server config `AllowGpuSpecificOptimizations` must be disabled, also SageAttention cannot be used, pending upstream comfy bugfix
         - (gguf files pending someone posting them)
     - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
     - It has its own VAE, and will be automatically downloaded.

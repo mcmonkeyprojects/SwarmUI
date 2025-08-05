@@ -301,7 +301,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             addedArgs += $" --extra-model-paths-config {pathRaw}";
             if (Utilities.PresumeNVidia30xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
             {
-                addedArgs += " --fast";
+                addedArgs += " --fast fp16_accumulation cublas_ops"; // TODO: Temp due to fp8 mat mult being borked on Qwen Image
             }
             if (Settings.EnablePreviews)
             {

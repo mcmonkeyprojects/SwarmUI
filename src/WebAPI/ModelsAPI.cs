@@ -419,7 +419,6 @@ public static class ModelsAPI
         input.Set(T2IParamTypes.Seed, Random.Shared.Next(int.MaxValue));
         input.Set(T2IParamTypes.Prompt, prompt);
         input.Set(T2IParamTypes.NegativePrompt, "");
-        input.PreparsePromptLikes();
         input.ApplyLateSpecialLogic();
         return new JObject() { ["result"] = input.Get(T2IParamTypes.Prompt) };
     }

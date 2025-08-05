@@ -1028,7 +1028,7 @@ public class WorkflowGenerator
                     else
                     {
                         dtype = "fp8_e4m3fn";
-                        if (Utilities.PresumeNVidia30xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations)
+                        if (Utilities.PresumeNVidia30xx && Program.ServerSettings.Performance.AllowGpuSpecificOptimizations && !IsQwenImage())
                         {
                             dtype = "fp8_e4m3fn_fast";
                         }
