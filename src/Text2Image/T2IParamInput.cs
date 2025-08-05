@@ -115,6 +115,9 @@ public class T2IParamInput
         }
     ];
 
+    /// <summary>Special handlers for any special logic to apply at the end of other processing on param input.</summary>
+    public static List<Action<T2IParamInput>> LateSpecialParameterHandlers = [input => input.PreparsePromptLikes()];
+
     /// <summary>The underlying raw <see cref="T2IParamSet"/> backing the main inputs.</summary>
     public T2IParamSet InternalSet = new();
 
@@ -588,6 +591,15 @@ public class T2IParamInput
             handler(this);
         }
         EarlyLoadDone = true;
+    }
+
+    /// <summary>Late special logic handlers.</summary>
+    public void ApplyLateSpecialLogic()
+    {
+        foreach (Action<T2IParamInput> handler in LateSpecialParameterHandlers)
+        {
+            handler(this);
+        }
     }
 
     /// <summary>Returns a simple text representation of the input data.</summary>

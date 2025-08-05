@@ -141,6 +141,7 @@ public static class ComfyUIWebAPI
             input = T2IAPI.RequestToParams(session, rawInput);
             input.ApplySpecialLogic();
             input.PreparsePromptLikes();
+            input.ApplyLateSpecialLogic();
             ComfyUIAPIAbstractBackend backend = ComfyUIBackendExtension.ComfyBackendsDirect().FirstOrDefault().Backend as ComfyUIAPIAbstractBackend;
             if (backend is null)
             {
