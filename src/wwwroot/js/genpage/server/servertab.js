@@ -583,6 +583,9 @@ function server_clear_sysram() {
 }
 
 function serverResourceLoop() {
+    if (isVisible(getRequiredElementById('server_tab'))) {
+        fixTabHeights();
+    }
     if (isVisible(getRequiredElementById('Server-Info'))) {
         if (!hasEverCheckedForUpdates) {
             if (window.checkForUpdatesAutomatically) {

@@ -204,6 +204,7 @@ class GenTabLayout {
             document.body.classList.remove('small-window');
             document.body.classList.add('large-window');
         }
+        fixTabHeights();
         tweakNegativePromptBox();
         if (this.altRegion.style.display != 'none') {
             dynamicSizeTextBox(this.altText);

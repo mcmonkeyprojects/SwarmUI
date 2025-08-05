@@ -435,6 +435,7 @@ Parameters and usage is the same as any other normal model.
     - **Steps:** normal ~20 works, but higher steps (eg 50) is recommended for best quality
     - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions in a range between 928 up to 1472.
     - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
+        - Requires >30 gigs of system RAM just to load at all in fp8. If you have limited sysram you're gonna have a bad time. Pagefile can help.
     - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
     - **Sigma Shift:** Defaults to 2.
 
