@@ -19,8 +19,17 @@ public class PromptRegion
 
     public enum PartType
     {
-        Region, Object, Segment, ClearSegment, Extend
+        Region, Object, Segment, ClearSegment, Extend, CustomExtensionPart
     }
+
+    /// <summary>Custom Extensions can add new prompt part types here to be parsed by the extension during prompt parsing.</summary>
+    /// <example>
+    /// This will add prompt parsing for &lt;wcdetailer&gt;
+    /// <code>
+    /// PromptRegion.CustomExtensionPartTypes.Add("wcdetailer");
+    /// </code>
+    /// </example>
+    public static List<string> CustomExtensionPartTypes = [];
 
     public class Part
     {
@@ -36,6 +45,8 @@ public class PromptRegion
 
         public PartType Type;
 
+        public string CustomExtensionPartType;
+
         public int ContextID;
     }
 
@@ -47,7 +58,7 @@ public class PromptRegion
 
     public PromptRegion(string prompt)
     {
-        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:") && !prompt.Contains("<refiner") && !prompt.Contains("<base") && !prompt.Contains("<video"))
+        if (!prompt.Contains("<region:") && !prompt.Contains("<object:") && !prompt.Contains("<segment:") && !prompt.Contains("<clear:") && !prompt.Contains("<extend:") && !prompt.Contains("<refiner") && !prompt.Contains("<base") && !prompt.Contains("<video") && !CustomExtensionPartTypes.Any(p => prompt.Contains($"<{p}")))
         {
             GlobalPrompt = prompt;
             return;
@@ -136,6 +147,10 @@ public class PromptRegion
             {
                 type = PartType.ClearSegment;
             }
+            else if (CustomExtensionPartTypes.Contains(prefix))
+            {
+                type = PartType.CustomExtensionPart;
+            }
             else
             {
                 addMore($"<{piece}");
@@ -145,6 +160,7 @@ public class PromptRegion
             {
                 Prompt = content,
                 Type = type,
+                CustomExtensionPartType = (type == PartType.CustomExtensionPart) ? prefix : null,
                 ContextID = id
             };
             string[] coords = regionData.Split(',');
@@ -178,6 +194,10 @@ public class PromptRegion
             {
                 p.DataText = regionData;
             }
+            else if (type == PartType.CustomExtensionPart)
+            {
+                p.DataText = regionData;
+            }
             else
             {
                 if (coords.Length < 4 || coords.Length > 6
@@ -207,6 +227,10 @@ public class PromptRegion
         foreach (Part part in Parts)
         {
             if (part.Type == PartType.Segment && string.IsNullOrWhiteSpace(part.Prompt))
+            {
+                part.Prompt = GlobalPrompt;
+            }
+            if (part.Type == PartType.CustomExtensionPart && string.IsNullOrWhiteSpace(part.Prompt))
             {
                 part.Prompt = GlobalPrompt;
             }
