@@ -19,7 +19,7 @@
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Modern but bad |
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality |
-[Qwen Image](#qwen-image) | ? | 2025 | Alibaba-Qwen | 20B | No | Modern, Great Quality, very memory intense |
+[Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | No | Modern, Great Quality, very memory intense |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -423,15 +423,17 @@ Parameters and usage is the same as any other normal model.
     - At time of writing the underlying comfy impl is considered an initial/wip impl and may have further work before it's quite right.
     - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
         - Save it to `diffusion_models`
-        - There's an fp8 and a bf16 variant available. At time of writing the bf16 seems required, pending bugfixes with the fp8 version.
+        - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
+        - At time of writing, server config `AllowGpuSpecificOptimizations` must be disabled, also SageAttention cannot be used, pending upstream comfy bugfix
         - (gguf files pending someone posting them)
     - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
     - It has its own VAE, and will be automatically downloaded.
-    - **CFG:** Usual CFG rules, around 4 as a baseline
+    - **CFG:** You can use CFG=1 for best performance. You can also happily use higher CFGs, eg CFG=4, at a performance cost.
     - **Steps:** normal ~20 works, but higher steps (eg 50) is recommended for best quality
-    - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions (eg lower it a bit for performance).
-    - **Performance:** Very slow.
+    - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions in a range between 928 up to 1472.
+    - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
     - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
+    - **Sigma Shift:** Defaults to 2.
 
 # Video Models
 

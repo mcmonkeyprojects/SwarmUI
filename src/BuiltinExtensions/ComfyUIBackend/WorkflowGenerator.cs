@@ -1021,7 +1021,7 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsQwenImage()) // TODO: Qwen image bug with fp8?
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma())
                     {
                         dtype = "default";
                     }
