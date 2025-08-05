@@ -216,11 +216,18 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "lumina-2";
     }
 
-    /// <summary>Returns true if the current model is an OmniGen.</summary>
+    /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz.StartsWith("omnigen-");
+    }
+
+    /// <summary>Returns true if the current model is Qwen Image.</summary>
+    public bool IsQwenImage()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz.StartsWith("qwen-image");
     }
 
     /// <summary>Returns true if the current model is Hunyuan Video.</summary>
@@ -812,6 +819,10 @@ public class WorkflowGenerator
         {
             return requireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", null);
         }
+        string getQwenImage25_7b_tenc()
+        {
+            return requireClipModel("qwen_2.5_vl_7b_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4", null);
+        }
         string getClipLModel()
         {
             if (UserInput.TryGet(T2IParamTypes.ClipLModel, out T2IModel model))
@@ -1010,7 +1021,7 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma())
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsQwenImage()) // TODO: Qwen image bug with fp8?
                     {
                         dtype = "default";
                     }
@@ -1225,12 +1236,26 @@ public class WorkflowGenerator
             {
                 loaderType = "CLIPLoaderGGUF";
             }
-            string quadClipLoader = CreateNode(loaderType, new JObject()
+            string clipLoader = CreateNode(loaderType, new JObject()
             {
                 ["clip_name"] = getOmniQwenModel(),
             });
-            LoadingClip = [quadClipLoader, 0];
+            LoadingClip = [clipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsQwenImage())
+        {
+            string loaderType = "CLIPLoader";
+            if (getQwenImage25_7b_tenc().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getQwenImage25_7b_tenc(),
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "qwen-image", "qwen-image-vae");
         }
         else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
         {
@@ -1382,6 +1407,15 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
+            else if (IsQwenImage())
+            {
+                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shiftVal
+                });
+                LoadingModel = [samplingNode, 0];
+            }
         }
         foreach (WorkflowGenStep step in ModelGenSteps)
         {
@@ -1509,7 +1543,7 @@ public class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage())
         {
             defscheduler ??= "simple";
         }
@@ -1960,7 +1994,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {

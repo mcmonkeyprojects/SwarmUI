@@ -7,18 +7,19 @@
 [Stable Diffusion XL](#stable-diffusion-xl) | unet | 2023 | Stability AI | 2B | Partial | Older but some finetunes are worth using |
 [SD1 and SDXL Turbo Variants](#sd1-and-sdxl-turbo-variants) | unet | 2023 | Stability AI and others | 2B | Partial | Outdated |
 [Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Yes | Outdated, prefer 3.5 |
-[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Partial | Modern, High Quality |
+[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Partial | Modern, Good Quality |
 [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Modern, Good Quality |
 [Segmind SSD 1B](#segmind-ssd-1b) | unet | 2023 | Segmind | 1B | Partial | Outdated |
 [Stable Cascade](#stable-cascade) | unet cascade | 2024 | Stability AI | 5B | Partial | Outdated |
 [PixArt Sigma](#pixart-sigma) | DiT | 2024 | PixArt | 1B | ? | Outdated |
-[Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Modern, Low Quality |
+[Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Just Bad |
 [AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Modern, High Quality |
-[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Decent Quality |
+[Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Passable Quality |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Modern but bad |
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality |
+[Qwen Image](#qwen-image) | ? | 2025 | Alibaba-Qwen | 20B | No | Modern, Great Quality, very memory intense |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -405,7 +406,7 @@ Parameters and usage is the same as any other normal model.
     - It is technically an LLM, and the LLM features are not supported, only the direct raw image features.
     - Download the model here <https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/blob/main/split_files/diffusion_models/omnigen2_fp16.safetensors>
         - Save it to `diffusion_models`
-    - The text encoder is Qwen 2.5 VL (LLM), and will be automatically downloaded.
+    - The text encoder is Qwen 2.5 VL 3B (LLM), and will be automatically downloaded.
     - The VAE is the Flux VAE, and will be automatically downloaded.
     - Add images to the prompt box to use them as input images for the model. If no input images are given, but you have an Init Image, that will be used as the input image.
     - **CFG:** Usual CFG rules, around 5 to 7 is a good baseline
@@ -414,6 +415,23 @@ Parameters and usage is the same as any other normal model.
     - **Resolution:** Normal 1024x1024-ish.
     - **Performance:** Pretty terribly slow. Incompatible with fp8, incompatible with sage attention.
     - **Prompts:** their demo page has some prompt tips and examples <https://huggingface.co/spaces/OmniGen2/OmniGen2>
+
+# Qwen Image
+
+- [Qwen Image](https://huggingface.co/Qwen/Qwen-Image) is natively supported in SwarmUI.
+    - Just the image gen part, they haven't released the other bits at time of writing.
+    - At time of writing the underlying comfy impl is considered an initial/wip impl and may have further work before it's quite right.
+    - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
+        - Save it to `diffusion_models`
+        - There's an fp8 and a bf16 variant available. At time of writing the bf16 seems required, pending bugfixes with the fp8 version.
+        - (gguf files pending someone posting them)
+    - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
+    - It has its own VAE, and will be automatically downloaded.
+    - **CFG:** Usual CFG rules, around 4 as a baseline
+    - **Steps:** normal ~20 works, but higher steps (eg 50) is recommended for best quality
+    - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions (eg lower it a bit for performance).
+    - **Performance:** Very slow.
+    - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
 
 # Video Models
 

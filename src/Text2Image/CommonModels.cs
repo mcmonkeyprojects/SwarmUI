@@ -85,5 +85,6 @@ public static class CommonModels
         Register(new("wan21-vae", "Wan 2.1 VAE", "The VAE for Wan 2.1", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors", "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b", "VAE", "Wan/wan_2.1_vae.safetensors"));
         Register(new("wan22-vae", "Wan 2.2 VAE", "The VAE for Wan 2.2", "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan2.2_vae.safetensors", "e40321bd36b9709991dae2530eb4ac303dd168276980d3e9bc4b6e2b75fed156", "VAE", "Wan/wan2.2_vae.safetensors"));
         Register(new("ltxv-vae", "LTX-V VAE", "The VAE for Lightricks LTX-Video.", "https://huggingface.co/wsbagnsv1/ltxv-13b-0.9.7-dev-GGUF/resolve/c4296d06bab7719ce08e68bfa7a35042898e538b/ltxv-13b-0.9.7-vae-BF16.safetensors", "ee5ddcebc0b92d81b8aed9ee43445b7a4e66df1acf180678c5aa40e82f898dc5", "VAE", "LTXV/ltxv_vae.safetensors"));
+        Register(new("qwen-image-vae", "Qwen Image VAE", "The VAE for Qwen Image", "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors", "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f", "VAE", "QwenImage/qwen_image_vae.safetensors"));
     }
 }
