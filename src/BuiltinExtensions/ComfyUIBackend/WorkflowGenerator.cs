@@ -1256,6 +1256,12 @@ public class WorkflowGenerator
             });
             LoadingClip = [clipLoader, 0];
             doVaeLoader(null, "qwen-image", "qwen-image-vae");
+            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
+            });
+            LoadingModel = [samplingNode, 0];
         }
         else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
         {
@@ -1401,15 +1407,6 @@ public class WorkflowGenerator
             else if (IsHunyuanVideo() || IsWanVideo() || IsWanVideo22() || IsHiDream() || IsChroma())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
-                {
-                    ["model"] = LoadingModel,
-                    ["shift"] = shiftVal
-                });
-                LoadingModel = [samplingNode, 0];
-            }
-            else if (IsQwenImage())
-            {
-                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {
                     ["model"] = LoadingModel,
                     ["shift"] = shiftVal

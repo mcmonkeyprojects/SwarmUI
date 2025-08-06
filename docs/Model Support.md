@@ -426,9 +426,11 @@ Parameters and usage is the same as any other normal model.
     - At time of writing the underlying comfy impl is considered an initial/wip impl and may have further work before it's quite right.
         - SageAttention has compatibility issues
     - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
-        - Save it to `diffusion_models`
         - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
         - Or, for limited memory space, GGUF versions <https://huggingface.co/city96/Qwen-Image-gguf/tree/main>
+        - Or a distilled version here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/blob/main/non_official/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors>
+            - This uses CFG=1, Steps=15 or so.
+        - Save it to `diffusion_models`
     - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
     - It has its own VAE, and will be automatically downloaded.
     - **CFG:** You can use CFG=1 for best performance. You can also happily use higher CFGs, eg CFG=4, at a performance cost.
@@ -437,7 +439,7 @@ Parameters and usage is the same as any other normal model.
     - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
         - Requires >30 gigs of system RAM just to load at all in fp8. If you have limited sysram you're gonna have a bad time. Pagefile can help.
     - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
-    - **Sigma Shift:** Defaults to `1.15`
+    - **Sigma Shift:** Comfy defaults it to `1.15`, but this ruins fine details, so Swarm defaults it to `3` instead. Many different values are potentially valid. Proper guidance on choices TBD.
 
 # Video Models
 
