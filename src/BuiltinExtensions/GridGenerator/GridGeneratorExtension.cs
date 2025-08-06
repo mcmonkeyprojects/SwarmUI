@@ -22,7 +22,7 @@ namespace SwarmUI.Builtin_GridGeneratorExtension;
 /// <summary>Extension that adds a tool to generate grids of images.</summary>
 public class GridGeneratorExtension : Extension
 {
-    public static T2IRegisteredParam<string> PromptReplaceParameter, PresetsParameter;
+    public static T2IRegisteredParam<string> PromptReplaceParameter, PromptAddParameter, PresetsParameter;
 
     public static PermInfo PermGenerateGrids = Permissions.Register(new("gridgen_generate_grids", "[Grid Generator] Generate Grids", "Allows the user to generate grids with the Grid Generator tool.", PermissionDefault.USER, Permissions.GroupUser));
     public static PermInfo PermReadGrids = Permissions.Register(new("gridgen_read_grids", "[Grid Generator] Read Grids", "Allows the user to read their list of saved grids.", PermissionDefault.USER, Permissions.GroupUser));
@@ -58,8 +58,12 @@ public class GridGeneratorExtension : Extension
                     return $"{first}={v}";
                 })];
             }));
+        PromptAddParameter = T2IParamTypes.Register<string>(new("[Grid Gen] Prompt Add", "Add text to the end of the prompt in a stackable way.\nOnly compatible with the base 'prompt' parameter.",
+            "", VisibleNormally: false, AlwaysRetain: true, Toggleable: true, Nonreusable: true, ChangeWeight: -6
+            ));
         PresetsParameter = T2IParamTypes.Register<string>(new("[Grid Gen] Presets", "Apply parameter presets to the image. Can use a comma-separated list to apply multiple per-cell, eg 'a, b || a, c || b, c'",
-            "", VisibleNormally: false, AlwaysRetain: true, Toggleable: true, Nonreusable: true, ValidateValues: false, ChangeWeight: 2, GetValues: (session) => [.. session.User.GetAllPresets().Select(p => p.Title)]));
+            "", VisibleNormally: false, AlwaysRetain: true, Toggleable: true, Nonreusable: true, ValidateValues: false, ChangeWeight: 2, GetValues: (session) => [.. session.User.GetAllPresets().Select(p => p.Title)]
+            ));
         GridCallInitHook = (call) =>
         {
             call.LocalData = new GridCallData();
@@ -75,9 +79,14 @@ public class GridGeneratorExtension : Extension
                 call.Grid.MinHeight = call.Grid.InitialParams.GetImageHeight();
             }
             string cleaned = T2IParamTypes.CleanTypeName(param);
-            if (cleaned == "gridgenpromptreplace")
+            if (cleaned == PromptReplaceParameter.Type.ID)
             {
                 (call.LocalData as GridCallData).Replacements.Add(val);
+                return true;
+            }
+            else if (cleaned == PromptAddParameter.Type.ID)
+            {
+                (call.LocalData as GridCallData).Additions.Add(val);
                 return true;
             }
             else if (cleaned == "width" || cleaned == "outwidth")
@@ -104,7 +113,8 @@ public class GridGeneratorExtension : Extension
         };
         GridCallApplyHook = (call, param, dry) =>
         {
-            foreach (string replacement in (call.LocalData as GridCallData).Replacements)
+            GridCallData data = call.LocalData as GridCallData;
+            foreach (string replacement in data.Replacements)
             {
                 string[] parts = replacement.Split('=', 2);
                 string key = parts[0].Trim();
@@ -113,6 +123,11 @@ public class GridGeneratorExtension : Extension
                 {
                     param.InternalSet.ValuesInput[paramId] = param.InternalSet.ValuesInput[paramId].ToString().Replace(key, val);
                 }
+            }
+            if (data.Additions.Any())
+            {
+                string prompt = param.InternalSet.Get(T2IParamTypes.Prompt, "") + " " + data.Additions.JoinString(" ");
+                param.InternalSet.Set(T2IParamTypes.Prompt, prompt.Trim());
             }
         };
         GridRunnerPreRunHook = (runner) =>
@@ -307,6 +322,8 @@ public class GridGeneratorExtension : Extension
     public class GridCallData
     {
         public List<string> Replacements = [];
+
+        public List<string> Additions = [];
     }
 
     public class SwarmUIGridData
