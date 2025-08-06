@@ -428,7 +428,7 @@ Parameters and usage is the same as any other normal model.
     - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
         - Save it to `diffusion_models`
         - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
-        - (gguf files pending someone posting them)
+        - Or, for limited memory space, GGUF versions <https://huggingface.co/city96/Qwen-Image-gguf/tree/main>
     - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
     - It has its own VAE, and will be automatically downloaded.
     - **CFG:** You can use CFG=1 for best performance. You can also happily use higher CFGs, eg CFG=4, at a performance cost.
@@ -437,7 +437,7 @@ Parameters and usage is the same as any other normal model.
     - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
         - Requires >30 gigs of system RAM just to load at all in fp8. If you have limited sysram you're gonna have a bad time. Pagefile can help.
     - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
-    - **Sigma Shift:** Defaults to 2.
+    - **Sigma Shift:** Defaults to `1.15`
 
 # Video Models
 
