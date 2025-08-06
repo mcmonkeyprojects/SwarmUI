@@ -76,12 +76,14 @@ def make_swarm_sampler_callback(steps, device, model, previews):
     def callback(step, x0, x, total_steps):
         pbar.update_absolute(step + 1, total_steps, None)
         if previewer:
+            if step == 0:
+                x0 = x0.clone().cpu() # Sync copy to CPU for first step to prevent reading old data. Future tensors allow comfy to do async non_blocky stuff.
             if x0.ndim == 5:
-                # mochi shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
+                # video shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
                 x0 = x0[0].permute(1, 0, 2, 3)
                 x0 = torch.flip(x0, [0])
             def do_preview(id, index):
-                preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])
+                preview_img = previewer.decode_latent_to_preview_image("JPEG", prev_tens)
                 swarm_send_extra_preview(id, preview_img[1])
             if previews == "iterate":
                 do_preview(0, step % x0.shape[0])
