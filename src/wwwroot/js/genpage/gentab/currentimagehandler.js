@@ -499,8 +499,8 @@ function alignImageDataFormat() {
     let format = getUserSetting('ImageMetadataFormat', 'auto');
     let extrasWrapper = curImg.querySelector('.current-image-extras-wrapper');
     let scale = img.dataset.previewGrow == 'true' ? 8 : 1;
-    let imgWidth = img.naturalWidth * scale;
-    let imgHeight = img.naturalHeight * scale;
+    let imgWidth = (img.naturalWidth ?? img.videoWidth) * scale;
+    let imgHeight = (img.naturalHeight ?? img.videoHeight) * scale;
     let ratio = imgWidth / imgHeight;
     let height = Math.min(imgHeight, curImg.offsetHeight);
     let width = Math.min(imgWidth, height * ratio);
@@ -662,6 +662,13 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             img.dataset.previewGrow = 'true';
         }
         alignImageDataFormat();
+    }
+    if (isVideo) {
+        img.addEventListener('loadeddata', function() {
+            if (img) {
+                img.onload();
+            }
+        }, false);
     }
     srcTarget.src = src;
     img.className = 'current-image-img';
