@@ -148,3 +148,11 @@ DAAMSwarm:
     license: MIT
     tags:
     - parameters
+
+FrameSaver:
+    author: Mathew Tomberlin
+    description: Adds parameters to save the first and/or last frame of generated video.
+    url: https://github.com/MathewTomberlin/FrameSaver
+    license: MIT
+    tags:
+    - parameters
