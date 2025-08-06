@@ -130,6 +130,12 @@
     - GUI is generally preferred for LoRAs, this is available to allow dynamically messing with presets (eg `<preset:<random:a, b>>`)
     - You can shorthand this as `<p:presetname>`
 
+## Params
+
+- You can directly set generation parameters via `<param[paramName]:paramValue>`
+    - For example, `<param[CFG Scale]:1>` or `<param[cfgscale]:1>` sets CFG Scale to 1.
+    - You can combine this with sub-syntax, eg `<param[cfgscale]:<random:1,2,3>>` to set CFG Scale to a random value.
+
 ## Automatic Segmentation and Refining
 
 ![img](/docs/images/segment-ref.jpg)

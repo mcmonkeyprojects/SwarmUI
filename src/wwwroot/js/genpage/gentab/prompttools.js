@@ -48,6 +48,9 @@ class PromptTabCompleteClass {
             let prefixLow = prefix.toLowerCase();
             return this.getOrderedMatches(allPresets.map(p => p.title), prefixLow);
         });
+        this.registerPrefix('param[param_id]', 'Set a raw parameter value directly.', (prefix) => { 
+            return ['\nSet a parameter value directly, for example "<param[CFG Scale]:1>" or "<param[cfgscale]:1>" to set CFG Scale to 1.', '\nYou can combine with sub-syntax, eg "<param[cfgscale]:<random:1,2,3>>" to set CFG Scale to a random value.'];
+        });
         this.registerAltPrefix('p', 'preset');
         this.registerPrefix('embed', 'Use a pretrained CLIP TI Embedding', (prefix) => {
             let prefixLow = prefix.toLowerCase();

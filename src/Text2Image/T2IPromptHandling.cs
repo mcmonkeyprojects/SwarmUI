@@ -436,6 +436,24 @@ public class T2IPromptHandling
         }
         PromptTagLengthEstimators["preset"] = estimateEmpty;
         PromptTagLengthEstimators["p"] = estimateEmpty;
+        PromptTagProcessors["param"] = (data, context) =>
+        {
+            string preData = context.PreData;
+            if (preData is null)
+            {
+                context.TrackWarning("Prompt tag 'param' requires pre-data to specify the parameter name.");
+                return null;
+            }
+            data = context.Parse(data).Trim();
+            if (T2IParamTypes.TryGetType(preData, out T2IParamType type, context.Input))
+            {
+                T2IParamTypes.ApplyParameter(preData, data, context.Input);
+                return "";
+            }
+            context.TrackWarning($"Parameter '{preData}' does not exist and will be ignored.");
+            return null;
+        };
+        PromptTagLengthEstimators["param"] = estimateEmpty;
         PromptTagProcessors["embed"] = (data, context) =>
         {
             data = context.Parse(data);
