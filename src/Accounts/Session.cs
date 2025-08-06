@@ -259,12 +259,19 @@ public class Session : IEquatable<Session>
                     {
                         File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
                     }
-                    if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension) && !string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
+                    if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension))
                     {
-                        Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]).Wait();
-                        if (Program.ServerSettings.UI.AllowAnimatedPreviews)
+                        if (string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
                         {
-                            Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
+                            Logs.Warning("ffmpeg cannot be found, some features will not work including video previews. Please ensure ffmpeg is locatable to use video files.");
+                        }
+                        else
+                        {
+                            Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]).Wait();
+                            if (Program.ServerSettings.UI.AllowAnimatedPreviews)
+                            {
+                                Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
+                            }
                         }
                     }
                     Logs.Debug($"Saved an output file as '{fullPath}'");

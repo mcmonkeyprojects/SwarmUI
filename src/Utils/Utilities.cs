@@ -1102,6 +1102,24 @@ public static class Utilities
                 return exe;
             }
         }
+        string linuxPath = "dlbackend/ComfyUI/venv/lib";
+        if (Directory.Exists(linuxPath))
+        {
+            string subFolder = Directory.EnumerateDirectories(linuxPath, "python*").FirstOrDefault();
+            if (subFolder is not null)
+            {
+                string linuxFolder = $"{subFolder}/site-packages/imageio_ffmpeg/binaries";
+                if (Directory.Exists(linuxFolder))
+                {
+                    string exe = Directory.EnumerateFiles(linuxFolder, "ffmpeg-linux*").FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(exe))
+                    {
+                        Logs.Debug($"Will use comfy copy of ffmpeg at '{exe}'");
+                        return exe;
+                    }
+                }
+            }
+        }
         Logs.Warning($"No ffmpeg available, some video-related features will not work. Install ffmpeg and ensure it is in your PATH to enable these features.");
         return null;
     }, true);
