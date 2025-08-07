@@ -339,15 +339,27 @@ public class ComfyUIRedirectHelper
                         {
                             return;
                         }
-                        Logs.Debug($"ComfyUI redirection failed (outsocket): {ex.ReadableString()}");
+                        Logs.Debug($"ComfyUI redirection failed (outsocket, user {swarmUser.UserID} with {user.Clients.Count} active sockets): {ex.ReadableString()}");
                     }
                     finally
                     {
-                        Users.TryRemove(client.SID, out _);
                         user.Clients.TryRemove(client, out _);
                         if (client.SID == user.Reserved?.SID)
                         {
                             user.Unreserve();
+                        }
+                        outSocket.Dispose();
+                        if (user.Clients.IsEmpty())
+                        {
+                            Users.TryRemove(client.SID, out _);
+                            _ = Utilities.RunCheckedTask(() =>
+                            {
+                                if (socket.State == WebSocketState.Open)
+                                {
+                                    socket.CloseAsync(WebSocketCloseStatus.InternalServerError, null, Utilities.TimedCancel(TimeSpan.FromSeconds(2)).Token);
+                                }
+                                socket.Dispose();
+                            });
                         }
                     }
                 }));
@@ -381,12 +393,17 @@ public class ComfyUIRedirectHelper
                     {
                         return;
                     }
-                    Logs.Debug($"ComfyUI redirection failed (in-socket): {ex.ReadableString()}");
+                    Logs.Debug($"ComfyUI redirection failed (in-socket, user {swarmUser.UserID} with {user.Clients.Count} active sockets): {ex.ReadableString()}");
                 }
                 finally
                 {
                     Users.TryRemove(user.MasterSID, out _);
                     user.Unreserve();
+                    socket.Dispose();
+                    foreach (ComfyClientData client in user.Clients.Values)
+                    {
+                        client.Socket.Dispose();
+                    }
                 }
             }));
             await Task.WhenAll(tasks);
