@@ -135,6 +135,9 @@
 - You can directly set generation parameters via `<param[paramName]:paramValue>`
     - For example, `<param[CFG Scale]:1>` or `<param[cfgscale]:1>` sets CFG Scale to 1.
     - You can combine this with sub-syntax, eg `<param[cfgscale]:<random:1,2,3>>` to set CFG Scale to a random value.
+    - Some parameters can be 'sectionalized' - that is, apply to specific sections, such as `<refiner>` or `<base>` or `<video>` or `<segment:...>` or `<extend:...>` etc.
+        - This includes: `CFG Scale`, `Steps`, `Sampler`, `Scheduler`
+        - So for example, `<video> <param[cfgscale]:5>` will set the CFG Scale of the video section only to `5`.
 
 ## Automatic Segmentation and Refining
 

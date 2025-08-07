@@ -34,6 +34,18 @@ public class T2IParamSet
         return toret;
     }
 
+    /// <summary>Lock in valid seeds to this set (ie remove '-1' seed values).</summary>
+    public void LockSeeds()
+    {
+        if (!TryGet(T2IParamTypes.Seed, out long seed) || seed == -1)
+        {
+            Set(T2IParamTypes.Seed, Random.Shared.Next());
+        }
+        if (TryGet(T2IParamTypes.VariationSeed, out long varSeed) && varSeed == -1)
+        {
+            Set(T2IParamTypes.VariationSeed, Random.Shared.Next());
+        }
+    }
 
     /// <summary>Gets the raw value of the parameter, if it is present, or null if not.</summary>
     public object GetRaw(T2IParamType param)

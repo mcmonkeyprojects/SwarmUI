@@ -1503,7 +1503,7 @@ public class WorkflowGenerator
     public string DefaultPreviews = "default";
 
     /// <summary>Creates a KSampler and returns its node ID.</summary>
-    public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null)
+    public string CreateKSampler(JArray model, JArray pos, JArray neg, JArray latent, double cfg, int steps, int startStep, int endStep, long seed, bool returnWithLeftoverNoise, bool addNoise, double sigmin = -1, double sigmax = -1, string previews = null, string defsampler = null, string defscheduler = null, string id = null, bool rawSampler = false, bool doTiled = false, bool isFirstSampler = false, bool hadSpecialCond = false, string explicitSampler = null, string explicitScheduler = null, int sectionId = 0)
     {
         if (IsVideoModel())
         {
@@ -1793,9 +1793,9 @@ public class WorkflowGenerator
             });
             string samplerNode = CreateNode("KSamplerSelect", new JObject()
             {
-                ["sampler_name"] = explicitSampler ?? UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler)
+                ["sampler_name"] = explicitSampler ?? UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler, sectionId: sectionId)
             });
-            string scheduler = explicitScheduler ?? UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler).ToLowerFast();
+            string scheduler = explicitScheduler ?? UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler, sectionId: sectionId).ToLowerFast();
             JArray schedulerNode;
             if (scheduler == "turbo")
             {
@@ -1891,8 +1891,8 @@ public class WorkflowGenerator
             ["noise_seed"] = seed,
             ["steps"] = steps,
             ["cfg"] = cfg,
-            ["sampler_name"] = explicitSampler ?? UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler),
-            ["scheduler"] = explicitScheduler ?? UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler),
+            ["sampler_name"] = explicitSampler ?? UserInput.Get(ComfyUIBackendExtension.SamplerParam, defsampler ?? DefaultSampler, sectionId: sectionId),
+            ["scheduler"] = explicitScheduler ?? UserInput.Get(ComfyUIBackendExtension.SchedulerParam, defscheduler ?? DefaultScheduler, sectionId: sectionId),
             ["positive"] = pos,
             ["negative"] = neg,
             ["latent_image"] = latent,
@@ -2207,6 +2207,7 @@ public class WorkflowGenerator
         public string DefaultSampler = null, DefaultScheduler = null;
         public double DefaultCFG = 7;
         public bool HadSpecialCond = false;
+        public int ContextID = T2IParamInput.SectionID_Video;
 
         public void PrepModelAndCond(WorkflowGenerator g)
         {
@@ -2630,20 +2631,26 @@ public class WorkflowGenerator
             endStep = (int)Math.Round(genInfo.Steps * genInfo.VideoSwapPercent);
             returnLeftoverNoise = true;
         }
-        string samplered = CreateKSampler(genInfo.Model, genInfo.PosCond, genInfo.NegCond, genInfo.Latent, genInfo.VideoCFG.Value, genInfo.Steps, genInfo.StartStep, endStep, genInfo.Seed, returnLeftoverNoise, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: genInfo.HadSpecialCond);
+        string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: genInfo.ContextID, includeBase: false);
+        string explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: genInfo.ContextID, includeBase: false);
+        string samplered = CreateKSampler(genInfo.Model, genInfo.PosCond, genInfo.NegCond, genInfo.Latent, genInfo.VideoCFG.Value, genInfo.Steps, genInfo.StartStep, endStep, genInfo.Seed, returnLeftoverNoise, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: genInfo.HadSpecialCond, explicitSampler: explicitSampler, explicitScheduler: explicitScheduler);
         FinalLatentImage = [samplered, 0];
         if (genInfo.VideoSwapModel is not null)
         {
             IsImageToVideoSwap = true;
             (T2IModel swapModel, JArray swapVideoModel, JArray clip, _) = CreateStandardModelLoader(genInfo.VideoSwapModel, "image2video", null, true);
+            double cfg = genInfo.VideoCFG.Value;
             if (genInfo.Prompt.Contains("<videoswap"))
             {
                 genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, swapModel, true, isVideo: true, isVideoSwap: true);
                 genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, swapModel, false, isVideo: true, isVideoSwap: true);
                 genInfo.PrepFullCond(this);
+                explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.Section_VideoSwap, includeBase: false) ?? explicitSampler;
+                explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.Section_VideoSwap, includeBase: false) ?? explicitScheduler;
+                cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.Section_VideoSwap, false) ?? cfg;
             }
             // TODO: Should class-changes be allowed (must re-emit all the model-specific cond logic, maybe a vae reencoder - this is basically a refiner run)
-            samplered = CreateKSampler(swapVideoModel, genInfo.PosCond, genInfo.NegCond, FinalLatentImage, genInfo.VideoCFG.Value, genInfo.Steps, endStep, 10000, genInfo.Seed + 1, false, false, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: genInfo.HadSpecialCond);
+            samplered = CreateKSampler(swapVideoModel, genInfo.PosCond, genInfo.NegCond, FinalLatentImage, cfg, genInfo.Steps, endStep, 10000, genInfo.Seed + 1, false, false, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: genInfo.HadSpecialCond, explicitSampler: explicitSampler, explicitScheduler: explicitScheduler);
             FinalLatentImage = [samplered, 0];
             IsImageToVideoSwap = false;
         }

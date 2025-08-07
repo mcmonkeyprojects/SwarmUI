@@ -632,12 +632,10 @@ public class ComfyUIBackendExtension : Extension
             MetadataFormat: v => v.StartsWith("PARSED%") ? v.After("%").Before("%") : v
             ));
         SamplerParam = T2IParamTypes.Register<string>(new("Sampler", "Sampler type (for ComfyUI backends).\nGenerally, 'Euler' is fine, but for SD1 and SDXL 'DPM++ 2M' is popular when paired with the 'Karras' scheduler.\n'Ancestral' and 'SDE' samplers only work with non-rectified models (eg SD1/SDXL) and randomly move over time.\nSome special model variants require specific Samplers or Schedulers.\n'CFG++' samplers have a different CFG range than normal (between 0 to 2, depending).",
-            "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -5,
-            GetValues: (_) => Samplers
+            "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -5, CanSectionalize: true, GetValues: (_) => Samplers
             ));
         SchedulerParam = T2IParamTypes.Register<string>(new("Scheduler", "Scheduler type (for ComfyUI backends).\nGoes with the Sampler parameter above.",
-            "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -4,
-            GetValues: (_) => Schedulers
+            "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -4, CanSectionalize: true, GetValues: (_) => Schedulers
             ));
         AITemplateParam = T2IParamTypes.Register<bool>(new("Enable AITemplate", "If checked, enables AITemplate for ComfyUI generations (UNet only). Only compatible with some GPUs.",
             "false", IgnoreIf: "false", FeatureFlag: "aitemplate", Group: ComfyGroup, ChangeWeight: 5

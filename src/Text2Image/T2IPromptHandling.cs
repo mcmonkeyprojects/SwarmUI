@@ -48,7 +48,9 @@ public class T2IPromptHandling
                 return text;
             }
             Depth++;
+            int sectionId = SectionID;
             string result = ProcessPromptLike(text, this, false);
+            SectionID = sectionId;
             Depth--;
             return result;
         }
@@ -103,7 +105,7 @@ public class T2IPromptHandling
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags.</summary>
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagProcessors = [];
 
-    /// <summary>Mapping of prompt tags that require no input.</summary>
+    /// <summary>Mapping of prompt tags that can run very early on or require no input.</summary>
     public static Dictionary<string, Func<string, PromptTagContext, string>> PromptTagBasicProcessors = [];
 
     /// <summary>Mapping of prompt tag prefixes, to allow for registration of custom prompt tags - specifically post-processing like lora (which remove from prompt and get read elsewhere).</summary>
@@ -447,7 +449,7 @@ public class T2IPromptHandling
             data = context.Parse(data).Trim();
             if (T2IParamTypes.TryGetType(preData, out T2IParamType type, context.Input))
             {
-                T2IParamTypes.ApplyParameter(preData, data, context.Input);
+                T2IParamTypes.ApplyParameter(preData, data, context.Input, type.CanSectionalize ? context.SectionID : 0);
                 return "";
             }
             context.TrackWarning($"Parameter '{preData}' does not exist and will be ignored.");
@@ -576,28 +578,28 @@ public class T2IPromptHandling
             context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
             return "";
         };
-        PromptTagPostProcessors["base"] = (data, context) =>
+        PromptTagBasicProcessors["base"] = (data, context) =>
         {
-            context.SectionID = 5;
-            return "<base//cid=5>";
+            context.SectionID = T2IParamInput.SectionID_BaseOnly;
+            return $"<base//cid={T2IParamInput.SectionID_BaseOnly}>";
         };
         PromptTagLengthEstimators["base"] = estimateAsSectionBreak;
-        PromptTagPostProcessors["refiner"] = (data, context) =>
+        PromptTagBasicProcessors["refiner"] = (data, context) =>
         {
-            context.SectionID = 1;
-            return "<refiner//cid=1>";
+            context.SectionID = T2IParamInput.SectionID_Refiner;
+            return $"<refiner//cid={T2IParamInput.SectionID_Refiner}>";
         };
         PromptTagLengthEstimators["refiner"] = estimateAsSectionBreak;
-        PromptTagPostProcessors["video"] = (data, context) =>
+        PromptTagBasicProcessors["video"] = (data, context) =>
         {
-            context.SectionID = 2;
-            return "<video//cid=2>";
+            context.SectionID = T2IParamInput.SectionID_Video;
+            return $"<video//cid={T2IParamInput.SectionID_Video}>";
         };
         PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
-        PromptTagPostProcessors["videoswap"] = (data, context) =>
+        PromptTagBasicProcessors["videoswap"] = (data, context) =>
         {
-            context.SectionID = 3;
-            return "<videoswap//cid=3>";
+            context.SectionID = T2IParamInput.Section_VideoSwap;
+            return $"<videoswap//cid={T2IParamInput.Section_VideoSwap}>";
         };
         PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
         string autoConfine(string data, PromptTagContext context)
@@ -610,10 +612,10 @@ public class T2IPromptHandling
             string raw = context.RawCurrentTag.Before("//cid=");
             return $"<{raw}//cid={context.SectionID}>";
         }
-        PromptTagPostProcessors["segment"] = autoConfine;
-        PromptTagPostProcessors["object"] = autoConfine;
-        PromptTagPostProcessors["region"] = autoConfine;
-        PromptTagPostProcessors["extend"] = autoConfine;
+        PromptTagBasicProcessors["segment"] = autoConfine;
+        PromptTagBasicProcessors["object"] = autoConfine;
+        PromptTagBasicProcessors["region"] = autoConfine;
+        PromptTagBasicProcessors["extend"] = autoConfine;
         PromptTagBasicProcessors["break"] = (data, context) =>
         {
             return "<break>";
@@ -721,8 +723,10 @@ public class T2IPromptHandling
             return null;
         }
         string addBefore = "", addAfter = "";
+        int baseSectionId = context.SectionID;
         void processSet(Dictionary<string, Func<string, PromptTagContext, string>> set)
         {
+            context.SectionID = baseSectionId;
             val = StringConversionHelper.QuickSimpleTagFiller(val, "<", ">", tag =>
             {
                 (string prefix, string data) = tag.BeforeAndAfter(':');
@@ -761,6 +765,13 @@ public class T2IPromptHandling
                         }
                         return result;
                     }
+                }
+                int cidCut = tag.LastIndexOf("//cid=");
+                if (cidCut != -1)
+                {
+                    sectionId = int.Parse(tag[(cidCut + "//cid=".Length)..]);
+                    Logs.Verbose($"[Prompt Parsing] Section ID changed by a prior mapping from {context.SectionID} to  {sectionId}");
+                    context.SectionID = sectionId;
                 }
                 return $"<{tag}>";
             }, false, 0);

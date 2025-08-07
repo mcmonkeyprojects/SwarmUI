@@ -82,6 +82,7 @@ public enum ParamViewType
 /// <param name="AlwaysRetain">If true, the parameter will be retained when otherwise it would be removed (for example, by comfy workflow usage).</param>
 /// <param name="ChangeWeight">Weighting value used to indicate, as a relative weight, how much processing time is needed to change the value of this parameter type - this is used for example for grids to do speed priority sorting. 0 is normal, 10 is model change.</param>
 /// <param name="ExtraHidden">If true, agressively hide from anything.</param>
+/// <param name="CanSectionalize">If true, this parameter can be locked to a sub-section.</param>
 /// <param name="Type">The type of the type - text vs integer vs etc (will be set when registering).</param>
 /// <param name="DoNotSave">Can be set to forbid tracking/saving of a param value.</param>
 /// <param name="ImageShouldResize">(For Image-type params) If true, the image should resize to match the target resolution.</param>
@@ -95,7 +96,7 @@ public enum ParamViewType
 public record class T2IParamType(string Name, string Description, string Default, double Min = 0, double Max = 0, double Step = 1, double ViewMin = 0, double ViewMax = 0,
     Func<string, string, string> Clean = null, Func<Session, List<string>> GetValues = null, string[] Examples = null, Func<List<string>, List<string>> ParseList = null, bool ValidateValues = true,
     bool VisibleNormally = true, bool IsAdvanced = false, string FeatureFlag = null, PermInfo Permission = null, bool Toggleable = false, double OrderPriority = 10, T2IParamGroup Group = null, string IgnoreIf = null,
-    ParamViewType ViewType = ParamViewType.SMALL, bool HideFromMetadata = false, Func<string, string> MetadataFormat = null, bool AlwaysRetain = false, double ChangeWeight = 0, bool ExtraHidden = false,
+    ParamViewType ViewType = ParamViewType.SMALL, bool HideFromMetadata = false, Func<string, string> MetadataFormat = null, bool AlwaysRetain = false, double ChangeWeight = 0, bool ExtraHidden = false, bool CanSectionalize = false,
     T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false, string DependNonDefault = null,
     string Subtype = null, string ID = null, Type SharpType = null)
 {
@@ -136,6 +137,7 @@ public record class T2IParamType(string Name, string Description, string Default
             ["do_not_preview"] = DoNotPreview,
             ["view_type"] = ViewType.ToString().ToLowerFast(),
             ["extra_hidden"] = ExtraHidden,
+            ["can_sectionalize"] = CanSectionalize,
             ["nonreusable"] = Nonreusable,
             ["depend_non_default"] = DependNonDefault
         };
@@ -371,11 +373,11 @@ public class T2IParamTypes
             "-1", Min: -1, Max: long.MaxValue, Step: 1, Examples: ["1", "2", "...", "10"], OrderPriority: -30, ViewType: ParamViewType.SEED, Group: GroupCore, ChangeWeight: -5
             ));
         Steps = Register<int>(new("Steps", "Diffusion works by running a model repeatedly to slowly build and then refine an image.\nThis parameter is how many times to run the model.\nMore steps = better quality, but more time.\n20 is a good baseline for speed, 40 is good for maximizing quality.\nSome models, such as Turbo models, are intended for low step counts like 4 or 8.\nYou can go much higher, but it quickly becomes pointless above 70 or so.\nNote that steps is a core parameter used for defining diffusion schedules and other advanced internals,\nand merely running the model over top of an existing image is not the same as increasing the steps.\nNote that the number of steps actually ran can be influenced by other parameters such as Init Image Creativity when applied.",
-            "20", Min: 0, Max: 500, ViewMax: 100, Step: 1, Examples: ["10", "15", "20", "30", "40"], OrderPriority: -20, Group: GroupCore, ViewType: ParamViewType.SLIDER
+            "20", Min: 0, Max: 500, ViewMax: 100, Step: 1, Examples: ["10", "15", "20", "30", "40"], OrderPriority: -20, Group: GroupCore, ViewType: ParamViewType.SLIDER, CanSectionalize: true
             ));
         CFGScale = Register<double>(new("CFG Scale", "How strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Flux, Hunyuan Video, or any Turbo model, expect CFG to be set to 1.",
-            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: -18, ViewType: ParamViewType.SLIDER, Group: GroupCore, ChangeWeight: -3
+            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: -18, ViewType: ParamViewType.SLIDER, Group: GroupCore, ChangeWeight: -3, CanSectionalize: true
             ));
         // ================================================ Text2Video ================================================
         GroupText2Video = new("Text To Video", Open: false, OrderPriority: -30, Toggles: true, Description: $"Support for Text2Video models.");
@@ -395,10 +397,10 @@ public class T2IParamTypes
         // ================================================ Variation Seed ================================================
         GroupVariation = new("Variation Seed", Toggles: true, Open: false, OrderPriority: -17, Description: "Variation Seeds let you reuse a single seed, but slightly vary it according to a second seed and a weight value.\nThis technique results in creating images that are almost the same, but with small variations.\nUsing two static seeds and adjusting the strength can produce a smooth transition between two seeds.");
         VariationSeed = Register<long>(new("Variation Seed", "Image-variation seed.\nCombined partially with the original seed to create a similar-but-different image for the same seed.\n-1 = random.",
-            "-1", Min: -1, Max: uint.MaxValue, Step: 1, Examples: ["1", "2", "...", "10"], OrderPriority: -17, ViewType: ParamViewType.SEED, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4
+            "-1", Min: -1, Max: uint.MaxValue, Step: 1, Examples: ["1", "2", "...", "10"], OrderPriority: -17, ViewType: ParamViewType.SEED, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4, CanSectionalize: true
             ));
         VariationSeedStrength = Register<double>(new("Variation Seed Strength", "How strongly to apply the variation seed.\n0 = don't use, 1 = replace the base seed entirely. 0.5 is a good value.",
-            "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, Examples: ["0", "0.25", "0.5", "0.75"], OrderPriority: -17, ViewType: ParamViewType.SLIDER, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4
+            "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, Examples: ["0", "0.25", "0.5", "0.75"], OrderPriority: -17, ViewType: ParamViewType.SLIDER, Group: GroupVariation, FeatureFlag: "variation_seed", ChangeWeight: -4, CanSectionalize: true
             ));
         // ================================================ Resolution ================================================
         GroupResolution = new("Resolution", Toggles: false, Open: false, OrderPriority: -11);
@@ -1026,7 +1028,7 @@ public class T2IParamTypes
     }
 
     /// <summary>Takes user input of a parameter and applies it to the parameter tracking data object.</summary>
-    public static void ApplyParameter(string paramTypeName, string value, T2IParamInput data)
+    public static void ApplyParameter(string paramTypeName, string value, T2IParamInput data, int sectionId = 0)
     {
         if (!TryGetType(paramTypeName, out T2IParamType type, data))
         {
@@ -1046,7 +1048,7 @@ public class T2IParamTypes
         try
         {
             value = ValidateParam(type, value, data.SourceSession);
-            data.Set(type, value);
+            data.Set(type, value, sectionId);
         }
         catch (SwarmReadableErrorException ex)
         {

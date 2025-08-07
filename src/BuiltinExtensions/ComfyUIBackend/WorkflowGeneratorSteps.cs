@@ -1143,7 +1143,7 @@ public class WorkflowGeneratorSteps
             else
             {
                 g.CreateKSampler(g.FinalModel, g.FinalPrompt, g.FinalNegativePrompt, g.FinalLatentImage, cfg, steps, startStep, endStep,
-                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true);
+                    g.UserInput.Get(T2IParamTypes.Seed), g.UserInput.Get(T2IParamTypes.RefinerMethod, "none") == "StepSwapNoisy", g.MainSamplerAddNoise, id: "10", isFirstSampler: true, sectionId: T2IParamInput.SectionID_BaseOnly);
                 if (g.UserInput.Get(T2IParamTypes.UseReferenceOnly, false))
                 {
                     string fromBatch = g.CreateNode("LatentFromBatch", new JObject()
@@ -1306,11 +1306,13 @@ public class WorkflowGeneratorSteps
                     });
                     model = [hyperTileNode, 0];
                 }
-                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps));
-                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale));
+                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
+                string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
                 g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
                     g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
-                    explicitSampler: g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null), explicitScheduler: g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null));
+                    explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
                 g.FinalSamples = ["23", 0];
                 g.IsRefinerStage = false;
             }
@@ -1468,11 +1470,11 @@ public class WorkflowGeneratorSteps
                     JArray prompt = g.CreateConditioning(part.Prompt, clip, t2iModel, true);
                     string neg = negativeParts.FirstOrDefault(p => p.DataText == part.DataText)?.Prompt ?? negativeRegion.GlobalPrompt;
                     JArray negPrompt = g.CreateConditioning(neg, clip, t2iModel, false);
-                    int steps = g.UserInput.Get(T2IParamTypes.SegmentSteps, g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps)));
+                    int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.SegmentSteps, part.ContextID) ?? g.UserInput.GetNullable(T2IParamTypes.RefinerSteps, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: part.ContextID);
                     int startStep = (int)Math.Round(steps * (1 - part.Strength2));
                     long seed = g.UserInput.Get(T2IParamTypes.Seed) + 2 + i;
-                    double cfg = g.UserInput.Get(T2IParamTypes.SegmentCFGScale, g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale)));
-                    string sampler = g.CreateKSampler(model, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true);
+                    double cfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.SegmentCFGScale, part.ContextID) ?? g.UserInput.GetNullable(T2IParamTypes.RefinerCFGScale, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: part.ContextID);
+                    string sampler = g.CreateKSampler(model, prompt, negPrompt, [g.MaskShrunkInfo.MaskedLatent, 0], cfg, steps, startStep, 10000, seed, false, true, sectionId: part.ContextID);
                     string decoded = g.CreateVAEDecode(vae, [sampler, 0]);
                     g.FinalImageOut = g.RecompositeCropped(g.MaskShrunkInfo.BoundsNode, [g.MaskShrunkInfo.CroppedMask, 0], g.FinalImageOut, [decoded, 0]);
                     g.MaskShrunkInfo = new(null, null, null, null);
@@ -1600,8 +1602,8 @@ public class WorkflowGeneratorSteps
             {
                 int? frames = g.UserInput.TryGet(T2IParamTypes.VideoFrames, out int framesRaw) ? framesRaw : null;
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
-                double? videoCfg = g.UserInput.TryGet(T2IParamTypes.VideoCFG, out double cfgRaw) ? cfgRaw : null;
-                int steps = g.UserInput.Get(T2IParamTypes.VideoSteps, 20);
+                double? videoCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_Video, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, T2IParamInput.SectionID_Video);
+                int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_Video, false) ?? g.UserInput.Get(T2IParamTypes.VideoSteps, 20, sectionId: T2IParamInput.SectionID_Video);
                 string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLowerFast();
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 42;
@@ -1680,7 +1682,8 @@ public class WorkflowGeneratorSteps
                     Seed = seed,
                     AltLatent = altLatent,
                     BatchIndex = batchInd,
-                    BatchLen = batchLen
+                    BatchLen = batchLen,
+                    ContextID = T2IParamInput.SectionID_Video
                 };
                 g.CreateImageToVideo(genInfo);
                 videoFps = genInfo.VideoFPS;
@@ -1733,8 +1736,6 @@ public class WorkflowGeneratorSteps
             if (fullRawPrompt.Contains("<extend:"))
             {
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
-                double cfg = g.UserInput.Get(T2IParamTypes.CFGScale, 7);
-                int steps = g.UserInput.Get(T2IParamTypes.Steps, 20);
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 600;
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLowerFast();
@@ -1758,6 +1759,8 @@ public class WorkflowGeneratorSteps
                 for (int i = 0; i < parts.Length; i++)
                 {
                     PromptRegion.Part part = parts[i];
+                    double cfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.CFGScale, 7);
+                    int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, part.ContextID, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoSteps, part.ContextID) ?? g.UserInput.Get(T2IParamTypes.Steps, 20);
                     seed++;
                     int? frames = int.Parse(part.DataText);
                     string prompt = part.Prompt;
@@ -1794,7 +1797,8 @@ public class WorkflowGeneratorSteps
                         Steps = steps,
                         Seed = seed,
                         BatchIndex = 0,
-                        BatchLen = frameExtendOverlap
+                        BatchLen = frameExtendOverlap,
+                        ContextID = part.ContextID
                     };
                     g.CreateImageToVideo(genInfo);
                     videoFps = genInfo.VideoFPS;
