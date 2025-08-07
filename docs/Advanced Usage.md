@@ -73,7 +73,7 @@ Triton is a Linux-only AI acceleration library that you can hack into working on
     - Copy over the contents of the `Include` folder too
 - Go back to the command line inside the `dlbackend\comfy`
     - `.\python_embeded\python.exe -s -m pip install triton-windows`
-    - `.\python_embeded\python.exe -s -m pip install sageattention`
+    - `.\python_embeded\python.exe -s -m pip install sageattention` or use of these wheels <https://github.com/woct0rdho/SageAttention/releases>
 - Launch SwarmUI
     - Go to Server->Backends, edit the Comfy Self Start backend
     - Under `ExtraArgs`, add `--use-sage-attention`
