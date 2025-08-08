@@ -416,6 +416,7 @@ There's a full step by step guide for video model usage here: <https://github.co
             - For T2V Use with this at the end of your prompt: `<base> <lora:Wan2.2-Lightning_T2V-A14B-4steps-lora_HIGH_fp16>   <refiner> <lora:Wan2.2-Lightning_T2V-A14B-4steps-lora_LOW_fp16>` (adapt the lora filenames to whatever specific filenames you have locally)
                 - You can use your LoRA browser tab at the top, find the LoRA, and click the `☰` hamburger menu and then `Add To Prompt`
             - For I2V, use `<video> <lora:...i2v-high>   <videoswap> <lora:...i2v-low>` and of course use the i2v loras
+                - the I2V Lightning LoRA appears to target 16 fps
             - Because this is wonky, once you get it working, it is recommended that you make a Preset with the Prompt set like `{value} <base> ... <refiner> ...` to make it easy to click straight into this behavior rather than doing it manually every time. You can also select the models, CFG, etc. in the preset to have it all ready in one click.
         - You can use the Wan 2.1 Lightx2v or other causvid-likes (see [CausVid Section Above](#wan-causvid---high-speed-14b)) on the Wan 2.2 14B (not on the 5B)
             - For I2V, this seems to "just work"
