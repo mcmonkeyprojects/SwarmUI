@@ -83,7 +83,7 @@ def make_swarm_sampler_callback(steps, device, model, previews):
                 x0 = x0[0].permute(1, 0, 2, 3)
                 x0 = torch.flip(x0, [0])
             def do_preview(id, index):
-                preview_img = previewer.decode_latent_to_preview_image("JPEG", prev_tens)
+                preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[index:index+1])
                 swarm_send_extra_preview(id, preview_img[1])
             if previews == "iterate":
                 do_preview(0, step % x0.shape[0])
