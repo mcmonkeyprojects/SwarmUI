@@ -420,5 +420,5 @@ There's a full step by step guide for video model usage here: <https://github.co
             - Because this is wonky, once you get it working, it is recommended that you make a Preset with the Prompt set like `{value} <base> ... <refiner> ...` to make it easy to click straight into this behavior rather than doing it manually every time. You can also select the models, CFG, etc. in the preset to have it all ready in one click.
         - You can use the Wan 2.1 Lightx2v or other causvid-likes (see [CausVid Section Above](#wan-causvid---high-speed-14b)) on the Wan 2.2 14B (not on the 5B)
             - For I2V, this seems to "just work"
-            - For T2V, this has soe visual oddities but does still mostly work
+            - For T2V, this has some visual oddities but does still mostly work
         - Wan 2.2 has an official prompting guide book: <https://alidocs.dingtalk.com/i/nodes/EpGBa2Lm8aZxe5myC99MelA2WgN7R35y>
