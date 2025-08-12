@@ -598,8 +598,8 @@ public class T2IPromptHandling
         PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
         PromptTagBasicProcessors["videoswap"] = (data, context) =>
         {
-            context.SectionID = T2IParamInput.Section_VideoSwap;
-            return $"<videoswap//cid={T2IParamInput.Section_VideoSwap}>";
+            context.SectionID = T2IParamInput.SectionID_VideoSwap;
+            return $"<videoswap//cid={T2IParamInput.SectionID_VideoSwap}>";
         };
         PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
         string autoConfine(string data, PromptTagContext context)

@@ -2646,10 +2646,10 @@ public class WorkflowGenerator
                 genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip, swapModel, true, isVideo: true, isVideoSwap: true);
                 genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip, swapModel, false, isVideo: true, isVideoSwap: true);
                 genInfo.PrepFullCond(this);
-                explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.Section_VideoSwap, includeBase: false) ?? explicitSampler;
-                explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.Section_VideoSwap, includeBase: false) ?? explicitScheduler;
-                cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.Section_VideoSwap, false) ?? cfg;
-                steps = UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.Section_VideoSwap, false) ?? steps;
+                explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_VideoSwap, includeBase: false) ?? explicitSampler;
+                explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_VideoSwap, includeBase: false) ?? explicitScheduler;
+                cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_VideoSwap, false) ?? cfg;
+                steps = UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_VideoSwap, false) ?? steps;
                 endStep = (int)Math.Round(steps * genInfo.VideoSwapPercent);
             }
             // TODO: Should class-changes be allowed (must re-emit all the model-specific cond logic, maybe a vae reencoder - this is basically a refiner run)
