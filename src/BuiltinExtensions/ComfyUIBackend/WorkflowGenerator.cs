@@ -2969,7 +2969,7 @@ public class WorkflowGenerator
         }
         else if (!isVideo && !isRefiner && !string.IsNullOrWhiteSpace(regionalizer.BasePrompt))
         {
-            globalPromptText = $"{globalPromptText} {regionalizer.RefinerPrompt}";
+            globalPromptText = $"{globalPromptText} {regionalizer.BasePrompt}";
         }
         JArray globalCond = CreateConditioningLine(globalPromptText.Trim(), clip, model, isPositive, firstId);
         if (!isPositive && string.IsNullOrWhiteSpace(prompt) && UserInput.Get(T2IParamTypes.ZeroNegative, false))
