@@ -1,0 +1,194 @@
+:root {
+    --background: #11111b;
+    --background-soft: #1e1e2e;
+    --background-gray: #1e1e2e;
+    --background-panel: #181825;
+    --background-panel-subtle: #1e1e2e;
+
+    --emphasis: #fab387;
+    --emphasis-soft: color-mix(in srgb, #fab387 80%, #11111b 20%);
+    --emphasis-text: var(--button-text);
+
+    --border-color: #45475a;
+    --light-border: #45475a;
+
+    --popup-front: #dce0e8;
+
+    --text: #cdd6f4;
+    --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
+
+    --button-text: #dce0e8;
+    --button-foreground-hover: #1e1e2e;
+    --button-foreground-disabled: #585b70;
+    --button-background: #585b70;
+    --button-background-disabled: #313244;
+
+    --danger-button-border: #45475a;
+    --danger-button-foreground-hover: #dce0e8;
+    --danger-button-foreground: #cdd6f4;
+    --danger-button-background-hover: color-mix(in srgb, #f38ba8 60%, #11111b);
+    --danger-button-background: color-mix(in srgb, #f38ba8 80%, #11111b);
+
+    --range-track-color: #313244 !important;
+    --range-thumb-color: #6c7086 !important;
+
+    --toggle-thumb-active: color-mix(in srgb, var(--emphasis) 25%, #585b70);
+
+    --star: #f9e2af !important;
+
+    --red: #f38ba8;
+    --green: #a6e3a1;
+}
+
+a:not(.p-menubar-item-link,.sui_popover_model_button), code {
+    color: #fab387;
+}
+
+input[type="checkbox"] {
+    accent-color: #fab387;
+}
+
+input:focus, textarea:focus {
+    outline: solid 1px #fab387 !important;
+    border-color: #fab387;
+}
+
+/* Custom background */
+#currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #preset_list, #model_list, #lora_list, #controlnet_list, #wildcard_list, #vae_list, #embedding_list {
+    background-image: url('../../imgs/ctp_background.png');
+}
+
+.card {
+    --bs-card-bg: #1e1e2e;
+    color: #cdd6f4;
+}
+
+.border-secondary {
+    border-color: #313244;
+}
+
+.auto-slider-toggle-content {
+    background: #cdd6f4 !important;
+}
+
+.auto-slider-toggle-content::after {
+    background: #585b70  !important;
+}
+
+.form-check-input {
+    --bs-form-check-bg: #cdd6f4 !important;
+}
+
+.preset-remove-button, .card.border-danger {
+    border-color: #f38ba8 !important;
+}
+
+.preset-remove-button:hover {
+    background-color: color-mix(in srgb, #f38ba8 70%, #11111b) !important;
+}
+
+.basic-button:disabled {
+    background-color: color-mix(in srgb, var(--button-background) 40%, #f38ba880) !important;
+}
+
+.btn-primary {
+    color: #1e1e2e !important;
+}
+
+.btn-secondary {
+    --bs-btn-bg: #6c7086 !important;
+    --bs-btn-border-color: #6c7086 !important;
+    --bs-btn-hover-bg: #45475a !important;
+    --bs-btn-hover-border-color: #45475a !important;
+    --bs-btn-active-bg: #313244 !important;
+    --bs-btn-active-border-color: #313244 !important;
+    --bs-btn-disabled-bg: #6c7086 !important;
+    --bs-btn-disabled-border-color: #6c7086 !important;
+    --bs-btn-color: #cdd6f4 !important;
+    --bs-btn-hover-color: #cdd6f4 !important;
+    --bs-btn-active-color: #cdd6f4 !important;
+    --bs-btn-disabled-color: #cdd6f4 !important;
+}
+
+#alt_generate_button:hover, #alt_center_button:hover {
+    color: var(--button-foreground-hover) !important;
+}
+
+.model-block-menu-button:hover, .sui_popover_model_button:hover {
+    color: #1e1e2e;
+}
+
+/* Fill out horizontal space that an image *isn't* using in the model block, guaranteeing that the rounded corners will always be visible (for Small Cards, Cards, and Big Cards only) */
+.model-block img {
+    background-color: #11111b;
+}
+
+.model-block img:hover {
+    border-color: #fab387 !important;
+}
+
+.backend-running, .border-success {
+    border-color: #a6e3a1 !important;
+}
+
+.status-bar-soft {
+    background-color: #f9e2af !important;
+}
+
+.toast {
+    --bs-toast-bg: #45475a;
+    --bs-toast-header-bg: #313244;
+    --bs-toast-header-color: #cdd6f4;
+}
+
+.toast-error-box {
+    border-color: #f38ba8 !important;
+}
+
+.tag-text {
+    --tag-color-percent: 60%;
+}
+
+.tag-text-soft {
+    --tag-color-percent: 80%;
+}
+
+.tag-type-0 {
+    --tag-color: #89b4fa;
+}
+
+.tag-type-1 {
+    --tag-color: #f38ba8;
+}
+
+.tag-type-2 {
+    --tag-color: #94e2d5;
+}
+
+.tag-type-3 {
+    --tag-color: #cba6f7;
+}
+
+.tag-type-4 {
+    --tag-color: #a6e3a1;
+}
+
+.tag-type-5 {
+    --tag-color: #f9e2af;
+}
+
+.tag-type-6 {
+    --tag-color: #eba0ac;
+}
+
+.tag-type-7 {
+    --tag-color: #89dceb;
+}
+
+.tag-type-8 {
+    --tag-color: #b4befe;
+}
+
+.tag-type-9 {
+    --tag-color: #f5e0dc;
+}

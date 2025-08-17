@@ -1,0 +1,194 @@
+:root {
+    --background: #dce0e8;
+    --background-soft: #eff1f5;
+    --background-gray: #eff1f5;
+    --background-panel: #e6e9ef;
+    --background-panel-subtle: #eff1f5;
+
+    --emphasis: #fe640b;
+    --emphasis-soft: color-mix(in srgb, #fe640b 80%, #dce0e8 20%);
+    --emphasis-text: var(--button-text);
+
+    --border-color: #bcc0cc;
+    --light-border: #bcc0cc;
+
+    --popup-front: #11111b;
+
+    --text: #4c4f69;
+    --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
+
+    --button-text: #11111b;
+    --button-foreground-hover: #eff1f5;
+    --button-foreground-disabled: #acb0be;
+    --button-background: #acb0be;
+    --button-background-disabled: #ccd0da;
+
+    --danger-button-border: #bcc0cc;
+    --danger-button-foreground-hover: #11111b;
+    --danger-button-foreground: #4c4f69;
+    --danger-button-background-hover: color-mix(in srgb, #d20f39 60%, #dce0e8);
+    --danger-button-background: color-mix(in srgb, #d20f39 80%, #dce0e8);
+
+    --range-track-color: #ccd0da !important;
+    --range-thumb-color: #9ca0b0 !important;
+
+    --toggle-thumb-active: color-mix(in srgb, var(--emphasis) 25%, #acb0be);
+
+    --star: #df8e1d !important;
+
+    --red: #d20f39;
+    --green: #40a02b;
+}
+
+a:not(.p-menubar-item-link,.sui_popover_model_button), code {
+    color: #fe640b;
+}
+
+input[type="checkbox"] {
+    accent-color: #fe640b;
+}
+
+input:focus, textarea:focus {
+    outline: solid 1px #fe640b !important;
+    border-color: #fe640b;
+}
+
+/* Custom background */
+#currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #preset_list, #model_list, #lora_list, #controlnet_list, #wildcard_list, #vae_list, #embedding_list {
+    background-image: url('../../imgs/ctp_background.png');
+}
+
+.card {
+    --bs-card-bg: #eff1f5;
+    color: #4c4f69;
+}
+
+.border-secondary {
+    border-color: #ccd0da;
+}
+
+.auto-slider-toggle-content {
+    background: #4c4f69 !important;
+}
+
+.auto-slider-toggle-content::after {
+    background: #acb0be  !important;
+}
+
+.form-check-input {
+    --bs-form-check-bg: #4c4f69 !important;
+}
+
+.preset-remove-button, .card.border-danger {
+    border-color: #d20f39 !important;
+}
+
+.preset-remove-button:hover {
+    background-color: color-mix(in srgb, #d20f39 70%, #dce0e8) !important;
+}
+
+.basic-button:disabled {
+    background-color: color-mix(in srgb, var(--button-background) 40%, #d20f3980) !important;
+}
+
+.btn-primary {
+    color: #eff1f5 !important;
+}
+
+.btn-secondary {
+    --bs-btn-bg: #9ca0b0 !important;
+    --bs-btn-border-color: #9ca0b0 !important;
+    --bs-btn-hover-bg: #bcc0cc !important;
+    --bs-btn-hover-border-color: #bcc0cc !important;
+    --bs-btn-active-bg: #ccd0da !important;
+    --bs-btn-active-border-color: #ccd0da !important;
+    --bs-btn-disabled-bg: #9ca0b0 !important;
+    --bs-btn-disabled-border-color: #9ca0b0 !important;
+    --bs-btn-color: #4c4f69 !important;
+    --bs-btn-hover-color: #4c4f69 !important;
+    --bs-btn-active-color: #4c4f69 !important;
+    --bs-btn-disabled-color: #4c4f69 !important;
+}
+
+#alt_generate_button:hover, #alt_center_button:hover {
+    color: var(--button-foreground-hover) !important;
+}
+
+.model-block-menu-button:hover, .sui_popover_model_button:hover {
+    color: #eff1f5;
+}
+
+/* Fill out horizontal space that an image *isn't* using in the model block, guaranteeing that the rounded corners will always be visible (for Small Cards, Cards, and Big Cards only) */
+.model-block img {
+    background-color: #dce0e8;
+}
+
+.model-block img:hover {
+    border-color: #fe640b !important;
+}
+
+.backend-running, .border-success {
+    border-color: #40a02b !important;
+}
+
+.status-bar-soft {
+    background-color: #df8e1d !important;
+}
+
+.toast {
+    --bs-toast-bg: #bcc0cc;
+    --bs-toast-header-bg: #ccd0da;
+    --bs-toast-header-color: #4c4f69;
+}
+
+.toast-error-box {
+    border-color: #d20f39 !important;
+}
+
+.tag-text {
+    --tag-color-percent: 60%;
+}
+
+.tag-text-soft {
+    --tag-color-percent: 80%;
+}
+
+.tag-type-0 {
+    --tag-color: #1e66f5;
+}
+
+.tag-type-1 {
+    --tag-color: #d20f39;
+}
+
+.tag-type-2 {
+    --tag-color: #179299;
+}
+
+.tag-type-3 {
+    --tag-color: #8839ef;
+}
+
+.tag-type-4 {
+    --tag-color: #40a02b;
+}
+
+.tag-type-5 {
+    --tag-color: #df8e1d;
+}
+
+.tag-type-6 {
+    --tag-color: #e64553;
+}
+
+.tag-type-7 {
+    --tag-color: #04a5e5;
+}
+
+.tag-type-8 {
+    --tag-color: #7287fd;
+}
+
+.tag-type-9 {
+    --tag-color: #dc8a78;
+}
