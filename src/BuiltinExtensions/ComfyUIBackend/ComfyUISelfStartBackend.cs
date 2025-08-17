@@ -541,6 +541,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     await pipCall($"Remove numpy2+", $"uninstall -y numpy");
                     await update("numpy", "numpy==1.26.4");
                 }
+                await install("peft", "peft"); // Late-added nunchaku dep
                 // Nunchaku devs seem very confused how to python package. So we gotta do some cursed install for them.
                 bool isValid = true;
                 string pyVers = "310";
