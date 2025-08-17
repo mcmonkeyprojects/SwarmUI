@@ -12,6 +12,33 @@ let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 let modelIconUrlCache = {};
 let starredModels = null;
 
+document.addEventListener('click', function(event) {
+  if (event.target.classList.contains('model-info-clickable')) {
+    handleModelInfoClick(event.target);
+  }
+});
+
+document.addEventListener('keydown', function(event) {
+  if (event.target.classList.contains('model-info-clickable') &&
+      (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    handleModelInfoClick(event.target);
+  }
+});
+
+function handleModelInfoClick(element) {
+  const textToCopy = element.getAttribute('data-copy-text');
+  if (textToCopy) {
+    try {
+      copyText(textToCopy);
+      doNoticePopover('Copied!', 'notice-pop-green');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      doNoticePopover('Copy failed!', 'notice-pop-red');
+    }
+  }
+}
+
 function editModelGetHashNow() {
     if (curModelMenuModel == null) {
         return;
@@ -466,6 +493,34 @@ class ModelBrowserWrapper {
         this.browser.update();
     }
 
+    createClickableTriggerPhrase(phrase) {
+        const phraseWithComma = phrase.endsWith(',') ? phrase : phrase + ',';
+        const safePhrase = escapeHtml(phraseWithComma);
+        return `<span class="model-info-clickable" title="Click to copy" data-copy-text="${safePhrase}" tabindex="0">${safePhrase}</span>`;
+    }
+
+    formatTriggerPhrases(val) {
+        if (val.includes(',,')) {
+            const phrases = val.split(',,').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
+            return phrases.map(phrase => this.createClickableTriggerPhrase(phrase)).join('');
+        } else {
+            return this.createClickableTriggerPhrase(val);
+        }
+    }
+
+    createInfoLine(label, value) {
+        if (value == null) {
+            return `<b>${escapeHtml(label)}:</b> <span>(Unset)</span><br>`;
+        }
+
+        if (label === 'Trigger Phrase') {
+            const clickableContent = this.formatTriggerPhrases(value);
+            return `<b>${escapeHtml(label)}:</b> ${clickableContent}<br>`;
+        }
+
+        return `<b>${escapeHtml(label)}:</b> <span>${safeHtmlOnly(value)}</span><br>`;
+    }
+
     describeModel(model) {
         let description = '';
         let buttons = [];
@@ -564,7 +619,9 @@ class ModelBrowserWrapper {
         }
         let searchableAdded = '';
         if (model.data.is_supported_model_format) {
-            let getLine = (label, val) => `<b>${label}:</b> <span>${val == null ? "(Unset)" : safeHtmlOnly(val)}</span><br>`;
+            let getLine = (label, val) => {
+                return this.createInfoLine(label, val);
+            };
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
             if (this.subType == 'LoRA' || this.subType == 'Stable-Diffusion') {
                 interject += `${getLine("Resolution", `${model.data.standard_width}x${model.data.standard_height}`)}`;
