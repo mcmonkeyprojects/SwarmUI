@@ -573,7 +573,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 if (isValid)
                 {
                     string nunchakuVers = getVers("nunchaku");
-                    if (nunchakuVers is not null && Version.Parse(nunchakuVers) < Version.Parse("0.3.1"))
+                    if (nunchakuVers is not null && Version.Parse(nunchakuVers) < Version.Parse("0.3.2"))
                     {
                         await update("nunchaku", url);
                     }
