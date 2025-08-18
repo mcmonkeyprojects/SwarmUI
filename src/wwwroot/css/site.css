@@ -39,8 +39,6 @@
     --notice-pop-green-bg-color: #005500;
     --slider-toggle-background: #ccc;
     --slider-toggle-thumb-color: #4b4b4b;
-    --button-primary-text-color: #ffffff;
-    --button-primary-text-color-hover: #ffffff;
     --link-color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
     --code-color: var(--bs-code-color);
     --model-img-border-color-hover: white;
@@ -561,7 +559,6 @@ textarea, input, select {
 }
 .basic-button.btn-primary {
     background-color: var(--emphasis);
-    color: var(--button-primary-text-color) !important;
 }
 .basic-button:hover {
     background-color: var(--button-background-hover);
@@ -569,7 +566,6 @@ textarea, input, select {
 }
 .basic-button.btn-primary:hover {
     background-color: color-mix(in srgb, var(--button-background-hover) 50%, var(--emphasis));
-    color: var(--button-primary-text-color-hover) !important;
 }
 .basic-button:disabled {
     background-color: color-mix(in srgb, var(--button-background) 40%, var(--basic-button-bg-color-disabled));
