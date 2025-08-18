@@ -29,6 +29,37 @@ Want to add custom UI themes (ie the Themes selectable in the User Settings tab)
 - In `OnInit`, call eg `WebServer.RegisterTheme(new("my_custom_dark", "My Custom Dark", ["/css/themes/modern.css", "/ExtensionFile/MyExtension/Assets/my_custom_dark.css"], true));`
 - Be careful to keep CSS edits minimal. Any format breakage from an extension CSS edit is on you to fix, only custom CSS in core themes are tested in core updates.
 
+## Custom Model Classes
+
+Want to add support for a non-standard model architecture? Here's how:
+
+- First of all, you will need to find or develop a comfy node that's capable of loading and running the model.
+    - Make sure your node has relevant "model loader" node(s), that return a `MODEL` that works in a standard `KSampler`. Nodepack hack jobs that aren't compatible with regular sampling (eg "wrapper" packs like what kijai often makes) will be a massive pain to support.
+- You need a C# extension class as usual.
+- In `OnPreInit`:
+    - Call `T2IModelClassSorter.Register(T2IModelClass clazz);` where `clazz` is constructed with valid data and a reliable `IsThisModelOfClass` tester.
+    - Note, if base model scanning misdetects your model as an existing class, you may instead register your modelclass in your extension class constructor. Registered model testers run linearly, so running earlier than preinit means your model tester will run before any built-in class checkers run.
+- In `OnInit`:
+    - Call `InstallableFeatures.RegisterInstallableFeature(new("Node Pack Proper Name", "shortidhere", "https://github.com/mcmonkey4eva/MyNodePackHere", "Author Name Here", AutoInstall: true));`
+        - This will cause the node pack to be auto-installed and updated alongside the user's comfy install
+    - Call `WorkflowGeneratorSteps.AddModelGenStep(g => { /* Loader */ }, -200);`
+        - Note with Model Gen Step priority IDs, any number lower than `-100` runs before base model loading logic. You will need to assign `g.LoadingModel`, `LoadingVAE`, and `LoadingClip`.
+        - For example, an extremely base sufficient vanilla-style loader might be:
+        - ```cs
+            if (g.CurrentCompatClass() == "my-custom-class-compat-id-here")
+            {
+                string modelNode = g.CreateNode("CheckpointLoaderSimple", new JObject()
+                {
+                    ["ckpt_name"] = model.ToString(g.ModelFolderFormat)
+                });
+                g.LoadingModel = [modelNode, 0];
+                g.LoadingClip = [modelNode, 1];
+                g.LoadingVAE = [modelNode, 2];
+            }
+          ```
+        - You will want to consider other potentially relevant model data to handle here. Does the user need a CLIP Selector? Does the model support some form of Sigma Shift? Should you be auto-downloading a VAE file?
+    - Consider any other workflow modifications your model needs, or parameters your model would need to expose, and register those as well.
+
 # Extension Standards
 
 The following standards will be enforced for official listing of Swarm extensions. You won't be physically prevented from making extensions that violate these standards, you will just not be included on official listings if you violate them.
