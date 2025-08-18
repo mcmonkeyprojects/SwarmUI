@@ -50,7 +50,7 @@ input[type="checkbox"] {
     accent-color: #fab387;
 }
 
-input:focus, textarea:focus {
+input[type="text"]:focus, textarea:focus {
     outline: solid 1px #fab387 !important;
     border-color: #fab387;
 }
