@@ -64,7 +64,7 @@ body {
     --bs-font-sans-serif: Lato, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", Unifont;
     --bs-body-font-family: var(--bs-font-sans-serif);
 }
-a:not(.p-menubar-item-link,.sui_popover_model_button) {
+a:not(.p-menubar-item-link, .dropdown-item, .sui_popover_model_button) {
     color: var(--link-color);
 }
 code {
@@ -724,6 +724,14 @@ textarea, input, select {
     object-position: center;
     margin: auto;
     vertical-align: text-top;
+}
+.dropdown-menu {
+    --bs-dropdown-bg: var(--popup-back);
+    --bs-dropdown-border-color: gray;
+    color: var(--popup-front);
+}
+.dropdown-divider {
+    border-color: gray;
 }
 .secretexperimental {
     display: none;
