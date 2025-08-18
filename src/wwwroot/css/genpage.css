@@ -463,7 +463,8 @@ body {
     opacity: 1.0;
     background-color: var(--emphasis) !important;
     cursor: pointer;
-    border: 1px solid black;
+    border: 1px solid var(--model-block-menu-button-border-color-hover);
+    color: var(--model-block-menu-button-color-hover);
 }
 .model-selected {
     border: 1px solid var(--box-selected-border-stronger);

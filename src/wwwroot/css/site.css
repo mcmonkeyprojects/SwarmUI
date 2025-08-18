@@ -44,6 +44,8 @@
     --link-color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
     --code-color: var(--bs-code-color);
     --model-img-border-color-hover: white;
+    --model-block-menu-button-border-color-hover: black;
+    --model-block-menu-button-color-hover: white;
 }
 .modal-content {
     background-color: var(--background) !important;
