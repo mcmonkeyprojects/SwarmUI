@@ -34,6 +34,7 @@
     --backend-delete-btn-border-color-hover: #000000;
     --backend-save-btn-text-color-hover: #000000;
     --backend-save-btn-border-color-hover: #000000;
+    --toast-flash-bg-color: #FF0000;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -373,7 +374,7 @@ textarea, input, select {
 }
 @keyframes toast-flash {
     0% {background-color: transparent;}
-    50% {background-color: #FF0000;}
+    50% {background-color: var(--toast-flash-bg-color);}
     100% {background-color: transparent;}
 }
 .center-toast {
