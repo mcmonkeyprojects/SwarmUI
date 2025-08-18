@@ -123,10 +123,6 @@ input:focus, textarea:focus {
     border-color: #a6d189 !important;
 }
 
-.status-bar-soft {
-    background-color: #e5c890 !important;
-}
-
 .toast {
     --bs-toast-bg: #51576d;
     --bs-toast-header-bg: #414559;
