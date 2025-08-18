@@ -44,7 +44,7 @@
     --model-img-border-color-hover: white;
     --model-block-menu-button-border-color-hover: black;
     --model-block-menu-button-color-hover: white;
-    --qbutton-text-color: #000000;
+    --qbutton-foreground-color-hover: #000000;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -418,7 +418,7 @@ textarea, input, select {
 }
 .auto-input-qbutton:hover {
     background-color: var(--qbutton);
-    color: var(--qbutton-text-color) !important;
+    color: var(--qbutton-foreground-color-hover) !important;
 }
 .sui-popover {
     background-color: var(--popup-back);
