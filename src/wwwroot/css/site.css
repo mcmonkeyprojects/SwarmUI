@@ -20,6 +20,12 @@
     --status-bar-error-color-start-end: #bb2020;
     --status-bar-error-color-middle: #880000;
     --status-bar-soft-color: #888800;
+    --backend-errored-border-color: #ff0000;
+    --backend-disabled-border-color: #ffaa00;
+    --backend-running-border-color: #00aa33;
+    --backend-idle-border-color: #688772;
+    --backend-loading-border-color: #335500;
+    --backend-waiting-border-color: #335500;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -138,22 +144,22 @@ body {
     padding: 1.5px;
 }
 .backend-errored {
-    border: 1px solid #ff0000;
+    border: 1px solid var(--backend-errored-border-color);
 }
 .backend-disabled {
-    border: 1px solid #ffaa00;
+    border: 1px solid var(--backend-disabled-border-color);
 }
 .backend-running {
-    border: 1px solid #00aa33;
+    border: 1px solid var(--backend-running-border-color);
 }
 .backend-idle {
-    border: 1px solid #688772;
+    border: 1px solid var(--backend-idle-border-color);
 }
 .backend-loading {
-    border: 1px solid #335500;
+    border: 1px solid var(--backend-loading-border-color);
 }
 .backend-waiting {
-    border: 1px solid #335500;
+    border: 1px solid var(--backend-waiting-border-color);
 }
 .card-header {
     background-color: var(--background-gray);
