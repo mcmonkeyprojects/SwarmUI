@@ -184,6 +184,9 @@ code {
 .backend-waiting {
     border: 1px solid var(--backend-waiting-border-color);
 }
+.card {
+    color: var(--text);
+}
 .card-header {
     background-color: var(--background-gray);
 }
