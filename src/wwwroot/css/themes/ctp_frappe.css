@@ -41,80 +41,20 @@
 
     /* Custom variables */
     --background-image: url('../../imgs/ctp_background.png');
-}
 
-a:not(.p-menubar-item-link,.sui_popover_model_button), code {
-    color: #ef9f76;
-}
+    --text-input-focus-outline: solid 1px #ef9f76;
+    --text-input-focus-border-color: #ef9f76;
 
-input[type="checkbox"] {
-    accent-color: #ef9f76;
-}
+    --checkbox-accent-color: #ef9f76;
 
-input[type="text"]:focus, textarea:focus {
-    outline: solid 1px #ef9f76 !important;
-    border-color: #ef9f76;
-}
+    --slider-toggle-background: #c6d0f5;
 
-.card {
-    --bs-card-bg: #303446;
-    color: #c6d0f5;
-}
+    --link-code-color: #ef9f76;
 
-.border-secondary {
-    border-color: #414559;
-}
+    --model-img-hover-border-color: #ef9f76;
 
-.auto-slider-toggle-content {
-    background: #c6d0f5 !important;
-}
+    --secondary-border-color: #414559;
 
-.auto-slider-toggle-content::after {
-    background: #626880  !important;
-}
-
-.form-check-input {
-    --bs-form-check-bg: #c6d0f5 !important;
-}
-
-.preset-remove-button, .card.border-danger {
-    border-color: #e78284 !important;
-}
-
-.preset-remove-button:hover {
-    background-color: color-mix(in srgb, #e78284 70%, #232634) !important;
-}
-
-.basic-button:disabled {
-    background-color: color-mix(in srgb, var(--button-background) 40%, #e7828480) !important;
-}
-
-.btn-primary {
-    color: #303446 !important;
-}
-
-#alt_generate_button:hover, #alt_center_button:hover {
-    color: var(--button-foreground-hover) !important;
-}
-
-.model-block-menu-button:hover, .sui_popover_model_button:hover {
-    color: #303446;
-}
-
-.model-block img:hover {
-    border-color: #ef9f76 !important;
-}
-
-.backend-running, .border-success {
-    border-color: #a6d189 !important;
-}
-
-.toast {
-    --bs-toast-bg: #51576d;
-    --bs-toast-header-bg: #414559;
-    --bs-toast-header-color: #c6d0f5;
-}
-
-.toast-error-box {
-    border-color: #e78284 !important;
+    --toast-bg-color: #51576d;
+    --toast-header-bg-color: #414559;
 }

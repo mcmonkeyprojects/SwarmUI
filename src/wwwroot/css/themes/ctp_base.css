@@ -1,0 +1,79 @@
+.nav-tabs:not(#bottombartabcollection), #currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar_content, .browser-folder-tree-container, .browser-fullcontent-container {
+    background-image: var(--background-image);
+}
+
+a:not(.p-menubar-item-link,.sui_popover_model_button), code {
+    color: var( --link-code-color);
+}
+
+input[type="checkbox"] {
+    accent-color: var(--checkbox-accent-color);
+}
+
+input[type="text"]:focus, textarea:focus {
+    outline: var(--text-input-focus-outline) !important;
+    border-color: var(--text-input-focus-border-color);
+}
+
+.card {
+    --bs-card-bg: var(--background-gray);
+    color: var(--text);
+}
+
+.border-secondary {
+    border-color: var(--secondary-border-color);
+}
+
+.auto-slider-toggle-content {
+    background: var(--slider-toggle-background) !important;
+}
+
+.auto-slider-toggle-content::after {
+    background: var(--button-background)  !important;
+}
+
+.form-check-input {
+    --bs-form-check-bg: var(--slider-toggle-background) !important;
+}
+
+.preset-remove-button, .card.border-danger {
+    border-color: var(--red) !important;
+}
+
+.preset-remove-button:hover {
+    background-color: color-mix(in srgb, var(--red) 70%, var(--background)) !important;
+}
+
+.basic-button:disabled {
+    background-color: color-mix(in srgb, var(--button-background) 40%, #f38ba880) !important;
+}
+
+.btn-primary {
+    color: var(--background-gray) !important;
+}
+
+#alt_generate_button:hover, #alt_center_button:hover {
+    color: var(--button-foreground-hover) !important;
+}
+
+.model-block-menu-button:hover, .sui_popover_model_button:hover {
+    color: var(--background-gray);
+}
+
+.model-block img:hover {
+    border-color: var(--model-img-hover-border-color) !important;
+}
+
+.backend-running, .border-success {
+    border-color: var(--green) !important;
+}
+
+.toast {
+    --bs-toast-bg: var(--toast-bg-color);
+    --bs-toast-header-bg: var(--toast-header-bg-color);
+    --bs-toast-header-color: var(--text);
+}
+
+.toast-error-box {
+    border-color: var(--red) !important;
+}

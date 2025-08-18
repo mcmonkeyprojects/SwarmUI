@@ -41,80 +41,20 @@
 
     /* Custom variables */
     --background-image: url('../../imgs/ctp_background.png');
-}
 
-a:not(.p-menubar-item-link,.sui_popover_model_button), code {
-    color: #fab387;
-}
+    --text-input-focus-outline: solid 1px #fab387;
+    --text-input-focus-border-color: #fab387;
 
-input[type="checkbox"] {
-    accent-color: #fab387;
-}
+    --checkbox-accent-color: #fab387;
 
-input[type="text"]:focus, textarea:focus {
-    outline: solid 1px #fab387 !important;
-    border-color: #fab387;
-}
+    --slider-toggle-background: #cdd6f4;
 
-.card {
-    --bs-card-bg: #1e1e2e;
-    color: #cdd6f4;
-}
+    --link-code-color: #fab387;
 
-.border-secondary {
-    border-color: #313244;
-}
+    --model-img-hover-border-color: #fab387;
 
-.auto-slider-toggle-content {
-    background: #cdd6f4 !important;
-}
+    --secondary-border-color: #313244;
 
-.auto-slider-toggle-content::after {
-    background: #585b70  !important;
-}
-
-.form-check-input {
-    --bs-form-check-bg: #cdd6f4 !important;
-}
-
-.preset-remove-button, .card.border-danger {
-    border-color: #f38ba8 !important;
-}
-
-.preset-remove-button:hover {
-    background-color: color-mix(in srgb, #f38ba8 70%, #11111b) !important;
-}
-
-.basic-button:disabled {
-    background-color: color-mix(in srgb, var(--button-background) 40%, #f38ba880) !important;
-}
-
-.btn-primary {
-    color: #1e1e2e !important;
-}
-
-#alt_generate_button:hover, #alt_center_button:hover {
-    color: var(--button-foreground-hover) !important;
-}
-
-.model-block-menu-button:hover, .sui_popover_model_button:hover {
-    color: #1e1e2e;
-}
-
-.model-block img:hover {
-    border-color: #fab387 !important;
-}
-
-.backend-running, .border-success {
-    border-color: #a6e3a1 !important;
-}
-
-.toast {
-    --bs-toast-bg: #45475a;
-    --bs-toast-header-bg: #313244;
-    --bs-toast-header-color: #cdd6f4;
-}
-
-.toast-error-box {
-    border-color: #f38ba8 !important;
+    --toast-bg-color: #45475a;
+    --toast-header-bg-color: #313244;
 }
