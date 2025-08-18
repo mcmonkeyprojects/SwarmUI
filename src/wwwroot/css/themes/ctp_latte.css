@@ -16,6 +16,8 @@
 
     --text: #4c4f69;
     --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
+    --link-color: #df8e1d !important;
+    --code-color: #df8e1d !important;
 
     --button-text: #11111b;
     --button-foreground-hover: #eff1f5;
@@ -29,15 +31,50 @@
     --danger-button-background-hover: color-mix(in srgb, #d20f39 60%, #dce0e8);
     --danger-button-background: color-mix(in srgb, #d20f39 80%, #dce0e8);
 
+    --basic-button-bg-color-disabled: rgba(210, 15, 57, 0.5) !important;
+
+    --button-primary-text-color: #eff1f5 !important;
+
     --range-track-color: #ccd0da !important;
     --range-thumb-color: #9ca0b0 !important;
 
     --toggle-thumb-active: color-mix(in srgb, var(--emphasis) 25%, #acb0be);
+    --slider-toggle-background: #4c4f69 !important;
+    --slider-toggle-thumb-color: #acb0be !important;
 
     --star: #df8e1d !important;
 
     --red: #d20f39;
     --green: #40a02b;
+
+    --status-bar-text-color: #dce0e8 !important;
+    --status-bar-warn-color-start-end: #df8e1d !important;
+    --status-bar-warn-color-middle: color-mix(in srgb, #df8e1d 70%, #dce0e8) !important;
+    --status-bar-error-color-start-end: #d20f39 !important;
+    --status-bar-error-color-middle: color-mix(in srgb, #d20f39 70%, #dce0e8) !important;
+    --status-bar-soft-color: color-mix(in srgb, #df8e1d 70%, #dce0e8) !important;
+
+    --backend-errored-border-color: #d20f39 !important;
+    --backend-disabled-border-color: #fe640b !important;
+    --backend-running-border-color: #40a02b !important;
+    --backend-idle-border-color: color-mix(in srgb, #40a02b 30%, #179299) !important;
+    --backend-loading-border-color: color-mix(in srgb, #40a02b 60%, #dce0e8) !important;
+    --backend-waiting-border-color: color-mix(in srgb, #40a02b 60%, #dce0e8) !important;
+
+    --backend-edit-btn-text-color-hover: #dce0e8 !important;
+    --backend-edit-btn-border-color-hover: #dce0e8 !important;
+    --backend-edit-btn-text-color-disabled: #acb0be !important;
+    --backend-edit-btn-border-color-disabled: #acb0be !important;
+    --backend-delete-btn-text-color-hover: #dce0e8 !important;
+    --backend-delete-btn-border-color-hover: #dce0e8 !important;
+    --backend-save-btn-text-color-hover: #dce0e8 !important;
+    --backend-save-btn-border-color-hover: #dce0e8 !important;
+
+    --model-img-border-color-hover: #fe640b !important;
+    --model-block-menu-button-border-color-hover: #dce0e8 !important;
+    --model-block-menu-button-color-hover: #eff1f5 !important;
+
+    --toast-flash-color: #d20f39 !important;
 
     /* Custom variables */
     --background-image: url('../../imgs/ctp_background.png');
@@ -46,12 +83,6 @@
     --text-input-focus-border-color: #fe640b;
 
     --checkbox-accent-color: #fe640b;
-
-    --slider-toggle-background: #4c4f69;
-
-    --link-code-color: #fe640b;
-
-    --model-img-hover-border-color: #fe640b;
 
     --secondary-border-color: #ccd0da;
 

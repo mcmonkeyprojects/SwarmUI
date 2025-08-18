@@ -16,28 +16,65 @@
 
     --text: #c6d0f5;
     --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
+    --link-color: #ef9f76 !important;
+    --code-color: #ef9f76 !important;
 
-    --button-text: #dce0e8;
-    --button-foreground-hover: #303446;
-    --button-foreground-disabled: #626880;
-    --button-background: #626880;
-    --button-background-disabled: #414559;
+    --button-text: #dce0e8 !important;
+    --button-foreground-hover: #303446 !important;
+    --button-foreground-disabled: #626880 !important;
+    --button-background: #626880 !important;
+    --button-background-disabled: #414559 !important;
 
-    --danger-button-border: #51576d;
-    --danger-button-foreground-hover: #dce0e8;
-    --danger-button-foreground: #c6d0f5;
-    --danger-button-background-hover: color-mix(in srgb, #e78284 60%, #232634);
-    --danger-button-background: color-mix(in srgb, #e78284 80%, #232634);
+    --danger-button-border: #51576d !important;
+    --danger-button-foreground-hover: #dce0e8 !important;
+    --danger-button-foreground: #c6d0f5 !important;
+    --danger-button-background-hover: color-mix(in srgb, #e78284 60%, #232634) !important;
+    --danger-button-background: color-mix(in srgb, #e78284 80%, #232634) !important;
+
+    --basic-button-bg-color-disabled: rgba(231, 130, 132, 0.5) !important;
+
+    --button-primary-text-color: #303446 !important;
 
     --range-track-color: #414559 !important;
     --range-thumb-color: #737994 !important;
 
-    --toggle-thumb-active: color-mix(in srgb, var(--emphasis) 25%, #626880);
+    --toggle-thumb-active: color-mix(in srgb, var(--emphasis) 25%, #626880) !important;
+    --slider-toggle-background: #c6d0f5 !important;
+    --slider-toggle-thumb-color: #626880 !important;
 
     --star: #e5c890 !important;
 
-    --red: #e78284;
-    --green: #a6d189;
+    --red: #e78284 !important;
+    --green: #a6d189 !important;
+
+    --status-bar-text-color: #232634 !important;
+    --status-bar-warn-color-start-end: #e5c890 !important;
+    --status-bar-warn-color-middle: color-mix(in srgb, #e5c890 70%, #232634) !important;
+    --status-bar-error-color-start-end: #e78284 !important;
+    --status-bar-error-color-middle: color-mix(in srgb, #e78284 70%, #232634) !important;
+    --status-bar-soft-color: color-mix(in srgb, #e5c890 70%, #232634) !important;
+
+    --backend-errored-border-color: #e78284 !important;
+    --backend-disabled-border-color: #ef9f76 !important;
+    --backend-running-border-color: #a6d189 !important;
+    --backend-idle-border-color: color-mix(in srgb, #a6d189 30%, #81c8be) !important;
+    --backend-loading-border-color: color-mix(in srgb, #a6d189 60%, #232634) !important;
+    --backend-waiting-border-color: color-mix(in srgb, #a6d189 60%, #232634) !important;
+
+    --backend-edit-btn-text-color-hover: #232634 !important;
+    --backend-edit-btn-border-color-hover: #232634 !important;
+    --backend-edit-btn-text-color-disabled: #626880 !important;
+    --backend-edit-btn-border-color-disabled: #626880 !important;
+    --backend-delete-btn-text-color-hover: #232634 !important;
+    --backend-delete-btn-border-color-hover: #232634 !important;
+    --backend-save-btn-text-color-hover: #232634 !important;
+    --backend-save-btn-border-color-hover: #232634 !important;
+
+    --model-img-border-color-hover: #ef9f76 !important;
+    --model-block-menu-button-border-color-hover: #232634 !important;
+    --model-block-menu-button-color-hover: #303446 !important;
+
+    --toast-flash-color: #e78284 !important;
 
     /* Custom variables */
     --background-image: url('../../imgs/ctp_background.png');
@@ -46,12 +83,6 @@
     --text-input-focus-border-color: #ef9f76;
 
     --checkbox-accent-color: #ef9f76;
-
-    --slider-toggle-background: #c6d0f5;
-
-    --link-code-color: #ef9f76;
-
-    --model-img-hover-border-color: #ef9f76;
 
     --secondary-border-color: #414559;
 

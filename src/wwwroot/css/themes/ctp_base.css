@@ -2,78 +2,33 @@
     background-image: var(--background-image);
 }
 
-a:not(.p-menubar-item-link,.sui_popover_model_button), code {
-    color: var( --link-code-color);
-}
-
-input[type="checkbox"] {
-    accent-color: var(--checkbox-accent-color);
-}
-
+/* Seems like these need to be here, tried adding to site.css but couldn't get it to work properly (esp. when considering compatibility with legacy themes) */
 input[type="text"]:focus, textarea:focus {
     outline: var(--text-input-focus-outline) !important;
     border-color: var(--text-input-focus-border-color);
 }
-
-.card {
-    --bs-card-bg: var(--background-gray);
-    color: var(--text);
+input[type="checkbox"] {
+    accent-color: var(--checkbox-accent-color);
 }
 
-.border-secondary {
-    border-color: var(--secondary-border-color);
-}
-
-.auto-slider-toggle-content {
-    background: var(--slider-toggle-background) !important;
-}
-
-.auto-slider-toggle-content::after {
-    background: var(--button-background)  !important;
-}
-
-.form-check-input {
-    --bs-form-check-bg: var(--slider-toggle-background) !important;
-}
-
-.preset-remove-button, .card.border-danger {
-    border-color: var(--red) !important;
-}
-
-.preset-remove-button:hover {
-    background-color: color-mix(in srgb, var(--red) 70%, var(--background)) !important;
-}
-
-.basic-button:disabled {
-    background-color: color-mix(in srgb, var(--button-background) 40%, #f38ba880) !important;
-}
-
-.btn-primary {
-    color: var(--background-gray) !important;
-}
-
+/* Need to have this; otherwise the button text color is not applied. Tried doing stuff to genpage.css to make it work without needing this in this file, but was unable to in an elegant way */
 #alt_generate_button:hover, #alt_center_button:hover {
     color: var(--button-foreground-hover) !important;
 }
 
-.model-block-menu-button:hover, .sui_popover_model_button:hover {
-    color: var(--background-gray);
-}
-
-.model-block img:hover {
-    border-color: var(--model-img-hover-border-color) !important;
-}
-
-.backend-running, .border-success {
-    border-color: var(--green) !important;
-}
-
+/* Could not get this working properly with automatic light/dark mode switching (breaking other themes), so added it here */
 .toast {
     --bs-toast-bg: var(--toast-bg-color);
     --bs-toast-header-bg: var(--toast-header-bg-color);
     --bs-toast-header-color: var(--text);
 }
 
-.toast-error-box {
-    border-color: var(--red) !important;
+/* Couldn't come up with a good way to do this in one of the main stylesheets, therefore, it's here */
+.border-secondary {
+    border-color: var(--border-secondary-color);
+}
+
+/* Was affecting other themes in a negative way when I attempted to add it to one of the main stylesheets */
+.btn-primary {
+    color: var(--background-gray) !important;
 }
