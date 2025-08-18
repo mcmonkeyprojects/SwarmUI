@@ -38,6 +38,8 @@
 
     --red: #e78284;
     --green: #a6d189;
+
+    --noise-image: url('../../imgs/ctp_background.png');
 }
 
 a:not(.p-menubar-item-link,.sui_popover_model_button), code {
@@ -51,11 +53,6 @@ input[type="checkbox"] {
 input:focus, textarea:focus {
     outline: solid 1px #ef9f76 !important;
     border-color: #ef9f76;
-}
-
-/* Custom background */
-#currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #preset_list, #model_list, #lora_list, #controlnet_list, #wildcard_list, #vae_list, #embedding_list {
-    background-image: url('../../imgs/ctp_background.png');
 }
 
 .card {
@@ -116,11 +113,6 @@ input:focus, textarea:focus {
 
 .model-block-menu-button:hover, .sui_popover_model_button:hover {
     color: #303446;
-}
-
-/* Fill out horizontal space that an image *isn't* using in the model block, guaranteeing that the rounded corners will always be visible (for Small Cards, Cards, and Big Cards only) */
-.model-block img {
-    background-color: #232634;
 }
 
 .model-block img:hover {
