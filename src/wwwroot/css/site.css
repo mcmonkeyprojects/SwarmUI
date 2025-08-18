@@ -36,6 +36,7 @@
     --backend-save-btn-border-color-hover: #000000;
     --toast-flash-color: #FF0000;
     --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
+    --notice-pop-green-bg-color: #005500;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -781,8 +782,8 @@ textarea, input, select {
     width: fit-content;
 }
 .notice-pop-green {
-    background-color: #005500;
-    color: #ffffff;
+    background-color: var( --notice-pop-green-bg-color);
+    color: var(--text);
 }
 .drag_image_target_highlight {
     box-shadow: inset 0 0 8px 2px var(--emphasis);
