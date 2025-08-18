@@ -111,7 +111,7 @@ code {
     animation-name: status_glow-error;
 }
 .status-bar-soft {
-    background-color: var( --status-bar-soft-color);
+    background-color: var(--status-bar-soft-color);
 }
 .auto-input {
     display: block;
@@ -796,7 +796,7 @@ textarea, input, select {
     width: fit-content;
 }
 .notice-pop-green {
-    background-color: var( --notice-pop-green-bg-color);
+    background-color: var(--notice-pop-green-bg-color);
     color: var(--text);
 }
 .drag_image_target_highlight {
