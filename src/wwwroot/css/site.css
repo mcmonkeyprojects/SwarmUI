@@ -398,7 +398,7 @@ textarea, input, select {
 }
 .auto-input-qbutton:hover {
     background-color: var(--qbutton);
-    color: #000000 !important;
+    color: var(--qbutton-text-color) !important;
 }
 .sui-popover {
     background-color: var(--popup-back);
