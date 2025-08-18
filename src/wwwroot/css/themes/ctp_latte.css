@@ -92,21 +92,6 @@ input:focus, textarea:focus {
     color: #eff1f5 !important;
 }
 
-.btn-secondary {
-    --bs-btn-bg: #9ca0b0 !important;
-    --bs-btn-border-color: #9ca0b0 !important;
-    --bs-btn-hover-bg: #bcc0cc !important;
-    --bs-btn-hover-border-color: #bcc0cc !important;
-    --bs-btn-active-bg: #ccd0da !important;
-    --bs-btn-active-border-color: #ccd0da !important;
-    --bs-btn-disabled-bg: #9ca0b0 !important;
-    --bs-btn-disabled-border-color: #9ca0b0 !important;
-    --bs-btn-color: #4c4f69 !important;
-    --bs-btn-hover-color: #4c4f69 !important;
-    --bs-btn-active-color: #4c4f69 !important;
-    --bs-btn-disabled-color: #4c4f69 !important;
-}
-
 #alt_generate_button:hover, #alt_center_button:hover {
     color: var(--button-foreground-hover) !important;
 }

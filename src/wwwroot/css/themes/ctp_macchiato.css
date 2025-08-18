@@ -92,21 +92,6 @@ input:focus, textarea:focus {
     color: #24273a !important;
 }
 
-.btn-secondary {
-    --bs-btn-bg: #6e738d !important;
-    --bs-btn-border-color: #6e738d !important;
-    --bs-btn-hover-bg: #494d64 !important;
-    --bs-btn-hover-border-color: #494d64 !important;
-    --bs-btn-active-bg: #363a4f !important;
-    --bs-btn-active-border-color: #363a4f !important;
-    --bs-btn-disabled-bg: #6e738d !important;
-    --bs-btn-disabled-border-color: #6e738d !important;
-    --bs-btn-color: #cad3f5 !important;
-    --bs-btn-hover-color: #cad3f5 !important;
-    --bs-btn-active-color: #cad3f5 !important;
-    --bs-btn-disabled-color: #cad3f5 !important;
-}
-
 #alt_generate_button:hover, #alt_center_button:hover {
     color: var(--button-foreground-hover) !important;
 }
