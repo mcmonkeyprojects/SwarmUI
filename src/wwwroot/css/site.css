@@ -37,6 +37,8 @@
     --toast-flash-color: #FF0000;
     --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
     --notice-pop-green-bg-color: #005500;
+    --slider-toggle-background: #ccc;
+    --slider-toggle-thumb-color: #4b4b4b;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -966,7 +968,7 @@ input[type="range"]::-moz-range-track {
     box-shadow: inset 0px 0px 3px rgba(0, 0, 0, 0.35);
     border-radius: 16px;
     pointer-events: none;
-    background: #ccc;
+    background: var(--slider-toggle-background);
 }
 .auto-slider-toggle-content::after {
     content: "";
@@ -975,7 +977,7 @@ input[type="range"]::-moz-range-track {
     left: -1px;
     width: var(--toggle-thumb-size);
     height: var(--toggle-thumb-size);
-    background: #4b4b4b;
+    background: var(--slider-toggle-thumb-color);
     border-radius: 20px;
     transition: left 0.2s, background-color 0.2s;
 }
