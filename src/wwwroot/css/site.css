@@ -41,6 +41,8 @@
     --slider-toggle-thumb-color: #4b4b4b;
     --button-primary-text-color: #ffffff;
     --button-primary-text-color-hover: #ffffff;
+    --link-color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
+    --code-color: var(--bs-code-color);
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -58,6 +60,12 @@ body {
     font-size: 14px;
     --bs-font-sans-serif: Lato, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", Unifont;
     --bs-body-font-family: var(--bs-font-sans-serif);
+}
+a:not(.p-menubar-item-link,.sui_popover_model_button) {
+    color: var( --link-color);
+}
+code {
+    color: var( --code-color);
 }
 @keyframes status_glow-warn {
     0% {background-color: var(--status-bar-warn-color-start-end);}
