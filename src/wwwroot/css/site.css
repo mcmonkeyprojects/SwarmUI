@@ -35,6 +35,7 @@
     --backend-save-btn-text-color-hover: #000000;
     --backend-save-btn-border-color-hover: #000000;
     --toast-flash-color: #FF0000;
+    --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -549,7 +550,7 @@ textarea, input, select {
     background-color: color-mix(in srgb, var(--button-background-hover) 50%, var(--emphasis));
 }
 .basic-button:disabled {
-    background-color: color-mix(in srgb, var(--button-background) 40%, rgba(100, 0, 0, 0.5));
+    background-color: color-mix(in srgb, var(--button-background) 40%, var(--basic-button-bg-color-disabled));
     color: color-mix(in srgb, var(--button-text) 60%, transparent);
 }
 .simpler-button-disable:disabled {
