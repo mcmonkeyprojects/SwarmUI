@@ -35,6 +35,7 @@
     --box-selected-border: color-mix(in srgb, var(--emphasis) 70%, transparent);
     --box-selected-border-stronger: color-mix(in srgb, var(--emphasis) 80%, transparent);
     --noise-image: url('../../imgs/noise.png');
+    --model-img-border-color-hover: white;
 
     /* Theme specific */
     --panel-gap: 7px;

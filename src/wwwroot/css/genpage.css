@@ -413,7 +413,7 @@ body {
     overflow: auto;
 }
 .model-block img:hover {
-    border: 2px solid white;
+    border: 2px solid var(--model-img-border-color-hover);
 }
 .model-block-small {
     height: 8rem;
