@@ -397,6 +397,7 @@ body {
     vertical-align: top;
     cursor: pointer;
     object-fit: contain;
+    background-color: var(--background-soft);
 }
 .model-descblock {
     width: 19.5rem;
