@@ -44,6 +44,7 @@
     --model-img-border-color-hover: white;
     --model-block-menu-button-border-color-hover: black;
     --model-block-menu-button-color-hover: white;
+    --qbutton-text-color: #000000;
 }
 .modal-content {
     background-color: var(--background) !important;

@@ -29,7 +29,6 @@
     --button-background-hover: color-mix(in srgb, var(--button-background) 70%, white) !important;
     --button-foreground-hover: var(--button-text);
     --qbutton: var(--emphasis);
-    --qbutton-text-color: #000000;
     --box-selected-background: color-mix(in srgb, var(--emphasis) 20%, transparent);
     --box-selected-background-stronger: color-mix(in srgb, var(--emphasis) 30%, transparent);
     --box-selected-border: color-mix(in srgb, var(--emphasis) 70%, transparent);
