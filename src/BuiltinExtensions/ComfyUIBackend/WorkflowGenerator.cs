@@ -913,7 +913,16 @@ public class WorkflowGenerator
             }
             LoadingVAE = CreateVAELoader(vaeFile, nodeId);
         }
-        if (model.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
+        LoadingModel = null;
+        foreach (WorkflowGenStep step in ModelGenSteps.Where(s => s.Priority <= -100))
+        {
+            step.Action(this);
+        }
+        if (LoadingModel is not null)
+        {
+            // Custom action has loaded it for us.
+        }
+        else if (model.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
         {
             string baseArch = model.ModelClass?.ID?.Before('/');
             string trtType = ComfyUIWebAPI.ArchitecturesTRTCompat[baseArch];
@@ -1380,7 +1389,7 @@ public class WorkflowGenerator
                 doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
             }
         }
-        else if (!string.IsNullOrWhiteSpace(predType))
+        else if (!string.IsNullOrWhiteSpace(predType) && LoadingModel is not null)
         {
             string discreteNode = CreateNode("ModelSamplingDiscrete", new JObject()
             {
@@ -1414,7 +1423,7 @@ public class WorkflowGenerator
                 LoadingModel = [samplingNode, 0];
             }
         }
-        foreach (WorkflowGenStep step in ModelGenSteps)
+        foreach (WorkflowGenStep step in ModelGenSteps.Where(s => s.Priority > -100))
         {
             step.Action(this);
         }
