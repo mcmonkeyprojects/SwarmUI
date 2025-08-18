@@ -629,7 +629,7 @@ body {
     display: inline-block;
     color: var(--text);
     font-weight: bold;
-    border: 1px solid red;
+    border: 1px solid var(--red);
     border-radius: 0.5rem;
     margin-left: 0.2rem;
     padding-left: 0.2rem;
@@ -637,7 +637,7 @@ body {
     cursor: pointer;
 }
 .preset-remove-button:hover {
-    background-color: color-mix(in srgb, red 70%, black);
+    background-color: color-mix(in srgb, var(--red) 70%, black);
 }
 .new_preset_image {
     align-items: center;
