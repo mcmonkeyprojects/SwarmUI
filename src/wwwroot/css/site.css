@@ -14,6 +14,12 @@
     --toggle-thumb-active-hover: color-mix(in srgb, var(--emphasis) 25%, white);
     --font-monospace: 'Courier New', Courier, monospace;
     --star: #ffff00;
+    --status-bar-text-color: #000000;
+    --status-bar-warn-color-start-end: #dddd55;
+    --status-bar-warn-color-middle: #888800;
+    --status-bar-error-color-start-end: #bb2020;
+    --status-bar-error-color-middle: #880000;
+    --status-bar-soft-color: #888800;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -33,14 +39,14 @@ body {
     --bs-body-font-family: var(--bs-font-sans-serif);
 }
 @keyframes status_glow-warn {
-    0% {background-color: #dddd55;}
-    50% {background-color: #888800;}
-    100% {background-color: #dddd55;}
+    0% {background-color: var(--status-bar-warn-color-start-end);}
+    50% {background-color: var(--status-bar-warn-color-middle);}
+    100% {background-color: var(--status-bar-warn-color-start-end);}
 }
 @keyframes status_glow-error {
-    0% {background-color: #bb2020;}
-    50% {background-color: #880000;}
-    100% {background-color: #bb2020;}
+    0% {background-color: var(--status-bar-error-color-start-end);}
+    50% {background-color: var(--status-bar-error-color-middle);}
+    100% {background-color: var(--status-bar-error-color-start-end);}
 }
 .password {
     text-security: disc;
@@ -60,7 +66,7 @@ body {
 }
 .top-status-bar {
     position: absolute;
-    color: #000000;
+    color: var(--status-bar-text-color);
     top: 0px;
     width: 100vw;
     z-index: 100;
@@ -76,7 +82,7 @@ body {
     animation-name: status_glow-error;
 }
 .status-bar-soft {
-    background-color: #888800;
+    background-color: var( --status-bar-soft-color);
 }
 .auto-input {
     display: block;
