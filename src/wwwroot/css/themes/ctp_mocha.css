@@ -39,7 +39,8 @@
     --red: #f38ba8;
     --green: #a6e3a1;
 
-    --noise-image: url('../../imgs/ctp_background.png');
+    /* Custom variables */
+    --background-image: url('../../imgs/ctp_background.png');
 }
 
 a:not(.p-menubar-item-link,.sui_popover_model_button), code {
