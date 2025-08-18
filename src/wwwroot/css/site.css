@@ -39,6 +39,8 @@
     --notice-pop-green-bg-color: #005500;
     --slider-toggle-background: #ccc;
     --slider-toggle-thumb-color: #4b4b4b;
+    --button-primary-text-color: #ffffff;
+    --button-primary-text-color-hover: #ffffff;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -544,6 +546,7 @@ textarea, input, select {
 }
 .basic-button.btn-primary {
     background-color: var(--emphasis);
+    color: var(--button-primary-text-color);
 }
 .basic-button:hover {
     background-color: var(--button-background-hover);
@@ -551,6 +554,7 @@ textarea, input, select {
 }
 .basic-button.btn-primary:hover {
     background-color: color-mix(in srgb, var(--button-background-hover) 50%, var(--emphasis));
+    color: var(--button-primary-text-color-hover);
 }
 .basic-button:disabled {
     background-color: color-mix(in srgb, var(--button-background) 40%, var(--basic-button-bg-color-disabled));
