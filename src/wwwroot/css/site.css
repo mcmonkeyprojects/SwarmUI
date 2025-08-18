@@ -62,10 +62,10 @@ body {
     --bs-body-font-family: var(--bs-font-sans-serif);
 }
 a:not(.p-menubar-item-link,.sui_popover_model_button) {
-    color: var( --link-color);
+    color: var(--link-color);
 }
 code {
-    color: var( --code-color);
+    color: var(--code-color);
 }
 @keyframes status_glow-warn {
     0% {background-color: var(--status-bar-warn-color-start-end);}
