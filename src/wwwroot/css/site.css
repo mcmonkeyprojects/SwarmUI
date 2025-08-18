@@ -26,6 +26,14 @@
     --backend-idle-border-color: #688772;
     --backend-loading-border-color: #335500;
     --backend-waiting-border-color: #335500;
+    --backend-edit-btn-text-color-hover: #000000;
+    --backend-edit-btn-border-color-hover: #000000;
+    --backend-edit-btn-text-color-disabled: #505050;
+    --backend-edit-btn-border-color-disabled: #505050;
+    --backend-delete-btn-text-color-hover: #000000;
+    --backend-delete-btn-border-color-hover: #000000;
+    --backend-save-btn-text-color-hover: #000000;
+    --backend-save-btn-border-color-hover: #000000;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -189,13 +197,13 @@ body {
     border: 1px solid var(--green);
 }
 .backend-edit-button:hover {
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
+    color: var(--backend-edit-btn-text-color-hover) !important;
+    border: 1px solid var(--backend-edit-btn-border-color-hover) !important;
     background-color: var(--green) !important;
 }
 .backend-edit-button:disabled {
-    color: #505050 !important;
-    border: 1px solid #505050 !important;
+    color: var(--backend-edit-btn-text-color-disabled) !important;
+    border: 1px solid var(--backend-edit-btn-border-color-disabled) !important;
     background-color: transparent !important;
 }
 .backend-delete-button {
@@ -203,8 +211,8 @@ body {
     border: 1px solid var(--red);
 }
 .backend-delete-button:hover {
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
+    color: var(--backend-delete-btn-text-color-hover) !important;
+    border: 1px solid var(--backend-delete-btn-border-color-hover) !important;
     background-color: var(--red) !important;
 }
 .backend-save-button {
@@ -213,8 +221,8 @@ body {
     border: 1px solid var(--green);
 }
 .backend-save-button:hover {
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
+    color: var(--backend-save-btn-text-color-hover) !important;
+    border: 1px solid var(--backend-save-btn-border-color-hover) !important;
     background-color: var(--green) !important;
 }
 .backend-toggle-switch {
