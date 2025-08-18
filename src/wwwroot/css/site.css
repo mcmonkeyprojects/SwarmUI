@@ -554,7 +554,7 @@ textarea, input, select {
 }
 .basic-button.btn-primary {
     background-color: var(--emphasis);
-    color: var(--button-primary-text-color);
+    color: var(--button-primary-text-color) !important;
 }
 .basic-button:hover {
     background-color: var(--button-background-hover);
@@ -562,7 +562,7 @@ textarea, input, select {
 }
 .basic-button.btn-primary:hover {
     background-color: color-mix(in srgb, var(--button-background-hover) 50%, var(--emphasis));
-    color: var(--button-primary-text-color-hover);
+    color: var(--button-primary-text-color-hover) !important;
 }
 .basic-button:disabled {
     background-color: color-mix(in srgb, var(--button-background) 40%, var(--basic-button-bg-color-disabled));
