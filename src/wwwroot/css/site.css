@@ -587,6 +587,15 @@ textarea, input, select {
     text-decoration: none;
     transition: all 0.5s;
 }
+.btn-secondary {
+    background-color: var(--button-background);
+    color: var(--button-text);
+    border: 1px solid var(--button-border);
+}
+.btn-secondary:hover {
+    background-color: var(--button-background-hover);
+    color: var(--button-foreground-hover);
+}
 .modal_text_extra {
     width: 100%;
     margin-bottom: 0.1rem;
