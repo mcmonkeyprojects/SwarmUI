@@ -2,6 +2,8 @@
 let allPresets = [];
 let allPresetsUnsorted = [];
 let currentPresets = [];
+let selectedPresetsForBatch = new Set();
+let batchDeleteMode = false;
 
 let preset_to_edit = null;
 
@@ -397,7 +399,12 @@ function describePreset(preset) {
     ];
     let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
     let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
-    let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
+    let isSelected = selectedPresetsForBatch.has(preset.data.title);
+    let isCurrentPreset = currentPresets.some(p => p.title == preset.data.title);
+    let className = isCurrentPreset ? 'preset-block-selected preset-block' : 'preset-block';
+    if (isSelected) {
+        className += ' preset-batch-selected';
+    }
     let name = preset.data.title;
     let index = name.lastIndexOf('/');
     if (index != -1) {
@@ -423,7 +430,17 @@ function describePreset(preset) {
         }
     });
     let detail_list = displayParams.map(p => escapeHtmlNoBr(p.value).replaceAll('\n', '&emsp;'));
-    return { name, description: escapeHtml(description), buttons, 'image': preset.data.preview_image, className, searchable, detail_list };
+    return { 
+        name, 
+        description: escapeHtml(description), 
+        buttons, 
+        'image': preset.data.preview_image, 
+        className, 
+        searchable, 
+        detail_list,
+        batchSelected: batchDeleteMode ? isSelected : undefined,
+        onBatchToggle: () => togglePresetForBatch(preset.data)
+    };
 }
 
 function selectPreset(preset) {
@@ -443,12 +460,98 @@ function clearPresets() {
     presetBrowser.rerender();
 }
 
+function togglePresetForBatch(preset) {
+    if (selectedPresetsForBatch.has(preset.title)) {
+        selectedPresetsForBatch.delete(preset.title);
+    } else {
+        selectedPresetsForBatch.add(preset.title);
+    }
+    updateBatchDeleteButton();
+    presetBrowser.rerender();
+}
+
+function toggleBatchDeleteMode() {
+    batchDeleteMode = !batchDeleteMode;
+    
+    if (batchDeleteMode) {
+        // Entering batch mode - select all presets
+        selectedPresetsForBatch.clear();
+        for (let preset of allPresets) {
+            selectedPresetsForBatch.add(preset.title);
+        }
+    } else {
+        // Exiting batch mode - clear selection
+        selectedPresetsForBatch.clear();
+    }
+    
+    updateBatchDeleteButton();
+    presetBrowser.rerender();
+}
+
+function updateBatchDeleteButton() {
+    let deleteButton = document.getElementById('preset_batch_delete_button');
+    
+    if (deleteButton) {
+        if (batchDeleteMode) {
+            let count = selectedPresetsForBatch.size;
+            deleteButton.innerText = count > 0 ? `Delete Selected (${count})` : 'Cancel Batch Delete';
+            deleteButton.disabled = false;
+        } else {
+            deleteButton.innerText = 'Batch Delete';
+            deleteButton.disabled = false;
+        }
+    }
+}
+
+function batchDeletePresets() {
+    if (!batchDeleteMode) {
+        // Enter batch delete mode
+        toggleBatchDeleteMode();
+        return;
+    }
+    
+    if (selectedPresetsForBatch.size === 0) {
+        // Exit batch delete mode if no presets selected
+        toggleBatchDeleteMode();
+        return;
+    }
+    
+    let presetNames = Array.from(selectedPresetsForBatch);
+    let confirmMessage = `Are you sure you want to delete ${presetNames.length} preset(s)?\n\nPresets to delete:\n${presetNames.join('\n')}`;
+    
+    if (confirm(confirmMessage)) {
+        let deleteCount = 0;
+        let totalCount = presetNames.length;
+        
+        for (let presetName of presetNames) {
+            genericRequest('DeletePreset', { preset: presetName }, data => {
+                deleteCount++;
+                if (deleteCount === totalCount) {
+                    // Exit batch mode after deletion
+                    batchDeleteMode = false;
+                    selectedPresetsForBatch.clear();
+                    updateBatchDeleteButton();
+                    loadUserData();
+                }
+            });
+        }
+    }
+}
+
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
     `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Path</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
     <button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
     <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>
     <button id="preset_list_export_button translate" class="refresh-button" onclick="exportPresetsButton()">Export All Presets</button>
-    <button id="preset_list_apply_button translate" class="refresh-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply Presets</button>`);
+    <button id="preset_list_apply_button translate" class="refresh-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply Presets</button>
+    <button id="preset_batch_delete_button translate" class="refresh-button" onclick="batchDeletePresets()">Batch Delete</button>`);
+
+// Initialize batch selection UI after the preset browser is built
+presetBrowser.builtEvent = () => {
+    setTimeout(() => {
+        updateBatchDeleteButton();
+    }, 100);
+};
 
 function importPresetsButton() {
     getRequiredElementById('import_presets_textarea').value = '';

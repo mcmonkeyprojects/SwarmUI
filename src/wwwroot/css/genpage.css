@@ -609,6 +609,29 @@ body {
     border: 1px solid var(--box-selected-border);
     background-color: var(--box-selected-background);
 }
+
+.preset-batch-selected {
+    border: 2px solid #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.batch-selection-checkbox {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    padding: 3px;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.batch-selection-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
 .preset-descblock {
     width: 20rem;
     word-wrap: normal;

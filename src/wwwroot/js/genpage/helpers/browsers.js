@@ -422,6 +422,22 @@ class GenPageBrowserClass {
                     container.appendChild(menuDiv);
                 }
             }
+            // Add checkbox if batch selection is supported
+            if (desc.batchSelected !== undefined) {
+                let checkboxDiv = createDiv(null, 'batch-selection-checkbox');
+                let checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = desc.batchSelected;
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (desc.onBatchToggle) {
+                        desc.onBatchToggle();
+                    }
+                });
+                checkboxDiv.appendChild(checkbox);
+                div.appendChild(checkboxDiv);
+            }
+            
             let img = document.createElement('img');
             img.addEventListener('click', () => {
                 this.select(file, div);
