@@ -88,11 +88,14 @@ def make_swarm_sampler_callback(steps, device, model, previews):
             if previews == "iterate":
                 do_preview(0, step % x0.shape[0])
             elif previews == "animate":
-                images = []
-                for i in range(x0.shape[0]):
-                    preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[i:i+1])
-                    images.append(preview_img[1])
-                swarm_send_animated_preview(0, images)
+                if x0.shape[0] == 1:
+                    do_preview(0, 0)
+                else:
+                    images = []
+                    for i in range(x0.shape[0]):
+                        preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[i:i+1])
+                        images.append(preview_img[1])
+                    swarm_send_animated_preview(0, images)
             elif previews == "default":
                 for i in range(x0.shape[0]):
                     preview_img = previewer.decode_latent_to_preview_image("JPEG", x0[i:i+1])
