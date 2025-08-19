@@ -220,6 +220,7 @@ body {
     min-width: 20rem;
     vertical-align: top;
     margin-left: 0.5rem;
+    margin-right: 0.5rem;
     max-height: 10rem;
 }
 .extras-wrapper-sideblock .current-image-data {
@@ -391,6 +392,7 @@ body {
 .model-block img {
     max-height: 9rem;
     width: 9rem;
+    height: 9rem;
     display: inline-block;
     margin: 0.5rem;
     margin-bottom: 0px;
@@ -436,10 +438,12 @@ body {
 .model-block-small img {
     max-height: 7rem;
     width: 7rem;
+    height: 7rem;
 }
 .model-block-big img {
     max-height: 14rem;
     width: 14rem;
+    height: 14rem;
 }
 .model-block-menu-button {
     display: block;
@@ -669,6 +673,8 @@ body {
     border: 1px solid var(--light-border);
     display: inline-block;
     color: var(--text-soft);
+    overflow: clip;
+    text-overflow: ellipsis;
 }
 .param_view_block_model {
     background-color: color-mix(in srgb, transparent 99%, var(--tag-color));

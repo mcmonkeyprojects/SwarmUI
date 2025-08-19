@@ -154,6 +154,8 @@ body {
 }
 .card-body {
     background-color: var(--background);
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 .backend-errored .card-header {
     background-color: var(--background-gray-danger);
