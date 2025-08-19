@@ -57,7 +57,7 @@ There are several alternate AMD backend options that work better than DirectML:
 
 The message `AssertionError: Torch not compiled with CUDA enabled` means that python dependencies of Swarm's comfy backend have been mangled. This most often happens when custom nodes or packages have poorly built requirements files. You'll see issues like this most frequently if you often allow Comfy Manager to install nodepacks.
 
-**So how do I fix it?** The concept is easy, just the details vary. You need to reinstall torch, which means you need to trigger a pip install of: `torch torchvision torchaudio -U --index-url https://download.pytorch.org/whl/cu126` (the cu126 is CUDA version and may change over time, refer to [PyTorch's Website](https://pytorch.org/get-started/locally/) for updated index-url options). Note the usage of `-U` to tell pip to upgrade/replace the existing torch. To see how to install pip packages, refer to [I need to install something with pip](#i-need-to-install-something-with-pip) below.
+**So how do I fix it?** The concept is easy, just the details vary. You need to reinstall torch, which means you need to trigger a pip install of: `torch torchvision torchaudio -U --index-url https://download.pytorch.org/whl/cu128` (the cu128 is CUDA version and may change over time, refer to [PyTorch's Website](https://pytorch.org/get-started/locally/) for updated index-url options). Note the usage of `-U` to tell pip to upgrade/replace the existing torch. To see how to install pip packages, refer to [I need to install something with pip](#i-need-to-install-something-with-pip) below.
 
 ### fatal: detected dubious ownership in repository at '...'
 

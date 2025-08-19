@@ -34,6 +34,7 @@ class SwarmClipTextEncodeAdvanced:
                 "guidance": ("FLOAT", {"default": -1, "min": -1, "max": 100.0, "step": 0.1, "tooltip": "Guidance value to embed, used by some models (eg Flux)."}),
                 "llama_template": ("STRING", {"default": "", "multiline": True, "tooltip": "Template for the LLaMA model, if applicable."}),
                 "clip_vision_output": ("CLIP_VISION_OUTPUT", {"default": None, "tooltip": "Optional CLIP Vision Output to use for the LLaMA model, if applicable."}),
+                "images": ("IMAGE", {"default": None, "tooltip": "Optional images to use for a text-vision model, if applicable."}),
             }
         }
 
@@ -42,13 +43,15 @@ class SwarmClipTextEncodeAdvanced:
     FUNCTION = "encode"
     DESCRIPTION = "Acts like the regular CLIPTextEncode, but supports more advanced special features like '<break>', '[from:to:when]', '[alter|nate]', ..."
 
-    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None):
+    def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None, images = None):
         if llama_template == "hunyuan_image":
             llama_template = PROMPT_TEMPLATE_ENCODE_VIDEO_I2V
 
         def tokenize(text: str):
             if clip_vision_output is not None:
                 return clip.tokenize(text, llama_template=llama_template, image_embeds=clip_vision_output.mm_projected)
+            elif images is not None:
+                return clip.tokenize(text, images=images)
             else:
                 return clip.tokenize(text)
 

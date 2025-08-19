@@ -483,6 +483,10 @@ public class T2IModelClassSorter
         {
             return isQwenImage(h);
         }});
+        Register(new() { ID = "qwen-image-edit", CompatClass = "qwen-image", Name = "Qwen Image Edit", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "qwen-image/vae", CompatClass = "qwen-image", Name = "Qwen Image VAE", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO?

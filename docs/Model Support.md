@@ -434,13 +434,24 @@ Parameters and usage is the same as any other normal model.
         - Save it to `diffusion_models`
     - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
     - It has its own VAE, and will be automatically downloaded.
-    - **CFG:** You can use CFG=1 for best performance. You can also happily use higher CFGs, eg CFG=4, at a performance cost.
+    - **CFG:** You can use CFG=`1` for best performance. You can also happily use higher CFGs, eg CFG=`4`, at a performance cost.
     - **Steps:** normal ~20 works, but higher steps (eg 50) is recommended for best quality
     - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions in a range between 928 up to 1472.
     - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
         - Requires >30 gigs of system RAM just to load at all in fp8. If you have limited sysram you're gonna have a bad time. Pagefile can help.
     - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
     - **Sigma Shift:** Comfy defaults it to `1.15`, but this ruins fine details, so Swarm defaults it to `3` instead. Many different values are potentially valid. Proper guidance on choices TBD.
+
+### Qwen Image Edit
+
+- The Qwen Image **Edit** model can be downloaded here: <https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models>
+    - The architecture cannot be autodetected and must be set manually.
+        - Click the `☰` hamburger menu on a model, then `Edit Metadata`, then change `Architecture` to `Qwen Image Edit` and hit `Save`
+    - Most params are broadly the same as regular Qwen Image
+    - **CFG** must be `1`, Edit is not compatible with higher CFGs.
+    - You can insert image(s) to the prompt box to have it edit that image
+        - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
+    - It is compatible with qwen image Lightning loras, but the quality will be poor until edit-specific lightning loras are trained
 
 # Video Models
 

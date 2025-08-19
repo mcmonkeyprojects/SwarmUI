@@ -182,6 +182,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is a Kontext model (eg Flux.1 Kontext Dev).</summary>
+    public bool IsKontext()
+    {
+        string clazz = CurrentModelClass()?.ID;
+        return clazz is not null && clazz.EndsWith("/kontext");
+    }
+
     /// <summary>Returns true if the current model is Chroma.</summary>
     public bool IsChroma()
     {
@@ -228,6 +235,13 @@ public class WorkflowGenerator
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz.StartsWith("qwen-image");
+    }
+
+    /// <summary>Returns true if the current model is Qwen Image Edit.</summary>
+    public bool IsQwenImageEdit()
+    {
+        string clazz = CurrentModelClass()?.ID;
+        return clazz is not null && clazz.StartsWith("qwen-image-edit");
     }
 
     /// <summary>Returns true if the current model is Hunyuan Video.</summary>
@@ -1638,11 +1652,11 @@ public class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        else if (classId.EndsWith("/kontext") || IsOmniGen())
+        else if (IsKontext() || IsOmniGen() || IsQwenImageEdit())
         {
             JArray img = null;
             JArray imgNeg = null;
-            bool doLatentChain = IsOmniGen();
+            bool doLatentChain = !IsKontext(); // Arguably even kontext should just do this?
             if (IsOmniGen())
             {
                 imgNeg = neg;
@@ -1668,22 +1682,7 @@ public class WorkflowGenerator
             }
             if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
             {
-                string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
-                img = [img1, 0];
-                (int width, int height) = images[0].GetResolution();
-                if (width * height < 960 * 960 || width * height > 2048 * 2048) // Kontext wonks out below 1024x1024 so add a scale fix check, with a bit of margin for close-enough
-                {
-                    (width, height) = Utilities.ResToModelFit(width, height, 1024 * 1024);
-                    string scaleFix = CreateNode("ImageScale", new JObject()
-                    {
-                        ["image"] = img,
-                        ["width"] = width,
-                        ["height"] = height,
-                        ["crop"] = "disabled",
-                        ["upscale_method"] = "lanczos"
-                    });
-                    img = [scaleFix, 0];
-                }
+                img = GetFirstPromptImage(true);
                 if (doLatentChain)
                 {
                     makeRefLatent(img);
@@ -1941,6 +1940,33 @@ public class WorkflowGenerator
             created = CreateKSampler(cascadeModel, [stageBCond, 0], neg, [latent[0], 1], 1.1, steps, startStep, endStep, seed + 27, returnWithLeftoverNoise, addNoise, sigmin, sigmax, previews ?? previews, defsampler, defscheduler, id, true);
         }
         return created;
+    }
+
+    /// <summary>Returns a reference to the first prompt image, if given. Null if not.</summary>
+    /// <param name="fixTo1024ish">If true, rescale the image to 1024-ish. If false, leave it as-is.</param>
+    public JArray GetFirstPromptImage(bool fixTo1024ish)
+    {
+        if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+        {
+            string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
+            JArray img = [img1, 0];
+            (int width, int height) = images[0].GetResolution();
+            if (fixTo1024ish && (width * height < 960 * 960 || width * height > 2048 * 2048)) // Kontext wonks out below 1024x1024 so add a scale fix check, with a bit of margin for close-enough
+            {
+                (width, height) = Utilities.ResToModelFit(width, height, 1024 * 1024);
+                string scaleFix = CreateNode("ImageScale", new JObject()
+                {
+                    ["image"] = img,
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["crop"] = "disabled",
+                    ["upscale_method"] = "lanczos"
+                });
+                img = [scaleFix, 0];
+            }
+            return img;
+        }
+        return null;
     }
 
     /// <summary>Creates a VAE Encode node and applies mask..</summary>
@@ -2838,6 +2864,7 @@ public class WorkflowGenerator
             defaultGuidance = 1;
         }
         bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels());
+        JArray qwenImage;
         if (IsSana())
         {
             node = CreateNode("SanaTextEncode", new JObject()
@@ -2845,6 +2872,34 @@ public class WorkflowGenerator
                 ["GEMMA"] = clip,
                 ["text"] = prompt
             }, id);
+        }
+        else if (IsQwenImageEdit() && isPositive && (qwenImage = GetFirstPromptImage(true)) is not null)
+        {
+            if (wantsSwarmCustom)
+            {
+                node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
+                {
+                    ["clip"] = clip,
+                    ["steps"] = UserInput.Get(T2IParamTypes.Steps),
+                    ["prompt"] = prompt,
+                    ["width"] = width,
+                    ["height"] = height,
+                    ["target_width"] = width,
+                    ["target_height"] = height,
+                    ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
+                    ["images"] = qwenImage,
+                }, id);
+            }
+            else
+            {
+                node = CreateNode("TextEncodeQwenImageEdit", new JObject()
+                {
+                    ["clip"] = clip,
+                    ["prompt"] = prompt,
+                    ["vae"] = null, // Explicitly handled separately
+                    ["image"] = qwenImage,
+                }, id);
+            }
         }
         else if (IsHunyuanVideoI2V() && prompt.StartsWith("<image:"))
         {
@@ -2869,8 +2924,8 @@ public class WorkflowGenerator
                     ["clip"] = clip,
                     ["steps"] = UserInput.Get(T2IParamTypes.Steps),
                     ["prompt"] = content,
-                    ["width"] = enhance ? (int)Utilities.RoundToPrecision(width * mult, 64) : width,
-                    ["height"] = enhance ? (int)Utilities.RoundToPrecision(height * mult, 64) : height,
+                    ["width"] = width,
+                    ["height"] = height,
                     ["target_width"] = width,
                     ["target_height"] = height,
                     ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
