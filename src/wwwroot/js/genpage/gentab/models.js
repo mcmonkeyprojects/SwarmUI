@@ -12,19 +12,6 @@ let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 let modelIconUrlCache = {};
 let starredModels = null;
 
-function handleModelInfoClick(element) {
-  const textToCopy = element.getAttribute('data-copy-text');
-  if (textToCopy) {
-    try {
-      copyText(textToCopy);
-      doNoticePopover('Copied!', 'notice-pop-green');
-    } catch (err) {
-      console.error('Failed to copy: ', err);
-      doNoticePopover('Copy failed!', 'notice-pop-red');
-    }
-  }
-}
-
 function editModelGetHashNow() {
     if (curModelMenuModel == null) {
         return;
