@@ -494,8 +494,7 @@ class ModelBrowserWrapper {
     }
 
     createClickableTriggerPhrase(phrase) {
-        const phraseWithComma = phrase.endsWith(',') ? phrase + ' ' : phrase + ', ';
-        const safePhrase = escapeHtmlNoBr(escapeJsString(phraseWithComma));
+        const safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
         return `<span>${safePhrase}</span><button title="Click to copy" class="basic-button" onclick="copyText('${safePhrase}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
     }
 
