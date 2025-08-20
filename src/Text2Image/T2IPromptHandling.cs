@@ -664,7 +664,7 @@ public class T2IPromptHandling
                     string matched = T2IParamTypes.GetBestModelInList(lora, context.Loras);
                     if (matched is not null)
                     {
-                        add(Program.T2IModelSets["LoRA"].GetModel(matched)?.Metadata?.TriggerPhrase);
+                        add(Program.T2IModelSets["LoRA"].GetModel(matched)?.Metadata?.TriggerPhrase.Replace(';', ','));
                     }
                 }
             }
