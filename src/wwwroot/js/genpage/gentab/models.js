@@ -466,7 +466,7 @@ class ModelBrowserWrapper {
         this.browser.update();
     }
 
-    createClickableTriggerPhrase(phrase) {
+    createCopyableTriggerPhrase(phrase) {
         const safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
         return `<button title="Click to copy" class="basic-button" onclick="copyText('${safePhrase}');doNoticePopover('Copied!', 'notice-pop-green');">${safePhrase} &#x29C9;</button>`;
     }
@@ -474,9 +474,9 @@ class ModelBrowserWrapper {
     formatTriggerPhrases(val) {
         if (val.includes(';')) {
             const phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
-            return phrases.map(phrase => this.createClickableTriggerPhrase(phrase)).join('');
+            return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
         } else {
-            return this.createClickableTriggerPhrase(val);
+            return this.createCopyableTriggerPhrase(val);
         }
     }
 
