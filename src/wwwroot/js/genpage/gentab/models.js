@@ -12,20 +12,6 @@ let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 let modelIconUrlCache = {};
 let starredModels = null;
 
-document.addEventListener('click', function(event) {
-  if (event.target.classList.contains('model-info-clickable')) {
-    handleModelInfoClick(event.target);
-  }
-});
-
-document.addEventListener('keydown', function(event) {
-  if (event.target.classList.contains('model-info-clickable') &&
-      (event.key === 'Enter' || event.key === ' ')) {
-    event.preventDefault();
-    handleModelInfoClick(event.target);
-  }
-});
-
 function handleModelInfoClick(element) {
   const textToCopy = element.getAttribute('data-copy-text');
   if (textToCopy) {
