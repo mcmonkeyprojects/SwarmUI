@@ -827,7 +827,6 @@ class ModelMetadataScanner {
                             'description': model.description || '',
                             'standard_width': model.standard_width || 0,
                             'standard_height': model.standard_height || 0,
-                            'usage_hint': model.usage_hint || '',
                             'date': model.date || '',
                             'license': model.license || '',
                             'trigger_phrase': model.trigger_phrase || '',
