@@ -500,8 +500,8 @@ class ModelBrowserWrapper {
     }
 
     formatTriggerPhrases(val) {
-        if (val.includes(',,')) {
-            const phrases = val.split(',,').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
+        if (val.includes(';')) {
+            const phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
             return phrases.map(phrase => this.createClickableTriggerPhrase(phrase)).join('');
         } else {
             return this.createClickableTriggerPhrase(val);
