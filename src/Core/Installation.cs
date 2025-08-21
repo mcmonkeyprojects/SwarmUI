@@ -93,7 +93,9 @@ public class Installation
             }*/
             else
             {
-                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
+                //await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
+                // TODO: Comfy updated default to python 3.13, but 3.13 is super unstable and incompatible, so use an older package
+                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/v0.3.49/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
             }
         }
         catch (HttpRequestException ex)

@@ -445,10 +445,12 @@ Parameters and usage is the same as any other normal model.
 ### Qwen Image Edit
 
 - The Qwen Image **Edit** model can be downloaded here: <https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models>
+    - Or GGUF version here: <https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>
     - The architecture cannot be autodetected and must be set manually.
         - Click the `☰` hamburger menu on a model, then `Edit Metadata`, then change `Architecture` to `Qwen Image Edit` and hit `Save`
     - Most params are broadly the same as regular Qwen Image
     - **CFG** must be `1`, Edit is not compatible with higher CFGs.
+    - **Sigma Shift:** `3` or lower (as low as `0.5`) is a valid range. Some users report that a value below 1 might be ideal.
     - You can insert image(s) to the prompt box to have it edit that image
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
     - It is compatible with qwen image Lightning loras, but the quality will be poor until edit-specific lightning loras are trained
