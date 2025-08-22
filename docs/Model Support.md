@@ -422,9 +422,6 @@ Parameters and usage is the same as any other normal model.
 *(Qwen Image ran at CFG=4, Steps=50, Res=1328x1328. This took me about 3 minutes per image. This comparison is unfair to the other models, but this model seems intended to be a 'slow but smart' model, so this is the way to run it for now. The test prompt seems to be particular hard on Qwen Image, I promise it's smarter than this makes it look lol.)*
 
 - [Qwen Image](https://huggingface.co/Qwen/Qwen-Image) is natively supported in SwarmUI.
-    - Just the image gen part, they haven't released the other bits at time of writing.
-    - At time of writing the underlying comfy impl is considered an initial/wip impl and may have further work before it's quite right.
-        - SageAttention has compatibility issues
     - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
         - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
         - Or, for limited memory space, GGUF versions <https://huggingface.co/city96/Qwen-Image-gguf/tree/main>
@@ -434,6 +431,7 @@ Parameters and usage is the same as any other normal model.
         - Save it to `diffusion_models`
     - The text encoder is Qwen 2.5 VL 7B (LLM), and will be automatically downloaded.
     - It has its own VAE, and will be automatically downloaded.
+    - SageAttention has compatibility issues, if you use Sage it will need to be disabled.
     - **CFG:** You can use CFG=`1` for best performance. You can also happily use higher CFGs, eg CFG=`4`, at a performance cost.
     - **Steps:** normal ~20 works, but higher steps (eg 50) is recommended for best quality
     - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions in a range between 928 up to 1472.

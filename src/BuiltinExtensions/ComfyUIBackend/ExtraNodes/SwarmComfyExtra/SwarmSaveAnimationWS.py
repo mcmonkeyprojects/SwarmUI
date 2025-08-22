@@ -75,7 +75,7 @@ class SwarmSaveAnimationWS:
                 ext = "mov"
                 type_num = 7
             elif format == "gif-hd":
-                args += ["-filter_complex", "split=2 [a][b]; [a] palettegen [pal]; [b] fifo [b]; [b] [pal] paletteuse"]
+                args += ["-filter_complex", "split=2 [a][b]; [a] palettegen [pal]; [b] [pal] paletteuse"]
                 ext = "gif"
                 type_num = 4
             path = folder_paths.get_save_image_path("swarm_tmp_", folder_paths.get_temp_directory())[0]
