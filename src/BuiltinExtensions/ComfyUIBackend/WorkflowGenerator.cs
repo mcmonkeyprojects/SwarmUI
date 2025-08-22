@@ -1652,11 +1652,12 @@ public class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        else if (IsKontext() || IsOmniGen() || IsQwenImageEdit())
+        else if (IsKontext() || IsOmniGen() || IsQwenImage())
         {
             JArray img = null;
             JArray imgNeg = null;
             bool doLatentChain = !IsKontext(); // Arguably even kontext should just do this?
+            bool onlyExplicit = IsQwenImage() && !IsQwenImageEdit();
             if (IsOmniGen())
             {
                 imgNeg = neg;
@@ -1713,12 +1714,12 @@ public class WorkflowGenerator
                     makeRefLatent(img);
                 }
             }
-            else if (MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
+            else if (!onlyExplicit && MaskShrunkInfo is not null && MaskShrunkInfo.ScaledImage is not null)
             {
                 img = [MaskShrunkInfo.ScaledImage, 0];
                 makeRefLatent(img);
             }
-            else if (FinalInputImage is not null)
+            else if (!onlyExplicit && FinalInputImage is not null)
             {
                 img = FinalInputImage;
                 makeRefLatent(img);

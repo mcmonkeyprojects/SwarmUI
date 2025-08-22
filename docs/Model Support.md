@@ -440,6 +440,19 @@ Parameters and usage is the same as any other normal model.
     - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
     - **Sigma Shift:** Comfy defaults it to `1.15`, but this ruins fine details, so Swarm defaults it to `3` instead. Many different values are potentially valid. Proper guidance on choices TBD.
 
+### Controlnets
+
+- There are two controlnet versions available for Qwen Image currently
+    - LoRA form
+        - Download here <https://huggingface.co/Comfy-Org/Qwen-Image-DiffSynth-ControlNets/tree/main/split_files/loras>
+        - Save to loras folder
+        - Select the lora, use with a regular qwen image base model
+        - Upload a prompt image of controlnet input (depth or canny)
+            - You can create this from an existing image by using the Controlnet Parameter group, select the preprocessor (Canny, or MiDAS Depth), and hit "Preview"
+        - You cannot use the controlnet parameters directly for actual generation due to the weird lora-hack this uses
+    - "Model Patch"
+        - Support pending
+
 ### Qwen Image Edit
 
 - The Qwen Image **Edit** model can be downloaded here: <https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models>
