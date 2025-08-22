@@ -24,6 +24,11 @@
     min-width: 3rem;
     min-height: 3rem;
 }
+.comfy_buttons_closeable_area_closed {
+    padding: 0.5rem;
+    min-width: 2.3rem;
+    min-height: 2.6rem;
+}
 .comfy_workflow_buttons_left {
     display: inline-block;
     width: fit-content;

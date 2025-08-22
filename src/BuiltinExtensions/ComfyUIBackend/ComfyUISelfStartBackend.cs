@@ -282,7 +282,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.23.4";
+    public static string SwarmValidatedFrontendVersion = "1.25.9";
 
     public override async Task Init()
     {
@@ -629,6 +629,8 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>List of required python packages that need a specific version, in structure (string libFolder, string pipName, string rel, string version).</summary>
     public static List<(string, string, string, string)> RequiredVersionPythonPackages =
     [
+        ("aiohttp", "aiohttp", ">=", "3.11.8"),
+        ("yarl", "yarl", ">=", "1.18.0"),
         ("av", "av", ">=", "14.2.0"),
         ("spandrel", "spandrel", ">=", "0.4.1"),
         ("transformers", "transformers", ">=", "4.37.2"),

@@ -14,6 +14,8 @@ let comfyHasTriedToLoad = false;
 
 let comfyAltSaveNodes = ['ADE_AnimateDiffCombine', 'VHS_VideoCombine', 'SaveAnimatedWEBP', 'SaveAnimatedPNG', 'SwarmSaveAnimatedWebpWS', 'SwarmSaveAnimationWS'];
 
+let swarmComfyInjectedHeaderSpacer = null;
+
 /**
  * Tries to load the ComfyUI workflow frame.
  */
@@ -43,15 +45,18 @@ function comfyFixMenuLocation() {
     let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top');
     let bodyTopMenu = bodyTop ? bodyTop.querySelector('.comfyui-menu') : null;
     if (bodyTopMenu) {
-        let logo = bodyTopMenu.querySelector('.comfyui-logo');
+        let logo = bodyTopMenu.querySelector('.comfyui-logo-wrapper') || bodyTopMenu.querySelector('.comfyui-logo');
         if (logo && !logo.parentElement.querySelector('.swarm-injected-header-spacer')) {
             let space = document.createElement('span');
             space.className = 'swarm-injected-header-spacer';
-            space.style.width = ((swarmComfyMenu.offsetWidth < 5 ? 296 : swarmComfyMenu.offsetWidth) + 30) + 'px';
+            let offsetTarget = (swarmComfyMenu.offsetWidth < 5 ? 296 : swarmComfyMenu.offsetWidth);
+            space.style.width = `${offsetTarget}px`;
+            space.dataset.offsetTarget = offsetTarget;
             logo.parentElement.insertBefore(space, logo.nextSibling);
+            swarmComfyInjectedHeaderSpacer = space;
         }
-        swarmComfyMenu.style.top = '0rem';
-        swarmComfyMenu.style.left = `50px`;
+        swarmComfyMenu.style.top = `${logo.offsetTop}px`;
+        swarmComfyMenu.style.left = `${logo.offsetLeft + logo.offsetWidth}px`;
     }
     else {
         swarmComfyMenu.style.left = undefined;
@@ -1144,10 +1149,18 @@ function comfyToggleButtonsVisible() {
     if (area.style.display == 'none') {
         area.style.display = '';
         button.innerHTML = '&#x2B9D;';
+        area.parentElement.classList.remove('comfy_buttons_closeable_area_closed');
+        if (swarmComfyInjectedHeaderSpacer) {
+            swarmComfyInjectedHeaderSpacer.style.width = `${swarmComfyInjectedHeaderSpacer.dataset.offsetTarget}px`;
+        }
     }
     else {
         area.style.display = 'none';
         button.innerHTML = '&#x2B9F;';
+        area.parentElement.classList.add('comfy_buttons_closeable_area_closed');
+        if (swarmComfyInjectedHeaderSpacer) {
+            swarmComfyInjectedHeaderSpacer.style.width = `30px`;
+        }
     }
 }
 
