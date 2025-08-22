@@ -370,7 +370,7 @@ public class Settings : AutoConfiguration
             public string PresetListDetailsFields = "";
 
             [ConfigComment("If enabled, trigger phrases are copied with a trailing comma added.\nIf disabled, trigger phrases are copied as-is without any trailing comma.\nThis is useful when copying them to prompts.")]
-            public bool CopyTriggerPhraseWithTrailingComma = true;
+            public bool CopyTriggerPhraseWithTrailingComma = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
