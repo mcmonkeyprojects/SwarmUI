@@ -486,14 +486,6 @@ class ModelBrowserWrapper {
         }
     }
 
-    createInfoLine(label, value) {
-        const content = label === 'Trigger Phrase'
-            ? `${this.formatTriggerPhrases(value)}`
-            : `${value == null ? '(Unset)' : safeHtmlOnly(value)}`;
-
-        return `<b>${escapeHtml(label)}:</b> <span>${content}</span><br>`;
-    }
-
     describeModel(model) {
         let description = '';
         let buttons = [];
@@ -593,7 +585,10 @@ class ModelBrowserWrapper {
         let searchableAdded = '';
         if (model.data.is_supported_model_format) {
             let getLine = (label, val) => {
-                return this.createInfoLine(label, val);
+                const content = label === 'Trigger Phrase'
+                    ? `${this.formatTriggerPhrases(val)}`
+                    : `${val == null ? '(Unset)' : safeHtmlOnly(val)}`;
+                return `<b>${escapeHtml(label)}:</b> <span>${content}</span><br>`;
             };
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
             if (this.subType == 'LoRA' || this.subType == 'Stable-Diffusion') {
