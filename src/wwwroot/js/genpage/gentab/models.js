@@ -467,8 +467,13 @@ class ModelBrowserWrapper {
     }
 
     createCopyableTriggerPhrase(phrase) {
+        let copyPhrase = phrase;
+        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', true) && !phrase.endsWith(',')) {
+          copyPhrase += ',';
+        }
         const safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
-        return `<button title="Click to copy" class="basic-button" onclick="copyText('${safePhrase}');doNoticePopover('Copied!', 'notice-pop-green');">${safePhrase} &#x29C9;</button>`;
+        const safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
+        return `<button title="Click to copy" class="basic-button" onclick="copyText('${safeCopyPhrase}');doNoticePopover('Copied!', 'notice-pop-green');">${safePhrase} &#x29C9;</button>`;
     }
 
     formatTriggerPhrases(val) {
