@@ -480,7 +480,8 @@ class ModelBrowserWrapper {
         if (val.includes(';')) {
             const phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
             return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
-        } else {
+        }
+        else {
             return this.createCopyableTriggerPhrase(val);
         }
     }
