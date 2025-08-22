@@ -588,7 +588,7 @@ class ModelBrowserWrapper {
                 const content = label === 'Trigger Phrase'
                     ? `${this.formatTriggerPhrases(val)}`
                     : `${val == null ? '(Unset)' : safeHtmlOnly(val)}`;
-                return `<b>${escapeHtml(label)}:</b> <span>${content}</span><br>`;
+                return `<b>${label}:</b> <span>${content}</span><br>`;
             };
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
             if (this.subType == 'LoRA' || this.subType == 'Stable-Diffusion') {
