@@ -473,7 +473,7 @@ class ModelBrowserWrapper {
         }
         const safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
         const safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
-        return `<button title="Click to copy" class="basic-button" onclick="copyText('${safeCopyPhrase}');doNoticePopover('Copied!', 'notice-pop-green');">${safePhrase} &#x29C9;</button>`;
+        return `${safePhrase}<button title="Click to copy" class="basic-button trigger-phrase-copy-button" onclick="copyText('${safeCopyPhrase}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
     }
 
     formatTriggerPhrases(val) {

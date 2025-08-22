@@ -1629,3 +1629,8 @@ body {
 .prompt-copy-button {
     float: right;
 }
+.trigger-phrase-copy-button {
+    display: inline-flex;
+    align-items: center;
+    height: 1em;
+}
