@@ -403,6 +403,7 @@ body {
     width: 19.5rem;
     height: 10rem;
     overflow: hidden;
+    scrollbar-gutter: stable;
     display: inline-block;
     white-space: normal;
     word-break: normal;
