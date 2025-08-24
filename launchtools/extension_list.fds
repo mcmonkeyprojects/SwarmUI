@@ -156,3 +156,11 @@ FrameSaver:
     license: MIT
     tags:
     - parameters
+
+VAEReflection:
+    author: Jelosus2
+    description: Adds support for using reflect padding mode in VAEs, fixing artifacts in the edges of images generated using a VAE trained with reflect padding.
+    url: https://github.com/Jelosus2/comfyui-vae-reflection
+    license: MIT
+    tags:
+    - parameters
