@@ -1001,18 +1001,33 @@ public class WorkflowGenerator
                 {
                     throw new SwarmUserErrorException($"Model '{model.Name}' is in Nunchaku format, but the server does not have Nunchaku support installed. Cannot run.");
                 }
-                // TODO: Configuration of these params?
-                string modelNode = CreateNode("NunchakuFluxDiTLoader", new JObject()
+                if (IsFlux())
                 {
-                    ["model_path"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
-                    ["cache_threshold"] = UserInput.Get(ComfyUIBackendExtension.NunchakuCacheThreshold, 0),
-                    ["attention"] = "nunchaku-fp16",
-                    ["cpu_offload"] = "auto",
-                    ["device_id"] = 0,
-                    ["data_type"] = model.Metadata?.SpecialFormat == "nunchaku-fp4" ? "bfloat16" : "float16",
-                    ["i2f_mode"] = "enabled"
-                }, id);
-                LoadingModel = [modelNode, 0];
+                    // TODO: Configuration of these params?
+                    string modelNode = CreateNode("NunchakuFluxDiTLoader", new JObject()
+                    {
+                        ["model_path"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
+                        ["cache_threshold"] = UserInput.Get(ComfyUIBackendExtension.NunchakuCacheThreshold, 0),
+                        ["attention"] = "nunchaku-fp16",
+                        ["cpu_offload"] = "auto",
+                        ["device_id"] = 0,
+                        ["data_type"] = model.Metadata?.SpecialFormat == "nunchaku-fp4" ? "bfloat16" : "float16",
+                        ["i2f_mode"] = "enabled"
+                    }, id);
+                    LoadingModel = [modelNode, 0];
+                }
+                else if (IsQwenImage())
+                {
+                    string modelNode = CreateNode("NunchakuQwenImageDiTLoader", new JObject()
+                    {
+                        ["model_name"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat)
+                    }, id);
+                    LoadingModel = [modelNode, 0];
+                }
+                else
+                {
+                    throw new SwarmUserErrorException($"Cannot load nunchaku for model architecture '{model.ModelClass?.ID}'. If other model architectures are supported in the Nunchaku source, please report this on the SwarmUI GitHub or Discord.");
+                }
             }
             else if (model.Metadata?.SpecialFormat == "bnb_nf4" || model.Metadata?.SpecialFormat == "bnb_fp4")
             {

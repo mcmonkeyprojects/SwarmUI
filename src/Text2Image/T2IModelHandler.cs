@@ -563,12 +563,12 @@ public class T2IModelHandler
                     specialFormat = "fp8_scaled";
                     break;
                 }
-                if (key.EndsWith(".mlp_context_fc1.wscales"))
+                if (key.EndsWith(".wscales"))
                 {
                     specialFormat = "nunchaku";
                     break;
                 }
-                if (key.EndsWith(".mlp_context_fc1.wtscale"))
+                if (key.EndsWith(".wtscale"))
                 {
                     specialFormat = "nunchaku-fp4";
                     break;
