@@ -107,6 +107,39 @@ class GenPageBrowserClass {
         this.isSmallWindow = mobileDesktopLayout == 'auto' ? window.innerWidth < 768 : mobileDesktopLayout == 'mobile';
     }
 
+    getFilterTooltip() {
+        if (this.id !== 'imagehistorybrowser') {
+            return 'Text filter, only show items that contain this text.';
+        }
+        return `SEARCH FILTERS:
+
+Text: any text (searches everywhere)
+prompt:woman (in prompt)
+lora:name (lora containing name)
+model:sdxl (model containing sdxl)
+controlnet:canny (controlnet type)
+sampler:euler (sampler name)
+aspectratio:16:9 (aspect ratio)
+
+NUMERIC FILTERS (support >, <, =):
+seed:12345 or seed:>10000
+steps:20 or steps:>30
+cfgscale:7.5 or cfgscale:<10
+width:1024 or width:>512
+height:768 or height:<1024
+videoframes:120 or videoframes:>60
+fps:30 or fps:<60
+
+DATE FILTERS:
+date:2025 (year)
+date:2025.07 (year.month)
+date:2025.07.13 (exact date)
+date:>2025.07.01 (after date)
+date:<2025.07.01 (before date)
+
+Combine: prompt:cat lora:style steps:>20`;
+    }
+
     /**
      * Schedules a rerender with a small delay.
      */
@@ -376,8 +409,30 @@ class GenPageBrowserClass {
             let file = files[i];
             id++;
             let desc = this.describe(file);
-            if (this.filter && !desc.searchable.toLowerCase().includes(this.filter)) {
+            if (!desc) {
                 continue;
+            }
+            if (this.filter) {
+                const searchParts = typeof parseSearchQuery !== 'undefined' ? parseSearchQuery(this.filter) : [{ type: 'text', value: this.filter }];
+                let matches = true;
+                
+                for (let part of searchParts) {
+                    if (part.type === 'namespace' && desc.parsedMeta) {
+                        if (!matchesNamespaceSearch(desc.parsedMeta, part.namespace, part.value)) {
+                            matches = false;
+                            break;
+                        }
+                    } else if (part.type === 'text') {
+                        if (!desc.searchable.toLowerCase().includes(part.value)) {
+                            matches = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!matches) {
+                    continue;
+                }
             }
             if (i > maxBuildNow) {
                 let remainingFiles = files.slice(i);
@@ -621,7 +676,7 @@ class GenPageBrowserClass {
                 `<button id="${this.id}_refresh_button" title="Refresh" class="refresh-button translate translate-no-text">&#x21BB;</button>\n`
                 + `<button id="${this.id}_up_button" class="refresh-button translate translate-no-text" disabled autocomplete="off" title="Go back up 1 folder">&#x21d1;</button>\n`
                 + `<span><span class="translate">Depth</span>: <input id="${this.id}_depth_input" class="depth-number-input translate translate-no-text" type="number" min="1" max="10" value="${this.depth}" title="Depth of subfolders to show" autocomplete="off"></span>\n`
-                + `<div class="input_filter_container bottom_filter"><input id="${this.id}_filter_input" type="text" value="${this.filter}" title="Text filter, only show items that contain this text." rows="1" autocomplete="off" class="translate translate-no-text" placeholder="${translate('Filter...')}"><span class="clear_input_icon bottom_filter">&#x2715;</span></div>\n`
+                + `<div class="input_filter_container bottom_filter"><input id="${this.id}_filter_input" type="text" value="${this.filter}" title="${this.getFilterTooltip()}" rows="1" autocomplete="off" class="translate translate-no-text" placeholder="${translate('Filter...')}"><span class="clear_input_icon bottom_filter">&#x2715;</span></div>\n`
                 + this.extraHeader);
             let inputArr = buttons.getElementsByTagName('input');
             let depthInput = inputArr[0];

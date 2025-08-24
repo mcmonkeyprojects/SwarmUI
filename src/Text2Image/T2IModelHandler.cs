@@ -117,6 +117,8 @@ public class T2IModelHandler
 
         public string MergedFrom { get; set; }
 
+        public string ArchitectureGroup { get; set; }
+
         public string Date { get; set; }
 
         public string Preprocessor { get; set; }
@@ -658,6 +660,7 @@ public class T2IModelHandler
                 StandardHeight = height,
                 UsageHint = pickBest(metaHeader?.Value<string>("modelspec.usage_hint"), metaHeader?.Value<string>("usage_hint")),
                 MergedFrom = pickBest(metaHeader?.Value<string>("modelspec.merged_from"), metaHeader?.Value<string>("merged_from")),
+                ArchitectureGroup = pickBest(metaHeader?.Value<string>("modelspec.architecture_group"), metaHeader?.Value<string>("architecture_group")),
                 TriggerPhrase = pickBest(metaHeader?.Value<string>("modelspec.trigger_phrase"), metaHeader?.Value<string>("trigger_phrase")) ?? altTriggerPhrase,
                 License = pickBest(metaHeader?.Value<string>("modelspec.license"), metaHeader?.Value<string>("license")),
                 Date = pickBest(metaHeader?.Value<string>("modelspec.date"), metaHeader?.Value<string>("date")),

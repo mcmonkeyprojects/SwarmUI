@@ -219,6 +219,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                 specSetEmptyable("trigger_phrase", Metadata.TriggerPhrase);
                 specSetEmptyable("tags", Metadata.Tags is null ? null : string.Join(",", Metadata.Tags));
                 specSet("merged_from", Metadata.MergedFrom);
+                specSet("architecture_group", Metadata.ArchitectureGroup);
                 specSet("date", Metadata.Date);
                 specSet("preprocessor", Metadata.Preprocessor);
                 specSet("resolution", $"{Metadata.StandardWidth}x{Metadata.StandardHeight}");
@@ -304,6 +305,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             [$"{prefix}usage_hint"] = Metadata?.UsageHint,
             [$"{prefix}trigger_phrase"] = Metadata?.TriggerPhrase,
             [$"{prefix}merged_from"] = Metadata?.MergedFrom,
+            [$"{prefix}architecture_group"] = Metadata?.ArchitectureGroup,
             [$"{prefix}tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
             [$"{prefix}is_supported_model_format"] = IsSupportedModelType,
             [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,

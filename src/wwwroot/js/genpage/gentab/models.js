@@ -167,7 +167,7 @@ function editModel(model, browser) {
     }
     getRequiredElementById('edit_model_prediction_type').value = model.prediction_type || '';
     getRequiredElementById('edit_model_resolution').value = `${model.standard_width}x${model.standard_height}`;
-    for (let val of ['description', 'author', 'usage_hint', 'date', 'license', 'trigger_phrase', 'tags']) {
+    for (let val of ['description', 'author', 'usage_hint', 'date', 'license', 'trigger_phrase', 'tags', 'merged_from', 'architecture_group']) {
         getRequiredElementById(`edit_model_${val}`).value = model[val] || '';
     }
     getRequiredElementById('edit_model_is_negative').checked = model.is_negative_embedding || false;
@@ -249,13 +249,27 @@ function save_edit_model() {
         'preview_image': '',
         'preview_image_metadata': currentMetadataVal
     };
-    for (let val of ['author', 'type', 'description', 'usage_hint', 'date', 'license', 'trigger_phrase', 'tags', 'prediction_type']) {
+    for (let val of ['author', 'type', 'description', 'usage_hint', 'date', 'license', 'trigger_phrase', 'tags', 'prediction_type', 'merged_from', 'architecture_group']) {
         data[val] = getRequiredElementById(`edit_model_${val}`).value;
     }
     data['is_negative_embedding'] = (model.architecture || '').endsWith('/textual-inversion') ? getRequiredElementById('edit_model_is_negative').checked : false;
     data.subtype = curModelMenuBrowser.subType;
     function complete() {
-        genericRequest('EditModelMetadata', data, data => {
+        genericRequest('EditModelMetadata', data, response => {
+            const modelName = model.name;
+            const archGroup = data.architecture_group;
+            const archType = data.type;
+            if (typeof modelArchitectureMap !== 'undefined') {
+                if (archGroup) {
+                    modelArchitectureMap[modelName] = archGroup;
+                } else if (archType && typeof groupArchitecture !== 'undefined') {
+                    modelArchitectureMap[modelName] = groupArchitecture(archType);
+                }
+                
+                if (typeof updateArchitectureDropdown !== 'undefined') {
+                    updateArchitectureDropdown();
+                }
+            }
             curModelMenuBrowser.browser.update();
         });
         $('#edit_model_modal').modal('hide');
@@ -397,6 +411,11 @@ class ModelBrowserWrapper {
                 this.models[file.name] = file;
                 if (this.subType == 'Stable-Diffusion') {
                     modelIconUrlCache[file.name] = file.data.preview_image;
+                    if (file.data.architecture_group) {
+                        modelArchitectureMap[file.name] = file.data.architecture_group;
+                    } else if (file.data.architecture) {
+                        modelArchitectureMap[file.name] = groupArchitecture(file.data.architecture);
+                    }
                 }
             }
             if (this.subType == 'VAE') {
