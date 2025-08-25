@@ -424,7 +424,8 @@ Parameters and usage is the same as any other normal model.
 - [Qwen Image](https://huggingface.co/Qwen/Qwen-Image) is natively supported in SwarmUI.
     - Download the model here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>
         - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
-        - Or, for limited memory space, GGUF versions <https://huggingface.co/city96/Qwen-Image-gguf/tree/main>
+        - Or, for nunchaku accelerated version that uses a bit less VRAM and runs faster, <https://huggingface.co/nunchaku-tech/nunchaku-qwen-image/tree/main>
+        - Or, other option for limited memory space, GGUF versions <https://huggingface.co/city96/Qwen-Image-gguf/tree/main>
         - Or a distilled version here <https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/blob/main/non_official/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors>
             - This uses CFG=1, Steps=15 or so.
             - There's also a couple "Lightning" loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main> for the base model, CFG=1 Steps=8 or 4
@@ -464,7 +465,8 @@ Parameters and usage is the same as any other normal model.
     - **Sigma Shift:** `3` or lower (as low as `0.5`) is a valid range. Some users report that a value below 1 might be ideal.
     - You can insert image(s) to the prompt box to have it edit that image
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
-    - It is compatible with qwen image Lightning loras, but the quality will be poor until edit-specific lightning loras are trained
+    - There are a couple dedicated Qwen Image Edit Lightning Loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>
+        - Take care to separate the Edit lora vs the base Qwen Image lora.
 
 # Video Models
 
