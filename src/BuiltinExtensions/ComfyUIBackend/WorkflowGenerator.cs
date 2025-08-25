@@ -1967,9 +1967,32 @@ public class WorkflowGenerator
             string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
             JArray img = [img1, 0];
             (int width, int height) = images[0].GetResolution();
-            if (fixTo1024ish && (width * height < 960 * 960 || width * height > 2048 * 2048)) // Kontext wonks out below 1024x1024 so add a scale fix check, with a bit of margin for close-enough
+            int genWidth = UserInput.GetImageWidth(), genHeight = UserInput.GetImageHeight();
+            int actual = (int)Math.Sqrt(width * height), target = (int)Math.Sqrt(genWidth * genHeight);
+            bool doesFit = true;
+            if (IsKontext()) // Kontext needs <= target gen size, and is sufficient once input hits 1024.
             {
-                (width, height) = Utilities.ResToModelFit(width, height, 1024 * 1024);
+                if (target < 1024)
+                {
+                    doesFit = Math.Abs(actual - target) <= 32;
+                }
+                else if (target >= 1024)
+                {
+                    if (actual < 1024)
+                    {
+                        target = 1024;
+                        doesFit = false;
+                    } // else does fit
+                }
+            }
+            else if (IsQwenImage())
+            {
+                target = 1024; // Qwen image targets 1328 for gen but wants 1024 inputs.
+                doesFit = Math.Abs(actual - target) <= 64;
+            }
+            if (fixTo1024ish && !doesFit)
+            {
+                (width, height) = Utilities.ResToModelFit(width, height, target * target);
                 string scaleFix = CreateNode("ImageScale", new JObject()
                 {
                     ["image"] = img,
