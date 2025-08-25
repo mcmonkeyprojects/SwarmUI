@@ -579,7 +579,9 @@ function genInputs(delay_final = false) {
             if (input) {
                 input.addEventListener('change', () => {
                     loraHelper.loadFromParams();
-                    sdLoraBrowser.rebuildSelectedClasses();
+                    if (loraParam == 'loras') {
+                        sdLoraBrowser.rebuildSelectedClasses();
+                    }
                 });
             }
         }

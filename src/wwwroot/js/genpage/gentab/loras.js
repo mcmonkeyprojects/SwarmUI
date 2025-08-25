@@ -109,6 +109,7 @@ class LoraHelper {
             let renderElem = this.rendered[lora.name];
             if (renderElem) {
                 renderElem.weightInput.value = lora.weight;
+                renderElem.confinementInput.value = lora.confinement;
             }
             else {
                 let div = createDiv(null, 'preset-in-list');
@@ -164,6 +165,7 @@ class LoraHelper {
                 this.rendered[lora.name] = {
                     div: div,
                     weightInput: weightInput,
+                    confinementInput: confinementInput,
                     removeButton: removeButton,
                 };
             }

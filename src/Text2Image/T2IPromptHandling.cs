@@ -576,6 +576,8 @@ public class T2IPromptHandling
             Logs.Verbose($"LoRA {lora} confined to section {context.SectionID}.");
             confinements.Add($"{context.SectionID}");
             context.Input.Set(T2IParamTypes.LoraSectionConfinement, confinements);
+            List<string> promptedLoras = context.Input.ExtraMeta.GetOrCreate("prompted_loras", () => new List<string>()) as List<string>;
+            promptedLoras.Add(T2IParamTypes.CleanModelName(matched));
             return "";
         };
         PromptTagBasicProcessors["base"] = (data, context) =>

@@ -345,18 +345,27 @@ function copy_current_image_params() {
         let confinements = metadata.lorasectionconfinement;
         let loras = metadata.loras;
         let weights = metadata.loraweights;
+        let promptedLoras = extra.prompted_loras || [];
+        let isOldSwarmVers = !metadata.swarm_version || metadata.swarm_version.match(/^0\.9\.[0-6]\./);
         if (confinements.length == loras.length && loras.length == weights.length) {
             let newLoras = [];
             let newWeights = [];
+            let newConfinements = [];
             for (let i = 0; i < confinements.length; i++) {
-                if (confinements[i] == -1) {
+                if (isOldSwarmVers ? confinements[i] == -1 : !promptedLoras.includes(loras[i])) {
                     newLoras.push(loras[i]);
                     newWeights.push(weights[i]);
+                    newConfinements.push(confinements[i]);
                 }
             }
             metadata.loras = newLoras;
             metadata.loraweights = newWeights;
-            delete metadata.lorasectionconfinement;
+            if (isOldSwarmVers) {
+                delete metadata.lorasectionconfinement;
+            }
+            else {
+                metadata.lorasectionconfinement = newConfinements;
+            }
         }
     }
     if ('loras' in metadata && 'loraweights' in metadata && document.getElementById('input_loras') && metadata.loras.length == metadata.loraweights.length) {
