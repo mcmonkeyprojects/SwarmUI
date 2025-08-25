@@ -146,6 +146,14 @@
         <div>Usage Hint: <input type="text" id="edit_model_usage_hint" class="modal_text_extra translate" placeholder="Model Usage Hint" /></div>
         <div>Trigger Phrase: <input type="text" id="edit_model_trigger_phrase" class="modal_text_extra translate" placeholder="Model Trigger Phrase" /></div>
         <div id="edit_model_is_negative_div">Is Negative Embedding: <span class="form-check form-switch display-inline-block"><input type="checkbox" id="edit_model_is_negative" class="slider-toggle form-check-input" title="If checked, embedding is for Negative Prompts. Otherwise, for the main prompt." /></span></div>
+        <div id="edit_model_lora_default_weight_div">Default LoRA Weight: <input type="number" min="-10" max="10" step="0.05" id="edit_model_lora_default_weight" class="modal_text_extra translate" placeholder="Default LoRA Weight" /></div>
+        <div id="edit_model_lora_default_confinement_div">Default LoRA Confinement: <select id="edit_model_lora_default_confinement" class="modal_text_extra translate" placeholder="Default LoRA Confinement">
+            <option value="0">Global</option>
+            <option value="5">Base</option>
+            <option value="1">Refiner</option>
+            <option value="2">Video</option>
+            <option value="3">VideoSwap</option>
+        </select></div>
         Description: <textarea class="auto-text auto-text-block translate" id="edit_model_description" rows="3" placeholder="Model description text..."></textarea>
         <span class="form-check form-switch display-inline-block">
             <input class="form-check-input translate" type="checkbox" id="edit_model_enable_image" title="Enable/disable image" onclick="doToggleEnable('edit_model_image')"> Use Image

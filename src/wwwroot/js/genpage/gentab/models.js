@@ -171,6 +171,10 @@ function editModel(model, browser) {
     }
     getRequiredElementById('edit_model_is_negative').checked = model.is_negative_embedding || false;
     getRequiredElementById('edit_model_is_negative_div').style.display = model.architecture && model.architecture.endsWith('/textual-inversion') ? 'block' : 'none';
+    getRequiredElementById('edit_model_lora_default_weight').value = '';
+    getRequiredElementById('edit_model_lora_default_weight_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
+    getRequiredElementById('edit_model_lora_default_confinement').value = '';
+    getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     $('#edit_model_modal').modal('show');
 }
 
@@ -252,6 +256,8 @@ function save_edit_model() {
         data[val] = getRequiredElementById(`edit_model_${val}`).value;
     }
     data['is_negative_embedding'] = (model.architecture || '').endsWith('/textual-inversion') ? getRequiredElementById('edit_model_is_negative').checked : false;
+    data['lora_default_weight'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_weight').value : '';
+    data['lora_default_confinement'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_confinement').value : '';
     data.subtype = curModelMenuBrowser.subType;
     function complete() {
         genericRequest('EditModelMetadata', data, data => {
@@ -591,8 +597,13 @@ class ModelBrowserWrapper {
             if (!model.data.local) {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
             }
-            description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
             searchableAdded = `${display}, ${isStarred ? 'starred' : 'unstarred'}, Title: ${model.data.title}, Resolution: ${model.data.standard_width}x${model.data.standard_height}, Author: ${model.data.author}, Type: ${model.data.class}, Usage Hint: ${model.data.usage_hint}, Trigger Phrase: ${model.data.trigger_phrase}, Description: ${model.data.description}`;
+            if (this.subType == 'LoRA') {
+                let confinementName = model.data.lora_default_confinement == '' ? '' : loraHelper.confinementNames[model.data.lora_default_confinement];
+                interject += `${getOptLine("Default LoRA Weight", model.data.lora_default_weight)}${getOptLine("Default LoRA Confinement", confinementName)}`;
+                searchableAdded += `, Default LoRA Weight: ${model.data.lora_default_weight}, Default LoRA Confinement: ${confinementName}`;
+            }
+            description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
             let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
             detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
             if (model.data.local && permissions.hasPermission('edit_model_metadata')) {

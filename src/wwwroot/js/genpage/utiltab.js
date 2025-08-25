@@ -835,7 +835,9 @@ class ModelMetadataScanner {
                             'tags': model.tags ? model.tags.join(', ') : null,
                             'preview_image': model.preview_image == "imgs/model_placeholder.jpg" ? null : model.preview_image,
                             'preview_image_metadata': null,
-                            'is_negative_embedding': model.is_negative_embedding
+                            'is_negative_embedding': model.is_negative_embedding,
+                            'lora_default_weight': model.lora_default_weight || '',
+                            'lora_default_confinement': model.lora_default_confinement || ''
                         };
                         genericRequest('EditModelMetadata', newMetadata, data => {
                             updated++;

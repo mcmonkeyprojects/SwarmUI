@@ -2,8 +2,8 @@
 class SelectedLora {
     constructor(name, weight, confinement, model) {
         this.name = name;
-        this.weight = weight || loraHelper.loraWeightPref[name] || 1;
-        this.confinement = confinement || loraHelper.loraConfinementPref[name] || 0;
+        this.weight = weight || (model && model.lora_default_weight ? parseFloat(model.lora_default_weight) : null) || loraHelper.loraWeightPref[name] || 1;
+        this.confinement = confinement || (model && model.lora_default_confinement ? parseInt(model.lora_default_confinement) : null) || loraHelper.loraConfinementPref[name] || 0;
         this.model = model;
     }
 
@@ -35,6 +35,15 @@ class LoraHelper {
 
     /** If true, the helper is currently modifying parameters, and should not reload from parameter change events. */
     dedup = false;
+
+    /** Map of LoRA confinement values to their display names. */
+    confinementNames = {
+        0: 'Global',
+        5: 'Base',
+        1: 'Refiner',
+        2: 'Video',
+        3: 'VideoSwap'
+    }
 
     /** Get the "LoRAs" parameter input element. */
     getLorasInput() {

@@ -467,6 +467,8 @@ public static class ModelsAPI
         [API.APIParameter("New model `preview_image` metadata value (image-data-string format, or null to not change).")] string preview_image = null,
         [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null,
         [API.APIParameter("New model `is_negative_embedding` metadata value.")] bool is_negative_embedding = false,
+        [API.APIParameter("New model `lora_default_weight` metadata value.")] string lora_default_weight = "",
+        [API.APIParameter("New model `lora_default_confinement` metadata value.")] string lora_default_confinement = "",
         [API.APIParameter("The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc.")] string subtype = "Stable-Diffusion")
     {
         using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
@@ -515,6 +517,8 @@ public static class ModelsAPI
             actualModel.Metadata.TriggerPhrase = trigger_phrase;
             actualModel.Metadata.Tags = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             actualModel.Metadata.IsNegativeEmbedding = is_negative_embedding;
+            actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
+            actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
         }
         handler.ResetMetadataFrom(actualModel);

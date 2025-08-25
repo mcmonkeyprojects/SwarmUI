@@ -228,6 +228,8 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                 {
                     specSet("is_negative_embedding", "true");
                 }
+                specSetEmptyable("lora_default_weight", Metadata.LoraDefaultWeight);
+                specSetEmptyable("lora_default_confinement", Metadata.LoraDefaultConfinement);
                 json["__metadata__"] = metaHeader;
                 void HandleResave(string path)
                 {
@@ -307,6 +309,8 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             [$"{prefix}tags"] = Metadata?.Tags is null ? null : new JArray(Metadata.Tags),
             [$"{prefix}is_supported_model_format"] = IsSupportedModelType,
             [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
+            [$"{prefix}lora_default_weight"] = Metadata?.LoraDefaultWeight ?? "",
+            [$"{prefix}lora_default_confinement"] = Metadata?.LoraDefaultConfinement ?? "",
             [$"{prefix}local"] = true,
             [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
             [$"{prefix}time_modified"] = Metadata?.TimeModified ?? 0,

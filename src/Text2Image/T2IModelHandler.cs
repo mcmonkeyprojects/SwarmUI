@@ -107,6 +107,10 @@ public class T2IModelHandler
 
         public bool IsNegativeEmbedding { get; set; }
 
+        public string LoraDefaultWeight { get; set; }
+
+        public string LoraDefaultConfinement { get; set; }
+
         public string License { get; set; }
 
         public string UsageHint { get; set; }
@@ -664,6 +668,8 @@ public class T2IModelHandler
                 Preprocessor = pickBest(metaHeader?.Value<string>("modelspec.preprocessor"), metaHeader?.Value<string>("preprocessor")),
                 Tags = tags,
                 IsNegativeEmbedding = (pickBest(metaHeader?.Value<string>("modelspec.is_negative_embedding"), metaHeader?.Value<string>("is_negative_embedding")) ?? "false") == "true",
+                LoraDefaultWeight = pickBest(metaHeader?.Value<string>("modelspec.lora_default_weight"), metaHeader?.Value<string>("lora_default_weight")),
+                LoraDefaultConfinement = pickBest(metaHeader?.Value<string>("modelspec.lora_default_confinement"), metaHeader?.Value<string>("lora_default_confinement")),
                 PredictionType = pickBest(metaHeader?.Value<string>("modelspec.prediction_type"), metaHeader?.Value<string>("prediction_type")),
                 Hash = pickBest(metaHeader?.Value<string>("modelspec.hash_sha256"), metaHeader?.Value<string>("hash_sha256")),
                 TextEncoders = textEncs,
