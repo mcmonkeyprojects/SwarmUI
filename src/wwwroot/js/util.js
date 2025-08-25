@@ -1006,3 +1006,17 @@ function copyText(text) {
         document.body.removeChild(temp);
     }
 }
+
+/** Measures the width of a given text in a given relative div. */
+function measureText(text, relativeDiv = null) {
+    relativeDiv = relativeDiv || document.body;
+    let div = document.createElement('div');
+    div.style.position = 'absolute';
+    div.style.opacity = '0';
+    div.style.left = '-999999px';
+    div.innerText = text;
+    relativeDiv.appendChild(div);
+    let width = div.offsetWidth;
+    relativeDiv.removeChild(div);
+    return width;
+}

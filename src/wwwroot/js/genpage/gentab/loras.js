@@ -3,13 +3,18 @@ class SelectedLora {
     constructor(name, weight, confinement, model) {
         this.name = name;
         this.weight = weight || loraHelper.loraWeightPref[name] || 1;
-        this.confinement = confinement || 0;
+        this.confinement = confinement || loraHelper.loraConfinementPref[name] || 0;
         this.model = model;
     }
 
     setWeight(weight) {
         this.weight = weight;
         loraHelper.loraWeightPref[this.name] = weight;
+    }
+
+    setConfinement(confinement) {
+        this.confinement = confinement;
+        loraHelper.loraConfinementPref[this.name] = confinement;
     }
 }
 
@@ -24,6 +29,9 @@ class LoraHelper {
 
     /** Map of LoRA names to their last-used weights. */
     loraWeightPref = {};
+
+    /** Map of LoRA names to their last-used confinements. */
+    loraConfinementPref = {};
 
     /** If true, the helper is currently modifying parameters, and should not reload from parameter change events. */
     dedup = false;
@@ -113,6 +121,26 @@ class LoraHelper {
                     lora.setWeight(weightInput.value);
                     this.rebuildParams();
                 });
+                let confinementInput = document.createElement('select');
+                confinementInput.add(new Option('@ Global', '0', true, true));
+                confinementInput.add(new Option('Base', '5'));
+                confinementInput.add(new Option('Refiner', '1'));
+                confinementInput.add(new Option('Video', '2'));
+                confinementInput.add(new Option('VideoSwap', '3'));
+                confinementInput.value = lora.confinement;
+                let fixSize = () => {
+                    let displayText = confinementInput.selectedOptions[0].text;
+                    if (confinementInput.value == '0') {
+                        displayText = '@';
+                    }
+                    confinementInput.style.width = `${measureText(displayText) + 30}px`;
+                }
+                fixSize();
+                confinementInput.addEventListener('change', () => {
+                    lora.setConfinement(confinementInput.value);
+                    this.rebuildParams();
+                    fixSize();
+                });
                 let removeButton = createDiv(null, 'preset-remove-button');
                 removeButton.innerHTML = '&times;';
                 removeButton.title = "Remove this LoRA";
@@ -120,6 +148,7 @@ class LoraHelper {
                     this.selectLora(lora);
                     sdLoraBrowser.rebuildSelectedClasses();
                 });
+                div.appendChild(confinementInput);
                 div.appendChild(weightInput);
                 div.appendChild(removeButton);
                 container.appendChild(div);
