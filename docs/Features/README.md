@@ -7,7 +7,6 @@ See [The Docs Readme](/docs/README.md) for general listing of documentation and 
 - [Autocompletions](/docs/Features/Autocompletions.md) for details about the prompt autocompletions engine.
 - [Image Prompting](/docs/Features/ImagePrompting.md) for details about image-prompting with IP-Adapter, ReVision, etc.
 - [ControlNet](/docs/Features/ControlNet.md) for info about using ControlNets.
-- [Video](/docs/Features/Video.md) for info about generating videos.
 - [Custom Comfy Workflows](/docs/Features/Comfy-Workflows.md) for info about getting the most out of custom Comfy workflows in SwarmUI.
 - [Webhooks](/docs/Features/Webhooks.md) for info about custom defined webhooks triggered by your SwarmUI server.
 - [UISounds](/docs/Features/UISounds.md) for info about sound playback in the UI (eg a sound to play after generations complete).
