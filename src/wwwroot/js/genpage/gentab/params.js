@@ -574,16 +574,14 @@ function genInputs(delay_final = false) {
             });
             tweakNegativePromptBox();
         }
-        let inputLoras = document.getElementById('input_loras');
-        if (inputLoras) {
-            inputLoras.addEventListener('change', () => {
-                updateLoraList();
-                sdLoraBrowser.rebuildSelectedClasses();
-            });
-        }
-        let inputLoraWeights = document.getElementById('input_loraweights');
-        if (inputLoraWeights) {
-            inputLoraWeights.addEventListener('change', reapplyLoraWeights);
+        for (let loraParam of ['loras', 'loraweights', 'lorasectionconfinement']) {
+            let input = document.getElementById(`input_${loraParam}`);
+            if (input) {
+                input.addEventListener('change', () => {
+                    loraHelper.loadFromParams();
+                    sdLoraBrowser.rebuildSelectedClasses();
+                });
+            }
         }
         let inputBatchSize = document.getElementById('input_batchsize');
         let shouldResetBatch = getUserSetting('resetbatchsizetoone', false);
@@ -818,7 +816,7 @@ function genInputs(delay_final = false) {
         hideUnsupportableParams();
         let loras = document.getElementById('input_loras');
         if (loras) {
-            reapplyLoraWeights();
+            loraHelper.loadFromParams();
         }
         if (imageEditor.active) {
             imageEditor.doParamHides();

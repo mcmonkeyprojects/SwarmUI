@@ -7,7 +7,6 @@ let curModelCompatClass = '';
 let curModelSpecialFormat = '';
 let curModelMenuModel = null;
 let curModelMenuBrowser = null;
-let loraWeightPref = {};
 let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
 let modelIconUrlCache = {};
 let starredModels = null;
@@ -723,7 +722,7 @@ class ModelBrowserWrapper {
 
 let sdModelBrowser = new ModelBrowserWrapper('Stable-Diffusion', ['', 'inpaint', 'tensorrt', 'depth', 'canny', 'kontext'], 'model_list', 'modelbrowser', (model) => { directSetModel(model.data); });
 let sdVAEBrowser = new ModelBrowserWrapper('VAE', ['vae'], 'vae_list', 'sdvaebrowser', (vae) => { directSetVae(vae.data); });
-let sdLoraBrowser = new ModelBrowserWrapper('LoRA', ['lora', 'lora-depth', 'lora-canny'], 'lora_list', 'sdlorabrowser', (lora) => { toggleSelectLora(cleanModelName(lora.data.name)); });
+let sdLoraBrowser = new ModelBrowserWrapper('LoRA', ['lora', 'lora-depth', 'lora-canny'], 'lora_list', 'sdlorabrowser', (lora) => { loraHelper.selectLora(lora.data); });
 let sdEmbedBrowser = new ModelBrowserWrapper('Embedding', ['embedding', 'textual-inversion'], 'embedding_list', 'sdembedbrowser', (embed) => { selectEmbedding(embed.data); });
 let sdControlnetBrowser = new ModelBrowserWrapper('ControlNet', ['controlnet', 'control-lora', 'controlnet-alimamainpaint'], 'controlnet_list', 'sdcontrolnetbrowser', (controlnet) => { setControlNet(controlnet.data); });
 let wildcardsBrowser = new ModelBrowserWrapper('Wildcards', [], 'wildcard_list', 'wildcardsbrowser', (wildcard) => { wildcardHelpers.selectWildcard(wildcard.data); }, `<button id="wildcards_list_create_new_button" class="refresh-button" onclick="wildcardHelpers.createNewWildcardButton()">Create New Wildcard</button>`);
@@ -799,103 +798,6 @@ function initialModelListLoad() {
     for (let browser of allModelBrowsers) {
         browser.browser.navigate('');
     }
-}
-
-function reapplyLoraWeights() {
-    let valSet = [...getRequiredElementById('input_loras').selectedOptions].map(option => option.value);
-    let weightVal = getRequiredElementById('input_loraweights').value;
-    if (!weightVal) {
-        return;
-    }
-    let weights = weightVal.split(',');
-    if (weights.length != valSet.length) {
-        console.log(`Ignoring invalid LoRA weights value. Have ${valSet.length} LoRAs (${JSON.stringify(valSet)}), but ${weights.length} weights (${weightVal})`);
-        return;
-    }
-    let viewable = [...getRequiredElementById('current_lora_list_view').children];
-    for (let i = 0; i < valSet.length; i++) {
-        loraWeightPref[valSet[i]] = weights[i];
-        let entry = viewable.filter(elem => elem.dataset.lora_name == valSet[i]);
-        if (entry.length == 1) {
-            entry[0].querySelector('.lora-weight-input').value = weights[i];
-        }
-    }
-}
-
-function updateLoraWeights(doChange = true) {
-    let valSet = [...getRequiredElementById('input_loras').selectedOptions].map(option => option.value);
-    let inputWeights = getRequiredElementById('input_loraweights');
-    inputWeights.value = valSet.map(lora => loraWeightPref[lora] || 1).join(',');
-    if (doChange) {
-        inputWeights.dispatchEvent(new Event('change'));
-    }
-}
-
-function updateLoraList() {
-    let view = getRequiredElementById('current_lora_list_view');
-    let loraElem = document.getElementById('input_loras');
-    if (!loraElem) {
-        return;
-    }
-    let currentLoras = [...loraElem.selectedOptions].map(option => option.value);
-    view.innerHTML = '';
-    for (let lora of currentLoras) {
-        let div = createDiv(null, 'preset-in-list');
-        div.dataset.lora_name = lora;
-        div.innerText = cleanModelName(lora);
-        let weightInput = document.createElement('input');
-        weightInput.className = 'lora-weight-input';
-        weightInput.type = 'number';
-        let weightsParam = gen_param_types.find(p => p.id == 'loraweights');
-        weightInput.min = weightsParam ? weightsParam.min : -10;
-        weightInput.max = weightsParam ? weightsParam.max : 10;
-        weightInput.step = weightsParam ? weightsParam.step : 0.1;
-        weightInput.value = loraWeightPref[lora] || 1;
-        weightInput.addEventListener('change', () => {
-            loraWeightPref[lora] = weightInput.value;
-            updateLoraWeights();
-        });
-        weightInput.addEventListener('input', () => {
-            loraWeightPref[lora] = weightInput.value;
-            updateLoraWeights(false);
-        });
-        let removeButton = createDiv(null, 'preset-remove-button');
-        removeButton.innerHTML = '&times;';
-        removeButton.title = "Remove this LoRA";
-        removeButton.addEventListener('click', () => {
-            toggleSelectLora(lora);
-            updateLoraList();
-            sdLoraBrowser.rebuildSelectedClasses();
-        });
-        div.appendChild(weightInput);
-        div.appendChild(removeButton);
-        view.appendChild(div);
-    }
-    getRequiredElementById('current_loras_wrapper').style.display = currentLoras.length > 0 ? 'inline-block' : 'none';
-    getRequiredElementById('lora_info_slot').innerText = ` (${currentLoras.length})`;
-    setTimeout(() => {
-        genTabLayout.reapplyPositions();
-    }, 1);
-}
-
-function toggleSelectLora(lora) {
-    let loraInput = document.getElementById('input_loras');
-    if (!loraInput) {
-        showError("Cannot set LoRAs currently. Are you using a custom workflow? LoRAs only work in the default mode.");
-        return;
-    }
-    let selected = [...loraInput.selectedOptions].map(option => option.value);
-    if (selected.includes(lora)) {
-        selected = selected.filter(l => l != lora);
-    }
-    else {
-        selected.push(lora);
-    }
-    $(loraInput).val(selected);
-    $(loraInput).trigger('change');
-    loraInput.dispatchEvent(new Event('change'));
-    updateLoraWeights();
-    updateLoraList();
 }
 
 function directSetVae(vae) {
