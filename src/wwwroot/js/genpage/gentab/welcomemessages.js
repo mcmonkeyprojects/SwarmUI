@@ -53,7 +53,7 @@ function automaticWelcomeMessage(override = null) {
         `Did you know:\nWant to try some fancy prompting?\nJust type a '&lt;' symbol and watch the suggestions for prompt-syntax tools appear! Give the syntax features a try! <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md">(Documentation Here)</a>`,
         `Did you know:\nSwarm doesn't update itself by default.\nGo to the '<b>Server</b>' tab and click '<b>Update and Restart</b>' to get the latest version. There's also a '<b>Server Config</b>' option to always pull dev updates.`,
         /* Version release notes */
-        `Release notes (2025-04-15): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.6-Beta">Release Notes for version 0.9.6 (Beta)</a>`
+        `Release notes (2025-08-25): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.7-Beta">Release Notes for version 0.9.7 (Beta)</a>`
     ];
     let dotnetNotice = document.getElementById('dotnet_missing_message');
     if (dotnetNotice) {
