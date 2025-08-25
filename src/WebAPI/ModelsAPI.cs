@@ -464,6 +464,8 @@ public static class ModelsAPI
         [API.APIParameter("New model `trigger_phrase` metadata value.")] string trigger_phrase,
         [API.APIParameter("New model `prediction_type` metadata value.")] string prediction_type,
         [API.APIParameter("New model `tags` metadata value (comma-separated list).")] string tags,
+        [API.APIParameter("New model `merged_from` metadata value.")] string merged_from,
+        [API.APIParameter("New model `architecture_group` metadata value.")] string architecture_group,
         [API.APIParameter("New model `preview_image` metadata value (image-data-string format, or null to not change).")] string preview_image = null,
         [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null,
         [API.APIParameter("New model `is_negative_embedding` metadata value.")] bool is_negative_embedding = false,
@@ -520,6 +522,8 @@ public static class ModelsAPI
             actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
             actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
+            actualModel.Metadata.MergedFrom = string.IsNullOrWhiteSpace(merged_from) ? null : merged_from;
+            actualModel.Metadata.ArchitectureGroup = string.IsNullOrWhiteSpace(architecture_group) ? null : architecture_group;
         }
         handler.ResetMetadataFrom(actualModel);
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
