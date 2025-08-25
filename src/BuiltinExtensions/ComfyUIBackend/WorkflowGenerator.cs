@@ -2702,7 +2702,7 @@ public class WorkflowGenerator
         bool returnLeftoverNoise = false;
         if (genInfo.VideoSwapModel is not null)
         {
-            endStep = (int)Math.Round(genInfo.Steps * genInfo.VideoSwapPercent);
+            endStep = (int)Math.Round(genInfo.Steps * (1 - genInfo.VideoSwapPercent));
             returnLeftoverNoise = true;
         }
         string explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: genInfo.ContextID, includeBase: false);
@@ -2724,7 +2724,7 @@ public class WorkflowGenerator
                 explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_VideoSwap, includeBase: false) ?? explicitScheduler;
                 cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_VideoSwap, false) ?? cfg;
                 steps = UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_VideoSwap, false) ?? steps;
-                endStep = (int)Math.Round(steps * genInfo.VideoSwapPercent);
+                endStep = (int)Math.Round(steps * (1 - genInfo.VideoSwapPercent));
             }
             // TODO: Should class-changes be allowed (must re-emit all the model-specific cond logic, maybe a vae reencoder - this is basically a refiner run)
             samplered = CreateKSampler(swapVideoModel, genInfo.PosCond, genInfo.NegCond, FinalLatentImage, cfg, steps, endStep, 10000, genInfo.Seed + 1, false, false, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: genInfo.HadSpecialCond, explicitSampler: explicitSampler, explicitScheduler: explicitScheduler);

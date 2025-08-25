@@ -390,14 +390,14 @@ There's a full step by step guide for video model usage here: <https://github.co
         - There's a **14B T2V (Text To Video)**, in a high+low noise pair
             - You're expected to run the high noise as a base and the low noise as a refiner, with:
                 - **RefinerMethod** as `StepSwap`, and
-                - **RefinerControlPercentage** as `0.5`
+                - **RefinerControlPercentage** as `0.5` (or higher if preferred, cannot go lower)
             - Reference **CFG** range is `5`
         - There's a **14B I2V (Image To Video)**, in a high+low noise pair
             - You're expected to run the high noise as a base and the low noise as a refiner
                 - In the **Image To Video** params:
                     - Set the regular **Video Model** to the high noise model,
                     - and set the advanced **Video Swap Model** to the low noise model,
-                    - and leave **Video Swap Percent** at `0.5`
+                    - and leave **Video Swap Percent** at `0.5` (or higher if preferred, cannot go lower)
             - Reference **CFG** range is `3.5`
             - This also supports the `Video End Frame` input to create a video that moves between two known places
         - For both 14B types:

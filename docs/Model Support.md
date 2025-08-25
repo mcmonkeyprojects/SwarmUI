@@ -291,8 +291,7 @@ Parameters and usage is the same as any other normal model.
         - Click the `☰` hamburger menu on the model, then `Edit Metadata`, then select the `Architecture` as `Flux.1 Kontext Dev`, then hit save
     - Paste images into the prompt box to serve as the reference images it will use to generate.
         - If you have an init image and no reference images, the init image will be used.
-        - Be aware that the first image used will be the resolution control of the input. You will want to keep the image between 1024 and 2048 pixels wide.
-            - (If the image is significantly out of scale range, eg 512x512, it will be automatically rescaled for you)
+        - Swarm will automatically keep the size of the image correct for Kontext input, but make sure your aspect ratio is matched.
     - Kontext can take as many images as you want, but the way this works on the inside is a bit hacky and limited quality.
     - Prompt should describe a *change* to make to the image.
     - BFL published an official prompting guide here, following it carefully is recommended: <https://docs.bfl.ai/guides/prompting_guide_kontext_i2i>
