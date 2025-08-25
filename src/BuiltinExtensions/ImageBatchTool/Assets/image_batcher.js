@@ -14,10 +14,11 @@ class ImageBatcherClass {
             'append_filename_to_prompt': getRequiredElementById('ext_image_batcher_append_filename_to_prompt').checked,
             'resMode': getRequiredElementById('ext_image_batcher_res_mode').value
         };
+        let timeLastGenHit = [Date.now()];
+        let images = {};
+        let discardable = {};
         makeWSRequestT2I('ImageBatchRun', inData, data => {
-            if (data.image) {
-                gotImageResult(data.image, data.metadata, `${batch_id}_${data.batch_index}`);
-            }
+            mainGenHandler.internalHandleData(data, images, discardable, timeLastGenHit, inData.baseParams, null, null, false);
         });
     }
 
