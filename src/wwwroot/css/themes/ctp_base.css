@@ -1,0 +1,34 @@
+.nav-tabs:not(#bottombartabcollection), #currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar_content, .browser-folder-tree-container, .browser-fullcontent-container {
+    background-image: var(--background-image);
+}
+
+/* Seems like these need to be here, tried adding to site.css but couldn't get it to work properly (esp. when considering compatibility with legacy themes) */
+input[type="text"]:focus, textarea:focus {
+    outline: var(--text-input-focus-outline) !important;
+    border-color: var(--text-input-focus-border-color);
+}
+input[type="checkbox"] {
+    accent-color: var(--checkbox-accent-color);
+}
+
+/* Need to have this; otherwise the button text color is not applied. Tried doing stuff to genpage.css to make it work without needing this in this file, but was unable to in an elegant way */
+#alt_generate_button:hover, #alt_center_button:hover {
+    color: var(--button-foreground-hover) !important;
+}
+
+/* Could not get this working properly with automatic light/dark mode switching (breaking other themes), so added it here */
+.toast {
+    --bs-toast-bg: var(--toast-bg-color);
+    --bs-toast-header-bg: var(--toast-header-bg-color);
+    --bs-toast-header-color: var(--text);
+}
+
+/* Couldn't come up with a good way to do this in one of the main stylesheets, therefore, it's here */
+.border-secondary {
+    border-color: var(--border-secondary-color);
+}
+
+/* Was affecting other themes in a negative way when I attempted to add it to one of the main stylesheets */
+.btn-primary {
+    color: var(--background-gray) !important;
+}
