@@ -138,9 +138,9 @@ class LoraHelper {
                 confinementInput.add(new Option('Refiner', '1'));
                 confinementInput.add(new Option('Video', '2'));
                 confinementInput.add(new Option('VideoSwap', '3'));
-                confinementInput.value = lora.confinement;
+                confinementInput.value = lora.confinement in this.confinementNames ? lora.confinement : '0';
                 let fixSize = () => {
-                    let displayText = confinementInput.selectedOptions[0].text;
+                    let displayText = confinementInput.selectedOptions.length > 0 ? confinementInput.selectedOptions[0].text : '';
                     if (confinementInput.value == '0') {
                         displayText = '@';
                     }
