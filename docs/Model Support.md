@@ -445,7 +445,9 @@ Parameters and usage is the same as any other normal model.
 - There are three controlnet versions available for Qwen Image currently
     - Regular form
         - There's a regular controlnet-union available here <https://huggingface.co/InstantX/Qwen-Image-ControlNet-Union/blob/main/diffusion_pytorch_model.safetensors>
-        - works like any other controlnet
+        - works like any other controlnet. Select as controlnet model, give it an image, select a preprocessor. Probably lower the strength a bit.
+        - Compatible with lightning loras.
+        - If not using Lightning, probably raise your CFG a bit to ensure your prompt is stronger than the controlnet.
     - "Model Patch"
         - Support pending
     - LoRA form

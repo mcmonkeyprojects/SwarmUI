@@ -76,8 +76,8 @@ def make_swarm_sampler_callback(steps, device, model, previews):
     def callback(step, x0, x, total_steps):
         pbar.update_absolute(step + 1, total_steps, None)
         if previewer:
-            if step == 0:
-                x0 = x0.clone().cpu() # Sync copy to CPU for first step to prevent reading old data. Future tensors allow comfy to do async non_blocky stuff.
+            if step == 0 or (step < 3 and x0.ndim == 5 and x0.shape[1] > 8):
+                x0 = x0.clone().cpu() # Sync copy to CPU for first few steps to prevent reading old data, more steps for videos. Future steps allow comfy to do its async non_blocky stuff.
             if x0.ndim == 5:
                 # video shape is [batch, channels, backwards time, width, height], for previews needs to be swapped to [forwards time, channels, width, height]
                 x0 = x0[0].permute(1, 0, 2, 3)
