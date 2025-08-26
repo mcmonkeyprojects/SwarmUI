@@ -51,6 +51,7 @@ public class T2IMultiStepObjectBuilder
         foreach (T2IParamTypes.ControlNetParamHolder controlnet in T2IParamTypes.Controlnets)
         {
             basicInput.Remove(controlnet.Model);
+            basicInput.Remove(controlnet.Strength);
         }
         Image img = await createImageDirect(basicInput);
         if (img is null)

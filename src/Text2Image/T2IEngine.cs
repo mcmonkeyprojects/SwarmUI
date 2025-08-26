@@ -231,6 +231,7 @@ namespace SwarmUI.Text2Image
                         foreach (T2IParamTypes.ControlNetParamHolder controlnet in T2IParamTypes.Controlnets)
                         {
                             user_input.Remove(controlnet.Model);
+                            user_input.Remove(controlnet.Strength);
                         }
                     }
                 }
