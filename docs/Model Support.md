@@ -442,7 +442,12 @@ Parameters and usage is the same as any other normal model.
 
 ### Controlnets
 
-- There are two controlnet versions available for Qwen Image currently
+- There are three controlnet versions available for Qwen Image currently
+    - Regular form
+        - There's a regular controlnet-union available here <https://huggingface.co/InstantX/Qwen-Image-ControlNet-Union/blob/main/diffusion_pytorch_model.safetensors>
+        - works like any other controlnet
+    - "Model Patch"
+        - Support pending
     - LoRA form
         - Download here <https://huggingface.co/Comfy-Org/Qwen-Image-DiffSynth-ControlNets/tree/main/split_files/loras>
         - Save to loras folder
@@ -450,8 +455,6 @@ Parameters and usage is the same as any other normal model.
         - Upload a prompt image of controlnet input (depth or canny)
             - You can create this from an existing image by using the Controlnet Parameter group, select the preprocessor (Canny, or MiDAS Depth), and hit "Preview"
         - You cannot use the controlnet parameters directly for actual generation due to the weird lora-hack this uses
-    - "Model Patch"
-        - Support pending
 
 ### Qwen Image Edit
 

@@ -109,6 +109,7 @@ public class T2IModelClassSorter
                                             || (h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora.down.weight") && h.ContainsKey("transformer.transformer_blocks.0.attn.to_out.0.lora.down.weight"))
                                             || (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.lora_A.default.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.net.2.lora_A.default.weight"))
                                             || (h.ContainsKey("lora_unet_transformer_blocks_0_attn_add_k_proj.lora_down.weight") && h.ContainsKey("lora_unet_transformer_blocks_0_img_mlp_net_0_proj.lora_down.weight"));
+        bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -483,11 +484,15 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "qwen-image", CompatClass = "qwen-image", Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
-            return isQwenImage(h);
+            return isQwenImage(h) && !isControlnetX(h);
         }});
         Register(new() { ID = "qwen-image-edit", CompatClass = "qwen-image", Name = "Qwen Image Edit", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
             return false;
+        }});
+        Register(new() { ID = "qwen-image/controlnet", CompatClass = "qwen-image", Name = "Qwen Image Controlnet", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return isQwenImage(h) && isControlnetX(h);
         }});
         Register(new() { ID = "qwen-image/vae", CompatClass = "qwen-image", Name = "Qwen Image VAE", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
