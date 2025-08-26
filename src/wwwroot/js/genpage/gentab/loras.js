@@ -193,18 +193,7 @@ class LoraHelper {
         if (!loraInput || !loraWeightsInput || !loraConfinementInput) {
             return;
         }
-        let loraVals = [];
-        let weightVals = [];
-        let confinementVals = [];
-        let anyConfined = false;
-        for (let lora of this.selected) {
-            loraVals.push(lora.name);
-            weightVals.push(lora.weight);
-            confinementVals.push(lora.confinement);
-            if (lora.confinement != 0) {
-                anyConfined = true;
-            }
-        }
+        let loraVals = this.selected.map(l => l.name);
         this.dedup = true;
         let oldLoraVals = this.getLoraParamSelections();
         if (!arraysEqual(oldLoraVals, loraVals)) {
@@ -218,6 +207,25 @@ class LoraHelper {
             if (loraVals.length == 0 && toggler) {
                 toggler.checked = false;
                 triggerChangeFor(toggler);
+            }
+            // Note: hack reorder selected to match what the select2 input_loras elem wants.
+            let actualSelected = [];
+            let valSet = [...loraInput.options].map(option => option.value);
+            for (let val of valSet) {
+                if (loraVals.includes(val)) {
+                    actualSelected.push(this.selected.find(l => l.name == val));
+                }
+            }
+            this.selected = actualSelected;
+        }
+        let weightVals = [];
+        let confinementVals = [];
+        let anyConfined = false;
+        for (let lora of this.selected) {
+            weightVals.push(lora.weight);
+            confinementVals.push(lora.confinement);
+            if (lora.confinement != 0) {
+                anyConfined = true;
             }
         }
         let weightStr = weightVals.join(',');
