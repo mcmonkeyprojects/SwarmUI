@@ -171,9 +171,9 @@ function editModel(model, browser) {
     }
     getRequiredElementById('edit_model_is_negative').checked = model.is_negative_embedding || false;
     getRequiredElementById('edit_model_is_negative_div').style.display = model.architecture && model.architecture.endsWith('/textual-inversion') ? 'block' : 'none';
-    getRequiredElementById('edit_model_lora_default_weight').value = '';
+    getRequiredElementById('edit_model_lora_default_weight').value = model.lora_default_weight || '';
     getRequiredElementById('edit_model_lora_default_weight_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
-    getRequiredElementById('edit_model_lora_default_confinement').value = '';
+    getRequiredElementById('edit_model_lora_default_confinement').value = model.lora_default_confinement || '';
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     $('#edit_model_modal').modal('show');
 }
