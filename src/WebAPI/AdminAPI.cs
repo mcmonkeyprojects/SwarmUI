@@ -788,6 +788,7 @@ public static class AdminAPI
             user.Data.PasswordHashed = Utilities.HashPassword(user.UserID, password);
         }
         user.Data.IsPasswordSetByAdmin = true;
+        user.BuildRoles();
         user.Save();
         return new JObject() { ["success"] = true };
     }
@@ -822,6 +823,7 @@ public static class AdminAPI
             }
             user.Settings.TrySetFieldValue(key, obj);
         }
+        user.BuildRoles();
         user.Save();
         return new JObject() { ["success"] = true };
     }
@@ -989,6 +991,15 @@ public static class AdminAPI
                 return new JObject() { ["error"] = "Role removal failed." };
             }
             Program.Sessions.Save();
+        }
+
+        foreach (User user in Program.Sessions.Users.Values)
+        {
+            if (user.Settings.Roles.Contains(name))
+            {
+                user.BuildRoles();
+                user.Save();
+            }
         }
         return new JObject() { ["success"] = true };
     }
