@@ -523,7 +523,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>Creates a new node to load an image.</summary>
-    public string CreateLoadImageNode(Image img, string param, bool resize, string nodeId = null)
+    public string CreateLoadImageNode(Image img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
     {
         if (nodeId is null && NodeHelpers.TryGetValue($"imgloader_{param}_{resize}", out string alreadyLoaded))
         {
@@ -536,7 +536,7 @@ public class WorkflowGenerator
             {
                 result = CreateNode("SwarmLoadImageB64", new JObject()
                 {
-                    ["image_base64"] = (resize ? img.Resize(UserInput.GetImageWidth(), UserInput.GetImageHeight()) : img).AsBase64
+                    ["image_base64"] = (resize ? img.Resize(width ?? UserInput.GetImageWidth(), height ?? UserInput.GetImageHeight()) : img).AsBase64
                 }, nodeId);
             }
             else
@@ -2516,8 +2516,17 @@ public class WorkflowGenerator
                 });
                 if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
                 {
-                    string endFrame = g.CreateLoadImageNode(videoEndFrame, "${videoendframe}", true);
+                    string endFrame = g.CreateLoadImageNode(videoEndFrame, "${videoendframe}", false);
                     JArray endFrameNode = [endFrame, 0];
+                    string scaled = g.CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = endFrameNode,
+                        ["width"] = Width,
+                        ["height"] = Height,
+                        ["upscale_method"] = "lanczos",
+                        ["crop"] = "disabled"
+                    });
+                    endFrameNode = [scaled, 0];
                     string encodedEnd = g.CreateNode("CLIPVisionEncode", new JObject()
                     {
                         ["clip_vision"] = clipLoaderNode,

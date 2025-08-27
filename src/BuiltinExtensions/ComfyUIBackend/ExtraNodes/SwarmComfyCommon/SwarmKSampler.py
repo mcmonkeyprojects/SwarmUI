@@ -281,7 +281,7 @@ class SwarmKSampler:
             elif isinstance(model.model, Chroma):
                 model_type = "Chroma"
             else:
-                print(f"Unknown model type: {type(model.model)}, defaulting to SD1")
+                print(f"AlignYourSteps: Unknown model type: {type(model.model)}, defaulting to SD1")
                 model_type = "SD1"
             sigmas = AYS_NOISE_LEVELS[model_type][:]
             if (steps + 1) != len(sigmas):
