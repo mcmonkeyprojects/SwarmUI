@@ -2434,8 +2434,17 @@ public class WorkflowGenerator
                 }
                 if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
                 {
-                    string endFrame = g.CreateLoadImageNode(videoEndFrame, "${videoendframe}", true);
+                    string endFrame = g.CreateLoadImageNode(videoEndFrame, "${videoendframe}", false);
                     JArray endFrameNode = [endFrame, 0];
+                    string scaled = g.CreateNode("ImageScale", new JObject()
+                    {
+                        ["image"] = endFrameNode,
+                        ["width"] = Width,
+                        ["height"] = Height,
+                        ["upscale_method"] = "lanczos",
+                        ["crop"] = "disabled"
+                    });
+                    endFrameNode = [scaled, 0];
                     string img2vidNode = g.CreateNode("WanFirstLastFrameToVideo", new JObject()
                     {
                         ["width"] = Width,
