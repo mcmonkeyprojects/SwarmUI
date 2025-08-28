@@ -124,12 +124,13 @@ class LoraHelper {
                 weightInput.max = weightsParam ? weightsParam.max : 10;
                 weightInput.step = weightsParam ? weightsParam.step : 0.1;
                 weightInput.value = lora.weight;
+                let getLora = () => this.selected.find(l => l.name == lora.name);
                 weightInput.addEventListener('change', () => {
-                    lora.setWeight(weightInput.value);
+                    getLora().setWeight(weightInput.value);
                     this.rebuildParams();
                 });
                 weightInput.addEventListener('input', () => {
-                    lora.setWeight(weightInput.value);
+                    getLora().setWeight(weightInput.value);
                     this.rebuildParams();
                 });
                 let confinementInput = document.createElement('select');
@@ -148,7 +149,7 @@ class LoraHelper {
                 }
                 fixSize();
                 confinementInput.addEventListener('change', () => {
-                    lora.setConfinement(confinementInput.value);
+                    getLora().setConfinement(confinementInput.value);
                     this.rebuildParams();
                     fixSize();
                 });
