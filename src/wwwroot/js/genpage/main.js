@@ -16,6 +16,101 @@ let allModels = [];
 
 let coreModelMap = {};
 
+if (typeof window.modelArchitectureMap === 'undefined') {
+    window.modelArchitectureMap = {};
+}
+let modelArchitectureMap = window.modelArchitectureMap;
+
+function loadModelArchitectureMap() {
+    for (let key in modelArchitectureMap) {
+        delete modelArchitectureMap[key];
+    }
+    
+    if (!allModels || allModels.length === 0) {
+        return;
+    }
+    
+    let processedCount = 0;
+    const totalModels = allModels.length;
+    
+    for (let modelName of allModels) {
+        genericRequest('DescribeModel', {'modelName': modelName, 'subtype': 'Stable-Diffusion'}, data => {
+            processedCount++;
+            
+            if (!data.model) {
+                modelArchitectureMap[modelName] = 'Unknown';
+                return;
+            }
+            
+            const model = data.model;
+            
+            if (model.architecture_group) {
+                modelArchitectureMap[modelName] = model.architecture_group;
+            } 
+            else if (model.architecture) {
+                const grouped = groupArchitecture(model.architecture);
+                modelArchitectureMap[modelName] = grouped;
+            } 
+            else {
+                modelArchitectureMap[modelName] = 'Unknown';
+            }
+            
+            if (processedCount === totalModels) {
+                if (typeof imageHistoryBrowser !== 'undefined' && imageHistoryBrowser) {
+                    imageHistoryBrowser.update();
+                    updateArchitectureDropdown();
+                }
+            }
+        }, undefined, error => {
+            processedCount++;
+            modelArchitectureMap[modelName] = 'Unknown';
+            
+            if (processedCount === totalModels) {
+                if (typeof imageHistoryBrowser !== 'undefined' && imageHistoryBrowser) {
+                    imageHistoryBrowser.update();
+                    updateArchitectureDropdown();
+                }
+            }
+        });
+    }
+}
+
+
+function groupArchitecture(arch) {
+    if (!arch) return null;
+    
+    const archLower = arch.toLowerCase();
+    
+    if (archLower.startsWith('flux-1') || arch.startsWith('Flux.1')) return 'Flux.1';
+    
+    if (archLower.startsWith('stable-diffusion-xl')) return 'SDXL';
+    if (archLower.startsWith('stable-diffusion-v1') || archLower === 'stable-diffusion-v1') return 'SD1';
+    if (archLower.startsWith('stable-diffusion-v2')) return 'SD2';
+    if (archLower.startsWith('stable-diffusion-v3-5') || archLower.startsWith('stable-diffusion-v3.5')) return 'SD3.5';
+    if (archLower.startsWith('stable-diffusion-v3')) return 'SD3';
+    if (archLower.startsWith('stable-video-diffusion')) return 'SVD';
+    if (archLower.startsWith('stable-cascade')) return 'Stable Cascade';
+    
+    if (archLower.includes('nvidia-cosmos') || archLower.includes('cosmos')) return 'NVIDIA Cosmos';
+    if (archLower.includes('nvidia-sana') || archLower.includes('sana')) return 'NVIDIA Sana';
+    if (archLower.includes('hunyuan-video')) return 'Hunyuan Video';
+    if (archLower.startsWith('wan-2')) return 'Wan 2.x';
+    if (archLower.includes('ltx-video')) return 'LTX Video';
+    if (archLower.includes('genmo-mochi')) return 'Genmo Mochi';
+    
+    if (archLower.includes('hidream')) return 'HiDream';
+    if (archLower.includes('pixart')) return 'PixArt';
+    if (archLower.includes('qwen-image')) return 'Qwen Image';
+    if (archLower.includes('auraflow')) return 'AuraFlow';
+    if (archLower.includes('lumina')) return 'Lumina';
+    if (archLower.includes('omnigen')) return 'OmniGen';
+    if (archLower.includes('chroma')) return 'Chroma';
+    if (archLower.includes('alt-diffusion')) return 'Alt-Diffusion';
+    if (archLower.includes('segmind') || archLower.includes('ssd-1b')) return 'Segmind';
+    
+    return arch;
+}
+
 let otherInfoSpanContent = [];
 
 let isGeneratingForever = false, isGeneratingPreviews = false;
@@ -383,6 +478,7 @@ function loadUserData(callback) {
 function updateAllModels(models) {
     coreModelMap = models;
     allModels = models['Stable-Diffusion'];
+    loadModelArchitectureMap();
     let selector = getRequiredElementById('current_model');
     let selectorVal = selector.value;
     selector.innerHTML = '';
