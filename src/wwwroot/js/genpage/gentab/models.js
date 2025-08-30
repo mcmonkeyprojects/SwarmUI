@@ -471,6 +471,26 @@ class ModelBrowserWrapper {
         this.browser.update();
     }
 
+    createCopyableTriggerPhrase(phrase) {
+        let copyPhrase = phrase;
+        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', true) && !phrase.endsWith(',')) {
+          copyPhrase += ',';
+        }
+        const safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
+        const safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
+        return `${safePhrase}<button title="Click to copy" class="basic-button trigger-phrase-copy-button" onclick="copyText('${safeCopyPhrase}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
+    }
+
+    formatTriggerPhrases(val) {
+        if (val.includes(';')) {
+            const phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
+            return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
+        }
+        else {
+            return this.createCopyableTriggerPhrase(val);
+        }
+    }
+
     describeModel(model) {
         let description = '';
         let buttons = [];
@@ -589,7 +609,12 @@ class ModelBrowserWrapper {
         }
         let searchableAdded = '';
         if (model.data.is_supported_model_format) {
-            let getLine = (label, val) => `<b>${label}:</b> <span>${val == null ? "(Unset)" : safeHtmlOnly(val)}</span><br>`;
+            let getLine = (label, val) => {
+                const content = label === 'Trigger Phrase'
+                    ? `${this.formatTriggerPhrases(val)}`
+                    : `${val == null ? '(Unset)' : safeHtmlOnly(val)}`;
+                return `<b>${label}:</b> <span>${content}</span><br>`;
+            };
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
             if (this.subType == 'LoRA' || this.subType == 'Stable-Diffusion') {
                 interject += `${getLine("Resolution", `${model.data.standard_width}x${model.data.standard_height}`)}`;

@@ -306,7 +306,7 @@ class ModelDownloaderUtil {
                     metadata['modelspec.author'] = rawData.creator.username;
                 }
                 if (rawVersion.trainedWords) {
-                    metadata['modelspec.trigger_phrase'] = rawVersion.trainedWords.join(", ");
+                    metadata['modelspec.trigger_phrase'] = rawVersion.trainedWords.join("; ");
                 }
                 if (rawData.tags) {
                     metadata['modelspec.tags'] = rawData.tags.join(", ");
@@ -454,7 +454,7 @@ class ModelDownloaderUtil {
                         <br><b>Date</b>: ${escapeHtml(rawVersion.createdAt)}`
                         + `<br><b>Model description</b>: ${safeHtmlOnly(rawData.description)}`
                         + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '')
-                        + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join(", "))}` : '');
+                        + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join("; "))}` : '');
                     this.metadataZone.dataset.raw = `${JSON.stringify(metadata, null, 2)}`;
                     if (img) {
                         this.metadataZone.dataset.image = img;
