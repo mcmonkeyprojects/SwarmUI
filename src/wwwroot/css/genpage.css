@@ -1632,5 +1632,7 @@ body {
 .trigger-phrase-copy-button {
     display: inline-flex;
     align-items: center;
-    height: 1em;
+    font-size: 90%;
+    height: 1.6em;
+    padding-top: 0 !important;
 }

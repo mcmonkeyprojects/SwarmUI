@@ -468,22 +468,17 @@ class ModelBrowserWrapper {
 
     createCopyableTriggerPhrase(phrase) {
         let copyPhrase = phrase;
-        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', true) && !phrase.endsWith(',')) {
-          copyPhrase += ',';
+        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', false) && !phrase.endsWith(',')) {
+          copyPhrase += ', ';
         }
-        const safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
-        const safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
+        let safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
+        let safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
         return `${safePhrase}<button title="Click to copy" class="basic-button trigger-phrase-copy-button" onclick="copyText('${safeCopyPhrase}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
     }
 
     formatTriggerPhrases(val) {
-        if (val.includes(';')) {
-            const phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
-            return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
-        }
-        else {
-            return this.createCopyableTriggerPhrase(val);
-        }
+        let phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
+        return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
     }
 
     describeModel(model) {
@@ -585,9 +580,7 @@ class ModelBrowserWrapper {
         let searchableAdded = '';
         if (model.data.is_supported_model_format) {
             let getLine = (label, val) => {
-                const content = label === 'Trigger Phrase'
-                    ? `${this.formatTriggerPhrases(val)}`
-                    : `${val == null ? '(Unset)' : safeHtmlOnly(val)}`;
+                let content = val == null ? '(Unset)' : (label == 'Trigger Phrase' ? this.formatTriggerPhrases(val) : safeHtmlOnly(val));
                 return `<b>${label}:</b> <span>${content}</span><br>`;
             };
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
