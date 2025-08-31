@@ -476,7 +476,7 @@ public class T2IParamTypes
         static List<string> listRefinerModels(Session s)
         {
             List<T2IModel> baseList = [.. Program.MainSDModels.ListModelsFor(s).OrderBy(m => m.Name)];
-            List<T2IModel> refinerList = [.. baseList.Where(m => m.ModelClass is not null && m.ModelClass.Name.Contains("Refiner"))];
+            List<T2IModel> refinerList = [.. baseList.Where(m => m.ModelClass is not null && (m.ModelClass.Name.Contains("Refiner") || m.ModelClass.ID.Contains("wan-2_1-text2video-14b")))];
             List<string> bases = CleanModelList(baseList.Select(m => m.Name));
             return ["(Use Base)", .. CleanModelList(refinerList.Select(m => m.Name)), "-----", .. bases];
         }
