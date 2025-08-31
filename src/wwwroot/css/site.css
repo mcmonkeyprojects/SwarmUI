@@ -13,7 +13,38 @@
     --toggle-thumb-hover: var(--button-background-hover);
     --toggle-thumb-active-hover: color-mix(in srgb, var(--emphasis) 25%, white);
     --font-monospace: 'Courier New', Courier, monospace;
+    --yellow: #ffff00;
     --star: #ffff00;
+    --status-bar-text-color: #000000;
+    --status-bar-warn-color-start-end: #dddd55;
+    --status-bar-warn-color-middle: #888800;
+    --status-bar-error-color-start-end: #bb2020;
+    --status-bar-error-color-middle: #880000;
+    --status-bar-soft-color: #888800;
+    --backend-errored-border-color: #ff0000;
+    --backend-disabled-border-color: #ffaa00;
+    --backend-running-border-color: #00aa33;
+    --backend-idle-border-color: #688772;
+    --backend-loading-border-color: #335500;
+    --backend-waiting-border-color: #335500;
+    --backend-edit-btn-text-color-hover: #000000;
+    --backend-edit-btn-border-color-hover: #000000;
+    --backend-edit-btn-text-color-disabled: #505050;
+    --backend-edit-btn-border-color-disabled: #505050;
+    --backend-delete-btn-text-color-hover: #000000;
+    --backend-delete-btn-border-color-hover: #000000;
+    --backend-save-btn-text-color-hover: #000000;
+    --backend-save-btn-border-color-hover: #000000;
+    --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
+    --notice-pop-green-bg-color: #005500;
+    --slider-toggle-background: #ccc;
+    --slider-toggle-thumb-color: #4b4b4b;
+    --link-color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
+    --code-color: var(--bs-code-color);
+    --model-img-border-color-hover: white;
+    --model-block-menu-button-border-color-hover: black;
+    --model-block-menu-button-color-hover: white;
+    --qbutton-foreground-color-hover: #000000;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -33,14 +64,14 @@ body {
     --bs-body-font-family: var(--bs-font-sans-serif);
 }
 @keyframes status_glow-warn {
-    0% {background-color: #dddd55;}
-    50% {background-color: #888800;}
-    100% {background-color: #dddd55;}
+    0% {background-color: var(--status-bar-warn-color-start-end);}
+    50% {background-color: var(--status-bar-warn-color-middle);}
+    100% {background-color: var(--status-bar-warn-color-start-end);}
 }
 @keyframes status_glow-error {
-    0% {background-color: #bb2020;}
-    50% {background-color: #880000;}
-    100% {background-color: #bb2020;}
+    0% {background-color: var(--status-bar-error-color-start-end);}
+    50% {background-color: var(--status-bar-error-color-middle);}
+    100% {background-color: var(--status-bar-error-color-start-end);}
 }
 .password {
     text-security: disc;
@@ -60,7 +91,7 @@ body {
 }
 .top-status-bar {
     position: absolute;
-    color: #000000;
+    color: var(--status-bar-text-color);
     top: 0px;
     width: 100vw;
     z-index: 100;
@@ -76,7 +107,7 @@ body {
     animation-name: status_glow-error;
 }
 .status-bar-soft {
-    background-color: #888800;
+    background-color: var(--status-bar-soft-color);
 }
 .auto-input {
     display: block;
@@ -132,22 +163,25 @@ body {
     padding: 1.5px;
 }
 .backend-errored {
-    border: 1px solid #ff0000;
+    border: 1px solid var(--backend-errored-border-color);
 }
 .backend-disabled {
-    border: 1px solid #ffaa00;
+    border: 1px solid var(--backend-disabled-border-color);
 }
 .backend-running {
-    border: 1px solid #00aa33;
+    border: 1px solid var(--backend-running-border-color);
 }
 .backend-idle {
-    border: 1px solid #688772;
+    border: 1px solid var(--backend-idle-border-color);
 }
 .backend-loading {
-    border: 1px solid #335500;
+    border: 1px solid var(--backend-loading-border-color);
 }
 .backend-waiting {
-    border: 1px solid #335500;
+    border: 1px solid var(--backend-waiting-border-color);
+}
+.card {
+    color: var(--text);
 }
 .card-header {
     background-color: var(--background-gray);
@@ -179,13 +213,13 @@ body {
     border: 1px solid var(--green);
 }
 .backend-edit-button:hover {
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
+    color: var(--backend-edit-btn-text-color-hover) !important;
+    border: 1px solid var(--backend-edit-btn-border-color-hover) !important;
     background-color: var(--green) !important;
 }
 .backend-edit-button:disabled {
-    color: #505050 !important;
-    border: 1px solid #505050 !important;
+    color: var(--backend-edit-btn-text-color-disabled) !important;
+    border: 1px solid var(--backend-edit-btn-border-color-disabled) !important;
     background-color: transparent !important;
 }
 .backend-delete-button {
@@ -193,8 +227,8 @@ body {
     border: 1px solid var(--red);
 }
 .backend-delete-button:hover {
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
+    color: var(--backend-delete-btn-text-color-hover) !important;
+    border: 1px solid var(--backend-delete-btn-border-color-hover) !important;
     background-color: var(--red) !important;
 }
 .backend-save-button {
@@ -203,8 +237,8 @@ body {
     border: 1px solid var(--green);
 }
 .backend-save-button:hover {
-    color: #000000 !important;
-    border: 1px solid #000000 !important;
+    color: var(--backend-save-btn-text-color-hover) !important;
+    border: 1px solid var(--backend-save-btn-border-color-hover) !important;
     background-color: var(--green) !important;
 }
 .backend-toggle-switch {
@@ -355,7 +389,7 @@ textarea, input, select {
 }
 @keyframes toast-flash {
     0% {background-color: transparent;}
-    50% {background-color: #FF0000;}
+    50% {background-color: var(--red);}
     100% {background-color: transparent;}
 }
 .center-toast {
@@ -379,7 +413,7 @@ textarea, input, select {
 }
 .auto-input-qbutton:hover {
     background-color: var(--qbutton);
-    color: #000000 !important;
+    color: var(--qbutton-foreground-color-hover) !important;
 }
 .sui-popover {
     background-color: var(--popup-back);
@@ -530,11 +564,20 @@ textarea, input, select {
     background-color: color-mix(in srgb, var(--button-background-hover) 50%, var(--emphasis));
 }
 .basic-button:disabled {
-    background-color: color-mix(in srgb, var(--button-background) 40%, rgba(100, 0, 0, 0.5));
+    background-color: color-mix(in srgb, var(--button-background) 40%, var(--basic-button-bg-color-disabled));
     color: color-mix(in srgb, var(--button-text) 60%, transparent);
 }
 .simpler-button-disable:disabled {
     background-color: color-mix(in srgb, var(--button-background) 40%, transparent);
+}
+.btn-secondary {
+    background-color: var(--button-background);
+    color: var(--button-text);
+    border: 1px solid var(--button-border);
+}
+.btn-secondary:hover {
+    background-color: var(--button-background-hover);
+    color: var(--button-foreground-hover);
 }
 .text_button {
     background-color: color-mix(in srgb, var(--button-background) 50%, transparent);
@@ -553,6 +596,14 @@ textarea, input, select {
     margin-bottom: 0.1rem;
     border-radius: 0.5rem;
     background-color: transparent;
+}
+.dropdown-menu {
+    --bs-dropdown-bg: var(--popup-back);
+    --bs-dropdown-border-color: gray;
+    color: var(--popup-front);
+}
+.dropdown-divider {
+    border-color: gray;
 }
 .info-popover-button {
     cursor: pointer;
@@ -761,8 +812,8 @@ textarea, input, select {
     width: fit-content;
 }
 .notice-pop-green {
-    background-color: #005500;
-    color: #ffffff;
+    background-color: var(--notice-pop-green-bg-color);
+    color: var(--text);
 }
 .drag_image_target_highlight {
     box-shadow: inset 0 0 8px 2px var(--emphasis);
@@ -945,7 +996,7 @@ input[type="range"]::-moz-range-track {
     box-shadow: inset 0px 0px 3px rgba(0, 0, 0, 0.35);
     border-radius: 16px;
     pointer-events: none;
-    background: #ccc;
+    background: var(--slider-toggle-background);
 }
 .auto-slider-toggle-content::after {
     content: "";
@@ -954,7 +1005,7 @@ input[type="range"]::-moz-range-track {
     left: -1px;
     width: var(--toggle-thumb-size);
     height: var(--toggle-thumb-size);
-    background: #4b4b4b;
+    background: var(--slider-toggle-thumb-color);
     border-radius: 20px;
     transition: left 0.2s, background-color 0.2s;
 }
