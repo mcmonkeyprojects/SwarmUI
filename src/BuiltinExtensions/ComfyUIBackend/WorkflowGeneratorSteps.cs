@@ -1787,6 +1787,8 @@ public class WorkflowGeneratorSteps
                     {
                         Generator = g,
                         VideoModel = extendModel,
+                        VideoSwapModel = g.UserInput.Get(T2IParamTypes.VideoExtendSwapModel, null),
+                        VideoSwapPercent = g.UserInput.Get(T2IParamTypes.VideoExtendSwapPercent, 0.5),
                         Frames = frames,
                         VideoCFG = cfg,
                         VideoFPS = videoFps,

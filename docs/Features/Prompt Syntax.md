@@ -240,6 +240,7 @@
     - For example, `<extend:33>` will extend the video by 33 frames.
     - Use the `Video Extend` parameter group to configure values for this. At least `Video Extend Model` must be set.
     - Must set Overlap less than 1/3rd of the extend frame count.
+        - For many I2V models, overlap of `1` is likely ideal, unless using a model that has been trained to use overlap well.
     - Use the `Advanced Video` parameters as well.
     - Under `Other Fixes` -> `Trim Video End Frames` may be useful on some models. Do not use `Trim Start`
 
