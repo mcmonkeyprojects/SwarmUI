@@ -95,6 +95,7 @@
 
 - If your model or current LoRA's have a trigger phrase in their metadata, you can use `<trigger>` to automatically apply those within a prompt.
     - If you have multiple models with trigger phrases, they will be combined into a comma-separated list. For example `cat` and `dog` will be inserted as `cat, dog`.
+    - Semicolons in trigger phrases are automatically replaced with commas. For example, `cat; dog` will be replaced with `cat, dog`.
     - Note this is just a simple autofill, especially for usage in grids or other bulk generations, and not meant to robustly handle all cases. If you require specific formatting, you'll want to just copy the trigger phrase in directly yourself.
     - Fills empty when there's no data to fill.
 
