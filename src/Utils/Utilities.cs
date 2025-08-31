@@ -676,6 +676,9 @@ public static class Utilities
     /// <summary>Reusable general web client.</summary>
     public static HttpClient UtilWebClient = NetworkBackendUtils.MakeHttpClient();
 
+    /// <summary>Reusable general web client with a very long timeout, for <see cref="DownloadFile"/> in particular to use.</summary>
+    public static HttpClient DownloaderWebClient = NetworkBackendUtils.MakeHttpClient(120);
+
     /// <summary>Downloads a file from a given URL and saves it to a given filepath.</summary>
     public static async Task DownloadFile(string url, string filepath, Action<long, long, long> progressUpdate, CancellationTokenSource cancel = null, string altUrl = null, string verifyHash = null, Dictionary<string, string> headers = null)
     {
