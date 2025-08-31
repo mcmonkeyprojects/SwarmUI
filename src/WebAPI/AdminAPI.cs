@@ -970,7 +970,6 @@ public static class AdminAPI
                 if (user.Settings.Roles.Contains(name))
                 {
                     user.BuildRoles();
-                    user.Save();
                 }
             }
         }
@@ -1000,13 +999,11 @@ public static class AdminAPI
             }
             Program.Sessions.Save();
         }
-
         foreach (User user in Program.Sessions.Users.Values)
         {
             if (user.Settings.Roles.Contains(name))
             {
                 user.BuildRoles();
-                user.Save();
             }
         }
         return new JObject() { ["success"] = true };
