@@ -993,7 +993,7 @@ public static class AdminAPI
             }
             Program.Sessions.Save();
         }
-        Program.Sessions.PropagateRoleChange(role.ID);
+        Program.Sessions.PropagateRoleChange(name);
         return new JObject() { ["success"] = true };
     }
 
