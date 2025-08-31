@@ -965,13 +965,7 @@ public static class AdminAPI
             role.Data.ModelBlacklist = [.. model_blacklist.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
             role.Data.PermissionFlags = [.. permissions.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s))];
             Program.Sessions.Save();
-            foreach (User user in Program.Sessions.Users.Values)
-            {
-                if (user.Settings.Roles.Contains(name))
-                {
-                    user.BuildRoles();
-                }
-            }
+            Program.Sessions.PropagateRoleChange(role.ID);
         }
         return new JObject() { ["success"] = true };
     }
@@ -999,13 +993,7 @@ public static class AdminAPI
             }
             Program.Sessions.Save();
         }
-        foreach (User user in Program.Sessions.Users.Values)
-        {
-            if (user.Settings.Roles.Contains(name))
-            {
-                user.BuildRoles();
-            }
-        }
+        Program.Sessions.PropagateRoleChange(role.ID);
         return new JObject() { ["success"] = true };
     }
 
