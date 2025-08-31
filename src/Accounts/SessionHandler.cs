@@ -72,6 +72,18 @@ public class SessionHandler
         }
     }
 
+    /// <summary>Rebuild roles for any user that has the given role, to propagate any changes made to that role.</summary>
+    public void PropagateRoleChange(string roleId)
+    {
+        foreach (User user in Users.Values)
+        {
+            if (user.Settings.Roles.Contains(roleId))
+            {
+                user.BuildRoles();
+            }
+        }
+    }
+
     /// <summary>Keeps the default permission list applied.</summary>
     public void ApplyDefaultPermissions()
     {
