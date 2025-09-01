@@ -27,15 +27,10 @@
     --backend-idle-border-color: #688772;
     --backend-loading-border-color: #335500;
     --backend-waiting-border-color: #335500;
-    --backend-edit-btn-text-color-hover: #000000;
-    --backend-edit-btn-border-color-hover: #000000;
-    --backend-edit-btn-text-color-disabled: #505050;
-    --backend-edit-btn-border-color-disabled: #505050;
-    --backend-delete-btn-text-color-hover: #000000;
-    --backend-delete-btn-border-color-hover: #000000;
-    --backend-save-btn-text-color-hover: #000000;
-    --backend-save-btn-border-color-hover: #000000;
+    --backend-button-foreground-hover: #000000;
+    --backend-button-foreground-disabled: #505050;
     --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
+    --dropdown-border-color: gray;
     --notice-pop-green-bg-color: #005500;
     --slider-toggle-background: #ccc;
     --slider-toggle-thumb-color: #4b4b4b;
@@ -213,13 +208,13 @@ body {
     border: 1px solid var(--green);
 }
 .backend-edit-button:hover {
-    color: var(--backend-edit-btn-text-color-hover) !important;
-    border: 1px solid var(--backend-edit-btn-border-color-hover) !important;
+    color: var(--backend-button-foreground-hover) !important;
+    border: 1px solid var(--backend-button-foreground-hover) !important;
     background-color: var(--green) !important;
 }
 .backend-edit-button:disabled {
-    color: var(--backend-edit-btn-text-color-disabled) !important;
-    border: 1px solid var(--backend-edit-btn-border-color-disabled) !important;
+    color: var(--backend-button-foreground-disabled) !important;
+    border: 1px solid var(--backend-button-foreground-disabled) !important;
     background-color: transparent !important;
 }
 .backend-delete-button {
@@ -227,8 +222,8 @@ body {
     border: 1px solid var(--red);
 }
 .backend-delete-button:hover {
-    color: var(--backend-delete-btn-text-color-hover) !important;
-    border: 1px solid var(--backend-delete-btn-border-color-hover) !important;
+    color: var(--backend-button-foreground-hover) !important;
+    border: 1px solid var(--backend-button-foreground-hover) !important;
     background-color: var(--red) !important;
 }
 .backend-save-button {
@@ -237,8 +232,8 @@ body {
     border: 1px solid var(--green);
 }
 .backend-save-button:hover {
-    color: var(--backend-save-btn-text-color-hover) !important;
-    border: 1px solid var(--backend-save-btn-border-color-hover) !important;
+    color: var(--backend-button-foreground-hover) !important;
+    border: 1px solid var(--backend-button-foreground-hover) !important;
     background-color: var(--green) !important;
 }
 .backend-toggle-switch {
@@ -401,6 +396,14 @@ textarea, input, select {
     transform: translate(-50%, 0);
     animation-name: toast-flash;
     animation-duration: 2s;
+}
+.toast {
+    background-color: var(--toast-body-bg, var(--bs-toast-bg));
+    color: var(--text);
+}
+.toast-header {
+    background-color: var(--toast-header-bg, var(--bs-toast-header-bg));
+    color: var(--text);
 }
 .auto-input-qbutton {
     margin-left: 0.25rem;
@@ -570,12 +573,12 @@ textarea, input, select {
 .simpler-button-disable:disabled {
     background-color: color-mix(in srgb, var(--button-background) 40%, transparent);
 }
-.btn-secondary {
+.rst-welcome-msg-btn {
     background-color: var(--button-background);
     color: var(--button-text);
     border: 1px solid var(--button-border);
 }
-.btn-secondary:hover {
+.rst-welcome-msg-btn:hover {
     background-color: var(--button-background-hover);
     color: var(--button-foreground-hover);
 }
@@ -599,11 +602,11 @@ textarea, input, select {
 }
 .dropdown-menu {
     --bs-dropdown-bg: var(--popup-back);
-    --bs-dropdown-border-color: gray;
+    --bs-dropdown-border-color: var(--dropdown-border-color);
     color: var(--popup-front);
 }
 .dropdown-divider {
-    border-color: gray;
+    border-color: var(--dropdown-border-color);
 }
 .info-popover-button {
     cursor: pointer;
