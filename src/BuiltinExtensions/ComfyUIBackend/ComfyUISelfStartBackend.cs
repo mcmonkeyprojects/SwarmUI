@@ -473,12 +473,21 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                         ">=" => curVers < actualVers,
                         "<=" => curVers > actualVers,
                         "==" => curVers < actualVers,
+                        "force-eq" => curVers != actualVers,
                         _ => throw new ArgumentException($"Invalid version relation '{rel}' for package '{libFolder}' with version '{version}'.")
                     };
                 }
                 if (doUpdate)
                 {
-                    await update(libFolder, $"{pipName}{rel}{version}");
+                    if (rel == "force-eq")
+                    {
+                        await pipCall($"Remove old '{libFolder}'", $"uninstall -y {pipName}");
+                        await pipCall(libFolder, $"install {pipName}{rel}{version}");
+                    }
+                    else
+                    {
+                        await update(libFolder, $"{pipName}{rel}{version}");
+                    }
                 }
             }
             string frontendVersion = getVers("comfyui_frontend_package");
@@ -538,6 +547,16 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 if (!libs.Contains("nunchaku") && numpyVers is not null && Version.Parse(numpyVers) > Version.Parse("2.0")) // Patch-hack because numpy v2 has incompatibilities with insightface
                 { // Note: sometimes 2+ is needed, so we carefully only remove for the first install of nunchaku, and allow it to be manually shifted back to 2+ after without undoing it
+                    if (libs.Contains("opencv_python_headless"))
+                    {
+                        await pipCall($"Remove opencv_python_headless", $"uninstall -y opencv_python_headless");
+                        await update("opencv_python_headless", "opencv_python_headless==4.11.0.86");
+                    }
+                    if (libs.Contains("opencv_python"))
+                    {
+                        await pipCall($"Remove opencv_python", $"uninstall -y opencv_python");
+                        await update("opencv_python", "opencv_python==4.11.0.86");
+                    }
                     await pipCall($"Remove numpy2+", $"uninstall -y numpy");
                     await update("numpy", "numpy==1.26.4");
                 }
@@ -660,7 +679,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
     public override void PostResultCallback(string filename)
     {
-        string path =  $"{ComfyPathBase}/output/{filename}";
+        string path = $"{ComfyPathBase}/output/{filename}";
         Task.Run(() =>
         {
             if (File.Exists(path))
