@@ -16,6 +16,7 @@ Administrative APIs related to server management.
 - HTTP Route [ChangeServerSettings](#http-route-apichangeserversettings)
 - HTTP Route [DebugGenDocs](#http-route-apidebuggendocs)
 - HTTP Route [DebugLanguageAdd](#http-route-apidebuglanguageadd)
+- HTTP Route [GetGlobalStatus](#http-route-apigetglobalstatus)
 - HTTP Route [GetServerResourceInfo](#http-route-apigetserverresourceinfo)
 - HTTP Route [InstallExtension](#http-route-apiinstallextension)
 - HTTP Route [ListConnectedUsers](#http-route-apilistconnectedusers)
@@ -267,6 +268,38 @@ Changes server settings.
 
 ```js
 "success": true
+```
+
+## HTTP Route /API/GetGlobalStatus
+
+#### Description
+
+Get global server-wide generation status across all sessions.
+
+#### Permission Flag
+
+`read_server_info_panels` - `Read Server Info Panels` in group `Admin`
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+    "status": {
+        "waiting_gens": 0,
+        "loading_models": 0,
+        "waiting_backends": 0,
+        "live_gens": 0
+    },
+    "backend_status": {
+        "status": "running", // "idle", "unknown", "disabled", "loading", "running", "some_loading", "errored", "all_disabled", "empty"
+        "class": "", // "error", "warn", "soft", ""
+        "message": "", // User-facing English text
+        "any_loading": false
+    },
+    "supported_features": ["feature_id1", "feature_id2"]
 ```
 
 ## HTTP Route /API/GetServerResourceInfo
