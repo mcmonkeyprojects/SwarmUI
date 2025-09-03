@@ -54,6 +54,9 @@ class ImageFullViewHelper {
         if (e.button == 2) { // right-click
             return;
         }
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap')) {
+            return;
+        }
         this.lastMouseX = e.clientX;
         this.lastMouseY = e.clientY;
         this.isDragging = true;
