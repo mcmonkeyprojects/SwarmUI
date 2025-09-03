@@ -54,7 +54,7 @@ class ImageFullViewHelper {
         if (e.button == 2) { // right-click
             return;
         }
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap')) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
             return;
         }
         this.lastMouseX = e.clientX;
@@ -151,7 +151,7 @@ class ImageFullViewHelper {
     }
 
     onWheel(e) {
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap')) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
             return;
         }
         this.detachImg();
