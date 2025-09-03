@@ -333,13 +333,10 @@ public static class BasicAPIFeatures
     }
 
     /// <summary>Gets current session status. Not an API call.</summary>
-    public static JObject GetCurrentStatusRaw(Session session, bool do_debug = false)
+    public static JObject GetCurrentStatusRaw(Session session)
     {
-        if (do_debug) { Logs.Verbose($"Getting current status for session {session.User.UserID}..."); }
         JObject backendStatus = Program.Backends.CurrentBackendStatus.GetValue();
-        if (do_debug) { Logs.Verbose("Got backend status, will get feature set..."); }
         string[] features = [.. Program.Backends.GetAllSupportedFeatures()];
-        if (do_debug) { Logs.Verbose("Got backend stats, will get session data...."); }
         Interlocked.MemoryBarrier();
         JObject stats = new()
         {
@@ -348,7 +345,6 @@ public static class BasicAPIFeatures
             ["waiting_backends"] = session.WaitingBackends,
             ["live_gens"] = session.LiveGens
         };
-        if (do_debug) { Logs.Verbose("Exited session lock. Done."); }
         return new JObject
         {
             ["status"] = stats,
@@ -373,10 +369,9 @@ public static class BasicAPIFeatures
             },
             "supported_features": ["feature_id1", "feature_id2"]
         """)]
-    public static async Task<JObject> GetCurrentStatus(Session session,
-        [API.APIParameter("If true, verbose log data about the status report gathering (internal usage).")] bool do_debug = false)
+    public static async Task<JObject> GetCurrentStatus(Session session)
     {
-        return GetCurrentStatusRaw(session, do_debug);
+        return GetCurrentStatusRaw(session);
     }
 
     [API.APIDescription("Tell all waiting generations in this session or all sessions to interrupt.",
