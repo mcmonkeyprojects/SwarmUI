@@ -151,6 +151,9 @@ class ImageFullViewHelper {
     }
 
     onWheel(e) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap')) {
+            return;
+        }
         this.detachImg();
         let img = this.getImg();
         let origHeight = this.getHeightPercent();
