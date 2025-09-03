@@ -64,6 +64,7 @@ public class BackendHandler
     public BackendHandler()
     {
         RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
+        RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
         Program.ModelRefreshEvent += () =>
         {
             List<Task> waitFor = [];
