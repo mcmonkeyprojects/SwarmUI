@@ -32,6 +32,8 @@
     --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
     --dropdown-border-color: gray;
     --notice-pop-green-bg-color: #005500;
+    --toast-header-bg: #303030;
+    --toast-body-bg: #444;
     --slider-toggle-background: #ccc;
     --slider-toggle-thumb-color: #4b4b4b;
     --link-color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
@@ -333,6 +335,13 @@ input[type="range"]::-webkit-slider-thumb, input[type="range"]::-moz-range-thumb
     box-shadow: -407px 0 0 400px var(--emphasis);
     margin-top: -4px;
 }
+input[type="checkbox"] {
+    accent-color: var(--emphasis);
+}
+input[type="text"]:focus, textarea:focus {
+    outline: solid 1px var(--emphasis);
+    border-color: var(--emphasis);
+}
 .auto-slider-range-wrapper {
     display: contents;
 }
@@ -398,11 +407,11 @@ textarea, input, select {
     animation-duration: 2s;
 }
 .toast {
-    background-color: var(--toast-body-bg, var(--bs-toast-bg));
+    background-color: var(--toast-body-bg);
     color: var(--text);
 }
 .toast-header {
-    background-color: var(--toast-header-bg, var(--bs-toast-header-bg));
+    background-color: var(--toast-header-bg);
     color: var(--text);
 }
 .auto-input-qbutton {

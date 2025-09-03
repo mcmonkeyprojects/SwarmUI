@@ -32,4 +32,6 @@
     --box-selected-background: rgba(255, 162, 85, 0.2);
     --box-selected-border-stronger: rgba(255, 162, 85, 1.0);
     --box-selected-background-stronger: rgba(255, 162, 85, 0.3);
+    --toast-header-bg: #ffffffd9;
+    --toast-body-bg: #ffffffd9;
 }
