@@ -26,6 +26,7 @@ public static class AdminAPI
         API.RegisterAPICall(LogSubmitToPastebin, true, Permissions.ViewLogs);
         API.RegisterAPICall(ShutdownServer, true, Permissions.Shutdown);
         API.RegisterAPICall(GetServerResourceInfo, false, Permissions.ReadServerInfoPanels);
+        API.RegisterAPICall(GetGlobalStatus, false, Permissions.ReadServerInfoPanels);
         API.RegisterAPICall(DebugLanguageAdd, true, Permissions.AdminDebug);
         API.RegisterAPICall(DebugGenDocs, true, Permissions.AdminDebug);
         API.RegisterAPICall(ListConnectedUsers, false, Permissions.ReadServerInfoPanels);
@@ -45,7 +46,6 @@ public static class AdminAPI
         API.RegisterAPICall(AdminEditRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminDeleteRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminListPermissions, false, Permissions.ConfigureRoles);
-        API.RegisterAPICall(GetGlobalStatus, false, Permissions.ReadServerInfoPanels);
     }
 
     public static JObject AutoConfigToParamData(AutoConfiguration config, bool hideRestricted = false)
@@ -423,7 +423,56 @@ public static class AdminAPI
         return result;
     }
 
+    [API.APIDescription("Get global server-wide generation status across all sessions.",
+        """
+            "status": {
+                "waiting_gens": 0,
+                "loading_models": 0,
+                "waiting_backends": 0,
+                "live_gens": 0
+            },
+            "backend_status": {
+                "status": "running", // "idle", "unknown", "disabled", "loading", "running", "some_loading", "errored", "all_disabled", "empty"
+                "class": "", // "error", "warn", "soft", ""
+                "message": "", // User-facing English text
+                "any_loading": false
+            },
+            "supported_features": ["feature_id1", "feature_id2"]
+        """)]
+    [API.APINonfinalMark]
+    public static async Task<JObject> GetGlobalStatus(Session session)
+    {
+        JObject backendStatus = Program.Backends.CurrentBackendStatus.GetValue();
+        string[] features = [.. Program.Backends.GetAllSupportedFeatures()];
+        Interlocked.MemoryBarrier();
+        int totalWaitingGens = 0;
+        int totalLoadingModels = 0;
+        int totalWaitingBackends = 0;
+        int totalLiveGens = 0;
+        foreach (Session sess in Program.Sessions.Sessions.Values)
+        {
+            totalWaitingGens += sess.WaitingGenerations;
+            totalLoadingModels += sess.LoadingModels;
+            totalWaitingBackends += sess.WaitingBackends;
+            totalLiveGens += sess.LiveGens;
+        }
+        JObject stats = new()
+        {
+            ["waiting_gens"] = totalWaitingGens,
+            ["loading_models"] = totalLoadingModels,
+            ["waiting_backends"] = totalWaitingBackends,
+            ["live_gens"] = totalLiveGens
+        };
+        return new JObject
+        {
+            ["status"] = stats,
+            ["backend_status"] = backendStatus,
+            ["supported_features"] = new JArray(features)
+        };
+    }
+
     [API.APIDescription("(Internal/Debug route), adds language data to the language file builder.", "\"success\": true")]
+    [API.APINonfinalMark]
     public static async Task<JObject> DebugLanguageAdd(Session session,
         [API.APIParameter("\"set\": [ \"word\", ... ]")] JObject raw)
     {
@@ -432,6 +481,7 @@ public static class AdminAPI
     }
 
     [API.APIDescription("(Internal/Debug route), generates API docs.", "\"success\": true")]
+    [API.APINonfinalMark]
     public static async Task<JObject> DebugGenDocs(Session session)
     {
         await API.GenerateAPIDocs();
@@ -709,6 +759,7 @@ public static class AdminAPI
                 "user2"
             ]
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminListUsers(Session session)
     {
         List<string> users = [.. Program.Sessions.UserDatabase.FindAll().Select(u => u.ID)];
@@ -721,6 +772,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminAddUser(Session session,
         [API.APIParameter("The name of the new user.")] string name,
         [API.APIParameter("Initial password for the new user.")] string password,
@@ -763,6 +815,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminSetUserPassword(Session session,
         [API.APIParameter("The name of the user.")] string name,
         [API.APIParameter("New password for the user.")] string password)
@@ -798,6 +851,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminChangeUserSettings(Session session,
         [API.APIParameter("The name of the user.")] string name,
         [API.APIParameter("Simple object map of key as setting ID to new setting value to apply, under 'settings'.")] JObject rawData)
@@ -833,6 +887,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminDeleteUser(Session session,
         [API.APIParameter("The name of the user to delete.")] string name)
     {
@@ -859,6 +914,7 @@ public static class AdminAPI
             "settings": { ... }, // User settings, same format as GetUserSettings
             "max_t2i": 32 // actual value of max t2i simultaneous, calculated from current roles and available backends
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminGetUserInfo(Session session,
         [API.APIParameter("The name of the user to get info for.")] string name)
     {
@@ -892,6 +948,7 @@ public static class AdminAPI
                 }
             ]
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminListRoles(Session session)
     {
         JObject roles = [];
@@ -917,6 +974,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminAddRole(Session session,
         [API.APIParameter("The name of the new role.")] string name)
     {
@@ -942,6 +1000,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminEditRole(Session session,
         [API.APIParameter("The name of the role.")] string name,
         [API.APIParameter("The description text for the role.")] string description,
@@ -975,6 +1034,7 @@ public static class AdminAPI
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminDeleteRole(Session session,
         [API.APIParameter("The name of the new role.")] string name)
     {
@@ -1014,6 +1074,7 @@ public static class AdminAPI
                 }
             ]
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> AdminListPermissions(Session session)
     {
         JObject permissions = [];
@@ -1034,52 +1095,5 @@ public static class AdminAPI
             };
         }
         return new JObject() { ["permissions"] = permissions, ["ordered"] = JArray.FromObject(Permissions.OrderedKeys) };
-    }
-
-    [API.APIDescription("Get global server-wide generation status across all sessions.",
-        """
-            "status": {
-                "waiting_gens": 0,
-                "loading_models": 0,
-                "waiting_backends": 0,
-                "live_gens": 0
-            },
-            "backend_status": {
-                "status": "running", // "idle", "unknown", "disabled", "loading", "running", "some_loading", "errored", "all_disabled", "empty"
-                "class": "", // "error", "warn", "soft", ""
-                "message": "", // User-facing English text
-                "any_loading": false
-            },
-            "supported_features": ["feature_id1", "feature_id2"]
-        """)]
-    public static async Task<JObject> GetGlobalStatus(Session session)
-    {
-        JObject backendStatus = Program.Backends.CurrentBackendStatus.GetValue();
-        string[] features = [.. Program.Backends.GetAllSupportedFeatures()];
-        Interlocked.MemoryBarrier();
-        int totalWaitingGens = 0;
-        int totalLoadingModels = 0;
-        int totalWaitingBackends = 0;
-        int totalLiveGens = 0;
-        foreach (Session sess in Program.Sessions.Sessions.Values)
-        {
-            totalWaitingGens += sess.WaitingGenerations;
-            totalLoadingModels += sess.LoadingModels;
-            totalWaitingBackends += sess.WaitingBackends;
-            totalLiveGens += sess.LiveGens;
-        }
-        JObject stats = new()
-        {
-            ["waiting_gens"] = totalWaitingGens,
-            ["loading_models"] = totalLoadingModels,
-            ["waiting_backends"] = totalWaitingBackends,
-            ["live_gens"] = totalLiveGens
-        };
-        return new JObject
-        {
-            ["status"] = stats,
-            ["backend_status"] = backendStatus,
-            ["supported_features"] = new JArray(features)
-        };
     }
 }
