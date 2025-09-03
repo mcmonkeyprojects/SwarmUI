@@ -7,6 +7,7 @@ Basic general API routes, primarily for users and session handling.
 #### Table of Contents:
 
 - HTTP Route [AddNewPreset](#http-route-apiaddnewpreset)
+- HTTP Route [ChangePassword](#http-route-apichangepassword)
 - HTTP Route [ChangeUserSettings](#http-route-apichangeusersettings)
 - HTTP Route [DeletePreset](#http-route-apideletepreset)
 - HTTP Route [DuplicatePreset](#http-route-apiduplicatepreset)
@@ -18,6 +19,8 @@ Basic general API routes, primarily for users and session handling.
 - HTTP Route [GetUserSettings](#http-route-apigetusersettings)
 - WebSocket Route [InstallConfirmWS](#websocket-route-apiinstallconfirmws)
 - HTTP Route [InterruptAll](#http-route-apiinterruptall)
+- HTTP Route [Login](#http-route-apilogin)
+- HTTP Route [Logout](#http-route-apilogout)
 - HTTP Route [ServerDebugMessage](#http-route-apiserverdebugmessage)
 - HTTP Route [SetAPIKey](#http-route-apisetapikey)
 - HTTP Route [SetParamEdits](#http-route-apisetparamedits)
@@ -52,6 +55,34 @@ User route to add a new parameter preset.
     "preset_fail": "Some friendly error text here"
 ```
 
+## HTTP Route /API/ChangePassword
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+User route to change their own password. Has a ratelimit built in.
+
+#### Permission Flag
+
+`edit_user_settings` - `Edit User Settings` in group `User`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| oldPassword | String | Your current password. | **(REQUIRED)** |
+| newPassword | String | Your new password. Must be at least 8 characters. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
+```
+
 ## HTTP Route /API/ChangeUserSettings
 
 #### Description
@@ -66,7 +97,7 @@ User route to change user settings data.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| rawData | JObject | Simple object map of key as setting ID to new setting value to apply. | **(REQUIRED)** |
+| rawData | JObject | Simple object map of key as setting ID to new setting value to apply, under 'settings'. | **(REQUIRED)** |
 
 #### Return Format
 
@@ -152,9 +183,7 @@ Get current waiting generation count, model loading count, etc.
 
 #### Parameters
 
-| Name | Type | Description | Default |
-| --- | --- | --- | --- |
-| do_debug | Boolean | If true, verbose log data about the status report gathering (internal usage). | `False` |
+**None.**
 
 #### Return Format
 
@@ -245,6 +274,7 @@ User route to get the user's own base data.
 #### Description
 
 Special route to create a new session ID. Must be called before any other API route. Also returns other fundamental user and server data.
+Intentionally no permission flag required, as permissions are not defined until you create a session.
 
 #### Permission Flag
 
@@ -252,9 +282,7 @@ Special route to create a new session ID. Must be called before any other API ro
 
 #### Parameters
 
-| Name | Type | Description | Default |
-| --- | --- | --- | --- |
-| context | HttpContext | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+**None.**
 
 #### Return Format
 
@@ -316,6 +344,7 @@ Websocket route for the initial installation from the UI.
 | models | String | Selected models to predownload. | **(REQUIRED)** |
 | install_amd | Boolean | If true, install with AMD GPU compatibility. | **(REQUIRED)** |
 | language | String | Selected user language. | **(REQUIRED)** |
+| make_shortcut | Boolean | If true, make a Desktop shortcut. | `False` |
 
 #### Return Format
 
@@ -343,6 +372,61 @@ Tell all waiting generations in this session or all sessions to interrupt.
 
 ```js
     "success": true
+```
+
+## HTTP Route /API/Login
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Special route to log in as a user account. Generally only for UI users, bots/automated API usages should have a user account generate a token first.
+
+#### Permission Flag
+
+(MISSING)
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| username | String | Login username. | **(REQUIRED)** |
+| password | String | Login password. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": "true" // and sets a cookie
+    // or
+    "error_id": "invalid_login" // or "ratelimit"
+```
+
+## HTTP Route /API/Logout
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Causes a user to log out, closing all assocated sessions in the process.
+
+#### Permission Flag
+
+`fundamental` - `Fundamental` in group `User`
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+    "success": "true"
 ```
 
 ## HTTP Route /API/ServerDebugMessage

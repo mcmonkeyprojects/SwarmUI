@@ -59,6 +59,7 @@ public static class BasicAPIFeatures
             // or
             "error_id": "invalid_login" // or "ratelimit"
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> Login(HttpContext context,
         [API.APIParameter("Login username.")] string username,
         [API.APIParameter("Login password.")] string password)
@@ -145,6 +146,7 @@ public static class BasicAPIFeatures
         """
             "success": "true"
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> Logout(HttpContext context, Session session)
     {
         if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
@@ -465,6 +467,7 @@ public static class BasicAPIFeatures
         """
             "success": true
         """)]
+    [API.APINonfinalMark]
     public static async Task<JObject> ChangePassword(Session session,
         [API.APIParameter("Your current password.")] string oldPassword,
         [API.APIParameter("Your new password. Must be at least 8 characters.")] string newPassword)

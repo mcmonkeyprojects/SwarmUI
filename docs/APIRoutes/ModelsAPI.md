@@ -167,6 +167,8 @@ Modifies the metadata of a model. Returns before the file update is necessarily 
 | preview_image | String | New model `preview_image` metadata value (image-data-string format, or null to not change). | (null) |
 | preview_image_metadata | String | Optional raw text of metadata to inject to the preview image. | (null) |
 | is_negative_embedding | Boolean | New model `is_negative_embedding` metadata value. | `False` |
+| lora_default_weight | String | New model `lora_default_weight` metadata value. | (Empty String) |
+| lora_default_confinement | String | New model `lora_default_confinement` metadata value. | (Empty String) |
 | subtype | String | The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc. | `Stable-Diffusion` |
 
 #### Return Format
@@ -291,6 +293,7 @@ Returns a list of models available on the server within a given folder, with the
 | sortBy | String | What to sort the list by - `Name`, `DateCreated`, or `DateModified. | `Name` |
 | allowRemote | Boolean | If true, allow remote models. If false, only local models. | `True` |
 | sortReverse | Boolean | If true, the sorting should be done in reverse. | `False` |
+| dataImages | Boolean | If true, provide model images in raw data format. If false, use URLs. | `False` |
 
 #### Return Format
 

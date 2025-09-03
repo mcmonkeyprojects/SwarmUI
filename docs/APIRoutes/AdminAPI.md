@@ -8,12 +8,17 @@ Administrative APIs related to server management.
 
 - HTTP Route [AdminAddRole](#http-route-apiadminaddrole)
 - HTTP Route [AdminAddUser](#http-route-apiadminadduser)
+- HTTP Route [AdminChangeUserSettings](#http-route-apiadminchangeusersettings)
 - HTTP Route [AdminDeleteRole](#http-route-apiadmindeleterole)
 - HTTP Route [AdminDeleteUser](#http-route-apiadmindeleteuser)
+- HTTP Route [AdminEditRole](#http-route-apiadmineditrole)
+- HTTP Route [AdminGetUserInfo](#http-route-apiadmingetuserinfo)
 - HTTP Route [AdminListPermissions](#http-route-apiadminlistpermissions)
 - HTTP Route [AdminListRoles](#http-route-apiadminlistroles)
 - HTTP Route [AdminListUsers](#http-route-apiadminlistusers)
+- HTTP Route [AdminSetUserPassword](#http-route-apiadminsetuserpassword)
 - HTTP Route [ChangeServerSettings](#http-route-apichangeserversettings)
+- HTTP Route [CheckForUpdates](#http-route-apicheckforupdates)
 - HTTP Route [DebugGenDocs](#http-route-apidebuggendocs)
 - HTTP Route [DebugLanguageAdd](#http-route-apidebuglanguageadd)
 - HTTP Route [GetGlobalStatus](#http-route-apigetglobalstatus)
@@ -30,6 +35,11 @@ Administrative APIs related to server management.
 - HTTP Route [UpdateExtension](#http-route-apiupdateextension)
 
 ## HTTP Route /API/AdminAddRole
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
 
 #### Description
 
@@ -53,6 +63,11 @@ Admin route to create a new user permission role.
 
 ## HTTP Route /API/AdminAddUser
 
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
 #### Description
 
 Admin route to create a new user account.
@@ -75,7 +90,40 @@ Admin route to create a new user account.
     "success": true
 ```
 
+## HTTP Route /API/AdminChangeUserSettings
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Admin route to forcibly change user settings data for a user.
+
+#### Permission Flag
+
+`manage_users` - `Manage Users` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| name | String | The name of the user. | **(REQUIRED)** |
+| rawData | JObject | Simple object map of key as setting ID to new setting value to apply, under 'settings'. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
+```
+
 ## HTTP Route /API/AdminDeleteRole
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
 
 #### Description
 
@@ -99,6 +147,11 @@ Admin route to delete an existing user permission role.
 
 ## HTTP Route /API/AdminDeleteUser
 
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
 #### Description
 
 Admin route to delete an existing user account.
@@ -119,7 +172,76 @@ Admin route to delete an existing user account.
     "success": true
 ```
 
+## HTTP Route /API/AdminEditRole
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Admin route to edit a permission role.
+
+#### Permission Flag
+
+`configure_roles` - `Configure Roles` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| name | String | The name of the role. | **(REQUIRED)** |
+| description | String | The description text for the role. | **(REQUIRED)** |
+| max_outpath_depth | Int32 | The maximum outpath depth allowed for the role. | **(REQUIRED)** |
+| max_t2i_simultaneous | Int32 | The maximum number of simultaneous T2I allowed for the role. | **(REQUIRED)** |
+| allow_unsafe_outpaths | Boolean | Whether to allow unsafe outpaths for the role. | **(REQUIRED)** |
+| model_whitelist | String | Comma-separated list of model names to whitelist for the role. | **(REQUIRED)** |
+| model_blacklist | String | Comma-separated list of model names to blacklist for the role. | **(REQUIRED)** |
+| permissions | String | Comma-separated list of enabled permission nodes. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
+```
+
+## HTTP Route /API/AdminGetUserInfo
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Admin route to get info about a user.
+
+#### Permission Flag
+
+`manage_users` - `Manage Users` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| name | String | The name of the user to get info for. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "user_id": "useridhere",
+    "password_set_by_admin": true, // false if set by user
+    "settings": { ... }, // User settings, same format as GetUserSettings
+    "max_t2i": 32 // actual value of max t2i simultaneous, calculated from current roles and available backends
+```
+
 ## HTTP Route /API/AdminListPermissions
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
 
 #### Description
 
@@ -153,6 +275,11 @@ Admin route to get a list of all available permissions.
 
 ## HTTP Route /API/AdminListRoles
 
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
 #### Description
 
 Admin route to get a list of all available roles.
@@ -185,6 +312,11 @@ Admin route to get a list of all available roles.
 
 ## HTTP Route /API/AdminListUsers
 
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
 #### Description
 
 Admin route to get a list of all known users by ID.
@@ -204,6 +336,34 @@ Admin route to get a list of all known users by ID.
         "user1",
         "user2"
     ]
+```
+
+## HTTP Route /API/AdminSetUserPassword
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
+
+#### Description
+
+Admin route to force-set a user's password.
+
+#### Permission Flag
+
+`manage_users` - `Manage Users` in group `Admin`
+
+#### Parameters
+
+| Name | Type | Description | Default |
+| --- | --- | --- | --- |
+| name | String | The name of the user. | **(REQUIRED)** |
+| password | String | New password for the user. | **(REQUIRED)** |
+
+#### Return Format
+
+```js
+    "success": true
 ```
 
 ## HTTP Route /API/ChangeServerSettings
@@ -228,7 +388,35 @@ Changes server settings.
 "success": true
 ```
 
+## HTTP Route /API/CheckForUpdates
+
+#### Description
+
+Do a scan for any available updates to SwarmUI, extensions, or backends.
+
+#### Permission Flag
+
+`restart` - `Restart Server` in group `Admin`
+
+#### Parameters
+
+**None.**
+
+#### Return Format
+
+```js
+    "server_updates_count": 0,
+    "server_updates_preview": ["name1", ..., "name6"], // capped to just a few
+    "extension_updates": ["name1", ...],
+    "backend_updates": ["name1", ...]
+```
+
 ## HTTP Route /API/DebugGenDocs
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
 
 #### Description
 
@@ -249,6 +437,11 @@ Changes server settings.
 ```
 
 ## HTTP Route /API/DebugLanguageAdd
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
 
 #### Description
 
@@ -271,6 +464,11 @@ Changes server settings.
 ```
 
 ## HTTP Route /API/GetGlobalStatus
+
+> [!WARNING]
+> This API is marked non-final.
+> This means it is experimental, non-functional, or subject to change.
+> Use at your own risk.
 
 #### Description
 
@@ -432,7 +630,8 @@ Returns a list of recent server log messages.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| raw | JObject | Optionally input `"last_sequence_ids": { "info": 123 }` to set the start point. | **(REQUIRED)** |
+| raw | JObject | Use eg `"types": ["info"]` to specify what log types to include.
+Optionally input `"last_sequence_ids": { "info": 123 }` to set the start point. | **(REQUIRED)** |
 
 #### Return Format
 
@@ -556,6 +755,8 @@ Causes swarm to update, then close and restart itself. If there's no update to a
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
+| updateExtensions | Boolean | True to also update any extensions. | `False` |
+| updateBackends | Boolean | True to also update any backends. | `False` |
 | force | Boolean | True to always rebuild and restart even if there's no visible update. | `False` |
 
 #### Return Format
