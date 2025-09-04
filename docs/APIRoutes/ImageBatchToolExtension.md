@@ -29,6 +29,7 @@
 | revision | Boolean | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | controlnet | Boolean | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 | resMode | String | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
+| append_filename_to_prompt | Boolean | (PARAMETER DESCRIPTION NOT SET) | **(REQUIRED)** |
 
 #### Return Format
 

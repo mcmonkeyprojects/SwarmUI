@@ -26,7 +26,7 @@ Count the CLIP-like tokens in a given text prompt.
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | text | String | The text to tokenize. | **(REQUIRED)** |
-| skipPromptSyntax | Boolean | If false, processing prompt syntax (things like `<random:`). If true, don't process that. | `False` |
+| skipPromptSyntax | Boolean | If false, process prompt syntax (things like `<random:`) as if its regular text. If true, clean it up first. | `False` |
 | tokenset | String | What tokenization set to use. | `clip` |
 | weighting | Boolean | If true, process weighting (like `(word:1.5)`). If false, don't process that. | `True` |
 
@@ -74,6 +74,7 @@ Tokenize some prompt text and get thorough detail about it.
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | text | String | The text to tokenize. | **(REQUIRED)** |
+| skipPromptSyntax | Boolean | If false, process prompt syntax (things like `<random:`) as if its regular text. If true, clean it up first. | `False` |
 | tokenset | String | What tokenization set to use. | `clip` |
 | weighting | Boolean | If true, process weighting (like `(word:1.5)`). If false, don't process that. | `True` |
 

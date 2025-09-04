@@ -84,7 +84,8 @@ Generate images from text prompts, directly as an HTTP route. See the examples i
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | images | Int32 | The number of images to generate. | **(REQUIRED)** |
-| rawInput | JObject | Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ "prompt": "a photo of a cat", "model": "OfficialStableDiffusion/sd_xl_base_1.0", "steps": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc. | **(REQUIRED)** |
+| rawInput | JObject | Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ "prompt": "a photo of a cat", "model": "OfficialStableDiffusion/sd_xl_base_1.0", "steps": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.
+The key 'extra_metadata' may be used to apply extra internal metadata as a JSON string:string map. | **(REQUIRED)** |
 
 #### Return Format
 
@@ -110,7 +111,8 @@ Generate images from text prompts, with WebSocket updates. This is the most impo
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | images | Int32 | The number of images to generate. | **(REQUIRED)** |
-| rawInput | JObject | Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ "prompt": "a photo of a cat", "model": "OfficialStableDiffusion/sd_xl_base_1.0", "steps": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc. | **(REQUIRED)** |
+| rawInput | JObject | Raw mapping of input should contain general T2I parameters (see listing on Generate tab of main interface) to values, eg `{ "prompt": "a photo of a cat", "model": "OfficialStableDiffusion/sd_xl_base_1.0", "steps": 20, ... }`. Note that this is the root raw map, ie all params go on the same level as `images`, `session_id`, etc.
+The key 'extra_metadata' may be used to apply extra internal metadata as a JSON string:string map. | **(REQUIRED)** |
 
 #### Return Format
 
@@ -222,22 +224,26 @@ Get a list of available T2I parameters.
         "feature_flag": "flagname", // or null
         "toggleable": true,
         "priority": 0,
-        "group":
-        {
-            "name": "Group Name Here",
-            "id": "groupidhere",
-            "toggles": true,
-            "open": false,
-            "priority": 0,
-            "description": "group description here",
-            "advanced": false,
-            "can_shrink": true
-        },
+        "group": "idhere", // or null
         "always_retain": false,
         "do_not_save": false,
         "do_not_preview": false,
         "view_type": "big", // dependent on type
         "extra_hidden": false
+    }
+],
+"groups":
+[
+    {
+        "name": "Group Name Here",
+        "id": "groupidhere",
+        "toggles": true,
+        "open": false,
+        "priority": 0,
+        "description": "group description here",
+        "advanced": false,
+        "can_shrink": true,
+        "parent": "idhere" // or null
     }
 ],
 "models":
@@ -318,6 +324,7 @@ Trigger a refresh of the server's data, returning parameter data. Requires permi
 ```js
     // see `ListT2IParams` for details
     "list": [...],
+    "groups": [...],
     "models": [...],
     "wildcards": [...],
     "param_edits": [...]

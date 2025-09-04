@@ -268,6 +268,10 @@ public class API
                 docText.Append($"## HTTP Route /API/{call.Name}\n\n");
                 toc.Append($"- HTTP Route [{call.Name}](#http-route-api{call.Name.ToLowerFast()})\n");
             }
+            if (call.Original.GetCustomAttribute<APINonfinalMarkAttribute>() is not null)
+            {
+                docText.Append("> [!WARNING]\n> This API is marked non-final.\n> This means it is experimental, non-functional, or subject to change.\n> Use at your own risk.\n\n");
+            }
             APIDescriptionAttribute methodDesc = call.Original.GetCustomAttribute<APIDescriptionAttribute>();
             string perm = call.Permission is null ? "(MISSING)" : $"`{call.Permission.ID}` - `{call.Permission.DisplayName}` in group `{call.Permission.Group.DisplayName}`";
             docText.Append($"#### Description\n\n{methodDesc?.Description ?? "(ROUTE DESCRIPTION NOT SET)"}\n\n#### Permission Flag\n\n{perm}\n\n#### Parameters\n\n");
@@ -320,4 +324,7 @@ public class API
     {
         public string Description = description;
     }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class APINonfinalMarkAttribute : Attribute { }
 }
