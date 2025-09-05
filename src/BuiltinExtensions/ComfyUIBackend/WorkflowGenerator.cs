@@ -1420,13 +1420,25 @@ public class WorkflowGenerator
         }
         else if (!string.IsNullOrWhiteSpace(predType) && LoadingModel is not null)
         {
-            string discreteNode = CreateNode("ModelSamplingDiscrete", new JObject()
+            if (predType == "sd3")
             {
-                ["model"] = LoadingModel,
-                ["sampling"] = predType switch { "v" => "v_prediction", "v-zsnr" => "v_prediction", "epsilon" => "eps", _ => predType },
-                ["zsnr"] = predType.Contains("zsnr")
-            });
-            LoadingModel = [discreteNode, 0];
+                string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
+                });
+                LoadingModel = [samplingNode, 0];
+            }
+            else
+            {
+                string discreteNode = CreateNode("ModelSamplingDiscrete", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["sampling"] = predType switch { "v" => "v_prediction", "v-zsnr" => "v_prediction", "epsilon" => "eps", _ => predType },
+                    ["zsnr"] = predType.Contains("zsnr")
+                });
+                LoadingModel = [discreteNode, 0];
+            }
         }
         if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
         {
