@@ -1324,6 +1324,9 @@ function buildParameterList(params, groups) {
 
 /** Returns a copy of the parameter name, cleaned for ID format input. */
 function cleanParamName(name) {
+    if (name == null) {
+        return null;
+    }
     return name.toLowerCase().replaceAll(/[^a-z]/g, '');
 }
 
