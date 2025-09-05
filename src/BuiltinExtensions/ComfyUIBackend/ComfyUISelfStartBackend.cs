@@ -588,13 +588,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.9]).");
                     isValid = false;
                 }
-                string nunchakuTargetVersion = "1.0.0.dev20250823"; string nunchakuRelName = "1.0.0dev20250823"; // they fucked up the url format omg
+                string nunchakuTargetVersion = "1.0.0";
                 // eg https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.2/nunchaku-0.3.2+torch2.5-cp310-cp310-linux_x86_64.whl
-                string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuRelName}/nunchaku-{nunchakuTargetVersion}+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
+                string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuTargetVersion}/nunchaku-{nunchakuTargetVersion}+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)
                 {
                     string nunchakuVers = getVers("nunchaku");
-                    if (nunchakuVers is not null && Version.Parse(nunchakuVers.Before(".dev")) < Version.Parse(nunchakuTargetVersion.Before(".dev")))
+                    if (nunchakuVers is not null && (Version.Parse(nunchakuVers.Before(".dev")) < Version.Parse(nunchakuTargetVersion.Before(".dev")) || nunchakuVers.Contains(".dev")))
                     {
                         await update("nunchaku", url);
                     }

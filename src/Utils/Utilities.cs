@@ -695,7 +695,7 @@ public static class Utilities
                 request.Headers.Add(key, value);
             }
         }
-        using HttpResponseMessage response = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
+        HttpResponseMessage response = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
         long length = response.Content.Headers.ContentLength ?? 0;
         ConcurrentQueue<byte[]> chunks = new();
         ConcurrentQueue<(long, long, long, bool)> progUpdates = new();
@@ -706,53 +706,91 @@ public static class Utilities
         using Stream dlStream = await response.Content.ReadAsStreamAsync();
         Task loadData = Task.Run(async () =>
         {
+            HttpResponseMessage workingResponse = response;
+            Stream workingStream = dlStream;
             try
             {
+                int tryCount = 0;
+                long totalRead = 0;
                 byte[] buffer = new byte[Math.Min(length + 1024, 1024 * 1024 * 64)]; // up to 64 megabytes, just grab as big a chunk as we can at a time
                 int nextOffset = 0;
                 while (true)
                 {
-                    using CancellationTokenSource delayCleanup = new();
-                    Task<int> readTask = Task.Run(async () => await dlStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token));
-                    Task waiting = Task.Delay(TimeSpan.FromMinutes(2), delayCleanup.Token);
-                    Task reading = Task.Run(async () => await readTask);
-                    Task first = await Task.WhenAny(waiting, reading);
-                    if (first == waiting)
+                    try
                     {
-                        Logs.Warning($"Download from '{altUrl}' has had no update for 2 minutes. Download may be failing. Will wait 3 more minutes and consider failed if it exceeds 5 total minutes.");
-                        Task waiting2 = Task.Delay(TimeSpan.FromMinutes(3), delayCleanup.Token);
-                        Task second = await Task.WhenAny(waiting2, reading);
-                        if (second == waiting2)
+                        using CancellationTokenSource delayCleanup = new();
+                        Task<int> readTask = Task.Run(async () => await workingStream.ReadAsync(buffer.AsMemory(nextOffset), combinedCancel.Token));
+                        Task waiting = Task.Delay(TimeSpan.FromMinutes(2), delayCleanup.Token);
+                        Task reading = Task.Run(async () => await readTask);
+                        Task first = await Task.WhenAny(waiting, reading);
+                        if (first == waiting)
+                        {
+                            Logs.Warning($"Download from '{altUrl}' has had no update for 2 minutes. Download may be failing. Will wait 3 more minutes and consider failed if it exceeds 5 total minutes.");
+                            Task waiting2 = Task.Delay(TimeSpan.FromMinutes(3), delayCleanup.Token);
+                            Task second = await Task.WhenAny(waiting2, reading);
+                            if (second == waiting2)
+                            {
+                                chunks.Enqueue(null);
+                                throw new SwarmReadableErrorException("Download timed out, 5 minutes with no new data over stream.");
+                            }
+                            Logs.Info($"Download progressed before timeout, continuing as normal (received {new MemoryNum(await readTask)}).");
+                        }
+                        delayCleanup.Cancel();
+                        int read = await readTask;
+                        if (read <= 0)
+                        {
+                            if (nextOffset > 0)
+                            {
+                                chunks.Enqueue(buffer[..nextOffset]);
+                                totalRead += nextOffset;
+                            }
+                            chunks.Enqueue(null);
+                            break;
+                        }
+                        if (nextOffset + read < 1024 * 1024 * 5)
+                        {
+                            nextOffset += read;
+                        }
+                        else
+                        {
+                            chunks.Enqueue(buffer[..(nextOffset + read)]);
+                            totalRead += nextOffset + read;
+                            nextOffset = 0;
+                        }
+                        if (cancel is not null && cancel.IsCancellationRequested)
                         {
                             chunks.Enqueue(null);
-                            throw new SwarmReadableErrorException("Download timed out, 5 minutes with no new data over stream.");
+                            break;
                         }
-                        Logs.Info($"Download progressed before timeout, continuing as normal (received {new MemoryNum(await readTask)}).");
                     }
-                    delayCleanup.Cancel();
-                    int read = await readTask;
-                    if (read <= 0)
+                    catch (Exception ex)
                     {
-                        if (nextOffset > 0)
+                        if (tryCount < 4 && totalRead > 0 && totalRead < length)
                         {
-                            chunks.Enqueue(buffer[..nextOffset]);
+                            Logs.Debug($"Download from '{altUrl}' failed in loadData with internal exception, (WILL RETRY): {ex.ReadableString()}");
+                            tryCount++;
+                            nextOffset = 0;
+                            workingStream.Dispose();
+                            workingStream = null;
+                            workingResponse.Dispose();
+                            request = new(HttpMethod.Get, url);
+                            if (headers is not null)
+                            {
+                                foreach ((string key, string value) in headers)
+                                {
+                                    request.Headers.Add(key, value);
+                                }
+                            }
+                            request.Headers.Range = new(totalRead, length);
+                            workingResponse = await UtilWebClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, Program.GlobalProgramCancel);
+                            if (workingResponse.StatusCode != HttpStatusCode.PartialContent)
+                            {
+                                throw new SwarmReadableErrorException($"Failed to download {altUrl} (expecting Partial range continue): got response code {(int)workingResponse.StatusCode} {workingResponse.StatusCode}");
+                            }
+                            workingStream = await workingResponse.Content.ReadAsStreamAsync();
+                            continue;
                         }
-                        chunks.Enqueue(null);
-                        break;
-                    }
-                    if (nextOffset + read < 1024 * 1024 * 5)
-                    {
-                        nextOffset += read;
-                    }
-                    else
-                    {
-                        chunks.Enqueue(buffer[..(nextOffset + read)]);
-                        nextOffset = 0;
-                    }
-                    if (cancel is not null && cancel.IsCancellationRequested)
-                    {
-                        chunks.Enqueue(null);
-                        break;
+                        throw;
                     }
                 }
             }
@@ -761,6 +799,11 @@ public static class Utilities
                 Logs.Error($"Download from '{altUrl}' failed in loadData with internal exception: {ex.ReadableString()}");
                 chunks.Enqueue(null);
                 throw;
+            }
+            finally
+            {
+                workingStream?.Dispose();
+                workingResponse?.Dispose();
             }
         });
         void removeFile()

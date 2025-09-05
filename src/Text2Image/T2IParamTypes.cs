@@ -658,7 +658,7 @@ public class T2IParamTypes
             "Disabled", IgnoreIf: "Disabled", GetValues: _ => ["Disabled", "inductor", "cudagraphs"], OrderPriority: 40, Group: GroupAdvancedModelAddons
             ));
         OverridePredictionType = Register<string>(new("Override Prediction Type", "Override the prediction type set in the model.\nThis is almost never a good idea to touch.",
-            "epsilon", Toggleable: true, GetValues: _ => ["v///V Prediction", "v-zsnr///V Prediction (ZSNR)", "epsilon///Epsilon-Pred", "x0", "lcm"], OrderPriority: 50, Group: GroupAdvancedModelAddons
+            "epsilon", Toggleable: true, GetValues: _ => ["v///V Prediction", "v-zsnr///V Prediction (ZSNR)", "epsilon///Epsilon-Pred", "x0", "lcm", "sd3///SD3 (Rectified Flow)"], OrderPriority: 50, Group: GroupAdvancedModelAddons
             ));
         // ================================================ Swarm Internal ================================================
         GroupSwarmInternal = new("Swarm Internal", Open: false, OrderPriority: 0, IsAdvanced: true);
