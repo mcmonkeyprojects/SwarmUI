@@ -1020,7 +1020,8 @@ public class WorkflowGenerator
                 {
                     string modelNode = CreateNode("NunchakuQwenImageDiTLoader", new JObject()
                     {
-                        ["model_name"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat)
+                        ["model_name"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
+                        ["cpu_offload"] = "auto"
                     }, id);
                     LoadingModel = [modelNode, 0];
                 }
