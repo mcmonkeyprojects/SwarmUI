@@ -309,15 +309,16 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 if (!hasDeletedQueueItem)
                 {
                     hasDeletedQueueItem = true;
-                    Logs.Debug("ComfyUI queue-item-remove requested");
+                    Logs.Debug($"ComfyUI queue-item-remove requested, promptId={promptId}");
                     await HttpClient.PostAsync($"{APIAddress}/queue", new StringContent(new JObject() { ["delete"] = new JArray() { promptId } }.ToString()), Program.GlobalProgramCancel);
                 }
                 if (!hasInterrupted && isMe)
                 {
                     hasInterrupted = true;
-                    Logs.Debug("ComfyUI Interrupt requested");
-                    await HttpClient.PostAsync($"{APIAddress}/interrupt", new StringContent(""), Program.GlobalProgramCancel);
+                    Logs.Debug($"ComfyUI Interrupt requested, promptId={promptId}");
+                    await HttpClient.PostAsync($"{APIAddress}/interrupt", new StringContent(new JObject() { ["prompt_id"] = promptId }.ToString()), Program.GlobalProgramCancel);
                 }
+                await HttpClient.PostAsync($"{APIAddress}/history", new StringContent(new JObject() { ["delete"] = new JArray() { promptId } }.ToString()), Program.GlobalProgramCancel);
             }
             while (true)
             {
@@ -515,6 +516,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     takeOutput(new T2IEngine.ImageOutput() { Img = image, IsReal = true, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
                 }
             }
+            await HttpClient.PostAsync($"{APIAddress}/history", new StringContent(new JObject() { ["delete"] = new JArray() { promptId } }.ToString()), Program.GlobalProgramCancel);
         }
         catch (Exception)
         {
