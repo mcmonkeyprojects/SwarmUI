@@ -645,7 +645,7 @@ public static class T2IAPI
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            Process.Start("xdg-open", $"\"{Path.GetFullPath(path)}\"");
+            Process.Start("xdg-open", $"\"{Path.GetDirectoryName(Path.GetFullPath(path))}\"");
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
