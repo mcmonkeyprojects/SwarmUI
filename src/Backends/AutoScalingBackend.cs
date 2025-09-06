@@ -134,7 +134,10 @@ public class AutoScalingBackend : AbstractT2IBackend
                 {
                     continue;
                 }
+                // TODO: Add a "Failed to scale" output of some form
                 // TODO: Add a SwarmSwarmBackend with this URL
+                // TODO: Document how to make the remote instances make any sense
+                // TODO: Code for remote instance to know that it's meant to be remote controlled, and auto-close itself if the master never connects
             }
             Logs.Debug($"SwarmAutoScalingBackend Launch #{id} Output: {line}");
         }

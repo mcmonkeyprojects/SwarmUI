@@ -76,6 +76,11 @@ function comfyFixMenuLocation() {
             space.style.width = `${offsetTarget}px`;
             space.dataset.offsetTarget = offsetTarget;
             logo.parentElement.insertBefore(space, logo.nextSibling);
+            if (!swarmComfyInjectedHeaderSpacer && localStorage.getItem('comfy_buttons_closed')) {
+                setTimeout(() => {
+                    comfyToggleButtonsVisible();
+                }, 100);
+            }
             swarmComfyInjectedHeaderSpacer = space;
         }
         swarmComfyMenu.style.top = `${logo.offsetTop}px`;
@@ -1187,6 +1192,7 @@ function comfyToggleButtonsVisible() {
         if (swarmComfyInjectedHeaderSpacer) {
             swarmComfyInjectedHeaderSpacer.style.width = `${swarmComfyInjectedHeaderSpacer.dataset.offsetTarget}px`;
         }
+        localStorage.removeItem('comfy_buttons_closed');
     }
     else {
         area.style.display = 'none';
@@ -1195,6 +1201,7 @@ function comfyToggleButtonsVisible() {
         if (swarmComfyInjectedHeaderSpacer) {
             swarmComfyInjectedHeaderSpacer.style.width = `30px`;
         }
+        localStorage.setItem('comfy_buttons_closed', 'true');
     }
 }
 

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
+# Ensure correct local path.
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR/.."
+
 source ./launchtools/linux-path-fix.sh
+
+mkdir -p ./src/bin
 
 # Server settings option
 if [ -f ./src/bin/always_pull ]; then
@@ -10,7 +16,7 @@ fi
 
 if [ -d .git ]; then
     cur_head=`git rev-parse HEAD`
-    built_head=`cat src/bin/last_build`
+    built_head=`cat src/bin/last_build 2>/dev/null`
     if [ "$cur_head" != "$built_head" ]; then
         printf "\n\nWARNING: You did a git pull without building. Will now build for you...\n\n"
         touch ./src/bin/must_rebuild

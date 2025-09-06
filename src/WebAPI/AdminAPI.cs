@@ -557,9 +557,17 @@ public static class AdminAPI
                 {
                     string showOutput = await Utilities.RunGitProcess($"show --no-patch --format=%h^%ci^%s {commits[i]}");
                     string[] parts = showOutput.SplitFast('^', 2);
-                    DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
-                    string dateFormat = $"{date:yyyy-MM-dd HH:mm:ss}";
-                    commits[i] = $"{dateFormat}: {parts[2]}";
+                    if (parts.Length < 2)
+                    {
+                        Logs.Error($"Cannot parse commit details for commit '{commits[i]}': yielded '{showOutput}' with split {parts.Length}");
+                        commits[i] = $"{commits[i]}: (unknown commit details, see error in logs)";
+                    }
+                    else
+                    {
+                        DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
+                        string dateFormat = $"{date:yyyy-MM-dd HH:mm:ss}";
+                        commits[i] = $"{dateFormat}: {parts[2]}";
+                    }
                 }
             }
             updatesPreview = [.. commits];
