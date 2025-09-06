@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Ensure correct local path.
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd "$SCRIPT_DIR/.."
+
 source ./launchtools/linux-path-fix.sh
 
 # Server settings option
