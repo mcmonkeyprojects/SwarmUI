@@ -6,9 +6,10 @@
     --light-border: #728787;
     --popup-front: hsl(0, 0%, 6%);
     --button-foreground-disabled: #fff;
-    --text-soft: #525252;
     --background: #aaa;
     --text: #101010;
+    --text-strong: #000000;
+    --text-soft: #525252;
     --emphasis: #c7966b;
     --emphasis-soft: #c7966b;
     --button-text: #101010;

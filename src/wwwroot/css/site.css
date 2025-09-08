@@ -13,35 +13,35 @@
     --toggle-thumb-hover: var(--button-background-hover);
     --toggle-thumb-active-hover: color-mix(in srgb, var(--emphasis) 25%, white);
     --font-monospace: 'Courier New', Courier, monospace;
+    --red: #ff0000;
+    --green: #00ff00;
     --yellow: #ffff00;
+    --white: #ffffff;
+    --black: #000000;
     --star: #ffff00;
+    --gray: #808080;
+    --darkgray: #505050;
+    --transparentdarkred: rgba(100, 0, 0, 0.5);
     --status-bar-text-color: #000000;
     --status-bar-warn-color-start-end: #dddd55;
     --status-bar-warn-color-middle: #888800;
     --status-bar-error-color-start-end: #bb2020;
     --status-bar-error-color-middle: #880000;
     --status-bar-soft-color: #888800;
-    --backend-errored-border-color: #ff0000;
-    --backend-disabled-border-color: #ffaa00;
-    --backend-running-border-color: #00aa33;
-    --backend-idle-border-color: #688772;
-    --backend-loading-border-color: #335500;
-    --backend-waiting-border-color: #335500;
-    --backend-button-foreground-hover: #000000;
-    --backend-button-foreground-disabled: #505050;
-    --basic-button-bg-color-disabled: rgba(100, 0, 0, 0.5);
-    --dropdown-border-color: gray;
-    --notice-pop-green-bg-color: #005500;
-    --toast-header-bg: #303030;
-    --toast-body-bg: #444;
-    --slider-toggle-background: #ccc;
-    --slider-toggle-thumb-color: #4b4b4b;
-    --link-color: rgba(var(--bs-link-color-rgb),var(--bs-link-opacity,1));
-    --code-color: var(--bs-code-color);
-    --model-img-border-color-hover: white;
+    --backend-errored: #ff0000;
+    --backend-disabled: #ffaa00;
+    --backend-running: #00aa33;
+    --backend-idle: #688772;
+    --backend-loading: #335500;
+    --backend-waiting: #335500;
+    --notice-pop: #005500;
+    --toast-header: #303030;
+    --toast-body: #444;
+    --toggle-background: #ccc;
+    --toggle-thumb-color: #4b4b4b;
+    --model-img-border-color-hover: #ffffff;
     --model-block-menu-button-border-color-hover: black;
     --model-block-menu-button-color-hover: white;
-    --qbutton-foreground-color-hover: #000000;
 }
 .modal-content {
     background-color: var(--background) !important;
@@ -160,22 +160,22 @@ body {
     padding: 1.5px;
 }
 .backend-errored {
-    border: 1px solid var(--backend-errored-border-color);
+    border: 1px solid var(--backend-errored);
 }
 .backend-disabled {
-    border: 1px solid var(--backend-disabled-border-color);
+    border: 1px solid var(--backend-disabled);
 }
 .backend-running {
-    border: 1px solid var(--backend-running-border-color);
+    border: 1px solid var(--backend-running);
 }
 .backend-idle {
-    border: 1px solid var(--backend-idle-border-color);
+    border: 1px solid var(--backend-idle);
 }
 .backend-loading {
-    border: 1px solid var(--backend-loading-border-color);
+    border: 1px solid var(--backend-loading);
 }
 .backend-waiting {
-    border: 1px solid var(--backend-waiting-border-color);
+    border: 1px solid var(--backend-waiting);
 }
 .card {
     color: var(--text);
@@ -210,13 +210,13 @@ body {
     border: 1px solid var(--green);
 }
 .backend-edit-button:hover {
-    color: var(--backend-button-foreground-hover) !important;
-    border: 1px solid var(--backend-button-foreground-hover) !important;
+    color: var(--black) !important;
+    border: 1px solid var(--black) !important;
     background-color: var(--green) !important;
 }
 .backend-edit-button:disabled {
-    color: var(--backend-button-foreground-disabled) !important;
-    border: 1px solid var(--backend-button-foreground-disabled) !important;
+    color: var(--darkgray) !important;
+    border: 1px solid var(--darkgray) !important;
     background-color: transparent !important;
 }
 .backend-delete-button {
@@ -224,8 +224,8 @@ body {
     border: 1px solid var(--red);
 }
 .backend-delete-button:hover {
-    color: var(--backend-button-foreground-hover) !important;
-    border: 1px solid var(--backend-button-foreground-hover) !important;
+    color: var(--black) !important;
+    border: 1px solid var(--black) !important;
     background-color: var(--red) !important;
 }
 .backend-save-button {
@@ -234,8 +234,8 @@ body {
     border: 1px solid var(--green);
 }
 .backend-save-button:hover {
-    color: var(--backend-button-foreground-hover) !important;
-    border: 1px solid var(--backend-button-foreground-hover) !important;
+    color: var(--black) !important;
+    border: 1px solid var(--black) !important;
     background-color: var(--green) !important;
 }
 .backend-toggle-switch {
@@ -407,11 +407,11 @@ textarea, input, select {
     animation-duration: 2s;
 }
 .toast {
-    background-color: var(--toast-body-bg);
+    background-color: var(--toast-body);
     color: var(--text);
 }
 .toast-header {
-    background-color: var(--toast-header-bg);
+    background-color: var(--toast-header);
     color: var(--text);
 }
 .auto-input-qbutton {
@@ -425,7 +425,7 @@ textarea, input, select {
 }
 .auto-input-qbutton:hover {
     background-color: var(--qbutton);
-    color: var(--qbutton-foreground-color-hover) !important;
+    color: var(--text-strong) !important;
 }
 .sui-popover {
     background-color: var(--popup-back);
@@ -576,20 +576,11 @@ textarea, input, select {
     background-color: color-mix(in srgb, var(--button-background-hover) 50%, var(--emphasis));
 }
 .basic-button:disabled {
-    background-color: color-mix(in srgb, var(--button-background) 40%, var(--basic-button-bg-color-disabled));
+    background-color: color-mix(in srgb, var(--button-background) 40%, var(--transparentdarkred));
     color: color-mix(in srgb, var(--button-text) 60%, transparent);
 }
 .simpler-button-disable:disabled {
     background-color: color-mix(in srgb, var(--button-background) 40%, transparent);
-}
-.rst-welcome-msg-btn {
-    background-color: var(--button-background);
-    color: var(--button-text);
-    border: 1px solid var(--button-border);
-}
-.rst-welcome-msg-btn:hover {
-    background-color: var(--button-background-hover);
-    color: var(--button-foreground-hover);
 }
 .text_button {
     background-color: color-mix(in srgb, var(--button-background) 50%, transparent);
@@ -610,12 +601,12 @@ textarea, input, select {
     background-color: transparent;
 }
 .dropdown-menu {
-    --bs-dropdown-bg: var(--popup-back);
-    --bs-dropdown-border-color: var(--dropdown-border-color);
+    background-color: var(--popup-back);
+    border-color: var(--light-border);
     color: var(--popup-front);
 }
 .dropdown-divider {
-    border-color: var(--dropdown-border-color);
+    border-color: var(--light-border);
 }
 .info-popover-button {
     cursor: pointer;
@@ -824,7 +815,7 @@ textarea, input, select {
     width: fit-content;
 }
 .notice-pop-green {
-    background-color: var(--notice-pop-green-bg-color);
+    background-color: var(--notice-pop);
     color: var(--text);
 }
 .drag_image_target_highlight {
@@ -1008,7 +999,7 @@ input[type="range"]::-moz-range-track {
     box-shadow: inset 0px 0px 3px rgba(0, 0, 0, 0.35);
     border-radius: 16px;
     pointer-events: none;
-    background: var(--slider-toggle-background);
+    background: var(--toggle-background);
 }
 .auto-slider-toggle-content::after {
     content: "";
@@ -1017,7 +1008,7 @@ input[type="range"]::-moz-range-track {
     left: -1px;
     width: var(--toggle-thumb-size);
     height: var(--toggle-thumb-size);
-    background: var(--slider-toggle-thumb-color);
+    background: var(--toggle-thumb-color);
     border-radius: 20px;
     transition: left 0.2s, background-color 0.2s;
 }
