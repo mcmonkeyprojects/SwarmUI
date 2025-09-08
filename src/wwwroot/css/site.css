@@ -342,6 +342,9 @@ input[type="text"]:focus, textarea:focus {
     outline: solid 1px var(--emphasis);
     border-color: var(--emphasis);
 }
+input[type="file"] {
+    cursor: pointer;
+}
 .auto-slider-range-wrapper {
     display: contents;
 }
