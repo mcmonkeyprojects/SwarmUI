@@ -778,7 +778,7 @@ body {
     width: calc(100% - 1rem);
     height: 2.5rem;
     display: block;
-    overflow-x: scroll;
+    overflow-x: auto;
     overflow-y: hidden;
     margin-left: 0.5rem;
 }
