@@ -679,7 +679,7 @@ public static class T2IAPI
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            Process.Start("powershell.exe", $"-command Set-Clipboard -Path \"{Path.GetFullPath(path)}\"");
+            Process.Start("powershell.exe", $"-command Set-Clipboard -Path \\\"{Path.GetFullPath(path)}\\\"");
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
