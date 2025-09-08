@@ -416,7 +416,7 @@ body {
     overflow: auto;
 }
 .model-block img:hover {
-    border: 2px solid white;
+    border: 2px solid var(--model-img-border-color-hover);
 }
 .model-block-small {
     height: 8rem;
@@ -468,7 +468,8 @@ body {
     opacity: 1.0;
     background-color: var(--emphasis) !important;
     cursor: pointer;
-    border: 1px solid black;
+    border: 1px solid var(--button-border);
+    color: var(--text-strong);
 }
 .model-selected {
     border: 1px solid var(--box-selected-border-stronger);
@@ -590,10 +591,10 @@ body {
     margin-left: 5%;
 }
 .modal_error_bottom {
-    color: #ff0000;
+    color: var(--red);
 }
 .modal_success_bottom {
-    color: #00ff00;
+    color: var(--green);
 }
 #add_preset_modal {
     max-height: calc(95vh - var(--bs-modal-margin));
@@ -634,7 +635,7 @@ body {
     display: inline-block;
     color: var(--text);
     font-weight: bold;
-    border: 1px solid red;
+    border: 1px solid var(--red);
     border-radius: 0.5rem;
     margin-left: 0.2rem;
     padding-left: 0.2rem;
@@ -642,7 +643,7 @@ body {
     cursor: pointer;
 }
 .preset-remove-button:hover {
-    background-color: color-mix(in srgb, red 70%, black);
+    background-color: color-mix(in srgb, var(--red) 70%, black);
 }
 .new_preset_image {
     align-items: center;
@@ -720,8 +721,8 @@ body {
     padding-left: 2rem;
 }
 .setting-looks-wrong {
-    border: 1px  solid red !important;
-    box-shadow: 0px 0px 1px 1px red !important;
+    border: 1px  solid var(--red) !important;
+    box-shadow: 0px 0px 1px 1px var(--red) !important;
 }
 .group-label {
     position: relative;
@@ -1053,12 +1054,12 @@ body {
 .alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
     opacity: 1.0;
     background-color: color-mix(in srgb, transparent 50%, var(--background));
-    border: 1px solid red;
+    border: 1px solid var(--red);
 }
 
 .alt-prompt-image-container-remove-button:hover {
     opacity: 1.0;
-    background-color: color-mix(in srgb, red 70%, black) !important;
+    background-color: color-mix(in srgb, var(--red) 70%, black) !important;
     border: 1px solid black;
     cursor: pointer;
 }
@@ -1110,10 +1111,10 @@ body {
     padding-left: 0.6rem;
     padding-right: 0.6rem;
     margin: 1px;
-    background-color: color-mix(in srgb, var(--background) 70%, #ffff00);
+    background-color: color-mix(in srgb, var(--background) 70%, var(--yellow));
 }
 .clip-tokenization-word-tweak {
-    background-color: color-mix(in srgb, var(--background) 70%, #00ff00);
+    background-color: color-mix(in srgb, var(--background) 70%, var(--green));
 }
 .clip-tokenization-wordbreak {
     font-size: 80%;
@@ -1156,7 +1157,7 @@ body {
     left: 0;
     width: 0;
     height: 2px;
-    background-color: #00ff00;
+    background-color: var(--green);
 }
 .controlnet-preview-result img {
     max-width: 200px;

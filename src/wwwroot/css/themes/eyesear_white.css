@@ -27,9 +27,12 @@
     --batch-0: rgba(200, 200, 200, 0.3);
     --batch-1: rgba(200, 200, 200, 0.3);
     --text: #101010;
+    --text-strong: #000000;
     --text-soft: #303030;
     --box-selected-border: rgba(225, 162, 85, 0.8);
     --box-selected-background: rgba(255, 162, 85, 0.2);
     --box-selected-border-stronger: rgba(255, 162, 85, 1.0);
     --box-selected-background-stronger: rgba(255, 162, 85, 0.3);
+    --toast-header-bg: #ffffffd9;
+    --toast-body-bg: #ffffffd9;
 }

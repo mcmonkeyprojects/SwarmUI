@@ -6,9 +6,10 @@
     --light-border: #A4A4A4;
     --popup-front: hsl(0, 0%, 6%);
     --button-foreground-disabled: #fff;
-    --text-soft: #525252;
     --background: #d3cdc0;
     --text: #101010;
+    --text-strong: #000000;
+    --text-soft: #525252;
     --emphasis: #c76bbb;
     --emphasis-soft: #c76bbb;
     --button-text: #101010;
@@ -20,6 +21,8 @@
     --range-track-color: #B1B1B1;
     --range-thumb-color: #a1a1a1;
     --qbutton: #8b6445;
+    --toast-header-bg: #ffffffd9;
+    --toast-body-bg: #ffffffd9;
 }
 body {
     scrollbar-color: #a1a1a1 #dbd4c3;
