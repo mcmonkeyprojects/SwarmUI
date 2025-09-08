@@ -329,7 +329,7 @@ public class WorkflowGeneratorSteps
                     string teaCacheNode = g.CreateNode("EasyCache", new JObject()
                     {
                         ["model"] = g.LoadingModel,
-                        ["reuse_threshold"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheThreshold, 0.25),
+                        ["reuse_threshold"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheThreshold, 0),
                         ["start_percent"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheStart, 0),
                         ["end_percent"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheEnd, 1),
                         ["verbose"] = false

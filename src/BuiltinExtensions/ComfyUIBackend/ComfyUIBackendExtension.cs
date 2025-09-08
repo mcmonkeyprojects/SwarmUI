@@ -717,7 +717,7 @@ public class ComfyUIBackendExtension : Extension
             "disabled", IgnoreIf: "disabled", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, GetValues: (_) => ["disabled", "all", "base gen only///base gen only (no refiner or video)", "video only"], OrderPriority: 14
             ));
         EasyCacheThreshold = T2IParamTypes.Register<double>(new("EasyCache Threshold", "What threshold to use with EasyCache.\nSet to 0 to disable.\nHigher values skip more steps.",
-            "0.2", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, DependNonDefault: EasyCacheMode.Type.ID
+            "0.2", Min: 0, Max: 1, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, DependNonDefault: EasyCacheMode.Type.ID
             ));
         EasyCacheStart = T2IParamTypes.Register<double>(new("EasyCache Start", "When to start applying EasyCache, as a fraction of steps (if enabled).\n0 or 0.15 is the recommended default for most models.",
             "0.15", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14.6, DependNonDefault: EasyCacheMode.Type.ID
