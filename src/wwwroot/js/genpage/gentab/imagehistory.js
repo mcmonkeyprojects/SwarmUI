@@ -83,7 +83,16 @@ function buttonsForImage(fullsrc, src, metadata) {
                 genericRequest('OpenImageFolder', {'path': fullsrc}, data => {});
             }
         });
-    }
+        buttons.push({
+            label: 'Copy File',
+            title: 'Copies the selected file to clipboard.',
+            onclick: (e) => {
+                genericRequest('CopyImagePath', {'path': fullsrc}, data => {
+                    doNoticePopover('Copied!', 'notice-pop-green');
+                });
+            }
+        });
+     }
     buttons.push({
         label: 'Download',
         title: 'Downloads this image to your PC.',

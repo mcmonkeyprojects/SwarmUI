@@ -31,6 +31,7 @@ public static class T2IAPI
         API.RegisterAPICall(ListImages, false, Permissions.ViewImageHistory);
         API.RegisterAPICall(ToggleImageStarred, true, Permissions.UserStarImages);
         API.RegisterAPICall(OpenImageFolder, true, Permissions.LocalImageFolder);
+        API.RegisterAPICall(CopyImagePath, true, Permissions.LocalImageFolder);
         API.RegisterAPICall(DeleteImage, true, Permissions.UserDeleteImage);
         API.RegisterAPICall(ListT2IParams, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(TriggerRefresh, true, Permissions.FundamentalGenerateTabAccess); // Intentionally weird perm here: internal check for readonly vs true refresh
@@ -655,6 +656,43 @@ public static class T2IAPI
         {
             Logs.Warning("Cannot open image path on unrecognized OS type.");
             return new JObject() { ["error"] = "Cannot open image folder on this OS." };
+        }
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Copies the selected file to the clipboard. Used for local users directly.", "\"success\": true")]
+    public static async Task<JObject> CopyImagePath(Session session,
+        [API.APIParameter("The path to the image file to copy.")] string path)
+    {
+        string origPath = path;
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        (path, string consoleError, string userError) = WebServer.CheckFilePath(root, path);
+        if (consoleError is not null)
+        {
+            Logs.Error(consoleError);
+            return new JObject() { ["error"] = userError };
+        }
+        if (!File.Exists(path))
+        {
+            Logs.Warning($"User {session.User.UserID} tried to copy file path '{origPath}' which maps to '{path}', but cannot as the file does not exist.");
+            return new JObject() { ["error"] = "That file does not exist, cannot copy." };
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            Process.Start("powershell.exe", $"-command Set-Clipboard -Path \"{Path.GetFullPath(path)}\"");
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            Process.Start("xclip", $"-selection clipboard \"{Path.GetFullPath(path)}\"");
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            Process.Start("osascript", $"-e 'set the clipboard to (POSIX file \"{Path.GetFullPath(path)}\")'");
+        }
+        else
+        {
+            Logs.Warning("Cannot copy file on unrecognized OS type.");
+            return new JObject() { ["error"] = "Cannot copy file on this OS." };
         }
         return new JObject() { ["success"] = true };
     }
