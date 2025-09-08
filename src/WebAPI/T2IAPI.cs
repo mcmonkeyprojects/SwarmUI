@@ -681,10 +681,6 @@ public static class T2IAPI
         {
             Process.Start("powershell.exe", $"-command Set-Clipboard -Path \\\"{Path.GetFullPath(path)}\\\"");
         }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            Process.Start("xclip", $"-selection clipboard \"{Path.GetFullPath(path)}\"");
-        }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             Process.Start("osascript", $"-e 'set the clipboard to (POSIX file \"{Path.GetFullPath(path)}\")'");
