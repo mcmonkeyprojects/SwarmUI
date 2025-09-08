@@ -38,18 +38,15 @@ public static class MetadataHelper
 
     /// <summary>
     /// Pre-processes the image to prevent the WebP encoder from discarding the alpha channel.
-    /// It does this by setting all alpha values to a slightly non-opaque value (254).
+    /// It does this by creating a semi-transparent vertical line on the right edge of the image.
     /// </summary>
-    private static void PrepareImageForWebPAlpha(Image<Rgba32> image)
+    public static void PrepareImageForWebPAlpha(Image<Rgba32> image)
     {
-        for (int x = 0; x < image.Width; x++)
+        for (int y = 0; y < image.Height; y++)
         {
-            for (int y = 0; y < image.Height; y++)
-            {
-                Rgba32 pixel = image[x, y];
-                pixel.A = 254; // Set alpha just below fully opaque
-                image[x, y] = pixel;
-            }
+            Rgba32 pixel = image[image.Width - 1, y];
+            pixel.A = 254;
+            image[image.Width - 1, y] = pixel;
         }
     }
 
