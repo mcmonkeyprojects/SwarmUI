@@ -340,11 +340,13 @@ public class Image
         }
         using MemoryStream ms = new();
         ISImage img = ToIS;
-        if (metadata is not null && stealthMetadata.ToLowerFast() != "false" && format == "PNG")
+        bool isLossyWebp = format.StartsWith("WEBP") && format != "WEBP_LOSSLESS";
+        bool canDoStealth = metadata is not null && (format == "PNG" || format.StartsWith("WEBP")) && !(isLossyWebp && stealthMetadata.ToLowerFast() == "rgb");
+        if (stealthMetadata.ToLowerFast() != "false" && canDoStealth)
         {
             string actualStealthMode = stealthMetadata.ToLowerInvariant();
             ISImage32 rgbaImage = img.CloneAs<Rgba32>();
-            MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode);
+            MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode, format);
             img.Dispose();
             img = rgbaImage;
         }

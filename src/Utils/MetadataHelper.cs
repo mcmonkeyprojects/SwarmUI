@@ -15,9 +15,16 @@ public static class MetadataHelper
     /// <param name="image">The image to modify. Must be in Rgba32 format.</param>
     /// <param name="metadata">The metadata string to embed.</param>
     /// <param name="mode">The encoding mode: "Alpha" or "RGB".</param>
-    public static void EncodeStealthMetadata(Image<Rgba32> image, string metadata, string mode)
+    /// <param name="format">The target image format (e.g., "webp", "png").</param>
+    public static void EncodeStealthMetadata(Image<Rgba32> image, string metadata, string mode, string format)
     {
         string actualMode = mode.ToLowerInvariant();
+        // stupid hack to stop the alpha layer from getting deleted
+        if (actualMode == "alpha" && format.StartsWith("WEBP"))
+        {
+            PrepareImageForWebPAlpha(image);
+        }
+
         string binaryData = PrepareData(metadata, actualMode, true);
         if (actualMode == "alpha")
         {
@@ -26,6 +33,20 @@ public static class MetadataHelper
         else if (actualMode == "rgb")
         {
             EmbedRgb(image, binaryData);
+        }
+    }
+
+    /// <summary>
+    /// Pre-processes the image to prevent the WebP encoder from discarding the alpha channel.
+    /// It does this by creating a semi-transparent vertical line on the right edge of the image.
+    /// </summary>
+    public static void PrepareImageForWebPAlpha(Image<Rgba32> image)
+    {
+        for (int y = 0; y < image.Height; y++)
+        {
+            Rgba32 pixel = image[image.Width - 1, y];
+            pixel.A = 254;
+            image[image.Width - 1, y] = pixel;
         }
     }
 
