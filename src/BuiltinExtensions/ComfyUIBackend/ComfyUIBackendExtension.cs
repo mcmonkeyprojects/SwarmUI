@@ -555,11 +555,11 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, SetClipDevice;
+    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar;
 
-    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, RenormCFG;
+    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG;
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier, Text2VideoFrameInterpolationMultiplier;
 
@@ -712,6 +712,18 @@ public class ComfyUIBackendExtension : Extension
             ));
         YoloModelInternal = T2IParamTypes.Register<string>(new("YOLO Model Internal", "Parameter for internally tracking YOLOv8 models.\nThis is not for real usage, it is just to expose the list to the UI handler.",
             "", IgnoreIf: "", FeatureFlag: "yolov8", Group: ComfyAdvancedGroup, GetValues: (_) => YoloModels, Toggleable: true, IsAdvanced: true, AlwaysRetain: true, VisibleNormally: false
+            ));
+        EasyCacheMode = T2IParamTypes.Register<string>(new("EasyCache Mode", "When to use EasyCache.\nEasyCache is a trick to accelerate diffusion models, especially video models.\nThat is: generation runs faster, but loses some quality.\nYou can leave this disabled, enabled for all model sampling stages, or only enabled for certain model sampling stages.\n(This separation is so eg you can accelerate your video generation, without losing quality of an initial image).",
+            "disabled", IgnoreIf: "disabled", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, GetValues: (_) => ["disabled", "all", "base gen only///base gen only (no refiner or video)", "video only"], OrderPriority: 14
+            ));
+        EasyCacheThreshold = T2IParamTypes.Register<double>(new("EasyCache Threshold", "What threshold to use with EasyCache.\nSet to 0 to disable.\nHigher values skip more steps.",
+            "0.2", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, DependNonDefault: EasyCacheMode.Type.ID
+            ));
+        EasyCacheStart = T2IParamTypes.Register<double>(new("EasyCache Start", "When to start applying EasyCache, as a fraction of steps (if enabled).\n0 or 0.15 is the recommended default for most models.",
+            "0.15", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14.6, DependNonDefault: EasyCacheMode.Type.ID
+            ));
+        EasyCacheEnd = T2IParamTypes.Register<double>(new("EasyCache End", "When to stop applying EasyCache, as a fraction of steps (if enabled).\n1 or 0.95 is the recommended default for most models.",
+            "0.95", IgnoreIf: "1", Min: 0, Max: 1, Step: 0.05, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 14.7, DependNonDefault: EasyCacheMode.Type.ID
             ));
         TeaCacheMode = T2IParamTypes.Register<string>(new("TeaCache Mode", "When to use TeaCache.\nTeaCache is a trick to accelerate diffusion models, especially video models.\nThat is: generation runs faster, but loses some quality.\nSee <a target=\"_blank\" href=\"https://liewfeng.github.io/TeaCache/\">here for more info</a>.\nYou can leave this disabled, enabled for all model sampling stages, or only enabled for certain model sampling stages.\n(This separation is so eg you can accelerate your video generation, without losing quality of an initial image).",
             "disabled", IgnoreIf: "disabled", FeatureFlag: "teacache", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, GetValues: (_) => ["disabled", "all", "base gen only///base gen only (no refiner or video)", "video only"], OrderPriority: 15

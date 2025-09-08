@@ -318,6 +318,25 @@ public class WorkflowGeneratorSteps
                     Logs.Debug($"Ignore TeaCache Mode parameter because the current model is '{g.CurrentModelClass()?.Name ?? "(none)"}' which does not support TeaCache.");
                 }
             }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.EasyCacheMode, out string easyCacheMode) && easyCacheMode != "disabled")
+            {
+                if (teaCacheMode == "base gen only" && g.LoadingModelType != "Base")
+                {
+                    // wrong step, skip
+                }
+                else if (g.IsVideoModel() || teaCacheMode != "video only")
+                {
+                    string teaCacheNode = g.CreateNode("EasyCache", new JObject()
+                    {
+                        ["model"] = g.LoadingModel,
+                        ["reuse_threshold"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheThreshold, 0.25),
+                        ["start_percent"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheStart, 0),
+                        ["end_percent"] = g.UserInput.Get(ComfyUIBackendExtension.EasyCacheEnd, 1),
+                        ["verbose"] = false
+                    });
+                    g.LoadingModel = [teaCacheNode, 0];
+                }
+            }
         }, -4);
         AddModelGenStep(g =>
         {
