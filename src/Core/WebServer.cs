@@ -228,13 +228,15 @@ public class WebServer
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
             {
                 Logs.Debug($"ComfyBackendDirect call via Referrer '{referrer}' was misrouted, rerouting to 'ComfyBackendDirect{context.Request.Path}'");
-                context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
+                context.Response.StatusCode = StatusCodes.Status307TemporaryRedirect;
+                context.Response.Headers.Location = $"/ComfyBackendDirect{context.Request.Path}";
                 return;
             }
             else if (path.StartsWith("/assets/"))
             {
                 Logs.Debug($"ComfyBackendDirect assets call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
-                context.Response.Redirect($"/ComfyBackendDirect{context.Request.Path}");
+                context.Response.StatusCode = StatusCodes.Status307TemporaryRedirect;
+                context.Response.Headers.Location = $"/ComfyBackendDirect{context.Request.Path}";
                 return;
             }
             if (Program.ServerSettings.Network.EnableSpecialDevForwarding)

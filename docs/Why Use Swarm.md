@@ -36,9 +36,18 @@ Swarm is a wrapper around Comfy - it contains Comfy, in full, node graph and all
 
 (TODO) basically Swarm is a very good UI that covers about everything other UIs do, and has a lot of power features that they don't, and a very very strong core (Comfy) that outpaces most others in performance.
 
-### I am an online SD UI user
+### I use online AI generation services
 
-(TODO) basically running locally is really cool and gives you privacy and control and doesn't cost money and etc, and Swarm is the best option for local.
+So you're using one of those big well-known name brand AI image/video/whatever generation sites. Cool! I won't lie, they're pretty powerful. It varies as the tech advances, but often the best AI model is locked behind an online service, not one you can run at home. So why use local free AI options like Swarm?
+- Well, first, it's free! As long as you have a decently capable computer.
+- When you generate locally, you control every parameter. A very common activity when generating locally is to lock everything, even the random seed, and tweak the tiniest bit piece by piece under a generation goes perfectly. Different webservices give you different degrees of control, but none give you *everything*. Local really does give you everything *(don't worry, things still default to convenient easy options, you only have to worry about the fine grained parameters if you really want to)*.
+- Do you want to generate pictures based on yourself, your friends, your family, etc? It's hard to trust the privacy policies of big tech companies. Swarm runs entirely only your own computer, it doesn't upload anything to anyone. So if privacy is a major concern, running locally is an obligation.
+    - Do you work at a company or otherwise on content under an NDA? Private home usage might even be *legally obligated* in that case.
+- Do you want to generate something... not conventionally permitted in public? Maybe you want something NSFW, maybe you want to want to generate in a copyrighted style or using characters from a copyrighted brand that has lots of lawyers. These types of generations often end up having to be forbidden and blocked on the major online services. But if you're running at home? No problem! I have no way to know what you're generating and no reason to care, you may your own choices.
+    - You are responsible for your own creations. If you make something problematic and post it online, all the trouble is on your head alone.
+- Do you want to generate something... perfectly fine and normal? Chances are, that's forbidden by online services too. Not because they intend to, but just because they're using AI to automate blocking, and AI is nowhere near perfect yet. One of the most common reasons people switch from online to local, is webservices telling them "no" to very simple inoffensive requests - I've heard stories ranging from ChatGPT saying that a picture of a kid in a rocket ship was too dangerous because they could get hurt, to a muslim being told they're not allowed to create images of their own culture because it's too offensive.
+- Do you want to generate something... less commonly known or hard to get right? Maybe a favorite character from a niche show, maybe a musical instrument but your favorite online generator keeps messing the strings up, or a thousand other things. AI is not magic, it's not perfect, it makes mistakes. With an online generator, often if it messes up, then it just can't do it. With local generation, you have options! You can pick from thousands of other models to find one that's right, or you can train your own. Swarm doesn't include its own model trainer yet, but other model training UIs such as OneTrainer are easy to use and output files compatible with Swarm.
+- Do you want to generate something... just like what you've generated a year ago? Often, major web services will shut down, or update to a new model, or increase prices, or etc. Whatever they do, you just gotta deal with it. Running at home, whatever you ran a year ago, you can definitely still do today, or 10 years from now.
 
 ### I am running a large professional AI service
 

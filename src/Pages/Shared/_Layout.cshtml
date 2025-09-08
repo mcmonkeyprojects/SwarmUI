@@ -13,18 +13,18 @@
         WebServer.ThemeData theme = Program.Web.RegisteredThemes[themeId];
         string bsUrl = theme.IsDark ? "css/bootstrap.min.css" : "css/bootstrap_light.min.css";
         <link rel="stylesheet" id="bs_theme_header" href="@bsUrl" />
+        <link rel="stylesheet" href="css/select2.min.css" />
+        <link rel="stylesheet" href="css/select2_bootstrap.min.css" />
+        <link rel="stylesheet" id="sitecssheader" href="css/site.css?vary=@Utilities.VaryID" />
+        @RenderSection("Header", required: false)
+        @WebServer.PageHeaderExtra
         foreach (string path in theme.CSSPaths)
         {
             string themeUrl = $"{path}?vary={Utilities.VaryID}";
             <link class="theme_sheet_header" rel="stylesheet" href="@themeUrl" />
         }
     }
-    <link rel="stylesheet" href="css/select2.min.css" />
-    <link rel="stylesheet" href="css/select2_bootstrap.min.css" />
-    <link rel="stylesheet" id="sitecssheader" href="css/site.css?vary=@Utilities.VaryID" />
     <link id="favicon" rel="shortcut icon" href="favicon.ico" />
-    @RenderSection("Header", required: false)
-    @WebServer.PageHeaderExtra
     <script src="js/lib/jquery.min.js"></script>
     <script src="js/lib/bootstrap.min.js"></script>
     <script src="js/lib/select2.min.js"></script>

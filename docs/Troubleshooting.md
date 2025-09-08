@@ -104,8 +104,11 @@ If you're an advanced user familiar with command line usage and/or with a custom
 The easiest way to reinstall, is just:
 - Close SwarmUI
 - Rename the Swarm folder to `Old_SwarmUI`
-- run the installer again, fully, til you get to a working Generate tab
+- run the installer again, fully, until you get to a working Generate tab
+- close SwarmUI
 - copy/move over any files you want from Old to new.
+    - Notably, you probably want to move back in: `Data`, `Models`, `Output`
+- Then relaunch SwarmUI
 
 However, if you want an "in-place reinstall":
 - Close SwarmUI

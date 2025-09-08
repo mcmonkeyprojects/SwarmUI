@@ -405,6 +405,7 @@ textarea, input, select {
     transform: translate(-50%, 0);
     animation-name: toast-flash;
     animation-duration: 2s;
+    border-radius: 6px;
 }
 .toast {
     background-color: var(--toast-body);

@@ -19,11 +19,11 @@ public static class NetworkBackendUtils
 {
     #region Network
     /// <summary>Create and preconfigure a basic <see cref="HttpClient"/> instance to make web requests with.</summary>
-    public static HttpClient MakeHttpClient()
+    public static HttpClient MakeHttpClient(int timeoutMinutes = 10)
     {
         HttpClient client = new(new SocketsHttpHandler() { PooledConnectionLifetime = TimeSpan.FromMinutes(10), MaxConnectionsPerServer = 1000 });
         client.DefaultRequestHeaders.UserAgent.ParseAdd($"SwarmUI/{Utilities.Version}");
-        client.Timeout = TimeSpan.FromMinutes(10);
+        client.Timeout = TimeSpan.FromMinutes(timeoutMinutes);
         return client;
     }
 

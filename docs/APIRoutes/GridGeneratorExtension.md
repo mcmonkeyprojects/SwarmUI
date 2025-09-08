@@ -43,7 +43,7 @@
 
 #### Permission Flag
 
-`gridgen_read_grids` - `[Grid Generator] Read Grids` in group `User`
+`view_image_history` - `View Image History` in group `User`
 
 #### Parameters
 

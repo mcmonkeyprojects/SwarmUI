@@ -115,7 +115,7 @@
                     <span class="card-text">
                         @if (Program.VersionUpdateMessageShort is not null)
                         {
-                            <span>@Program.VersionUpdateMessageShort</span>
+                            <div>@(new HtmlString(Program.VersionUpdateMessageShort))</div>
                         }
                         <span id="updates_available_notice_area" style="white-space:pre-wrap">(Loading...)</span>
                         <br><button class="basic-button translate" onclick="check_for_updates()">Check For Updates</button>

@@ -90,6 +90,7 @@ Modify and re-init an already registered backend.
 | backend_id | Int32 | ID of the backend to edit. | **(REQUIRED)** |
 | title | String | New title of the backend. | **(REQUIRED)** |
 | raw_inp | JObject |  Input should contain a map of `"settingname": value`. | **(REQUIRED)** |
+| new_id | Int32 | Optional new ID to change the backend to. | `-1` |
 
 #### Return Format
 

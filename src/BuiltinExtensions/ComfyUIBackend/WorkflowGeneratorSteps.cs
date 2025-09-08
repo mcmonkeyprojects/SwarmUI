@@ -105,7 +105,7 @@ public class WorkflowGeneratorSteps
             {
                 (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(1, g.LoadingModel, g.LoadingClip);
             }
-            else if (g.IsImageToVideoSwap && g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<videoswap"))
+            else if (g.IsImageToVideoSwap)
             {
                 (g.LoadingModel, g.LoadingClip) = g.LoadLorasForConfinement(T2IParamInput.SectionID_VideoSwap, g.LoadingModel, g.LoadingClip);
             }
@@ -1787,6 +1787,8 @@ public class WorkflowGeneratorSteps
                     {
                         Generator = g,
                         VideoModel = extendModel,
+                        VideoSwapModel = g.UserInput.Get(T2IParamTypes.VideoExtendSwapModel, null),
+                        VideoSwapPercent = g.UserInput.Get(T2IParamTypes.VideoExtendSwapPercent, 0.5),
                         Frames = frames,
                         VideoCFG = cfg,
                         VideoFPS = videoFps,

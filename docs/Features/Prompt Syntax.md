@@ -95,6 +95,7 @@
 
 - If your model or current LoRA's have a trigger phrase in their metadata, you can use `<trigger>` to automatically apply those within a prompt.
     - If you have multiple models with trigger phrases, they will be combined into a comma-separated list. For example `cat` and `dog` will be inserted as `cat, dog`.
+    - Semicolons in trigger phrases are automatically replaced with commas. For example, `cat; dog` will be replaced with `cat, dog`.
     - Note this is just a simple autofill, especially for usage in grids or other bulk generations, and not meant to robustly handle all cases. If you require specific formatting, you'll want to just copy the trigger phrase in directly yourself.
     - Fills empty when there's no data to fill.
 
@@ -239,6 +240,7 @@
     - For example, `<extend:33>` will extend the video by 33 frames.
     - Use the `Video Extend` parameter group to configure values for this. At least `Video Extend Model` must be set.
     - Must set Overlap less than 1/3rd of the extend frame count.
+        - For many I2V models, overlap of `1` is likely ideal, unless using a model that has been trained to use overlap well.
     - Use the `Advanced Video` parameters as well.
     - Under `Other Fixes` -> `Trim Video End Frames` may be useful on some models. Do not use `Trim Start`
 
