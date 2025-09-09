@@ -194,8 +194,8 @@ body {
 .backend-errored .card-body {
     background-color: var(--background-danger);
 }
-.border-danger {
-    border-color: var(--red) !important;
+.border-red {
+    border-color: var(--red);
 }
 .backend-card .card-header button {
     height: 1.8rem;
