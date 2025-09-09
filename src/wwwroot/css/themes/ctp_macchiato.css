@@ -11,7 +11,7 @@
     --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
     --text-strong: #24273a;
 
-    --button-text: #24273a;
+    --button-text: #cad3f5;
     --button-foreground-hover: #24273a;
     --button-foreground-disabled: #5b6078;
     --button-background: #5b6078;
@@ -28,7 +28,7 @@
 
     --emphasis: #f5a97f;
     --emphasis-soft: color-mix(in srgb, #f5a97f 80%, #181926 20%);
-    --emphasis-text: var(--button-text);
+    --emphasis-text: #24273a;
 
     --border-color: #494d64;
     --light-border: #494d64;

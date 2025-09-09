@@ -574,6 +574,7 @@ textarea, input, select {
 }
 .basic-button.btn-primary {
     background-color: var(--emphasis);
+    color: var(--emphasis-text);
 }
 .basic-button:hover {
     background-color: var(--button-background-hover);
