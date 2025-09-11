@@ -117,6 +117,33 @@
     padding-left: 0.3em;
     padding-right: 0.3em;
 }
+.theme_preview_solarized {
+    background-color: #d3cdc0;
+    color: #101010;
+}
+.theme_preview_solarized .button_example {
+    border: 1px solid #3f3f46;
+    background-color: #a1a1a1;
+    color: #101010;
+}
+.theme_preview_swarmpunk {
+    background-color: #0a0a1f;
+    color: #00ff9d;
+}
+.theme_preview_swarmpunk .button_example {
+    border: 1px solid #00ff9d40;
+    background-color: #12122a;
+    color: #00ff9d;
+}
+.theme_preview_beweish {
+    background-color: #0e0e2c;
+    color: #ffffff;
+}
+.theme_preview_beweish .button_example {
+    border: 1px solid #2a4170;
+    background-color: #0f3460;
+    color: #ffffff;
+}
 label {
     font-size: 120%;
     vertical-align: top;
