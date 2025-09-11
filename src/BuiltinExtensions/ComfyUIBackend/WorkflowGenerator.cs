@@ -1483,7 +1483,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsWanVideo() || IsWanVideo22() || IsHiDream() || IsChroma())
+            else if (IsHunyuanVideo() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream() || IsChroma())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
