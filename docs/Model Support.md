@@ -479,18 +479,24 @@ Parameters and usage is the same as any other normal model.
 
 - [Hunyuan Image 2.1](https://huggingface.co/tencent/HunyuanImage-2.1) is supported in SwarmUI.
     - The main model's [official original download here](https://huggingface.co/tencent/HunyuanImage-2.1/blob/main/dit/hunyuanimage2.1.safetensors), save to `diffusion_models`
-        - FP8 download linking pending
-        - GGUF download link pending
+        - FP8 download link pending
+        - Or GGUF: <https://huggingface.co/QuantStack/HunyuanImage-2.1-GGUF/tree/main>
     - There is also a distilled variant, you can [download here](https://huggingface.co/Comfy-Org/HunyuanImage_2.1_ComfyUI/blob/main/split_files/diffusion_models/hunyuanimage2.1_distilled_bf16.safetensors).
         - (The tencent upload does not work, use the linked upload)
-        - FP8 download linking pending
-        - GGUF download link pending
+        - FP8 download link pending
+        - Or GGUF: <https://huggingface.co/QuantStack/HunyuanImage-2.1-Distilled-GGUF/tree/main>
+    - They also provide and recommend a Refiner model, you can [download that here](https://huggingface.co/tencent/HunyuanImage-2.1/blob/main/dit/hunyuanimage-refiner.safetensors)
+        - (NOT YET SUPPORTED)
+        - FP8 download link pending
+        - Or GGUF: <https://huggingface.co/QuantStack/HunyuanImage-2.1-Refiner-GGUF/tree/main>
+        - This naturally is meant to be used via the Refine/Upscale parameter group in Swarm
+        - It is not required. It can also be replaced with other models of other architectures
     - **CFG Scale:** Normal CFG range, recommended around 3.5.
     - **Steps:** Normal step values, around 20.
     - **Resolution:** Targets 2048x2048, can work at lower resolutions too.
         - The VAE is a 32x32 downscale (vs most image models use 8x8), so it's a much smaller latent image than other models would have at this scale
     - **Sigma Shift:** Default is 5.
-    - TBD: Info specific to Distilled variant, and dedicated Refiner model
+    - TBD: Info specific to Distilled variant usage (doesn't seem to work well with their documented settings, testing TBD or comfy fix), and dedicated Refiner model
 
 # Video Models
 
