@@ -911,13 +911,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(extrasWrapper);
     }
 
-    // search #current_image_batch for element with data-batch_id == batchId
+    // search #current_image_batch for element with data-src == src
     let batchContainer = getRequiredElementById('current_image_batch');
-    let batchImg = batchContainer.querySelector(`[data-batch_id="${batchId}"]`);
-
-    if (batchImg) {
+    if (batchContainer) {
+        let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
         [...batchContainer.getElementsByClassName('image-block')].forEach(i => {
-            if (i === batchImg) {
+            if (batchImg && batchImg === i) {
               i.classList.add('image-block-current');
               return;
             }
