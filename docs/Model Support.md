@@ -20,6 +20,7 @@
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Modern but bad |
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality |
 [Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | Minimal | Modern, Great Quality, very memory intense |
+[Hunyuan Image 2.1](#hunyuan-image) | MMDiT | 2025 | Tencent | 17B | Uncensored | Modern, Great Quality, very memory intense |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -471,6 +472,20 @@ Parameters and usage is the same as any other normal model.
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
     - There are a couple dedicated Qwen Image Edit Lightning Loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>
         - Take care to separate the Edit lora vs the base Qwen Image lora.
+
+### Hunyuan Image 2.1
+
+![img](/docs/images/models/hy-img-21.jpg)
+
+- [Hunyuan Image 2.1](https://huggingface.co/tencent/HunyuanImage-2.1) is supported in SwarmUI.
+    - [Official original download here](https://huggingface.co/tencent/HunyuanImage-2.1/blob/main/dit/hunyuanimage2.1.safetensors), save to `diffusion_models`
+    - FP8 download linking pending
+    - GGUF download link pending
+    - **CFG Scale:** Normal CFG range, recommended around 3.5
+    - **Steps:** Normal step values, around 20
+    - **Resolution:** Targets 2048x2048, can work at lower resolutions too.
+        - The VAE is a 32x32 downscale (vs most image models use 8x8), so it's a much smaller latent image than other models would have at this scale
+    - TBD: Info specific to Distilled variant, and dedicated Refiner model
 
 # Video Models
 

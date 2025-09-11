@@ -110,6 +110,7 @@ public class T2IModelClassSorter
                                             || (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.lora_A.default.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.net.2.lora_A.default.weight"))
                                             || (h.ContainsKey("lora_unet_transformer_blocks_0_attn_add_k_proj.lora_down.weight") && h.ContainsKey("lora_unet_transformer_blocks_0_img_mlp_net_0_proj.lora_down.weight"));
         bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
+        bool isHyImg(JObject h) => h.ContainsKey("byt5_in.fc1.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -381,7 +382,7 @@ public class T2IModelClassSorter
         // ====================== Hunyuan Video ======================
         Register(new() { ID = "hunyuan-video", CompatClass = "hunyuan-video", Name = "Hunyuan Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
-            return isHunyuanVideo(h) && !isHunyuanVideoNativeImage2V(h);
+            return isHunyuanVideo(h) && !isHunyuanVideoNativeImage2V(h) && !isHyImg(h);
         }});
         Register(new() { ID = "hunyuan-video-skyreels", CompatClass = "hunyuan-video", Name = "Hunyuan Video - SkyReels Text2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
@@ -389,11 +390,11 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "hunyuan-video-skyreels-i2v", CompatClass = "hunyuan-video", Name = "Hunyuan Video - SkyReels Image2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
-            return isHunyuanVideo(h) && isHunyuanVideoSkyreelsImage2V(h);
+            return isHunyuanVideo(h) && isHunyuanVideoSkyreelsImage2V(h) && !isHyImg(h);
         }});
         Register(new() { ID = "hunyuan-video-i2v", CompatClass = "hunyuan-video", Name = "Hunyuan Video - Image2Video", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
-            return isHunyuanVideo(h) && isHunyuanVideoNativeImage2V(h);
+            return isHunyuanVideo(h) && isHunyuanVideoNativeImage2V(h) && !isHyImg(h);
         }});
         Register(new() { ID = "hunyuan-video-i2v-v2", CompatClass = "hunyuan-video", Name = "Hunyuan Video - Image2Video v2 ('Fixed')", StandardWidth = 720, StandardHeight = 720, IsThisModelOfClass = (m, h) =>
         {
@@ -501,6 +502,19 @@ public class T2IModelClassSorter
         Register(new() { ID = "qwen-image/lora", CompatClass = "qwen-image", Name = "Qwen Image LoRA", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
             return isQwenImageLora(h);
+        }});
+        // ====================== Hunyuan Image 2.1 ======================
+        Register(new() { ID = "hunyuan-image-2_1", CompatClass = "hunyuan-image-2_1", Name = "Hunyuan Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return isHyImg(h);
+        }});
+        Register(new() { ID = "hunyuan-image-2_1/lora", CompatClass = "hunyuan-image-2_1", Name = "Hunyuan Image LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
+        Register(new() { ID = "hunyuan-image-2_1/vae", CompatClass = "hunyuan-image-2_1", Name = "Hunyuan Image VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants

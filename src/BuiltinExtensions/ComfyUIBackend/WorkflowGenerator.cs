@@ -251,6 +251,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "hunyuan-video";
     }
 
+    /// <summary>Returns true if the current model is Hunyuan Image 2.1.</summary>
+    public bool IsHunyuanImage()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "hunyuan-image-2_1";
+    }
+
     /// <summary>Returns true if the current model is Hunyuan Video Image2Video.</summary>
     public bool IsHunyuanVideoI2V()
     {
@@ -829,6 +836,10 @@ public class WorkflowGenerator
         {
             return requireClipModel("umt5_xxl_fp8_e4m3fn_scaled.safetensors", "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors", "c3355d30191f1f066b26d93fba017ae9809dce6c627dda5f6a66eaa651204f68", T2IParamTypes.T5XXLModel);
         }
+        string getByT5SmallGlyphxl_tenc()
+        {
+            return requireClipModel("byt5_small_glyphxl_fp16.safetensors", "https://huggingface.co/Comfy-Org/HunyuanImage_2.1_ComfyUI/resolve/main/split_files/text_encoders/byt5_small_glyphxl_fp16.safetensors", "516910bb4c9b225370290e40585d1b0e6c8cd3583690f7eec2f7fb593990fb48", T2IParamTypes.T5XXLModel);
+        }
         string getOmniQwenModel()
         {
             return requireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", T2IParamTypes.QwenModel);
@@ -1301,6 +1312,23 @@ public class WorkflowGenerator
                 ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
             });
             LoadingModel = [samplingNode, 0];
+        }
+        else if (IsHunyuanImage())
+        {
+            string loaderType = "DualCLIPLoader";
+            if (getQwenImage25_7b_tenc().EndsWith(".gguf"))
+            {
+                loaderType = "DualCLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name1"] = getQwenImage25_7b_tenc(),
+                ["clip_name2"] = getByT5SmallGlyphxl_tenc(),
+                ["type"] = "hunyuan_image",
+                ["device"] = "default"
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "hunyuan-image-2_1", "hunyuan-image-2_1-vae");
         }
         else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
         {
@@ -2081,6 +2109,15 @@ public class WorkflowGenerator
         else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
+        else if (IsHunyuanImage())
+        {
+            return CreateNode("EmptyHunyuanImageLatent", new JObject()
             {
                 ["batch_size"] = batchSize,
                 ["height"] = height,
