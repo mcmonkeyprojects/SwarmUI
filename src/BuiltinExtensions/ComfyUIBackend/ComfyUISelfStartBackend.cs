@@ -36,12 +36,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
         public string FrontendVersion = "LatestSwarmValidated";
 
-        [ConfigComment("If checked, tells Comfy to generate image previews. If unchecked, previews will not be generated, and images won't show up until they're done.")]
-        public bool EnablePreviews = true;
-
-        [ConfigComment("Which type of image previews to use.  Using a higher quality method will increase image generation time.  TAESD (Tiny Auto Encoder for Stable Diffusion) is a distilled version of the Stable Diffusion VAE which runs much more quickly than the full VAE.")]
-        [ManualSettingsOptions(Impl = null, Vals = ["latent2rgb", "taesd"], ManualNames = ["Latent2RGB (fast)", "TAESD (higher quality, less fast)"])]
-        public string PreviewMethod = "latent2rgb";
+        [ConfigComment("Whether Comfy should generate image previews. If disabled, previews will not be generated, and images won't show up until they're done.\nLatent2RGB runs at 1/8 scale and does not match the final image's colors.\nTAESD (Tiny Auto Encoder for Stable Diffusion) is a distilled version of the Stable Diffusion VAE which runs much faster than the full VAE.")]
+        [ManualSettingsOptions(Impl = null, Vals = ["false", "true", "taesd"], ManualNames = ["No previews (fastest)", "Latent2RGB (fast)", "TAESD (high quality, less fast)"])]
+        public string EnablePreviews = "true";  
 
         [ConfigComment("Which GPU to use, if multiple are available.\nShould be a single number, like '0'.\nYou can use syntax like '0,1' to provide multiple GPUs to one backend (only applicable if you have custom nodes that can take advantage of this.)")]
         public string GPU_ID = "0";
@@ -307,11 +304,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 addedArgs += " --fast fp16_accumulation cublas_ops"; // TODO: Temp due to fp8 mat mult being borked on Qwen Image
             }
-            if (Settings.EnablePreviews && Settings.PreviewMethod == "latent2rgb")
+            if (Settings.EnablePreviews == "true")
             {
                 addedArgs += " --preview-method latent2rgb";
             }
-            if (Settings.EnablePreviews && Settings.PreviewMethod == "taesd")
+            if (Settings.EnablePreviews == "taesd")
             {
                 addedArgs += " --preview-method taesd";
             }
