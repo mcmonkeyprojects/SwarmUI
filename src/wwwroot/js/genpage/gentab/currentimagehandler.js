@@ -306,21 +306,18 @@ function clickImageInBatch(div) {
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
-// Removes a batch thumbnail and reassigns the 'image-block-current' class appropriately within its container
+/** Removes a preview thumbnail and highlights either next or previous image. */
 function removeImageBlockFromBatch(div) {
+    /** Current image isn't the highlighted one, so just remove it. */
     if (!div.classList.contains('image-block-current')) {
         div.remove();
         return;
     }
-
     let chosen = div.previousElementSibling || div.nextElementSibling;
     div.remove();
-
-    if (!chosen) {
-        return;
+    if (chosen) {
+        setCurrentImage(chosen.dataset.src, chosen.dataset.metadata, chosen.dataset.batch_id, true);
     }
-
-    setCurrentImage(chosen.dataset.src, chosen.dataset.metadata, chosen.dataset.batch_id, true);
 }
 
 function rightClickImageInBatch(e, div) {
@@ -911,7 +908,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(extrasWrapper);
     }
 
-    // search #current_image_batch for element with data-src == src
+    /** If switching the main image, we want to update the image preview  as well. */
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
@@ -920,7 +917,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
               i.classList.add('image-block-current');
               return;
             }
-
             i.classList.remove('image-block-current')
         });
     }
