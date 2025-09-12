@@ -36,9 +36,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
         public string FrontendVersion = "LatestSwarmValidated";
 
-        [ConfigComment("Whether Comfy should generate image previews. If disabled, previews will not be generated, and images won't show up until they're done.\nLatent2RGB runs at 1/8 scale and does not match the final image's colors.\nTAESD (Tiny Auto Encoder for Stable Diffusion) is a distilled version of the Stable Diffusion VAE which runs much faster than the full VAE.")]
-        [ManualSettingsOptions(Impl = null, Vals = ["false", "true", "taesd"], ManualNames = ["No previews (fastest)", "Latent2RGB (fast)", "TAESD (high quality, less fast)"])]
-        public string EnablePreviews = "true";  
+        [ConfigComment("Whether Comfy should generate image previews. If disabled, previews will not be generated, and images won't show up until they're done.\nRegular enabled mode uses 'latent2rgb' which is nearly instant at the cost of a lower accuracy of the preview.\nThe 'HD' enabled variant uses TAESD (Tiny Auto Encoder for Stable Diffusion), which uses a small VAE-like model to get more accurate previews, at the cost of slowing down generation to run this extra model each step.\nTAESD only works if architecture-specific compatible models are present (some are included by default).")]
+        [ManualSettingsOptions(Impl = null, Vals = ["false", "true", "taesd"], ManualNames = ["Disabled", "Enabled (fast latent2rgb)", "Enabled HD (slow TAESD)"])]
+        public string EnablePreviews = "true";
 
         [ConfigComment("Which GPU to use, if multiple are available.\nShould be a single number, like '0'.\nYou can use syntax like '0,1' to provide multiple GPUs to one backend (only applicable if you have custom nodes that can take advantage of this.)")]
         public string GPU_ID = "0";
@@ -308,7 +308,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 addedArgs += " --preview-method latent2rgb";
             }
-            if (Settings.EnablePreviews == "taesd")
+            else if (Settings.EnablePreviews == "taesd")
             {
                 addedArgs += " --preview-method taesd";
             }
