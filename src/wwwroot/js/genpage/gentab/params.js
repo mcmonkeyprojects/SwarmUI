@@ -410,6 +410,7 @@ function genInputs(delay_final = false) {
                 doToggleGroup(`input_group_content_${group}`);
             }
         }
+        let dependsHandled = [];
         for (let param of gen_param_types) {
             if (param.toggleable) {
                 doToggleEnable(`input_${param.id}`);
@@ -431,6 +432,16 @@ function genInputs(delay_final = false) {
                             elem.addEventListener('change', autoActivate);
                         }, 1);
                     }
+                }
+            }
+            if (param.depend_non_default && !dependsHandled.includes(param.depend_non_default)) {
+                dependsHandled.push(param.depend_non_default);
+                let otherParam = gen_param_types.find(p => p.id == param.depend_non_default);
+                let other = document.getElementById(`input_${otherParam.id}`);
+                if (other) {
+                    other.addEventListener('change', () => {
+                        scheduleParamUnsupportUpdate();
+                    });
                 }
             }
         }
