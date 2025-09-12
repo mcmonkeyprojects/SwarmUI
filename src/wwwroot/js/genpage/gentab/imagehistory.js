@@ -113,7 +113,7 @@ function buttonsForImage(fullsrc, src, metadata) {
                     }
                     div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
                     if (div) {
-                        div.remove();
+                        removeImageBlockFromBatch(div);
                     }
                     let currentImage = document.getElementById('current_image_img');
                     if (currentImage && currentImage.dataset.src == src) {

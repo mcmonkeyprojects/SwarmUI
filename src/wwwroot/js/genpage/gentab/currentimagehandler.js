@@ -306,6 +306,20 @@ function clickImageInBatch(div) {
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
+/** Removes a preview thumbnail and highlights either next or previous image. */
+function removeImageBlockFromBatch(div) {
+    /** Current image isn't the highlighted one, so just remove it. */
+    if (!div.classList.contains('image-block-current')) {
+        div.remove();
+        return;
+    }
+    let chosen = div.previousElementSibling || div.nextElementSibling;
+    div.remove();
+    if (chosen) {
+        setCurrentImage(chosen.dataset.src, chosen.dataset.metadata, chosen.dataset.batch_id, true);
+    }
+}
+
 function rightClickImageInBatch(e, div) {
     if (e.shiftKey || e.ctrlKey) {
         return;
@@ -322,7 +336,7 @@ function rightClickImageInBatch(e, div) {
             popoverActions.push({ key: added.label, action: added.onclick, title: added.title });
         }
     }
-    popoverActions.push({ key: 'Remove From Batch View', action: () => div.remove() })
+    popoverActions.push({ key: 'Remove From Batch View', action: () => removeImageBlockFromBatch(div) })
     let popover = new AdvancedPopover('image_batch_context_menu', popoverActions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();
@@ -478,7 +492,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
 
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
-    let isCurImgFocused = document.activeElement && 
+    let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');
@@ -892,6 +906,19 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     if (!isReuse) {
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
+    }
+
+    /** If switching the main image, we want to update the image preview  as well. */
+    let batchContainer = getRequiredElementById('current_image_batch');
+    if (batchContainer) {
+        let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
+        [...batchContainer.getElementsByClassName('image-block')].forEach(i => {
+            if (batchImg && batchImg === i) {
+              i.classList.add('image-block-current');
+              return;
+            }
+            i.classList.remove('image-block-current')
+        });
     }
 }
 
