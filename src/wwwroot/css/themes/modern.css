@@ -390,7 +390,7 @@
 #alt_generate_button:hover,
 #alt_center_button:hover {
     background: color-mix(in srgb, var(--emphasis) 70%, white);
-    color: var(--button-foreground-hover);
+    color: var(--button-foreground-hover) !important;
 }
 
 #alt_center_button::after {

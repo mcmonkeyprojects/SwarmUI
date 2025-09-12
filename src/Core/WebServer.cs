@@ -120,6 +120,10 @@ public class WebServer
         RegisterTheme(new("eyesear_white", "Eyesear White (Legacy)", ["css/themes/eyesear_white.css"], false));
         RegisterTheme(new("swarmpunk", "Swarm Punk", ["css/themes/modern.css", "css/themes/swarmpunk.css"], true));
         RegisterTheme(new("beweish", "Beweish", ["css/themes/modern.css", "css/themes/beweish.css"], true));
+        RegisterTheme(new("ctp_mocha", "Catppuccin Mocha", ["css/themes/modern.css", "css/themes/ctp_base.css", "css/themes/ctp_mocha.css"], true));
+        RegisterTheme(new("ctp_macchiato", "Catppuccin Macchiato", ["css/themes/modern.css", "css/themes/ctp_base.css", "css/themes/ctp_macchiato.css"], true));
+        RegisterTheme(new("ctp_frappe", "Catppuccin Frappé", ["css/themes/modern.css", "css/themes/ctp_base.css", "css/themes/ctp_frappe.css"], true));
+        RegisterTheme(new("ctp_latte", "Catppuccin Latte", ["css/themes/modern.css", "css/themes/ctp_base.css", "css/themes/ctp_latte.css"], false));
     }
 
     /// <summary>Main prep, called by <see cref="Program"/>, generally should not be touched externally.</summary>
