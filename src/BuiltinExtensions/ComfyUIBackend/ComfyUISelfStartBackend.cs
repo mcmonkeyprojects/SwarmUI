@@ -36,8 +36,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
         public string FrontendVersion = "LatestSwarmValidated";
 
-        [ConfigComment("If checked, tells Comfy to generate image previews. If unchecked, previews will not be generated, and images won't show up until they're done.")]
-        public bool EnablePreviews = true;
+        [ConfigComment("Whether Comfy should generate image previews. If disabled, previews will not be generated, and images won't show up until they're done.\nRegular enabled mode uses 'latent2rgb' which is nearly instant at the cost of a lower accuracy of the preview.\nThe 'HD' enabled variant uses TAESD (Tiny Auto Encoder for Stable Diffusion), which uses a small VAE-like model to get more accurate previews, at the cost of slowing down generation to run this extra model each step.\nTAESD only works if architecture-specific compatible models are present (some are included by default).")]
+        [ManualSettingsOptions(Impl = null, Vals = ["false", "true", "taesd"], ManualNames = ["Disabled", "Enabled (fast latent2rgb)", "Enabled HD (slow TAESD)"])]
+        public string EnablePreviews = "true";
 
         [ConfigComment("Which GPU to use, if multiple are available.\nShould be a single number, like '0'.\nYou can use syntax like '0,1' to provide multiple GPUs to one backend (only applicable if you have custom nodes that can take advantage of this.)")]
         public string GPU_ID = "0";
@@ -303,9 +304,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 addedArgs += " --fast fp16_accumulation cublas_ops"; // TODO: Temp due to fp8 mat mult being borked on Qwen Image
             }
-            if (Settings.EnablePreviews)
+            if (Settings.EnablePreviews == "true")
             {
                 addedArgs += " --preview-method latent2rgb";
+            }
+            else if (Settings.EnablePreviews == "taesd")
+            {
+                addedArgs += " --preview-method taesd";
             }
             if (Settings.FrontendVersion == "Latest")
             {

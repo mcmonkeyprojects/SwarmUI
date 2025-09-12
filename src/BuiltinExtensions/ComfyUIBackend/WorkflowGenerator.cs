@@ -251,11 +251,18 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "hunyuan-video";
     }
 
-    /// <summary>Returns true if the current model is Hunyuan Image 2.1.</summary>
+    /// <summary>Returns true if the current model is Hunyuan Image 2.1 Base.</summary>
     public bool IsHunyuanImage()
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz == "hunyuan-image-2_1";
+    }
+
+    /// <summary>Returns true if the current model is Hunyuan Image 2.1 Refiner.</summary>
+    public bool IsHunyuanImageRefiner()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "hunyuan-image-2_1-refiner";
     }
 
     /// <summary>Returns true if the current model is Hunyuan Video Image2Video.</summary>
@@ -1330,6 +1337,23 @@ public class WorkflowGenerator
             LoadingClip = [clipLoader, 0];
             doVaeLoader(null, "hunyuan-image-2_1", "hunyuan-image-2_1-vae");
         }
+        else if (IsHunyuanImageRefiner())
+        {
+            string loaderType = "DualCLIPLoader";
+            if (getQwenImage25_7b_tenc().EndsWith(".gguf"))
+            {
+                loaderType = "DualCLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name1"] = getQwenImage25_7b_tenc(),
+                ["clip_name2"] = getByT5SmallGlyphxl_tenc(),
+                ["type"] = "hunyuan_image",
+                ["device"] = "default"
+            });
+            LoadingClip = [clipLoader, 0];
+            doVaeLoader(null, "hunyuan-image-2_1-refiner", "hunyuan-image-2_1-refiner-vae");
+        }
         else if (IsMochi() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
         {
             string loaderType = "CLIPLoader";
@@ -2115,7 +2139,7 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsHunyuanImage())
+        else if (IsHunyuanImage() || IsHunyuanImageRefiner())
         {
             return CreateNode("EmptyHunyuanImageLatent", new JObject()
             {

@@ -144,6 +144,42 @@
     background-color: #0f3460;
     color: #ffffff;
 }
+.theme_preview_ctp_mocha {
+    background-color: #11111b;
+    color: #cdd6f4;
+}
+.theme_preview_ctp_mocha .button_example {
+    border: 1px solid #313244;
+    background-color: #585b70;
+    color: #cdd6f4;
+}
+.theme_preview_ctp_macchiato {
+    background-color: #181926;
+    color: #cad3f5;
+}
+.theme_preview_ctp_macchiato .button_example {
+    border: 1px solid #363a4f;
+    background-color: #5b6078;
+    color: #cad3f5;
+}
+.theme_preview_ctp_frappe {
+    background-color: #232634;
+    color: #c6d0f5;
+}
+.theme_preview_ctp_frappe .button_example {
+    border: 1px solid #414559;
+    background-color: #626880;
+    color: #c6d0f5;
+}
+.theme_preview_ctp_latte {
+    background-color: #dce0e8;
+    color: #4c4f69;
+}
+.theme_preview_ctp_latte .button_example {
+    border: 1px solid #ccd0da;
+    background-color: #acb0be;
+    color: #4c4f69;
+}
 label {
     font-size: 120%;
     vertical-align: top;
