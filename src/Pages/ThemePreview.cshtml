@@ -1,0 +1,34 @@
+@page
+@section Header {
+    <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
+    <link rel="stylesheet" href="css/themepreview.css?vary=@Utilities.VaryID" />
+}
+<script>
+    (function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeId = urlParams.get('theme');
+
+        if (themeId) {
+            const linkElement = document.createElement('link');
+            linkElement.rel = 'stylesheet';
+            linkElement.href = `css/themes/${themeId}.css`;
+            document.head.appendChild(linkElement);
+        }
+    })();
+</script>
+
+<div class="theme_preview-content">
+    <div class="theme_preview-item">
+        <p>Core Parameters will go here</p>
+    </div>
+
+    <hr>
+
+    <div class="theme_preview-item">
+        <div class="alt-prompt-buttons-wrapper">
+            <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate" id="alt_generate_button">Generate</button>
+            <button class="alt-prompt-buttons alt-prompt-center-button basic-button" id="alt_center_button">&#x2B9F;</button>
+            <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt" id="alt_interrupt_button">&times;</button>
+        </div>
+    </div>
+</div>
