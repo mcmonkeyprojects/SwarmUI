@@ -1,0 +1,26 @@
+html, body {
+    height: 100%
+}
+#alt_generate_button {
+  margin-left: 0 !important;
+}
+.version-display {
+    display: none;
+    visibility: hidden;
+}
+.theme_preview-content {
+    height: 100%;
+    align-content: center;
+    margin-top: -0.25rem;
+}
+.theme_preview-item {
+    display: flex;
+    justify-content: center;
+}
+.theme_preview-item:not(:last-child) {
+    margin-bottom: 0.5em;
+}
+.theme_preview-item .theme_preview-text {
+    font-size: 1.25rem;
+    margin-bottom: 0;
+}
