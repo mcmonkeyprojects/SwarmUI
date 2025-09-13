@@ -2,21 +2,14 @@
 @section Header {
     <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
     <link rel="stylesheet" href="css/themepreview.css?vary=@Utilities.VaryID" />
-}
-<script>
-    (function () {
-        const urlParams = new URLSearchParams(window.location.search);
-        const themeId = urlParams.get('theme');
-
-        if (themeId) {
-            const linkElement = document.createElement('link');
-            linkElement.rel = 'stylesheet';
-            linkElement.href = `css/themes/${themeId}.css`;
-            document.head.appendChild(linkElement);
+    @{
+        var themeId = Request.Query["theme"].ToString();
+        if (!string.IsNullOrEmpty(themeId))
+        {
+            <link rel="stylesheet" href="css/themes/@(themeId).css?vary=@Utilities.VaryID" />
         }
-    })();
-</script>
-
+    }
+}
 <div class="theme_preview-content">
     <div class="theme_preview-item">
         <p>Core Parameters will go here</p>
