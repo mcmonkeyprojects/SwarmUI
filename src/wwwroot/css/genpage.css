@@ -528,6 +528,7 @@ body {
 }
 .sui_popover_model_button:hover {
     background-color: var(--emphasis);
+    color: var(--emphasis-text);
 }
 .sui-popover-inline-block {
     white-space: nowrap;
@@ -1367,6 +1368,7 @@ body {
 }
 .admin-user-manage-name:hover {
     background-color: var(--emphasis);
+    color: var(--emphasis-text);
 }
 .manage-users-left-header {
     display: flex;
