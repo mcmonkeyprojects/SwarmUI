@@ -202,6 +202,10 @@ class GenerateHandler {
                         }
                         this.setImageFor(imgHolder, data.gen_progress.preview);
                     }
+                    if (data.gen_progress.preview && imageFullView.isOpen() && imageFullView.imgElement && imageFullView.currentBatchId == thisBatchId)
+                    {
+                        imageFullView.imgElement.src = data.gen_progress.preview;
+                    }
                 }
             }
             this.gotProgress(data.gen_progress.current_percent, data.gen_progress.overall_percent, thisBatchId);

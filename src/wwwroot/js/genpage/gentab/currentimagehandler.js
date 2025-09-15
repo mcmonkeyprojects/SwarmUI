@@ -198,6 +198,7 @@ class ImageFullViewHelper {
                 ${formatMetadata(metadata)}
             </div>
         </div>`;
+        this.imgElement = document.getElementById("imageview_popup_modal_img");
         let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
             if (added.href) {
