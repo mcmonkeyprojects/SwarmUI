@@ -1643,6 +1643,23 @@ public class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
+        else if (IsHunyuanImageRefiner())
+        {
+            if (!hadSpecialCond)
+            {
+                string refinerCond = CreateNode("HunyuanRefinerLatent", new JObject()
+                {
+                    ["positive"] = pos,
+                    ["negative"] = neg,
+                    ["latent"] = latent,
+                    ["noise_augmentation"] = 0.1 // TODO: User input?
+                });
+                pos = [refinerCond, 0];
+                neg = [refinerCond, 1];
+                latent = [refinerCond, 2];
+            }
+            defscheduler ??= "simple";
+        }
         else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage())
         {
             defscheduler ??= "simple";
