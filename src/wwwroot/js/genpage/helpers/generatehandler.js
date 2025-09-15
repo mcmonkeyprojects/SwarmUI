@@ -143,7 +143,7 @@ class GenerateHandler {
                 if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == `${data.request_id}_${data.batch_index}`) {
                     let batchId = `${data.request_id}_${data.batch_index}`;
                     this.setCurrentImage(data.image, data.metadata, batchId, false, true);
-                    if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
+                    if (wantToSwapFullView()) {
                         imageFullView.showImage(data.image, data.metadata, batchId);
                     }
                 }

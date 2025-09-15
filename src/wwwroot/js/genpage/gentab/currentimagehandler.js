@@ -984,6 +984,32 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     return div;
 }
 
+function wantToSwapFullView() {
+    if (!imageFullView.isOpen()) {
+        return false;
+    }
+    let autoSwapSetting = getUserSetting('AutoSwapImagesIncludesFullView');
+    if (autoSwapSetting === 'true') {
+        return true;
+    }
+    else if (autoSwapSetting === 'false' || autoSwapSetting === 'from_newest_only') {
+        //even when false, still need to auto-swap from unfinished image to finished version of the same image
+        let batch_area = getRequiredElementById('current_image_batch');
+        let imgs = [...batch_area.getElementsByTagName('img')].filter(i => findParentOfClass(i, 'image-block-placeholder') == null);
+        let limit = Math.min(imgs.length, 2);
+        if (autoSwapSetting === 'false') {
+            limit = Math.min(imgs.length, 1);
+        }
+        for (i = 0; i < limit; i++) {
+            let block = findParentOfClass(imgs[i], 'image-block');
+            if (block.dataset.batch_id === imageFullView.currentBatchId) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 function gotImageResult(image, metadata, batchId) {
     updateGenCount();
     let src = image;
@@ -993,7 +1019,7 @@ function gotImageResult(image, metadata, batchId) {
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
-        if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
+        if (wantToSwapFullView()) {
             imageFullView.showImage(src, metadata, batchId);
         }
     }

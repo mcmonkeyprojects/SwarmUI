@@ -409,8 +409,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, images in the main center area will always grow to better fill the screen.")]
         public bool CenterImageAlwaysGrow = false; // TODO: UserUI
 
-        [ConfigComment("If true, when 'Auto Swap To Images' is enabled, and you have FullView open, the FullView will also be swapped.\nIf false, the FullView will not change.")]
-        public bool AutoSwapImagesIncludesFullView = false; // TODO: UserUI
+        [ConfigComment("If 'Always', when 'Auto Swap To Images' is enabled, and you have FullView open, the FullView will also be swapped.\nIf 'Never', the FullView will not change.\nIf 'From Newest Only', the FullView will only change if you are viewing the newest image, and a newer image arrives.")]
+        [ManualSettingsOptions(ManualNames = ["Never", "Always", "From Newest Only"], Vals = ["false", "true", "from_newest_only"])]
+        public string AutoSwapImagesIncludesFullView = "false"; // TODO: UserUI
 
         [ConfigComment("A list of what buttons to include directly under images in the main prompt area of the Generate tab.\nOther buttons will be moved into the 'More' dropdown.\nThis should be a comma separated list."
             + "\nThe following options are available: \"Use As Init\", \"Use As Image Prompt\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"Download\" \"View In History\", \"Refine Image\""
