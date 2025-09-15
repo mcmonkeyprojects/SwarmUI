@@ -427,12 +427,23 @@ function copy_current_image_params() {
 }
 
 function shiftToNextImagePreview(next = true, expand = false) {
-    let curImgElem = document.getElementById('current_image_img');
+    let batchId;
+    let curImgElem;
+    let isExpanded = imageFullView.isOpen();
+    if (!isExpanded) {
+        curImgElem = document.getElementById('current_image_img');
+        batchId = curImgElem.dataset.batch_id;
+    }
+    else {
+        curImgElem = imageFullView.imgElement;
+        batchId = imageFullView.currentBatchId;
+    }
+    
     if (!curImgElem) {
         return;
     }
-    let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
-    if (curImgElem.dataset.batch_id == 'history') {
+    let expandedState = isExpanded ? imageFullView.copyState() : {};
+    if (batchId == 'history') {
         let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
         let index = divs.findIndex(div => div == lastHistoryImageDiv);
         if (index == -1) {
