@@ -469,6 +469,10 @@ function shiftToNextImagePreview(next = true, expand = false) {
     let imgs = [...batch_area.getElementsByTagName('img')].filter(i => findParentOfClass(i, 'image-block-placeholder') == null);
     let index = imgs.findIndex(img => img.src == curImgElem.src);
     if (index == -1) {
+		//second chance in case we are at a preview and it failed to switch to the final image, allow it to find the current image by batch id instead
+		index = imgs.findIndex(img => findParentOfClass(img, 'image-block').dataset.batch_id == batchId);
+	}
+    if (index == -1) {
         let cleanSrc = (img) => img.src.length > 100 ? img.src.substring(0, 100) + '...' : img.src;
         console.log(`Image preview shift failed as current image ${cleanSrc(curImgElem)} is not in batch area set ${imgs.map(cleanSrc)}`);
         return;
