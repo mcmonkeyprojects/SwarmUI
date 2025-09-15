@@ -177,9 +177,10 @@ class ImageFullViewHelper {
         img.style.height = `${newHeight}%`;
     }
 
-    showImage(src, metadata) {
+    showImage(src, metadata, batchId) {
         this.currentSrc = src;
         this.currentMetadata = metadata;
+        this.currentBatchId = batchId;
         let isVideo = isVideoExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
@@ -300,7 +301,7 @@ function toggleSeparateBatches() {
 function clickImageInBatch(div) {
     let imgElem = div.getElementsByTagName('img')[0];
     if (currentImgSrc == div.dataset.src) {
-        imageFullView.showImage(div.dataset.src, div.dataset.metadata);
+        imageFullView.showImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id);
         return;
     }
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
@@ -447,7 +448,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
         divs[newIndex].querySelector('img').click();
         if (expand) {
             divs[newIndex].querySelector('img').click();
-            imageFullView.showImage(currentImgSrc, currentMetadataVal);
+            imageFullView.showImage(currentImgSrc, currentMetadataVal, 'history');
             imageFullView.pasteState(expandedState);
         }
         return;
@@ -471,7 +472,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
     let block = findParentOfClass(newImg, 'image-block');
     setCurrentImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id, newImg.dataset.previewGrow == 'true');
     if (expand) {
-        imageFullView.showImage(block.dataset.src, block.dataset.metadata);
+        imageFullView.showImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id);
         imageFullView.pasteState(expandedState);
     }
 }
@@ -576,7 +577,7 @@ function toggleStar(path, rawSrc) {
         if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
             let oldMetadata = JSON.parse(imageFullView.currentMetadata);
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
-            imageFullView.showImage(rawSrc, JSON.stringify(newMetadata));
+            imageFullView.showImage(rawSrc, JSON.stringify(newMetadata), imageFullView.currentBatchId);
         }
     });
 }
@@ -981,7 +982,7 @@ function gotImageResult(image, metadata, batchId) {
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
         if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-            imageFullView.showImage(src, metadata);
+            imageFullView.showImage(src, metadata, batchId);
         }
     }
     return batch_div;
