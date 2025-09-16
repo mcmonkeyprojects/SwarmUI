@@ -500,7 +500,7 @@
     border: 1px solid var(--box-selected-border-stronger);
 }
 .image-block.image-block-current {
-    outline: 3px solid color-mix(in srgb, var(--emphasis) 70%, white);
+    outline: 3px solid var(--box-selected-border-stronger);
 }
 
 .model-block {
