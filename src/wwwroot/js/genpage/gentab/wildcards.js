@@ -9,8 +9,9 @@ class WildcardHelpers {
         this.wildcardDataCache = {};
         this.nameElem = getRequiredElementById('edit_wildcard_name');
         this.contentsElem = getRequiredElementById('edit_wildcard_contents');
-        this.enableImageElem = getRequiredElementById('edit_wildcard_enable_image');
-        this.imageElem = getRequiredElementById('edit_wildcard_image');
+        this.imageBlockElem = getRequiredElementById('edit_wildcard_image_block');
+        let imageHtml = makeImageInput(null, 'edit_wildcard_image', null, 'Image', 'Image', true, false);
+        this.imageBlockElem.innerHTML = imageHtml;
         this.errorBoxElem = getRequiredElementById('edit_wildcard_modal_error');
         this.testResultElem = getRequiredElementById('test_wildcard_result');
         this.testAgainButtonElem = getRequiredElementById('test_wildcard_again_button');
@@ -34,6 +35,8 @@ class WildcardHelpers {
                 this.wildcardModalError('You have unsaved changes. Please Save or Cancel');
             }
         });
+        this.imageElem = getRequiredElementById('edit_wildcard_image');
+        this.enableImageElem = getRequiredElementById('edit_wildcard_image_toggle');
     }
 
     /** Applies a new wildcard list from the server. */
@@ -100,28 +103,26 @@ class WildcardHelpers {
             return;
         }
         this.curWildcardMenuWildcard = card;
-        this.imageElem.innerHTML = '';
+        clearImageFileInput(this.imageElem);
         this.enableImageElem.checked = false;
-        this.enableImageElem.disabled = true;
         let curImg = document.getElementById('current_image_img');
+        let run = () => {
+            triggerChangeFor(this.enableImageElem);
+            this.nameElem.value = card.name;
+            this.contentsElem.value = card.raw;
+            this.errorBoxElem.innerText = '';
+            this.modalMayClose = true;
+            $(this.modalElem).modal('show');
+        };
         if (curImg && curImg.tagName == 'IMG') {
-            let newImg = curImg.cloneNode(true);
-            newImg.id = 'edit_wildcard_image_img';
-            newImg.style.maxWidth = '100%';
-            newImg.style.maxHeight = '';
-            newImg.removeAttribute('width');
-            newImg.removeAttribute('height');
-            this.imageElem.appendChild(newImg);
-            if (!card.image || card.image == 'imgs/model_placeholder.jpg') {
-                this.enableImageElem.checked = true;
-            }
-            this.enableImageElem.disabled = false;
+            setImageFileDirect(this.imageElem, curImg.src, 'cur', 'cur', () => {
+                this.enableImageElem.checked = !card.image || card.image == 'imgs/model_placeholder.jpg';
+                run();
+            });
         }
-        this.nameElem.value = card.name;
-        this.contentsElem.value = card.raw;
-        this.errorBoxElem.innerText = '';
-        this.modalMayClose = true;
-        $(this.modalElem).modal('show');
+        else {
+            run();
+        }
     }
 
     wildcardModalError(error) {
@@ -170,15 +171,17 @@ class WildcardHelpers {
             $(this.modalElem).modal('hide');
         }
         if (this.enableImageElem.checked) {
-            data['preview_image_metadata'] = currentMetadataVal;
-            imageToData(this.imageElem.getElementsByTagName('img')[0].src, (dataURL) => {
-                data['preview_image'] = dataURL;
-                complete();
-            }, true);
+            let imageVal = getInputVal(this.imageElem);
+            if (imageVal) {
+                data['preview_image_metadata'] = currentMetadataVal;
+                imageToData(imageVal, (dataURL) => {
+                    data['preview_image'] = dataURL;
+                    complete();
+                }, true);
+                return;
+            }
         }
-        else {
-            complete();
-        }
+        complete();
     }
 
     /** Duplicate a wildcard, creating a new wildcard with a unique name. Does not open any modal, just has the server duplicate immediately. */

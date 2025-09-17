@@ -528,7 +528,7 @@ function setImageFileInput(elem, file) {
     reader.readAsDataURL(file);
 }
 
-function setImageFileDirect(elem, src, name, longName = null) {
+function setImageFileDirect(elem, src, name, longName = null, callback = null) {
     let parent = findParentOfClass(elem, 'auto-input');
     let preview = parent.querySelector('.auto-input-image-preview');
     let label = parent.querySelector('.auto-file-input-filename');
@@ -544,6 +544,9 @@ function setImageFileDirect(elem, src, name, longName = null) {
         loadImageFileDedup = true;
         triggerChangeFor(elem);
         loadImageFileDedup = false;
+        if (callback) {
+            callback();
+        }
     };
     img.src = src;
     preview.firstChild.addEventListener('click', () => {

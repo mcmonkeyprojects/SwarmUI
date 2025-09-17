@@ -156,7 +156,7 @@
         </select></div>
         Description: <textarea class="auto-text auto-text-block translate" id="edit_model_description" rows="3" placeholder="Model description text..."></textarea>
         <span class="form-check form-switch display-inline-block">
-            <input class="form-check-input translate" type="checkbox" id="edit_model_enable_image" title="Enable/disable image" onclick="doToggleEnable('edit_model_image')"> Use Image
+            <input class="form-check-input translate" type="checkbox" id="edit_model_enable_image" title="Enable/disable image"> Use Image
         </span>
         <div id="edit_model_image" class="new_preset_image"></div>
     </div>
@@ -170,10 +170,7 @@
         <p class="translate">Wildcards are lists of random prompt segments. One entry per line. Prompt sub-syntax is allowed (eg you can link another wildcard, or use <code>&lt;random:...&gt;</code>, or <code>&lt;preset:...&gt;</code> or anything else you want).</p>
         <p class="translate">Prefix a line with <code>#</code> to make it a comment (ie won't be counted as an option).</p>
         Options: <textarea class="auto-text auto-text-block" id="edit_wildcard_contents" rows="15" placeholder="Wildcard options (1 per line)"></textarea>
-        <span class="form-check form-switch display-inline-block">
-            <input class="form-check-input translate" type="checkbox" id="edit_wildcard_enable_image" title="Enable/disable image" onclick="doToggleEnable('edit_wildcard_image')"> Use Image
-        </span>
-        <div id="edit_wildcard_image" class="new_preset_image"></div>
+        <div id="edit_wildcard_image_block"></div>
     </div>
     <div class="modal-footer">
     <span id="edit_wildcard_modal_error" class="modal_error_bottom"></span>
@@ -291,7 +288,7 @@
     <div class="modal-body">
         <textarea class="auto-text auto-text-block translate" id="preset_description" rows="3" placeholder="Preset description text..."></textarea>
         <span class="form-check form-switch display-inline-block">
-            <input class="form-check-input translate" type="checkbox" id="new_preset_enable_image" title="Enable/disable image" onclick="doToggleEnable('new_preset_image')"> Use Image
+            <input class="form-check-input translate" type="checkbox" id="new_preset_enable_image" title="Enable/disable image"> Use Image
         </span>
         <div id="new_preset_image" class="new_preset_image"></div>
         <hr>
