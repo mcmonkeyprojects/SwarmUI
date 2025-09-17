@@ -138,6 +138,7 @@ public class WebServer
         {
             options.Limits.MaxRequestHeadersTotalSize = 1024 * 1024;
             options.Limits.MaxRequestHeaderCount = 200;
+            options.Limits.MaxRequestBodySize = 100 * 1024 * 1024;
         });
         timer.Check("[Web] WebApp builder prep");
         builder.Services.AddRazorPages();
