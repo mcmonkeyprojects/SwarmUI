@@ -499,9 +499,6 @@
     background: rgba(0, 0, 0, 0.2) !important;
     border: 1px solid var(--box-selected-border-stronger);
 }
-.image-block.image-block-current {
-    outline: 3px solid var(--box-selected-border-stronger);
-}
 
 .model-block {
     border-radius: 10px;

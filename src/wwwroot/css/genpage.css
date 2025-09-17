@@ -343,6 +343,9 @@ body {
 .image-block-failed::after {
     transform: rotate(-45deg);
 }
+.image-block.image-block-current {
+    outline: 3px solid var(--box-selected-border-stronger);
+}
 .image-batch-0 {
     background-color: var(--batch-0);
 }
