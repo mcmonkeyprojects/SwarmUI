@@ -420,13 +420,17 @@ function copy_current_image_params() {
         let elem = document.getElementById(`input_${param.id}`);
         let val = metadata[param.id];
         if (elem && val !== undefined && val !== null && val !== '') {
-            setDirectParamValue(param, val);
-            if (param.group && param.group.toggles) {
-                let toggle = getRequiredElementById(`input_group_content_${param.group.id}_toggle`);
-                if (!toggle.checked) {
-                    toggle.click();
+            let group = param.group;
+            while (group) {
+                if (group.toggles) {
+                    let toggle = getRequiredElementById(`input_group_content_${group.id}_toggle`);
+                    if (!toggle.checked) {
+                        toggle.click();
+                    }
                 }
+                group = group.parent;
             }
+            setDirectParamValue(param, val);
         }
         else if (elem && param.toggleable && param.visible && !resetExclude.includes(param.id)) {
             let toggle = getRequiredElementById(`input_${param.id}_toggle`);

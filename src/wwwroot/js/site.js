@@ -486,6 +486,7 @@ function doToggleEnable(id) {
     if (typeof scheduleParamUnsupportUpdate == 'function') {
         scheduleParamUnsupportUpdate();
     }
+    triggerChangeFor(toggler);
 }
 
 function getToggleHtml(toggles, id, name, extraClass = '', func = 'doToggleEnable') {
