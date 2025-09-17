@@ -548,7 +548,7 @@ public class T2IModelHandler
                 }
             }
             string altTriggerPhrase = triggerPhrases.JoinString(", ");
-            T2IModelClass clazz = T2IModelClassSorter.IdentifyClassFor(model, headerData);
+            T2IModelClass clazz = T2IModelClassSorter.IdentifyClassFor(model, headerData, ModelType);
             string specialFormat = null;
             foreach (string key in headerData.Properties().Select(p => p.Name))
             {
