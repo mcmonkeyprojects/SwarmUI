@@ -96,6 +96,7 @@ class GenPageBrowserClass {
         this.updatePendingSince = null;
         this.wantsReupdate = false;
         this.noContentUpdates = false;
+        this.refreshHandler = (callback) => callback();
         this.checkIsSmall();
     }
 
@@ -182,7 +183,7 @@ class GenPageBrowserClass {
      * Refreshes the browser view from source.
      */
     refresh() {
-        refreshParameterValues(true, () => {
+        this.refreshHandler(() => {
             this.chunksRendered = 0;
             let path = this.folder;
             this.folder = '';

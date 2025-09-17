@@ -322,6 +322,9 @@ class ModelBrowserWrapper {
         this.browser = new GenPageBrowserClass(container, this.listModelFolderAndFiles.bind(this), id, format, this.describeModel.bind(this), this.selectModel.bind(this), extraHeader);
         this.promptBox = getRequiredElementById('alt_prompt_textbox');
         this.models = {};
+        this.browser.refreshHandler = (callback) => {
+            refreshParameterValues(true, subType == 'Wildcards' ? 'wildcards' : null, callback);
+        };
     }
 
     sortModelLocal(a, b, files) {

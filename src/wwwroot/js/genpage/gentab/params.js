@@ -948,8 +948,8 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     return input;
 }
 
-function refreshParameterValues(strong = true, callback = null) {
-    genericRequest('TriggerRefresh', {strong: strong}, data => {
+function refreshParameterValues(strong = true, refreshType = null, callback = null) {
+    genericRequest('TriggerRefresh', {strong: strong, refreshType: refreshType}, data => {
         loadUserData();
         if (!gen_param_types) {
             return;

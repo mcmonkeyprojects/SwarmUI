@@ -791,7 +791,8 @@ public static class T2IAPI
             "param_edits": [...]
         """)]
     public static async Task<JObject> TriggerRefresh(Session session,
-        [API.APIParameter("If true, fully refresh everything. If false, just grabs the list of current available parameters (waiting for any pending refreshes first).")] bool strong = true)
+        [API.APIParameter("If true, fully refresh everything. If false, just grabs the list of current available parameters (waiting for any pending refreshes first).")] bool strong = true,
+        [API.APIParameter("Optional type of data to refresh. If unspecified, runs a general refresh. Valid options: ['wildcards']")] string refreshType = null)
     {
         Logs.Verbose($"User {session.User.UserID} triggered a {(strong ? "strong" : "weak")} data refresh");
         bool botherToRun = strong && RefreshSemaphore.CurrentCount > 0; // no need to run twice at once
@@ -811,8 +812,19 @@ public static class T2IAPI
             if (botherToRun)
             {
                 using ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite();
-                Program.ModelRefreshEvent?.Invoke();
-                LastRefreshed = Environment.TickCount64;
+                if (string.IsNullOrWhiteSpace(refreshType))
+                {
+                    Program.ModelRefreshEvent?.Invoke();
+                    LastRefreshed = Environment.TickCount64;
+                }
+                else if (refreshType == "wildcards")
+                {
+                    WildcardsHelper.Refresh();
+                }
+                else
+                {
+                    Logs.Warning($"User {session.User.UserID} requested refresh type '{refreshType}' which is unrecognized, ignoring.");
+                }
             }
         }
         finally

@@ -163,7 +163,7 @@ class WildcardHelpers {
             }
             genericRequest('EditWildcard', data, resData => {
                 wildcardsBrowser.browser.refresh();
-                if (card.name && card.name != data.card) {
+                if (card.name && card.name != data.card && !card.name.endsWith('/')) {
                     genericRequest('DeleteWildcard', { card: card.name }, data => {});
                 }
             });
