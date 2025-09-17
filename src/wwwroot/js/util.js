@@ -364,13 +364,19 @@ function isChildOf(node, parentId) {
 }
 
 /** Returns the current cursor position in the given contenteditable span, in a way that compensates for sub-spans. */
-function getCurrentCursorPosition(parentId) {
+function getCurrentCursorPosition(parentId, getEnd = false) {
     let selection = window.getSelection();
+    if (selection.rangeCount == 0) {
+        return -1;
+    }
+    let range = selection.getRangeAt(0);
     let charCount = -1;
     let node;
-    if (selection.focusNode && isChildOf(selection.focusNode, parentId)) {
-        node = selection.focusNode;
-        charCount = selection.focusOffset;
+    let containerTarget = getEnd ? range.endContainer : range.startContainer;
+    let offsetTarget = getEnd ? range.endOffset : range.startOffset;
+    if (containerTarget && isChildOf(containerTarget, parentId)) {
+        node = containerTarget;
+        charCount = offsetTarget;
         if (node.id == parentId) {
             let i = 0;
             let altCount = 0;

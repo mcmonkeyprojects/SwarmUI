@@ -171,8 +171,43 @@ class PromptTabCompleteClass {
         this.prefixes[name] = { name, description: data.description, completer: data.completer, selfStanding: data.selfStanding, isAlt: true };
     }
 
+    getPromptText(box) {
+        if (box.tagName == 'TEXTAREA') {
+            return box.value;
+        }
+        return box.innerText;
+    }
+
+    setPromptText(box, text) {
+        if (box.tagName == 'TEXTAREA') {
+            box.value = text;
+        }
+        else {
+            box.innerText = text;
+        }
+    }
+
+    setPromptSelRange(box, start, end) {
+        if (box.tagName == 'TEXTAREA') {
+            box.selectionStart = start;
+            box.selectionEnd = end;
+        }
+        else {
+            setSelectionRange(box, start, end);
+        }
+    }
+
+    getPromptSelRange(box) {
+        if (box.tagName == 'TEXTAREA') {
+            return [box.selectionStart, box.selectionEnd];
+        }
+        let start = getCurrentCursorPosition(box.id, false);
+        let end = getCurrentCursorPosition(box.id, true);
+        return [start, end];
+    }
+
     getPromptBeforeCursor(box) {
-        return box.value.substring(0, box.selectionStart);
+        return this.getPromptText(box).substring(0, this.getPromptSelRange(box)[0]);
     }
 
     findLastWordIndex(text) {
@@ -375,10 +410,9 @@ class PromptTabCompleteClass {
             if (isClickable) {
                 button.action = () => {
                     let areaPre = prompt.substring(0, index);
-                    let areaPost = box.value.substring(box.selectionStart);
-                    box.value = areaPre + apply + areaPost;
-                    box.selectionStart = areaPre.length + apply.length;
-                    box.selectionEnd = areaPre.length + apply.length;
+                    let areaPost = this.getPromptText(box).substring(this.getPromptSelRange(box)[0]);
+                    this.setPromptText(box, areaPre + apply + areaPost);
+                    this.setPromptSelRange(box, areaPre.length + apply.length, areaPre.length + apply.length);
                     box.focus();
                     box.dispatchEvent(new Event('input'));
                 };
@@ -513,8 +547,7 @@ class PromptPlusButton {
                 text += ' <';
             }
             this.altTextBox.value = text;
-            this.altTextBox.selectionStart = this.altTextBox.value.length;
-            this.altTextBox.selectionEnd = this.altTextBox.value.length;
+            this.setPromptSelRange(this.altTextBox, this.altTextBox.value.length, this.altTextBox.value.length);
             this.altTextBox.focus();
             triggerChangeFor(this.altTextBox);
         }});
