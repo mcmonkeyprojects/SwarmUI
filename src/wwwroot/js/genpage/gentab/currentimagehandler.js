@@ -911,13 +911,13 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
-        [...batchContainer.getElementsByClassName('image-block')].forEach(i => {
+        for (const i of batchContainer.getElementsByClassName('image-block')) {
             if (batchImg && batchImg == i) {
-              i.classList.add('image-block-current');
-              return;
+                i.classList.add('image-block-current');
+            } else {
+                i.classList.remove('image-block-current');
             }
-            i.classList.remove('image-block-current')
-        });
+        }
     }
 }
 
