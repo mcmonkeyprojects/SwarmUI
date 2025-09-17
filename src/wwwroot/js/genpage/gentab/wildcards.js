@@ -88,7 +88,7 @@ class WildcardHelpers {
      */
     createNewWildcardButton() {
         let card = {
-            name: '',
+            name: wildcardsBrowser.browser.folder,
             raw: ''
         };
         this.editWildcard(card);
@@ -137,7 +137,7 @@ class WildcardHelpers {
             this.wildcardModalError('No wildcard available to save (internal error?)');
             return;
         }
-        let name = this.nameElem.value.trim().replaceAll('\\', '/');
+        let name = this.nameElem.value.trim().replaceAll('\\', '/').replace(/^\/+/, '');
         if (name == '') {
             this.wildcardModalError('Name is required');
             return;
@@ -157,7 +157,7 @@ class WildcardHelpers {
             'preview_image': '',
             'preview_image_metadata': null
         };
-        function complete() {
+        let complete = () => {
             if (card.name != data.card && !data['preview_image'] && card.image && card.image != 'imgs/model_placeholder.jpg') {
                 data['preview_image'] = card.image;
             }
