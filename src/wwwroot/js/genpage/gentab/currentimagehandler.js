@@ -306,7 +306,7 @@ function clickImageInBatch(div) {
     setCurrentImage(div.dataset.src, div.dataset.metadata, div.dataset.batch_id ?? '', imgElem && imgElem.dataset.previewGrow == 'true', false, true, div.dataset.is_placeholder == 'true');
 }
 
-/** Removes a preview thumbnail and highlights either next or previous image. */
+/** Removes a preview thumbnail and moves to either previous or next image. */
 function removeImageBlockFromBatch(div) {
     if (!div.classList.contains('image-block-current')) {
         div.remove();
@@ -906,12 +906,11 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
-
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
-        for (const i of batchContainer.getElementsByClassName('image-block')) {
-            if (batchImg && batchImg == i) {
+        for (let i of batchContainer.getElementsByClassName('image-block')) {
+            if (batchImg == i) {
                 i.classList.add('image-block-current');
             }
             else {
