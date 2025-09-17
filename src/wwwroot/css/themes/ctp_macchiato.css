@@ -4,7 +4,8 @@
     --background-gray: #24273a;
     --background-panel: #1e2030;
     --background-panel-subtle: #24273a;
-    --background-danger: color-mix(in srgb, #181926 80%, #ed8796);
+    --background-danger: color-mix(in srgb, #181926 95%, #ed8796);
+    --background-gray-danger: color-mix(in srgb, #181926 90%, #ed8796);
     --background-image: url('../../imgs/ctp_background.png');
 
     --text: #cad3f5;
