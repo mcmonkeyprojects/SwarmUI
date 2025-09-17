@@ -1,3 +1,19 @@
+/** Collection of helper functions and data related to presets. */
+class PresetHelpers {
+
+    constructor() {
+        this.imageBlockElem = getRequiredElementById('new_preset_image_block');
+        let imageHtml = makeImageInput(null, 'new_preset_image', null, 'Image', 'Image', true, false);
+        this.imageBlockElem.innerHTML = imageHtml;
+        this.imageElem = getRequiredElementById('new_preset_image');
+        this.enableImageElem = getRequiredElementById('new_preset_image_toggle');
+    }
+}
+
+/** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
+let presetHelpers = new PresetHelpers();
+
+//////////// TODO: Merge all the below into the class above
 
 let allPresets = [];
 let allPresetsUnsorted = [];
@@ -27,10 +43,9 @@ function clearPresetView() {
     getRequiredElementById('new_preset_name').value = '';
     getRequiredElementById('preset_description').value = '';
     getRequiredElementById('new_preset_modal_error').value = '';
-    getRequiredElementById('new_preset_image').innerHTML = '';
-    let enableImage = getRequiredElementById('new_preset_enable_image');
-    enableImage.checked = false;
-    enableImage.disabled = true;
+    clearImageFileInput(presetHelpers.imageElem);
+    presetHelpers.enableImageElem.checked = false;
+    triggerChangeFor(presetHelpers.enableImageElem);
     for (let type of gen_param_types) {
         try {
             let elem = getRequiredElementById('input_' + type.id);
@@ -65,20 +80,24 @@ let editPresetTitle = translatable('Edit Preset');
 
 function create_new_preset_button() {
     clearPresetView();
+    getRequiredElementById('new_preset_name').value = presetBrowser.folder;
     getRequiredElementById('new_preset_modal_title').innerText = createNewPresetTitle.get();
-    $('#add_preset_modal').modal('show');
     let curImg = document.getElementById('current_image_img');
+    presetHelpers.enableImageElem.checked = false;
+    let run = () => {
+        triggerChangeFor(presetHelpers.enableImageElem);
+        fixPresetParamClickables();
+        $('#add_preset_modal').modal('show');
+    };
     if (curImg && curImg.tagName == 'IMG') {
-        let newImg = curImg.cloneNode(true);
-        newImg.id = 'new_preset_image_img';
-        newImg.style.maxWidth = '100%';
-        newImg.style.maxHeight = '';
-        getRequiredElementById('new_preset_image').appendChild(newImg);
-        let enableImage = getRequiredElementById('new_preset_enable_image');
-        enableImage.checked = true;
-        enableImage.disabled = false;
+        setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
+            presetHelpers.enableImageElem.checked = true;
+            run();
+        });
     }
-    fixPresetParamClickables();
+    else {
+        run();
+    }
 }
 
 function close_create_new_preset() {
@@ -87,9 +106,13 @@ function close_create_new_preset() {
 
 function save_new_preset() {
     let errorOut = getRequiredElementById('new_preset_modal_error');
-    let name = getRequiredElementById('new_preset_name').value;
+    let name = getRequiredElementById('new_preset_name').value.trim().replaceAll('\\', '/').replace(/^\/+/, '');
     if (name == '') {
         errorOut.innerText = "Must set a Preset Name.";
+        return;
+    }
+    if (name.endsWith('/')) {
+        errorOut.innerText = "Cannot save a preset as a folder, give it a filename, or remove the trailing slash";
         return;
     }
     let description = getRequiredElementById('preset_description').value;
@@ -120,17 +143,28 @@ function save_new_preset() {
         toSend['is_edit'] = true;
         toSend['editing'] = preset_to_edit.title;
     }
-    if (getRequiredElementById('new_preset_enable_image').checked) {
-        toSend['preview_image'] = imageToSmallPreviewData(getRequiredElementById('new_preset_image').getElementsByTagName('img')[0]);
-    }
-    genericRequest('AddNewPreset', toSend, data => {
-        if (Object.keys(data).includes("preset_fail")) {
-            errorOut.innerText = data.preset_fail;
+    let complete = () => {
+        genericRequest('AddNewPreset', toSend, data => {
+            if (Object.keys(data).includes("preset_fail")) {
+                errorOut.innerText = data.preset_fail;
+                return;
+            }
+            loadUserData();
+            $('#add_preset_modal').modal('hide');
+        });
+    };
+    if (presetHelpers.enableImageElem.checked) {
+        let imageVal = getInputVal(presetHelpers.imageElem);
+        if (imageVal) {
+            toSend['preview_image_metadata'] = currentMetadataVal;
+            imageToData(imageVal, (dataURL) => {
+                toSend['preview_image'] = dataURL;
+                complete();
+            }, true);
             return;
         }
-        loadUserData();
-        $('#add_preset_modal').modal('hide');
-    });
+    }
+    complete();
 }
 
 function preset_toggle_advanced() {
@@ -264,23 +298,10 @@ function duplicatePreset(preset) {
 function editPreset(preset) {
     clearPresetView();
     preset_to_edit = preset;
+    presetHelpers.enableImageElem.checked = false;
     getRequiredElementById('new_preset_name').value = preset.title;
     getRequiredElementById('preset_description').value = preset.description;
-    let curImg = document.getElementById('current_image_img');
-    if (curImg && curImg.tagName == 'IMG') {
-        let newImg = curImg.cloneNode(true);
-        newImg.id = 'new_preset_image_img';
-        newImg.style.maxWidth = '100%';
-        newImg.style.maxHeight = '';
-        newImg.removeAttribute('width');
-        newImg.removeAttribute('height');
-        getRequiredElementById('new_preset_image').appendChild(newImg);
-        let enableImage = getRequiredElementById('new_preset_enable_image');
-        enableImage.checked = false;
-        enableImage.disabled = false;
-    }
     getRequiredElementById('new_preset_modal_title').innerText = editPresetTitle.get();
-    $('#add_preset_modal').modal('show');
     for (let key of Object.keys(preset.param_map)) {
         let type = gen_param_types.filter(p => p.id == key)[0];
         if (type) {
@@ -290,7 +311,21 @@ function editPreset(preset) {
             doToggleEnable(presetElem.id);
         }
     }
-    fixPresetParamClickables();
+    let curImg = document.getElementById('current_image_img');
+    let run = () => {
+        triggerChangeFor(presetHelpers.enableImageElem);
+        $('#add_preset_modal').modal('show');
+        fixPresetParamClickables();
+    };
+    if (curImg && curImg.tagName == 'IMG') {
+        setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
+            presetHelpers.enableImageElem.checked = !preset.preview_image || preset.preview_image == 'imgs/model_placeholder.jpg';
+            run();
+        });
+    }
+    else {
+        run();
+    }
 }
 
 function getPresetSortValue(sortBy, preset) {

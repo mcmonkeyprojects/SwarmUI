@@ -287,10 +287,7 @@
 @WebUtil.ModalHeader("add_preset_modal", """<span id="new_preset_modal_title">Create New Preset</span>: <input type="text" id="new_preset_name" placeholder="Preset Name" />""")
     <div class="modal-body">
         <textarea class="auto-text auto-text-block translate" id="preset_description" rows="3" placeholder="Preset description text..."></textarea>
-        <span class="form-check form-switch display-inline-block">
-            <input class="form-check-input translate" type="checkbox" id="new_preset_enable_image" title="Enable/disable image"> Use Image
-        </span>
-        <div id="new_preset_image" class="new_preset_image"></div>
+        <div id="new_preset_image_block"></div>
         <hr>
         <h5 class="translate">Parameters in the Preset</h5>
         <p class="translate">Select the checkbox next to inputs you want included in the preset.<br>By default this will override values entirely. For text inputs, use <code>{value}</code> to include the current UI value instead of overriding.</p>

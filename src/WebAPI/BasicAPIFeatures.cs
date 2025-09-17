@@ -260,6 +260,7 @@ public static class BasicAPIFeatures
         [API.APIParameter("User-facing description text.")] string description,
         [API.APIParameter("Use 'param_map' key to send the raw parameter mapping, equivalent to GenerateText2Image.")] JObject raw,
         [API.APIParameter("Optional preview image data base64 string.")] string preview_image = null,
+        [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null,
         [API.APIParameter("If true, edit an existing preset. If false, do not override pre-existing presets of the same name.")] bool is_edit = false,
         [API.APIParameter("If is_edit is set, include the original preset name here.")] string editing = null)
     {
@@ -274,6 +275,16 @@ public static class BasicAPIFeatures
         {
             return new JObject() { ["preset_fail"] = "A preset with that title already exists." };
         }
+        if (!string.IsNullOrWhiteSpace(preview_image))
+        {
+            if ((preview_image != "imgs/model_placeholder.jpg" && !preview_image.StartsWith("data:image/jpeg;base64,") && !preview_image.StartsWith("/Output")) || preview_image.Contains('?'))
+            {
+                Logs.Info($"User {session.User.UserID} tried to set a preset preview image to forbidden path: {preview_image}");
+                return new JObject() { ["preset_fail"] = "Forbidden preview-image path." };
+            }
+            Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+            preview_image = img.AsDataString();
+        }
         T2IPreset preset = new()
         {
             Author = session.User.UserID,
@@ -282,11 +293,6 @@ public static class BasicAPIFeatures
             ParamMap = paramData.Properties().Select(p => (p.Name, p.Value.ToString())).PairsToDictionary(),
             PreviewImage = string.IsNullOrWhiteSpace(preview_image) ? "imgs/model_placeholder.jpg" : preview_image
         };
-        if ((preset.PreviewImage != "imgs/model_placeholder.jpg" && !preset.PreviewImage.StartsWith("data:image/jpeg;base64,") && !preset.PreviewImage.StartsWith("/Output")) || preset.PreviewImage.Contains('?'))
-        {
-            Logs.Info($"User {session.User.UserID} tried to set a preset preview image to forbidden path: {preset.PreviewImage}");
-            return new JObject() { ["preset_fail"] = "Forbidden preview-image path." };
-        }
         if (is_edit && existingPreset is not null && editing != title)
         {
             session.User.DeletePreset(editing);

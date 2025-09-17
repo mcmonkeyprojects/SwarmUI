@@ -106,12 +106,12 @@ class WildcardHelpers {
         clearImageFileInput(this.imageElem);
         this.enableImageElem.checked = false;
         let curImg = document.getElementById('current_image_img');
+        this.nameElem.value = card.name;
+        this.contentsElem.value = card.raw;
+        this.errorBoxElem.innerText = '';
+        this.modalMayClose = true;
         let run = () => {
             triggerChangeFor(this.enableImageElem);
-            this.nameElem.value = card.name;
-            this.contentsElem.value = card.raw;
-            this.errorBoxElem.innerText = '';
-            this.modalMayClose = true;
             $(this.modalElem).modal('show');
         };
         if (curImg && curImg.tagName == 'IMG') {
