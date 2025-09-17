@@ -308,7 +308,6 @@ function clickImageInBatch(div) {
 
 /** Removes a preview thumbnail and highlights either next or previous image. */
 function removeImageBlockFromBatch(div) {
-    /** Current image isn't the highlighted one, so just remove it. */
     if (!div.classList.contains('image-block-current')) {
         div.remove();
         return;
@@ -908,7 +907,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(extrasWrapper);
     }
 
-    /** If switching the main image, we want to update the image preview  as well. */
+    // If switching the main image, we want to update the image preview  as well.
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
