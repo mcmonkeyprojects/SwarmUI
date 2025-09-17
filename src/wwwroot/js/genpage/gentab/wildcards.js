@@ -7,6 +7,13 @@ class WildcardHelpers {
         this.allWildcards = [];
         this.wildcardNameCheck = {};
         this.wildcardDataCache = {};
+        this.nameElem = getRequiredElementById('edit_wildcard_name');
+        this.contentsElem = getRequiredElementById('edit_wildcard_contents');
+        this.enableImageElem = getRequiredElementById('edit_wildcard_enable_image');
+        this.imageElem = getRequiredElementById('edit_wildcard_image');
+        this.testResultElem = getRequiredElementById('test_wildcard_result');
+        this.testAgainButtonElem = getRequiredElementById('test_wildcard_again_button');
+        this.testNameElem = getRequiredElementById('test_wildcard_name');
     }
 
     /** Applies a new wildcard list from the server. */
@@ -25,16 +32,16 @@ class WildcardHelpers {
             return;
         }
         this.curWildcardMenuWildcard = card;
-        getRequiredElementById('test_wildcard_name').innerText = card.name;
+        this.testNameElem.innerText = card.name;
         let choice = Math.floor(Math.random() * card.options.length);
         let val = card.options[choice];
-        getRequiredElementById('test_wildcard_result').value = val;
-        let button = getRequiredElementById('test_wildcard_again_button');
+        this.testResultElem.value = val;
+        let button = this.testAgainButtonElem;
         if (val.includes('<')) {
             button.disabled = true;
             genericRequest('TestPromptFill', {'prompt': val}, data => {
                 button.disabled = false;
-                getRequiredElementById('test_wildcard_result').value = data.result;
+                this.testResultElem.value = data.result;
                 $('#test_wildcard_modal').modal('show');
             });
         }
@@ -73,11 +80,9 @@ class WildcardHelpers {
             return;
         }
         this.curWildcardMenuWildcard = card;
-        let imageInput = getRequiredElementById('edit_wildcard_image');
-        imageInput.innerHTML = '';
-        let enableImage = getRequiredElementById('edit_wildcard_enable_image');
-        enableImage.checked = false;
-        enableImage.disabled = true;
+        this.imageElem.innerHTML = '';
+        this.enableImageElem.checked = false;
+        this.enableImageElem.disabled = true;
         let curImg = document.getElementById('current_image_img');
         if (curImg && curImg.tagName == 'IMG') {
             let newImg = curImg.cloneNode(true);
@@ -86,14 +91,14 @@ class WildcardHelpers {
             newImg.style.maxHeight = '';
             newImg.removeAttribute('width');
             newImg.removeAttribute('height');
-            imageInput.appendChild(newImg);
+            this.imageElem.appendChild(newImg);
             if (!card.image || card.image == 'imgs/model_placeholder.jpg') {
-                enableImage.checked = true;
+                this.enableImageElem.checked = true;
             }
-            enableImage.disabled = false;
+            this.enableImageElem.disabled = false;
         }
-        getRequiredElementById('edit_wildcard_name').value = card.name;
-        getRequiredElementById('edit_wildcard_contents').value = card.raw;
+        this.nameElem.value = card.name;
+        this.contentsElem.value = card.raw;
         $('#edit_wildcard_modal').modal('show');
     }
 
@@ -104,9 +109,10 @@ class WildcardHelpers {
             console.log("Wildcard do save: no wildcard");
             return;
         }
+        let name = this.nameElem.value;
         let data = {
-            'card': getRequiredElementById('edit_wildcard_name').value,
-            'options': getRequiredElementById('edit_wildcard_contents').value.trim() + '\n',
+            'card': name,
+            'options': this.contentsElem.value.trim() + '\n',
             'preview_image': '',
             'preview_image_metadata': null
         };
@@ -122,9 +128,9 @@ class WildcardHelpers {
             });
             $('#edit_wildcard_modal').modal('hide');
         }
-        if (getRequiredElementById('edit_wildcard_enable_image').checked) {
+        if (this.enableImageElem.checked) {
             data['preview_image_metadata'] = currentMetadataVal;
-            imageToData(getRequiredElementById('edit_wildcard_image').getElementsByTagName('img')[0].src, (dataURL) => {
+            imageToData(this.imageElem.getElementsByTagName('img')[0].src, (dataURL) => {
                 data['preview_image'] = dataURL;
                 complete();
             }, true);
