@@ -296,41 +296,10 @@ function internalSiteJsGetUserSetting(name, defaultValue) {
 }
 
 function textPromptAddKeydownHandler(elem) {
-    let getValue = () => {
-        if (elem.tagName == 'TEXTAREA') {
-            return elem.value;
-        }
-        return elem.innerText;
-    }
-    let setValue = (text) => {
-        if (elem.tagName == 'TEXTAREA') {
-            elem.value = text;
-        }
-        else {
-            elem.innerText = text;
-        }
-    }
-    let setSelRange = (start, end) => {
-        if (elem.tagName == 'TEXTAREA') {
-            elem.selectionStart = start;
-            elem.selectionEnd = end;
-        }
-        else {
-            setSelectionRange(elem, start, end);
-        }
-    }
-    let getSelRange = () => {
-        if (elem.tagName == 'TEXTAREA') {
-            return [elem.selectionStart, elem.selectionEnd];
-        }
-        let start = getCurrentCursorPosition(elem.id, false);
-        let end = getCurrentCursorPosition(elem.id, true);
-        return [start, end];
-    }
     let shiftText = (up) => {
-        let [selStart, selEnd] = getSelRange();
+        let [selStart, selEnd] = getTextSelRange(elem);
         if (selStart == selEnd) {
-            let simpleText = getValue();
+            let simpleText = getTextContent(elem);
             for (let char of ['\n', '\t', ',', '.']) {
                 simpleText = simpleText.replaceAll(char, ' ');
             }
@@ -349,7 +318,7 @@ function textPromptAddKeydownHandler(elem) {
                 selEnd = simpleText.length;
             }
         }
-        let text = getValue();
+        let text = getTextContent(elem);
         let before = text.substring(0, selStart);
         let after = text.substring(selEnd);
         let mid = text.substring(selStart, selEnd);
@@ -397,18 +366,18 @@ function textPromptAddKeydownHandler(elem) {
         strength += up ? 0.1 : -0.1;
         strength = `${formatNumberClean(strength, 5)}`;
         if (strength == "1") {
-            setValue(`${before}${mid}${after}`);
-            setSelRange(before.length, before.length + mid.length);
+            setTextContent(elem, `${before}${mid}${after}`);
+            setTextSelRange(elem, before.length, before.length + mid.length);
         }
         else {
-            setValue(`${before}(${mid}:${strength})${after}`);
-            setSelRange(before.length + 1, before.length + mid.length + 1);
+            setTextContent(elem, `${before}(${mid}:${strength})${after}`);
+            setTextSelRange(elem, before.length + 1, before.length + mid.length + 1);
         }
         triggerChangeFor(elem);
     }
     let moveCommaSeparatedElement = (left) => {
-        let [cursor, cursorEnd] = getSelRange();
-        let parts = getValue().split(',');
+        let [cursor, cursorEnd] = getTextSelRange(elem);
+        let parts = getTextContent(elem).split(',');
         let textIndex = 0;
         let index = -1;
         for (let i = 0; i < parts.length; i++) {
@@ -439,8 +408,8 @@ function textPromptAddKeydownHandler(elem) {
             }
             newValue += parts[i];
         }
-        setValue(newValue);
-        setSelRange(newCursor, newCursor + (cursorEnd - cursor));
+        setTextContent(elem, newValue);
+        setTextSelRange(elem, newCursor, newCursor + (cursorEnd - cursor));
         triggerChangeFor(elem);
     }
     elem.addEventListener('keydown', (e) => {

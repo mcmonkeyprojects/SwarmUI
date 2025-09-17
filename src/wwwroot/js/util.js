@@ -403,6 +403,45 @@ function getCurrentCursorPosition(parentId, getEnd = false) {
     return charCount;
 }
 
+/** Returns the text content of the given element, compatible with both textareas and contenteditable spans. */
+function getTextContent(box) {
+    if (box.tagName == 'TEXTAREA') {
+        return box.value;
+    }
+    return box.innerText;
+}
+
+/** Sets the text content of the given element, compatible with both textareas and contenteditable spans. */
+function setTextContent(box, text) {
+    if (box.tagName == 'TEXTAREA') {
+        box.value = text;
+    }
+    else {
+        box.innerText = text;
+    }
+}
+
+/** Sets the selection range of the given element, compatible with both textareas and contenteditable spans. */
+function setTextSelRange(box, start, end) {
+    if (box.tagName == 'TEXTAREA') {
+        box.selectionStart = start;
+        box.selectionEnd = end;
+    }
+    else {
+        setSelectionRange(box, start, end);
+    }
+}
+
+/** Returns the selection range of the given element, compatible with both textareas and contenteditable spans. */
+function getTextSelRange(box) {
+    if (box.tagName == 'TEXTAREA') {
+        return [box.selectionStart, box.selectionEnd];
+    }
+    let start = getCurrentCursorPosition(box.id, false);
+    let end = getCurrentCursorPosition(box.id, true);
+    return [start, end];
+}
+
 /** Downloads the data at the given URL and returns a 'data:whatever,base64:...' URL. */
 function toDataURL(url, callback) {
     var xhr = new XMLHttpRequest();
