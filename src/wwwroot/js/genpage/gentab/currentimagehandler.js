@@ -907,14 +907,14 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(extrasWrapper);
     }
 
-    // If switching the main image, we want to update the image preview  as well.
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
         for (const i of batchContainer.getElementsByClassName('image-block')) {
             if (batchImg && batchImg == i) {
                 i.classList.add('image-block-current');
-            } else {
+            }
+            else {
                 i.classList.remove('image-block-current');
             }
         }
