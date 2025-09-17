@@ -177,7 +177,7 @@ class ImageFullViewHelper {
         img.style.height = `${newHeight}%`;
     }
 
-    showImage(src, metadata, batchId) {
+    showImage(src, metadata, batchId = null) {
         this.currentSrc = src;
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
@@ -187,6 +187,7 @@ class ImageFullViewHelper {
         if (isVideo) {
             imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="video/${encodedSrc.substring(encodedSrc.lastIndexOf('.') + 1)}"></video>`;
         }
+        this.imgElement = null;
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
         <div class="imageview_modal_inner_div">
@@ -198,7 +199,6 @@ class ImageFullViewHelper {
                 ${formatMetadata(metadata)}
             </div>
         </div>`;
-        this.imgElement = document.getElementById("imageview_popup_modal_img");
         let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
             if (added.href) {
@@ -214,6 +214,7 @@ class ImageFullViewHelper {
             }
         }
         this.modalJq.modal('show');
+        this.imgElement = document.getElementById("imageview_popup_modal_img");
         if (this.fixButtonDelay) {
             clearTimeout(this.fixButtonDelay);
         }
@@ -693,9 +694,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.dataset.src = src;
     img.dataset.metadata = metadata || '{}';
     img.dataset.batch_id = batchId;
-    img.onclick = () => {
-        imageFullView.showImage(img.dataset.src, img.dataset.metadata, img.dataset.batch_id);
-    }
+    img.onclick = () => { imageFullView.showImage(img.dataset.src, img.dataset.metadata, img.dataset.batch_id); }
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
     let buttons = createDiv(null, 'current-image-buttons');
