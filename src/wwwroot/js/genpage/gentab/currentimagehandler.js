@@ -912,7 +912,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
         [...batchContainer.getElementsByClassName('image-block')].forEach(i => {
-            if (batchImg && batchImg === i) {
+            if (batchImg && batchImg == i) {
               i.classList.add('image-block-current');
               return;
             }
