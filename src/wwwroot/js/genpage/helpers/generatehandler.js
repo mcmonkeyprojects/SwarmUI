@@ -199,8 +199,7 @@ class GenerateHandler {
                         }
                         this.setImageFor(imgHolder, data.gen_progress.preview);
                     }
-                    if (data.gen_progress.preview && imageFullView.isOpen() && imageFullView.imgElement && imageFullView.currentBatchId == thisBatchId)
-                    {
+                    if (data.gen_progress.preview && imageFullView.isOpen() && imageFullView.imgElement && imageFullView.currentBatchId == thisBatchId) {
                         imageFullView.imgElement.src = data.gen_progress.preview;
                     }
                 }
