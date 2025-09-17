@@ -554,13 +554,15 @@ function toggleStar(path, rawSrc) {
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
             curImgImg.dataset.metadata = JSON.stringify(newMetadata);
             let button = getRequiredElementById('current_image').querySelector('.star-button');
-            if (data.new_state) {
-                button.classList.add('button-starred-image');
-                button.innerText = 'Starred';
-            }
-            else {
-                button.classList.remove('button-starred-image');
-                button.innerText = 'Star';
+            if (button) {
+                if (data.new_state) {
+                    button.classList.add('button-starred-image');
+                    button.innerText = 'Starred';
+                }
+                else {
+                    button.classList.remove('button-starred-image');
+                    button.innerText = 'Star';
+                }
             }
         }
         let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
