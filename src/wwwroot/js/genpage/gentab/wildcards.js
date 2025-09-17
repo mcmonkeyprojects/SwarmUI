@@ -11,6 +11,7 @@ class WildcardHelpers {
         this.contentsElem = getRequiredElementById('edit_wildcard_contents');
         this.enableImageElem = getRequiredElementById('edit_wildcard_enable_image');
         this.imageElem = getRequiredElementById('edit_wildcard_image');
+        this.errorBoxElem = getRequiredElementById('edit_wildcard_modal_error');
         this.testResultElem = getRequiredElementById('test_wildcard_result');
         this.testAgainButtonElem = getRequiredElementById('test_wildcard_again_button');
         this.testNameElem = getRequiredElementById('test_wildcard_name');
@@ -102,17 +103,36 @@ class WildcardHelpers {
         $('#edit_wildcard_modal').modal('show');
     }
 
+    wildcardModalError(error) {
+        console.log(`Wildcard modal error: ${error}`);
+        this.errorBoxElem.innerText = error;
+    }
+
     /** Saves the edits to a wildcard from the modal created by {@link WildcardHelpers#editWildcard}. */
     saveEditWildcard() {
+        this.errorBoxElem.innerText = '';
         let card = this.curWildcardMenuWildcard;
         if (card == null) {
-            console.log("Wildcard do save: no wildcard");
+            this.wildcardModalError('No wildcard available to save (internal error?)');
             return;
         }
-        let name = this.nameElem.value;
+        let name = this.nameElem.value.trim().replaceAll('\\', '/');
+        if (name == '') {
+            this.wildcardModalError('Name is required');
+            return;
+        }
+        if (name.endsWith('/')) {
+            this.wildcardModalError('Cannot save a wildcard as a folder, give it a filename, or remove the trailing slash');
+            return;
+        }
+        let content = this.contentsElem.value.trim();
+        if (content == '') {
+            this.wildcardModalError('At least one entry is required');
+            return;
+        }
         let data = {
             'card': name,
-            'options': this.contentsElem.value.trim() + '\n',
+            'options': content + '\n',
             'preview_image': '',
             'preview_image_metadata': null
         };
