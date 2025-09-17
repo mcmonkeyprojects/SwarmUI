@@ -1039,7 +1039,9 @@ public class WorkflowGenerator
                     string modelNode = CreateNode("NunchakuQwenImageDiTLoader", new JObject()
                     {
                         ["model_name"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
-                        ["cpu_offload"] = "auto"
+                        ["cpu_offload"] = "auto",
+                        ["num_blocks_on_gpu"] = 1, // TODO: If nunchaku doesn't fix automation here, add a param. Also enable cpu_offload if the param is given.
+                        ["use_pin_memory"] = "enable"
                     }, id);
                     LoadingModel = [modelNode, 0];
                 }
