@@ -8,6 +8,7 @@
     --background-danger: #200b0b;
     --shadow: #3f3f46;
     --emphasis: #00fff7;
+    --emphasis-text: #0a0a0a;
     --light-border: #3f3f46;
     --red: #ff0000;
     --green: #00ff00;
@@ -159,6 +160,9 @@
 }
 .basic-button:hover {
     background-color: var(--pteal) !important;
+    color: white !important;
+}
+.basic-button.btn-primary {
     color: white !important;
 }
 
