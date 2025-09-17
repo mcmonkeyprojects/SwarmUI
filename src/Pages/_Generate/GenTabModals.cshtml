@@ -166,7 +166,8 @@
     <div class="modal-body">
         <p class="translate">Wildcards are lists of random prompt segments. One entry per line. Prompt sub-syntax is allowed (eg you can link another wildcard, or use <code>&lt;random:...&gt;</code>, or <code>&lt;preset:...&gt;</code> or anything else you want).</p>
         <p class="translate">Prefix a line with <code>#</code> to make it a comment (ie won't be counted as an option).</p>
-        Options: <textarea class="auto-text auto-text-block" id="edit_wildcard_contents" rows="15" placeholder="Wildcard options (1 per line)"></textarea>
+        <p>Use Experimental Editor? <input type="checkbox" id="edit_wildcard_experimental_editor" onchange="wildcardHelpers.toggleExperimentalEditor()" /></p>
+        <div id="edit_wildcard_editor_spot"></div>
         <div id="edit_wildcard_image_block"></div>
     </div>
     <div class="modal-footer">

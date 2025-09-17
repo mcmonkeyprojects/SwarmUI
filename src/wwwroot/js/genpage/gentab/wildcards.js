@@ -8,7 +8,9 @@ class WildcardHelpers {
         this.wildcardNameCheck = {};
         this.wildcardDataCache = {};
         this.nameElem = getRequiredElementById('edit_wildcard_name');
-        this.contentsElem = getRequiredElementById('edit_wildcard_contents');
+        this.experimentalEditorElem = getRequiredElementById('edit_wildcard_experimental_editor');
+        this.experimentalEditorSpotElem = getRequiredElementById('edit_wildcard_editor_spot');
+        this.toggleExperimentalEditor();
         this.imageBlockElem = getRequiredElementById('edit_wildcard_image_block');
         let imageHtml = makeImageInput(null, 'edit_wildcard_image', null, 'Image', 'Image', true, false);
         this.imageBlockElem.innerHTML = imageHtml;
@@ -19,9 +21,6 @@ class WildcardHelpers {
         this.modalElem = getRequiredElementById('edit_wildcard_modal');
         this.modalMayClose = true;
         this.nameElem.addEventListener('input', () => {
-            this.modalMayClose = false;
-        });
-        this.contentsElem.addEventListener('input', () => {
             this.modalMayClose = false;
         });
         setTimeout(() => {
@@ -37,6 +36,32 @@ class WildcardHelpers {
         });
         this.imageElem = getRequiredElementById('edit_wildcard_image');
         this.enableImageElem = getRequiredElementById('edit_wildcard_image_toggle');
+    }
+
+    /** Toggles the experimental editor. */
+    toggleExperimentalEditor() {
+        let content = null;
+        if (this.contentsElem) {
+            content = getTextContent(this.contentsElem);
+        }
+        if (this.experimentalEditorElem.checked) {
+            this.experimentalEditorSpotElem.innerHTML = '<div class="editable-textbox" id="edit_wildcard_contents" style="min-height: 15lh" contenteditable="true"></div>';
+            this.contentsElem = getRequiredElementById('edit_wildcard_contents');
+            this.contentsElem.addEventListener('input', () => {
+                this.processContents();
+            });
+        }
+        else {
+            this.experimentalEditorSpotElem.innerHTML = '<textarea class="auto-text auto-text-block" id="edit_wildcard_contents" rows="15" placeholder="Wildcard options (1 per line)"></textarea>';
+            this.contentsElem = getRequiredElementById('edit_wildcard_contents');
+        }
+        if (content) {
+            setTextContent(this.contentsElem, content);
+        }
+        this.contentsElem.addEventListener('input', () => {
+            this.modalMayClose = false;
+        });
+        this.processContents();
     }
 
     /** Applies a new wildcard list from the server. */
@@ -97,6 +122,31 @@ class WildcardHelpers {
         this.editWildcard(card);
     }
 
+    /** Processes the contents of the wildcard contents edit box, reapplying syntax highlighting. */
+    processContents() {
+        if (this.contentsElem.tagName == 'TEXTAREA') {
+            return;
+        }
+        let [start, end] = getTextSelRange(this.contentsElem);
+        let contents = getTextContent(this.contentsElem);
+        let lines = contents.split('\n');
+        let html = '';
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            let trimLine = line.trim();
+            let clazz = `wc_line_${i % 2}`;
+            if (trimLine.startsWith('#')) {
+                clazz += ' wc_line_comment';
+            }
+            html += `<span class="${clazz}">${line}</span>`;
+            if (i < lines.length - 1) {
+                html += '<br>';
+            }
+        }
+        this.contentsElem.innerHTML = html;
+        setTextSelRange(this.contentsElem, start, end);
+    }
+
     /** Edit a wildcard, opening the wildcard edit modal. This can also open the editor for new wildcards. */
     editWildcard(card) {
         if (card == null) {
@@ -107,7 +157,8 @@ class WildcardHelpers {
         this.enableImageElem.checked = false;
         let curImg = document.getElementById('current_image_img');
         this.nameElem.value = card.name;
-        this.contentsElem.value = card.raw;
+        setTextContent(this.contentsElem, card.raw);
+        this.processContents();
         this.errorBoxElem.innerText = '';
         this.modalMayClose = true;
         let run = () => {
@@ -147,7 +198,7 @@ class WildcardHelpers {
             this.wildcardModalError('Cannot save a wildcard as a folder, give it a filename, or remove the trailing slash');
             return;
         }
-        let content = this.contentsElem.value.trim();
+        let content = getTextContent(this.contentsElem).trim();
         if (content == '') {
             this.wildcardModalError('At least one entry is required');
             return;
