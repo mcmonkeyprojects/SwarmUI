@@ -15,6 +15,25 @@ class WildcardHelpers {
         this.testResultElem = getRequiredElementById('test_wildcard_result');
         this.testAgainButtonElem = getRequiredElementById('test_wildcard_again_button');
         this.testNameElem = getRequiredElementById('test_wildcard_name');
+        this.modalElem = getRequiredElementById('edit_wildcard_modal');
+        this.modalMayClose = true;
+        this.nameElem.addEventListener('input', () => {
+            this.modalMayClose = false;
+        });
+        this.contentsElem.addEventListener('input', () => {
+            this.modalMayClose = false;
+        });
+        setTimeout(() => {
+            $(this.modalElem).modal({backdrop: 'static', keyboard: false});
+        }, 1);
+        $(this.modalElem).on('hidePrevented.bs.modal', () => {
+            if (this.modalMayClose) {
+                $(this.modalElem).modal('hide');
+            }
+            else {
+                this.wildcardModalError('You have unsaved changes. Please Save or Cancel');
+            }
+        });
     }
 
     /** Applies a new wildcard list from the server. */
@@ -100,7 +119,9 @@ class WildcardHelpers {
         }
         this.nameElem.value = card.name;
         this.contentsElem.value = card.raw;
-        $('#edit_wildcard_modal').modal('show');
+        this.errorBoxElem.innerText = '';
+        this.modalMayClose = true;
+        $(this.modalElem).modal('show');
     }
 
     wildcardModalError(error) {
@@ -146,7 +167,7 @@ class WildcardHelpers {
                     genericRequest('DeleteWildcard', { card: card.name }, data => {});
                 }
             });
-            $('#edit_wildcard_modal').modal('hide');
+            $(this.modalElem).modal('hide');
         }
         if (this.enableImageElem.checked) {
             data['preview_image_metadata'] = currentMetadataVal;
