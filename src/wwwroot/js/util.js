@@ -315,16 +315,23 @@ function findParentOfClass(elem, className) {
 
 /** Returns all of the text nodes within an element. */
 function getTextNodesIn(node) {
-    var textNodes = [];
     if (node.nodeType == 3) {
-        textNodes.push(node);
+        if (node.textContent == '\n' && node.nextSibling && node.nextSibling.tagName == 'BR') {
+            // Some form of browser wonk, enter inserts a "\n" node and also a "<br>" node, which is visually only a single newline, so just... pretend we don't see the stray node I guess???
+            return [];
+        }
+        return [node];
     }
     else {
+        var textNodes = [];
+        if (node.tagName == 'BR') {
+            textNodes.push(node);
+        }
         for (let child of node.childNodes) {
             textNodes.push.apply(textNodes, getTextNodesIn(child));
         }
+        return textNodes;
     }
-    return textNodes;
 }
 
 /** Sets the selection range of the given element to the given start and end character indices. This is for fixing contenteditable elements. */
@@ -335,9 +342,10 @@ function setSelectionRange(el, start, end) {
     let foundStart = false;
     let charCount = 0
     let endCharCount;
-    for (let textNode of textNodes) {
-        endCharCount = charCount + textNode.length;
-        if (!foundStart && start >= charCount && start <= endCharCount) {
+    for (let i = 0; i < textNodes.length; i++) {
+        let textNode = textNodes[i];
+        endCharCount = charCount + (textNode.tagName == 'BR' ? 1 : textNode.textContent.length);
+        if (!foundStart && start >= charCount && (i == textNodes.length - 1 ? start <= endCharCount : start < endCharCount)) {
             range.setStart(textNode, start - charCount);
             foundStart = true;
         }
@@ -382,7 +390,7 @@ function getCurrentCursorPosition(parentId, getEnd = false) {
             let altCount = 0;
             for (let child of node.childNodes) {
                 if (i++ < charCount) {
-                    altCount += child.textContent.length;
+                    altCount += child.tagName == 'BR' ? 1 : child.textContent.length;
                 }
             }
             return altCount;
@@ -393,7 +401,7 @@ function getCurrentCursorPosition(parentId, getEnd = false) {
             }
             else if (node.previousSibling) {
                 node = node.previousSibling;
-                charCount += node.textContent.length;
+                charCount += node.tagName == 'BR' ? 1 : node.textContent.length;
             }
             else {
                 node = node.parentNode;
@@ -408,7 +416,12 @@ function getTextContent(box) {
     if (box.tagName == 'TEXTAREA') {
         return box.value;
     }
-    return box.innerText;
+    let nodes = getTextNodesIn(box);
+    let text = '';
+    for (let node of nodes) {
+        text += node.tagName == 'BR' ? '\n' : node.textContent;
+    }
+    return text;
 }
 
 /** Sets the text content of the given element, compatible with both textareas and contenteditable spans. */
