@@ -494,52 +494,70 @@ function getToggleHtml(toggles, id, name, extraClass = '', func = 'doToggleEnabl
 
 let loadImageFileDedup = false;
 
+function clearImageFileInput(elem) {
+    let parent = findParentOfClass(elem, 'auto-input');
+    let preview = parent.querySelector('.auto-input-image-preview');
+    let label = parent.querySelector('.auto-file-input-filename');
+    delete elem.dataset.filedata;
+    label.textContent = "";
+    preview.innerHTML = '';
+    elem.value = '';
+    loadImageFileDedup = true;
+    triggerChangeFor(elem);
+    loadImageFileDedup = false;
+}
+
+function setImageFileInput(elem, file) {
+    if (!file) {
+        clearImageFileInput(elem);
+        return;
+    }
+    let parent = findParentOfClass(elem, 'auto-input');
+    let preview = parent.querySelector('.auto-input-image-preview');
+    let label = parent.querySelector('.auto-file-input-filename');
+    let name = file.name;
+    if (name.length > 30) {
+        name = `${name.substring(0, 27)}...`;
+    }
+    let longName = file.name.length > 500 ? file.name.substring(0, 150) + '...' : file.name;
+    label.textContent = name;
+    let reader = new FileReader();
+    reader.addEventListener("load", () => {
+        setImageFileDirect(elem, reader.result, name, longName);
+    }, false);
+    reader.readAsDataURL(file);
+}
+
+function setImageFileDirect(elem, src, name, longName = null) {
+    let parent = findParentOfClass(elem, 'auto-input');
+    let preview = parent.querySelector('.auto-input-image-preview');
+    let label = parent.querySelector('.auto-file-input-filename');
+    elem.dataset.filedata = src;
+    preview.innerHTML = `<button class="interrupt-button auto-input-image-remove-button" title="Remove image">&times;</button><img alt="Image preview" />`;
+    let img = preview.querySelector('img');
+    img.onload = () => {
+        label.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight}, ${describeAspectRatio(img.naturalWidth, img.naturalHeight)})`;
+        elem.dataset.width = img.naturalWidth;
+        elem.dataset.height = img.naturalHeight;
+        elem.dataset.filename = longName || name;
+        elem.dataset.resolution = `${img.naturalWidth}x${img.naturalHeight}`;
+        loadImageFileDedup = true;
+        triggerChangeFor(elem);
+        loadImageFileDedup = false;
+    };
+    img.src = src;
+    preview.firstChild.addEventListener('click', () => {
+        clearImageFileInput(elem);
+    });
+}
+
 function load_image_file(elem) {
     if (loadImageFileDedup) {
         return;
     }
     updateFileDragging({ target: elem }, true);
     let file = elem.files[0];
-    let parent = elem.closest('.auto-input');
-    let preview = parent.querySelector('.auto-input-image-preview');
-    let label = parent.querySelector('.auto-file-input-filename');
-    if (file) {
-        let name = file.name;
-        if (name.length > 30) {
-            name = `${name.substring(0, 27)}...`;
-        }
-        label.textContent = name;
-        let reader = new FileReader();
-        reader.addEventListener("load", () => {
-            elem.dataset.filedata = reader.result;
-            preview.innerHTML = `<button class="interrupt-button auto-input-image-remove-button" title="Remove image">&times;</button><img alt="Image preview" />`;
-            let img = preview.querySelector('img');
-            img.onload = () => {
-                label.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight}, ${describeAspectRatio(img.naturalWidth, img.naturalHeight)})`;
-                elem.dataset.width = img.naturalWidth;
-                elem.dataset.height = img.naturalHeight;
-                elem.dataset.filename = file.name.length > 500 ? file.name.substring(0, 150) + '...' : file.name;
-                elem.dataset.resolution = `${img.naturalWidth}x${img.naturalHeight}`;
-                loadImageFileDedup = true;
-                triggerChangeFor(elem);
-                loadImageFileDedup = false;
-            };
-            img.src = reader.result;
-            preview.firstChild.addEventListener('click', () => {
-                delete elem.dataset.filedata;
-                label.textContent = "";
-                preview.innerHTML = '';
-                elem.value = '';
-                triggerChangeFor(elem);
-            });
-        }, false);
-        reader.readAsDataURL(file);
-    }
-    else {
-        delete elem.dataset.filedata;
-        label.textContent = "";
-        preview.innerHTML = '';
-    }
+    setImageFileInput(elem, file);
 }
 
 function autoSelectWidth(elem) {
