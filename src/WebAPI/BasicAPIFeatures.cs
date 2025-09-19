@@ -275,9 +275,9 @@ public static class BasicAPIFeatures
         {
             return new JObject() { ["preset_fail"] = "A preset with that title already exists." };
         }
-        if (!string.IsNullOrWhiteSpace(preview_image))
+        if (!string.IsNullOrWhiteSpace(preview_image) && preview_image != "imgs/model_placeholder.jpg")
         {
-            if ((preview_image != "imgs/model_placeholder.jpg" && !preview_image.StartsWith("data:image/jpeg;base64,") && !preview_image.StartsWith("/Output")) || preview_image.Contains('?'))
+            if ((!preview_image.StartsWith("data:image/jpeg;base64,") && !preview_image.StartsWith("/Output")) || preview_image.Contains('?'))
             {
                 Logs.Info($"User {session.User.UserID} tried to set a preset preview image to forbidden path: {preview_image}");
                 return new JObject() { ["preset_fail"] = "Forbidden preview-image path." };
