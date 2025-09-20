@@ -23,9 +23,9 @@ class WildcardHelpers {
         this.nameElem.addEventListener('input', () => {
             this.modalMayClose = false;
         });
-        setTimeout(() => {
+        $(() => {
             $(this.modalElem).modal({backdrop: 'static', keyboard: false});
-        }, 100); // This can just be '1' normally, but Chromium is very stupid, so we have to give it time to remember that jquery is in the fucking header.
+        }); // wait for DOMReady event, which is when bootstrap registers its jQuery plugins (like modal)
         $(this.modalElem).on('hidePrevented.bs.modal', () => {
             if (this.modalMayClose) {
                 $(this.modalElem).modal('hide');
