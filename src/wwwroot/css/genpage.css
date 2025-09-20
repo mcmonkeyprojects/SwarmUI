@@ -615,6 +615,11 @@ body {
 :is(#edit_wildcard_modal, #add_preset_modal) .modal-body {
     overflow-y: auto;
 }
+#edit_wildcard_editor_spot {
+    max-height: calc(100% - 75px);
+    overflow-y: auto;
+    margin-bottom: 1rem;
+}
 .preset-block-selected {
     border: 1px solid var(--box-selected-border);
     background-color: var(--box-selected-background);
