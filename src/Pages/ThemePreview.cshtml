@@ -2,13 +2,6 @@
 @section Header {
     <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
     <link rel="stylesheet" href="css/themepreview.css?vary=@Utilities.VaryID" />
-    @{
-        var themeId = Request.Query["theme"].ToString();
-        if (!string.IsNullOrEmpty(themeId))
-        {
-            <link rel="stylesheet" href="css/themes/@(themeId).css?vary=@Utilities.VaryID" />
-        }
-    }
 }
 <div class="theme_preview-content">
     <div class="theme_preview-item">
