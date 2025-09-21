@@ -290,7 +290,7 @@ document.addEventListener('mouseup', function (e) {
 /**
  * Builds a set of pseudo-parameters for the current Comfy workflow (async) then calls a callback with the parameter set object, the API workflow, and a list of retained default parameters, as callback(params, workflow, retained).
  */
-function comfyBuildParams(callback) {
+function comfyBuildParams(requireSave, callback) {
     comfyGetPromptAndWorkflow((workflow, prompt) => {
         function getFreeIdStartingAt(start) {
             let id = start;
@@ -405,7 +405,7 @@ function comfyBuildParams(callback) {
                 continue;
             }
             if (node.class_type == 'SaveImage') {
-                if ('SwarmSaveImageWS' in comfyObjectData) {
+                if ('SwarmSaveImageWS' in comfyObjectData && requireSave) {
                     node.class_type = 'SwarmSaveImageWS';
                     delete node.inputs['filename_prefix'];
                 }
@@ -437,13 +437,13 @@ function comfyBuildParams(callback) {
                 }
             }
         }
-        if (!hasSaves && previewNodes.length > 0) {
+        if (!hasSaves && previewNodes.length > 0 && requireSave) {
             prompt[previewNodes[0]].class_type = 'SwarmSaveImageWS';
             saveNodeId = previewNodes[0];
             hasSaves = true;
             previewNodes = previewNodes.slice(1);
         }
-        if (hasSaves && parseInt(saveNodeId) < 200) {
+        if (hasSaves && parseInt(saveNodeId) < 200 && requireSave) {
             let newSaveId = getFreeIdStartingAt(200);
             prompt[newSaveId] = prompt[saveNodeId];
             delete prompt[saveNodeId];
@@ -466,7 +466,7 @@ function comfyBuildParams(callback) {
                 }
             }
         }
-        if (!hasSaves) {
+        if (!hasSaves && requireSave) {
             showError('ComfyUI Workflow must have at least one SaveImage node!');
             document.getElementById('maintab_comfyworkflow').click();
             return;
@@ -905,7 +905,7 @@ function comfyBuildParams(callback) {
  * Updates the parameter list to match the currently ComfyUI workflow.
  */
 function replaceParamsToComfy() {
-    comfyBuildParams((params, prompt, retained, paramVal, workflow) => {
+    comfyBuildParams(true, (params, prompt, retained, paramVal, workflow) => {
         setComfyWorkflowInput(params, retained, paramVal, true);
     });
 }
@@ -1098,7 +1098,7 @@ function comfySaveModalSaveNow() {
     }
     $('#comfy_workflow_save_modal').modal('hide');
     comfyNoticeMessage("Saving...");
-    comfyBuildParams((params, prompt_text, retained, paramVal, workflow) => {
+    comfyBuildParams(false, (params, prompt_text, retained, paramVal, workflow) => {
         params = JSON.parse(JSON.stringify(params));
         delete params.comfyworkflowparammetadata;
         delete params.comfyworkflowraw;
