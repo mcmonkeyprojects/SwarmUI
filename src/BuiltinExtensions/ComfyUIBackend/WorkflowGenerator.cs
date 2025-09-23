@@ -3091,7 +3091,7 @@ public class WorkflowGenerator
                     ["clip"] = clip,
                     ["prompt"] = prompt,
                     ["vae"] = null, // Explicitly handled separately
-                    ["image1"] = qwenImage
+                    ["image"] = qwenImage
                 }, id);
             }
         }
