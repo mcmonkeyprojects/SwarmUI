@@ -16,6 +16,8 @@ PROMPT_TEMPLATE_ENCODE_VIDEO_I2V = (
     "<|start_header_id|>user<|end_header_id|>\n\n{}<|eot_id|>"
     "<|start_header_id|>assistant<|end_header_id|>\n\n"
 )
+# LLaMA template for Qwen Image Edit Plus.
+PROMPT_TEMPLATE_QWEN_IMAGE_EDIT_PLUS = "<|im_start|>system\nDescribe the key features of the input image (color, shape, size, texture, objects, background), then explain how the user's text instruction should alter or modify the image. Generate a new image that meets the user's requirements while maintaining consistency with the original input where appropriate.<|im_end|>\n<|im_start|>user\n{}<|im_end|>\n<|im_start|>assistant\n"
 
 class SwarmClipTextEncodeAdvanced:
     @classmethod
@@ -44,14 +46,24 @@ class SwarmClipTextEncodeAdvanced:
     DESCRIPTION = "Acts like the regular CLIPTextEncode, but supports more advanced special features like '<break>', '[from:to:when]', '[alter|nate]', ..."
 
     def encode(self, clip, steps: int, prompt: str, width: int, height: int, target_width: int, target_height: int, guidance: float = -1, llama_template = None, clip_vision_output = None, images = None):
+        image_prompt = ""
         if llama_template == "hunyuan_image":
             llama_template = PROMPT_TEMPLATE_ENCODE_VIDEO_I2V
+        elif llama_template == "qwen_image_edit_plus":
+            llama_template = PROMPT_TEMPLATE_QWEN_IMAGE_EDIT_PLUS
+            if images is not None:
+                if len(images.shape) == 3:
+                    images = [images]
+                else:
+                    images = [i.unsqueeze(0) for i in images]
+                for i, image in enumerate(images):
+                    image_prompt += f"Picture {i + 1}: <|vision_start|><|image_pad|><|vision_end|>"
 
         def tokenize(text: str):
             if clip_vision_output is not None:
                 return clip.tokenize(text, llama_template=llama_template, image_embeds=clip_vision_output.mm_projected)
             elif images is not None:
-                return clip.tokenize(text, images=images)
+                return clip.tokenize(image_prompt + text, llama_template=llama_template, images=images)
             else:
                 return clip.tokenize(text)
 

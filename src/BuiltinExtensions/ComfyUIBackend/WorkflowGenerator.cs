@@ -244,6 +244,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz.StartsWith("qwen-image-edit");
     }
 
+    /// <summary>Returns true if the current model is Qwen Image Edit Plus.</summary>
+    public bool IsQwenImageEditPlus()
+    {
+        string clazz = CurrentModelClass()?.ID;
+        return clazz is not null && clazz.StartsWith("qwen-image-edit-plus");
+    }
+
     /// <summary>Returns true if the current model is Hunyuan Video.</summary>
     public bool IsHunyuanVideo()
     {
@@ -1757,7 +1764,7 @@ public class WorkflowGenerator
             JArray imgNeg = null;
             bool doLatentChain = !IsKontext(); // Arguably even kontext should just do this?
             bool onlyExplicit = IsQwenImage() && !IsQwenImageEdit();
-            if (IsOmniGen())
+            if (IsOmniGen() || IsQwenImageEditPlus())
             {
                 imgNeg = neg;
             }
@@ -1782,7 +1789,7 @@ public class WorkflowGenerator
             }
             if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
             {
-                img = GetFirstPromptImage(true);
+                img = GetPromptImage(true);
                 if (doLatentChain)
                 {
                     makeRefLatent(img);
@@ -2043,14 +2050,16 @@ public class WorkflowGenerator
     }
 
     /// <summary>Returns a reference to the first prompt image, if given. Null if not.</summary>
-    /// <param name="fixTo1024ish">If true, rescale the image to 1024-ish. If false, leave it as-is.</param>
-    public JArray GetFirstPromptImage(bool fixTo1024ish)
+    /// <param name="fixSize">If true, rescale the image an appropriate size. If false, leave it as-is.</param>
+    /// <param name="promptSize">If true, and fixSize is true, then use "prompt size" targets rather than latent size targets.</param>
+    /// <param name="index">Index of image to grab.</param>
+    public JArray GetPromptImage(bool fixSize, bool promptSize = false, int index = 0)
     {
-        if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > 0)
+        if (UserInput.TryGet(T2IParamTypes.PromptImages, out List<Image> images) && images.Count > index)
         {
-            string img1 = CreateLoadImageNode(images[0], "${promptimages.0}", false);
+            string img1 = CreateLoadImageNode(images[index], "${promptimages." + index + "}", false);
             JArray img = [img1, 0];
-            (int width, int height) = images[0].GetResolution();
+            (int width, int height) = images[index].GetResolution();
             int genWidth = UserInput.GetImageWidth(), genHeight = UserInput.GetImageHeight();
             int actual = (int)Math.Sqrt(width * height), target = (int)Math.Sqrt(genWidth * genHeight);
             bool doesFit = true;
@@ -2069,12 +2078,17 @@ public class WorkflowGenerator
                     } // else does fit
                 }
             }
+            else if (IsQwenImageEditPlus() && promptSize)
+            {
+                target = 384;
+                doesFit = false;
+            }
             else if (IsQwenImage())
             {
                 target = 1024; // Qwen image targets 1328 for gen but wants 1024 inputs.
                 doesFit = Math.Abs(actual - target) <= 64;
             }
-            if (fixTo1024ish && !doesFit)
+            if (fixSize && !doesFit)
             {
                 (width, height) = Utilities.ResToModelFit(width, height, target * target);
                 string scaleFix = CreateNode("ImageScale", new JObject()
@@ -3020,10 +3034,30 @@ public class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsQwenImageEdit() && isPositive && (qwenImage = GetFirstPromptImage(true)) is not null)
+        else if (IsQwenImageEdit() && isPositive && (qwenImage = GetPromptImage(true, true)) is not null)
         {
             if (wantsSwarmCustom)
             {
+                JArray image2 = GetPromptImage(true, true, 1);
+                if (IsQwenImageEditPlus() && image2 is not null)
+                {
+                    string batched = CreateNode("ImageBatch", new JObject()
+                    {
+                        ["image1"] = qwenImage,
+                        ["image2"] = image2
+                    });
+                    qwenImage = [batched, 0];
+                    JArray image3 = GetPromptImage(true, true, 2);
+                    if (image3 is not null)
+                    {
+                        string batched2 = CreateNode("ImageBatch", new JObject()
+                        {
+                            ["image1"] = qwenImage,
+                            ["image2"] = image3
+                        });
+                        qwenImage = [batched2, 0];
+                    }
+                }
                 node = CreateNode("SwarmClipTextEncodeAdvanced", new JObject()
                 {
                     ["clip"] = clip,
@@ -3035,6 +3069,19 @@ public class WorkflowGenerator
                     ["target_height"] = height,
                     ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
                     ["images"] = qwenImage,
+                    ["llama_template"] = "qwen_image_edit_plus"
+                }, id);
+            }
+            else if (IsQwenImageEditPlus())
+            {
+                node = CreateNode("TextEncodeQwenImageEditPlus", new JObject()
+                {
+                    ["clip"] = clip,
+                    ["prompt"] = prompt,
+                    ["vae"] = null, // Explicitly handled separately
+                    ["image1"] = qwenImage,
+                    ["image2"] = GetPromptImage(true, true, 1),
+                    ["image3"] = GetPromptImage(true, true, 2)
                 }, id);
             }
             else
@@ -3044,7 +3091,7 @@ public class WorkflowGenerator
                     ["clip"] = clip,
                     ["prompt"] = prompt,
                     ["vae"] = null, // Explicitly handled separately
-                    ["image"] = qwenImage,
+                    ["image1"] = qwenImage
                 }, id);
             }
         }
