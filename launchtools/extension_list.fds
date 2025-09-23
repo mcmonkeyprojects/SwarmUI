@@ -29,6 +29,7 @@ FaceTools:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 WaifuDiffusionV:
     author: Neggles & Waifu Diffusion Team
@@ -82,6 +83,7 @@ PostRender:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 SkimmedCFG:
     author: Quaggles
@@ -90,6 +92,7 @@ SkimmedCFG:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 SkipLayerGuidance:
     author: mcmonkey
@@ -139,6 +142,7 @@ TIPO:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 NegPip:
     author: Hugs288
@@ -147,6 +151,7 @@ NegPip:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 DAAMSwarm:
     author: jakstein
@@ -155,6 +160,7 @@ DAAMSwarm:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 FrameSaver:
     author: Mathew Tomberlin
@@ -171,6 +177,7 @@ VAEReflection:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 MoreThemes:
     author: Blomblo
