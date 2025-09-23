@@ -171,3 +171,11 @@ VAEReflection:
     license: MIT
     tags:
     - parameters
+
+MoreThemes:
+    author: Blomblo
+    description: Adds a variety of high-quality themes to SwarmUI
+    url: https://github.com/mrblomblo/MoreThemes
+    license: MIT
+    tags:
+    - ui
