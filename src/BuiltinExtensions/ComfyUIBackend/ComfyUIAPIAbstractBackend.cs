@@ -44,7 +44,16 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
     {
         Logs.Verbose($"Comfy backend {BackendData.ID} loading value set...");
         using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(maxMinutes));
-        JObject result = await SendGet<JObject>("object_info", cancel.Token);
+        JObject result;
+        if (cancel.IsCancellationRequested) // Obscure fallback: I've seen this insta-cancel, possibly related to system clock instability, so give a giant timeout in that case.
+        {
+            using CancellationTokenSource altCancel = Utilities.TimedCancel(TimeSpan.FromMinutes(maxMinutes + 10));
+            result = await SendGet<JObject>("object_info", altCancel.Token);
+        }
+        else
+        {
+            result = await SendGet<JObject>("object_info", cancel.Token);
+        }
         if (result.TryGetValue("error", out JToken errorToken))
         {
             Logs.Verbose($"Comfy backend {BackendData.ID} failed to load value set: {errorToken}");
