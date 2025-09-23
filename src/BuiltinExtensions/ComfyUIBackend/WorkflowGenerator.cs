@@ -1875,10 +1875,10 @@ public class WorkflowGenerator
                 if (IsRefinerStage)
                 {
                     double scale = UserInput.Get(T2IParamTypes.RefinerUpscale, 1);
-                    width = (int)Math.Round(width * scale);
-                    height = (int)Math.Round(height * scale);
-                    width = (width / 16) * 16;
-                    height = (height / 16) * 16;
+                    int iwidth = (int)Math.Round(width * scale);
+                    int iheight = (int)Math.Round(height * scale);
+                    width = (iwidth / 16) * 16;
+                    height = (iheight / 16) * 16;
                 }
                 // TODO: This node asking for latent info is wacky. Maybe have a reader node that grabs it from the current actual latent, so it's more plug-n-play-ish
                 string phantomNode = CreateNode("WanPhantomSubjectToVideo", new JObject()
