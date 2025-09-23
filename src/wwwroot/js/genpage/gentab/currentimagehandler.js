@@ -316,7 +316,7 @@ function removeImageBlockFromBatch(div) {
     let chosen = div.previousElementSibling || div.nextElementSibling;
     div.remove();
     if (chosen) {
-        setCurrentImage(chosen.dataset.src, chosen.dataset.metadata, chosen.dataset.batch_id, true);
+        clickImageInBatch(chosen);
     }
 }
 
