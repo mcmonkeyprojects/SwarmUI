@@ -473,6 +473,7 @@ Parameters and usage is the same as any other normal model.
     - You can insert image(s) to the prompt box to have it edit that image
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
         - Qwen Image Edit Plus works with up to 3 images well
+        - Use phrasing like `The person in Picture 1` to refer to the content of specific input images in the prompt
     - There are a couple dedicated Qwen Image Edit Lightning Loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>
         - Take care to separate the Edit lora vs the base Qwen Image lora.
 
