@@ -462,7 +462,7 @@ Parameters and usage is the same as any other normal model.
 ### Qwen Image Edit
 
 - The Qwen Image **Edit** model can be downloaded here: <https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models>
-    - Or GGUF version here: <https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>
+    - Or GGUF version here: <https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF/tree/main> (or old version <https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>)
     - The architecture cannot be autodetected and must be set manually.
         - Click the `☰` hamburger menu on a model, then `Edit Metadata`, then change `Architecture` to `Qwen Image Edit Plus` and hit `Save`
             - For the original model (prior to 2509), use `Qwen Image Edit`

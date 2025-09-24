@@ -1852,6 +1852,10 @@ public class WorkflowGenerator
                         neg = imgNeg;
                     }
                 }
+                else if (IsQwenImageEditPlus())
+                {
+                    neg = imgNeg;
+                }
             }
         }
         else if (IsWanVideo()) // TODO: Somehow check if this is actually a phantom model?
@@ -3037,7 +3041,7 @@ public class WorkflowGenerator
                 ["text"] = prompt
             }, id);
         }
-        else if (IsQwenImageEdit() && isPositive && (qwenImage = GetPromptImage(true, true)) is not null)
+        else if (IsQwenImageEdit() && (isPositive || IsQwenImageEditPlus()) && (qwenImage = GetPromptImage(true, true)) is not null)
         {
             if (wantsSwarmCustom)
             {
