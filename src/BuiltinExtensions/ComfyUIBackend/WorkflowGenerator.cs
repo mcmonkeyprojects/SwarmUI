@@ -1796,17 +1796,17 @@ public class WorkflowGenerator
                 }
                 for (int i = 1; i < images.Count; i++)
                 {
-                    string img2 = CreateLoadImageNode(images[i], "${promptimages." + i + "}", false);
+                    JArray img2 = GetPromptImage(true, false, i);
                     if (doLatentChain)
                     {
-                        makeRefLatent([img2, 0]);
+                        makeRefLatent(img2);
                     }
                     else
                     {
                         string stitched = CreateNode("ImageStitch", new JObject()
                         {
                             ["image1"] = img,
-                            ["image2"] = new JArray() { img2, 0 },
+                            ["image2"] = img2,
                             ["direction"] = "right",
                             ["match_image_size"] = true,
                             ["spacing_width"] = 0,
