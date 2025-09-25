@@ -214,6 +214,10 @@ class ModelDownloaderUtil {
                 }
             }
         }
+        // Ensure diffusion_models folder is always available for downloading
+        if (!folderList.includes('diffusion_models')) {
+            folderList.push('diffusion_models');
+        }
         folderList.sort();
         for (let folder of folderList) {
             html += `<option>${folder}</option>\n`;
