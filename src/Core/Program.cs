@@ -446,6 +446,8 @@ public class Program
         buildPathList(ServerSettings.Paths.SDModelFolder + ";tensorrt;diffusion_models;unet", T2IModelSets["Stable-Diffusion"]);
         T2IModelSets["VAE"] = new() { ModelType = "VAE" };
         buildPathList(ServerSettings.Paths.SDVAEFolder, T2IModelSets["VAE"]);
+        T2IModelSets["diffusion_models"] = new() { ModelType = "diffusion_models" };
+        buildPathList(ServerSettings.Paths.ActualModelRoot + "/diffusion_models", T2IModelSets["diffusion_models"]);
         T2IModelSets["LoRA"] = new() { ModelType = "LoRA" };
         buildPathList(ServerSettings.Paths.SDLoraFolder, T2IModelSets["LoRA"]);
         T2IModelSets["Embedding"] = new() { ModelType = "Embedding" };
