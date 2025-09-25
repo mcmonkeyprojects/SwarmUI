@@ -1,4 +1,8 @@
 @page
+@{
+    var themeOverride = Request.Query["theme"].ToString();
+    ViewData["theme_override"] = themeOverride;
+}
 @section Header {
     <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
     <link rel="stylesheet" href="css/themepreview.css?vary=@Utilities.VaryID" />

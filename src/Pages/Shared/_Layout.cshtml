@@ -6,9 +6,10 @@
     <title id="page_title">@ViewData["Title"] - SwarmUI - @Program.ServerSettings.UserAuthorization.InstanceTitle</title>
     @{
         string themeId = "modern_dark";
-        string pageThemeOverride = ViewContext.HttpContext.Request.Query["theme"].ToString();
-        if (!string.IsNullOrEmpty(pageThemeOverride) && Program.Web.RegisteredThemes.ContainsKey(pageThemeOverride)) {
-            themeId = pageThemeOverride;
+        var themeOverride = ViewData["theme_override"]?.ToString();
+        if (!string.IsNullOrEmpty(themeOverride) && Program.Web.RegisteredThemes.ContainsKey(themeOverride))
+        {
+            themeId = themeOverride;
         }
         // TODO: Identify user by auth header and use their settings to determine theme
         else if (ViewContext.HttpContext.Request.Cookies.TryGetValue("sui_theme_id", out string themeCookie) && Program.Web.RegisteredThemes.ContainsKey(themeCookie)) {
