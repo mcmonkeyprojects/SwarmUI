@@ -24,3 +24,10 @@ html, body {
     font-size: 1.25rem;
     margin-bottom: 0;
 }
+.input-group.input-group-open {
+    display: block;
+    margin: 0 0.5rem;
+}
+.input-group.input-group-open .input-group-content  {
+    margin-top: 0;
+}
