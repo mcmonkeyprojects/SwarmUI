@@ -38,6 +38,11 @@
 .theme_preview .form-check:has(.form-check-input:checked) {
     border: 1px solid var(--emphasis);
 }
+.theme_preview label {
+    margin-top: 0.125rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
+}
 .form-check .form-check-input {
     margin-left: 0.5rem;
     margin-top: 0.5rem;
@@ -52,10 +57,9 @@
     left: 0;
 }
 label {
-    margin-top: 0.125rem;
-    margin-left: 0.5rem;
-    cursor: pointer;
     font-size: 120%;
+    vertical-align: top;
+    margin-top: -0.3rem;
 }
 .final_confirm_info {
     font-weight: bold;
