@@ -143,7 +143,7 @@ class GenerateHandler {
                 if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == `${data.request_id}_${data.batch_index}`) {
                     this.setCurrentImage(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, false, true);
                     if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-                        imageFullView.showImage(data.image, data.metadata);
+                        imageFullView.showImage(data.image, data.metadata, `${data.request_id}_${data.batch_index}`);
                     }
                 }
                 let imgElem = imgHolder.div.querySelector('img');
@@ -195,9 +195,14 @@ class GenerateHandler {
                     let curImgElem = document.getElementById(this.imageId);
                     if (data.gen_progress.preview && (!imgHolder.image || data.gen_progress.preview != imgHolder.image)) {
                         if (curImgElem && curImgElem.dataset.batch_id == thisBatchId) {
-                            curImgElem.src = data.gen_progress.preview;
+                            currentImgSrc = data.gen_progress.preview;
+                            curImgElem.src = currentImgSrc;
+                            curImgElem.dataset.src = currentImgSrc;
                         }
                         this.setImageFor(imgHolder, data.gen_progress.preview);
+                        if (imageFullView.isOpen() && imageFullView.currentBatchId == thisBatchId) {
+                            imageFullView.getImg().src = data.gen_progress.preview;
+                        }
                     }
                 }
             }

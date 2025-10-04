@@ -31,12 +31,13 @@ public static class Permissions
         OrderedKeys = [.. OrderedKeys.GroupBy(k => Registered[k].Group.DisplayName).Flatten()];
     }
 
-    public static PermInfoGroup GroupSpecial = new("Admin", "Special permissions that don't make sense to give out.");
+    public static PermInfoGroup GroupSpecial = new("Special", "Special permissions that don't make sense to give out.");
 
     public static PermInfo Admin = Register(new("*", "Full Control", "Allows full control over everything.\nA magic wildcard to allow all permissions.\nOnly the owner should have this.", PermissionDefault.NOBODY, GroupSpecial, PermSafetyLevel.POWERFUL));
     public static PermInfo LocalImageFolder = Register(new("local_image_folder", "Local Image Folder", "Allows access to the button that opens a local image folder. Only functions if you're on the same PC as the server.", PermissionDefault.NOBODY, GroupSpecial, PermSafetyLevel.POWERFUL));
     public static PermInfo Install = Register(new("install", "Install", "Allows access to initial installer system. If you can read this text, you don't need to give this permission to anyone.", PermissionDefault.NOBODY, GroupSpecial, PermSafetyLevel.POWERFUL));
     public static PermInfo ServerDebugMessage = Register(new("server_debug_message", "Server Debug Message", "Allows the user to send server debug messages (this is for internal debugging, not anything normal).", PermissionDefault.NOBODY, GroupSpecial, PermSafetyLevel.SAFE));
+    public static PermInfo AutomatedControl = Register(new("automated_control", "Automated Control", "Allows the user account to be used as an automated remote control system.", PermissionDefault.NOBODY, GroupSpecial, PermSafetyLevel.POWERFUL));
 
     public static PermInfoGroup GroupAdmin = new("Admin", "Permissions for server administration access.");
 

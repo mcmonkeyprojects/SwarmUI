@@ -25,8 +25,8 @@ Here's some general info:
 Want to add custom UI themes (ie the Themes selectable in the User Settings tab) in a Swarm extension? Here's how:
 
 - You need a C# extension class as usual.
-- In `OnPreInit`, add the path to your stylesheet to `OtherAssets` (NOT StyleSheetFiles) in your Extension class.
-- In `OnInit`, call eg `WebServer.RegisterTheme(new("my_custom_dark", "My Custom Dark", ["/css/themes/modern.css", "/ExtensionFile/MyExtension/Assets/my_custom_dark.css"], true));`
+- In `OnPreInit`, add the path to your stylesheet to `OtherAssets` (NOT StyleSheetFiles) in your Extension class, eg `OtherAssets.Add("Assets/my_custom_dark.css");`
+- In `OnInit`, call eg `Program.Web.RegisterTheme(new("my_custom_dark", "My Custom Dark", ["/css/themes/modern.css", "/ExtensionFile/MyExtension/Assets/my_custom_dark.css"], true));`
 - Be careful to keep CSS edits minimal. Any format breakage from an extension CSS edit is on you to fix, only custom CSS in core themes are tested in core updates.
 
 ## Custom Model Classes

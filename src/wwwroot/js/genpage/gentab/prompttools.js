@@ -172,7 +172,7 @@ class PromptTabCompleteClass {
     }
 
     getPromptBeforeCursor(box) {
-        return box.value.substring(0, box.selectionStart);
+        return getTextContent(box).substring(0, getTextSelRange(box)[0]);
     }
 
     findLastWordIndex(text) {
@@ -375,10 +375,9 @@ class PromptTabCompleteClass {
             if (isClickable) {
                 button.action = () => {
                     let areaPre = prompt.substring(0, index);
-                    let areaPost = box.value.substring(box.selectionStart);
-                    box.value = areaPre + apply + areaPost;
-                    box.selectionStart = areaPre.length + apply.length;
-                    box.selectionEnd = areaPre.length + apply.length;
+                    let areaPost = getTextContent(box).substring(getTextSelRange(box)[0]);
+                    setTextContent(box, areaPre + apply + areaPost);
+                    setTextSelRange(box, areaPre.length + apply.length, areaPre.length + apply.length);
                     box.focus();
                     box.dispatchEvent(new Event('input'));
                 };
@@ -513,8 +512,7 @@ class PromptPlusButton {
                 text += ' <';
             }
             this.altTextBox.value = text;
-            this.altTextBox.selectionStart = this.altTextBox.value.length;
-            this.altTextBox.selectionEnd = this.altTextBox.value.length;
+            setTextSelRange(this.altTextBox, this.altTextBox.value.length, this.altTextBox.value.length);
             this.altTextBox.focus();
             triggerChangeFor(this.altTextBox);
         }});

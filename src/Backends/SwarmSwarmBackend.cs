@@ -75,6 +75,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>A list of any non-real backends this instance controls.</summary>
     public ConcurrentDictionary<int, BackendHandler.T2IBackendData> ControlledNonrealBackends = new();
 
+    /// <summary>Map of models on the remote server.</summary>
     public ConcurrentDictionary<string, Dictionary<string, JObject>> RemoteModels = null;
 
     /// <summary>Gets the current target address.</summary>
@@ -439,6 +440,30 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         return true;
     }
 
+    /// <summary>Tell the remote SwarmUI instance to shut down fully.</summary>
+    public async Task TriggerRemoteShutdown()
+    {
+        await SendAPIJSON("ShutdownServer", []);
+    }
+
+    /// <summary>Core handler to send a simple API JSON request. Will auto-inject a proper session ID.</summary>
+    /// <param name="endpoint">The endpoint, only after the /API/ Part. For example, "GenerateText2Image".</param>
+    /// <param name="request">The request JSON body.</param>
+    /// <returns>The JSON response.</returns>
+    public async Task<JObject> SendAPIJSON(string endpoint, JObject request)
+    {
+        request = request.DeepClone() as JObject;
+        JObject result = null;
+        await RunWithSession(async () =>
+        {
+            request["session_id"] = Session;
+            result = await HttpClient.PostJson($"{Address}/API/{endpoint}", request, RequestAdapter());
+            AutoThrowException(result);
+        });
+        return result;
+    }
+
+    /// <summary>Builds the required JSON input for a GenerateText2Image API request based on a <see cref="T2IParamInput"/> to generate.</summary>
     public JObject BuildRequest(T2IParamInput user_input)
     {
         JObject req = user_input.ToJSON();
@@ -452,19 +477,6 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             req[T2IParamTypes.ExactBackendID.Type.ID] = LinkedRemoteBackendID;
         }
         return req;
-    }
-
-    public async Task<JObject> SendAPIJSON(string endpoint, JObject req)
-    {
-        req = req.DeepClone() as JObject;
-        JObject result = null;
-        await RunWithSession(async () =>
-        {
-            req["session_id"] = Session;
-            result = await HttpClient.PostJson($"{Address}/API/{endpoint}", req, RequestAdapter());
-            AutoThrowException(result);
-        });
-        return result;
     }
 
     /// <inheritdoc/>

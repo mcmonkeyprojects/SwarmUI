@@ -89,6 +89,12 @@ public class Program
     /// <summary>Date of the current git commit, if known.</summary>
     public static string CurrentGitDate = null;
 
+    /// <summary>If non-zero, a remote automated API has declared that it is in control of this instance, and this is the <see cref="Environment.TickCount64"/> when it was last declared.</summary>
+    public static long TimeLastRemoteControlPing = 0;
+
+    /// <summary>If non-zero, a remote automated API must declare that it is in control of this instance every this many milliseconds, or else the server will shut down.</summary>
+    public static long RequireControlPingEveryMS = 0;
+
     /// <summary>Primary execution entry point.</summary>
     public static void Main(string[] args)
     {
@@ -712,6 +718,11 @@ public class Program
             };
         }
         LaunchMode = GetCommandLineFlag("launch_mode", ServerSettings.LaunchMode);
+        RequireControlPingEveryMS = (long)(double.Parse(GetCommandLineFlag("require_control_within", "0")) * 60_000);
+        if (RequireControlPingEveryMS > 0)
+        {
+            TimeLastRemoteControlPing = Environment.TickCount64;
+        }
     }
 
     /// <summary>Applies runtime-changable settings.</summary>
@@ -806,16 +817,19 @@ public class Program
               [--data_dir <path>] [--settings_file <path>] [--backends_file <path>] [--environment <Production/Development>]
               [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
               [--user_id <username>] [--lock_settings <true/false>] [--ngrok-path <path>] [--cloudflared-path <path>]
-              [--proxy-region <region>] [--ngrok-basic-auth <auth-info>] [--launch_mode <mode>] [--help <true/false>]
+              [--proxy-region <region>] [--proxy-added-args <args>] [--ngrok-basic-auth <auth-info>]
+              [--launch_mode <mode>] [--require_control_within <minutes>] [--help <true/false>]
 
             Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
               - `settings_file`, `lock_settings`, `backends_file`, `loglevel` may be useful to advanced users will multiple instances.
               - `cloudflared-path` is useful for remote tunnel users (eg colab).
               - `host`, `port`, and `launch_mode` may be useful in developmental usages where you need to quickly or automatically change network paths.
+              - `require_control_within` is used for AutoScalingBackend especially.
 
             Additional documentation about the CLI args is available online: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Command%20Line%20Arguments.md> or in the `docs/` folder of this repo.
 
             Find more information about SwarmUI in the GitHub readme and docs folder:
+              - Main website: <https://swarmui.net/>
               - Project Github: <https://github.com/mcmonkeyprojects/SwarmUI>
               - Documentation: <https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs>
               - Feature Announcements: <https://github.com/mcmonkeyprojects/SwarmUI/discussions/1>

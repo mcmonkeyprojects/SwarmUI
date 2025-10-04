@@ -4,8 +4,8 @@
     --background-gray: #eff1f5;
     --background-panel: #e6e9ef;
     --background-panel-subtle: #eff1f5;
-    --background-danger: color-mix(in srgb, #dce0e8 80%, #d20f39);
-    --background-image: url('../../imgs/ctp_background.png');
+    --background-danger: color-mix(in srgb, #dce0e8 95%, #d20f39);
+    --background-gray-danger: color-mix(in srgb, #dce0e8 90%, #d20f39);
 
     --text: #4c4f69;
     --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
@@ -85,5 +85,6 @@
     --darkgray: #8c8fa1;
 
     --transparentdarkred: rgba(210, 15, 57, 0.5);
-    --scrollbar: rgba(156, 160, 176 0.5);
+    --scrollbar: rgba(156, 160, 176, 0.5);
+    --shadow: #ccd0da;
 }

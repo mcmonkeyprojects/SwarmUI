@@ -6,7 +6,6 @@
     --background-panel-subtle: #1e1e2e;
     --background-danger: color-mix(in srgb, #11111b 95%, #f38ba8);
     --background-gray-danger: color-mix(in srgb, #11111b 90%, #f38ba8);
-    --background-image: url('../../imgs/ctp_background.png');
 
     --text: #cdd6f4;
     --text-soft: color-mix(in srgb, var(--text) 80%, var(--background) 20%);
@@ -86,5 +85,6 @@
     --darkgray: #45475a;
 
     --transparentdarkred: rgba(243, 139, 168, 0.5);
-    --scrollbar: rgba(108, 112, 134 0.5);
+    --scrollbar: rgba(108, 112, 134, 0.5);
+    --shadow: #313244;
 }

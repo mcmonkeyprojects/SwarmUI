@@ -462,14 +462,18 @@ Parameters and usage is the same as any other normal model.
 ### Qwen Image Edit
 
 - The Qwen Image **Edit** model can be downloaded here: <https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models>
-    - Or GGUF version here: <https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>
+    - Or GGUF version here: <https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF/tree/main> (or old version <https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>)
+    - Or nunchaku version here: <https://huggingface.co/nunchaku-tech/nunchaku-qwen-image-edit-2509/tree/main> (or old version <https://huggingface.co/nunchaku-tech/nunchaku-qwen-image-edit/tree/main>)
     - The architecture cannot be autodetected and must be set manually.
-        - Click the `☰` hamburger menu on a model, then `Edit Metadata`, then change `Architecture` to `Qwen Image Edit` and hit `Save`
+        - Click the `☰` hamburger menu on a model, then `Edit Metadata`, then change `Architecture` to `Qwen Image Edit Plus` and hit `Save`
+            - For the original model (prior to 2509), use `Qwen Image Edit`
     - Most params are broadly the same as regular Qwen Image
-    - **CFG** must be `1`, Edit is not compatible with higher CFGs.
-    - **Sigma Shift:** `3` or lower (as low as `0.5`) is a valid range. Some users report that a value below 1 might be ideal.
+    - **CFG** must be `1`, Edit is not compatible with higher CFGs normally (unless using an advanced alternate guidance option)
+    - **Sigma Shift:** `3` or lower (as low as `0.5`) is a valid range. Some users report that a value below 1 might be ideal for single-image inputs.
     - You can insert image(s) to the prompt box to have it edit that image
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
+        - Qwen Image Edit Plus works with up to 3 images well
+        - Use phrasing like `The person in Picture 1` to refer to the content of specific input images in the prompt
     - There are a couple dedicated Qwen Image Edit Lightning Loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>
         - Take care to separate the Edit lora vs the base Qwen Image lora.
 
@@ -486,18 +490,19 @@ Parameters and usage is the same as any other normal model.
         - FP8 download link pending
         - Or GGUF: <https://huggingface.co/QuantStack/HunyuanImage-2.1-Distilled-GGUF/tree/main>
     - They also provide and recommend a Refiner model, you can [download that here](https://huggingface.co/tencent/HunyuanImage-2.1/blob/main/dit/hunyuanimage-refiner.safetensors)
-        - (NOT YET SUPPORTED)
         - FP8 download link pending
         - Or GGUF: <https://huggingface.co/QuantStack/HunyuanImage-2.1-Refiner-GGUF/tree/main>
-        - This naturally is meant to be used via the Refine/Upscale parameter group in Swarm
+        - This naturally is meant to be used via the Refine/Upscale parameter group in Swarm.
+            - Set `Refiner Control Percentage` to `1`, set `Refiner Steps` to `4`, set `Refiner CFG Scale` to `1`
+            - You may also want to mess with the prompt, official recommend is some hacky LLM stuff: `<|start_header_id|>system<|end_header_id|>Describe the image by detailing the color, shape, size, texture, quantity, text, spatial relationships of the objects and background: <|eot_id|><|start_header_id|>user<|end_header_id|> Make the image high quality<|eot_id|>`. You can use `<base> my prompt here <refiner> that llm junk here` in Swarm to automatically emit refiner-specific prompts.
         - This specific model is not required. In fact, it's pretty bad. It can be replaced with other models of other architectures - pick the model with details you like and refine with that instead.
         - Running the base model without a refiner works too, but fine detail quality is bad. You'll want to pick a refiner. *(Possibly finetunes will fix the base in the future, as happened eg with SDXL Base years ago.)*
-    - **CFG Scale:** Normal CFG range, recommended around 3.5. The distilled model is capable of CFG=1.
-    - **Steps:** Normal step values, around 20.
-    - **Resolution:** Targets 2048x2048, can work at lower resolutions too.
+    - **CFG Scale:** Normal CFG range, recommended around `3.5`. The distilled model is capable of CFG=`1`. The refiner requires CFG=`1`.
+    - **Steps:** Normal step values, around `20`. Refiner prefers `4`.
+    - **Resolution:** Targets `2048x2048`, can work at lower resolutions too.
         - The VAE is a 32x32 downscale (vs most image models use 8x8), so it's a much smaller latent image than other models would have at this scale.
         - 2048 on this model is the same latent size as 512 on other models.
-    - **Sigma Shift:** Default is 5.
+    - **Sigma Shift:** Default is `5`. Refine defaults to `4`.
     - TBD: Info specific to Distilled variant usage (doesn't seem to work well with their documented settings, testing TBD or comfy fix), and dedicated Refiner model
 
 # Video Models

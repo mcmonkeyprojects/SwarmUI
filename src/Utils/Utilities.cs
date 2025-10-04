@@ -48,6 +48,17 @@ public static class Utilities
                 QuickGC();
             }
         };
+        if (Program.RequireControlPingEveryMS > 0)
+        {
+            Program.SlowTickEvent += () =>
+            {
+                if (Program.TimeLastRemoteControlPing + Program.RequireControlPingEveryMS < Environment.TickCount64)
+                {
+                    Logs.Error($"`require_control_within` is set, and a ping has not been received in the last {(Environment.TickCount64 - Program.TimeLastRemoteControlPing) / 1000} seconds, SwarmUI will now shut down due to lack of remote control.");
+                    Program.Shutdown();
+                }
+            };
+        }
         new Thread(TickLoop).Start();
     }
 

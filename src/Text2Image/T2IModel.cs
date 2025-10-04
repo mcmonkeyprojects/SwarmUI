@@ -83,6 +83,15 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
         {
             return null;
         }
+        if (RawFilePath.EndsWith(".gguf"))
+        {
+            // TODO: Pick an appropriate hashing method for GGUF files. Should we still do a tensorhash, or swap to full file hash for gguf?
+            return null;
+        }
+        if (!RawFilePath.EndsWith(".safetensors") && !RawFilePath.EndsWith(".sft"))
+        {
+            return null;
+        }
         lock (Handler.ModificationLock)
         {
             if (Metadata.Hash is not null)

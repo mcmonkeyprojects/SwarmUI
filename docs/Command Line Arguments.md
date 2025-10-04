@@ -28,10 +28,13 @@ Argument | Default | Description
 `--proxy-added-args` | (None) | If specified, adds additional args to the proxy launch. Use a `.` as the first symbol (parser hackaround). For example, `--proxy-added-args ".--my-arg --arg -argy arg"`
 `--ngrok-basic-auth` | (None) | If specified, sets an ngrok basic-auth requirement to access.
 `--launch_mode` | `none` | Can be used to override the 'LaunchMode' server setting.
-`--help` | `false` | Displays an in-CLI shortlist of CLI args and some usage hints.
+`--require_control_within` | (None) | If specified, give a number of minutes within which a remote API server must send a `AdminTakeControl` API request, or presume the launch is bad. This is useful for auto-managed instances, such as via the AutoScalingBackend.
+`--help` | `false` | Displays an in-CLI shortlist of CLI args and some usage hints, and stops early before running Swarm.
 
 # Environment Variables (EnvVars)
 
-Swarm itself does not use any environment variables for anything.
+Swarm itself does not use any environment variables for almost anything.
 
 If you need to set environment variables for the Comfy backend - just set them before launching Swarm. Any envvars set for Swarm will be automatically transferred down to the backend process when it's launched.
+
+On Linux, `export SWARM_NO_VENV=true` to tell Swarm when installing the comfy backend to not add a venv. By default, a venv will be used. This is only normally intended for certain containerized install setups, such as Google Colab.

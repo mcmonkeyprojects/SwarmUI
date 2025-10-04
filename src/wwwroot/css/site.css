@@ -574,7 +574,7 @@ textarea, input, select {
 }
 .basic-button.btn-primary {
     background-color: var(--emphasis);
-    color: var(--emphasis-text);
+    color: var(--emphasis-text) !important;
 }
 .basic-button:hover {
     background-color: var(--button-background-hover);
@@ -852,6 +852,35 @@ textarea, input, select {
 .inline-block {
     display: inline-block;
 }
+.editable-textbox {
+    width: calc(100% - 1rem);
+    margin: 0.5rem;
+    vertical-align: top;
+    display: inline-block;
+    border: 1px solid var(--light-border);
+    background-color: var(--background-soft);
+    white-space: pre-wrap;
+}
+.wc_line_0 {
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 100%;
+    min-height: 1lh;
+    background-color: rgba(255, 255, 255, 0.1);
+    vertical-align: top;
+}
+.wc_line_1 {
+    display: inline-block;
+    white-space: pre-wrap;
+    width: 100%;
+    min-height: 1.6em;
+    background-color: rgba(0, 0, 0, 0.1);
+    vertical-align: top;
+}
+.wc_line_comment {
+    color: var(--text-soft);
+}
+
 
 
 

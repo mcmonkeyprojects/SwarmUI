@@ -343,6 +343,9 @@ body {
 .image-block-failed::after {
     transform: rotate(-45deg);
 }
+.image-block.image-block-current {
+    outline: 3px solid var(--box-selected-border-stronger);
+}
 .image-batch-0 {
     background-color: var(--batch-0);
 }
@@ -528,6 +531,7 @@ body {
 }
 .sui_popover_model_button:hover {
     background-color: var(--emphasis);
+    color: var(--emphasis-text);
 }
 .sui-popover-inline-block {
     white-space: nowrap;
@@ -644,14 +648,6 @@ body {
 }
 .preset-remove-button:hover {
     background-color: color-mix(in srgb, var(--red) 70%, black);
-}
-.new_preset_image {
-    align-items: center;
-    text-align: center;
-}
-.new_preset_image img {
-    max-width: 100%;
-    max-height: 20rem;
 }
 .interrupt_line {
     display: block;
@@ -1367,6 +1363,7 @@ body {
 }
 .admin-user-manage-name:hover {
     background-color: var(--emphasis);
+    color: var(--emphasis-text);
 }
 .manage-users-left-header {
     display: flex;
@@ -1644,6 +1641,6 @@ body {
     display: inline-flex;
     align-items: center;
     font-size: 90%;
-    height: 1.6em;
+    height: 1lh;
     padding-top: 0 !important;
 }

@@ -10,14 +10,17 @@
 # If you're a GPL fan, GPLv3 is questionable, LGPL might make more sense. AGPL is not welcome on the extension list.
 
 # Tags info:
-# 'parameters': Adds new T2I Parameters
-# 'tabs': adds new tabs on the main page (including subtabs, eg inside Utilities)
-# 'nodes': adds Comfy nodes
-# 'backend': adds a new backend
-# 'hidden': don't show on the main listing yet
-# 'paid': requires a paid account
-# 'beta': treat as an alpha or beta, not ready for general use
-# 'none': no tags of relevance to add
+# Content type:
+#   'parameters': Adds new T2I Parameters
+#   'tabs': adds new tabs on the main page (including subtabs, eg inside Utilities)
+#   'ui': modifies the UI in some way (including 'tabs' above, also themes and etc.)
+#   'nodes': adds Comfy nodes
+#   'backend': adds a new backend
+# Meta:
+#   'hidden': don't show on the main listing yet
+#   'paid': requires a paid account
+#   'beta': treat as an alpha or beta, not ready for general use
+#   'none': no tags of relevance to add
 
 FaceTools:
     author: Quaggles
@@ -26,6 +29,7 @@ FaceTools:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 WaifuDiffusionV:
     author: Neggles & Waifu Diffusion Team
@@ -52,6 +56,7 @@ MagicPrompt:
     license: MIT
     tags:
     - tabs
+    - ui
 
 UniversalTab:
     author: Hartsy AI
@@ -60,6 +65,7 @@ UniversalTab:
     license: MIT
     tags:
     - tabs
+    - ui
 
 WildcardImporter:
     author: spoomples+bman654
@@ -68,6 +74,7 @@ WildcardImporter:
     license: MIT
     tags:
     - tabs
+    - ui
 
 PostRender:
     author: HellerCommaA
@@ -76,6 +83,7 @@ PostRender:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 SkimmedCFG:
     author: Quaggles
@@ -84,6 +92,7 @@ SkimmedCFG:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 SkipLayerGuidance:
     author: mcmonkey
@@ -100,6 +109,7 @@ OllamaVision:
     license: MIT
     tags:
     - tabs
+    - ui
 
 AdaptiveProjectedGuidance:
     author: Quaggles
@@ -132,6 +142,7 @@ TIPO:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 NegPip:
     author: Hugs288
@@ -140,6 +151,7 @@ NegPip:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 DAAMSwarm:
     author: jakstein
@@ -148,6 +160,7 @@ DAAMSwarm:
     license: MIT
     tags:
     - parameters
+    - nodes
 
 FrameSaver:
     author: Mathew Tomberlin
@@ -164,3 +177,12 @@ VAEReflection:
     license: MIT
     tags:
     - parameters
+    - nodes
+
+MoreThemes:
+    author: Blomblo
+    description: Adds a variety of high-quality themes to SwarmUI
+    url: https://github.com/mrblomblo/MoreThemes
+    license: MIT
+    tags:
+    - ui

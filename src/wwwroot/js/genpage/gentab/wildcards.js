@@ -7,6 +7,61 @@ class WildcardHelpers {
         this.allWildcards = [];
         this.wildcardNameCheck = {};
         this.wildcardDataCache = {};
+        this.nameElem = getRequiredElementById('edit_wildcard_name');
+        this.experimentalEditorElem = getRequiredElementById('edit_wildcard_experimental_editor');
+        this.experimentalEditorSpotElem = getRequiredElementById('edit_wildcard_editor_spot');
+        this.toggleExperimentalEditor();
+        this.imageBlockElem = getRequiredElementById('edit_wildcard_image_block');
+        let imageHtml = makeImageInput(null, 'edit_wildcard_image', null, 'Image', 'Image', true, false);
+        this.imageBlockElem.innerHTML = imageHtml;
+        this.errorBoxElem = getRequiredElementById('edit_wildcard_modal_error');
+        this.testResultElem = getRequiredElementById('test_wildcard_result');
+        this.testAgainButtonElem = getRequiredElementById('test_wildcard_again_button');
+        this.testNameElem = getRequiredElementById('test_wildcard_name');
+        this.modalElem = getRequiredElementById('edit_wildcard_modal');
+        this.modalMayClose = true;
+        this.nameElem.addEventListener('input', () => {
+            this.modalMayClose = false;
+        });
+        $(() => {
+            $(this.modalElem).modal({backdrop: 'static', keyboard: false});
+        });
+        $(this.modalElem).on('hidePrevented.bs.modal', () => {
+            if (this.modalMayClose) {
+                $(this.modalElem).modal('hide');
+            }
+            else {
+                this.wildcardModalError('You have unsaved changes. Please Save or Cancel');
+            }
+        });
+        this.imageElem = getRequiredElementById('edit_wildcard_image');
+        this.enableImageElem = getRequiredElementById('edit_wildcard_image_toggle');
+    }
+
+    /** Toggles the experimental editor. */
+    toggleExperimentalEditor() {
+        let content = null;
+        if (this.contentsElem) {
+            content = getTextContent(this.contentsElem);
+        }
+        if (this.experimentalEditorElem.checked) {
+            this.experimentalEditorSpotElem.innerHTML = '<div class="editable-textbox" id="edit_wildcard_contents" style="min-height: 15lh" contenteditable="true"></div>';
+            this.contentsElem = getRequiredElementById('edit_wildcard_contents');
+            this.contentsElem.addEventListener('input', () => {
+                this.processContents();
+            });
+        }
+        else {
+            this.experimentalEditorSpotElem.innerHTML = '<textarea class="auto-text auto-text-block" id="edit_wildcard_contents" rows="15" placeholder="Wildcard options (1 per line)"></textarea>';
+            this.contentsElem = getRequiredElementById('edit_wildcard_contents');
+        }
+        if (content) {
+            setTextContent(this.contentsElem, content);
+        }
+        this.contentsElem.addEventListener('input', () => {
+            this.modalMayClose = false;
+        });
+        this.processContents();
     }
 
     /** Applies a new wildcard list from the server. */
@@ -25,16 +80,16 @@ class WildcardHelpers {
             return;
         }
         this.curWildcardMenuWildcard = card;
-        getRequiredElementById('test_wildcard_name').innerText = card.name;
+        this.testNameElem.innerText = card.name;
         let choice = Math.floor(Math.random() * card.options.length);
         let val = card.options[choice];
-        getRequiredElementById('test_wildcard_result').value = val;
-        let button = getRequiredElementById('test_wildcard_again_button');
+        this.testResultElem.value = val;
+        let button = this.testAgainButtonElem;
         if (val.includes('<')) {
             button.disabled = true;
             genericRequest('TestPromptFill', {'prompt': val}, data => {
                 button.disabled = false;
-                getRequiredElementById('test_wildcard_result').value = data.result;
+                this.testResultElem.value = data.result;
                 $('#test_wildcard_modal').modal('show');
             });
         }
@@ -61,10 +116,35 @@ class WildcardHelpers {
      */
     createNewWildcardButton() {
         let card = {
-            name: '',
+            name: wildcardsBrowser.browser.folder,
             raw: ''
         };
         this.editWildcard(card);
+    }
+
+    /** Processes the contents of the wildcard contents edit box, reapplying syntax highlighting. */
+    processContents() {
+        if (this.contentsElem.tagName == 'TEXTAREA') {
+            return;
+        }
+        let [start, end] = getTextSelRange(this.contentsElem);
+        let contents = getTextContent(this.contentsElem);
+        let lines = contents.split('\n');
+        let html = '';
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+            let trimLine = line.trim();
+            let clazz = `wc_line_${i % 2}`;
+            if (trimLine.startsWith('#')) {
+                clazz += ' wc_line_comment';
+            }
+            html += `<span class="${clazz}">${line}</span>`;
+            if (i < lines.length - 1) {
+                html += '<br>';
+            }
+        }
+        this.contentsElem.innerHTML = html;
+        setTextSelRange(this.contentsElem, start, end);
     }
 
     /** Edit a wildcard, opening the wildcard edit modal. This can also open the editor for new wildcards. */
@@ -73,65 +153,86 @@ class WildcardHelpers {
             return;
         }
         this.curWildcardMenuWildcard = card;
-        let imageInput = getRequiredElementById('edit_wildcard_image');
-        imageInput.innerHTML = '';
-        let enableImage = getRequiredElementById('edit_wildcard_enable_image');
-        enableImage.checked = false;
-        enableImage.disabled = true;
+        clearImageFileInput(this.imageElem);
+        this.enableImageElem.checked = false;
         let curImg = document.getElementById('current_image_img');
+        this.nameElem.value = card.name;
+        setTextContent(this.contentsElem, card.raw);
+        this.processContents();
+        this.errorBoxElem.innerText = '';
+        this.modalMayClose = true;
+        let run = () => {
+            triggerChangeFor(this.enableImageElem);
+            $(this.modalElem).modal('show');
+        };
         if (curImg && curImg.tagName == 'IMG') {
-            let newImg = curImg.cloneNode(true);
-            newImg.id = 'edit_wildcard_image_img';
-            newImg.style.maxWidth = '100%';
-            newImg.style.maxHeight = '';
-            newImg.removeAttribute('width');
-            newImg.removeAttribute('height');
-            imageInput.appendChild(newImg);
-            if (!card.image || card.image == 'imgs/model_placeholder.jpg') {
-                enableImage.checked = true;
-            }
-            enableImage.disabled = false;
+            setImageFileDirect(this.imageElem, curImg.src, 'cur', 'cur', () => {
+                this.enableImageElem.checked = !card.image || card.image == 'imgs/model_placeholder.jpg';
+                run();
+            });
         }
-        getRequiredElementById('edit_wildcard_name').value = card.name;
-        getRequiredElementById('edit_wildcard_contents').value = card.raw;
-        $('#edit_wildcard_modal').modal('show');
+        else {
+            run();
+        }
+    }
+
+    wildcardModalError(error) {
+        console.log(`Wildcard modal error: ${error}`);
+        this.errorBoxElem.innerText = error;
     }
 
     /** Saves the edits to a wildcard from the modal created by {@link WildcardHelpers#editWildcard}. */
     saveEditWildcard() {
+        this.errorBoxElem.innerText = '';
         let card = this.curWildcardMenuWildcard;
         if (card == null) {
-            console.log("Wildcard do save: no wildcard");
+            this.wildcardModalError('No wildcard available to save (internal error?)');
+            return;
+        }
+        let name = this.nameElem.value.trim().replaceAll('\\', '/').replace(/^\/+/, '');
+        if (name == '') {
+            this.wildcardModalError('Name is required');
+            return;
+        }
+        if (name.endsWith('/')) {
+            this.wildcardModalError('Cannot save a wildcard as a folder, give it a filename, or remove the trailing slash');
+            return;
+        }
+        let content = getTextContent(this.contentsElem).trim();
+        if (content == '') {
+            this.wildcardModalError('At least one entry is required');
             return;
         }
         let data = {
-            'card': getRequiredElementById('edit_wildcard_name').value,
-            'options': getRequiredElementById('edit_wildcard_contents').value.trim() + '\n',
+            'card': name,
+            'options': content + '\n',
             'preview_image': '',
             'preview_image_metadata': null
         };
-        function complete() {
+        let complete = () => {
             if (card.name != data.card && !data['preview_image'] && card.image && card.image != 'imgs/model_placeholder.jpg') {
                 data['preview_image'] = card.image;
             }
             genericRequest('EditWildcard', data, resData => {
                 wildcardsBrowser.browser.refresh();
-                if (card.name && card.name != data.card) {
+                if (card.name && card.name != data.card && !card.name.endsWith('/')) {
                     genericRequest('DeleteWildcard', { card: card.name }, data => {});
                 }
             });
-            $('#edit_wildcard_modal').modal('hide');
+            $(this.modalElem).modal('hide');
         }
-        if (getRequiredElementById('edit_wildcard_enable_image').checked) {
-            data['preview_image_metadata'] = currentMetadataVal;
-            imageToData(getRequiredElementById('edit_wildcard_image').getElementsByTagName('img')[0].src, (dataURL) => {
-                data['preview_image'] = dataURL;
-                complete();
-            }, true);
+        if (this.enableImageElem.checked) {
+            let imageVal = getInputVal(this.imageElem);
+            if (imageVal) {
+                data['preview_image_metadata'] = currentMetadataVal;
+                imageToData(imageVal, (dataURL) => {
+                    data['preview_image'] = dataURL;
+                    complete();
+                }, true);
+                return;
+            }
         }
-        else {
-            complete();
-        }
+        complete();
     }
 
     /** Duplicate a wildcard, creating a new wildcard with a unique name. Does not open any modal, just has the server duplicate immediately. */
