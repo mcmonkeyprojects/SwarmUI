@@ -816,6 +816,7 @@ public class Program
             Additional documentation about the CLI args is available online: <https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Command%20Line%20Arguments.md> or in the `docs/` folder of this repo.
 
             Find more information about SwarmUI in the GitHub readme and docs folder:
+              - Main website: <https://swarmui.net/>
               - Project Github: <https://github.com/mcmonkeyprojects/SwarmUI>
               - Documentation: <https://github.com/mcmonkeyprojects/SwarmUI/tree/master/docs>
               - Feature Announcements: <https://github.com/mcmonkeyprojects/SwarmUI/discussions/1>
