@@ -25,6 +25,7 @@ public static class AdminAPI
         API.RegisterAPICall(ListRecentLogMessages, false, Permissions.ViewLogs);
         API.RegisterAPICall(LogSubmitToPastebin, true, Permissions.ViewLogs);
         API.RegisterAPICall(ShutdownServer, true, Permissions.Shutdown);
+        API.RegisterAPICall(AdminTakeControl, true, Permissions.AutomatedControl);
         API.RegisterAPICall(GetServerResourceInfo, false, Permissions.ReadServerInfoPanels);
         API.RegisterAPICall(GetGlobalStatus, false, Permissions.ReadServerInfoPanels);
         API.RegisterAPICall(DebugLanguageAdd, true, Permissions.AdminDebug);
@@ -355,6 +356,13 @@ public static class AdminAPI
     {
         Logs.Warning($"User {session.User.UserID} requested server shutdown.");
         _ = Task.Run(() => Program.Shutdown());
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Marks the server as under control of a remote management, such as an AutoScalingBackend.\nIf `--require_control_within` was used, the server will shut down if the remote management does not consistently send pings.", "\"success\": true")]
+    public static async Task<JObject> AdminTakeControl(Session session)
+    {
+        Program.TimeLastRemoteControlPing = Environment.TickCount64;
         return new JObject() { ["success"] = true };
     }
 
