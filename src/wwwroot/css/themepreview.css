@@ -1,6 +1,9 @@
 html, body {
     height: 100%;
 }
+hr {
+    margin: 0 0 1rem 0;
+}
 #alt_generate_button {
   margin-left: 0 !important;
 }
@@ -11,18 +14,19 @@ html, body {
 .theme_preview-content {
     height: 100%;
     align-content: center;
-    margin-top: -0.25rem;
+    margin-top: -0.55rem;
 }
 .theme_preview-item {
     display: flex;
     justify-content: center;
 }
-.theme_preview-item:not(:last-child) {
-    margin-bottom: 0.5em;
-}
 .theme_preview-item .theme_preview-text {
     font-size: 1.25rem;
     margin-bottom: 0;
+}
+.theme_preview-item.noise-image-bg {
+    background-image: var(--noise-image);
+    padding: 1rem 0;
 }
 .input-group.input-group-open {
     display: block;
