@@ -440,6 +440,12 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         return true;
     }
 
+    /// <summary>Tell the remote SwarmUI instance to shut down fully.</summary>
+    public async Task TriggerRemoteShutdown()
+    {
+        await SendAPIJSON("ShutdownServer", []);
+    }
+
     /// <summary>Core handler to send a simple API JSON request. Will auto-inject a proper session ID.</summary>
     /// <param name="endpoint">The endpoint, only after the /API/ Part. For example, "GenerateText2Image".</param>
     /// <param name="request">The request JSON body.</param>
