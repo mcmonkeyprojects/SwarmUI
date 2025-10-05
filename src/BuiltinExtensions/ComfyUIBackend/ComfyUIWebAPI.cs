@@ -101,7 +101,7 @@ public static class ComfyUIWebAPI
     public static async Task<JObject> ComfyListWorkflows(Session session)
     {
         return new JObject() { ["workflows"] = JToken.FromObject(ComfyUIBackendExtension.CustomWorkflows.Keys.ToList()
-            .Select(ComfyUIBackendExtension.GetWorkflowByName).OrderBy(w => w.Name).Select(w => new JObject()
+            .Select(ComfyUIBackendExtension.GetWorkflowByName).Where(w => w is not null).OrderBy(w => w.Name).Select(w => new JObject()
             {
                 ["name"] = w.Name,
                 ["image"] = w.Image ?? "/imgs/model_placeholder.jpg",
