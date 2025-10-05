@@ -318,29 +318,37 @@ public class ComfyUIBackendExtension : Extension
             CustomWorkflows.TryRemove(name, out _);
             return null;
         }
-        JObject json = File.ReadAllText(path).ParseToJson();
-        string getStringFor(string key)
+        try
         {
-            if (!json.TryGetValue(key, out JToken data))
+            JObject json = File.ReadAllText(path).ParseToJson();
+            string getStringFor(string key)
             {
-                return null;
+                if (!json.TryGetValue(key, out JToken data))
+                {
+                    return null;
+                }
+                if (data.Type == JTokenType.String)
+                {
+                    return data.ToString();
+                }
+                return data.ToString(Formatting.None);
             }
-            if (data.Type == JTokenType.String)
-            {
-                return data.ToString();
-            }
-            return data.ToString(Formatting.None);
+            string workflowData = getStringFor("workflow");
+            string prompt = getStringFor("prompt");
+            string customParams = getStringFor("custom_params");
+            string paramValues = getStringFor("param_values");
+            string image = getStringFor("image") ?? "/imgs/model_placeholder.jpg";
+            string description = getStringFor("description");
+            bool enableInSimple = json.TryGetValue("enable_in_simple", out JToken enableInSimpleTok) && enableInSimpleTok.ToObject<bool>();
+            workflow = new(name, workflowData, prompt, customParams, paramValues, image, description, enableInSimple);
+            CustomWorkflows[name] = workflow;
+            return workflow;
         }
-        string workflowData = getStringFor("workflow");
-        string prompt = getStringFor("prompt");
-        string customParams = getStringFor("custom_params");
-        string paramValues = getStringFor("param_values");
-        string image = getStringFor("image") ?? "/imgs/model_placeholder.jpg";
-        string description = getStringFor("description");
-        bool enableInSimple = json.TryGetValue("enable_in_simple", out JToken enableInSimpleTok) && enableInSimpleTok.ToObject<bool>();
-        workflow = new(name, workflowData, prompt, customParams, paramValues, image, description, enableInSimple);
-        CustomWorkflows[name] = workflow;
-        return workflow;
+        catch (Exception ex)
+        {
+            Logs.Error($"Error loading ComfyUI custom workflow '{name}': {ex.ReadableString()}");
+            return null;
+        }
     }
 
     public void Refresh()
