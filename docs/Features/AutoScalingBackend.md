@@ -47,6 +47,7 @@ For obvious reasons, this is an advanced speciality functionality not intended f
                 - Default count is 1 retry (ie 2 total attempts to connect).
                 - Emit this setting *before* NewURL.
                 - This is a weirdo option, primarily intended for if you have weird networks, extremely slow launch times, a need to emit a url *before* swarm launch, etc. Also serves to let you have some launches get more time to connect than others (vs the global timeout on the backend settings).
+        - Be aware that the time until `NewURL` output is the time that some systems or UI behavior may lock and wait, so the sooner this is sent, the better. Pass or fail as quick as possible, then let the actual launch behavior happen after.
     - Output `DeclareFailed: <some reason>` to declare that scaling is not currently possible, and the server must make do with the resources it has.
     - If the script completes without giving a NewURL, critical failure will be presumed.
     - The script is not required to exit. As soon as NewURL is given, Swarm ignores the process and lets it run as long or short as it wants.
@@ -60,9 +61,13 @@ For obvious reasons, this is an advanced speciality functionality not intended f
     - Click the `?` buttons on the backend settings to see info about how to configure the other options.
     - Click **Save** when you're done editing
 
-## Tips
+## TODO
 
-**(TODO: Configuration tips)**
+In the future, a LoadFactor setting to allow for cases of large server networks that want to pre-scale would be nice.
+
+Also, this is a bit stupid around model loading. That could probably be made better.
+
+Also, the first-free load order req is a bit stupid: ideally track a usage rate for downscaling rather than just when a backend was last touched.
 
 ## Sample Scripts
 

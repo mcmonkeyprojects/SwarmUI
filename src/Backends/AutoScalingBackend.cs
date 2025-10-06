@@ -24,17 +24,17 @@ public class AutoScalingBackend : AbstractT2IBackend
         [ConfigComment("Minimum number of backends to always keep running, even if idle.")]
         public int MinBackends = 0;
 
-        [ConfigComment("Minimum time, in minutes, between spinning up new backends.\nFor example, if set 1, then only 1 new backend per minute can be started.")]
+        [ConfigComment("Minimum time, in minutes, between spinning up new backends.\nFor example, if set 1, then only 1 new backend per minute can be started.\nThis helps reduce the resource impact of sudden large bursts of activity.")]
         public double MinWaitBetweenStart = 1;
 
         [ConfigComment("Minimum time, in minutes, to wait after a backend fails to start before trying to start another one.")]
         public double MinWaitAfterFailure = 2;
 
-        [ConfigComment("Minimum time, in minutes, between shutting down idle backends.\nFor example, if set 1, then only 1 backend per minute can be automatically stopped.")]
-        public double MinWaitBetweenStop = 0.5;
+        [ConfigComment("Minimum time, in minutes, between shutting down idle backends.\nFor example, if set 1, then only 1 backend per minute can be automatically stopped.\nThis helps prevent spiky start/stop thrash, but may waste resources a bit if there are rare large bursts of activity.")]
+        public double MinWaitBetweenStop = 1;
 
         [ConfigComment("Minimum time, in minutes, that a backend must be idle before it can be selected for shutdown.")]
-        public double MinIdleTime = 1;
+        public double MinIdleTime = 10;
 
         [ConfigComment("Minimum number of waiting generations before a new backend can be started.\nSelect this high enough to not be wasteful of resources, but low enough to not cause generation requests to be pending for too long.\nMust be set to at least 1, should ideally be set higher.")]
         public int MinQueuedBeforeExpand = 10;
@@ -51,6 +51,8 @@ public class AutoScalingBackend : AbstractT2IBackend
 
         [ConfigComment("When attempting to connect to the backend, this is the maximum time Swarm will wait before considering the connection to be failed.\nNote that depending on other configurations, it may fail faster than this.\nFor local network machines, set this to a low value (eg 5) to avoid 'Loading...' delays.")]
         public int ConnectionAttemptTimeoutSeconds = 30;
+
+        // TODO: Some form of loadfactor stuff, to allow cases of users with very large servers wanting to pre-scale
     }
 
     public AutoScalingBackendSettings Settings => SettingsRaw as AutoScalingBackendSettings;
@@ -113,9 +115,8 @@ public class AutoScalingBackend : AbstractT2IBackend
                 await LaunchOne();
             }
         }
-        // TODO: ?
-        // TODO: Dynamic scaling monitoring stuff
         Program.TickEvent += Tick;
+        Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, SignalWantsOne);
         Status = BackendStatus.RUNNING;
     }
 
@@ -153,21 +154,33 @@ public class AutoScalingBackend : AbstractT2IBackend
     }
 
     /// <summary>Signal that a new backend is wanted. Only does anything if the system is currently ready to expand.</summary>
-    public void SignalWantsOne()
+    public async Task<BackendHandler.ScaleResult> SignalWantsOne()
     {
         lock (ScaleBehaviorLock)
         {
+            if (Status == BackendStatus.DISABLED)
+            {
+                return BackendHandler.ScaleResult.NoLaunch;
+            }
             if (TimeOfNextStart != 0 && Environment.TickCount64 < TimeOfNextStart)
             {
-                return;
+                Logs.Verbose("Scale request ignored due to wait time between starts.");
+                return BackendHandler.ScaleResult.NoLaunch;
             }
-            if (ControlledNonrealBackends.Count >= Settings.MaxBackends || Status == BackendStatus.DISABLED)
+            if (ControlledNonrealBackends.Count >= Settings.MaxBackends)
             {
-                return;
+                Logs.Verbose("Scale request ignored due to max backends count reached.");
+                return BackendHandler.ScaleResult.NoLaunch;
             }
             MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
         }
-        Utilities.RunCheckedTask(LaunchOne, "AutoScalingBackend Launch New Backend");
+        BackendHandler.ScaleResult result = BackendHandler.ScaleResult.AddedLaunch;
+        if (ControlledNonrealBackends.IsEmpty)
+        {
+            result = BackendHandler.ScaleResult.FreshLaunch;
+        }
+        await Utilities.RunCheckedTask(LaunchOne, "AutoScalingBackend Launch New Backend");
+        return result;
     }
 
     /// <summary>Update the <see cref="TimeOfNextStart"/> to require at least the given number of minutes before a new start.</summary>
@@ -330,6 +343,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     public override async Task Shutdown()
     {
         Program.TickEvent -= Tick;
+        Program.Backends.NewBackendNeededEvent.Remove(BackendData.ID, out _);
         foreach (int id in ControlledNonrealBackends.Keys.ToArray())
         {
             await StopOne(id);
