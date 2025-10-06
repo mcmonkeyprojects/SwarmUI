@@ -322,7 +322,7 @@ public class BackendHandler
         data.Backend.ShutDownReserve = true;
         try
         {
-            while (data.CheckIsInUse)
+            while (data.CheckIsInUse && data.Backend.MaxUsages > 0)
             {
                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                 {
@@ -660,7 +660,7 @@ public class BackendHandler
         }
         Logs.Verbose($"Got request to load model on all: {model.Name}");
         bool any = false;
-        T2IBackendData[] filtered = [.. T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.CanLoadModels)];
+        T2IBackendData[] filtered = [.. T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.MaxUsages > 0 && b.Backend.CanLoadModels)];
         if (!filtered.Any())
         {
             Logs.Warning($"Cannot load model as no backends are available.");
@@ -678,7 +678,7 @@ public class BackendHandler
         foreach (T2IBackendData backend in filtered)
         {
             backend.ReserveModelLoad = true;
-            while (backend.CheckIsInUseNoModelReserve)
+            while (backend.CheckIsInUseNoModelReserve && backend.Backend.MaxUsages > 0)
             {
                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                 {
@@ -723,7 +723,7 @@ public class BackendHandler
             tasks.Add((backend, Task.Run(async () =>
             {
                 int backTicks = 0;
-                while (backend.CheckIsInUse)
+                while (backend.CheckIsInUse && backend.Backend.MaxUsages > 0)
                 {
                     if (backTicks++ > 50)
                     {
@@ -1123,7 +1123,7 @@ public class BackendHandler
     /// <summary>Internal helper route for <see cref="GetNextT2IBackend"/> to trigger a backend model load.</summary>
     public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, ModelRequestPressure pressure, CancellationToken cancel)
     {
-        List<T2IBackendData> availableLoaders = [.. available.Where(b => b.Backend.CanLoadModels)];
+        List<T2IBackendData> availableLoaders = [.. available.Where(b => b.Backend.CanLoadModels && b.Backend.MaxUsages > 0)];
         if (availableLoaders.IsEmpty())
         {
             if (pressure?.IsLoading ?? false)
@@ -1226,7 +1226,7 @@ public class BackendHandler
                         {
                             availableBackend.ReserveModelLoad = true;
                             int ticks = 0;
-                            while (availableBackend.CheckIsInUseNoModelReserve)
+                            while (availableBackend.CheckIsInUseNoModelReserve && availableBackend.Backend.MaxUsages > 0)
                             {
                                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                                 {
