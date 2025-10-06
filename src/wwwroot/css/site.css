@@ -82,10 +82,6 @@ body {
     transition: opacity 0.25s;
     z-index: 0;
 }
-.top-status-bar-wrapper:hover {
-    display: none;
-    opacity: 0.5;
-}
 .top-status-bar {
     position: absolute;
     color: var(--status-bar-text-color);
