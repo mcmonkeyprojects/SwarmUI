@@ -116,6 +116,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             }
         }
         Program.TickEvent += Tick;
+        Program.PreShutdownEvent += PreShutdown;
         Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, SignalWantsOne);
         Status = BackendStatus.RUNNING;
     }
@@ -188,7 +189,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     {
         lock (ScaleBehaviorLock)
         {
-            TimeOfNextStart = Math.Max(TimeOfNextStart, Environment.TickCount64) + (long)(min * 60_000);
+            TimeOfNextStart = Math.Max(TimeOfNextStart, Environment.TickCount64 + (long)(min * 60_000));
         }
     }
 
@@ -197,7 +198,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     {
         lock (ScaleBehaviorLock)
         {
-            TimeOfNextStop = Math.Max(TimeOfNextStop, Environment.TickCount64) + (long)(min * 60_000);
+            TimeOfNextStop = Math.Max(TimeOfNextStop, Environment.TickCount64 + (long)(min * 60_000));
         }
     }
 
@@ -317,6 +318,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     {
         if (ControlledNonrealBackends.TryRemove(id, out BackendHandler.T2IBackendData data))
         {
+            Logs.Verbose($"AutoScalingBackend stopping controlled backend #{id}");
             if (data.Backend is SwarmSwarmBackend swarmBackend)
             {
                 try
@@ -337,12 +339,24 @@ public class AutoScalingBackend : AbstractT2IBackend
                 Logs.Debug($"AutoScalingBackend StopOne #{id} local delete failed: {ex.Message}");
             }
         }
+        else
+        {
+            Logs.Verbose($"AutoScalingBackend StopOne called for unknown backend #{id}");
+        }
+    }
+
+    /// <summary>Called before the proper shutdown. Network shutdown calls need to be sent early.</summary>
+    public void PreShutdown()
+    {
+        Task.WaitAll([.. ControlledNonrealBackends.Keys.Select(StopOne)]);
     }
 
     /// <inheritdoc/>
     public override async Task Shutdown()
     {
+        Logs.Info($"AutoScalingBackend {BackendData.ID} shutting down, stopping all controlled backends.");
         Program.TickEvent -= Tick;
+        Program.PreShutdownEvent -= PreShutdown;
         Program.Backends.NewBackendNeededEvent.Remove(BackendData.ID, out _);
         foreach (int id in ControlledNonrealBackends.Keys.ToArray())
         {

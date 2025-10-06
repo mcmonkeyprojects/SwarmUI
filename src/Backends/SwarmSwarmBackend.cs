@@ -469,6 +469,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Tell the remote SwarmUI instance to shut down fully.</summary>
     public async Task TriggerRemoteShutdown()
     {
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} triggering remote swarm shutdown at {Address}");
         await SendAPIJSON("ShutdownServer", []);
     }
 

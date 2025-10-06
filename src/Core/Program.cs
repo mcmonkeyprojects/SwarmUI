@@ -80,6 +80,9 @@ public class Program
     /// <summary>Event-action fired when the model paths have changed (eg via settings change).</summary>
     public static Action ModelPathsChangedEvent;
 
+    /// <summary>Event-action fired when shutdown has begun but before the global cancel has set.</summary>
+    public static Action PreShutdownEvent;
+
     /// <summary>General data directory root.</summary>
     public static string DataDir = "Data";
 
@@ -513,6 +516,7 @@ public class Program
         Task.WaitAny(waitShutdown, Task.Delay(TimeSpan.FromMinutes(2)));
         Environment.ExitCode = code;
         Logs.Info("Shutting down...");
+        PreShutdownEvent?.Invoke();
         GlobalCancelSource.Cancel();
         Logs.Verbose("Shutdown webserver...");
         WebServer.WebApp?.StopAsync().Wait();

@@ -481,6 +481,10 @@ public class ComfyUIRedirectHelper
                                     return;
                                 }
                                 ComfyClientData client = available.MinBy(c => c.QueueRemaining);
+                                if (available.All(c => c.QueueRemaining > 0))
+                                {
+                                    _ = Utilities.RunCheckedTask(async () => await Program.Backends.TryToScaleANewBackend(true));
+                                }
                                 if (preferredBackendIndex >= 0)
                                 {
                                     client = available[preferredBackendIndex % available.Length];
