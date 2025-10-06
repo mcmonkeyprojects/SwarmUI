@@ -63,7 +63,12 @@ public class T2IModelHandler
                 catch (Exception) { }
                 try
                 {
-                    File.Delete($"{Folder}/image_metadata.ldb");
+                    File.Delete($"{Folder}/model_metadata.ldb");
+                }
+                catch (Exception) { }
+                try
+                {
+                    File.Delete($"{Folder}/model_metadata-log.ldb");
                 }
                 catch (Exception) { }
                 ModelMetadataCachePerFolder.TryRemove(Folder, out _);
@@ -322,6 +327,10 @@ public class T2IModelHandler
     /// <summary>Updates the metadata cache database to the metadata assigned to this model object.</summary>
     public void ResetMetadataFrom(T2IModel model)
     {
+        if (Program.NoPersist)
+        {
+            return;
+        }
         ModelDatabase cache = null;
         try
         {

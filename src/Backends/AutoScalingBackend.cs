@@ -183,6 +183,8 @@ public class AutoScalingBackend : AbstractT2IBackend
                 // TODO: Add a SwarmSwarmBackend with this URL
                 // TODO: Document how to make the remote instances make any sense.
                 //       `--require_control_within 1` or higher, 3+ recommended (by default pings every 30 sec)
+                //       `--no_persist true` but also run at least once without that
+                //       also use separate data dir from the main server if using shared os (one "master" swarm config and one shared "worker" config)
                 //       avoid 'auto requeue' in any launcher tool
                 //       maybe a slurm sample script
                 //       must be non-account-based, OR have an admin account with `automated_control` perm

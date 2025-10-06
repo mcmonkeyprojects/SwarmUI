@@ -642,7 +642,7 @@ public class T2IParamTypes
         ClipVisionModel = Register<T2IModel>(new("CLIP-Vision Model", "Which CLIP-Vision model to use as an image encoder, for certain image-input tasks.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "ClipVision", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 16.5, ChangeWeight: 7
             ));
-        T5XXLModel = Register<T2IModel>(new("T5-XXL Model", "Which T5-XXL model to use as a text encoder, for SD3/Flux style 'diffusion_models' folder models.",
+        T5XXLModel = Register<T2IModel>(new("T5-XXL Model", "Which T5-XXL model to use as a text encoder, for SD3/Flux style 'diffusion_models' folder models.\nAlso used for Wan's umt5, and Hunyuan Image's ByT5 small glyph XL.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 17, ChangeWeight: 7
             ));
         LLaVAModel = Register<T2IModel>(new("LLaVA Model", "Which LLaVA model to use as a text encoder, for Hunyuan Video 'diffusion_models' folder models.",
