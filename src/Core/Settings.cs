@@ -172,6 +172,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("Preference for order of backend selection when loading a new model.\n'Last Used' will load the model on the last backend to load a model. This tends to distribute work between GPUs fairly.\n'First Free' will load the model on the first free backend. This tends to cause frequent model reloading on your first backend, and underuse of others.\nDefaults to Last Used.")]
         [ManualSettingsOptions(ManualNames = ["Last Used", "First Free"], Vals = ["last_used", "first_free"])]
         public string ModelLoadOrderPreference = "last_used";
+
+        [ConfigComment("If true, presume all backends can fast-load.\nFor example, if you have multiple local comfy instances, all them all to boot up at the same time.")]
+        public bool AllBackendsLoadFast = false;
     }
 
     /// <summary>Settings related to networking and the webserver.</summary>

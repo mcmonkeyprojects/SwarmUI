@@ -518,7 +518,7 @@ public class BackendHandler
         data.Backend.LoadStatusReport ??= [];
         data.Backend.Status = BackendStatus.WAITING;
         data.Backend.AddLoadStatus("Waiting to load...");
-        if (data.BackType.CanLoadFast)
+        if (data.BackType.CanLoadFast || Program.ServerSettings.Backends.AllBackendsLoadFast)
         {
             Task.Run(() => LoadBackendDirect(data));
         }
