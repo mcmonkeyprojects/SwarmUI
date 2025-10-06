@@ -64,6 +64,9 @@ public class AutoScalingBackend : AbstractT2IBackend
     /// <summary>If non-zero, this is the minimum value of <see cref="Environment.TickCount64"/> before starting a new backend.</summary>
     public long TimeOfNextStart = 0;
 
+    /// <summary>If non-zero, this is the minimum value of <see cref="Environment.TickCount64"/> before stopping an idle backend.</summary>
+    public long TimeOfNextStop = 0;
+
     /// <summary>Lock to prevents scaling behavior from overlapping itself across threads.</summary>
     public LockObject ScaleBehaviorLock = new();
 
@@ -77,6 +80,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         }
         CanLoadModels = false;
         TimeOfNextStart = 0;
+        TimeOfNextStop = 0;
         if (Settings.MaxBackends <= 0 || string.IsNullOrWhiteSpace(Settings.StartScript))
         {
             Status = BackendStatus.DISABLED;
@@ -88,16 +92,16 @@ public class AutoScalingBackend : AbstractT2IBackend
             Status = BackendStatus.ERRORED;
             return;
         }
-        if (!File.Exists(Settings.StartScript))
-        {
-            Logs.Error($"AutoScalingBackend cannot find start script: '{Settings.StartScript}', not a real file");
-            Status = BackendStatus.ERRORED;
-            return;
-        }
         string scriptExt = Path.GetExtension(Settings.StartScript).ToLowerInvariant();
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? (scriptExt == "bat" || scriptExt == "ps1") : (scriptExt == "sh"))
         {
             Logs.Error($"AutoScalingBackend cannot handle start script: '{Settings.StartScript}', not an OS-appropriate shell script. Use 'sh' for Linux/Mac, or 'bat'/'ps1' for Windows.");
+            Status = BackendStatus.ERRORED;
+            return;
+        }
+        if (!File.Exists(Settings.StartScript))
+        {
+            Logs.Error($"AutoScalingBackend cannot find start script: '{Settings.StartScript}', not a real file");
             Status = BackendStatus.ERRORED;
             return;
         }
@@ -111,8 +115,41 @@ public class AutoScalingBackend : AbstractT2IBackend
         }
         // TODO: ?
         // TODO: Dynamic scaling monitoring stuff
-        // TODO: Every 30 seconds, ping all controlled backends
+        Program.TickEvent += Tick;
         Status = BackendStatus.RUNNING;
+    }
+
+    /// <summary>Value of <see cref="Environment.TickCount64"/> at the last time that all controlled backends were pinged.</summary>
+    public long LastPingAll = 0;
+
+    /// <summary>Tick function, called every approx 1 sec by the core, to process slow monitoring tasks for this autoscaler.</summary>
+    public void Tick()
+    {
+        long timeNow = Environment.TickCount64;
+        if (timeNow > LastPingAll + 30_000)
+        {
+            foreach (int id in ControlledNonrealBackends.Keys.ToArray())
+            {
+                _ = Utilities.RunCheckedTask(() => PingBackend(id), $"AutoScalingBackend PingBackend #{id}");
+            }
+            if (ControlledNonrealBackends.Count > Settings.MinBackends)
+            {
+                foreach (BackendHandler.T2IBackendData data in ControlledNonrealBackends.Values.ToArray())
+                {
+                    if (!data.CheckIsInUseAtAll && timeNow > data.TimeLastRelease + Settings.MinIdleTime * 60_000)
+                    {
+                        lock (ScaleBehaviorLock)
+                        {
+                            if (ControlledNonrealBackends.Count > Settings.MinBackends && Environment.TickCount64 > TimeOfNextStop)
+                            {
+                                _ = Utilities.RunCheckedTask(() => StopOne(data.ID), $"AutoScalingBackend StopOne #{data.ID}");
+                                MustWaitMinutesBeforeStop(Settings.MinWaitBetweenStop);
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>Signal that a new backend is wanted. Only does anything if the system is currently ready to expand.</summary>
@@ -142,6 +179,15 @@ public class AutoScalingBackend : AbstractT2IBackend
         }
     }
 
+    /// <summary>Update the <see cref="TimeOfNextStop"/> to require at least the given number of minutes before a new stop.</summary>
+    public void MustWaitMinutesBeforeStop(double min)
+    {
+        lock (ScaleBehaviorLock)
+        {
+            TimeOfNextStop = Math.Max(TimeOfNextStop, Environment.TickCount64) + (long)(min * 60_000);
+        }
+    }
+
     /// <summary>Async task to launch a new backend. Only returns when a backend has launched, or failed. Throws an exception if a backend cannot be launched currently.</summary>
     public async Task LaunchOne()
     {
@@ -168,35 +214,65 @@ public class AutoScalingBackend : AbstractT2IBackend
             WorkingDirectory = Path.GetDirectoryName(Settings.StartScript)
         };
         Process process = Process.Start(psi) ?? throw new Exception("Failed to start backend launch process, fundamental failure. Is the start script valid?");
-        using StreamReader fixedReader = new(process.StandardOutput.BaseStream, Encoding.UTF8); // Force UTF-8, always
+        StreamReader fixedReader = new(process.StandardOutput.BaseStream, Encoding.UTF8); // Force UTF-8, always
         string line;
+        int retries = 1;
         while ((line = await fixedReader.ReadLineAsync()) is not null)
         {
             line = line.Trim();
             if (line.StartsWith("[SwarmAutoScaleBackend]") && line.EndsWith("[/SwarmAutoScaleBackend]"))
             {
                 line = line["[SwarmAutoScaleBackend]".Length..^"[/SwarmAutoScaleBackend]".Length].Trim();
-                if (line.StartsWith("NewURL: "))
+                Logs.Debug($"SwarmAutoScalingBackend Launch #{id} Managed Output: {line}");
+                if (line.StartsWith("NewURL:"))
                 {
-                    string url = line["NewURL: ".Length..].Trim();
+                    string url = line["NewURL:".Length..].Trim();
                     if (string.IsNullOrWhiteSpace(url))
                     {
                         continue;
                     }
-                    // TODO: Add a SwarmSwarmBackend with this URL
+                    SwarmSwarmBackend.SwarmSwarmBackendSettings settings = new()
+                    {
+                        Address = url,
+                        AuthorizationHeader = Settings.AuthorizationHeader,
+                        OtherHeaders = Settings.OtherHeaders,
+                        ConnectionAttemptTimeoutSeconds = Settings.ConnectionAttemptTimeoutSeconds
+                    };
+                    Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
+                    {
+                        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {newData.ID}: Master Control");
+                        SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
+                        newSwarm.IsSpecialControlled = true;
+                        newSwarm.Models = Models;
+                        newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] Master Control Swarm Instance";
+                        newSwarm.CanLoadModels = false;
+                        newSwarm.FirstLoadRetries = retries;
+                        newData.UpdateLastReleaseTime();
+                        ControlledNonrealBackends.TryAdd(newData.ID, newData);
+                    });
+                    MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
+                    break;
                 }
-                if (line.StartsWith("DeclareFailed: "))
+                if (line.StartsWith("DoRetries:"))
                 {
-                    string info = line["DeclareFailed: ".Length..].Trim();
+                    string info = line["DoRetries:".Length..].Trim();
+                    Logs.Debug($"SwarmAutoScalingBackend Launch #{id} request retry count: {info}");
+                    retries = int.Parse(info);
+                }
+                if (line.StartsWith("DeclareFailed:"))
+                {
+                    string info = line["DeclareFailed:".Length..].Trim();
                     Logs.Debug($"SwarmAutoScalingBackend Launch #{id} declared failure to launch: {info}");
                     MustWaitMinutesBeforeStart(Settings.MinWaitAfterFailure);
-                    return;
+                    break;
                 }
-                Logs.Debug($"SwarmAutoScalingBackend Launch #{id} Output: {line}");
-                MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
+            }
+            else
+            {
+                Logs.Verbose($"SwarmAutoScalingBackend launch #{id} startup stdout: {line}");
             }
         }
-        NetworkBackendUtils.ReportLogsFromProcess(process, $"AutoScalingBackendLaunch-{id}", $"autoscalebackend_{id}", out _, () => BackendStatus.RUNNING, _ => { }, true);
+        NetworkBackendUtils.ReportLogsFromProcess(process, $"AutoScalingBackendLaunch-{id}", $"autoscalingbackend_{id}", out _, () => BackendStatus.RUNNING, _ => { }, true);
     }
 
     /// <summary>Ping a controlled backend, by its ID. Tells the remote backend that we are in control of it. If the ping fails, the backend is stopped and removed from tracking.</summary>
@@ -253,6 +329,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task Shutdown()
     {
+        Program.TickEvent -= Tick;
         foreach (int id in ControlledNonrealBackends.Keys.ToArray())
         {
             await StopOne(id);
