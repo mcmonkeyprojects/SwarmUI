@@ -355,7 +355,11 @@ public static class AdminAPI
     public static async Task<JObject> ShutdownServer(Session session)
     {
         Logs.Warning($"User {session.User.UserID} requested server shutdown.");
-        _ = Task.Run(() => Program.Shutdown());
+        _ = Utilities.RunCheckedTask(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
+            Program.Shutdown();
+        });
         return new JObject() { ["success"] = true };
     }
 

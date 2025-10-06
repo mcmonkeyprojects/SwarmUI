@@ -123,7 +123,12 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     {
         using CancellationTokenSource timeout = Utilities.TimedCancel(TimeSpan.FromSeconds(Settings.ConnectionAttemptTimeoutSeconds));
         JObject sessData = await HttpClient.PostJson($"{Address}/API/GetNewSession", [], RequestAdapter(), timeout.Token);
-        Session = sessData["session_id"].ToString();
+        if (!sessData.TryGetValue("session_id", out JToken sessTok))
+        {
+            Logs.Debug($"{HandlerTypeData.Name} {BackendData.ID} failed to get session ID from remote swarm at {Address}: yielded raw json {sessData.ToDenseDebugString(true)}");
+            throw new Exception("Failed to get session ID from remote swarm. Check debug logs for details.");
+        }
+        Session = sessTok.ToString();
         string id = sessData["server_id"]?.ToString();
         Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Connected to remote Swarm instance {Address} with server ID '{id}'.");
         if (id == Utilities.LoopPreventionID.ToString())
