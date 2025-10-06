@@ -104,6 +104,9 @@ function addBackendToHtml(backend, disable, spot = null) {
         else if (setting.type == 'integer') {
             input.innerHTML = makeNumberInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name], 0, 1000, 1) + pop;
         }
+        else if (setting.type == 'decimal') {
+            input.innerHTML = makeNumberInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name], 0, 1000, 1) + pop;
+        }
         else if (setting.type == 'boolean') {
             input.innerHTML = makeCheckboxInput(null, `setting_${backend.id}_${setting.name}`, '', setting.name, setting.description, backend.settings[setting.name]) + pop;
         }
