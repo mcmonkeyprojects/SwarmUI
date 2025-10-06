@@ -492,7 +492,11 @@ public class ComfyUIRedirectHelper
                                 else if (available.Length > 1)
                                 {
                                     string[] classTypes = [.. prompt.Properties().Select(p => p.Value is JObject jobj ? (string)jobj["class_type"] : null).Where(ct => ct is not null)];
-                                    ComfyClientData[] validClients = [.. available.Where(c => c.Backend is not ComfyUIAPIAbstractBackend comfy || classTypes.All(ct => comfy.NodeTypes.Contains(ct)))];
+                                    ComfyClientData[] validClients = [.. available.Where(c =>
+                                    {
+                                        HashSet<string> nodes = c.Backend is SwarmSwarmBackend swarmBack ? ((HashSet<string>)swarmBack.ExtensionData.GetValueOrDefault("ComfyNodeTypes", new HashSet<string>())) : (c.Backend as ComfyUIAPIAbstractBackend).NodeTypes;
+                                        return classTypes.All(ct => nodes.Contains(ct));
+                                    })];
                                     if (validClients.Length == 0)
                                     {
                                         Logs.Debug("It looks like no available backends support all relevant comfy node class types?!");

@@ -78,6 +78,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Map of models on the remote server.</summary>
     public ConcurrentDictionary<string, Dictionary<string, JObject>> RemoteModels = null;
 
+    /// <summary>Data about the remote backend supplied by extensions.</summary>
+    public ConcurrentDictionary<string, object> ExtensionData = new();
+
     /// <summary>Gets the current target address.</summary>
     public string Address => Settings.Address.TrimEnd('/'); // Remove trailing slash to avoid issues.
 
@@ -93,6 +96,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
 
     /// <summary>How many seconds to wait between each re-try.</summary>
     public int FirstLoadRetryWaitSeconds = 5;
+
+    /// <summary>Event fired when a backend is revising its remote data.</summary>
+    public static Action<SwarmSwarmBackend> ReviseRemotesEvent;
 
     /// <summary>Gets a request adapter appropriate to this Swarm backend, including eg auth headers.</summary>
     public Action<HttpRequestMessage> RequestAdapter()
@@ -293,6 +299,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             }
             AnyLoading = isLoading;
             RemoteBackendTypes = types;
+            ReviseRemotesEvent?.Invoke(this);
         });
     }
 

@@ -131,6 +131,18 @@ public class ComfyUIBackendExtension : Extension
         T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, InternalListModelsFor("gligen", false));
         T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, InternalListModelsFor("style_models", true));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
+        SwarmSwarmBackend.ReviseRemotesEvent += (SwarmSwarmBackend backend) =>
+        {
+            if (backend.IsAControlInstance || !backend.LinkedRemoteBackendType.StartsWith("comfyui_"))
+            {
+                return;
+            }
+            Utilities.RunCheckedTask(async () =>
+            {
+                JObject types = await backend.SendAPIJSON("ComfyGetNodeTypesForBackend", new JObject() { ["backend"] = backend.LinkedRemoteBackendID });
+                backend.ExtensionData["ComfyNodeTypes"] = new HashSet<string>(types["node_types"].Values<string>());
+            });
+        };
     }
 
     /// <summary>Helper to quickly read a list of model files in a model subfolder, for prepopulating model lists during startup.</summary>
