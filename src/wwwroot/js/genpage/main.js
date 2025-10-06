@@ -32,6 +32,8 @@ let mainGenHandler = new GenerateHandler();
 let pageTitleSuffix = document.title.split(' - ')[1];
 let curAutoTitle = "Page is loading...";
 
+let featureSetChangedCallbacks = [];
+
 function setPageTitle(newTitle) {
     document.title = `${newTitle} - ${pageTitleSuffix}`;
 }
@@ -221,6 +223,9 @@ function reviseBackendFeatureSet() {
     }
     if (anyChanged) {
         hideUnsupportableParams();
+        for (let callback of featureSetChangedCallbacks) {
+            callback();
+        }
     }
 }
 
