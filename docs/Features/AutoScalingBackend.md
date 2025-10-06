@@ -26,7 +26,8 @@ For obvious reasons, this is an advanced speciality functionality not intended f
     - Your actual Swarm launch script should probably use at least `--require_control_within 1` or higher (3+ recommended) to automatically shut down the instance if the master is not tracking it (otherwise you may get stray runs left behind eating provider cost for no reason)
     - It should probably also use `--no_persist true` to avoid the worker trying to save random data (multiple overlapping writes may corrupt)
         - Run the worker manually at least once at some point without this flag just to prefill caches that workers can read but shouldn't be actively writing, otherwise they will be slow to launch
-    - If reusing the master swarm install, use at least a separate `--data-dir` for the worker vs the master. They can't have the same server settings. And also shouldn't.
+        - Also `--lock_settings true` may be wanted for a similar reason (don't have nodes fight over editing the settings file)
+    - If reusing the master swarm install, use at least a separate `--data_dir` for the worker vs the master. They can't have the same server settings. And also shouldn't.
 - Configure a launch script
     - This should be a `.sh` script normally (if you're on Linux, which you should be for auto-scaling server stuff!)
     - Essentially, it just needs to launch a swarm worker and return some data
@@ -65,10 +66,52 @@ For obvious reasons, this is an advanced speciality functionality not intended f
 
 In the future, a LoadFactor setting to allow for cases of large server networks that want to pre-scale would be nice.
 
+Also, the reverse still needs impl: MinQueuedBeforeExpand
+
 Also, this is a bit stupid around model loading. That could probably be made better.
 
 Also, the first-free load order req is a bit stupid: ideally track a usage rate for downscaling rather than just when a backend was last touched.
 
 ## Sample Scripts
 
-**(TODO: Sample scripts)**
+### Slurm
+
+If you're using a slurm setup, your scripts could look something like this:
+
+(Replace the `/path/to/` with your paths, configure other details to taste)
+
+**Main Swarm Launch Script.sh**
+```sh
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "Running on node: $SLURMD_NODENAME"
+
+echo "[SwarmAutoScaleBackend]DoRetries: 2[/SwarmAutoScaleBackend]"
+# If you're inside a slurm network, nodename should be in the hosts file
+echo "[SwarmAutoScaleBackend]NewURL: http://$SLURMD_NODENAME:7801/[/SwarmAutoScaleBackend]"
+
+printf "\n\n\n\n\n\n"
+
+nvidia-smi
+
+cd /path/to/SwarmUI
+
+printf "\n\n\n\n\n\n"
+
+./launch-linux.sh --host 0.0.0.0 --loglevel verbose --launch_mode none --data_dir /path/to/Data/WorkerData --require_control_within 3 --no_persist true --lock_settings true
+```
+
+**Srun Wrapper.sh** (this is the one you target in the backend config)
+```sh
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Explicitly remove parent slurm data, so the srun below doesn't constrict itself arbitrarily
+unset $(env | grep '^SLURM_' | cut -d= -f1)
+
+# Actual launch
+srun --immediate=5 --nodes=1 --gpus=8 --exclusive --job-name=SwarmBackend --time=24:00:00 /path/to/swarm-launch-sample-above.sh
+```
