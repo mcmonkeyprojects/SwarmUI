@@ -81,6 +81,19 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Gets the current target address.</summary>
     public string Address => Settings.Address.TrimEnd('/'); // Remove trailing slash to avoid issues.
 
+    /// <summary>If true, an external handler controls this as a specialty non-real backend. This is a real master instance, but not on the backends list.
+    /// For example, <see cref="AutoScalingBackend"/> uses this.</summary>
+    public bool IsSpecialControlled = false;
+
+    /// <summary>If true, this instance is the master referencing a single swarm instance, controlling several child backends for the remote backends.</summary>
+    public bool IsAControlInstance => IsReal || IsSpecialControlled;
+
+    /// <summary>How many times to re-try the first load if it fails.</summary>
+    public int FirstLoadRetries = 0;
+
+    /// <summary>How many seconds to wait between each re-try.</summary>
+    public int FirstLoadRetryWaitSeconds = 5;
+
     /// <summary>Gets a request adapter appropriate to this Swarm backend, including eg auth headers.</summary>
     public Action<HttpRequestMessage> RequestAdapter()
     {
@@ -136,7 +149,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
 
     public Task TriggerRefresh()
     {
-        if (!IsReal)
+        if (!IsAControlInstance)
         {
             return Task.CompletedTask;
         }
@@ -166,7 +179,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             {
                 Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got backend data list");
             }
-            if (IsReal && fullLoad)
+            if (IsAControlInstance && fullLoad)
             {
                 List<Task> tasks = [];
                 RemoteModels ??= [];
@@ -203,8 +216,8 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             }
             HashSet<string> features = [], types = [];
             bool isLoading = false;
-            HashSet<int> ids = IsReal ? new(ControlledNonrealBackends.Keys) : null;
-            if (!IsReal)
+            HashSet<int> ids = IsAControlInstance ? new(ControlledNonrealBackends.Keys) : null;
+            if (!IsAControlInstance)
             {
                 if (backendData.TryGetValue($"{LinkedRemoteBackendID}", out JToken data))
                 {
@@ -228,18 +241,20 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     string type = backend["type"].ToString();
                     string title = backend["title"].ToString();
                     types.Add(type);
-                    if (IsReal && !ids.Remove(id) && (Settings.AllowForwarding || type != "swarmswarmbackend"))
+                    if (IsAControlInstance && !ids.Remove(id) && (Settings.AllowForwarding || type != "swarmswarmbackend"))
                     {
                         Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {id} ({type}) '{title}'");
-                        BackendHandler.T2IBackendData newData = Handler.AddNewNonrealBackend(HandlerTypeData, BackendData, SettingsRaw);
-                        SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
-                        newSwarm.LinkedRemoteBackendID = id;
-                        newSwarm.Models = Models;
-                        newSwarm.LinkedRemoteBackendType = type;
-                        newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] {title}";
-                        newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
-                        OnSwarmBackendAdded?.Invoke(newSwarm);
-                        ControlledNonrealBackends.TryAdd(id, newData);
+                        Handler.AddNewNonrealBackend(HandlerTypeData, BackendData, SettingsRaw, (newData) =>
+                        {
+                            SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
+                            newSwarm.LinkedRemoteBackendID = id;
+                            newSwarm.Models = Models;
+                            newSwarm.LinkedRemoteBackendType = type;
+                            newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] {title}";
+                            newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
+                            OnSwarmBackendAdded?.Invoke(newSwarm);
+                            ControlledNonrealBackends.TryAdd(id, newData);
+                        });
                     }
                     if (ControlledNonrealBackends.TryGetValue(id, out BackendHandler.T2IBackendData data))
                     {
@@ -252,7 +267,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     isLoading = true;
                 }
             }
-            if (IsReal)
+            if (IsAControlInstance)
             {
                 foreach (int id in ids)
                 {
@@ -297,8 +312,8 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task Init()
     {
-        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Init, IsReal={IsReal}, Address={Settings.Address}");
-        if (IsReal)
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Init, IsReal={IsReal}, IsControl={IsAControlInstance}, Address={Settings.Address}");
+        if (IsAControlInstance)
         {
             CanLoadModels = false;
             Models = [];
@@ -308,7 +323,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             Status = BackendStatus.DISABLED;
             return;
         }
-        if (!IsReal)
+        if (!IsAControlInstance)
         {
             Status = BackendStatus.LOADING;
             try
@@ -352,53 +367,64 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 Idler.Start();
             }
         }
-        try
+        int attempts = 0;
+        while (true)
         {
-            Status = BackendStatus.LOADING;
-            await ValidateAndBuild();
-            _ = Task.Run(async () =>
+            try
             {
-                try
+                Status = BackendStatus.LOADING;
+                await ValidateAndBuild();
+                _ = Task.Run(async () =>
                 {
-                    while (AnyLoading)
+                    try
                     {
-                        Logs.Debug($"{HandlerTypeData.Name} {BackendData.ID} waiting for remote backends to load, have featureset {RemoteFeatureCombo.Keys.JoinString(", ")}");
-                        if (Program.GlobalProgramCancel.IsCancellationRequested
-                            || Status != BackendStatus.LOADING)
+                        while (AnyLoading)
                         {
+                            Logs.Debug($"{HandlerTypeData.Name} {BackendData.ID} waiting for remote backends to load, have featureset {RemoteFeatureCombo.Keys.JoinString(", ")}");
+                            if (Program.GlobalProgramCancel.IsCancellationRequested
+                                || Status != BackendStatus.LOADING)
+                            {
+                                return;
+                            }
+                            await Task.Delay(TimeSpan.FromSeconds(1));
+                            await ReviseRemoteDataList(true);
+                        }
+                        Status = BackendStatus.RUNNING;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!Settings.AllowIdle || NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
+                        {
+                            Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex.ReadableString()}");
+                            Status = BackendStatus.ERRORED;
                             return;
                         }
-                        await Task.Delay(TimeSpan.FromSeconds(1));
-                        await ReviseRemoteDataList(true);
                     }
-                    Status = BackendStatus.RUNNING;
-                }
-                catch (Exception ex)
+                    await PostEnable();
+                });
+                break;
+            }
+            catch (Exception)
+            {
+                if (attempts < FirstLoadRetries)
                 {
-                    if (!Settings.AllowIdle || NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
-                    {
-                        Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex.ReadableString()}");
-                        Status = BackendStatus.ERRORED;
-                        return;
-                    }
+                    await Task.Delay(TimeSpan.FromSeconds(FirstLoadRetryWaitSeconds));
+                    continue;
+                }
+                if (!Settings.AllowIdle)
+                {
+                    throw;
                 }
                 await PostEnable();
-            });
-        }
-        catch (Exception)
-        {
-            if (!Settings.AllowIdle)
-            {
-                throw;
+                break;
             }
-            await PostEnable();
         }
     }
 
     /// <inheritdoc/>
     public override async Task Shutdown()
     {
-        if (IsReal)
+        if (IsAControlInstance)
         {
             Logs.Info($"{HandlerTypeData.Name} {BackendData.ID} shutting down...");
             Idler.Stop();
@@ -414,7 +440,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task<bool> LoadModel(T2IModel model, T2IParamInput input)
     {
-        if (IsReal)
+        if (IsAControlInstance)
         {
             return false;
         }
@@ -472,7 +498,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         req[T2IParamTypes.DoNotSave.Type.ID] = true;
         req.Remove(T2IParamTypes.ExactBackendID.Type.ID);
         req.Remove(T2IParamTypes.BackendType.Type.ID);
-        if (!IsReal)
+        if (!IsAControlInstance)
         {
             req[T2IParamTypes.ExactBackendID.Type.ID] = LinkedRemoteBackendID;
         }
@@ -576,7 +602,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task<bool> FreeMemory(bool systemRam)
     {
-        if (IsReal)
+        if (IsAControlInstance)
         {
             return false;
         }

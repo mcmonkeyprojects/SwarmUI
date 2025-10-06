@@ -61,10 +61,13 @@ public class BackendHandler
         return [.. T2IBackends.Values.Where(b => b is not null && b.Backend.IsEnabled && b.Backend.Status != BackendStatus.IDLE).SelectMany(b => b.Backend.SupportedFeatures)];
     }
 
+    /// <summary>Registered core backend types.</summary>
+    public BackendType SwarmBackendType, AutoScalingBackendType;
+
     public BackendHandler()
     {
-        RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
-        RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
+        SwarmBackendType = RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
+        AutoScalingBackendType = RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
         Program.ModelRefreshEvent += () =>
         {
             List<Task> waitFor = [];
@@ -294,7 +297,7 @@ public class BackendHandler
     }
 
     /// <summary>Adds a new backend that is not a 'real' backend (it will not save nor show in the UI, but is available for generation calls).</summary>
-    public T2IBackendData AddNewNonrealBackend(BackendType type, T2IBackendData parent, AutoConfiguration config = null)
+    public T2IBackendData AddNewNonrealBackend(BackendType type, T2IBackendData parent, AutoConfiguration config = null, Action<T2IBackendData> preModify = null)
     {
         T2IBackendData data = new()
         {
@@ -311,6 +314,7 @@ public class BackendHandler
             data.ID = LastNonrealBackendID--;
             T2IBackends.TryAdd(data.ID, data);
         }
+        preModify?.Invoke(data);
         DoInitBackend(data);
         NewBackendInitSignal.Set();
         return data;
