@@ -37,7 +37,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         public double MinIdleTime = 10;
 
         [ConfigComment("Minimum number of waiting generations before a new backend can be started.\nSelect this high enough to not be wasteful of resources, but low enough to not cause generation requests to be pending for too long.\nMust be set to at least 1, should ideally be set higher.")]
-        public int MinQueuedBeforeExpand = 10;
+        public int MinQueuedBeforeExpand = 10; // TODO: Impl me
 
         [ConfigComment($"File path to a shell script (normally a '.sh') that will cause a new backend to be started.\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/AutoScalingBackend.md\">docs Features/AutoScalingBackend</a> for info on how to build this script.")]
         public string StartScript = "";
@@ -231,6 +231,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         StreamReader fixedReader = new(process.StandardOutput.BaseStream, Encoding.UTF8); // Force UTF-8, always
         string line;
         int retries = 1;
+        bool launched = false;
         while ((line = await fixedReader.ReadLineAsync()) is not null)
         {
             line = line.Trim();
@@ -265,6 +266,7 @@ public class AutoScalingBackend : AbstractT2IBackend
                         ControlledNonrealBackends.TryAdd(newData.ID, newData);
                     });
                     MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
+                    launched = true;
                     break;
                 }
                 if (line.StartsWith("DoRetries:"))
@@ -286,6 +288,10 @@ public class AutoScalingBackend : AbstractT2IBackend
                 Logs.Verbose($"SwarmAutoScalingBackend launch #{id} startup stdout: {line}");
             }
         }
+        if (!launched)
+        {
+            Logs.Warning($"AutoScalingBackend launch #{id} failed to launch a new backend.");
+        }
         NetworkBackendUtils.ReportLogsFromProcess(process, $"AutoScalingBackendLaunch-{id}", $"autoscalingbackend_{id}", out _, () => BackendStatus.RUNNING, _ => { }, true);
     }
 
@@ -294,7 +300,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     {
         if (ControlledNonrealBackends.TryGetValue(id, out BackendHandler.T2IBackendData data))
         {
-            if (data.Backend is SwarmSwarmBackend swarmBackend)
+            if (data.Backend is SwarmSwarmBackend swarmBackend && data.Backend.Status != BackendStatus.LOADING && data.Backend.Status != BackendStatus.WAITING)
             {
                 try
                 {
@@ -345,7 +351,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         }
     }
 
-    /// <summary>Called before the proper shutdown. Network shutdown calls need to be sent early.</summary>
+    /// <summary>Called before the proper full program shutdown. Network shutdown calls need to be sent early.</summary>
     public void PreShutdown()
     {
         Task.WaitAll([.. ControlledNonrealBackends.Keys.Select(StopOne)]);
@@ -355,15 +361,20 @@ public class AutoScalingBackend : AbstractT2IBackend
     public override async Task Shutdown()
     {
         Logs.Info($"AutoScalingBackend {BackendData.ID} shutting down, stopping all controlled backends.");
-        Program.TickEvent -= Tick;
-        Program.PreShutdownEvent -= PreShutdown;
-        Program.Backends.NewBackendNeededEvent.Remove(BackendData.ID, out _);
-        foreach (int id in ControlledNonrealBackends.Keys.ToArray())
+        List<Task> stopTasks = [];
+        lock (ScaleBehaviorLock)
         {
-            await StopOne(id);
+            Program.TickEvent -= Tick;
+            Program.PreShutdownEvent -= PreShutdown;
+            Program.Backends.NewBackendNeededEvent.Remove(BackendData.ID, out _);
+            foreach (int id in ControlledNonrealBackends.Keys.ToArray())
+            {
+                stopTasks.Add(StopOne(id));
+            }
+            ControlledNonrealBackends.Clear();
+            Status = BackendStatus.DISABLED;
         }
-        ControlledNonrealBackends.Clear();
-        Status = BackendStatus.DISABLED;
+        await Task.WhenAll(stopTasks);
     }
 
     /// <inheritdoc/>

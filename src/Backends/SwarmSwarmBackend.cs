@@ -406,7 +406,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             }
             catch (Exception)
             {
-                if (attempts < FirstLoadRetries)
+                if (attempts++ < FirstLoadRetries)
                 {
                     await Task.Delay(TimeSpan.FromSeconds(FirstLoadRetryWaitSeconds));
                     continue;
