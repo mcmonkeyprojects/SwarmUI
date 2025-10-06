@@ -2,6 +2,7 @@
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Utils;
+using System.IO;
 
 namespace SwarmUI.Text2Image;
 
@@ -152,6 +153,10 @@ public class T2IParamSet
             if (val.StartsWithFast("data:"))
             {
                 return Image.FromDataString(val);
+            }
+            if (File.Exists(val))
+            {
+                return Image.FromFilePath(val);
             }
             return new Image(val, Image.ImageType.IMAGE, "png");
         }

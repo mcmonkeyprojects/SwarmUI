@@ -994,10 +994,10 @@ public class T2IParamTypes
                 {
                     return "";
                 }
-                if (!ValidBase64Matcher.IsOnlyMatches(val) || val.Length < 10)
+                if ((!ValidBase64Matcher.IsOnlyMatches(val) || val.Length < 10) && !File.Exists(val))
                 {
                     string shortText = val.Length > 10 ? val[..10] + "..." : val;
-                    throw new SwarmUserErrorException($"Invalid image value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                    throw new SwarmUserErrorException($"Invalid image value for param {type.Name} - '{origVal}' - must be a valid base64 string or file path - got '{shortText}'");
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:
@@ -1012,10 +1012,10 @@ public class T2IParamTypes
                     {
                         continue;
                     }
-                    if (!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10)
+                    if ((!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10) && !File.Exists(partVal))
                     {
                         string shortText = partVal.Length > 10 ? partVal[..10] + "..." : partVal;
-                        throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                        throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string or file path - got '{shortText}'");
                     }
                 }
                 return origVal;

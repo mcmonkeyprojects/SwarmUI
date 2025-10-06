@@ -63,6 +63,12 @@ public class Image
         return new Image(data.ToString().After(";base64,"), ImageType.IMAGE, "png");
     }
 
+    /// <summary>Creates an image object from a local file path</summary>
+    public static Image FromFilePath(string path)
+    {
+        return new Image(ISImage.Load(path));
+    }
+
     /// <summary>Construct an image from Base64 text.</summary>
     public Image(string base64, ImageType type, string extension) : this(Convert.FromBase64String(base64), type, extension)
     {
