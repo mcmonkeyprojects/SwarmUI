@@ -43,7 +43,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ConfigComment("Which GPU to use, if multiple are available.\nShould be a single number, like '0'.\nYou can use syntax like '0,1' to provide multiple GPUs to one backend (only applicable if you have custom nodes that can take advantage of this.)")]
         public string GPU_ID = "0";
 
-        [ConfigComment("How many extra requests may queue up on this backend while one is processing.")]
+        [ConfigComment("How many extra requests may queue up on this backend while one is processing.\n0 means one a single live gen, 1 means a live gen and an extra waiting.\n-1 means this is a UI-only instance that cannot do actual gens.")]
         public int OverQueue = 1;
 
         [ConfigComment("If checked, if the backend crashes it will automatically restart.\nIf false, if the backend crashes it will sit in an errored state until manually restarted.")]
