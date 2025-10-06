@@ -10,3 +10,4 @@ See [The Docs Readme](/docs/README.md) for general listing of documentation and 
 - [Custom Comfy Workflows](/docs/Features/Comfy-Workflows.md) for info about getting the most out of custom Comfy workflows in SwarmUI.
 - [Webhooks](/docs/Features/Webhooks.md) for info about custom defined webhooks triggered by your SwarmUI server.
 - [UISounds](/docs/Features/UISounds.md) for info about sound playback in the UI (eg a sound to play after generations complete).
+- [AutoScalingBackend](/docs/Features/AutoScalingBackend.md) for info about the specialty advanced usage "Auto-Scaling" backend (for Slurm/Kubernetes/etc).

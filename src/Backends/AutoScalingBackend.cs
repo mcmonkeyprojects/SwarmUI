@@ -39,7 +39,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         [ConfigComment("Minimum number of waiting generations before a new backend can be started.\nSelect this high enough to not be wasteful of resources, but low enough to not cause generation requests to be pending for too long.\nMust be set to at least 1, should ideally be set higher.")]
         public int MinQueuedBeforeExpand = 10;
 
-        [ConfigComment("File path to a shell script (normally a '.sh') that will cause a new backend to be started.\nThe script must print to stdout `SwarmAutoScaleBackendNewURL: <url>`, for example `SwarmAutoScaleBackendNewURL: http://localhost:7801/`\nIf the script does not output this, it is assumed to have failed and must clean up any bad launches it made on its own.\nOutput `SwarmAutoScaleBackendDeclareFailed: (info text)` to explicitly declare a failure (eg no more resources available).\nThe shell script will be backgrounded after the stdout is found, and so may either continuing running or stop at your own discretion.\nThe remote Swarm will be shut down automatically via Swarm's internal self-communication, and so the script is expected to clean up any relevant resources on its own when the remote instance closes.")]
+        [ConfigComment($"File path to a shell script (normally a '.sh') that will cause a new backend to be started.\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/AutoScalingBackend.md\">docs Features/AutoScalingBackend</a> for info on how to build this script.")]
         public string StartScript = "";
 
         [ConfigComment("If the remote instance has an 'Authorization:' header required, specify it here.\nFor example, 'Bearer abc123'.\nIf you don't know what this is, you don't need it.")]
@@ -173,31 +173,28 @@ public class AutoScalingBackend : AbstractT2IBackend
         while ((line = await fixedReader.ReadLineAsync()) is not null)
         {
             line = line.Trim();
-            if (line.StartsWith("SwarmAutoScaleBackendNewURL: "))
+            if (line.StartsWith("[SwarmAutoScaleBackend]") && line.EndsWith("[/SwarmAutoScaleBackend]"))
             {
-                string url = line["SwarmAutoScaleBackendNewURL: ".Length..].Trim();
-                if (string.IsNullOrWhiteSpace(url))
+                line = line["[SwarmAutoScaleBackend]".Length..^"[/SwarmAutoScaleBackend]".Length].Trim();
+                if (line.StartsWith("NewURL: "))
                 {
-                    continue;
+                    string url = line["NewURL: ".Length..].Trim();
+                    if (string.IsNullOrWhiteSpace(url))
+                    {
+                        continue;
+                    }
+                    // TODO: Add a SwarmSwarmBackend with this URL
                 }
-                // TODO: Add a SwarmSwarmBackend with this URL
-                // TODO: Document how to make the remote instances make any sense.
-                //       `--require_control_within 1` or higher, 3+ recommended (by default pings every 30 sec)
-                //       `--no_persist true` but also run at least once without that
-                //       also use separate data dir from the main server if using shared os (one "master" swarm config and one shared "worker" config)
-                //       avoid 'auto requeue' in any launcher tool
-                //       maybe a slurm sample script
-                //       must be non-account-based, OR have an admin account with `automated_control` perm
+                if (line.StartsWith("DeclareFailed: "))
+                {
+                    string info = line["DeclareFailed: ".Length..].Trim();
+                    Logs.Debug($"SwarmAutoScalingBackend Launch #{id} declared failure to launch: {info}");
+                    MustWaitMinutesBeforeStart(Settings.MinWaitAfterFailure);
+                    return;
+                }
+                Logs.Debug($"SwarmAutoScalingBackend Launch #{id} Output: {line}");
+                MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
             }
-            if (line.StartsWith("SwarmAutoScaleBackendDeclareFailed: "))
-            {
-                string info = line["SwarmAutoScaleBackendDeclareFailed: ".Length..].Trim();
-                Logs.Debug($"SwarmAutoScalingBackend Launch #{id} declared failure to launch: {info}");
-                MustWaitMinutesBeforeStart(Settings.MinWaitAfterFailure);
-                return;
-            }
-            Logs.Debug($"SwarmAutoScalingBackend Launch #{id} Output: {line}");
-            MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
         }
         NetworkBackendUtils.ReportLogsFromProcess(process, $"AutoScalingBackendLaunch-{id}", $"autoscalebackend_{id}", out _, () => BackendStatus.RUNNING, _ => { }, true);
     }
