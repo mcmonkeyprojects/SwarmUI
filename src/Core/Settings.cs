@@ -173,7 +173,7 @@ public class Settings : AutoConfiguration
         [ManualSettingsOptions(ManualNames = ["Last Used", "First Free"], Vals = ["last_used", "first_free"])]
         public string ModelLoadOrderPreference = "last_used";
 
-        [ConfigComment("If true, presume all backends can fast-load.\nFor example, if you have multiple local comfy instances, all them all to boot up at the same time.")]
+        [ConfigComment("If true, presume all backends can fast-load.\nFor example, if you have multiple local comfy instances, allow them all to boot up at the same time.")]
         public bool AllBackendsLoadFast = false;
     }
 

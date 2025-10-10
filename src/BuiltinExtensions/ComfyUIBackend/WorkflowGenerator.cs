@@ -2070,7 +2070,11 @@ public class WorkflowGenerator
             int genWidth = UserInput.GetImageWidth(), genHeight = UserInput.GetImageHeight();
             int actual = (int)Math.Sqrt(width * height), target = (int)Math.Sqrt(genWidth * genHeight);
             bool doesFit = true;
-            if (IsKontext()) // Kontext needs <= target gen size, and is sufficient once input hits 1024.
+            if (!UserInput.Get(T2IParamTypes.SmartImagePromptResizing, true))
+            {
+                doesFit = Math.Abs(actual - target) <= 64;
+            }
+            else if (IsKontext()) // Kontext needs <= target gen size, and is sufficient once input hits 1024.
             {
                 if (target < 1024)
                 {
