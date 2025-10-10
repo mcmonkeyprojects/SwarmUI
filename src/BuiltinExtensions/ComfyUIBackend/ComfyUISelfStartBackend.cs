@@ -461,15 +461,15 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await install(libFolder, pipName);
             }
             string numpyVers = getVers("numpy");
-            if (numpyVers is null || Version.Parse(numpyVers) < Version.Parse("1.25"))
+            if (numpyVers is null || ParseVersion(numpyVers) < Version.Parse("1.25"))
             {
                 await update("numpy", "numpy==1.26.4");
             }
             foreach ((string libFolder, string pipName, string rel, string version) in RequiredVersionPythonPackages)
             {
                 string curVersRaw = getVers(libFolder);
-                Version curVers = curVersRaw is null ? null : Version.Parse(curVersRaw);
-                Version actualVers = Version.Parse(version);
+                Version curVers = curVersRaw is null ? null : ParseVersion(curVersRaw);
+                Version actualVers = ParseVersion(version);
                 bool doUpdate = curVers is null;
                 if (!doUpdate)
                 {
@@ -599,7 +599,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 if (isValid)
                 {
                     string nunchakuVers = getVers("nunchaku");
-                    if (nunchakuVers is not null && (Version.Parse(nunchakuVers.Before(".dev")) < Version.Parse(nunchakuTargetVersion.Before(".dev")) || nunchakuVers.Contains(".dev")))
+                    if (nunchakuVers is not null && (ParseVersion(nunchakuVers) < ParseVersion(nunchakuTargetVersion) || nunchakuVers.Contains(".dev")))
                     {
                         await update("nunchaku", url);
                     }
@@ -622,6 +622,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             AddLoadStatus("Done validating required libs.");
         }
+    }
+
+    /// <summary>Wraps <see cref="Version.Parse(string)"/> but accounting for '.dev' versions.</summary>
+    public static Version ParseVersion(string vers)
+    {
+        return Version.Parse(vers.Before(".dev"));
     }
 
     /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>
