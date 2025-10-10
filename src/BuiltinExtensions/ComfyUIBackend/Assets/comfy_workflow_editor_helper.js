@@ -18,10 +18,15 @@ function comfyTryToLoad() {
     if (hasComfyLoaded) {
         return;
     }
+    let oldSpinner = document.getElementById('comfy_workflow_loadspinner');
+    if (oldSpinner) {
+        oldSpinner.remove();
+    }
     hasComfyLoaded = true;
     comfyButtonsArea.style.display = 'block';
     let container = getRequiredElementById('comfy_workflow_frameholder');
-    container.innerHTML = `<iframe class="comfy_workflow_frame" id="comfy_workflow_frame" src="ComfyBackendDirect/" onload="comfyOnLoadCallback()"></iframe>`;
+    container.innerHTML = `<div id="comfy_workflow_loadspinner" class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div><iframe class="comfy_workflow_frame" id="comfy_workflow_frame" src="ComfyBackendDirect/" style="visibility:hidden;" onload="comfyOnLoadCallback()" allowtransparency="true"></iframe>`;
+    uiImprover.runLoadSpinner(getRequiredElementById('comfy_workflow_loadspinner'));
 }
 
 /** Returns the ComfyUI workflow frame (or errors if not present). */
@@ -157,6 +162,11 @@ function comfyOnLoadCallback() {
                     return await origRefreshFunc();
                 };
                 app.swarmHasReplacedRefresh = true;
+            }
+            comfyFrame().style.visibility = 'visible';
+            let spinner = document.getElementById('comfy_workflow_loadspinner');
+            if (spinner) {
+                spinner.remove();
             }
             comfyFixMenuLocation();
             clearInterval(comfyRefreshControlInterval);
