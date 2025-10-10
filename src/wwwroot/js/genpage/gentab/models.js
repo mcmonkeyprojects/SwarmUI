@@ -281,6 +281,10 @@ function save_edit_model() {
             }, true);
             return;
         }
+        else {
+            data['preview_image'] = 'clear';
+            delete data['preview_image_metadata'];
+        }
     }
     complete();
 }

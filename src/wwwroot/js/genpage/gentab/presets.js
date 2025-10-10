@@ -163,6 +163,9 @@ function save_new_preset() {
             }, true);
             return;
         }
+        else {
+            delete toSend['preview_image'];
+        }
     }
     complete();
 }

@@ -427,7 +427,7 @@ public static class ModelsAPI
     public static async Task<JObject> EditWildcard(Session session,
         [API.APIParameter("Exact filepath name of the wildcard.")] string card,
         [API.APIParameter("Newline-separated string listing of wildcard options.")] string options,
-        [API.APIParameter("Image-data-string of a preview, or null to not change.")] string preview_image = null,
+        [API.APIParameter("Image-data-string of a preview, 'clear' to remove, or null to not change.")] string preview_image = null,
         [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null)
     {
         card = Utilities.StrictFilenameClean(card);
@@ -439,10 +439,21 @@ public static class ModelsAPI
         string folder = Path.GetDirectoryName(path);
         Directory.CreateDirectory(folder);
         File.WriteAllBytes(path, StringConversionHelper.UTF8Encoding.GetBytes(options));
+        string imgPath = $"{WildcardsHelper.Folder}/{card}.jpg";
         if (!string.IsNullOrWhiteSpace(preview_image))
         {
-            Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-            File.WriteAllBytes($"{WildcardsHelper.Folder}/{card}.jpg", img.ImageData);
+            if (preview_image == "clear")
+            {
+                if (File.Exists(imgPath))
+                {
+                    File.Delete(imgPath);
+                }
+            }
+            else
+            {
+                Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                File.WriteAllBytes(imgPath, img.ImageData);
+            }
         }
         WildcardsHelper.WildcardFiles[card.ToLowerFast()] = new WildcardsHelper.Wildcard() { Name = card };
         Interlocked.Increment(ref ModelEditID);
@@ -464,7 +475,7 @@ public static class ModelsAPI
         [API.APIParameter("New model `trigger_phrase` metadata value.")] string trigger_phrase,
         [API.APIParameter("New model `prediction_type` metadata value.")] string prediction_type,
         [API.APIParameter("New model `tags` metadata value (comma-separated list).")] string tags,
-        [API.APIParameter("New model `preview_image` metadata value (image-data-string format, or null to not change).")] string preview_image = null,
+        [API.APIParameter("New model `preview_image` metadata value (image-data-string format, 'clear' to remove, or null to not change).")] string preview_image = null,
         [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null,
         [API.APIParameter("New model `is_negative_embedding` metadata value.")] bool is_negative_embedding = false,
         [API.APIParameter("New model `lora_default_weight` metadata value.")] string lora_default_weight = "",
@@ -503,11 +514,19 @@ public static class ModelsAPI
             actualModel.Metadata ??= new();
             if (!string.IsNullOrWhiteSpace(preview_image))
             {
-                Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-                if (img is not null)
+                if (preview_image == "clear")
                 {
-                    actualModel.PreviewImage = img.AsDataString();
-                    actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                    actualModel.PreviewImage = "imgs/model_placeholder.jpg";
+                    actualModel.Metadata.PreviewImage = null;
+                }
+                else
+                {
+                    Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                    if (img is not null)
+                    {
+                        actualModel.PreviewImage = img.AsDataString();
+                        actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                    }
                 }
             }
             actualModel.Metadata.Author = author;

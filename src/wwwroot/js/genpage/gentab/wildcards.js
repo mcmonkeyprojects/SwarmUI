@@ -231,6 +231,10 @@ class WildcardHelpers {
                 }, true);
                 return;
             }
+            else {
+                data['preview_image'] = 'clear';
+                delete data['preview_image_metadata'];
+            }
         }
         complete();
     }
