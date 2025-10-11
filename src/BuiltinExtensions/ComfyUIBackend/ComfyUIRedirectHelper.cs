@@ -177,7 +177,7 @@ public class ComfyUIRedirectHelper
         {
             context.Response.ContentType = "text/html";
             context.Response.StatusCode = 401;
-            await context.Response.WriteAsync("<!DOCTYPE html><html><head><stylesheet>body{background-color:#101010;color:#eeeeee;}</stylesheet></head><body><span class=\"comfy-failed-to-load\">Permission denied.</span></body></html>");
+            await context.Response.WriteAsync("<!DOCTYPE html>\n<html>\n<head>\n<style>body{background-color:#101010;color:#eeeeee;}</style>\n</head>\n<body>\n<span class=\"comfy-failed-to-load\">Permission denied.</span>\n</body>\n</html>");
             await context.Response.CompleteAsync();
             return;
         }
@@ -191,7 +191,7 @@ public class ComfyUIRedirectHelper
         {
             context.Response.ContentType = "text/html";
             context.Response.StatusCode = 400;
-            await context.Response.WriteAsync("<!DOCTYPE html><html><head><stylesheet>body{background-color:#101010;color:#eeeeee;}</stylesheet></head><body><span class=\"comfy-failed-to-load\">No ComfyUI backend available, loading failed.</span></body></html>");
+            await context.Response.WriteAsync("<!DOCTYPE html>\n<html>\n<head>\n<style>body{background-color:#101010;color:#eeeeee;}</style>\n</head>\n<body>\n<span class=\"comfy-failed-to-load\">No ComfyUI backend available, loading failed.</span>\n</body>\n</html>");
             await context.Response.CompleteAsync();
             return;
         }
@@ -429,7 +429,7 @@ public class ComfyUIRedirectHelper
             {
                 context.Response.ContentType = "text/html";
                 context.Response.StatusCode = 401;
-                await context.Response.WriteAsync("<!DOCTYPE html><html><head><stylesheet>body{background-color:#101010;color:#eeeeee;}</stylesheet></head><body><span class=\"comfy-failed-to-load\">Permission denied.</span></body></html>");
+                await context.Response.WriteAsync("<!DOCTYPE html>\n<html>\n<head><style>body{background-color:#101010;color:#eeeeee;}</style></head>\n<body>\n<span class=\"comfy-failed-to-load\">Permission denied.</span>\n</body>\n</html>");
                 await context.Response.CompleteAsync();
                 return;
             }
