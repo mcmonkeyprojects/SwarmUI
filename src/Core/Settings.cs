@@ -245,6 +245,8 @@ public class Settings : AutoConfiguration
 
         public string ActualModelRoot => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ModelRoot.Split(';')[0]);
 
+        public IEnumerable<string> ActualModelRoots => ModelRoot.Split(';').Select(r => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, r));
+
         [ConfigComment("The model folder to use within 'ModelRoot'.\nDefaults to 'Stable-Diffusion'.\n'checkpoints' should be used for matching pre-existing ComfyUI model directories.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
         public string SDModelFolder = "Stable-Diffusion";
 

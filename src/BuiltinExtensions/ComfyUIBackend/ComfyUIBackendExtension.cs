@@ -148,17 +148,23 @@ public class ComfyUIBackendExtension : Extension
     /// <summary>Helper to quickly read a list of model files in a model subfolder, for prepopulating model lists during startup.</summary>
     public static string[] InternalListModelsFor(string subpath, bool createDir)
     {
-        string path = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, subpath);
-        if (createDir)
-        {
-            Directory.CreateDirectory(path);
-        }
-        else if (!Directory.Exists(path))
-        {
-            return [];
-        }
         static bool isModelFile(string f) => T2IModel.LegacyModelExtensions.Contains(f.AfterLast('.')) || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'));
-        return [.. Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(isModelFile).Select(f => Path.GetRelativePath(path, f))];
+        List<string> results = [];
+        foreach (string root in Program.ServerSettings.Paths.ActualModelRoots)
+        {
+            string path = Utilities.CombinePathWithAbsolute(root, subpath);
+            if (createDir)
+            {
+                Directory.CreateDirectory(path);
+            }
+            else if (!Directory.Exists(path))
+            {
+                continue;
+            }
+            results.AddRange(Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(isModelFile).Select(f => Path.GetRelativePath(path, f)));
+            createDir = false; // Only first root autocreates
+        }
+        return [.. results];
     }
 
     /// <inheritdoc/>
@@ -441,70 +447,96 @@ public class ComfyUIBackendExtension : Extension
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 
+    public static bool TryGetRequiredInputs(JObject raw, string node, string id, out JToken list)
+    {
+        if (!raw.TryGetValue(node, out JToken key))
+        {
+            list = null;
+            return false;
+        }
+        JToken req = key["input"]["required"][id];
+        foreach (JToken val in req)
+        {
+            if (val.Type == JTokenType.String) { continue; } // Some have "COMBO" as first string now
+            else if (val.Type == JTokenType.Array) { list = val; return true; }
+            else if (val.Type == JTokenType.Object && val["options"] is JToken opts && opts.Type == JTokenType.Array) { list = opts; return true; }
+            else { Logs.Warning($"Invalid JSON data type in object_info entry for node '{node}' input '{id}': {val.Type} ... {val}"); }
+        }
+        Logs.Warning($"object_info has node '{node}' but the input '{id}' is missing or invalid");
+        list = null;
+        return false;
+    }
+
     public static void AssignValuesFromRaw(JObject rawObjectInfo)
     {
         lock (ValueAssignmentLocker)
         {
-            if (rawObjectInfo.TryGetValue("UpscaleModelLoader", out JToken modelLoader))
+            if (TryGetRequiredInputs(rawObjectInfo, "UpscaleModelLoader", "model_name", out JToken upscaleModels))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, modelLoader["input"]["required"]["model_name"][0].Select(u => $"model-{u}///Model: {u}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, upscaleModels.Select(u => $"model-{u}///Model: {u}"));
             }
-            if (rawObjectInfo.TryGetValue("SwarmKSampler", out JToken swarmksampler))
+            if (TryGetRequiredInputs(rawObjectInfo, "SwarmKSampler", "sampler_name", out JToken swarmksamplerNames))
             {
-                string[] dropped = [.. Samplers.Select(s => s.Before("///")).Except([.. swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")])];
+                string[] dropped = [.. Samplers.Select(s => s.Before("///")).Except([.. swarmksamplerNames.Select(u => $"{u}")])];
                 if (dropped.Any())
                 {
                     Logs.Warning($"Samplers are listed, but not included in SwarmKSampler internal list: {dropped.JoinString(", ")}");
                 }
-                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}///{u} (New)"));
-                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, swarmksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}///{u} (New)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, swarmksamplerNames.Select(u => $"{u}///{u} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("KSampler", out JToken ksampler))
+            if (TryGetRequiredInputs(rawObjectInfo, "SwarmKSampler", "scheduler", out JToken swarmksamplerSchedulers))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, ksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}///{u} (New in KS)"));
-                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, ksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}///{u} (New in KS)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, swarmksamplerSchedulers.Select(u => $"{u}///{u} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoader", out JToken ipadapterCubiqUnified))
+            if (TryGetRequiredInputs(rawObjectInfo, "KSampler", "sampler_name", out JToken ksamplerSamplers))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnified["input"]["required"]["preset"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, ksamplerSamplers.Select(u => $"{u}///{u} (New in KS)"));
+            }
+            if (TryGetRequiredInputs(rawObjectInfo, "KSampler", "scheduler", out JToken ksamplerSchedulers))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, ksamplerSchedulers.Select(u => $"{u}///{u} (New in KS)"));
+            }
+            if (TryGetRequiredInputs(rawObjectInfo, "IPAdapterUnifiedLoader", "preset", out JToken ipadapterCubiqUnified))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnified.Select(m => $"{m}"));
             }
             else if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter) && (ipadapter["input"]["required"] as JObject).TryGetValue("model_name", out JToken ipAdapterModelName))
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipAdapterModelName[0].Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("IPAdapterModelLoader", out JToken ipadapterCubiq))
+            if (TryGetRequiredInputs(rawObjectInfo, "IPAdapterModelLoader", "ipadapter_file", out JToken ipadapterCubiq))
             {
                 HashSet<string> native = ["ip-adapter-faceid-portrait-v11_sd15.bin", "ip-adapter-faceid-portrait_sdxl.bin", "ip-adapter-faceid-portrait_sdxl_unnorm.bin", "ip-adapter-faceid-plusv2_sd15.bin", "ip-adapter-faceid-plusv2_sdxl.bin", "ip-adapter-faceid-plus_sd15.bin", "ip-adapter-faceid_sd15.bin", "ip-adapter-faceid_sdxl.bin", "full_face_sd15.safetensors", "ip-adapter-plus-face_sd15.safetensors", "ip-adapter-plus-face_sdxl_vit-h.safetensors", "ip-adapter-plus_sd15.safetensors", "ip-adapter-plus_sdxl_vit-h.safetensors", "ip-adapter_sd15_vit-G.safetensors", "ip-adapter_sdxl.safetensors", "ip-adapter_sd15.safetensors", "ip-adapter_sdxl_vit-h.safetensors", "sd15_light_v11.bin"];
-                string[] models = [.. ipadapterCubiq["input"]["required"]["ipadapter_file"][0].Select(m => $"{m}").Where(m => !native.Contains(m))];
+                string[] models = [.. ipadapterCubiq.Select(m => $"{m}").Where(m => !native.Contains(m))];
                 T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, models.Select(m => $"file:{m}///Model File: {m}"));
             }
             if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter2) && (ipadapter2["input"]["required"] as JObject).TryGetValue("weight_type", out JToken ipAdapterWeightType))
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterWeightTypes, ipAdapterWeightType[0].Select(m => $"{m}///{m} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoaderFaceID", out JToken ipadapterCubiqUnifiedFace))
+            if (TryGetRequiredInputs(rawObjectInfo, "IPAdapterUnifiedLoaderFaceID", "preset", out JToken ipadapterCubiqUnifiedFace))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnifiedFace["input"]["required"]["preset"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnifiedFace.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("GLIGENLoader", out JToken gligenLoader))
+            if (TryGetRequiredInputs(rawObjectInfo, "GLIGENLoader", "gligen_name", out JToken gligenLoader))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, gligenLoader["input"]["required"]["gligen_name"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, gligenLoader.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("StyleModelLoader", out JToken styleModelLoader))
+            if (TryGetRequiredInputs(rawObjectInfo, "StyleModelLoader", "style_model_name", out JToken styleModelLoader))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, styleModelLoader["input"]["required"]["style_model_name"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, styleModelLoader.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("SwarmYoloDetection", out JToken yoloDetection))
+            if (TryGetRequiredInputs(rawObjectInfo, "SwarmYoloDetection", "model_name", out JToken yoloDetection))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, yoloDetection["input"]["required"]["model_name"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, yoloDetection.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("SetUnionControlNetType", out JToken unionCtrlNet))
+            if (TryGetRequiredInputs(rawObjectInfo, "SetUnionControlNetType", "type", out JToken unionCtrlNet))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}///{m} (New)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet.Select(m => $"{m}///{m} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("OverrideCLIPDevice", out JToken overrideClipDevice))
+            if (TryGetRequiredInputs(rawObjectInfo, "OverrideCLIPDevice", "device", out JToken overrideClipDevice))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref SetClipDevices, overrideClipDevice["input"]["required"]["device"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref SetClipDevices, overrideClipDevice.Select(m => $"{m}"));
             }
             if (rawObjectInfo.TryGetValue("Sam2AutoSegmentation", out JToken nodeData))
             {
