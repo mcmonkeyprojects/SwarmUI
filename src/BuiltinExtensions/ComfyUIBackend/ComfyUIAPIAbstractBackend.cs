@@ -122,6 +122,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 
     public async Task InitInternal(bool ignoreWebError)
     {
+        await ClearSockets();
         MaxUsages = 1 + OverQueue;
         if (string.IsNullOrWhiteSpace(APIAddress))
         {
@@ -172,10 +173,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
     }
 
-    /// <inheritdoc/>
-    public override async Task Shutdown()
+    public async Task ClearSockets()
     {
-        Logs.Info($"ComfyUI backend {BackendData.ID} shutting down...");
         while (ReusableSockets.TryDequeue(out ReusableSocket socket))
         {
             try
@@ -192,6 +191,13 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 Logs.Verbose($"ComfyUI backend {BackendData.ID} failed to close websocket: {ex.ReadableString()}");
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public override async Task Shutdown()
+    {
+        Logs.Info($"ComfyUI backend {BackendData.ID} shutting down...");
+        await ClearSockets();
         Idler.Stop();
         Status = BackendStatus.DISABLED;
     }
