@@ -679,7 +679,7 @@ function comfyBuildParams(requireSave, callback) {
                             view_type = 'big';
                             min = paramDataRaw[1].min ?? min;
                             max = paramDataRaw[1].max ?? max;
-                            step = 1;
+                            step = paramDataRaw[1].step ?? 1;
                             if (inputId == 'batch_size' && getUserSetting('resetbatchsizetoone') && !claimedByPrimitives.includes('batchsize')) {
                                 val = 1;
                             }
@@ -689,7 +689,7 @@ function comfyBuildParams(requireSave, callback) {
                             view_type = 'slider';
                             min = paramDataRaw[1].min ?? min;
                             max = paramDataRaw[1].max ?? max;
-                            step = (max - min) * 0.01;
+                            step = paramDataRaw[1].step ?? ((max - min) * 0.01);
                         }
                         else {
                             type = 'decimal';
