@@ -569,7 +569,12 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 // TODO: Use mimetypes directly rather than this funky reconversion
                 format = $"{mimeType}" switch { "image/jpeg" => "jpg", "image/png" => "png", "image/webp" => "webp", "image/gif" => "gif", "video/mp4" => "mp4", "video/webm" => "webm", _ => "jpg" };
             }
-            return (format, 0, eventId, 8 + metaLength);
+            int id = 0;
+            if (jmeta.TryGetValue("id", out JToken idTok) && idTok.Type == JTokenType.Integer)
+            {
+                id = idTok.Value<int>();
+            }
+            return (format, id, eventId, 8 + metaLength);
         }
         else
         {

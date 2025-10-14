@@ -57,6 +57,7 @@ def swarm_send_extra_preview(id, image):
     server = PromptServer.instance
     metadata = get_preview_metadata()
     metadata["mime_type"] = "image/jpeg"
+    metadata["id"] = id
     metadata_json = json.dumps(metadata).encode('utf-8')
     bytesIO = BytesIO()
     image.save(bytesIO, format="JPEG", quality=90, compress_level=4)
@@ -75,6 +76,7 @@ def swarm_send_animated_preview(id, images):
     image_bytes = bytesIO.getvalue()
     metadata = get_preview_metadata()
     metadata["mime_type"] = "image/webp"
+    metadata["id"] = id
     metadata_json = json.dumps(metadata).encode('utf-8')
     combined_data = bytearray()
     combined_data.extend(struct.pack(">I", len(metadata_json)))
