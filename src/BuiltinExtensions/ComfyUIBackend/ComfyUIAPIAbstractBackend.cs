@@ -949,6 +949,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             return true;
         }
+        workflowRaw = StringConversionHelper.QuickSimpleTagFiller(workflowRaw, "${", "}", (tag) =>
+        {
+            return "null";
+        });
         JObject workflow = Utilities.ParseToJson(workflowRaw);
         JProperty refusalNode = workflow.Properties().FirstOrDefault(p => !nodeTypes.Contains($"{p.Value["class_type"]}"));
         if (refusalNode is not null)

@@ -147,7 +147,7 @@ namespace SwarmUI.Text2Image
                         }
                     }
                 }
-                return true;
+                return backend.Backend.IsValidForThisBackend(user_input);
             };
         }
 
