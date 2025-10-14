@@ -677,8 +677,8 @@ function comfyBuildParams(requireSave, callback) {
                         if (paramDataRaw && paramDataRaw[0] == 'INT' && paramDataRaw.length == 2) {
                             type = 'integer';
                             view_type = 'big';
-                            min = paramDataRaw[1].min;
-                            max = paramDataRaw[1].max;
+                            min = paramDataRaw[1].min ?? min;
+                            max = paramDataRaw[1].max ?? max;
                             step = 1;
                             if (inputId == 'batch_size' && getUserSetting('resetbatchsizetoone') && !claimedByPrimitives.includes('batchsize')) {
                                 val = 1;
@@ -687,8 +687,8 @@ function comfyBuildParams(requireSave, callback) {
                         else if (paramDataRaw && paramDataRaw[0] == 'FLOAT' && paramDataRaw.length == 2) {
                             type = 'decimal';
                             view_type = 'slider';
-                            min = paramDataRaw[1].min;
-                            max = paramDataRaw[1].max;
+                            min = paramDataRaw[1].min ?? min;
+                            max = paramDataRaw[1].max ?? max;
                             step = (max - min) * 0.01;
                         }
                         else {
