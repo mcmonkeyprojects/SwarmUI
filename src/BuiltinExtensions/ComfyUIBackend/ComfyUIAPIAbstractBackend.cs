@@ -707,12 +707,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         return [.. images];
     }
 
-    public static string CreateWorkflow(T2IParamInput user_input, Func<string, string> initImageFixer, string ModelFolderFormat = null, HashSet<string> features = null)
+    public static string GetRawWorkflowFrom(T2IParamInput input)
     {
         string workflow = null;
-        // note: gently break any standard embed with a space, *require* swarm format embeds, as comfy's raw syntax has unwanted behaviors
-        user_input.ProcessPromptEmbeds(x => $" embedding:{x.Replace("/", ModelFolderFormat)} ", p => p.Replace("embedding:", "embedding :", StringComparison.OrdinalIgnoreCase));
-        if (user_input.TryGet(ComfyUIBackendExtension.CustomWorkflowParam, out string customWorkflowName))
+        if (input.TryGet(ComfyUIBackendExtension.CustomWorkflowParam, out string customWorkflowName))
         {
             if (customWorkflowName.StartsWith("PARSED%"))
             {
@@ -728,11 +726,19 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 workflow = flowObj["prompt"].ToString();
             }
         }
-        else if (user_input.TryGetRaw(ComfyUIBackendExtension.FakeRawInputType, out object workflowRaw))
+        else if (input.TryGetRaw(ComfyUIBackendExtension.FakeRawInputType, out object workflowRaw))
         {
             workflow = (string)workflowRaw;
         }
         workflow = workflow?.Replace("\"%%_COMFYFIXME_${", "${").Replace("}_ENDFIXME_%%\"", "}");
+        return workflow;
+    }
+
+    public static string CreateWorkflow(T2IParamInput user_input, Func<string, string> initImageFixer, string ModelFolderFormat = null, HashSet<string> features = null)
+    {
+        // note: gently break any standard embed with a space, *require* swarm format embeds, as comfy's raw syntax has unwanted behaviors
+        user_input.ProcessPromptEmbeds(x => $" embedding:{x.Replace("/", ModelFolderFormat)} ", p => p.Replace("embedding:", "embedding :", StringComparison.OrdinalIgnoreCase));
+        string workflow = GetRawWorkflowFrom(user_input);
         if (workflow is not null && !user_input.Get(T2IParamTypes.ControlNetPreviewOnly))
         {
             Logs.Verbose("Will fill a workflow...");
@@ -921,6 +927,36 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 step();
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public override bool IsValidForThisBackend(T2IParamInput input)
+    {
+        return TryIsValid(input, NodeTypes);
+    }
+
+    /// <summary>
+    /// Implementation for <see cref="IsValidForThisBackend(T2IParamInput)"/>.
+    /// </summary>
+    public static bool TryIsValid(T2IParamInput input, HashSet<string> nodeTypes)
+    {
+        if (nodeTypes is null)
+        {
+            return true;
+        }
+        string workflowRaw = GetRawWorkflowFrom(input);
+        if (string.IsNullOrWhiteSpace(workflowRaw))
+        {
+            return true;
+        }
+        JObject workflow = Utilities.ParseToJson(workflowRaw);
+        JProperty refusalNode = workflow.Properties().FirstOrDefault(p => !nodeTypes.Contains($"{p.Value["class_type"]}"));
+        if (refusalNode is not null)
+        {
+            input.RefusalReasons.Add($"The custom workflow contains an unsupported node type '{refusalNode.Value["class_type"]}'.");
+            return false;
+        }
+        return true;
     }
 
     public Task<JType> SendGet<JType>(string url) where JType : class

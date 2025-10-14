@@ -147,6 +147,13 @@ public abstract class AbstractT2IBackend
         return false;
     }
 
+    /// <summary>Return true if the input is (likely) valid to run on this backend, or false if it is known to not be compatible (eg missing models, etc).
+    /// Update <see cref="T2IParamInput.RefusalReasons"/> if this method returns false.</summary>
+    public virtual bool IsValidForThisBackend(T2IParamInput input)
+    {
+        return true;
+    }
+
     /// <summary>Exception can be thrown to indicate the backend cannot fulfill the request, but for temporary reasons, and another backend should be used instead.</summary>
     public class PleaseRedirectException : Exception
     {

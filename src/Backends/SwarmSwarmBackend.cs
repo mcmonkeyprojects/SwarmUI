@@ -612,6 +612,29 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         });
     }
 
+    /// <summary>Implementations for <see cref="IsValidForThisBackend(T2IParamInput)"/> mapped by backend type id.</summary>
+    public static ConcurrentDictionary<string, Func<SwarmSwarmBackend, T2IParamInput, bool>> ValidityChecks = [];
+
+    /// <inheritdoc/>
+    public override bool IsValidForThisBackend(T2IParamInput input)
+    {
+        if (IsAControlInstance)
+        {
+            input.RefusalReasons.Add("Control instances cannot generate.");
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(LinkedRemoteBackendType))
+        {
+            input.RefusalReasons.Add("No loaded remote backend.");
+            return false;
+        }
+        if (ValidityChecks.TryGetValue(LinkedRemoteBackendType, out Func<SwarmSwarmBackend, T2IParamInput, bool> func))
+        {
+            return func(this, input);
+        }
+        return true;
+    }
+
     /// <inheritdoc/>
     public override async Task<bool> FreeMemory(bool systemRam)
     {
