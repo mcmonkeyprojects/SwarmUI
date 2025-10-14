@@ -418,11 +418,11 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     }
                     else
                     {
-                        (string formatLabel, int index, int eventId) = ComfyRawWebsocketOutputToFormatLabel(output);
+                        (string formatLabel, int index, int eventId, int preBytes) = ComfyRawWebsocketOutputToFormatLabel(output);
                         Logs.Verbose($"ComfyUI Websocket sent: {output.Length} bytes of image data as event {eventId} in format {formatLabel} to index {index}");
                         if (isExpectingText || formatLabel == "txt")
                         {
-                            string metadata = StringConversionHelper.UTF8Encoding.GetString(output[8..]);
+                            string metadata = StringConversionHelper.UTF8Encoding.GetString(output[preBytes..]);
                             int colon = metadata.IndexOf(':');
                             if (metadata.Length > 1_000_000)
                             {
@@ -480,7 +480,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                                     ["comfy_index"] = index
                                 };
                             }
-                            takeOutput(new T2IEngine.ImageOutput() { Img = new Image(output[8..], type, formatLabel), IsReal = isReal, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
+                            takeOutput(new T2IEngine.ImageOutput() { Img = new Image(output[preBytes..], type, formatLabel), IsReal = isReal, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
                         }
                         else
                         {
@@ -499,7 +499,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                             {
                                 ["batch_index"] = index == 0 || !int.TryParse(batchId, out int batchInt) ? batchId : batchInt + index,
                                 ["request_id"] = $"{user_input.UserRequestId}",
-                                ["preview"] = $"data:{dataType};base64," + Convert.ToBase64String(output, 8, output.Length - 8),
+                                ["preview"] = $"data:{dataType};base64," + Convert.ToBase64String(output, preBytes, output.Length - preBytes),
                                 ["overall_percent"] = (nodesDone + curPercent) / (float)expectedNodes,
                                 ["current_percent"] = curPercent
                             });
@@ -555,30 +555,46 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 
     public static AsciiMatcher CustomMetaKeyCleaner = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "_");
 
-    public static (string, int, int) ComfyRawWebsocketOutputToFormatLabel(byte[] output)
+    public static (string, int, int, int) ComfyRawWebsocketOutputToFormatLabel(byte[] output)
     {
         int eventId = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(output, 0));
-        int format = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(output, 4));
-        int index = 0;
-        if (format > 2)
+        if (eventId == 4)
         {
-            index = (format >> 4) & 0xffff;
-            format &= 7;
-        }
-        string formatLabel;
-        if (eventId == 3)
-        {
-            formatLabel = "txt";
-        }
-        else if (eventId == 10)
-        {
-            formatLabel = format switch { 1 => "bmp", _ => "jpg" };
+            int metaLength = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(output, 4));
+            string metadata = StringConversionHelper.UTF8Encoding.GetString(output, 8, metaLength);
+            JObject jmeta = Utilities.ParseToJson(metadata);
+            string format = "jpg";
+            if (jmeta.TryGetValue("mime_type", out JToken mimeType))
+            {
+                // TODO: Use mimetypes directly rather than this funky reconversion
+                format = $"{mimeType}" switch { "image/jpeg" => "jpg", "image/png" => "png", "image/webp" => "webp", "image/gif" => "gif", "video/mp4" => "mp4", "video/webm" => "webm", _ => "jpg" };
+            }
+            return (format, 0, eventId, 8 + metaLength);
         }
         else
         {
-            formatLabel = format switch { 1 => "jpg", 2 => "png", 3 => "webp", 4 => "gif", 5 => "mp4", 6 => "webm", 7 => "mov", _ => "jpg" };
+            int format = BinaryPrimitives.ReverseEndianness(BitConverter.ToInt32(output, 4));
+            int index = 0;
+            if (format > 2)
+            {
+                index = (format >> 4) & 0xffff;
+                format &= 7;
+            }
+            string formatLabel;
+            if (eventId == 3)
+            {
+                formatLabel = "txt";
+            }
+            else if (eventId == 10)
+            {
+                formatLabel = format switch { 1 => "bmp", _ => "jpg" };
+            }
+            else
+            {
+                formatLabel = format switch { 1 => "jpg", 2 => "png", 3 => "webp", 4 => "gif", 5 => "mp4", 6 => "webm", 7 => "mov", _ => "jpg" };
+            }
+            return (formatLabel, index, eventId, 8);
         }
-        return (formatLabel, index, eventId);
     }
 
     public static Image.ImageType ComfyFormatLabelToImageType(string formatLabel) => formatLabel switch
