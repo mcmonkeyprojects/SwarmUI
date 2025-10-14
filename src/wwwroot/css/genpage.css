@@ -1494,9 +1494,14 @@ body {
 .simpleimagearea .loading-spinner {
     top: -60%;
 }
-.simpleimagearea img {
+.simple_image_container_img_wrapper {
     max-width: 100%;
     height: calc(100vh - 20rem);
+    object-fit: contain;
+}
+.simple_image_container_img {
+    max-width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 .simpletab-workflow-header {

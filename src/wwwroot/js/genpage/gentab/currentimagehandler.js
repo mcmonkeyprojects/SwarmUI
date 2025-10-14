@@ -974,7 +974,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         img.width = 16 * 10;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
-        sourceObj.type = `video/${src.substring(src.lastIndexOf('.') + 1)}`;
+        sourceObj.type = `video/${imageSrc.substring(imageSrc.lastIndexOf('.') + 1)}`;
         img.appendChild(sourceObj);
     }
     else {

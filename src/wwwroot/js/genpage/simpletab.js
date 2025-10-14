@@ -13,6 +13,7 @@ class SimpleTab {
         this.wrapperDiv = getRequiredElementById('simpletabbrowserwrapper');
         this.imageContainer = getRequiredElementById('simple_image_container');
         this.imageElem = getRequiredElementById('simple_image_container_img');
+        this.imageElemWrapper = getRequiredElementById('simple_image_container_img_wrapper');
         this.progressWrapper = getRequiredElementById('simpletab_progress_wrapper');
         this.loadingSpinner = getRequiredElementById('simple_loading_spinner');
         this.batchArea = getRequiredElementById('simple_current_image_batch');
@@ -91,24 +92,41 @@ class SimpleTab {
     }
 
     setImage(imgSrc) {
-        this.imageElem.src = imgSrc;
-        this.imageElem.style.opacity = 1;
+        if (isVideoExt(imgSrc)) {
+            if (this.imageElem.tagName == 'VIDEO') {
+                this.imageElem.src = imgSrc;
+            }
+            else {
+                this.imageElemWrapper.innerHTML = `<video class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${imgSrc}" id="simple_image_container_img" type="video/${imgSrc.substring(imgSrc.lastIndexOf('.') + 1)}"></video>`;
+                this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+            }
+        }
+        else {
+            if (this.imageElem.tagName == 'IMG') {
+                this.imageElem.src = imgSrc;
+            }
+            else {
+                this.imageElemWrapper.innerHTML = `<img class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${imgSrc}">`;
+                this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+            }
+        }
+        this.imageElemWrapper.style.opacity = 1;
     }
 
     markLoading() {
         this.loadingSpinner.style.display = '';
-        this.imageElem.style.filter = 'blur(5px)';
+        this.imageElemWrapper.style.filter = 'blur(5px)';
         uiImprover.runLoadSpinner(this.loadingSpinner);
     }
 
     markDoneLoading() {
         this.loadingSpinner.style.display = 'none';
-        this.imageElem.style.filter = '';
+        this.imageElemWrapper.style.filter = '';
         this.genHandler.gotProgress(-1, -1, '');
     }
 
     setNoImage() {
-        this.imageElem.style.opacity = 0;
+        this.imageElemWrapper.style.opacity = 0;
     }
 
     browserDescribeEntry(workflow) {
