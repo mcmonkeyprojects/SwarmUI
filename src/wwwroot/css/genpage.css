@@ -1454,7 +1454,7 @@ body {
 }
 .simple-bottom-area {
     width: 100%;
-    height: 15rem;
+    height: 12rem;
     display: block;
 }
 .simpleinputsidebar {
@@ -1537,9 +1537,9 @@ body {
     overflow-x: auto;
     overflow-y: hidden;
     width: 100%;
-    height: 15rem;
+    height: 12rem;
     text-align: right;
-    white-space: normal;
+    white-space: nowrap;
 }
 .simple_current_image_batch .image-block {
     margin-left: 0.5rem;
