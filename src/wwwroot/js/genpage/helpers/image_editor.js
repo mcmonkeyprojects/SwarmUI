@@ -845,13 +845,14 @@ class ImageEditorToolShape extends ImageEditorTool {
         super(editor, 'shape', 'shape', 'Shape', 'Create different shapes for AI editing.\nRectangle: Click and drag\nCircle: Click and drag\nHotKey: X', 'x');
         this.cursor = 'crosshair';
         this.color = '#ff0000';
-        this.strokeWidth = 2;
+        this.strokeWidth = 4;
         this.shape = 'rectangle';
         this.isDrawing = false;
         this.startX = 0;
         this.startY = 0;
         this.currentX = 0;
         this.currentY = 0;
+        this.shapesLayer = null;
         
         let colorHTML = `
         <div class="image-editor-tool-block">
@@ -872,10 +873,10 @@ class ImageEditorToolShape extends ImageEditorTool {
         
         let strokeHTML = `
         <div class="image-editor-tool-block id-stroke-block">
-            <label>Stroke:&nbsp;</label>
-            <input type="number" style="width: 40px;" class="auto-number id-stroke1" min="1" max="20" step="1" value="2">
-            <div class="auto-slider-range-wrapper" style="${getRangeStyle(2, 1, 20)}">
-                <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="2" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+            <label>Thickness:&nbsp;</label>
+            <input type="number" style="width: 40px;" class="auto-number id-stroke1" min="1" max="20" step="1" value="4">
+            <div class="auto-slider-range-wrapper" style="${getRangeStyle(4, 1, 20)}">
+                <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
             </div>
         </div>`;
         
@@ -915,7 +916,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         
         this.shapeSelect.addEventListener('change', () => {
             this.shape = this.shapeSelect.value;
-            this.updateUI();
             this.editor.redraw();
         });
         
@@ -925,8 +925,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.clearButton.addEventListener('click', () => {
             this.clearAllShapes();
         });
-        
-        this.shapes = [];
     }
     
     setColor(col) {
@@ -943,12 +941,51 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     clearAllShapes() {
-        this.shapes = [];
+        if (this.shapesLayer && this.shapesLayer.hasAnyContent) {
+            this.editor.activeLayer.saveBeforeEdit();
+            
+            this.shapesLayer.ctx.clearRect(0, 0, this.shapesLayer.canvas.width, this.shapesLayer.canvas.height);
+            this.shapesLayer.hasAnyContent = false;
+            this.editor.markChanged();
+        }
         this.isDrawing = false;
         this.editor.redraw();
     }
     
-    
+    drawShapeToSubLayer(shape) {
+        if (!this.shapesLayer) return;
+        
+        let [canvasX1, canvasY1] = this.editor.imageCoordToCanvasCoord(shape.x, shape.y);
+        let [canvasX2, canvasY2] = this.editor.imageCoordToCanvasCoord(shape.x + shape.width, shape.y + shape.height);
+        
+        let [layerX1, layerY1] = this.shapesLayer.canvasCoordToLayerCoord(canvasX1, canvasY1);
+        let [layerX2, layerY2] = this.shapesLayer.canvasCoordToLayerCoord(canvasX2, canvasY2);
+        
+        this.shapesLayer.ctx.save();
+        this.shapesLayer.ctx.strokeStyle = shape.color;
+        this.shapesLayer.ctx.lineWidth = shape.strokeWidth;
+        this.shapesLayer.ctx.setLineDash([]);
+        this.shapesLayer.ctx.beginPath();
+        
+        if (shape.type === 'rectangle') {
+            let x = Math.min(layerX1, layerX2);
+            let y = Math.min(layerY1, layerY2);
+            let w = Math.abs(layerX2 - layerX1);
+            let h = Math.abs(layerY2 - layerY1);
+            this.shapesLayer.ctx.rect(x, y, w, h);
+        } 
+        else if (shape.type === 'circle') {
+            let cx = (layerX1 + layerX2) / 2;
+            let cy = (layerY1 + layerY2) / 2;
+            let radius = Math.sqrt(Math.pow(layerX2 - layerX1, 2) + Math.pow(layerY2 - layerY1, 2)) / 2;
+            this.shapesLayer.ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        }
+        
+        this.shapesLayer.ctx.stroke();
+        this.shapesLayer.ctx.restore();
+        this.shapesLayer.hasAnyContent = true;
+    }
+        
     draw() {
         if (this.isDrawing && (this.shape === 'rectangle' || this.shape === 'circle')) {
             this.drawShape({
@@ -966,7 +1003,7 @@ class ImageEditorToolShape extends ImageEditorTool {
     drawShape(shape) {
         this.editor.ctx.save();
         this.editor.ctx.strokeStyle = shape.color;
-        this.editor.ctx.lineWidth = shape.strokeWidth;
+        this.editor.ctx.lineWidth = shape.strokeWidth * this.editor.zoomLevel;
         this.editor.ctx.setLineDash([]);
         this.editor.ctx.beginPath();
         
@@ -974,7 +1011,8 @@ class ImageEditorToolShape extends ImageEditorTool {
             let [x, y] = this.editor.imageCoordToCanvasCoord(shape.x, shape.y);
             let [w, h] = [shape.width * this.editor.zoomLevel, shape.height * this.editor.zoomLevel];
             this.editor.ctx.rect(x, y, w, h);
-        } else if (shape.type === 'circle') {
+        } 
+        else if (shape.type === 'circle') {
             let [cx, cy] = this.editor.imageCoordToCanvasCoord(shape.x + shape.width / 2, shape.y + shape.height / 2);
             let radius = Math.sqrt(shape.width * shape.width + shape.height * shape.height) / 2 * this.editor.zoomLevel;
             this.editor.ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
@@ -983,32 +1021,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.editor.ctx.stroke();
         this.editor.ctx.restore();
     }
-    
-    drawShapeToCanvas(ctx, shape, zoom, offsetX = 0, offsetY = 0) {
-        ctx.save();
-        ctx.strokeStyle = shape.color;
-        ctx.lineWidth = shape.strokeWidth;
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        
-        if (shape.type === 'rectangle') {
-            let x = (shape.x + offsetX) * zoom;
-            let y = (shape.y + offsetY) * zoom;
-            let w = shape.width * zoom;
-            let h = shape.height * zoom;
-            ctx.rect(x, y, w, h);
-        } else if (shape.type === 'circle') {
-            let cx = (shape.x + shape.width / 2 + offsetX) * zoom;
-            let cy = (shape.y + shape.height / 2 + offsetY) * zoom;
-            let radius = Math.sqrt(shape.width * shape.width + shape.height * shape.height) / 2 * zoom;
-            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
-        }
-        
-        ctx.stroke();
-        ctx.restore();
-    }
-    
-    
+               
     onMouseDown(e) {
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         
@@ -1020,23 +1033,32 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     onMouseUp(e) {
-        if (this.isDrawing && (this.shape === 'rectangle' || this.shape === 'circle')) {
+        if (this.isDrawing) {
             let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
             this.currentX = mouseX;
             this.currentY = mouseY;
             
-            // Only add if there's actual size
             if (Math.abs(this.currentX - this.startX) > 1 || Math.abs(this.currentY - this.startY) > 1) {
-            this.shapes.push({
-                type: this.shape,
-                x: Math.min(this.startX, this.currentX),
-                y: Math.min(this.startY, this.currentY),
-                width: Math.abs(this.currentX - this.startX),
-                height: Math.abs(this.currentY - this.startY),
-                color: this.color,
-                strokeWidth: this.strokeWidth
-            });
-            this.editor.markChanged();
+                // Create shapes sub-layer if it doesn't exist
+                if (!this.shapesLayer) {
+                    this.shapesLayer = new ImageEditorLayer(this.editor, this.editor.activeLayer.canvas.width, this.editor.activeLayer.canvas.height, this.editor.activeLayer);
+                    this.editor.activeLayer.childLayers.push(this.shapesLayer);
+                }
+                
+                this.editor.activeLayer.saveBeforeEdit();
+                
+                let shape = {
+                    type: this.shape,
+                    x: Math.min(this.startX, this.currentX),
+                    y: Math.min(this.startY, this.currentY),
+                    width: Math.abs(this.currentX - this.startX),
+                    height: Math.abs(this.currentY - this.startY),
+                    color: this.color,
+                    strokeWidth: this.strokeWidth
+                };
+                
+                this.drawShapeToSubLayer(shape);
+                this.editor.markChanged();
             }
             
             this.isDrawing = false;
@@ -2082,12 +2104,6 @@ class ImageEditor {
             this.drawSelectionBox(selectX, selectY, this.selectWidth * this.zoomLevel, this.selectHeight * this.zoomLevel, this.uiColor, 8 * this.zoomLevel, 0);
         }
         
-        if (this.tools.shape && this.tools.shape.shapes) {
-            for (let shape of this.tools.shape.shapes) {
-                this.tools.shape.drawShape(shape);
-            }
-        }
-        
         this.activeTool.draw();
         this.ctx.restore();
     }
@@ -2100,12 +2116,6 @@ class ImageEditor {
         for (let layer of this.layers) {
             if (!layer.isMask) {
                 layer.drawToBack(ctx, this.finalOffsetX, this.finalOffsetY, 1);
-            }
-        }
-        
-        if (this.tools.shape && this.tools.shape.shapes) {
-            for (let shape of this.tools.shape.shapes) {
-                this.tools.shape.drawShapeToCanvas(ctx, shape, 1);
             }
         }
         
@@ -2132,12 +2142,6 @@ class ImageEditor {
         for (let layer of this.layers) {
             if (!layer.isMask) {
                 layer.drawToBack(ctx, -minX, -minY, 1);
-            }
-        }
-        
-        if (this.tools.shape && this.tools.shape.shapes) {
-            for (let shape of this.tools.shape.shapes) {
-                this.tools.shape.drawShapeToCanvas(ctx, shape, 1, -minX, -minY);
             }
         }
         
