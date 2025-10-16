@@ -2082,7 +2082,6 @@ class ImageEditor {
             this.drawSelectionBox(selectX, selectY, this.selectWidth * this.zoomLevel, this.selectHeight * this.zoomLevel, this.uiColor, 8 * this.zoomLevel, 0);
         }
         
-        // Always draw shapes regardless of active tool
         if (this.tools.shape && this.tools.shape.shapes) {
             for (let shape of this.tools.shape.shapes) {
                 this.tools.shape.drawShape(shape);
