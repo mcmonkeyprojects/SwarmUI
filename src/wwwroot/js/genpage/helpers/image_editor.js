@@ -852,6 +852,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.startY = 0;
         this.currentX = 0;
         this.currentY = 0;
+        this.shapes = [];
         this.shapesLayer = null;
         
         let colorHTML = `
@@ -941,11 +942,14 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     clearAllShapes() {
-        if (this.shapesLayer && this.shapesLayer.hasAnyContent) {
+        if (this.shapesLayer && this.shapes.length > 0) {
+            // Save before edit for undo functionality
             this.editor.activeLayer.saveBeforeEdit();
             
+            // Clear only the shapes sub-layer
             this.shapesLayer.ctx.clearRect(0, 0, this.shapesLayer.canvas.width, this.shapesLayer.canvas.height);
             this.shapesLayer.hasAnyContent = false;
+            this.shapes = [];
             this.editor.markChanged();
         }
         this.isDrawing = false;
@@ -1021,7 +1025,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.editor.ctx.stroke();
         this.editor.ctx.restore();
     }
-               
+      
     onMouseDown(e) {
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         
@@ -1039,7 +1043,6 @@ class ImageEditorToolShape extends ImageEditorTool {
             this.currentY = mouseY;
             
             if (Math.abs(this.currentX - this.startX) > 1 || Math.abs(this.currentY - this.startY) > 1) {
-                // Create shapes sub-layer if it doesn't exist
                 if (!this.shapesLayer) {
                     this.shapesLayer = new ImageEditorLayer(this.editor, this.editor.activeLayer.canvas.width, this.editor.activeLayer.canvas.height, this.editor.activeLayer);
                     this.editor.activeLayer.childLayers.push(this.shapesLayer);
@@ -1057,6 +1060,7 @@ class ImageEditorToolShape extends ImageEditorTool {
                     strokeWidth: this.strokeWidth
                 };
                 
+                this.shapes.push(shape);
                 this.drawShapeToSubLayer(shape);
                 this.editor.markChanged();
             }
