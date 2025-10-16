@@ -852,8 +852,8 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.startY = 0;
         this.currentX = 0;
         this.currentY = 0;
-        this.shapes = [];
-        this.shapesLayer = null;
+        this.shapes = []; // Track shapes for undo functionality
+        this.shapesLayer = null; // Sub-layer for storing shapes
         
         let colorHTML = `
         <div class="image-editor-tool-block">
@@ -874,7 +874,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         
         let strokeHTML = `
         <div class="image-editor-tool-block id-stroke-block">
-            <label>Thickness:&nbsp;</label>
+            <label>Width:&nbsp;</label>
             <input type="number" style="width: 40px;" class="auto-number id-stroke1" min="1" max="20" step="1" value="4">
             <div class="auto-slider-range-wrapper" style="${getRangeStyle(4, 1, 20)}">
                 <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
@@ -959,9 +959,11 @@ class ImageEditorToolShape extends ImageEditorTool {
     drawShapeToSubLayer(shape) {
         if (!this.shapesLayer) return;
         
+        // Convert image coordinates to canvas coordinates first
         let [canvasX1, canvasY1] = this.editor.imageCoordToCanvasCoord(shape.x, shape.y);
         let [canvasX2, canvasY2] = this.editor.imageCoordToCanvasCoord(shape.x + shape.width, shape.y + shape.height);
         
+        // Then convert to sub-layer coordinates
         let [layerX1, layerY1] = this.shapesLayer.canvasCoordToLayerCoord(canvasX1, canvasY1);
         let [layerX2, layerY2] = this.shapesLayer.canvasCoordToLayerCoord(canvasX2, canvasY2);
         
@@ -988,8 +990,10 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.shapesLayer.ctx.stroke();
         this.shapesLayer.ctx.restore();
         this.shapesLayer.hasAnyContent = true;
+        console.log('Drew shape to sub-layer:', shape);
     }
-        
+    
+    
     draw() {
         if (this.isDrawing && (this.shape === 'rectangle' || this.shape === 'circle')) {
             this.drawShape({
@@ -1025,7 +1029,33 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.editor.ctx.stroke();
         this.editor.ctx.restore();
     }
-      
+    
+    drawShapeToCanvas(ctx, shape, zoom, offsetX = 0, offsetY = 0) {
+        ctx.save();
+        ctx.strokeStyle = shape.color;
+        ctx.lineWidth = shape.strokeWidth;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        
+        if (shape.type === 'rectangle') {
+            let x = (shape.x + offsetX) * zoom;
+            let y = (shape.y + offsetY) * zoom;
+            let w = shape.width * zoom;
+            let h = shape.height * zoom;
+            ctx.rect(x, y, w, h);
+        } 
+        else if (shape.type === 'circle') {
+            let cx = (shape.x + shape.width / 2 + offsetX) * zoom;
+            let cy = (shape.y + shape.height / 2 + offsetY) * zoom;
+            let radius = Math.sqrt(shape.width * shape.width + shape.height * shape.height) / 2 * zoom;
+            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        }
+        
+        ctx.stroke();
+        ctx.restore();
+    }
+    
+        
     onMouseDown(e) {
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         
@@ -1043,11 +1073,14 @@ class ImageEditorToolShape extends ImageEditorTool {
             this.currentY = mouseY;
             
             if (Math.abs(this.currentX - this.startX) > 1 || Math.abs(this.currentY - this.startY) > 1) {
+                // Create shapes sub-layer if it doesn't exist
                 if (!this.shapesLayer) {
                     this.shapesLayer = new ImageEditorLayer(this.editor, this.editor.activeLayer.canvas.width, this.editor.activeLayer.canvas.height, this.editor.activeLayer);
                     this.editor.activeLayer.childLayers.push(this.shapesLayer);
+                    console.log('Created shapes sub-layer, childLayers count:', this.editor.activeLayer.childLayers.length);
                 }
                 
+                // Save before edit for undo functionality
                 this.editor.activeLayer.saveBeforeEdit();
                 
                 let shape = {
