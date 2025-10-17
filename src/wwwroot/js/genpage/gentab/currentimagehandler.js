@@ -185,7 +185,7 @@ class ImageFullViewHelper {
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
-            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="video/${encodedSrc.substring(encodedSrc.lastIndexOf('.') + 1)}"></video>`;
+            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="${isVideo}"></video>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
@@ -664,7 +664,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         img.muted = true;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
-        sourceObj.type = `video/${src.substring(src.lastIndexOf('.') + 1)}`;
+        sourceObj.type = isVideo;
         img.appendChild(sourceObj);
     }
     else {
@@ -974,7 +974,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         img.width = 16 * 10;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
-        sourceObj.type = `video/${imageSrc.substring(imageSrc.lastIndexOf('.') + 1)}`;
+        sourceObj.type = isVideo;
         img.appendChild(sourceObj);
     }
     else {

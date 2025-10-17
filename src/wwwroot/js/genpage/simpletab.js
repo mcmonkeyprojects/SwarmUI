@@ -92,12 +92,13 @@ class SimpleTab {
     }
 
     setImage(imgSrc) {
-        if (isVideoExt(imgSrc)) {
+        let isVideo = isVideoExt(imgSrc);
+        if (isVideo) {
             if (this.imageElem.tagName == 'VIDEO') {
                 this.imageElem.src = imgSrc;
             }
             else {
-                this.imageElemWrapper.innerHTML = `<video class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${imgSrc}" id="simple_image_container_img" type="video/${imgSrc.substring(imgSrc.lastIndexOf('.') + 1)}"></video>`;
+                this.imageElemWrapper.innerHTML = `<video class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${imgSrc}" id="simple_image_container_img" type="${isVideo}"></video>`;
                 this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
             }
         }
