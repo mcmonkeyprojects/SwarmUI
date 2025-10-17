@@ -259,21 +259,7 @@ public class Session : IEquatable<Session>
                     {
                         File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
                     }
-                    if (ImageMetadataTracker.ExtensionsForFfmpegables.Contains(extension))
-                    {
-                        if (string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
-                        {
-                            Logs.Warning("ffmpeg cannot be found, some features will not work including video previews. Please ensure ffmpeg is locatable to use video files.");
-                        }
-                        else
-                        {
-                            Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]).Wait();
-                            if (Program.ServerSettings.UI.AllowAnimatedPreviews)
-                            {
-                                Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", fullPath, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]).Wait();
-                            }
-                        }
-                    }
+                    ImageMetadataTracker.GetOrCreatePreviewFor(fullPath.Replace('\\', '/'));
                     Logs.Debug($"Saved an output file as '{fullPath}'");
                     await Task.Delay(TimeSpan.FromSeconds(10)); // (Give time for WebServer to read data from cache rather than having to reload from file for first read)
                     StillSavingFiles.TryRemove(fullPath, out _);

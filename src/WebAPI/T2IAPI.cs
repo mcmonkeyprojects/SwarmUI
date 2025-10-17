@@ -509,7 +509,7 @@ public static class T2IAPI
             {
                 tasks.TryAdd(dir, Utilities.RunCheckedTask(() =>
                 {
-                    if (dir.EndsWith("/"))
+                    if (dir.EndsWith('/'))
                     {
                         dir = dir[..^1];
                     }

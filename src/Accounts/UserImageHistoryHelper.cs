@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticToolkit;
 using SwarmUI.Core;
 using SwarmUI.Utils;
 
@@ -51,5 +53,28 @@ public class UserImageHistoryHelper
             path = path[..^1];
         }
         return path;
+    }
+
+    /// <summary>Ffmpeg can get weird with overlapping calls, so max one at a time.</summary>
+    public static ManyReadOneWriteLock FfmpegLock = new(1);
+
+    /// <summary>Use ffmpeg to generate a preview for a video file.</summary>
+    /// <param name="file">The video file.</param>
+    public static async Task DoFfmpegPreviewGeneration(string file)
+    {
+        string fullPathNoExt = file.BeforeLast('.');
+        if (string.IsNullOrWhiteSpace(Utilities.FfmegLocation.Value))
+        {
+            Logs.Warning("ffmpeg cannot be found, some features will not work including video previews. Please ensure ffmpeg is locatable to use video files.");
+        }
+        else
+        {
+            using var claim = FfmpegLock.LockWrite();
+            await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]);
+            if (Program.ServerSettings.UI.AllowAnimatedPreviews)
+            {
+                await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vcodec", "libwebp", "-filter:v", "fps=fps=6,scale=-1:128", "-lossless", "0", "-compression_level", "2", "-q:v", "60", "-loop", "0", "-preset", "picture", "-an", "-vsync", "0", "-t", "5", fullPathNoExt + ".swarmpreview.webp"]);
+            }
+        }
     }
 }

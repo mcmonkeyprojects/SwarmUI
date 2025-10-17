@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using LiteDB;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
 using System.IO;
 
@@ -140,6 +141,7 @@ public static class ImageMetadataTracker
     /// <summary>Get the preview bytes for the given image, going through a cache manager.</summary>
     public static ImagePreviewEntry GetOrCreatePreviewFor(string file)
     {
+        file = file.Replace('\\', '/');
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
@@ -213,25 +215,38 @@ public static class ImageMetadataTracker
             }
             if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
-                if (!ExtensionsForAnimatedImages.Contains(ext))
+                if (ExtensionsForAnimatedImages.Contains(ext))
                 {
-                    return null;
+                    byte[] data = File.ReadAllBytes(file);
+                    Image img = new(data, Image.ImageType.ANIMATION, ext);
+                    fileData = data;
+                    simplifiedData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                    File.WriteAllBytes(jpegPreview, simplifiedData);
+                    Image webpAnim = img.ToWebpPreviewAnim();
+                    if (webpAnim is null)
+                    {
+                        fileData = simplifiedData;
+                        simplifiedData = null;
+                    }
+                    else
+                    {
+                        fileData = webpAnim.ImageData;
+                        File.WriteAllBytes(animPreview, fileData);
+                    }
                 }
-                byte[] data = File.ReadAllBytes(file);
-                Image img = new(data, Image.ImageType.ANIMATION, ext);
-                fileData = data;
-                simplifiedData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
-                File.WriteAllBytes(jpegPreview, simplifiedData);
-                Image webpAnim = img.ToWebpPreviewAnim();
-                if (webpAnim is null)
+                else if (ExtensionsForFfmpegables.Contains(ext))
                 {
-                    fileData = simplifiedData;
-                    simplifiedData = null;
+                    UserImageHistoryHelper.DoFfmpegPreviewGeneration(file).Wait();
+                    altExists = Program.ServerSettings.UI.AllowAnimatedPreviews && File.Exists(altPreview);
+                    if (!altExists)
+                    {
+                        altPreview = jpegPreview;
+                        altExists = File.Exists(altPreview);
+                    }
                 }
                 else
                 {
-                    fileData = webpAnim.ImageData;
-                    File.WriteAllBytes(animPreview, fileData);
+                    return null;
                 }
             }
             if (fileData is null)
@@ -280,6 +295,7 @@ public static class ImageMetadataTracker
     /// <summary>Get the metadata text for the given file, going through a cache manager.</summary>
     public static ImageMetadataEntry GetMetadataFor(string file, string root, bool starNoFolders)
     {
+        file = file.Replace('\\', '/');
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
