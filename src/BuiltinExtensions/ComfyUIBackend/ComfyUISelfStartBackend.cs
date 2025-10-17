@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
+using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Utils;
@@ -334,6 +335,19 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         {
             AddLoadStatus($"Start script '{Settings.StartScript}' looks wrong");
             Logs.Warning($"ComfyUI start script is '{Settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
+        }
+        lock (ComfyModelFileHelperLock)
+        {
+            string inputFolder = $"{Directory.GetParent(Settings.StartScript).FullName}/input";
+            if (Directory.Exists(inputFolder) && !UserImageHistoryHelper.SharedSpecialFolders.Values.Contains(inputFolder))
+            {
+                UserImageHistoryHelper.SharedSpecialFolders[$"inputs/_comfy{BackendData.ID}/"] = inputFolder;
+            }
+            string outputFolder = $"{Directory.GetParent(Settings.StartScript).FullName}/output";
+            if (Directory.Exists(outputFolder) && !UserImageHistoryHelper.SharedSpecialFolders.Values.Contains(outputFolder))
+            {
+                UserImageHistoryHelper.SharedSpecialFolders[$"_comfy{BackendData.ID}/"] = outputFolder;
+            }
         }
         Directory.CreateDirectory(Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes"));
         string autoUpdNodes = Settings.UpdateManagedNodes.ToLowerFast();

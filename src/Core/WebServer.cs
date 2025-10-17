@@ -552,6 +552,7 @@ public class WebServer
             await context.YieldJsonOutput(null, 400, Utilities.ErrorObj(userError, "bad_path"));
             return;
         }
+        path = UserImageHistoryHelper.GetRealPathFor(user, path, root: root);
         byte[] data = null;
         string contentType = Utilities.GuessContentType(path);
         try
