@@ -91,7 +91,7 @@ function create_new_preset_button() {
     };
     if (curImg && curImg.tagName == 'IMG') {
         setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            presetHelpers.enableImageElem.checked = true;
+            presetHelpers.enableImageElem.checked = false;
             run();
         });
     }
@@ -322,7 +322,7 @@ function editPreset(preset) {
     };
     if (curImg && curImg.tagName == 'IMG') {
         setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            presetHelpers.enableImageElem.checked = !preset.preview_image || preset.preview_image == 'imgs/model_placeholder.jpg';
+            presetHelpers.enableImageElem.checked = false;
             run();
         });
     }
