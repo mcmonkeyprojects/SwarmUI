@@ -178,10 +178,6 @@ public class T2IParamSet
         if (obj is null)
         {
             Logs.Debug($"Ignoring input to parameter '{param.ID}' of '{val}' because the value maps to null.");
-            if (param.ID == "model")
-            {
-                Logs.Debug($"Model input '{val}' appears to be null.");
-            }
             return;
         }
         ValuesInput[param.ID] = obj;

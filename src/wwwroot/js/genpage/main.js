@@ -6,7 +6,7 @@ let lastImageDir = '';
 
 let lastModelDir = '';
 
-let num_current_gens = 0, num_models_loading = 0, num_live_gens = 0, num_backends_waiting = 0;
+let num_waiting_gens = 0, num_models_loading = 0, num_live_gens = 0, num_backends_waiting = 0;
 
 let shouldApplyDefault = false;
 
@@ -58,15 +58,25 @@ let generatingPreviewsText = translatable('Generating live previews...');
 let waitingOnModelLoadText = translatable('waiting on model load');
 let generatingText = translatable('generating');
 
+function currentGenString(num_waiting_gens, num_models_loading, num_live_gens, num_backends_waiting) {
+    function autoBlock(num, text) {
+        if (num == 0) {
+            return '';
+        }
+        return `<span class="interrupt-line-part">${num} ${text.replaceAll('%', autoS(num))},</span> `;
+    }
+    return `${autoBlock(num_waiting_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())}`;
+}
+
 function updateCurrentStatusDirect(data) {
     if (data) {
-        num_current_gens = data.waiting_gens;
+        num_waiting_gens = data.waiting_gens;
         num_models_loading = data.loading_models;
         num_live_gens = data.live_gens;
         num_backends_waiting = data.waiting_backends;
     }
-    let total = num_current_gens + num_models_loading + num_live_gens + num_backends_waiting;
-    if (isGeneratingPreviews && num_current_gens <= getRequiredElementById('usersettings_maxsimulpreviews').value) {
+    let total = num_waiting_gens + num_models_loading + num_live_gens + num_backends_waiting;
+    if (isGeneratingPreviews && num_waiting_gens <= getRequiredElementById('usersettings_maxsimulpreviews').value) {
         total = 0;
     }
     getRequiredElementById('alt_interrupt_button').classList.toggle('interrupt-button-none', total == 0);
@@ -75,20 +85,14 @@ function updateCurrentStatusDirect(data) {
         oldInterruptButton.classList.toggle('interrupt-button-none', total == 0);
     }
     let elem = getRequiredElementById('num_jobs_span');
-    function autoBlock(num, text) {
-        if (num == 0) {
-            return '';
-        }
-        return `<span class="interrupt-line-part">${num} ${text.replaceAll('%', autoS(num))},</span> `;
-    }
     let timeEstimate = '';
     if (total > 0 && mainGenHandler.totalGensThisRun > 0) {
         let avgGenTime = mainGenHandler.totalGenRunTime / mainGenHandler.totalGensThisRun;
         let estTime = avgGenTime * total;
         timeEstimate = ` (est. ${durationStringify(estTime)})`;
     }
-    elem.innerHTML = total == 0 ? (isGeneratingPreviews ? generatingPreviewsText.get() : '') : `${autoBlock(num_current_gens, 'current generation%')}${autoBlock(num_live_gens, 'running')}${autoBlock(num_backends_waiting, 'queued')}${autoBlock(num_models_loading, waitingOnModelLoadText.get())} ${timeEstimate}...`;
-    let max = Math.max(num_current_gens, num_models_loading, num_live_gens, num_backends_waiting);
+    elem.innerHTML = total == 0 ? (isGeneratingPreviews ? generatingPreviewsText.get() : '') : `${currentGenString(num_waiting_gens, num_models_loading, num_live_gens, num_backends_waiting)} ${timeEstimate}...`;
+    let max = Math.max(num_waiting_gens, num_models_loading, num_live_gens, num_backends_waiting);
     setPageTitle(total == 0 ? curAutoTitle : `(${max} ${generatingText.get()}) ${curAutoTitle}`);
 }
 

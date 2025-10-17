@@ -46,7 +46,7 @@ class GenerateHandler {
     }
 
     beforeGenRun() {
-        num_current_gens += parseInt(getRequiredElementById('input_images').value);
+        num_waiting_gens += parseInt(getRequiredElementById('input_images').value);
     }
 
     doInterrupt(allSessions = false) {

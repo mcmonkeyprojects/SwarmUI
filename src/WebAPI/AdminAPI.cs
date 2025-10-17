@@ -42,6 +42,7 @@ public static class AdminAPI
         API.RegisterAPICall(AdminChangeUserSettings, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminDeleteUser, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminGetUserInfo, false, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminInterruptUser, true, Permissions.InterruptOthers);
         API.RegisterAPICall(AdminListRoles, false, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminAddRole, true, Permissions.ConfigureRoles);
         API.RegisterAPICall(AdminEditRole, true, Permissions.ConfigureRoles);
@@ -508,7 +509,11 @@ public static class AdminAPI
                     "id": "useridhere",
                     "last_active_seconds": 0,
                     "active_sessions": [ "addresshere", "..." ],
-                    "last_active": "10 seconds ago"
+                    "last_active": "10 seconds ago",
+                    "waiting_gens": 0,
+                    "loading_models": 0,
+                    "waiting_backends": 0,
+                    "live_gens": 0
                 }
             ]
         """)]
@@ -528,13 +533,36 @@ public static class AdminAPI
             }
             return result;
         }
-        JArray list = [.. Program.Sessions.Users.Values.Where(u => u.TimeSinceLastPresent.TotalMinutes < 3 && !u.UserID.StartsWith("__")).OrderBy(u => u.UserID).Select(u => new JObject()
+        Interlocked.MemoryBarrier();
+        JArray list = [.. Program.Sessions.Users.Values.Where(u => !u.UserID.StartsWith("__")).OrderBy(u => u.UserID).Select(u =>
         {
-            ["id"] = u.UserID,
-            ["last_active_seconds"] = u.TimeSinceLastUsed.TotalSeconds,
-            ["active_sessions"] = sessWrangle(u.CurrentSessions.Values.Where(s => s.TimeSinceLastUsed.TotalMinutes < 3).Select(s => s.OriginAddress)),
-            ["last_active"] = $"{u.TimeSinceLastUsed.SimpleFormat(false, false)} ago"
-        }).ToArray()];
+            int totalWaitingGens = 0;
+            int totalLoadingModels = 0;
+            int totalWaitingBackends = 0;
+            int totalLiveGens = 0;
+            foreach (Session sess in u.CurrentSessions.Values)
+            {
+                totalWaitingGens += sess.WaitingGenerations;
+                totalLoadingModels += sess.LoadingModels;
+                totalWaitingBackends += sess.WaitingBackends;
+                totalLiveGens += sess.LiveGens;
+            }
+            if (u.TimeSinceLastPresent.TotalMinutes > 3 && totalWaitingGens == 0 && totalLoadingModels == 0 && totalWaitingBackends == 0 && totalLiveGens == 0)
+            {
+                return null;
+            }
+            return new JObject()
+            {
+                ["id"] = u.UserID,
+                ["last_active_seconds"] = u.TimeSinceLastUsed.TotalSeconds,
+                ["active_sessions"] = sessWrangle(u.CurrentSessions.Values.Where(s => s.TimeSinceLastUsed.TotalMinutes < 3).Select(s => s.OriginAddress)),
+                ["last_active"] = $"{u.TimeSinceLastUsed.SimpleFormat(false, false)} ago",
+                ["waiting_gens"] = totalWaitingGens,
+                ["loading_models"] = totalLoadingModels,
+                ["waiting_backends"] = totalWaitingBackends,
+                ["live_gens"] = totalLiveGens
+            };
+        }).Where(val => val is not null).ToArray()];
         return new JObject() { ["users"] = list };
     }
 
@@ -950,6 +978,27 @@ public static class AdminAPI
             ["settings"] = AutoConfigToParamData(user.Settings, false),
             ["max_t2i"] = user.CalcMaxT2ISimultaneous
         };
+    }
+
+    [API.APIDescription("Admin route to interrupt another user's queue.",
+        """
+            "success": true
+        """)]
+    [API.APINonfinalMark]
+    public static async Task<JObject> AdminInterruptUser(Session session,
+        [API.APIParameter("The name of the user to interrupt.")] string name)
+    {
+        User user = Program.Sessions.GetUser(name, false);
+        if (user is null)
+        {
+            return new JObject() { ["error"] = "No user by that name exists." };
+        }
+        Logs.Debug($"Admin '{session.User.UserID}' interrupted all sessions for user '{user.UserID}'.");
+        foreach (Session sess in user.CurrentSessions.Values.ToArray())
+        {
+            sess.Interrupt();
+        }
+        return new JObject() { ["success"] = true };
     }
 
     [API.APIDescription("Admin route to get a list of all available roles.",
