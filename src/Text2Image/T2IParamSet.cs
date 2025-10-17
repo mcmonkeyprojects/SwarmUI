@@ -180,7 +180,7 @@ public class T2IParamSet
             Logs.Debug($"Ignoring input to parameter '{param.ID}' of '{val}' because the value maps to null.");
             if (param.ID == "model")
             {
-                Logs.Warning($"Model input '{val}' appears to be null.");
+                Logs.Debug($"Model input '{val}' appears to be null.");
             }
             return;
         }
