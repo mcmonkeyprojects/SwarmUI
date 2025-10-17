@@ -509,6 +509,10 @@ public static class T2IAPI
             {
                 tasks.TryAdd(dir, Utilities.RunCheckedTask(() =>
                 {
+                    if (dir.EndsWith("/"))
+                    {
+                        dir = dir[..^1];
+                    }
                     if (dir != "")
                     {
                         (subDepth == 0 ? finalDirs : dirsConc).TryAdd(dir, dir);
