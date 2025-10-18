@@ -911,6 +911,9 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             }
         }
     }
+    if (input['aspectratio'] == 'Custom') {
+        delete input['sidelength'];
+    }
     if (!input['vae'] || input['vae'] == 'Automatic') {
         input['automaticvae'] = true;
         delete input['vae'];
