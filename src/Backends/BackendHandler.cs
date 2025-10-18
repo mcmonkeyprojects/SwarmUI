@@ -460,6 +460,9 @@ public class BackendHandler
         new Thread(new ThreadStart(RequestHandlingLoop)).Start();
     }
 
+    /// <summary>If true, backends handler is still loading.</summary>
+    public static bool IsLoading = true;
+
     /// <summary>Internal route for loading backends. Do not call directly.</summary>
     public void LoadInternal()
     {
@@ -510,7 +513,11 @@ public class BackendHandler
                 T2IBackends.TryAdd(data.ID, data);
             }
         }
+        IsLoading = false;
     }
+
+    /// <summary>How many backends have fast-loaded thus far.</summary>
+    public static long CountBackendsFastLoaded = 0;
 
     /// <summary>Cause a backend to run its initializer, either immediately or in the next available slot.</summary>
     public void DoInitBackend(T2IBackendData data)
@@ -520,7 +527,17 @@ public class BackendHandler
         data.Backend.AddLoadStatus("Waiting to load...");
         if (data.BackType.CanLoadFast || Program.ServerSettings.Backends.AllBackendsLoadFast)
         {
-            Task.Run(() => LoadBackendDirect(data));
+            long count = Interlocked.Increment(ref CountBackendsFastLoaded);
+            bool shouldWait = count > 1 && IsLoading;
+            Task.Run(async () =>
+            {
+                if (shouldWait)
+                {
+                    // Tiny delay on fast-loads at first boot just to prevent hyperthrash of first-time loadup, since there's a lot of prep stuff that happens
+                    await Task.Delay(TimeSpan.FromSeconds(1 + Math.Min(5, count / 10.0)));
+                }
+                await LoadBackendDirect(data);
+            });
         }
         else
         {
