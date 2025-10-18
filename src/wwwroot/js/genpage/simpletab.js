@@ -54,11 +54,10 @@ class SimpleTab {
     }
 
     onTabClicked() {
-        this.browser.navigate('');
         if (this.hasLoaded) {
-            this.onFolderSelected();
             return;
         }
+        this.browser.navigate('');
         for (let key in sessionStorage) {
             if (key.startsWith('simpletablast_')) {
                 sessionStorage.removeItem(key);
