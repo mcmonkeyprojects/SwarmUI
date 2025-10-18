@@ -366,6 +366,9 @@ class SimpleTabGenerateHandler extends GenerateHandler {
     }
 
     getRequestIdFor(batchId) {
+        if (!batchId) {
+            return null;
+        }
         return batchId.split('_')[0];
     }
 
@@ -403,7 +406,9 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(image);
-        this.getHistoryFor(metadata).add(image, metadata, batchId, false);
+        let history = this.getHistoryFor(metadata);
+        history.entries.filter(e => this.getRequestIdFor(e.batchId) == this.getRequestIdFor(batchId) && e.isLoading && e.div).forEach(e => e.div.remove());
+        history.add(image, metadata, batchId, false);
     }
 
     gotTrackedImageResult(image, metadata, batchId, existingDiv = null) {
@@ -414,7 +419,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
             existingDiv.dataset.is_loading = false;
         }
         let history = this.getHistoryFor(metadata);
-        history.filter(e => e.batchId == batchId).forEach(e => e.isLoading = false);
+        history.entries.filter(e => e.batchId == batchId).forEach(e => e.isLoading = false);
         history.save();
     }
 
