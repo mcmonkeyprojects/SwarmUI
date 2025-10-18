@@ -32,6 +32,15 @@ class SimpleTab {
         this.genHandler.imageContainerDivId = 'simple_image_container';
         this.genHandler.imageId = 'simple_image_container_img';
         this.mustSelectTarget = null;
+        this.histories = {};
+    }
+
+    getHistoryFor(workflow) {
+        if (!(workflow in this.histories)) {
+            this.histories[workflow] = new SimpleTabHistory(workflow);
+            this.histories[workflow].load();
+        }
+        return this.histories[workflow];
     }
 
     onFolderSelected() {
@@ -84,6 +93,7 @@ class SimpleTab {
             let value = getInputVal(elem);
             inputs[id] = value;
         }
+        inputs['personalnote'] = `SimpleTab: Workflow: ${this.browser.selected}`;
         this.genHandler.doGenerate(inputs);
     }
 
@@ -234,6 +244,8 @@ class SimpleTab {
             for (let runnable of runnables) {
                 runnable();
             }
+            this.batchArea.innerHTML = '';
+            this.getHistoryFor(workflow.name).applyToBatchView();
             if (callback && typeof callback == 'function') {
                 callback();
             }
@@ -254,6 +266,75 @@ class SimpleTab {
             callback(folders, mapped);
         });
     }
+
+    clearBatch() {
+        this.batchArea.innerHTML = '';
+        this.getHistoryFor(this.browser.selected).clear();
+    }
+}
+
+class SimpleTabHistory {
+
+    constructor(workflow) {
+        this.workflow = workflow;
+        this.entries = [];
+        this.maxPersist = 20;
+    }
+
+    load() {
+        let data = localStorage.getItem(`simpletabhistory_${this.workflow}`);
+        if (data) {
+            this.entries = JSON.parse(data).map(e => {
+                return { src: e, isLoading: false };
+            });
+        }
+    }
+
+    save() {
+        let simpleEntries = this.entries.filter(e => !e.isLoading && !e.src.startsWith('DOPLACEHOLDER:') && !e.src.startsWith('data:')).map(e => e.src);
+        if (simpleEntries.length > this.maxPersist) {
+            simpleEntries = simpleEntries.slice(simpleEntries.length - this.maxPersist);
+        }
+        localStorage.setItem(`simpletabhistory_${this.workflow}`, JSON.stringify(simpleEntries));
+    }
+
+    add(src, metadata, batchId, isLoading) {
+        let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
+        let batch_div = null;
+        if (simpleTab.browser.selected == this.workflow) {
+            batch_div = appendImage(simpleTab.batchArea, src, batchId, fname, metadata, 'batch');
+            batch_div.dataset.is_loading = isLoading;
+            batch_div.addEventListener('click', () => {
+                simpleTab.genHandler.setCurrentImage(batch_div.dataset.src, batch_div.dataset.metadata, batchId);
+                if (batch_div.dataset.is_loading) {
+                    simpleTab.markLoading();
+                }
+            });
+        }
+        let entry = { src: src, metadata: metadata, batchId: batchId, fname: fname, div: batch_div, isLoading: isLoading };
+        this.entries.push(entry);
+        this.save();
+        return entry;
+    }
+
+    applyToBatchView() {
+        for (let entry of this.entries) {
+            if (entry.isLoading) {
+                // TODO: Restore properly?
+                continue;
+            }
+            let fname = entry.fname || (entry.src && entry.src.includes('/') ? entry.src.substring(entry.src.lastIndexOf('/') + 1) : entry.src);
+            let batch_div = appendImage(simpleTab.batchArea, entry.src, entry.batchId || 'none', fname, entry.metadata || '{}', 'batch', true);
+            batch_div.addEventListener('click', () => simpleTab.genHandler.setCurrentImage(entry.src, entry.metadata, entry.batchId));
+            batch_div.dataset.is_loading = entry.isLoading;
+            entry.div = batch_div;
+        }
+    }
+
+    clear() {
+        this.entries = [];
+        localStorage.removeItem(`simpletabhistory_${this.workflow}`);
+    }
 }
 
 class SimpleTabGenerateHandler extends GenerateHandler {
@@ -261,6 +342,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
     constructor() {
         super();
         this.currentDisplayedRequestId = null;
+        this.batchDiv = document.getElementById('simple_current_image_batch');
     }
 
     resetBatchIfNeeded() {
@@ -287,6 +369,19 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         return batchId.split('_')[0];
     }
 
+    getHistoryFor(metadata) {
+        let workflow = simpleTab.browser.selected;
+        if (metadata) {
+            let metadataParsed = JSON.parse(metadata);
+            let note = metadataParsed.sui_image_params?.personalnote;
+            if (note && note.startsWith('SimpleTab: Workflow: ')) {
+                workflow = note.substring('SimpleTab: Workflow: '.length);
+
+            }
+        }
+        return simpleTab.getHistoryFor(workflow);
+    }
+
     isCurrentRequest(batchId) {
         if (this.currentDisplayedRequestId == null) {
             return true;
@@ -308,9 +403,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(image);
-        let fname = image && image.includes('/') ? image.substring(image.lastIndexOf('/') + 1) : image;
-        let batch_div = appendImage(simpleTab.batchArea, image, batchId, fname, metadata, 'batch');
-        batch_div.addEventListener('click', () => this.setCurrentImage(image, metadata, batchId));
+        this.getHistoryFor(metadata).add(image, metadata, batchId, false);
     }
 
     gotTrackedImageResult(image, metadata, batchId, existingDiv = null) {
@@ -320,20 +413,16 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         if (existingDiv) {
             existingDiv.dataset.is_loading = false;
         }
+        let history = this.getHistoryFor(metadata);
+        history.filter(e => e.batchId == batchId).forEach(e => e.isLoading = false);
+        history.save();
     }
 
     gotImagePreview(image, metadata, batchId) {
         this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markLoading();
-        let fname = image && image.includes('/') ? image.substring(image.lastIndexOf('/') + 1) : image;
-        let batch_div = appendImage(simpleTab.batchArea, image, batchId, fname, metadata, 'batch', true);
-        batch_div.dataset.is_loading = true;
-        batch_div.addEventListener('click', () => {
-            this.setCurrentImage(batch_div.dataset.src, batch_div.dataset.metadata, batchId);
-            if (batch_div.dataset.is_loading) {
-                simpleTab.markLoading();
-            }
-        });
+        let entry = this.getHistoryFor(metadata).add(image, metadata, batchId, true);
+        let batch_div = entry.div;
         if (image.startsWith('DOPLACEHOLDER:')) {
             return batch_div;
         }
@@ -349,7 +438,6 @@ class SimpleTabGenerateHandler extends GenerateHandler {
     }
 
     gotProgress(current, overall, batchId) {
-        console.log('gotProgress', this.currentDisplayedRequestId, this.getRequestIdFor(batchId), batchId, current);
         if (this.isCurrentRequest(batchId)) {
             if (current < 0) {
                 simpleTab.progressWrapper.style.display = 'none';
