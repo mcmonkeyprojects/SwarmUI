@@ -168,7 +168,14 @@ class GenPageBrowserClass {
                 return;
             }
             tree = tree.children[part];
-            if (!tree.isOpen) {
+            if (tree.fileData) {
+                tree.clickme(() => {
+                    this.noContentUpdates = false;
+                    this.rerender();
+                });
+                return;
+            }
+            else if (!tree.isOpen) {
                 tree.clickme(() => {
                     this.clickPath(path);
                 });

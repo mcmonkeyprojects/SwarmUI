@@ -134,7 +134,7 @@ class SimpleTab {
         return { name: workflow.name, description: `<b>${escapeHtmlNoBr(workflow.name)}</b><br>${escapeHtmlNoBr(workflow.data.description ?? "")}`, image: workflow.data.image, buttons: buttons, className: '', searchable: `${workflow.name}\n${workflow.data.description}` };
     }
 
-    browserSelectEntry(workflow) {
+    browserSelectEntry(workflow, callback = null) {
         this.browser.selected = workflow.name;
         updateHash();
         this.browser.rerender();
@@ -233,6 +233,9 @@ class SimpleTab {
             }
             for (let runnable of runnables) {
                 runnable();
+            }
+            if (callback) {
+                callback();
             }
         });
     }
