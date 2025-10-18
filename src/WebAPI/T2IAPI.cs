@@ -751,9 +751,11 @@ public static class T2IAPI
     public static async Task<JObject> ToggleImageStarred(Session session,
         [API.APIParameter("The path to the image to star.")] string path)
     {
+        bool wasStar = false;
         path = path.Replace('\\', '/').Trim('/');
         if (path.StartsWith("Starred/"))
         {
+            wasStar = true;
             path = path["Starred/".Length..];
         }
         string origPath = path;
@@ -765,17 +767,35 @@ public static class T2IAPI
             return new JObject() { ["error"] = userError };
         }
         path = UserImageHistoryHelper.GetRealPathFor(session.User, path, root: root);
-        if (!File.Exists(path))
-        {
-            Logs.Warning($"User {session.User.UserID} tried to star image path '{origPath}' which maps to '{path}', but cannot as the image does not exist.");
-            return new JObject() { ["error"] = "That file does not exist, cannot star." };
-        }
         string pathBeforeDot = path.BeforeLast('.');
         string starPath = $"Starred/{(session.User.Settings.StarNoFolders ? origPath.Replace("/", "") : origPath)}";
         (starPath, _, _) = WebServer.CheckFilePath(root, starPath);
+        starPath = UserImageHistoryHelper.GetRealPathFor(session.User, starPath, root: root);
         string starBeforeDot = starPath.BeforeLast('.');
+        if (!File.Exists(path))
+        {
+            if (wasStar && File.Exists(starPath))
+            {
+                Logs.Debug($"User {session.User.UserID} un-starred '{path}' without a raw, moving back to raw");
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.Move(starPath, path);
+                foreach (string ext in DeletableFileExtensions)
+                {
+                    if (File.Exists($"{starBeforeDot}{ext}"))
+                    {
+                        File.Move($"{starBeforeDot}{ext}", $"{pathBeforeDot}{ext}");
+                    }
+                }
+                ImageMetadataTracker.RemoveMetadataFor(path);
+                ImageMetadataTracker.RemoveMetadataFor(starPath);
+                return new JObject() { ["new_state"] = false };
+            }
+            Logs.Warning($"User {session.User.UserID} tried to star image path '{origPath}' which maps to '{path}', but cannot as the image does not exist.");
+            return new JObject() { ["error"] = "That file does not exist, cannot star." };
+        }
         if (File.Exists(starPath))
         {
+            Logs.Debug($"User {session.User.UserID} un-starred '{path}'");
             File.Delete(starPath);
             foreach (string ext in DeletableFileExtensions)
             {
@@ -790,6 +810,7 @@ public static class T2IAPI
         }
         else
         {
+            Logs.Debug($"User {session.User.UserID} starred '{path}'");
             Directory.CreateDirectory(Path.GetDirectoryName(starPath));
             File.Copy(path, starPath);
             foreach (string ext in DeletableFileExtensions)
