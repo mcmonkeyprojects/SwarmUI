@@ -981,9 +981,9 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         img = document.createElement('img');
         srcTarget = img;
     }
-    img.addEventListener('load', () => {
+    img.addEventListener(isVideo ? 'loadeddata' : 'load', () => {
         if (batchId != "folder") {
-            let ratio = img.naturalWidth / img.naturalHeight;
+            let ratio = (img.naturalWidth || img.videoWidth) / (img.naturalHeight || img.videoHeight);
             div.style.width = `calc(${roundToStr(ratio * 10, 2)}rem + 2px)`;
         }
     });

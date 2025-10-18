@@ -449,7 +449,7 @@ class GenPageBrowserClass {
                 else {
                     div.style.width = `${factor + 1}rem`;
                     img.addEventListener('load', () => {
-                        let ratio = img.width / img.height;
+                        let ratio = img.naturalWidth / img.naturalHeight;
                         div.style.width = `${(ratio * factor) + 1}rem`;
                     });
                 }
