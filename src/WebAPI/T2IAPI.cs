@@ -647,6 +647,31 @@ public static class T2IAPI
 
     public record struct ImageHistoryHelper(string Name, ImageMetadataTracker.ImageMetadataEntry Metadata);
 
+    [API.APIDescription("Gets a list of images in a saved image history folder.",
+        """
+            "folders": ["Folder1", "Folder2"],
+            "files":
+            [
+                {
+                    "src": "path/to/image.jpg",
+                    "metadata": "some-metadata" // usually a JSON blob encoded as a string. Not guaranteed.
+                }
+            ]
+        """)]
+    public static async Task<JObject> ListImages(Session session,
+        [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path,
+        [API.APIParameter("Maximum depth (number of recursive folders) to search.")] int depth,
+        [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Name",
+        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
+    {
+        if (!Enum.TryParse(sortBy, true, out ImageHistorySortMode sortMode))
+        {
+            return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
+        }
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        return GetListAPIInternal(session, path, root, ImageExtensions, f => true, depth, sortMode, sortReverse);
+    }
+
     [API.APIDescription("Open an image folder in the file explorer. Used for local users directly.", "\"success\": true")]
     public static async Task<JObject> OpenImageFolder(Session session,
         [API.APIParameter("The path to the image to show in the image folder.")] string path)
@@ -720,31 +745,6 @@ public static class T2IAPI
         }
         ImageMetadataTracker.RemoveMetadataFor(path);
         return new JObject() { ["success"] = true };
-    }
-
-    [API.APIDescription("Gets a list of images in a saved image history folder.",
-        """
-            "folders": ["Folder1", "Folder2"],
-            "files":
-            [
-                {
-                    "src": "path/to/image.jpg",
-                    "metadata": "some-metadata" // usually a JSON blob encoded as a string. Not guaranteed.
-                }
-            ]
-        """)]
-    public static async Task<JObject> ListImages(Session session,
-        [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path,
-        [API.APIParameter("Maximum depth (number of recursive folders) to search.")] int depth,
-        [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Name",
-        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
-    {
-        if (!Enum.TryParse(sortBy, true, out ImageHistorySortMode sortMode))
-        {
-            return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
-        }
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        return GetListAPIInternal(session, path, root, ImageExtensions, f => true, depth, sortMode, sortReverse);
     }
 
     [API.APIDescription("Toggle whether an image is starred or not.", "\"new_state\": true")]
