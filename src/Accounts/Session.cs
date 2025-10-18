@@ -231,9 +231,9 @@ public class Session : IEquatable<Session>
             Logs.Verbose($"Image is type {image.Img.Type} and will save with extension '{image.Img.Extension}'.");
             extension = image.Img.Extension;
         }
-        string fullPathNoExt = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}");
+        string fullPathNoExt = Path.GetFullPath(UserImageHistoryHelper.GetRealPathFor(User, $"{User.OutputDirectory}/{imagePath}"));
         string pathFolder = imagePath.Contains('/') ? imagePath.BeforeLast('/') : "";
-        string folderRoute = Path.GetFullPath($"{User.OutputDirectory}/{pathFolder}");
+        string folderRoute = Path.GetFullPath(UserImageHistoryHelper.GetRealPathFor(User, $"{User.OutputDirectory}/{pathFolder}"));
         string fullPath = $"{fullPathNoExt}.{extension}";
         lock (User.UserLock)
         {
@@ -246,7 +246,7 @@ public class Session : IEquatable<Session>
                 {
                     num++;
                     imagePath = rawImagePath.Contains("[number]") ? rawImagePath.Replace("[number]", $"{num}") : $"{rawImagePath}-{num}";
-                    fullPathNoExt = Path.GetFullPath($"{User.OutputDirectory}/{imagePath}");
+                    fullPathNoExt = Path.GetFullPath(UserImageHistoryHelper.GetRealPathFor(User, $"{User.OutputDirectory}/{imagePath}"));
                     fullPath = $"{fullPathNoExt}.{extension}";
                 }
                 RecentlyBlockedFilenames[fullPath] = fullPath;
