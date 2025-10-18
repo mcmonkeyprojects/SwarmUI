@@ -28,8 +28,21 @@ class GenerateHandler {
         return gotImageResult(image, metadata, batchId);
     }
 
+    gotTrackedImageResult(image, metadata, batchId, existingDiv = null) {
+        let curImgElem = document.getElementById(this.imageId);
+        if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == batchId) {
+            this.setCurrentImage(image, metadata, batchId, false, true);
+            if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
+                imageFullView.showImage(image, metadata, batchId);
+            }
+        }
+    }
+
     gotImagePreview(image, metadata, batchId) {
         return gotImagePreview(image, metadata, batchId);
+    }
+
+    gotTrackedImagePreview(image, metadata, batchId) {
     }
 
     gotProgress(current, overall, batchId) {
@@ -112,11 +125,9 @@ class GenerateHandler {
             if (this.sockets[socketId] == socket) {
                 this.sockets[socketId] = null;
             }
-            if (Object.keys(discardable).length > 0) {
-                // clear any lingering previews
-                for (let img of Object.values(images)) {
-                    img.div.remove();
-                }
+            // clear any lingering previews
+            for (let img of Object.values(images)) {
+                img.div.remove();
             }
             playCompletionAudio();
             return;
@@ -140,13 +151,7 @@ class GenerateHandler {
             }
             else {
                 let imgHolder = images[data.batch_index];
-                let curImgElem = document.getElementById(this.imageId);
-                if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == `${data.request_id}_${data.batch_index}`) {
-                    this.setCurrentImage(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, false, true);
-                    if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-                        imageFullView.showImage(data.image, data.metadata, `${data.request_id}_${data.batch_index}`);
-                    }
-                }
+                this.gotTrackedImageResult(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, imgHolder.div);
                 let imgElem = imgHolder.div.querySelector('img');
                 this.setImageFor(imgHolder, data.image);
                 let spinner = imgHolder.div.querySelector('.loading-spinner-parent');
@@ -172,8 +177,8 @@ class GenerateHandler {
         }
         if (data.gen_progress) {
             let thisBatchId = `${data.gen_progress.request_id}_${data.gen_progress.batch_index}`;
+            let metadataRaw = data.gen_progress.metadata ?? '{}';
             if (!(data.gen_progress.batch_index in images)) {
-                let metadataRaw = data.gen_progress.metadata ?? '{}';
                 let metadataParsed = JSON.parse(metadataRaw);
                 let batch_div = this.gotImagePreview(data.gen_progress.preview ?? `DOPLACEHOLDER:${metadataParsed.sui_image_params?.model || actualInput.model || ''}`, metadataRaw, thisBatchId);
                 if (batch_div) {
@@ -181,6 +186,9 @@ class GenerateHandler {
                     let progress_bars = createDiv(null, 'image-preview-progress-wrapper', this.progressBarHtml);
                     batch_div.prepend(progress_bars);
                 }
+            }
+            else if (data.gen_progress.preview) {
+                this.gotTrackedImagePreview(data.gen_progress.preview, metadataRaw, thisBatchId);
             }
             if (data.gen_progress.batch_index in images) {
                 let imgHolder = images[data.gen_progress.batch_index];

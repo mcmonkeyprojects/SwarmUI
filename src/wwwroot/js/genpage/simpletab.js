@@ -280,7 +280,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         return data;
     }
 
-    setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false) {
+    setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, existingBatchDiv = null) {
         simpleTab.markDoneLoading();
         simpleTab.setImage(src);
     }
@@ -293,11 +293,25 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         batch_div.addEventListener('click', () => this.setCurrentImage(image));
     }
 
+    gotTrackedImageResult(image, metadata, batchId, existingDiv = null) {
+        simpleTab.markDoneLoading();
+        simpleTab.setImage(image);
+    }
+
     gotImagePreview(image, metadata, batchId) {
         simpleTab.markLoading();
+        let fname = image && image.includes('/') ? image.substring(image.lastIndexOf('/') + 1) : image;
+        let batch_div = appendImage(simpleTab.batchArea, image, batchId, fname, metadata, 'batch', true);
+        batch_div.addEventListener('click', () => this.setCurrentImage(batch_div.dataset.src));
         if (image.startsWith('DOPLACEHOLDER:')) {
-            return;
+            return batch_div;
         }
+        simpleTab.setImage(image);
+        return batch_div;
+    }
+
+    gotTrackedImagePreview(image, metadata, batchId) {
+        simpleTab.markLoading();
         simpleTab.setImage(image);
     }
 
