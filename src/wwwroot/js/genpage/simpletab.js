@@ -419,7 +419,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
             existingDiv.dataset.is_loading = false;
         }
         let history = this.getHistoryFor(metadata);
-        history.entries.filter(e => e.batchId == batchId).forEach(e => e.isLoading = false);
+        history.entries.filter(e => e.batchId == batchId).forEach(e => { e.src = image; e.metadata = metadata; e.isLoading = false; });
         history.save();
     }
 
