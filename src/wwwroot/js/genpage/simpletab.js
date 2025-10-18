@@ -234,7 +234,7 @@ class SimpleTab {
             for (let runnable of runnables) {
                 runnable();
             }
-            if (callback) {
+            if (callback && typeof callback == 'function') {
                 callback();
             }
         });
@@ -260,6 +260,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
 
     constructor() {
         super();
+        this.currentDisplayedRequestId = null;
     }
 
     resetBatchIfNeeded() {
@@ -282,29 +283,57 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         return data;
     }
 
+    getRequestIdFor(batchId) {
+        return batchId.split('_')[0];
+    }
+
+    isCurrentRequest(batchId) {
+        if (this.currentDisplayedRequestId == null) {
+            return true;
+        }
+        let requestId = this.getRequestIdFor(batchId);
+        if (requestId == null || requestId == '') {
+            return true;
+        }
+        return this.currentDisplayedRequestId == requestId;
+    }
+
     setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, existingBatchDiv = null) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(src);
     }
 
     gotImageResult(image, metadata, batchId) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(image);
         let fname = image && image.includes('/') ? image.substring(image.lastIndexOf('/') + 1) : image;
         let batch_div = appendImage(simpleTab.batchArea, image, batchId, fname, metadata, 'batch');
-        batch_div.addEventListener('click', () => this.setCurrentImage(image));
+        batch_div.addEventListener('click', () => this.setCurrentImage(image, metadata, batchId));
     }
 
     gotTrackedImageResult(image, metadata, batchId, existingDiv = null) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(image);
+        if (existingDiv) {
+            existingDiv.dataset.is_loading = false;
+        }
     }
 
     gotImagePreview(image, metadata, batchId) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markLoading();
         let fname = image && image.includes('/') ? image.substring(image.lastIndexOf('/') + 1) : image;
         let batch_div = appendImage(simpleTab.batchArea, image, batchId, fname, metadata, 'batch', true);
-        batch_div.addEventListener('click', () => this.setCurrentImage(batch_div.dataset.src));
+        batch_div.dataset.is_loading = true;
+        batch_div.addEventListener('click', () => {
+            this.setCurrentImage(batch_div.dataset.src, batch_div.dataset.metadata, batchId);
+            if (batch_div.dataset.is_loading) {
+                simpleTab.markLoading();
+            }
+        });
         if (image.startsWith('DOPLACEHOLDER:')) {
             return batch_div;
         }
@@ -313,19 +342,24 @@ class SimpleTabGenerateHandler extends GenerateHandler {
     }
 
     gotTrackedImagePreview(image, metadata, batchId) {
-        simpleTab.markLoading();
-        simpleTab.setImage(image);
+        if (this.isCurrentRequest(batchId)) {
+            simpleTab.markLoading();
+            simpleTab.setImage(image);
+        }
     }
 
     gotProgress(current, overall, batchId) {
-        if (current < 0) {
-            simpleTab.progressWrapper.style.display = 'none';
-            return;
+        console.log('gotProgress', this.currentDisplayedRequestId, this.getRequestIdFor(batchId), batchId, current);
+        if (this.isCurrentRequest(batchId)) {
+            if (current < 0) {
+                simpleTab.progressWrapper.style.display = 'none';
+                return;
+            }
+            simpleTab.markLoading();
+            simpleTab.progressWrapper.style.display = '';
+            simpleTab.progressWrapper.querySelector('.image-preview-progress-current').style.width = `${current * 100}%`;
+            simpleTab.progressWrapper.querySelector('.image-preview-progress-overall').style.width = `${overall * 100}%`;
         }
-        simpleTab.markLoading();
-        simpleTab.progressWrapper.style.display = '';
-        simpleTab.progressWrapper.querySelector('.image-preview-progress-current').style.width = `${current * 100}%`;
-        simpleTab.progressWrapper.querySelector('.image-preview-progress-overall').style.width = `${overall * 100}%`;
     }
 
     hadError(msg) {
