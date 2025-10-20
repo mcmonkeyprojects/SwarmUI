@@ -303,7 +303,12 @@ class SimpleTabHistory {
         let batch_div = null;
         if (simpleTab.browser.selected == this.workflow) {
             batch_div = appendImage(simpleTab.batchArea, src, batchId, fname, metadata, 'batch');
-            batch_div.dataset.is_loading = isLoading;
+            if (isLoading) {
+                batch_div.dataset.is_loading = isLoading;
+            }
+            else {
+                delete batch_div.dataset.is_loading;
+            }
             batch_div.addEventListener('click', () => {
                 simpleTab.genHandler.setCurrentImage(batch_div.dataset.src, batch_div.dataset.metadata, batchId);
                 if (batch_div.dataset.is_loading) {
@@ -326,7 +331,12 @@ class SimpleTabHistory {
             let fname = entry.fname || (entry.src && entry.src.includes('/') ? entry.src.substring(entry.src.lastIndexOf('/') + 1) : entry.src);
             let batch_div = appendImage(simpleTab.batchArea, entry.src, entry.batchId || 'none', fname, entry.metadata || '{}', 'batch', true);
             batch_div.addEventListener('click', () => simpleTab.genHandler.setCurrentImage(entry.src, entry.metadata, entry.batchId));
-            batch_div.dataset.is_loading = entry.isLoading;
+            if (entry.isLoading) {
+                batch_div.dataset.is_loading = entry.isLoading;
+            }
+            else {
+                delete batch_div.dataset.is_loading;
+            }
             entry.div = batch_div;
         }
     }
@@ -416,7 +426,7 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         simpleTab.markDoneLoading();
         simpleTab.setImage(image);
         if (existingDiv) {
-            existingDiv.dataset.is_loading = false;
+            delete existingDiv.dataset.is_loading;
         }
         let history = this.getHistoryFor(metadata);
         history.entries.filter(e => e.batchId == batchId).forEach(e => { e.src = image; e.metadata = metadata; e.isLoading = false; });
