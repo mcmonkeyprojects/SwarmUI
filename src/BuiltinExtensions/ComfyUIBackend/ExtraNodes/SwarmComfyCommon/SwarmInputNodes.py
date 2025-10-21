@@ -72,7 +72,7 @@ class SwarmInputFloat:
         return {
             "required": {
                 "title": ("STRING", {"default": "My Floating-Point Number", "tooltip": "The name of the input."}),
-                "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The default value of the input."}),
+                "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The default value of the input."}),
                 "step": ("FLOAT", {"default": 0.1, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The step size of the input. That is, how much the value changes when you click the up/down arrows or move the slider."}),
                 "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The minimum value of the input."}),
                 "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input."}),
