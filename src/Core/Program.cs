@@ -214,12 +214,12 @@ public class Program
                 DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
                 CurrentGitDate = $"{date:yyyy-MM-dd HH:mm:ss}";
                 TimeSpan relative = DateTimeOffset.UtcNow - date;
-                string ago = $"{relative.Hours} hour{(relative.Hours == 1 ? "" : "s")} ago";
-                if (relative.Hours > 48)
+                string ago = $"{Math.Floor(relative.TotalHours)} hour{(Math.Floor(relative.TotalHours) == 1 ? "" : "s")} ago";
+                if (relative.TotalHours > 48)
                 {
-                    ago = $"{relative.Days} day{(relative.Days == 1 ? "" : "s")} ago";
+                    ago = $"{Math.Floor(relative.TotalDays)} day{(Math.Floor(relative.TotalDays) == 1 ? "" : "s")} ago";
                 }
-                else if (relative.Hours == 0)
+                else if (relative.TotalHours < 1)
                 {
                     ago = $"{relative.Minutes} minute{(relative.Minutes == 1 ? "" : "s")} ago";
                 }

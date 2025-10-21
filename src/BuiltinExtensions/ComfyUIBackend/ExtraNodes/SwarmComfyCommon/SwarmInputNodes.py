@@ -74,9 +74,9 @@ class SwarmInputFloat:
                 "title": ("STRING", {"default": "My Floating-Point Number", "tooltip": "The name of the input."}),
                 "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The default value of the input."}),
                 "step": ("FLOAT", {"default": 0.1, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The step size of the input. That is, how much the value changes when you click the up/down arrows or move the slider."}),
-                "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The minimum value of the input."}),
-                "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input."}),
-                "view_max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input that is displayed in the UI when using a slider. This is useful if you want to allow a higher range of values, but don't want to clutter the UI with a huge slider."}),
+                "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The minimum value of the input."}),
+                "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The maximum value of the input."}),
+                "view_max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The maximum value of the input that is displayed in the UI when using a slider. This is useful if you want to allow a higher range of values, but don't want to clutter the UI with a huge slider."}),
                 "view_type": (["big", "small", "slider", "pot_slider"], {"tooltip": "The type of input control to use. 'big' is a large text input, 'small' is a small text input, 'slider' is a slider, and 'pot_slider' is a Power-Of-Two scaled slider - this is useful for large inputs like resolutions to allow a more natural feeling selection range."}),
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
