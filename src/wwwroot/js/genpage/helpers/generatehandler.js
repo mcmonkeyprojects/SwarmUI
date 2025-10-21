@@ -131,19 +131,21 @@ class GenerateHandler {
         return null;
     }
     
-    internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview) {
+    internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview, batch_id) {
         if ('socket_intention' in data && data.socket_intention == 'close' && socket) {
             if (this.sockets[socketId] == socket) {
                 this.sockets[socketId] = null;
             }
-            // clear any lingering previews
-            for (let img of Object.values(images)) {
-                let div = this.getDiv(img);
-                if (div) {
-                    div.remove();
+            if (this.interrupted < batch_id || getUserSetting('ui.removeinterruptedgens', false)) {
+                // clear any lingering previews
+                for (let img of Object.values(images)) {
+                    let div = this.getDiv(img);
+                    if (div) {
+                        div.remove();
+                    }
                 }
+                playCompletionAudio();
             }
-            playCompletionAudio();
             return;
         }
         if (isPreview) {
@@ -314,7 +316,7 @@ class GenerateHandler {
                 this.sockets[socketId].send(JSON.stringify(actualInput));
             }
             else {
-                socket = makeWSRequestT2I('GenerateText2ImageWS', actualInput, data => this.internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview), handleError);
+                socket = makeWSRequestT2I('GenerateText2ImageWS', actualInput, data => this.internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview, batch_id), handleError);
                 this.sockets[socketId] = socket;
             }
         };

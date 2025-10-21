@@ -133,7 +133,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Can be enabled to cache certain backend data.\nFor example, with ComfyUI backends this will add an extended cache on the object_info data.\nDefaults to false.")]
         public bool DoBackendDataCache = false;
 
-        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nSome very minor quality changes may result.\nIf you encounter error that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
+        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nSome very minor quality changes may result.\nIf you encounter errors that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
         public bool AllowGpuSpecificOptimizations = true;
 
         [ConfigComment("How many models can be loaded in a model list at once.\nPast this count, the list will simply be cut off.\nUse sub-folder organization to prevent issues.")]
@@ -376,6 +376,9 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("If enabled, trigger phrases are copied with a trailing comma added.\nIf disabled, trigger phrases are copied as-is without any trailing comma.\nThis is useful when copying them to prompts.")]
             public bool CopyTriggerPhraseWithTrailingComma = false;
+
+            [ConfigComment("If true, when you interrupt generation, any incomplete generations will be removed from the batch view.\nIf false, they will linger in the batch view with an X mark indicated they were started but not finished.\nIn both cases, they will not save to file.")]
+            public bool RemoveInterruptedGens = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
