@@ -718,8 +718,8 @@ function makeSecretInput(featureid, id, paramid, name, description, value, place
     </div>`;
 }
 
-function dynamicSizeTextBox(elem, min=15) {
-    let maxHeight = parseInt(internalSiteJsGetUserSetting('maxpromptlines', '10'));
+function dynamicSizeTextBox(elem, min=15, altMax = null) {
+    let maxHeight = altMax || parseInt(internalSiteJsGetUserSetting('maxpromptlines', '10'));
     elem.style.height = '0px';
     let height = elem.scrollHeight;
     let fontSize = parseFloat(window.getComputedStyle(elem).fontSize);
@@ -736,7 +736,7 @@ function makeTextInput(featureid, id, paramid, name, description, value, format,
     }
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
-    let onInp = format == "prompt" ? ' oninput="textPromptInputHandle(this)"' : (format == 'big' ? ' oninput="dynamicSizeTextBox(this, 32)"' : '');
+    let onInp = format == "prompt" ? ' oninput="textPromptInputHandle(this)"' : (format == 'big' ? ' oninput="dynamicSizeTextBox(this, 32, 50)"' : '');
     let tokenCounter = format == "prompt" ? '<span class="auto-input-prompt-tokencount" title="Text-Encoder token count / chunk-size">0/75</span>' : '';
     let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
     featureid += featureid2;

@@ -97,7 +97,7 @@ class SwarmInputText:
             "required": {
                 "title": ("STRING", {"default": "My Text", "tooltip": "The name of the input."}),
                 "value": ("STRING", {"default": "", "multiline": True, "tooltip": "The default value of the input."}),
-                "view_type": (["normal", "prompt"], {"tooltip": "How to format this text input. 'normal' is a simple single line text input, 'prompt' is a prompt-like text input that has multiple lines and other prompting-specific features."}),
+                "view_type": (["normal", "prompt", "big"], {"tooltip": "How to format this text input. 'normal' is a simple single line text input, 'prompt' is a prompt-like text input that has multiple lines and other prompting-specific features, 'big' is an extra large multiline text box."}),
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
