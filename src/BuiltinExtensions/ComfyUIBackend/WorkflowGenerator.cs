@@ -2361,16 +2361,18 @@ public class WorkflowGenerator
         {
             string modelLoader = CreateNode("DownloadAndLoadGIMMVFIModel", new JObject()
             {
-                ["model"] = "gimmvfi_f_arb_lpips_fp32.safetensors"
+                ["model"] = "gimmvfi_f_arb_lpips_fp32.safetensors",
+                ["precision"] = "fp16",
+                ["torch_compile"] = false
             });
             string gimm = CreateNode("GIMMVFI_interpolate", new JObject()
             {
                 ["gimmvfi_model"] = new JArray() { modelLoader, 0 },
                 ["images"] = imageIn,
-                ["multiplier"] = mult,
-                ["ds_factor"] = 1,
+                ["ds_factor"] = 0.5, // TODO: They recommend this as a factor relative to size. 0.5 for 2k, 0.25 for 4k. This is a major performance alteration.
                 ["interpolation_factor"] = mult,
-                ["seed"] = 1
+                ["seed"] = 1,
+                ["output_flows"] = false
             });
             return [gimm, 0];
         }
