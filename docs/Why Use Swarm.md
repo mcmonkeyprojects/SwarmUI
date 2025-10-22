@@ -7,7 +7,7 @@ The answer to why you should use Swarm depends on who you are...
 
 ### I am a ComfyUI User
 
-If you're a happy comfy user, you're probably a fan of the noodles. If you're not a fan of the noodles but just tolerating, switch to the "other local SD UI user" option below.
+If you're a happy comfy user, you're probably a fan of the noodles. If you're not a fan of the noodles at all or just tolerating, keep reading as most of the listed features are supported in the UI mode, then switch to the "other local SD UI user" option below.
 
 Swarm is a wrapper around Comfy - it contains Comfy, in full, node graph and all, and then adds more. So right away point one for a Comfy user considering Swarm: you lose literally nothing. You get the exact same Comfy you already have. Here's some things you get on top:
 - **Integrated workflow browser:** Have a bunch of cool workflows? Save/load/browser is a super convenient integrated interface.
@@ -34,7 +34,7 @@ Swarm is a wrapper around Comfy - it contains Comfy, in full, node graph and all
 
 ### I am an Auto WebUI or other local SD UI user
 
-(TODO) basically Swarm is a very good UI that covers about everything other UIs do, and has a lot of power features that they don't, and a very very strong core (Comfy) that outpaces most others in performance.
+(WIP) Basically Swarm is a very good UI that covers about everything other UIs do, and has a lot of power features that they don't, and a very very strong core (Comfy) that outpaces most others in performance.
 
 ### I use online AI generation services
 
