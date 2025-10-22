@@ -216,6 +216,7 @@ public static class ImageMetadataTracker
             }
             if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
+                altPreview = animPreview;
                 if (ExtensionsForAnimatedImages.Contains(ext))
                 {
                     byte[] data = File.ReadAllBytes(file);
@@ -229,11 +230,14 @@ public static class ImageMetadataTracker
                     {
                         fileData = simplifiedData;
                         simplifiedData = null;
+                        altPreview = jpegPreview;
+                        altExists = true;
                     }
                     else
                     {
                         fileData = webpAnim.RawData;
                         File.WriteAllBytes(animPreview, fileData);
+                        altExists = true;
                     }
                 }
                 else if (ExtensionsForFfmpegables.Contains(ext))
@@ -269,7 +273,7 @@ public static class ImageMetadataTracker
                 else
                 {
                     ImageFile newFile = new Image(data, MediaType.GetByExtension(ext));
-                    fileData = newFile.ToMetadataJpg().RawData;
+                    fileData = newFile.ToMetadataJpg()?.RawData;
                 }
             }
         }
