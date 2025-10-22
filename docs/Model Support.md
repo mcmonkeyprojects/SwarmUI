@@ -309,16 +309,25 @@ Parameters and usage is the same as any other normal model.
 ### Chroma
 
 - Chroma is a derivative of Flux, and is supported in SwarmUI
-    - FP8 Scaled versions here: <https://huggingface.co/Clybius/Chroma-fp8-scaled/tree/main>
+    - FP8 Scaled versions here: <https://huggingface.co/silveroxides/Chroma1-HD-fp8-scaled/tree/main>
+        - Or older revs <https://huggingface.co/Clybius/Chroma-fp8-scaled/tree/main>
     - Or GGUF versions here: <https://huggingface.co/silveroxides/Chroma-GGUF>
     - Or original BF16 here (not recommended): <https://huggingface.co/lodestones/Chroma/tree/main>
     - Model files goes in `diffusion_models`
     - Uses standard CFG, not distilled to 1 like other Flux models
-    - Official reference workflow uses Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
+    - Original official reference workflow used Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
         - (It's named `Optimal Steps` in their workflow, but Swarm's AYS scheduler is equivalent to that)
     - Generally works better with longer prompts. Adding some "prompt fluff" on the end can help clean it up. This is likely related to it being a beta model with an odd training dataset.
     - "Sigmoid Offset" scheduler is their newer recommendation, it requires a custom node
         - You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
+- **Parameters**
+    - **CFG Scale:** around `3.5`
+    - **Sampler:** Defaults to regular `Euler`
+    - **Scheduler:** Defaults to `Beta`
+    - **Steps:** Normal step counts work, official recommendation is `26`
+    - **Sigma Shift:** Defaults to `1`
+    - **Resolution:** `1024x1024` or nearby values. The *HD* models were trained extra on `1152x1152`.
+
 
 # Lumina 2
 

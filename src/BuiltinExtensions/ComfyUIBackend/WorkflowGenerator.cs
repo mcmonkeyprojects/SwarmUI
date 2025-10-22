@@ -1272,10 +1272,16 @@ public class WorkflowGenerator
             string t5Patch = CreateNode("T5TokenizerOptions", new JObject() // TODO: This node is a temp patch
             {
                 ["clip"] = LoadingClip,
-                ["min_padding"] = 1,
+                ["min_padding"] = 0,
                 ["min_length"] = 0
             });
             LoadingClip = [t5Patch, 0];
+            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1)
+            });
+            LoadingModel = [samplingNode, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
         else if (IsHiDream())
@@ -1516,7 +1522,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream() || IsChroma())
+            else if (IsHunyuanVideo() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
@@ -1673,7 +1679,11 @@ public class WorkflowGenerator
         {
             defscheduler ??= "simple";
         }
-        bool willCascadeFix = false;
+        else if (IsChroma())
+        {
+            defscheduler ??= "beta";
+        }
+            bool willCascadeFix = false;
         JArray cascadeModel = null;
         if (!rawSampler && IsCascade() && FinalLoadedModel.Name.Contains("stage_c") && Program.MainSDModels.Models.TryGetValue(FinalLoadedModel.Name.Replace("stage_c", "stage_b"), out T2IModel bModel))
         {
