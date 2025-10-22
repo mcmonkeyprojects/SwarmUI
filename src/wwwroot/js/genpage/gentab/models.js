@@ -338,6 +338,7 @@ class ModelBrowserWrapper {
         this.browser.refreshHandler = (callback) => {
             refreshParameterValues(true, subType == 'Wildcards' ? 'wildcards' : null, callback);
         };
+        this.modelDescribeCallbacks = [];
     }
 
     sortModelLocal(a, b, files) {
@@ -614,7 +615,11 @@ class ModelBrowserWrapper {
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
             let searchable = `${model.data.name}, ${name}, ${raw}`;
-            return { name, description, buttons, className, searchable, 'image': model.data.image, display, detail_list };
+            let result = { name, description, buttons, className, searchable, 'image': model.data.image, display, detail_list };
+            for (let callback of this.modelDescribeCallbacks) {
+                callback(result, model);
+            }
+            return result;
         }
         let isCorrect = this.subType == 'Stable-Diffusion' || isModelArchCorrect(model.data);
         let interject = '';
@@ -662,7 +667,11 @@ class ModelBrowserWrapper {
         }
         let className = this.getClassFor(model, isCorrect);
         let searchable = `${model.data.name}, ${searchableAdded}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
-        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display, detail_list };
+        result = { name, description, buttons, 'image': model.data.preview_image, className, searchable, display, detail_list };
+        for (let callback of this.modelDescribeCallbacks) {
+            callback(result, model);
+        }
+        return result;
     }
 
     isSelected(name) {
