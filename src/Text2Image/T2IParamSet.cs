@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 
 namespace SwarmUI.Text2Image;
@@ -147,13 +148,13 @@ public class T2IParamSet
             ValuesInput.Remove(param.ID);
             return;
         }
-        Image imageFor(string val)
+        ImageFile imageFor(string val)
         {
             if (val.StartsWithFast("data:"))
             {
-                return Image.FromDataString(val);
+                return ImageFile.FromDataString(val);
             }
-            return new Image(val, Image.ImageType.IMAGE, "png");
+            return ImageFile.FromBase64(val, MediaType.ImagePng);
         }
         object obj = param.Type switch
         {

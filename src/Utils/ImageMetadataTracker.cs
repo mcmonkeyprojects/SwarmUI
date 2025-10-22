@@ -4,6 +4,7 @@ using LiteDB;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using System.IO;
 
 namespace SwarmUI.Utils;
@@ -218,11 +219,12 @@ public static class ImageMetadataTracker
                 if (ExtensionsForAnimatedImages.Contains(ext))
                 {
                     byte[] data = File.ReadAllBytes(file);
-                    Image img = new(data, Image.ImageType.ANIMATION, ext);
+                    ImageFile img = new Image(data, MediaType.GetByExtension(ext));
                     fileData = data;
-                    simplifiedData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                    ImageFile simplified = new Image(data, img.Type);
+                    simplifiedData = simplified.ToMetadataJpg().RawData;
                     File.WriteAllBytes(jpegPreview, simplifiedData);
-                    Image webpAnim = img.ToWebpPreviewAnim();
+                    ImageFile webpAnim = img.ToWebpPreviewAnim();
                     if (webpAnim is null)
                     {
                         fileData = simplifiedData;
@@ -230,7 +232,7 @@ public static class ImageMetadataTracker
                     }
                     else
                     {
-                        fileData = webpAnim.ImageData;
+                        fileData = webpAnim.RawData;
                         File.WriteAllBytes(animPreview, fileData);
                     }
                 }
@@ -266,7 +268,8 @@ public static class ImageMetadataTracker
                 }
                 else
                 {
-                    fileData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                    ImageFile newFile = new Image(data, MediaType.GetByExtension(ext));
+                    fileData = newFile.ToMetadataJpg().RawData;
                 }
             }
         }
@@ -361,7 +364,7 @@ public static class ImageMetadataTracker
                 {
                     return null;
                 }
-                fileData = new Image(data, Image.ImageType.IMAGE, ext).GetMetadata();
+                fileData = new Image(data, MediaType.GetByExtension(ext)).GetMetadata();
             }
             if (string.IsNullOrWhiteSpace(fileData) && File.Exists(altMetaPath))
             {

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
@@ -629,12 +630,12 @@ public class WebServer
         }
         async Task yieldResult(string imageData)
         {
-            Image img = Image.FromDataString(imageData);
-            context.Response.ContentType = img.MimeType();
+            ImageFile img = ImageFile.FromDataString(imageData);
+            context.Response.ContentType = img.Type.MimeType;
             context.Response.StatusCode = 200;
-            context.Response.ContentLength = img.ImageData.Length;
+            context.Response.ContentLength = img.RawData.Length;
             context.Response.Headers.CacheControl = $"private, max-age=2";
-            await context.Response.Body.WriteAsync(img.ImageData, Program.GlobalProgramCancel);
+            await context.Response.Body.WriteAsync(img.RawData, Program.GlobalProgramCancel);
             await context.Response.CompleteAsync();
         }
         if (!user.IsAllowedModel(name))

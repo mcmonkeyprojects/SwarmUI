@@ -10,6 +10,7 @@ using SwarmUI.Utils;
 using SwarmUI.Backends;
 using System;
 using System.Net.Http;
+using SwarmUI.Media;
 
 namespace SwarmUI.Builtin_AutoWebUIExtension;
 
@@ -112,7 +113,7 @@ public abstract class AutoWebUIAPIAbstractBackend : AbstractT2IBackend
         }
         JObject result = await SendPost<JObject>(route, toSend);
         // TODO: Error handlers
-        return [.. result["images"].Select(i => new Image((string)i, Image.ImageType.IMAGE, "png"))];
+        return [.. result["images"].Select(i => ImageFile.FromBase64((string)i, MediaType.ImagePng) as Image)];
     }
 
     public async Task<JType> SendGet<JType>(string url) where JType : class

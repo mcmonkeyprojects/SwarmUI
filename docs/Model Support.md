@@ -317,9 +317,11 @@ Parameters and usage is the same as any other normal model.
     - Uses standard CFG, not distilled to 1 like other Flux models
     - Original official reference workflow used Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
         - (It's named `Optimal Steps` in their workflow, but Swarm's AYS scheduler is equivalent to that)
+        - "Sigmoid Offset" scheduler was their later recommendation, it requires a custom node
+            - You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
+        - Or, "power_shift" / "beta42" from <https://github.com/silveroxides/ComfyUI_PowerShiftScheduler> may be better
+            - Works the same, `git clone https://github.com/silveroxides/ComfyUI_PowerShiftScheduler` into your ComfyUI `custom_nodes` and restart
     - Generally works better with longer prompts. Adding some "prompt fluff" on the end can help clean it up. This is likely related to it being a beta model with an odd training dataset.
-    - "Sigmoid Offset" scheduler is their newer recommendation, it requires a custom node
-        - You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
 - **Parameters**
     - **CFG Scale:** around `3.5`
     - **Sampler:** Defaults to regular `Euler`

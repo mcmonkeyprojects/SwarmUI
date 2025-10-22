@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.Diagnostics;
@@ -28,7 +29,7 @@ namespace SwarmUI.Text2Image
         public static Action<PostGenerationEventParams> PostGenerateEvent;
 
         /// <summary>Paramters for <see cref="PostGenerateEvent"/>.</summary>
-        public record class PostGenerationEventParams(Image Image, T2IParamInput UserInput, Action RefuseImage);
+        public record class PostGenerationEventParams(MediaFile File, T2IParamInput UserInput, Action RefuseImage);
 
         /// <summary>Extension event, fired after a batch of images were generated.
         /// Use "RefuseImage" to mark an image as removed. Note that it may have already been shown to a user, when the live result websocket API is in use.</summary>
@@ -43,19 +44,27 @@ namespace SwarmUI.Text2Image
         /// <summary>Micro-class that represents an image-output and key related details.</summary>
         public class ImageOutput
         {
-            /// <summary>The generated image.</summary>
-            public Image Img;
+            /// <summary>The generated media file.</summary>
+            public MediaFile File;
 
-            /// <summary>An async task to get the actual final image meant to be saved to file.</summary>
-            public Task<Image> ActualImageTask;
+            /// <summary>The generated image.</summary>
+            [Obsolete("Use File instead")]
+            public Image Img
+            {
+                get => File as Image;
+                set => File = value;
+            }
+
+            /// <summary>An async task to get the actual final filedata meant to be saved to file.</summary>
+            public Task<MediaFile> ActualFileTask;
 
             /// <summary>The time in milliseconds it took to generate, or -1 if unknown.</summary>
             public long GenTimeMS = -1;
 
-            /// <summary>If true, the image is a real final output. If false, there is something non-standard about this image (eg it's a secondary preview) and so should be excluded from grids/etc.</summary>
+            /// <summary>If true, the image is a real final output. If false, there is something non-standard about this file (eg it's a secondary preview) and so should be excluded from grids/etc.</summary>
             public bool IsReal = true;
 
-            /// <summary>An action that will remove/discard this image as relevant.</summary>
+            /// <summary>An action that will remove/discard this file as relevant.</summary>
             public Action RefuseImage;
         }
 
@@ -176,7 +185,7 @@ namespace SwarmUI.Text2Image
             int numImagesGenned = 0;
             long lastGenTime = Environment.TickCount64;
             string genTimeReport = "? failed!";
-            void handleImage(ImageOutput img)
+            void handleFileOutput(ImageOutput img)
             {
                 lastGenTime = Environment.TickCount64;
                 if (img.GenTimeMS < 0)
@@ -198,15 +207,15 @@ namespace SwarmUI.Text2Image
                     copyInput.ExtraMeta["intermediate"] = "intermediate output";
                 }
                 bool refuse = false;
-                PostGenerateEvent?.Invoke(new(img.Img, copyInput, () => refuse = true));
+                PostGenerateEvent?.Invoke(new(img.File, copyInput, () => refuse = true));
                 if (refuse)
                 {
                     Logs.Info($"Refused an image.");
                 }
                 else
                 {
-                    (Task<Image> imgTask, string metadata) = copyInput.SourceSession.ApplyMetadata(img.Img, copyInput, numImagesGenned, true);
-                    img.ActualImageTask = imgTask;
+                    (Task<MediaFile> imgTask, string metadata) = copyInput.SourceSession.ApplyMetadata(img.File, copyInput, numImagesGenned, true);
+                    img.ActualFileTask = imgTask;
                     saveImages(img, metadata);
                     numImagesGenned++;
                 }
@@ -224,7 +233,7 @@ namespace SwarmUI.Text2Image
                         double cleanup = user_input.Get(T2IParamTypes.RegionalObjectCleanupFactor, 0);
                         if (cleanup == 0)
                         {
-                            handleImage(new() { Img = multiImg, IsReal = true, GenTimeMS = -1, RefuseImage = null });
+                            handleFileOutput(new() { File = multiImg, IsReal = true, GenTimeMS = -1, RefuseImage = null });
                             return;
                         }
                         user_input.Set(T2IParamTypes.InitImageCreativity, cleanup);
@@ -279,13 +288,13 @@ namespace SwarmUI.Text2Image
                     prepTime = Environment.TickCount64;
                     await backend.Backend.GenerateLive(user_input, batchId, obj =>
                     {
-                        if (obj is Image img)
+                        if (obj is MediaFile file)
                         {
-                            handleImage(new() { Img = img });
+                            handleFileOutput(new() { File = file });
                         }
                         else if (obj is ImageOutput imgOut)
                         {
-                            handleImage(imgOut);
+                            handleFileOutput(imgOut);
                         }
                         else
                         {

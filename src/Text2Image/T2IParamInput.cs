@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 
 namespace SwarmUI.Text2Image;
@@ -261,7 +262,7 @@ public class T2IParamInput
 
     public static object SimplifyParamVal(object val)
     {
-        if (val is Image img)
+        if (val is ImageFile img)
         {
             return img.AsBase64;
         }

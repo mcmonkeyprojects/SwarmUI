@@ -4,11 +4,10 @@ using LiteDB;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using System.IO;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 
 namespace SwarmUI.Text2Image;
 
@@ -388,7 +387,8 @@ public class T2IModelHandler
             {
                 if (File.Exists(prefix + suffix))
                 {
-                    return new Image(File.ReadAllBytes(prefix + suffix), Image.ImageType.IMAGE, suffix.AfterLast('.')).ToMetadataFormat();
+                    ImageFile loaded = new Image(File.ReadAllBytes(prefix + suffix), MediaType.GetByExtension(suffix.AfterLast('.')));
+                    return loaded.ToMetadataFormat();
                 }
             }
             catch (Exception ex)

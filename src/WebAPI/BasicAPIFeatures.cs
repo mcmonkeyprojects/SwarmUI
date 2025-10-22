@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Microsoft.Extensions.Primitives;
 using System.Reflection;
 using FreneticUtilities.FreneticToolkit;
+using SwarmUI.Media;
 
 namespace SwarmUI.WebAPI;
 
@@ -282,7 +283,7 @@ public static class BasicAPIFeatures
                 Logs.Info($"User {session.User.UserID} tried to set a preset preview image to forbidden path: {preview_image}");
                 return new JObject() { ["preset_fail"] = "Forbidden preview-image path." };
             }
-            Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+            ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
             preview_image = img.AsDataString();
         }
         T2IPreset preset = new()

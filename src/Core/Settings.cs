@@ -1,5 +1,6 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
 using SwarmUI.Backends;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 using System.Reflection;
 
@@ -337,7 +338,7 @@ public class Settings : AutoConfiguration
         public class FileFormatData : AutoConfiguration
         {
             [ConfigComment("What format to save images in.\nDefault is '.png', but '.jpg' is recommended to save some filespace.")]
-            [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<Image.ImageFormat>))]
+            [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<ImageFile.ImageFormat>))]
             public string ImageFormat = "PNG";
 
             [ConfigComment("Quality for JPEG and WEBP formats (1-100). Other formats are ignored.\nDefault is 100, recommended 70-90.")]

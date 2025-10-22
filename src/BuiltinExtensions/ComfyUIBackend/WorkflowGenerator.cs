@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.IO;
@@ -544,7 +545,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>Creates a new node to load an image.</summary>
-    public string CreateLoadImageNode(Image img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
+    public string CreateLoadImageNode(ImageFile img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
     {
         if (nodeId is null && NodeHelpers.TryGetValue($"imgloader_{param}_{resize}", out string alreadyLoaded))
         {
@@ -553,7 +554,7 @@ public class WorkflowGenerator
         string result;
         if (Features.Contains("comfy_loadimage_b64") && !RestrictCustomNodes)
         {
-            if (img.Type == Image.ImageType.IMAGE)
+            if (img.Type.MetaType == MediaMetaType.Image)
             {
                 result = CreateNode("SwarmLoadImageB64", new JObject()
                 {

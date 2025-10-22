@@ -3,6 +3,7 @@ using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
@@ -523,7 +524,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     {
         user_input.ProcessPromptEmbeds(x => $"<embedding:{x}>");
         JObject generated = SendAPIJSON("GenerateText2Image", BuildRequest(user_input)).Result;
-        Image[] images = [.. generated["images"].Select(img => Image.FromDataString(img.ToString()))];
+        Image[] images = [.. generated["images"].Select(img => ImageFile.FromDataString(img.ToString()) as Image)];
         return images;
     }
 
@@ -533,9 +534,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         if (!Settings.AllowWebsocket)
         {
             Image[] results = await Generate(user_input);
-            foreach (Image img in results)
+            foreach (MediaFile file in results)
             {
-                takeOutput(img);
+                takeOutput(file);
             }
             return;
         }
@@ -596,7 +597,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     else if (response.TryGetValue("image", out val))
                     {
                         Logs.Verbose($"[{HandlerTypeData.Name}] Got image from websocket");
-                        takeOutput(Image.FromDataString(val.ToString()));
+                        takeOutput(ImageFile.FromDataString(val.ToString()));
                     }
                     else
                     {

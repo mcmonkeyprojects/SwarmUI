@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using LiteDB;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.Collections.Generic;
@@ -152,7 +153,7 @@ public class Session : IEquatable<Session>
     }
 
     /// <summary>Applies metadata to an image and converts the filetype, following the user's preferences.</summary>
-    public (Task<Image>, string) ApplyMetadata(Image image, T2IParamInput user_input, int numImagesGenned, bool maySkipConversion = false)
+    public (Task<MediaFile>, string) ApplyMetadata(MediaFile file, T2IParamInput user_input, int numImagesGenned, bool maySkipConversion = false)
     {
         if (numImagesGenned > 0 && user_input.TryGet(T2IParamTypes.BatchSize, out int batchSize) && numImagesGenned < batchSize)
         {
@@ -167,15 +168,15 @@ public class Session : IEquatable<Session>
             }
         }
         string metadata = user_input.GenRawMetadata();
-        Task<Image> resultImg = Task.FromResult(image);
-        if (!maySkipConversion || !user_input.Get(T2IParamTypes.DoNotSave, false) || user_input.SourceSession.User.Settings.FileFormat.ReformatTransientImages)
+        Task<MediaFile> resultImg = Task.FromResult(file);
+        if (file is ImageFile img && (!maySkipConversion || !user_input.Get(T2IParamTypes.DoNotSave, false) || user_input.SourceSession.User.Settings.FileFormat.ReformatTransientImages))
         {
             string format = user_input.Get(T2IParamTypes.ImageFormat, User.Settings.FileFormat.ImageFormat);
-            resultImg = Task.Run(() =>
+            resultImg = Task.Run<MediaFile>(() =>
             {
                 try
                 {
-                    return image.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100), User.Settings.FileFormat.StealthMetadata);
+                    return img.ConvertTo(format, User.Settings.FileFormat.SaveMetadata ? metadata : null, User.Settings.FileFormat.DPI, Math.Clamp(User.Settings.FileFormat.ImageQuality, 1, 100), User.Settings.FileFormat.StealthMetadata);
                 }
                 catch (Exception ex)
                 {
@@ -184,13 +185,8 @@ public class Session : IEquatable<Session>
                 }
             });
         }
+        // TODO: Metadata for audio, video, ...?
         return (resultImg, metadata ?? "");
-    }
-
-    /// <summary>Returns a properly web-formatted base64 encoding of an image, per the user's file format preference.</summary>
-    public string GetImageB64(Image image)
-    {
-        return image.AsDataString();
     }
 
     /// <summary>Special cache of recently blocked image filenames (eg file deleted, or may be saving), to prevent generating new images with exact same filenames.</summary>
@@ -199,19 +195,13 @@ public class Session : IEquatable<Session>
     /// <summary>File data that will be saved soon, or has very recently saved.</summary>
     public static ConcurrentDictionary<string, Task<byte[]>> StillSavingFiles = [];
 
-    [Obsolete("Use ImageOutput overload instead")]
-    public (string, string) SaveImage(Image image, int batchIndex, T2IParamInput user_input, string metadata)
-    {
-        return SaveImage(new T2IEngine.ImageOutput() { Img = image }, batchIndex, user_input, metadata);
-    }
-
     /// <summary>Save an image as this user, and returns the new URL. If user has disabled saving, returns a data URL.</summary>
     /// <returns>(User-Visible-WebPath, Local-FilePath)</returns>
     public (string, string) SaveImage(T2IEngine.ImageOutput image, int batchIndex, T2IParamInput user_input, string metadata)
     {
         if (!User.Settings.SaveFiles)
         {
-            return (GetImageB64(image.Img), null);
+            return (image.File.AsDataString(), null);
         }
         string rawImagePath = User.BuildImageOutputPath(user_input, batchIndex);
         string imagePath = rawImagePath.Replace("[number]", "1");
@@ -219,17 +209,17 @@ public class Session : IEquatable<Session>
         string extension;
         try
         {
-            extension = Image.ImageFormatToExtension(format);
+            extension = ImageFile.ImageFormatToExtension(format);
         }
         catch (Exception ex)
         {
             Logs.Debug($"Invalid file format extension: {ex.GetType().Name}: {ex.Message}");
             extension = "jpg";
         }
-        if (image.Img.Type != Image.ImageType.IMAGE)
+        if (image.File.Type.MetaType != MediaMetaType.Image)
         {
-            Logs.Verbose($"Image is type {image.Img.Type} and will save with extension '{image.Img.Extension}'.");
-            extension = image.Img.Extension;
+            Logs.Verbose($"Image is type {image.File.Type} and will save with extension '{image.File.Type.Extension}'.");
+            extension = image.File.Type.Extension;
         }
         string fullPathNoExt = Path.GetFullPath(UserImageHistoryHelper.GetRealPathFor(User, $"{User.OutputDirectory}/{imagePath}"));
         string pathFolder = imagePath.Contains('/') ? imagePath.BeforeLast('/') : "";
@@ -250,11 +240,11 @@ public class Session : IEquatable<Session>
                     fullPath = $"{fullPathNoExt}.{extension}";
                 }
                 RecentlyBlockedFilenames[fullPath] = fullPath;
-                StillSavingFiles[fullPath] = image.ActualImageTask is null ? Task.FromResult(image.Img.ImageData) : Task.Run(async () => (await image.ActualImageTask).ImageData);
+                StillSavingFiles[fullPath] = image.ActualFileTask is null ? Task.FromResult(image.File.RawData) : Task.Run(async () => (await image.ActualFileTask).RawData);
                 Utilities.RunCheckedTask(async () =>
                 {
-                    Image actualImage = image.ActualImageTask is null ? image.Img : await image.ActualImageTask;
-                    File.WriteAllBytes(fullPath, actualImage.ImageData);
+                    MediaFile actualFile = image.ActualFileTask is null ? image.File : await image.ActualFileTask;
+                    File.WriteAllBytes(fullPath, actualFile.RawData);
                     if ((User.Settings.FileFormat.SaveTextFileMetadata || !ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
                         File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());

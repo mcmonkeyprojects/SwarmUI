@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
@@ -37,7 +38,7 @@ public static class ComfyUIWebAPI
         Directory.CreateDirectory(Directory.GetParent(path).FullName);
         if (!string.IsNullOrWhiteSpace(image))
         {
-            image = Image.FromDataString(image).ToMetadataFormat();
+            image = ImageFile.FromDataString(image).ToMetadataFormat();
         }
         else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(origPath))
         {
