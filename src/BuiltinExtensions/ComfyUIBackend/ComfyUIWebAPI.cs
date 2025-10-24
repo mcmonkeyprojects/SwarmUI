@@ -126,7 +126,6 @@ public static class ComfyUIWebAPI
             return new JObject() { ["error"] = "Unknown custom workflow name." };
         }
         File.Delete(fullPath);
-        Logs.Debug($"check {path} against {ComfyUIBackendExtension.ExampleWorkflowNames.JoinString(", ")}");
         if (ComfyUIBackendExtension.ExampleWorkflowNames.Contains(path.After("Examples/") + ".json"))
         {
             File.WriteAllText($"{fullPath}.deleted", "deleted-by-user");

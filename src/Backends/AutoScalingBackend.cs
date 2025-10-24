@@ -347,7 +347,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         }
         else
         {
-            Logs.Verbose($"AutoScalingBackend StopOne called for unknown backend #{id}");
+            Logs.Debug($"AutoScalingBackend StopOne called for unknown backend #{id}");
         }
     }
 
@@ -371,10 +371,10 @@ public class AutoScalingBackend : AbstractT2IBackend
             {
                 stopTasks.Add(StopOne(id));
             }
-            ControlledNonrealBackends.Clear();
             Status = BackendStatus.DISABLED;
         }
         await Task.WhenAll(stopTasks);
+        ControlledNonrealBackends.Clear();
     }
 
     /// <inheritdoc/>
