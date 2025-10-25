@@ -198,6 +198,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - The model used "Pile T5-XXL" as it's text encoder.
 - The model used the SDXL VAE as its VAE.
 - This model group was quickly forgotten by the community due to quality issues, but came back into popular attention much later via community finetune "Pony v7".
+    - Pony wants to be in the `diffusion_models` folder, but regular AuraFlow goes in `Stable-Diffusion` folder
 - Parameters and usage is the same as any other normal model.
     - CFG recommended around 3.5 or 4.
     - Pony v7 allows higher resolutions than base AuraFlow normally targets.
