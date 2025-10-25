@@ -183,6 +183,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is AuraFlow.</summary>
+    public bool IsAuraFlow()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "auraflow-v1";
+    }
+
     /// <summary>Returns true if the current model is a Kontext model (eg Flux.1 Kontext Dev).</summary>
     public bool IsKontext()
     {
@@ -855,6 +862,10 @@ public class WorkflowGenerator
         {
             return requireClipModel("byt5_small_glyphxl_fp16.safetensors", "https://huggingface.co/Comfy-Org/HunyuanImage_2.1_ComfyUI/resolve/main/split_files/text_encoders/byt5_small_glyphxl_fp16.safetensors", "516910bb4c9b225370290e40585d1b0e6c8cd3583690f7eec2f7fb593990fb48", T2IParamTypes.T5XXLModel);
         }
+        string getPileT5XLAuraFlow()
+        {
+            return requireClipModel("pile_t5xl_auraflow.safetensors", "https://huggingface.co/fal/AuraFlow-v0.2/resolve/main/text_encoder/model.safetensors", "0a07449cf1141c0ec86e653c00465f6f0d79c6e58a2c60c8bcf4203d0e4ec4f6", T2IParamTypes.T5XXLModel);
+        }
         string getOmniQwenModel()
         {
             return requireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", T2IParamTypes.QwenModel);
@@ -1256,6 +1267,28 @@ public class WorkflowGenerator
             });
             LoadingClip = [dualClipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsAuraFlow() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
+        {
+            string loaderType = "CLIPLoader";
+            if (getPileT5XLAuraFlow().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string dualClipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getPileT5XLAuraFlow(),
+                ["type"] = "chroma"
+            });
+            LoadingClip = [dualClipLoader, 0];
+            string t5Patch = CreateNode("T5TokenizerOptions", new JObject()
+            {
+                ["clip"] = LoadingClip,
+                ["min_padding"] = 768,
+                ["min_length"] = 768
+            });
+            LoadingClip = [t5Patch, 0];
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE, "stable-diffusion-xl-v1", "sdxl-vae");
         }
         else if (IsChroma())
         {

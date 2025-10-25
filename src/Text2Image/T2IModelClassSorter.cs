@@ -116,6 +116,7 @@ public class T2IModelClassSorter
         bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
         bool isHyImg(JObject h) => h.ContainsKey("byt5_in.fc1.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
         bool isHyImgRefiner(JObject h) => h.ContainsKey("double_blocks.0.img_attn_k_norm.weight") && h.TryGetValue("time_r_in.mlp.0.bias", out JToken timeTok) && timeTok["shape"].ToArray()[0].Value<long>() == 3328;
+        bool isAuraFlow(JObject h) => h.ContainsKey("model.cond_seq_linear.weight") && h.ContainsKey("model.double_layers.0.attn.w1k.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -537,6 +538,11 @@ public class T2IModelClassSorter
         {
             return false;
         }});
+        // ====================== AuraFlow v1 ======================
+        Register(new() { ID = "auraflow-v1", CompatClass = "auraflow-v1", Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isAuraFlow(h);
+        }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
         Register(new() { ID = "stable-diffusion-v1/vae", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 VAE", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
@@ -564,7 +570,6 @@ public class T2IModelClassSorter
         // Other model classes
         Register(new() { ID = "pixart-ms-sigma-xl-2", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "pixart-ms-sigma-xl-2-2k", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2 (2K)", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "auraflow-v1", CompatClass = "auraflow-v1", Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "auraflow-v1/tensorrt", CompatClass = "auraflow-v1", Name = "AuraFlow (TensorRT Engine)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         // ====================== General correction remaps ======================
         Remaps["flux-1-dev"] = "Flux.1-dev";
