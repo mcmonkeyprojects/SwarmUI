@@ -203,6 +203,13 @@ public class WorkflowGenerator
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz == "chroma";
     }
+    
+    /// <summary>Returns true if the current model is Chroma Radiance.</summary>
+    public bool IsChromaRadiance()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "chroma-radiance";
+    }
 
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
     public bool IsHiDream()
@@ -1099,7 +1106,7 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma())
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance())
                     {
                         dtype = "default";
                     }
@@ -1290,7 +1297,7 @@ public class WorkflowGenerator
             LoadingClip = [t5Patch, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE, "stable-diffusion-xl-v1", "sdxl-vae");
         }
-        else if (IsChroma())
+        else if (IsChroma() || IsChromaRadiance())
         {
             string loaderType = "CLIPLoader";
             if (getT5XXLModel().EndsWith(".gguf"))
@@ -1316,7 +1323,14 @@ public class WorkflowGenerator
                 ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1)
             });
             LoadingModel = [samplingNode, 0];
-            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+            if (IsChromaRadiance())
+            {
+                LoadingVAE = CreateVAELoader("pixel_space");
+            }
+            else
+            {
+                doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+            }
         }
         else if (IsHiDream())
         {
@@ -1713,7 +1727,7 @@ public class WorkflowGenerator
         {
             defscheduler ??= "simple";
         }
-        else if (IsChroma())
+        else if (IsChroma() || IsChromaRadiance())
         {
             defscheduler ??= "beta";
         }
@@ -2298,6 +2312,15 @@ public class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 121),
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
+        else if (IsChromaRadiance())
+        {
+            return CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
                 ["height"] = height,
                 ["width"] = width
             }, id);

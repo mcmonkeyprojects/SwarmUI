@@ -449,6 +449,10 @@ public class T2IModelClassSorter
         {
             return isChroma(h);
         }});
+        Register(new() { ID = "chroma-radiance", CompatClass = "chroma-radiance", Name = "Chroma Radiance", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
             return IsAlt(h);
