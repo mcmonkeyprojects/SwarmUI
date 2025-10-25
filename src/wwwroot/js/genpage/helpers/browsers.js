@@ -96,6 +96,7 @@ class GenPageBrowserClass {
         this.updatePendingSince = null;
         this.wantsReupdate = false;
         this.noContentUpdates = false;
+        this.lastListCache = null;
         this.refreshHandler = (callback) => callback();
         this.checkIsSmall();
     }
@@ -191,6 +192,7 @@ class GenPageBrowserClass {
      */
     refresh() {
         this.refreshHandler(() => {
+            this.lastListCache = null;
             this.chunksRendered = 0;
             let path = this.folder;
             this.folder = '';
@@ -212,7 +214,8 @@ class GenPageBrowserClass {
             this.contentDiv.scrollTop = 0;
         }
         let folder = this.folder;
-        this.listFoldersAndFiles(folder, isRefresh, (folders, files) => {
+        let parseContent = (folders, files) => {
+            this.lastListCache = { folder, folders, files };
             this.build(folder, folders, files);
             this.updatePendingSince = null;
             if (callback) {
@@ -222,7 +225,12 @@ class GenPageBrowserClass {
                 this.wantsReupdate = false;
                 this.update();
             }
-        }, this.depth);
+        };
+        if (!isRefresh && this.lastListCache && this.lastListCache.folder == folder) {
+            parseContent(this.lastListCache.folders, this.lastListCache.files);
+            return;
+        }
+        this.listFoldersAndFiles(folder, isRefresh, parseContent, this.depth);
     }
 
     /**

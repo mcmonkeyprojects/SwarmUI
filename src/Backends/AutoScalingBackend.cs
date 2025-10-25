@@ -146,6 +146,7 @@ public class AutoScalingBackend : AbstractT2IBackend
                             {
                                 _ = Utilities.RunCheckedTask(() => StopOne(data.ID), $"AutoScalingBackend StopOne #{data.ID}");
                                 MustWaitMinutesBeforeStop(Settings.MinWaitBetweenStop);
+                                break;
                             }
                         }
                     }
