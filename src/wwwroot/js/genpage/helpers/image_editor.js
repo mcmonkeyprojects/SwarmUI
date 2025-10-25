@@ -838,6 +838,284 @@ class ImageEditorToolBucket extends ImageEditorTool {
 }
 
 /**
+ * The Shape tool.
+ */
+class ImageEditorToolShape extends ImageEditorTool {
+    constructor(editor) {
+        super(editor, 'shape', 'shape', 'Shape', 'Create different shapes for AI editing.\nRectangle: Click and drag\nCircle: Click and drag\nHotKey: X', 'x');
+        this.cursor = 'crosshair';
+        this.color = '#ff0000';
+        this.strokeWidth = 4;
+        this.shape = 'rectangle';
+        this.isDrawing = false;
+        this.startX = 0;
+        this.startY = 0;
+        this.currentX = 0;
+        this.currentY = 0;
+        this.shapes = []; // Track shapes for undo functionality
+        this.shapesLayer = null; // Sub-layer for storing shapes
+        
+        let colorHTML = `
+        <div class="image-editor-tool-block">
+            <label>Color:&nbsp;</label>
+            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ff0000">
+            <input type="color" class="id-col2" value="#ff0000">
+            <button class="basic-button id-col3">Pick</button>
+        </div>`;
+        
+        let shapeHTML = `
+        <div class="image-editor-tool-block">
+            <label>Shape:&nbsp;</label>
+            <select class="id-shape" style="width:100px;">
+                <option value="rectangle">Rectangle</option>
+                <option value="circle">Circle</option>
+            </select>
+        </div>`;
+        
+        let strokeHTML = `
+        <div class="image-editor-tool-block id-stroke-block">
+            <label>Width:&nbsp;</label>
+            <input type="number" style="width: 40px;" class="auto-number id-stroke1" min="1" max="20" step="1" value="4">
+            <div class="auto-slider-range-wrapper" style="${getRangeStyle(4, 1, 20)}">
+                <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+            </div>
+        </div>`;
+        
+        let controlsHTML = `
+        <div class="image-editor-tool-block">
+            <button class="basic-button id-clear">Clear</button>
+        </div>`;
+        
+        this.configDiv.innerHTML = colorHTML + shapeHTML + strokeHTML + controlsHTML;
+        
+        this.colorText = this.configDiv.querySelector('.id-col1');
+        this.colorSelector = this.configDiv.querySelector('.id-col2');
+        this.colorPickButton = this.configDiv.querySelector('.id-col3');
+        this.shapeSelect = this.configDiv.querySelector('.id-shape');
+        this.strokeNumber = this.configDiv.querySelector('.id-stroke1');
+        this.strokeSelector = this.configDiv.querySelector('.id-stroke2');
+        this.clearButton = this.configDiv.querySelector('.id-clear');
+        
+        this.colorText.addEventListener('input', () => {
+            this.colorSelector.value = this.colorText.value;
+            this.onConfigChange();
+        });
+        this.colorSelector.addEventListener('change', () => {
+            this.colorText.value = this.colorSelector.value;
+            this.onConfigChange();
+        });
+        this.colorPickButton.addEventListener('click', () => {
+            if (this.colorPickButton.classList.contains('interrupt-button')) {
+                this.colorPickButton.classList.remove('interrupt-button');
+                this.editor.activateTool(this.id);
+            } else {
+                this.colorPickButton.classList.add('interrupt-button');
+                this.editor.pickerTool.toolFor = this;
+                this.editor.activateTool('picker');
+            }
+        });
+        
+        this.shapeSelect.addEventListener('change', () => {
+            this.shape = this.shapeSelect.value;
+            this.editor.redraw();
+        });
+        
+        enableSliderForBox(this.configDiv.querySelector('.id-stroke-block'));
+        this.strokeNumber.addEventListener('change', () => { this.onConfigChange(); });
+        
+        this.clearButton.addEventListener('click', () => {
+            this.clearAllShapes();
+        });
+    }
+    
+    setColor(col) {
+        this.color = col;
+        this.colorText.value = col;
+        this.colorSelector.value = col;
+        this.colorPickButton.classList.remove('interrupt-button');
+    }
+    
+    onConfigChange() {
+        this.color = this.colorText.value;
+        this.strokeWidth = parseInt(this.strokeNumber.value);
+        this.editor.redraw();
+    }
+    
+    clearAllShapes() {
+        if (this.shapesLayer && this.shapes.length > 0) {
+            // Save before edit for undo functionality
+            this.editor.activeLayer.saveBeforeEdit();
+            
+            // Clear only the shapes sub-layer
+            this.shapesLayer.ctx.clearRect(0, 0, this.shapesLayer.canvas.width, this.shapesLayer.canvas.height);
+            this.shapesLayer.hasAnyContent = false;
+            this.shapes = [];
+            this.editor.markChanged();
+        }
+        this.isDrawing = false;
+        this.editor.redraw();
+    }
+    
+    drawShapeToSubLayer(shape) {
+        if (!this.shapesLayer) return;
+        
+        // Convert image coordinates to canvas coordinates first
+        let [canvasX1, canvasY1] = this.editor.imageCoordToCanvasCoord(shape.x, shape.y);
+        let [canvasX2, canvasY2] = this.editor.imageCoordToCanvasCoord(shape.x + shape.width, shape.y + shape.height);
+        
+        // Then convert to sub-layer coordinates
+        let [layerX1, layerY1] = this.shapesLayer.canvasCoordToLayerCoord(canvasX1, canvasY1);
+        let [layerX2, layerY2] = this.shapesLayer.canvasCoordToLayerCoord(canvasX2, canvasY2);
+        
+        this.shapesLayer.ctx.save();
+        this.shapesLayer.ctx.strokeStyle = shape.color;
+        this.shapesLayer.ctx.lineWidth = shape.strokeWidth;
+        this.shapesLayer.ctx.setLineDash([]);
+        this.shapesLayer.ctx.beginPath();
+        
+        if (shape.type === 'rectangle') {
+            let x = Math.min(layerX1, layerX2);
+            let y = Math.min(layerY1, layerY2);
+            let w = Math.abs(layerX2 - layerX1);
+            let h = Math.abs(layerY2 - layerY1);
+            this.shapesLayer.ctx.rect(x, y, w, h);
+        } 
+        else if (shape.type === 'circle') {
+            let cx = (layerX1 + layerX2) / 2;
+            let cy = (layerY1 + layerY2) / 2;
+            let radius = Math.sqrt(Math.pow(layerX2 - layerX1, 2) + Math.pow(layerY2 - layerY1, 2)) / 2;
+            this.shapesLayer.ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        }
+        
+        this.shapesLayer.ctx.stroke();
+        this.shapesLayer.ctx.restore();
+        this.shapesLayer.hasAnyContent = true;
+        console.log('Drew shape to sub-layer:', shape);
+    }
+    
+    
+    draw() {
+        if (this.isDrawing && (this.shape === 'rectangle' || this.shape === 'circle')) {
+            this.drawShape({
+                type: this.shape,
+                x: this.startX,
+                y: this.startY,
+                width: this.currentX - this.startX,
+                height: this.currentY - this.startY,
+                color: this.color,
+                strokeWidth: this.strokeWidth
+            });
+        }
+    }
+    
+    drawShape(shape) {
+        this.editor.ctx.save();
+        this.editor.ctx.strokeStyle = shape.color;
+        this.editor.ctx.lineWidth = shape.strokeWidth * this.editor.zoomLevel;
+        this.editor.ctx.setLineDash([]);
+        this.editor.ctx.beginPath();
+        
+        if (shape.type === 'rectangle') {
+            let [x, y] = this.editor.imageCoordToCanvasCoord(shape.x, shape.y);
+            let [w, h] = [shape.width * this.editor.zoomLevel, shape.height * this.editor.zoomLevel];
+            this.editor.ctx.rect(x, y, w, h);
+        } 
+        else if (shape.type === 'circle') {
+            let [cx, cy] = this.editor.imageCoordToCanvasCoord(shape.x + shape.width / 2, shape.y + shape.height / 2);
+            let radius = Math.sqrt(shape.width * shape.width + shape.height * shape.height) / 2 * this.editor.zoomLevel;
+            this.editor.ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        }
+        
+        this.editor.ctx.stroke();
+        this.editor.ctx.restore();
+    }
+    
+    drawShapeToCanvas(ctx, shape, zoom, offsetX = 0, offsetY = 0) {
+        ctx.save();
+        ctx.strokeStyle = shape.color;
+        ctx.lineWidth = shape.strokeWidth;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        
+        if (shape.type === 'rectangle') {
+            let x = (shape.x + offsetX) * zoom;
+            let y = (shape.y + offsetY) * zoom;
+            let w = shape.width * zoom;
+            let h = shape.height * zoom;
+            ctx.rect(x, y, w, h);
+        } 
+        else if (shape.type === 'circle') {
+            let cx = (shape.x + shape.width / 2 + offsetX) * zoom;
+            let cy = (shape.y + shape.height / 2 + offsetY) * zoom;
+            let radius = Math.sqrt(shape.width * shape.width + shape.height * shape.height) / 2 * zoom;
+            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        }
+        
+        ctx.stroke();
+        ctx.restore();
+    }
+    
+        
+    onMouseDown(e) {
+        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        
+        this.isDrawing = true;
+        this.startX = mouseX;
+        this.startY = mouseY;
+        this.currentX = mouseX;
+        this.currentY = mouseY;
+    }
+    
+    onMouseUp(e) {
+        if (this.isDrawing) {
+            let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+            this.currentX = mouseX;
+            this.currentY = mouseY;
+            
+            if (Math.abs(this.currentX - this.startX) > 1 || Math.abs(this.currentY - this.startY) > 1) {
+                // Create shapes sub-layer if it doesn't exist
+                if (!this.shapesLayer) {
+                    this.shapesLayer = new ImageEditorLayer(this.editor, this.editor.activeLayer.canvas.width, this.editor.activeLayer.canvas.height, this.editor.activeLayer);
+                    this.editor.activeLayer.childLayers.push(this.shapesLayer);
+                    console.log('Created shapes sub-layer, childLayers count:', this.editor.activeLayer.childLayers.length);
+                }
+                
+                // Save before edit for undo functionality
+                this.editor.activeLayer.saveBeforeEdit();
+                
+                let shape = {
+                    type: this.shape,
+                    x: Math.min(this.startX, this.currentX),
+                    y: Math.min(this.startY, this.currentY),
+                    width: Math.abs(this.currentX - this.startX),
+                    height: Math.abs(this.currentY - this.startY),
+                    color: this.color,
+                    strokeWidth: this.strokeWidth
+                };
+                
+                this.shapes.push(shape);
+                this.drawShapeToSubLayer(shape);
+                this.editor.markChanged();
+            }
+            
+            this.isDrawing = false;
+            this.editor.redraw();
+        }
+    }
+    
+    onGlobalMouseMove(e) {
+        if (this.isDrawing) {
+            let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+            this.currentX = mouseX;
+            this.currentY = mouseY;
+            this.editor.redraw();
+            return true;
+        }
+        return false;
+    }
+}
+
+/**
  * The Color Picker tool, a special hidden sub-tool.
  */
 class ImageEditorToolPicker extends ImageEditorTempTool {
@@ -1243,6 +1521,7 @@ class ImageEditor {
         this.addTool(new ImageEditorToolBrush(this, 'brush', 'paintbrush', 'Paintbrush', 'Draw on the image.\nHotKey: B', false, 'b'));
         this.addTool(new ImageEditorToolBrush(this, 'eraser', 'eraser', 'Eraser', 'Erase parts of the image.\nHotKey: E', true, 'e'));
         this.addTool(new ImageEditorToolBucket(this));
+        this.addTool(new ImageEditorToolShape(this));
         this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'paintbrush', 'Color Picker', 'Pick a color from the image.');
         this.addTool(this.pickerTool);
         this.activateTool('brush');
@@ -1813,6 +2092,7 @@ class ImageEditor {
         this.ctx.restore();
     }
 
+
     redraw() {
         if (!this.canvas) {
             return;
@@ -1860,6 +2140,7 @@ class ImageEditor {
             let [selectX, selectY] = this.imageCoordToCanvasCoord(this.selectX, this.selectY);
             this.drawSelectionBox(selectX, selectY, this.selectWidth * this.zoomLevel, this.selectHeight * this.zoomLevel, this.uiColor, 8 * this.zoomLevel, 0);
         }
+        
         this.activeTool.draw();
         this.ctx.restore();
     }
@@ -1874,6 +2155,7 @@ class ImageEditor {
                 layer.drawToBack(ctx, this.finalOffsetX, this.finalOffsetY, 1);
             }
         }
+        
         return canvas.toDataURL(format);
     }
 
@@ -1899,6 +2181,7 @@ class ImageEditor {
                 layer.drawToBack(ctx, -minX, -minY, 1);
             }
         }
+        
         return canvas.toDataURL(format);
     }
 
