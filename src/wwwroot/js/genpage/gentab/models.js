@@ -903,7 +903,7 @@ function directSetModel(model) {
     }
     sdModelBrowser.rebuildSelectedClasses();
     for (let browser of subModelBrowsers) {
-        browser.browser.updateWithoutDup();
+        browser.browser.update();
     }
 }
 
