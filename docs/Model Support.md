@@ -309,7 +309,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - Add a Mask, draw a dot anywhere in the empty area (this is just a trick to tell the editor to automask all the empty area to the side, you don't need to mask it manually)
     - Type your prompt, hit generate
 
-### Chroma
+# Chroma
 
 - Chroma is a derivative of Flux, and is supported in SwarmUI
     - FP8 Scaled versions here: <https://huggingface.co/silveroxides/Chroma1-HD-fp8-scaled/tree/main>
@@ -333,6 +333,10 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Sigma Shift:** Defaults to `1`
     - **Resolution:** `1024x1024` or nearby values. The *HD* models were trained extra on `1152x1152`.
 
+# Chroma Radiance
+
+- TODO: fill me in
+    - Download here <https://huggingface.co/lodestones/Chroma1-Radiance/tree/main>
 
 # Lumina 2
 
