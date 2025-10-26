@@ -1325,7 +1325,7 @@ public class WorkflowGenerator
             LoadingModel = [samplingNode, 0];
             if (IsChromaRadiance())
             {
-                LoadingVAE = CreateVAELoader("pixel_space");
+                doVaeLoader("pixel_space", null, null);
             }
             else
             {
