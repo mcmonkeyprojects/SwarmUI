@@ -233,9 +233,8 @@ public class Program
         }, "check current git commit"));
         waitFor.Add(Utilities.RunCheckedTask(async () =>
         {
-            NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
             SystemStatusMonitor.HardwareInfo.RefreshMemoryStatus();
-            MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo.MemoryStatus;
+            MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo?.MemoryStatus ?? new();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalPageFile)} total page file, {new MemoryNum((long)memStatus.AvailablePageFile)} available page file");
@@ -252,6 +251,10 @@ public class Program
             {
                 Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalVirtual)} virtual, {new MemoryNum((long)memStatus.TotalVirtual - (long)memStatus.TotalPhysical)} swap");
             }
+        }, "load cpu hardware info"));
+        waitFor.Add(Utilities.RunCheckedTask(async () =>
+        {
+            NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
             if (gpuInfo is not null && gpuInfo.Length > 0)
             {
                 JObject gpus = [];

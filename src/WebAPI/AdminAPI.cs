@@ -399,7 +399,7 @@ public static class AdminAPI
     public static async Task<JObject> GetServerResourceInfo(Session session)
     {
         NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
-        MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo.MemoryStatus;
+        MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo?.MemoryStatus ?? new();
         JObject result = new()
         {
             ["cpu"] = new JObject()
