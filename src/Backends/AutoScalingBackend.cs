@@ -108,13 +108,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             return;
         }
         Status = BackendStatus.LOADING;
-        if (Settings.MinBackends > 0)
-        {
-            for (int i = 0; i < Settings.MinBackends; i++)
-            {
-                await LaunchOne();
-            }
-        }
+        await FillToMin(100, true);
         Program.TickEvent += Tick;
         Program.PreShutdownEvent += PreShutdown;
         Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, SignalWantsOne);
@@ -123,6 +117,22 @@ public class AutoScalingBackend : AbstractT2IBackend
 
     /// <summary>Value of <see cref="Environment.TickCount64"/> at the last time that all controlled backends were pinged.</summary>
     public long LastPingAll = 0;
+
+    /// <summary>Launch new backends to ensure the minimum expected is hit.</summary>
+    /// <param name="limit">Upper limit on how many can be launched at once.</param>
+    /// <param name="hardLaunch">If true, direct launch as many as needed immediately. If false, just signal to add more if needed.</param>
+    public async Task FillToMin(int limit, bool hardLaunch)
+    {
+        int mustAdd = Settings.MinBackends - ControlledNonrealBackends.Count;
+        if (mustAdd > 0)
+        {
+            mustAdd = Math.Min(mustAdd, limit);
+            for (int i = 0; i < mustAdd; i++)
+            {
+                await (hardLaunch ? LaunchOne() : SignalWantsOne());
+            }
+        }
+    }
 
     /// <summary>Tick function, called every approx 1 sec by the core, to process slow monitoring tasks for this autoscaler.</summary>
     public void Tick()
@@ -151,6 +161,10 @@ public class AutoScalingBackend : AbstractT2IBackend
                         }
                     }
                 }
+            }
+            else
+            {
+                _ = Utilities.RunCheckedTask(() => FillToMin(1, false), $"AutoScalingBackend Fill To Min");
             }
         }
     }
