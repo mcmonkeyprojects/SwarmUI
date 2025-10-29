@@ -47,6 +47,10 @@ public static class SystemStatusMonitor
     {
         Task.Run(() =>
         {
+            if (HardwareInfo is null) // Failed to init
+            {
+                return;
+            }
             if (DeDuplicator.CurrentCount == 0)
             {
                 return;
