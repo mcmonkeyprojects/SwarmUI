@@ -336,10 +336,16 @@ public class WorkflowGenerator
         return clazz is not null && clazz.StartsWith("wan-2_1-vace-");
     }
 
+    /// <summary>Returns true if the current model is any Wan variant.</summary>
+    public bool IsAnyWanModel()
+    {
+        return IsWanVideo() || IsWanVideo22();
+    }
+
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsWanVideo() || IsWanVideo22();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsAnyWanModel();
     }
 
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
@@ -1636,7 +1642,7 @@ public class WorkflowGenerator
                 ["samples"] = latent,
                 ["tile_size"] = UserInput.Get(T2IParamTypes.VAETileSize, 256),
                 ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64),
-                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, 32),
+                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, IsAnyWanModel() ? 9999 : 32),
                 ["temporal_overlap"] = UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 4)
             }, id);
         }

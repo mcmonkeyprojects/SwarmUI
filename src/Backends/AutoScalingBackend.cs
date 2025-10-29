@@ -220,6 +220,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
             id = Interlocked.Increment(ref LaunchID);
         }
+        Logs.Info($"AutoScalingBackend launching new backend instance #{id}");
         ProcessStartInfo psi = new()
         {
             FileName = Settings.StartScript,
@@ -325,7 +326,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     {
         if (ControlledNonrealBackends.TryRemove(id, out BackendHandler.T2IBackendData data))
         {
-            Logs.Verbose($"AutoScalingBackend stopping controlled backend #{id}");
+            Logs.Info($"AutoScalingBackend stopping controlled backend #{id}");
             if (data.Backend is SwarmSwarmBackend swarmBackend)
             {
                 try
@@ -334,7 +335,7 @@ public class AutoScalingBackend : AbstractT2IBackend
                 }
                 catch (Exception ex)
                 {
-                    Logs.Debug($"AutoScalingBackend StopOne #{id} remote shutdown failed: {ex.Message}");
+                    Logs.Info($"AutoScalingBackend StopOne #{id} remote shutdown failed: {ex.Message}");
                 }
             }
             try
@@ -343,12 +344,12 @@ public class AutoScalingBackend : AbstractT2IBackend
             }
             catch (Exception ex)
             {
-                Logs.Debug($"AutoScalingBackend StopOne #{id} local delete failed: {ex.Message}");
+                Logs.Info($"AutoScalingBackend StopOne #{id} local delete failed: {ex.Message}");
             }
         }
         else
         {
-            Logs.Debug($"AutoScalingBackend StopOne called for unknown backend #{id}");
+            Logs.Info($"AutoScalingBackend StopOne called for unknown backend #{id}");
         }
     }
 
