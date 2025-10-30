@@ -88,7 +88,7 @@ function doDeleteModelNow() {
         return;
     }
     genericRequest('DeleteModel', { 'modelName': model.name, 'subtype': curModelMenuBrowser.subType }, data => {
-        curModelMenuBrowser.browser.update();
+        curModelMenuBrowser.browser.lightRefresh();
     });
     $('#delete_model_modal').modal('hide');
 }
@@ -267,7 +267,7 @@ function save_edit_model() {
     data.subtype = curModelMenuBrowser.subType;
     function complete() {
         genericRequest('EditModelMetadata', data, data => {
-            curModelMenuBrowser.browser.update();
+            curModelMenuBrowser.browser.lightRefresh();
         });
         $('#edit_model_modal').modal('hide');
     }
@@ -403,11 +403,11 @@ class ModelBrowserWrapper {
                 sortReverseElem.checked = reverse;
                 sortElem.addEventListener('change', () => {
                     localStorage.setItem(`models_${this.subType}_sort_by`, sortElem.value);
-                    this.browser.update();
+                    this.browser.lightRefresh();
                 });
                 sortReverseElem.addEventListener('change', () => {
                     localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
-                    this.browser.update();
+                    this.browser.lightRefresh();
                 });
             }
         }

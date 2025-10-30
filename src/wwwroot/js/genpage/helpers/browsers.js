@@ -197,6 +197,14 @@ class GenPageBrowserClass {
     }
 
     /**
+     * Performs a 'light' refresh: cacheless update, but no server refresh call.
+     */
+    lightRefresh() {
+        this.lastListCache = null;
+        this.update();
+    }
+
+    /**
      * Updates/refreshes the browser view.
      */
     update(isRefresh = false, callback = null) {
@@ -640,7 +648,7 @@ class GenPageBrowserClass {
             depthInput.addEventListener('change', () => {
                 this.depth = depthInput.value;
                 localStorage.setItem(`browser_${this.id}_depth`, this.depth);
-                this.update();
+                this.lightRefresh();
             });
             if (!this.showDepth) {
                 depthInput.parentElement.style.display = 'none';

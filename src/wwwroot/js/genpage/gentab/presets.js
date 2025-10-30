@@ -370,11 +370,11 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
             let sortReverseElem = document.getElementById('preset_list_sort_reverse');
             sortElem.addEventListener('change', () => {
                 localStorage.setItem('preset_list_sort_by', sortElem.value);
-                presetBrowser.update();
+                presetBrowser.lightRefresh();
             });
             sortReverseElem.addEventListener('change', () => {
                 localStorage.setItem('preset_list_sort_reverse', sortReverseElem.checked);
-                presetBrowser.update();
+                presetBrowser.lightRefresh();
             });
         }
     }

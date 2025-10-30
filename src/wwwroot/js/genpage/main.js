@@ -374,7 +374,7 @@ function loadUserData(callback) {
         }
         allPresetsUnsorted = data.presets;
         sortPresets();
-        presetBrowser.update();
+        presetBrowser.lightRefresh();
         if (shouldApplyDefault) {
             shouldApplyDefault = false;
             let defaultPreset = getPresetByTitle('default');

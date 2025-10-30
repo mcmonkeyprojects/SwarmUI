@@ -21,15 +21,15 @@ function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
             sortReverseElem.checked = reverse;
             sortElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_sort_by', sortElem.value);
-                imageHistoryBrowser.update();
+                imageHistoryBrowser.lightRefresh();
             });
             sortReverseElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_sort_reverse', sortReverseElem.checked);
-                imageHistoryBrowser.update();
+                imageHistoryBrowser.lightRefresh();
             });
             allowAnimsElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_allow_anims', allowAnimsElem.checked);
-                imageHistoryBrowser.update();
+                imageHistoryBrowser.lightRefresh();
             });
         }
     }
