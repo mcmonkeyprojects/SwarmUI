@@ -182,7 +182,8 @@ function editModel(model, browser) {
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.tagName == 'IMG') {
         setImageFileDirect(modelsHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            modelsHelpers.enableImageElem.checked = false;
+            // Auto-enable if there's no existing preview image or it's the placeholder
+            modelsHelpers.enableImageElem.checked = !model.preview_image || model.preview_image == 'imgs/model_placeholder.jpg';
             run();
         });
     }
@@ -235,7 +236,9 @@ function edit_model_load_civitai() {
         }
         if (img) {
             setImageFileDirect(modelsHelpers.imageElem, img, 'cur', 'cur', () => {
-                modelsHelpers.enableImageElem.checked = false;
+                // Auto-enable if there's no existing preview image or it's the placeholder
+                let prev = curModelMenuModel ? curModelMenuModel.preview_image : null;
+                modelsHelpers.enableImageElem.checked = !prev || prev == 'imgs/model_placeholder.jpg';
                 triggerChangeFor(modelsHelpers.enableImageElem);
             });
         }
@@ -266,7 +269,17 @@ function save_edit_model() {
     data['lora_default_confinement'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_confinement').value : '';
     data.subtype = curModelMenuBrowser.subType;
     function complete() {
-        genericRequest('EditModelMetadata', data, data => {
+        genericRequest('EditModelMetadata', data, response => {
+            // Update the cached model data with the new thumbnail immediately
+            if (curModelMenuModel && response.success && data.preview_image) {
+                // Update the current model object
+                curModelMenuModel.preview_image = data.preview_image;
+                // Update the cached model in the browser
+                let cachedModel = curModelMenuBrowser.models[curModelMenuModel.name];
+                if (cachedModel) {
+                    cachedModel.data.preview_image = data.preview_image;
+                }
+            }
             curModelMenuBrowser.browser.update();
         });
         $('#edit_model_modal').modal('hide');
