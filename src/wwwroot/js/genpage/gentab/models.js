@@ -182,8 +182,7 @@ function editModel(model, browser) {
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.tagName == 'IMG') {
         setImageFileDirect(modelsHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            // Auto-enable if there's no existing preview image or it's the placeholder
-            modelsHelpers.enableImageElem.checked = !model.preview_image || model.preview_image == 'imgs/model_placeholder.jpg';
+            modelsHelpers.enableImageElem.checked = false;
             run();
         });
     }
@@ -236,9 +235,7 @@ function edit_model_load_civitai() {
         }
         if (img) {
             setImageFileDirect(modelsHelpers.imageElem, img, 'cur', 'cur', () => {
-                // Auto-enable if there's no existing preview image or it's the placeholder
-                let prev = curModelMenuModel ? curModelMenuModel.preview_image : null;
-                modelsHelpers.enableImageElem.checked = !prev || prev == 'imgs/model_placeholder.jpg';
+                modelsHelpers.enableImageElem.checked = false;
                 triggerChangeFor(modelsHelpers.enableImageElem);
             });
         }
