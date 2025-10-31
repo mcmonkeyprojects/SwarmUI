@@ -531,17 +531,20 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
     let preview = parent.querySelector('.auto-input-preview');
     let label = parent.querySelector('.auto-file-input-filename');
     elem.dataset.filedata = src;
-    let button = `<button class="interrupt-button auto-input-image-remove-button" title="Remove ${type}">&times;</button>`;
+    let button = `<button class="interrupt-button auto-input-remove-button" title="Remove ${type}">&times;</button>`;
+    let img;
     if (type == 'image') {
         preview.innerHTML = `${button}<img alt="Image preview" />`;
+        img = preview.querySelector('img');
     }
     else if (type == 'audio') {
         preview.innerHTML = `${button}<audio alt="Audio preview" controls></audio>`;
+        img = preview.querySelector('audio');
     }
     else if (type == 'video') {
         preview.innerHTML = `${button}<video alt="Video preview" loop muted autoplay></video>`;
+        img = preview.querySelector('video');
     }
-    let img = preview.querySelector(type);
     img.onload = () => {
         if (type == 'image') {
             label.textContent = `${name} (${img.naturalWidth}x${img.naturalHeight}, ${describeAspectRatio(img.naturalWidth, img.naturalHeight)})`;

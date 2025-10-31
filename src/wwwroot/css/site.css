@@ -1073,7 +1073,7 @@ input[type="range"]::-moz-range-track {
     width: 100%;
     object-fit: contain;
 }
-.auto-input-image-remove-button {
+.auto-input-remove-button {
     margin-top: 0.5rem;
 }
 .auto-file {
