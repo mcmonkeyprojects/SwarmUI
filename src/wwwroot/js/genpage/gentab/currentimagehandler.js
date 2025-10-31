@@ -186,7 +186,7 @@ class ImageFullViewHelper {
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
-            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="${isVideo}"></video>`;
+            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop controls><source src="${encodedSrc}" type="${isVideo}"></video>`;
         }
         else if (isAudio) {
             imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}"></audio>`;
@@ -217,6 +217,14 @@ class ImageFullViewHelper {
             }
         }
         this.modalJq.modal('show');
+        if (isVideo || isAudio) {
+            let curImgElem = document.getElementById('current_image_img');
+            if (curImgElem) {
+                if (curImgElem.tagName == 'VIDEO' || curImgElem.tagName == 'AUDIO') {
+                    curImgElem.pause();
+                }
+            }
+        }
         if (this.fixButtonDelay) {
             clearTimeout(this.fixButtonDelay);
         }
@@ -667,7 +675,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         img = document.createElement('video');
         img.loop = true;
         img.autoplay = true;
-        img.muted = true;
+        img.controls = true;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
         sourceObj.type = isVideo;
