@@ -189,7 +189,7 @@ MoreThemes:
 
 PromptBuilder:
     author: Juan Treminio
-    description: Adds a new tool UI to browse clickable Danbooru tags to build your prompt.
+    description: Adds a new tool UI to browse clickable Danbooru tags to build your prompt. Appears under Tools tab dropdown.
     url: https://github.com/jtreminio/SwarmUI-PromptBuilderExtension
     license: MIT
     tags:
