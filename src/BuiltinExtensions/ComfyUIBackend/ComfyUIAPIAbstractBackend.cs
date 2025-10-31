@@ -652,11 +652,16 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 {
                     imType = "temp";
                 }
+                string url = $"filename={HttpUtility.UrlEncode(fname)}&type={imType}";
+                if (outImage.TryGetValue("subfolder", out JToken subFolder) && !string.IsNullOrWhiteSpace($"{subFolder}"))
+                {
+                    url += $"&subfolder={HttpUtility.UrlEncode($"{subFolder}")}"; // TODO: Wtf, comfy? Cursed api. Just use paths.
+                }
                 string ext = fname.AfterLast('.');
                 string format = (outImage.TryGetValue("format", out JToken formatTok) ? formatTok.ToString() : "") ?? "";
                 MediaType type = MediaType.GetByExtension(ext) ?? MediaType.TypesByMimeType.GetValueOrDefault(format) ?? MediaType.ImageJpg;
-                byte[] image = await(await HttpClient.GetAsync($"{APIAddress}/view?filename={HttpUtility.UrlEncode(fname)}&type={imType}", interrupt)).Content.ReadAsByteArrayAsync(interrupt);
-                if (image == null || image.Length == 0)
+                byte[] image = await(await HttpClient.GetAsync($"{APIAddress}/view?{url}", interrupt)).Content.ReadAsByteArrayAsync(interrupt);
+                if (image is null || image.Length == 0)
                 {
                     Logs.Error($"Invalid/null/empty image data from ComfyUI server for '{fname}', under {outData.ToDenseDebugString()}");
                     return;
