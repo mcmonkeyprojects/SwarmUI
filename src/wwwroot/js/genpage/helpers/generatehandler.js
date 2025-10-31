@@ -114,6 +114,15 @@ class GenerateHandler {
             vid.appendChild(sourceObj);
             imgHolder.div.appendChild(vid);
         }
+        else if (isAudio) {
+            if (imgElem) {
+                imgElem.remove();
+            }
+            imgElem = document.createElement('audio');
+            imgElem.controls = true;
+            imgElem.src = src;
+            imgHolder.div.appendChild(imgElem);
+        }
         else {
             imgElem.src = src;
         }

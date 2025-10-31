@@ -182,10 +182,14 @@ class ImageFullViewHelper {
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
         let isVideo = isVideoExt(src);
+        let isAudio = isAudioExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
             imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="${isVideo}"></video>`;
+        }
+        else if (isAudio) {
+            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}"></audio>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
@@ -242,6 +246,7 @@ class ImageFullViewHelper {
         this.didDrag = false;
         this.modalJq.modal('hide');
         this.lastClosed = Date.now();
+        this.content.innerHTML = '';
     }
 
     isOpen() {
@@ -631,7 +636,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
     currentMetadataVal = metadata;
     let isVideo = isVideoExt(src);
-    if ((smoothAdd || !metadata) && canReparse && !isVideo) {
+    let isAudio = isAudioExt(src);
+    if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
         let image = new Image();
         image.onload = () => {
             if (!metadata) {
@@ -667,6 +673,12 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         sourceObj.type = isVideo;
         img.appendChild(sourceObj);
     }
+    else if (isAudio) {
+        curImg.innerHTML = '';
+        img = document.createElement('audio');
+        img.controls = true;
+        srcTarget = img;
+    }
     else {
         img = document.getElementById('current_image_img');
         if (!img || img.tagName != 'IMG') {
@@ -685,6 +697,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         if (isVideo) {
             return [img.videoWidth, img.videoHeight];
         }
+        else if (isAudio) {
+            return [200, 50];
+        }
         else {
             return [img.naturalWidth, img.naturalHeight];
         }
@@ -698,7 +713,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         alignImageDataFormat();
     }
-    if (isVideo) {
+    if (isVideo || isAudio) {
         img.addEventListener('loadeddata', function() {
             if (img) {
                 img.onload();
@@ -888,7 +903,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
             getRequiredElementById('imagehistorytabclickable').click();
             imageHistoryBrowser.navigate(folder);
-        }, '', 'Jumps the Image History browser to where this image is at.');
+        }, '', 'Jumps the History browser to where this file is at.');
     }
     for (let added of buttonsForImage(imagePathClean, src, metadata)) {
         if (added.label == 'Star' || added.label == 'Unstar') {
@@ -965,6 +980,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     div.dataset.src = imageSrc;
     div.dataset.metadata = metadata;
     let isVideo = isVideoExt(imageSrc);
+    let isAudio = isAudioExt(imageSrc);
     let img, srcTarget;
     if (isVideo) {
         img = document.createElement('video');
@@ -976,6 +992,11 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         srcTarget = sourceObj;
         sourceObj.type = isVideo;
         img.appendChild(sourceObj);
+    }
+    else if (isAudio) {
+        imageSrc = 'imgs/audio_placeholder.jpg';
+        img = document.createElement('img');
+        srcTarget = img;
     }
     else {
         img = document.createElement('img');

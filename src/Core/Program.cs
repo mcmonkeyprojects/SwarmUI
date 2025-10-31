@@ -538,7 +538,7 @@ public class Program
         Extensions.RunOnAllExtensions(e => e.OnShutdown());
         Extensions.Extensions.Clear();
         Logs.Verbose("Shutdown image metadata tracker...");
-        ImageMetadataTracker.Shutdown();
+        OutputMetadataTracker.Shutdown();
         Logs.Info("All core shutdowns complete.");
         if (Logs.LogSaveThread is not null)
         {

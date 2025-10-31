@@ -456,7 +456,7 @@ class GridGenClass {
             ${modalFooter()}
             <div id="grid-gen-info-box">...</div>
             <div id="grid-gen-page-config">
-                ${makeTextInput(null, 'grid-gen-output-folder-name', '', 'Output Folder Name', 'Name of the folder to save this grid under in your Image History.\nYou can use auto-fills [date], [time], [year], [month], [day], [hour], [minute], [second]', '', 'normal', 'Output folder name...', false, true)}
+                ${makeTextInput(null, 'grid-gen-output-folder-name', '', 'Output Folder Name', 'Name of the folder to save this grid under in your History tab.\nYou can use auto-fills [date], [time], [year], [month], [day], [hour], [minute], [second]', '', 'normal', 'Output folder name...', false, true)}
             </div>
             <br>
             <div class="grid-gen-checkboxes">

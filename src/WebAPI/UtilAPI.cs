@@ -185,7 +185,7 @@ public static class UtilAPI
                 Interlocked.Add(ref backend.Usages, -backend.Backend.MaxUsages);
             }
         }
-        ImageMetadataTracker.MassRemoveMetadata();
+        OutputMetadataTracker.MassRemoveMetadata();
         T2IAPI.LastRefreshed = Environment.TickCount64 - 20000;
         return new JObject() { ["success"] = true };
     }

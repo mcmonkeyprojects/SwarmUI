@@ -1,5 +1,5 @@
 
-function listImageHistoryFolderAndFiles(path, isRefresh, callback, depth) {
+function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     let sortBy = localStorage.getItem('image_history_sort_by') ?? 'Name';
     let reverse = localStorage.getItem('image_history_sort_reverse') == 'true';
     let allowAnims = localStorage.getItem('image_history_allow_anims') != 'false';
@@ -127,7 +127,7 @@ function buttonsForImage(fullsrc, src, metadata) {
     return buttons;
 }
 
-function describeImage(image) {
+function describeOutputFile(image) {
     let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
     let parsedMeta = { is_starred: false };
     if (image.data.metadata) {
@@ -145,15 +145,24 @@ function describeImage(image) {
     let name = image.data.name;
     let allowAnims = localStorage.getItem('image_history_allow_anims') != 'false';
     let allowAnimToggle = allowAnims ? '' : '&noanim=true';
-    let dragImage = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}`;
-    let imageSrc = image.data.src.endsWith('.html') ? 'imgs/html.jpg' : `${image.data.src}?preview=true${allowAnimToggle}`;
+    let forceImage = null, forcePreview = null;
+    let extension = image.data.src.split('.').pop();
+    if (extension == 'html') {
+        forceImage = 'imgs/html.jpg';
+        forcePreview = forceImage;
+    }
+    else if (['wav', 'mp3', 'aac', 'ogg', 'flac'].includes(extension)) {
+        forcePreview = 'imgs/audio_placeholder.jpg';
+    }
+    let dragImage = forceImage ?? `${image.data.src}`;
+    let imageSrc = forcePreview ?? `${image.data.src}?preview=true${allowAnimToggle}`;
     let searchable = `${image.data.name}, ${image.data.metadata}, ${image.data.fullsrc}`;
     let detail_list = [escapeHtml(image.data.name), formattedMetadata.replaceAll('<br>', '&emsp;')];
     let aspectRatio = parsedMeta.sui_image_params?.width && parsedMeta.sui_image_params?.height ? parsedMeta.sui_image_params.width / parsedMeta.sui_image_params.height : null;
     return { name, description, buttons, 'image': imageSrc, 'dragimage': dragImage, className: parsedMeta.is_starred ? 'image-block-starred' : '', searchable, display: name, detail_list, aspectRatio };
 }
 
-function selectImageInHistory(image, div) {
+function selectOutputInHistory(image, div) {
     lastHistoryImage = image.data.src;
     lastHistoryImageDiv = div;
     let curImg = document.getElementById('current_image_img');
@@ -174,7 +183,7 @@ function selectImageInHistory(image, div) {
     }
 }
 
-let imageHistoryBrowser = new GenPageBrowserClass('image_history', listImageHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeImage, selectImageInHistory,
+let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
     `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
 
 function storeImageToHistoryWithCurrentParams(img) {

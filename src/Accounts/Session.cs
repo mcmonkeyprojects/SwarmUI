@@ -245,11 +245,11 @@ public class Session : IEquatable<Session>
                 {
                     MediaFile actualFile = image.ActualFileTask is null ? image.File : await image.ActualFileTask;
                     File.WriteAllBytes(fullPath, actualFile.RawData);
-                    if ((User.Settings.FileFormat.SaveTextFileMetadata || !ImageMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
+                    if ((User.Settings.FileFormat.SaveTextFileMetadata || !OutputMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
                         File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
                     }
-                    ImageMetadataTracker.GetOrCreatePreviewFor(fullPath.Replace('\\', '/'));
+                    OutputMetadataTracker.GetOrCreatePreviewFor(fullPath.Replace('\\', '/'));
                     Logs.Debug($"Saved an output file as '{fullPath}'");
                     await Task.Delay(TimeSpan.FromSeconds(10)); // (Give time for WebServer to read data from cache rather than having to reload from file for first read)
                     StillSavingFiles.TryRemove(fullPath, out _);

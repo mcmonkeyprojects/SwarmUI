@@ -1044,6 +1044,26 @@ function isVideoExt(filename) {
     return false;
 }
 
+/** Returns a mimetype if the given filename is for an audio file based on the extension, or boolean false if it is not. */
+function isAudioExt(filename) {
+    if (filename.startsWith('data:')) {
+        let semicolonIndex = filename.indexOf(';');
+        let colonIndex = filename.indexOf(':');
+        if (semicolonIndex >= 0 && colonIndex >= 0) {
+            let mimeType = filename.substring(colonIndex + 1, semicolonIndex);
+            if (mimeType.startsWith('audio/')) {
+                return mimeType;
+            }
+            return false;
+        }
+    }
+    let ext = filename.split('.').pop();
+    if (['mp3', 'wav', 'aac', 'ogg', 'flac'].includes(ext)) {
+        return `audio/${ext}`;
+    }
+    return false;
+}
+
 /** 'string.split' with a count limit, and without the stupid misbehavior of the default JS 'string.split'. */
 function splitWithTail(str, splitter, limit) {
     let parts = str.split(splitter);

@@ -483,7 +483,14 @@ public static class T2IAPI
         return new() { ["images"] = new JArray() { new JObject() { ["image"] = path, ["batch_index"] = "0", ["request_id"] = $"{user_input.UserRequestId}", ["metadata"] = metadata } } };
     }
 
-    public static HashSet<string> ImageExtensions = ["png", "jpg", "html", "gif", "webm", "mp4", "webp", "mov"];
+    public static HashSet<string> HistoryExtensions = // TODO: Use MediaType?
+    [
+        "png", "jpg", // image
+        "html", // special
+        "gif", "webp", // animation
+        "webm", "mp4", "mov", // video
+        "mp3", "aac", "wav", "flac" // audio
+    ];
 
     public enum ImageHistorySortMode { Name, Date }
 
@@ -600,7 +607,7 @@ public static class T2IAPI
                 }
                 List<string> subFiles = [.. Directory.EnumerateFiles(actualPath).Take(localLimit)];
                 IEnumerable<string> newFileNames = subFiles.Where(isAllowed).Where(f => extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg") && !f.EndsWith(".swarmpreview.webp")).Select(f => f.Replace('\\', '/'));
-                List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), ImageMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null)];
+                List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), OutputMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null)];
                 int leftOver = Interlocked.Add(ref remaining, -localFiles.Count);
                 sortList(localFiles);
                 filesConc.TryAdd(localId, localFiles);
@@ -646,7 +653,7 @@ public static class T2IAPI
         }
     }
 
-    public record struct ImageHistoryHelper(string Name, ImageMetadataTracker.ImageMetadataEntry Metadata);
+    public record struct ImageHistoryHelper(string Name, OutputMetadataTracker.OutputMetadataEntry Metadata);
 
     [API.APIDescription("Gets a list of images in a saved image history folder.",
         """
@@ -670,7 +677,7 @@ public static class T2IAPI
             return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
         }
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        return GetListAPIInternal(session, path, root, ImageExtensions, f => true, depth, sortMode, sortReverse);
+        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, depth, sortMode, sortReverse);
     }
 
     [API.APIDescription("Open an image folder in the file explorer. Used for local users directly.", "\"success\": true")]
@@ -744,7 +751,7 @@ public static class T2IAPI
                 deleteFile(altFile);
             }
         }
-        ImageMetadataTracker.RemoveMetadataFor(path);
+        OutputMetadataTracker.RemoveMetadataFor(path);
         return new JObject() { ["success"] = true };
     }
 
@@ -787,8 +794,8 @@ public static class T2IAPI
                         File.Move($"{starBeforeDot}{ext}", $"{pathBeforeDot}{ext}");
                     }
                 }
-                ImageMetadataTracker.RemoveMetadataFor(path);
-                ImageMetadataTracker.RemoveMetadataFor(starPath);
+                OutputMetadataTracker.RemoveMetadataFor(path);
+                OutputMetadataTracker.RemoveMetadataFor(starPath);
                 return new JObject() { ["new_state"] = false };
             }
             Logs.Warning($"User {session.User.UserID} tried to star image path '{origPath}' which maps to '{path}', but cannot as the image does not exist.");
@@ -805,8 +812,8 @@ public static class T2IAPI
                     File.Delete($"{starBeforeDot}{ext}");
                 }
             }
-            ImageMetadataTracker.RemoveMetadataFor(path);
-            ImageMetadataTracker.RemoveMetadataFor(starPath);
+            OutputMetadataTracker.RemoveMetadataFor(path);
+            OutputMetadataTracker.RemoveMetadataFor(starPath);
             return new JObject() { ["new_state"] = false };
         }
         else
@@ -821,8 +828,8 @@ public static class T2IAPI
                     File.Copy($"{pathBeforeDot}{ext}", $"{starBeforeDot}{ext}");
                 }
             }
-            ImageMetadataTracker.RemoveMetadataFor(path);
-            ImageMetadataTracker.RemoveMetadataFor(starPath);
+            OutputMetadataTracker.RemoveMetadataFor(path);
+            OutputMetadataTracker.RemoveMetadataFor(starPath);
             return new JObject() { ["new_state"] = true };
         }
     }

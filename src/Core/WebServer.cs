@@ -560,7 +560,7 @@ public class WebServer
         {
             if (context.Request.Query.TryGetValue("preview", out StringValues previewToken) && $"{previewToken}" == "true" && user.Settings.ImageHistoryUsePreviews)
             {
-                ImageMetadataTracker.ImagePreviewEntry entry = ImageMetadataTracker.GetOrCreatePreviewFor(path);
+                OutputMetadataTracker.OutputPreviewEntry entry = OutputMetadataTracker.GetOrCreatePreviewFor(path);
                 if (entry is not null)
                 {
                     data = entry.PreviewData;

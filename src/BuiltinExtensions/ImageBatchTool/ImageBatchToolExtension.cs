@@ -210,7 +210,7 @@ public class ImageBatchToolExtension : Extension
                 string diffCode = curGen == 1 ? "" : $"-{curGen}";
                 string actualFile = $"{output_folder}/{preExt}{diffCode}";
                 File.WriteAllBytes($"{actualFile}.{ext}", finalFileOutput.RawData);
-                if (!ImageMetadataTracker.ExtensionsWithMetadata.Contains(ext) && !string.IsNullOrWhiteSpace(metadata))
+                if (!OutputMetadataTracker.ExtensionsWithMetadata.Contains(ext) && !string.IsNullOrWhiteSpace(metadata))
                 {
                     File.WriteAllBytes($"{actualFile}.swarm.json", metadata.EncodeUTF8());
                 }
