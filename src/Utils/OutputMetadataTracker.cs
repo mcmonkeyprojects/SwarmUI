@@ -110,6 +110,11 @@ public static class OutputMetadataTracker
                 File.Delete(path);
                 ldb = new(path);
             }
+            // TODO: TEMP 0.9.7: Clear out old image_metadata files.
+            if (File.Exists($"{folder}/image_metadata.ldb"))
+            {
+                File.Delete($"{folder}/image_metadata.ldb");
+            }
             return new(folder, new(), ldb, ldb.GetCollection<OutputMetadataEntry>("output_metadata"), ldb.GetCollection<OutputPreviewEntry>("output_previews"));
         });
     }
