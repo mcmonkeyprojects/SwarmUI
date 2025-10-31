@@ -156,6 +156,14 @@ public class T2IParamSet
             }
             return ImageFile.FromBase64(val, MediaType.ImagePng);
         }
+        AudioFile audioFor(string val)
+        {
+            if (val.StartsWithFast("data:"))
+            {
+                return AudioFile.FromDataString(val);
+            }
+            return AudioFile.FromBase64(val, MediaType.AudioWav);
+        }
         object obj = param.Type switch
         {
             T2IParamDataType.INTEGER => param.SharpType == typeof(long) ? long.Parse(val) : int.Parse(val),
@@ -166,6 +174,7 @@ public class T2IParamSet
             T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => imageFor(v) as Image).ToList(),
             T2IParamDataType.MODEL => getModel(val),
             T2IParamDataType.LIST => val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+            T2IParamDataType.AUDIO => audioFor(val),
             _ => throw new NotImplementedException()
         };
         if (param.SharpType == typeof(int))

@@ -561,6 +561,78 @@ function load_image_file(elem) {
     setImageFileInput(elem, file);
 }
 
+// TODO: Image above and Audio below are mostly identical, can be merged
+
+let loadAudioFileDedup = false;
+
+function clearAudioFileInput(elem) {
+    let parent = findParentOfClass(elem, 'auto-input');
+    let preview = parent.querySelector('.auto-input-audio-preview');
+    let label = parent.querySelector('.auto-file-input-filename');
+    delete elem.dataset.filedata;
+    label.textContent = "";
+    preview.innerHTML = '';
+    elem.value = '';
+    loadAudioFileDedup = true;
+    triggerChangeFor(elem);
+    loadAudioFileDedup = false;
+}
+
+function setAudioFileInput(elem, file) {
+    if (!file) {
+        clearAudioFileInput(elem);
+        return;
+    }
+    let parent = findParentOfClass(elem, 'auto-input');
+    let preview = parent.querySelector('.auto-input-audio-preview');
+    let label = parent.querySelector('.auto-file-input-filename');
+    let name = file.name;
+    if (name.length > 30) {
+        name = `${name.substring(0, 27)}...`;
+    }
+    let longName = file.name.length > 500 ? file.name.substring(0, 150) + '...' : file.name;
+    label.textContent = name;
+    let reader = new FileReader();
+    reader.addEventListener("load", () => {
+        setAudioFileDirect(elem, reader.result, name, longName);
+    }, false);
+    reader.readAsDataURL(file);
+}
+
+function setAudioFileDirect(elem, src, name, longName = null, callback = null) {
+    let parent = findParentOfClass(elem, 'auto-input');
+    let preview = parent.querySelector('.auto-input-audio-preview');
+    let label = parent.querySelector('.auto-file-input-filename');
+    elem.dataset.filedata = src;
+    preview.innerHTML = `<button class="interrupt-button auto-input-audio-remove-button" title="Remove audio">&times;</button><audio alt="Audio preview" controls></audio>`;
+    let audio = preview.querySelector('audio');
+    audio.addEventListener('loadedmetadata', () => {
+        let duration = roundTo(audio.duration, 0.01);
+        label.textContent = `${name} (${duration}s)`;
+        elem.dataset.filename = longName || name;
+        elem.dataset.duration = `${duration}`;
+        loadAudioFileDedup = true;
+        triggerChangeFor(elem);
+        loadAudioFileDedup = false;
+        if (callback) {
+            callback();
+        }
+    });
+    audio.src = src;
+    preview.firstChild.addEventListener('click', () => {
+        clearAudioFileInput(elem);
+    });
+}
+
+function load_audio_file(elem) {
+    if (loadAudioFileDedup) {
+        return;
+    }
+    updateFileDragging({ target: elem }, true);
+    let file = elem.files[0];
+    setAudioFileInput(elem, file);
+}
+
 function autoSelectWidth(elem) {
     if (elem.classList.contains('nogrow')) {
         return;
@@ -837,6 +909,15 @@ function onImageInputPaste(e) {
     }
 }
 
+function onAudioInputPaste(e) {
+    let element = findParentOfClass(e.target, 'auto-input').querySelector('input[type="file"]');
+    let files = e.clipboardData.files;
+    if (files.length > 0 && files[0].type.startsWith('audio/')) {
+        element.files = files;
+        triggerChangeFor(element);
+    }
+}
+
 function makeImageInput(featureid, id, paramid, name, description, toggles = false, popover_button = true) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
@@ -856,6 +937,29 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
             </div>
         </label>
         <div class="auto-input-image-preview"></div>
+    </div>`;
+    return html;
+}
+
+function makeAudioInput(featureid, id, paramid, name, description, toggles = false, popover_button = true) {
+    name = escapeHtml(name);
+    featureid = featureid ? ` data-feature-require="${featureid}"` : '';
+    let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
+    featureid += featureid2;
+    let html = `
+    <div class="auto-input auto-file-box"${featureid}>
+        <label class="auto-audio-input-label">
+            <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
+            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Audio" onpaste="onAudioInputPaste(arguments[0])">
+        </label>
+        <label for="${id}" class="auto-file-label drag_audio_target">
+            <input class="auto-file" type="file" accept="audio/wav, audio/wave, audio/mp3, audio/aac, audio/ogg, audio/flac" id="${id}" data-param_id="${paramid}" onchange="load_audio_file(this)" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
+            <div class="auto-file-input">
+                <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
+                <span class="auto-file-input-filename"></span>
+            </div>
+        </label>
+        <div class="auto-input-audio-preview"></div>
     </div>`;
     return html;
 }
