@@ -1,6 +1,8 @@
 from . import SwarmLoadImageB64
 import folder_paths
 from nodes import CheckpointLoaderSimple, LoadImage
+from comfy_extras.nodes_video import LoadVideo
+from comfy_api.input_impl import VideoFromFile
 import os, base64, io
 try:
     from comfy_extras.nodes_audio import LoadAudio
@@ -253,6 +255,35 @@ class SwarmInputAudio:
             return (audio, )
 
 
+class SwarmInputVideo:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["video"])
+        return {
+            "required": {
+                "title": ("STRING", {"default": "My Video", "tooltip": "The name of the input."}),
+                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+            } | STANDARD_REQ_INPUTS | {
+                "video": (sorted(files), {"video_upload": True}),
+            },
+        } | STANDARD_OTHER_INPUTS
+
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ("VIDEO",)
+    FUNCTION = "do_input"
+    DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Video lets you input a video file. Internally this node uses a Base64 string as input when value is set by SwarmUI server (Generate tab), otherwise use select Video (Comfy Workflow tab)."
+
+    def do_input(self, value=None, video=None, **kwargs):
+        if not value or value == "(Do Not Set Me)":
+            return LoadVideo.execute(video)
+        else:
+            video_data = base64.b64decode(value)
+            video_bytes = io.BytesIO(video_data)
+            return (VideoFromFile(video_bytes), )
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmInputGroup": SwarmInputGroup,
     "SwarmInputInteger": SwarmInputInteger,
@@ -264,4 +295,5 @@ NODE_CLASS_MAPPINGS = {
     "SwarmInputBoolean": SwarmInputBoolean,
     "SwarmInputImage": SwarmInputImage,
     "SwarmInputAudio": SwarmInputAudio,
+    "SwarmInputVideo": SwarmInputVideo,
 }
