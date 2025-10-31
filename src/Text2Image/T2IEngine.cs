@@ -61,7 +61,7 @@ namespace SwarmUI.Text2Image
             /// <summary>The time in milliseconds it took to generate, or -1 if unknown.</summary>
             public long GenTimeMS = -1;
 
-            /// <summary>If true, the image is a real final output. If false, there is something non-standard about this file (eg it's a secondary preview) and so should be excluded from grids/etc.</summary>
+            /// <summary>If true, the file is a real final output. If false, there is something non-standard about this file (eg it's a secondary preview) and so should be excluded from grids/etc.</summary>
             public bool IsReal = true;
 
             /// <summary>An action that will remove/discard this file as relevant.</summary>

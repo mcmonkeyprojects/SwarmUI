@@ -470,7 +470,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions in a range between 928 up to 1472.
     - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
         - Requires >30 gigs of system RAM just to load at all in fp8. If you have limited sysram you're gonna have a bad time. Pagefile can help.
-    - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
+    - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles. Official recommendations are very long LLM-ish prompts though.
     - **Sigma Shift:** Comfy defaults it to `1.15`, but this ruins fine details, so Swarm defaults it to `3` instead. Many different values are potentially valid. Proper guidance on choices TBD.
 
 ### Controlnets
@@ -506,6 +506,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
         - Qwen Image Edit Plus works with up to 3 images well
         - Use phrasing like `The person in Picture 1` to refer to the content of specific input images in the prompt
+        - There are a few samples of how to prompt here <https://www.alibabacloud.com/help/en/model-studio/qwen-image-edit-api>
     - There are a couple dedicated Qwen Image Edit Lightning Loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>
         - Take care to separate the Edit lora vs the base Qwen Image lora.
 
