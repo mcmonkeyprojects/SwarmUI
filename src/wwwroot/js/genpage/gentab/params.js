@@ -625,7 +625,7 @@ function genInputs(delay_final = false) {
         }
         let inputInitImage = document.getElementById('input_initimage');
         if (inputInitImage && inputAspectRatio && inputWidth && inputHeight) {
-            let targetDiv = findParentOfClass(inputInitImage, 'auto-input').querySelector('.auto-image-input-label');
+            let targetDiv = findParentOfClass(inputInitImage, 'auto-input').querySelector('.auto-file-input-label');
             if (targetDiv) {
                 let button = document.createElement('button');
                 button.className = 'basic-button';

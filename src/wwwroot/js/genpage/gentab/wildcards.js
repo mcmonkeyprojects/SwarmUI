@@ -153,7 +153,7 @@ class WildcardHelpers {
             return;
         }
         this.curWildcardMenuWildcard = card;
-        clearImageFileInput(this.imageElem);
+        clearMediaFileInput(this.imageElem);
         this.enableImageElem.checked = false;
         let curImg = document.getElementById('current_image_img');
         this.nameElem.value = card.name;
@@ -166,7 +166,7 @@ class WildcardHelpers {
             $(this.modalElem).modal('show');
         };
         if (curImg && curImg.tagName == 'IMG') {
-            setImageFileDirect(this.imageElem, curImg.src, 'cur', 'cur', () => {
+            setMediaFileDirect(this.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
                 this.enableImageElem.checked = false;
                 run();
             });

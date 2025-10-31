@@ -145,7 +145,7 @@ function editModel(model, browser) {
     }
     curModelMenuModel = model;
     curModelMenuBrowser = browser;
-    clearImageFileInput(modelsHelpers.imageElem);
+    clearMediaFileInput(modelsHelpers.imageElem);
     modelsHelpers.enableImageElem.checked = false;
     triggerChangeFor(modelsHelpers.enableImageElem);
     editModelFillTechnicalInfo(model);
@@ -181,7 +181,7 @@ function editModel(model, browser) {
     };
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.tagName == 'IMG') {
-        setImageFileDirect(modelsHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
+        setMediaFileDirect(modelsHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
             modelsHelpers.enableImageElem.checked = false;
             run();
         });
@@ -234,7 +234,7 @@ function edit_model_load_civitai() {
             }
         }
         if (img) {
-            setImageFileDirect(modelsHelpers.imageElem, img, 'cur', 'cur', () => {
+            setMediaFileDirect(modelsHelpers.imageElem, img, 'image', 'cur', 'cur', () => {
                 modelsHelpers.enableImageElem.checked = false;
                 triggerChangeFor(modelsHelpers.enableImageElem);
             });

@@ -43,7 +43,7 @@ function clearPresetView() {
     getRequiredElementById('new_preset_name').value = '';
     getRequiredElementById('preset_description').value = '';
     getRequiredElementById('new_preset_modal_error').value = '';
-    clearImageFileInput(presetHelpers.imageElem);
+    clearMediaFileInput(presetHelpers.imageElem);
     presetHelpers.enableImageElem.checked = false;
     triggerChangeFor(presetHelpers.enableImageElem);
     for (let type of gen_param_types) {
@@ -90,7 +90,7 @@ function create_new_preset_button() {
         $('#add_preset_modal').modal('show');
     };
     if (curImg && curImg.tagName == 'IMG') {
-        setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
+        setMediaFileDirect(presetHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
             presetHelpers.enableImageElem.checked = false;
             run();
         });
@@ -321,7 +321,7 @@ function editPreset(preset) {
         fixPresetParamClickables();
     };
     if (curImg && curImg.tagName == 'IMG') {
-        setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
+        setMediaFileDirect(presetHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
             presetHelpers.enableImageElem.checked = false;
             run();
         });

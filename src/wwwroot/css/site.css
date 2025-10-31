@@ -120,15 +120,15 @@ body {
 .auto-input-flex-wide {
     flex-basis: 100% !important;
 }
-.auto-input-image-preview {
+.auto-input-preview {
     width: fit-content;
     margin: auto;
 }
-.auto-input-image-remove-button {
+.auto-input-remove-button {
     position: absolute;
     left: 0.5rem;
 }
-.auto-input-image-preview img {
+.auto-input-preview img {
     max-width: 50rem;
     max-height: 10rem;
     margin: auto;
@@ -1069,7 +1069,7 @@ input[type="range"]::-moz-range-track {
 .input-group .auto-file-box {
     min-width: 100%;
 }
-.auto-input-image-preview img {
+.auto-input-preview img {
     width: 100%;
     object-fit: contain;
 }

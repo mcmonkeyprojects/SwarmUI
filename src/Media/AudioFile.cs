@@ -2,6 +2,7 @@
 
 namespace SwarmUI.Media;
 
+/// <summary>A simple audio file (eg mp3, wav).</summary>
 public class AudioFile : MediaFile
 {
     /// <summary>Creates an audio object from a web audio data URL string.</summary>
