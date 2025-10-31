@@ -380,6 +380,9 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("If true, when you interrupt generation, any incomplete generations will be removed from the batch view.\nIf false, they will linger in the batch view with an X mark indicated they were started but not finished.\nIn both cases, they will not save to file.")]
             public bool RemoveInterruptedGens = false;
+
+            [ConfigComment("Pipe-separated list of partial error message bodies.\nIf an error message contains any of these, it will not show in the main error popup box.\nThis is to hide intentionally-induced errors, or errors that pop up frequently but you don't want to be annoyed about.\nFor example, set this to 'Generation session interrupted.|Some Other Error.' if you frequently externally interrupt your own gens.")]
+            public string HideErrorMessages = "";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]

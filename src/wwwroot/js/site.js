@@ -69,6 +69,13 @@ function enableSliderForBox(div) {
 }
 
 function showError(message) {
+    let excludeErrorMessages = (typeof getUserSetting == 'function' ? getUserSetting('ui.HideErrorMessages', '') : '').split('|').map(x => x.trim());
+    for (let excludeMessage of excludeErrorMessages) {
+        if (excludeMessage && message.includes(excludeMessage)) {
+            console.log(`Error message ${message} contains excluded message ${excludeMessage}, not showing.`);
+            return;
+        }
+    }
     let container = getRequiredElementById('center_toast');
     let box = getRequiredElementById('error_toast_box');
     getRequiredElementById('error_toast_content').innerText = message;
