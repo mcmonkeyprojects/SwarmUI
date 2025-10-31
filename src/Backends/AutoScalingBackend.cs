@@ -15,9 +15,6 @@ public class AutoScalingBackend : AbstractT2IBackend
 {
     public class AutoScalingBackendSettings : AutoConfiguration
     {
-        [ConfigComment("Auto-Scaling Backends are a WIP. Do not use this.\nBy checking this checkbox, you agree to have your entire PC deleted and your house set on fire.")]
-        public bool DO_NOT_USE_THIS = false;
-
         [ConfigComment("Maximum number of additional backends to spin up.")]
         public int MaxBackends = 5;
 
@@ -77,12 +74,6 @@ public class AutoScalingBackend : AbstractT2IBackend
 
     public override async Task Init()
     {
-        if (!Settings.DO_NOT_USE_THIS)
-        {
-            Logs.Error("AutoScalingBackend is a WIP. Do not use it.");
-            Status = BackendStatus.ERRORED;
-            return;
-        }
         CanLoadModels = false;
         TimeOfNextStart = 0;
         TimeOfNextStop = 0;
