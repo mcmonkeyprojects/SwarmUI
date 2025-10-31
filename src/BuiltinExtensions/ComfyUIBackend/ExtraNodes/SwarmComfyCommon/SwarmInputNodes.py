@@ -1,7 +1,12 @@
 from . import SwarmLoadImageB64
 import folder_paths
 from nodes import CheckpointLoaderSimple, LoadImage
-import os
+import os, base64, io
+try:
+    from comfy_extras.nodes_audio import LoadAudio
+    from comfy_extras.nodes_audio import load as raw_audio_load
+except ImportError:
+    print("Error: Nodes_Audio failed to import")
 
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
@@ -216,6 +221,38 @@ class SwarmInputImage:
             return SwarmLoadImageB64.b64_to_img_and_mask(value)
 
 
+class SwarmInputAudio:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["audio"])
+        return {
+            "required": {
+                "title": ("STRING", {"default": "My Audio", "tooltip": "The name of the input."}),
+                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+            } | STANDARD_REQ_INPUTS | {
+                # TODO: This explodes the comfy frontend for some reason
+                #"audio": (sorted(files), {"audio_upload": True}),
+            },
+        } | STANDARD_OTHER_INPUTS
+
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ("AUDIO",)
+    FUNCTION = "do_input"
+    DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Audio lets you input an audio file. Internally this node uses a Base64 string as input when value is set by SwarmUI server (Generate tab), otherwise use select Audio (Comfy Workflow tab)."
+
+    def do_input(self, value=None, audio=None, **kwargs):
+        if not value or value == "(Do Not Set Me)":
+            return LoadAudio().load_audio(audio)
+        else:
+            audio_data = base64.b64decode(value)
+            audio_bytes = io.BytesIO(audio_data)
+            waveform, sample_rate = raw_audio_load(audio_bytes)
+            audio = {"waveform": waveform.unsqueeze(0), "sample_rate": sample_rate}
+            return (audio, )
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmInputGroup": SwarmInputGroup,
     "SwarmInputInteger": SwarmInputInteger,
@@ -226,4 +263,5 @@ NODE_CLASS_MAPPINGS = {
     "SwarmInputDropdown": SwarmInputDropdown,
     "SwarmInputBoolean": SwarmInputBoolean,
     "SwarmInputImage": SwarmInputImage,
+    "SwarmInputAudio": SwarmInputAudio,
 }
