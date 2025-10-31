@@ -550,8 +550,8 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             elem.dataset.resolution = `${img.naturalWidth}x${img.naturalHeight}`;
         }
         else if (type == 'audio') {
-            label.textContent = `${name} (${audio.duration}s)`;
-            elem.dataset.duration = `${audio.duration}`;
+            label.textContent = `${name} (${img.duration}s)`;
+            elem.dataset.duration = `${img.duration}`;
         }
         else if (type == 'video') {
             label.textContent = `${name} (${img.duration}s) (${img.videoWidth}x${img.videoHeight}, ${describeAspectRatio(img.videoWidth, img.videoHeight)})`;
@@ -573,6 +573,12 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             img.onload();
         });
         img.innerHTML = `<source src="${src}">`;
+    }
+    else if (type == 'audio') {
+        img.addEventListener('loadedmetadata', () => {
+            img.onload();
+        });
+        img.src = src;
     }
     else {
         img.src = src;
