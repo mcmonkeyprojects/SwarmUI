@@ -128,7 +128,7 @@ body {
     position: absolute;
     left: 0.5rem;
 }
-.auto-input-preview img {
+.auto-input-preview img, .auto-input-preview video {
     max-width: 50rem;
     max-height: 10rem;
     margin: auto;
@@ -1069,7 +1069,7 @@ input[type="range"]::-moz-range-track {
 .input-group .auto-file-box {
     min-width: 100%;
 }
-.auto-input-preview img {
+.auto-input-preview img, .auto-input-preview video {
     width: 100%;
     object-fit: contain;
 }

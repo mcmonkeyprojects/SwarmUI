@@ -538,6 +538,9 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
     else if (type == 'audio') {
         preview.innerHTML = `${button}<audio alt="Audio preview" controls></audio>`;
     }
+    else if (type == 'video') {
+        preview.innerHTML = `${button}<video alt="Video preview" loop muted autoplay></video>`;
+    }
     let img = preview.querySelector(type);
     img.onload = () => {
         if (type == 'image') {
@@ -550,6 +553,13 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             label.textContent = `${name} (${audio.duration}s)`;
             elem.dataset.duration = `${audio.duration}`;
         }
+        else if (type == 'video') {
+            label.textContent = `${name} (${img.duration}s) (${img.videoWidth}x${img.videoHeight}, ${describeAspectRatio(img.videoWidth, img.videoHeight)})`;
+            elem.dataset.duration = `${img.duration}`;
+            elem.dataset.width = img.videoWidth;
+            elem.dataset.height = img.videoHeight;
+            elem.dataset.resolution = `${img.videoWidth}x${img.videoHeight}`;
+        }
         elem.dataset.filename = longName || name;
         loadMediaFileDedup = true;
         triggerChangeFor(elem);
@@ -558,7 +568,15 @@ function setMediaFileDirect(elem, src, type, name, longName = null, callback = n
             callback();
         }
     };
-    img.src = src;
+    if (type == 'video') {
+        img.addEventListener('loadeddata', () => {
+            img.onload();
+        });
+        img.innerHTML = `<source src="${src}">`;
+    }
+    else {
+        img.src = src;
+    }
     preview.firstChild.addEventListener('click', () => {
         clearMediaFileInput(elem);
     });
@@ -885,6 +903,30 @@ function makeAudioInput(featureid, id, paramid, name, description, toggles = fal
         </label>
         <label for="${id}" class="auto-file-label drag_audio_target">
             <input class="auto-file" type="file" accept="audio/wav, audio/wave, audio/mp3, audio/aac, audio/ogg, audio/flac" id="${id}" data-param_id="${paramid}" onchange="load_media_file(this, 'audio')" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
+            <div class="auto-file-input">
+                <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
+                <span class="auto-file-input-filename"></span>
+            </div>
+        </label>
+        <div class="auto-input-preview"></div>
+    </div>`;
+    return html;
+}
+
+
+function makeVideoInput(featureid, id, paramid, name, description, toggles = false, popover_button = true) {
+    name = escapeHtml(name);
+    featureid = featureid ? ` data-feature-require="${featureid}"` : '';
+    let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
+    featureid += featureid2;
+    let html = `
+    <div class="auto-input auto-file-box"${featureid}>
+        <label class="auto-file-input-label">
+            <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
+            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Video" onpaste="onFileInputPaste(arguments[0], 'video/')">
+        </label>
+        <label for="${id}" class="auto-file-label drag_video_target">
+            <input class="auto-file" type="file" accept="video/mp4, video/webm, video/quicktime, video/mov" id="${id}" data-param_id="${paramid}" onchange="load_media_file(this, 'video')" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
             <div class="auto-file-input">
                 <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
                 <span class="auto-file-input-filename"></span>

@@ -155,6 +155,8 @@ function getHtmlForParam(param, prefix) {
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
             case 'audio':
                 return {html: makeAudioInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+            case 'video':
+                return {html: makeVideoInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
             case 'image_list':
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
         }
@@ -1045,7 +1047,7 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         $(paramElem).val(vals);
         $(paramElem).trigger('change');
     }
-    else if (param.type == "image" || param.type == "image_list" || param.type == "audio") {
+    else if (param.type == "image" || param.type == "image_list" || param.type == "audio" || param.type == "video") {
         // do not edit raw data files directly, this will just misbehave
     }
     else if (paramElem.tagName == "SELECT") {

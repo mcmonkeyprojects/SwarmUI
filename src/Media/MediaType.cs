@@ -69,7 +69,7 @@ public class MediaType(string extension, string mimeType, MediaMetaType metaType
     /// <summary>Core video media types.</summary>
     public static MediaType VideoMp4 = Register(new("mp4", "video/mp4", MediaMetaType.Video)),
         VideoWebm = Register(new("webm", "video/webm", MediaMetaType.Video)),
-        VideoMov = Register(new("mov", "video/quicktime", MediaMetaType.Video));
+        VideoMov = Register(new("mov", "video/quicktime", MediaMetaType.Video, ["video/mov"]));
 
     /// <summary>Core audio media types.</summary>
     public static MediaType AudioMp3 = Register(new("mp3", "audio/mpeg", MediaMetaType.Audio)),

@@ -561,6 +561,7 @@ function comfyBuildParams(requireSave, callback) {
                     case 'SwarmInputBoolean': type = 'boolean'; doFixMe = true; break;
                     case 'SwarmInputImage': type = 'image'; break;
                     case 'SwarmInputAudio': type = 'audio'; break;
+                    case 'SwarmInputVideo': type = 'video'; break;
                     default: throw new Error(`Unknown SwarmInput type ${node.class_type}`);
                 }
                 let inputIdDirect = node.inputs['raw_id'] || cleanParamName(node.inputs['title']);

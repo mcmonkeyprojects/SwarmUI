@@ -34,6 +34,8 @@ public enum T2IParamDataType
     IMAGE_LIST,
     /// <summary>Raw audio data file.</summary>
     AUDIO,
+    /// <summary>Raw video data file.</summary>
+    VIDEO,
 }
 
 /// <summary>Which format to display a number in.</summary>
@@ -224,6 +226,7 @@ public class T2IParamTypes
         if (t.IsAssignableTo(typeof(List<string>))) return T2IParamDataType.LIST;
         if (t.IsAssignableTo(typeof(List<Image>))) return T2IParamDataType.IMAGE_LIST;
         if (t.IsAssignableTo(typeof(AudioFile))) return T2IParamDataType.AUDIO;
+        if (t.IsAssignableTo(typeof(VideoFile))) return T2IParamDataType.VIDEO;
         return T2IParamDataType.UNSET;
     }
 
@@ -240,6 +243,7 @@ public class T2IParamTypes
             T2IParamDataType.LIST => typeof(List<string>),
             T2IParamDataType.IMAGE_LIST => typeof(List<Image>),
             T2IParamDataType.AUDIO => typeof(AudioFile),
+            T2IParamDataType.VIDEO => typeof(VideoFile),
             _ => null
         };
     }
@@ -995,6 +999,7 @@ public class T2IParamTypes
                 return val;
             case T2IParamDataType.IMAGE:
             case T2IParamDataType.AUDIO:
+            case T2IParamDataType.VIDEO:
                 if (val.StartsWith("data:"))
                 {
                     val = val.After(',');
