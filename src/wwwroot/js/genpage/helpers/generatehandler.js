@@ -99,6 +99,7 @@ class GenerateHandler {
             vid.remove();
         }
         let isVideo = isVideoExt(src);
+        let isAudio = isAudioExt(src);
         if (isVideo) {
             if (imgElem) {
                 imgElem.remove();
