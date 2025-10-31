@@ -571,7 +571,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     // TODO: This will require separate remote sessions per-user for multiuser support
                     await HttpClient.PostJson($"{Address}/API/InterruptAll", new() { ["session_id"] = Session, ["other_sessions"] = false }, RequestAdapter());
                 }
-                JObject response = await websocket.ReceiveJson(1024 * 1024 * 100, true);
+                JObject response = await websocket.ReceiveJson(1024 * 1024 * 1024, true);
                 if (response is not null)
                 {
                     AutoThrowException(response);

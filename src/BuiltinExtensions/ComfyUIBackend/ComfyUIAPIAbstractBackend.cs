@@ -343,7 +343,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     await doInterruptNow();
                     return;
                 }
-                Task<byte[]> getData = socket.ReceiveData(100 * 1024 * 1024, Program.GlobalProgramCancel);
+                Task<byte[]> getData = socket.ReceiveData(1024 * 1024 * 1024, Program.GlobalProgramCancel);
                 Task t = await Task.WhenAny(getData, interruptTask);
                 if (t == interruptTask)
                 {
@@ -827,7 +827,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 filled ??= defVal;
                 if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
                 {
-                    Logs.Verbose($"Filled tag '{tag}' with '{filled}'");
+                    Logs.Verbose($"Filled tag '{tag}' with '{(filled.Length > 512 ? $"{filled[..512]}...": filled)}'");
                 }
                 return Utilities.EscapeJsonString(filled);
             }, false);
