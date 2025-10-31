@@ -17,4 +17,10 @@ public class MediaFile
     {
         return $"data:{Type.MimeType};base64,{AsBase64}";
     }
+
+    /// <inheritdoc/>
+    public override string ToString()
+    {
+        return $"MediaFile({Type}, {RawData.Length} bytes)";
+    }
 }

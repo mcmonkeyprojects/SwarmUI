@@ -73,9 +73,10 @@ public class MediaType(string extension, string mimeType, MediaMetaType metaType
 
     /// <summary>Core audio media types.</summary>
     public static MediaType AudioMp3 = Register(new("mp3", "audio/mpeg", MediaMetaType.Audio)),
-        AudioWav = Register(new("wav", "audio/wav", MediaMetaType.Audio)),
+        AudioWav = Register(new("wav", "audio/wav", MediaMetaType.Audio, ["audio/wave", "audio/x-wav"])),
         AudioOgg = Register(new("ogg", "audio/ogg", MediaMetaType.Audio)),
-        AudioFlac = Register(new("flac", "audio/flac", MediaMetaType.Audio));
+        AudioFlac = Register(new("flac", "audio/flac", MediaMetaType.Audio)),
+        AudioAac = Register(new("aac", "audio/aac", MediaMetaType.Audio));
 
     /// <summary>Core text media types.</summary>
     public static MediaType TextTxt = Register(new("txt", "text/plain", MediaMetaType.Text));

@@ -775,9 +775,9 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     {
                         return model.ToString(ModelFolderFormat);
                     }
-                    else if (val is Image image)
+                    else if (val is MediaFile file)
                     {
-                        return image.AsBase64;
+                        return file.AsBase64;
                     }
                     else if (val is List<string> list)
                     {

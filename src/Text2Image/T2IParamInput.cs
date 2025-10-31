@@ -262,9 +262,9 @@ public class T2IParamInput
 
     public static object SimplifyParamVal(object val)
     {
-        if (val is ImageFile img)
+        if (val is MediaFile file)
         {
-            return img.AsBase64;
+            return file.AsBase64;
         }
         else if (val is List<Image> imgList)
         {
@@ -302,7 +302,7 @@ public class T2IParamInput
 
     public static JToken MetadatableToJTok(object val)
     {
-        if (val is Image)
+        if (val is MediaFile)
         {
             return null;
         }
