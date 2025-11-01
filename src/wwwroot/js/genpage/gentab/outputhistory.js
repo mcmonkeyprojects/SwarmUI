@@ -98,6 +98,7 @@ function buttonsForImage(fullsrc, src, metadata) {
                 if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
                     return;
                 }
+                shiftToNextImagePreview(true, imageFullView.isOpen());
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
                     if (e) {
                         e.remove();
@@ -119,7 +120,6 @@ function buttonsForImage(fullsrc, src, metadata) {
                     if (currentImage && currentImage.dataset.src == src) {
                         forceShowWelcomeMessage();
                     }
-                    imageFullView.close();
                 });
             }
         });
