@@ -465,6 +465,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
     if (!curImgElem) {
         return false;
     }
+    let doCycle = getUserSetting('ui.imageshiftingcycles', true);
     let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
     if (curImgElem.dataset.batch_id == 'history') {
         let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
@@ -475,9 +476,15 @@ function shiftToNextImagePreview(next = true, expand = false) {
         }
         let newIndex = index + (next ? 1 : -1);
         if (newIndex < 0) {
+            if (!doCycle) {
+                return false;
+            }
             newIndex = divs.length - 1;
         }
         else if (newIndex >= divs.length) {
+            if (!doCycle) {
+                return false;
+            }
             newIndex = 0;
         }
         if (newIndex == index) {
@@ -501,9 +508,15 @@ function shiftToNextImagePreview(next = true, expand = false) {
     }
     let newIndex = index + (next ? 1 : -1);
     if (newIndex < 0) {
+        if (!doCycle) {
+            return false;
+        }
         newIndex = imgs.length - 1;
     }
     else if (newIndex >= imgs.length) {
+        if (!doCycle) {
+            return false;
+        }
         newIndex = 0;
     }
     if (newIndex == index) {

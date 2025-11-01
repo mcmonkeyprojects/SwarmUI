@@ -383,6 +383,9 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("Pipe-separated list of partial error message bodies.\nIf an error message contains any of these, it will not show in the main error popup box.\nThis is to hide intentionally-induced errors, or errors that pop up frequently but you don't want to be annoyed about.\nFor example, set this to 'Generation session interrupted.|Some Other Error.' if you frequently externally interrupt your own gens.")]
             public string HideErrorMessages = "";
+
+            [ConfigComment("If true, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf false, shifting will simply stop at the ends.")]
+            public bool ImageShiftingCycles = true;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
