@@ -1660,3 +1660,25 @@ body {
     height: 1lh;
     padding-top: 0 !important;
 }
+#edit_model_override_inputs {
+    flex-wrap: wrap;
+    width: 100%;
+}
+#edit_model_override_inputs > div {
+    min-width: 100%;
+    flex: 0 0 100%;
+}
+#edit_model_override_block small {
+    flex: 0 0 100%;
+}
+#edit_model_override_inputs select {
+    flex: 1;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+#edit_model_override_inputs button.disabled-dim {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+

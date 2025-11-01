@@ -156,6 +156,12 @@
         </select></div>
         Description: <textarea class="auto-text auto-text-block translate" id="edit_model_description" rows="3" placeholder="Model description text..."></textarea>
         <div id="edit_model_image_block"></div>
+        <hr>
+        <div id="edit_model_override_block" class="input-group input-group-open">
+            <div class="translate" style="font-weight: bold; margin-bottom: 0.5rem;">Parameter Overrides</div>
+            <small class="form-text text-muted d-block mb-2 translate">Each of these is optional. If set, they will be applied automatically, overriding your current values, when you select this model.</small>
+            <div id="edit_model_override_inputs" class="input-group-content"></div>
+        </div>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-primary basic-button translate" onclick="save_edit_model()">Save</button>

@@ -328,6 +328,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             [$"{prefix}is_negative_embedding"] = Metadata?.IsNegativeEmbedding ?? false,
             [$"{prefix}lora_default_weight"] = Metadata?.LoraDefaultWeight ?? "",
             [$"{prefix}lora_default_confinement"] = Metadata?.LoraDefaultConfinement ?? "",
+            [$"{prefix}parameter_overrides"] = Metadata?.ParameterOverrides?.Count > 0 ? JObject.FromObject(Metadata.ParameterOverrides) : null,
             [$"{prefix}local"] = true,
             [$"{prefix}time_created"] = Metadata?.TimeCreated ?? 0,
             [$"{prefix}time_modified"] = Metadata?.TimeModified ?? 0,

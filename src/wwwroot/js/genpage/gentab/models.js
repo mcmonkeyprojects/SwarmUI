@@ -13,6 +13,12 @@ class ModelsHelpers {
 /** Collection of helper functions and data related to models, just an instance of {@link ModelsHelpers}. */
 let modelsHelpers = new ModelsHelpers();
 
+/** Model Parameter Overrides Configuration */
+// Currently-supported parameters for overrides
+const MODEL_OVERRIDE_PARAMS = ['steps', 'cfgscale', 'sampler', 'scheduler', 'clipskip', 'width', 'height'];
+// Parameters where 0 means "unset" rather than a valid value (0 is only unset for numeric params with Min > 0)
+const TREAT_ZERO_AS_UNSET_PARAMS = ['steps', 'cfgscale', 'width', 'height'];
+
 //////////// TODO: Merge all the below into the class above (or multiple separate classes)
 
 let models = {};
@@ -176,6 +182,11 @@ function editModel(model, browser) {
     getRequiredElementById('edit_model_lora_default_confinement').value = model.lora_default_confinement || '';
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     let run = () => {
+        buildModelOverrideInputs();
+        for (let paramId of MODEL_OVERRIDE_PARAMS) {
+            let value = model.parameter_overrides?.[paramId] ?? '';
+            setOverrideValue(paramId, value);
+        }
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
     };
@@ -265,6 +276,15 @@ function save_edit_model() {
     data['lora_default_weight'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_weight').value : '';
     data['lora_default_confinement'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_confinement').value : '';
     data.subtype = curModelMenuBrowser.subType;
+    // Gather parameter overrides
+    let overrides = {};
+    for (let paramId of MODEL_OVERRIDE_PARAMS) {
+        let input = document.getElementById(`edit_model_override_${paramId}`);
+        if (input?.value) {
+            overrides[paramId] = input.value;
+        }
+    }
+    data['parameter_overrides'] = Object.keys(overrides).length > 0 ? JSON.stringify(overrides) : '';
     function complete() {
         genericRequest('EditModelMetadata', data, data => {
             curModelMenuBrowser.browser.lightRefresh();
@@ -896,6 +916,26 @@ function directSetModel(model) {
         curModelSpecialFormat = specialFormat;
     }
     reviseBackendFeatureSet();
+    
+    if (model?.parameter_overrides) {
+        for (let paramId of MODEL_OVERRIDE_PARAMS) {
+            let overrideValue = model.parameter_overrides[paramId];
+            if (overrideValue !== undefined && overrideValue !== '') {
+                let param = rawGenParamTypesFromServer?.find(p => p.id === paramId);
+                if (param) {
+                    let value = overrideValue;
+                    // Convert to appropriate type based on parameter definition
+                    if (param.type === 'integer') {
+                        value = parseInt(value);
+                    } else if (param.type === 'decimal') {
+                        value = parseFloat(value);
+                    }
+                    setDirectParamValue(param, value);
+                }
+            }
+        }
+    }
+    
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));
     let aspect = document.getElementById('input_aspectratio');
     if (aspect) {
@@ -1022,6 +1062,175 @@ function doModelInstallRequiredCheck() {
         return true;
     }
     return false;
+}
+
+function setOverrideFromCurrent(paramName) {
+    let paramId = 'input_' + paramName;
+    let elem = document.getElementById(paramId);
+    if (elem) {
+        let currentValue = elem.value;
+        if (currentValue !== undefined && currentValue !== '') {
+            let overrideInput = document.getElementById(`edit_model_override_${paramName}`);
+            overrideInput.value = currentValue;
+            overrideInput.dispatchEvent(new Event('input', { bubbles: true }));
+            updateOverrideClearButtonState(paramName);
+        }
+    }
+}
+
+function clearOverride(paramName) {
+    setOverrideValue(paramName, '');
+}
+
+function setOverrideValue(paramName, value) {
+    let input = document.getElementById(`edit_model_override_${paramName}`);
+    if (!input) return;
+    input.value = value ? value : (TREAT_ZERO_AS_UNSET_PARAMS.includes(paramName) ? '0' : '')
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    updateOverrideClearButtonState(paramName);
+}
+
+function updateOverrideClearButtonState(paramName) {
+    let input = document.getElementById(`edit_model_override_${paramName}`);
+    if (!input) return;
+    // Find the Clear button (it's a btn-danger in the same row)
+    let row = input.closest('.row');
+    if (!row) return;
+    let clearBtn = row.querySelector('button.btn-danger');
+    if (clearBtn) {
+        if (input.value === '') {
+            clearBtn.classList.add('disabled-dim');
+        } else {
+            clearBtn.classList.remove('disabled-dim');
+        }
+    }
+}
+
+function buildModelOverrideInputs() {
+    let container = getRequiredElementById('edit_model_override_inputs');
+    let html = '';
+    
+    for (let paramId of MODEL_OVERRIDE_PARAMS) {
+        // Look up parameter from server
+        let param = rawGenParamTypesFromServer?.find(p => p.id === paramId);
+        if (!param) {
+            continue;
+        }
+        
+        let label = param.name || paramId;
+        let treatAsUnset = TREAT_ZERO_AS_UNSET_PARAMS.includes(paramId);
+        let fieldHtml = '';
+        
+        if (param.type === 'integer' || param.type === 'decimal') {
+            // Numeric parameter - use slider matching main UI layout
+            let min = param.min !== undefined ? param.min : 0;
+            let max = param.max !== undefined ? param.max : 999;
+            let step = param.step || 1;
+            let view_min = param.view_min || min;
+            let view_max = param.view_max || max;
+            
+            let sliderHtml = makeSliderInput(null, `edit_model_override_${paramId}`, paramId, label, '', '0', min, max, view_min, view_max, step, false, false, false);
+            fieldHtml = `
+                <div class="mb-1">
+                    <div class="row align-items-end g-2 m-0">
+                        <div class="col">${sliderHtml}</div>
+                        <div class="col-auto d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-secondary basic-button translate" onclick="setOverrideFromCurrent('${paramId}')" title="Copy current ${label.toLowerCase()} value to here">Set</button>
+                            <button type="button" class="btn btn-sm btn-danger basic-button translate" onclick="clearOverride('${paramId}')">Clear</button>
+                        </div>
+                    </div>
+                </div>`;
+        } else if (param.type === 'dropdown' && param.values) {
+            // Dropdown parameter
+            let fullDropdownHtml = makeDropdownInput(null, `edit_model_override_${paramId}`, paramId, label, '', param.values, '', false, false, param.value_names);
+            // Extract just the select element's HTML
+            let selectMatch = fullDropdownHtml.match(/<select[^>]*>[\s\S]*?<\/select>/);
+            let selectHtml = selectMatch ? selectMatch[0] : '';
+            fieldHtml = `
+                <div class="mb-1">
+                    <label for="edit_model_override_${paramId}" class="form-label translate">${escapeHtml(label)}</label>
+                    <div class="row align-items-center g-2 m-0">
+                        <div class="col d-flex" style="min-width: 0;">
+                            ${selectHtml}
+                        </div>
+                        <div class="col-auto d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-secondary basic-button translate" onclick="setOverrideFromCurrent('${paramId}')" title="Copy current ${label.toLowerCase()} value to override">Set</button>
+                            <button type="button" class="btn btn-sm btn-danger basic-button translate" onclick="clearOverride('${paramId}')">Clear</button>
+                        </div>
+                    </div>
+                </div>`;
+        } else {
+            // Text input parameter
+            fieldHtml = `
+                <div class="mb-1">
+                    <div class="row align-items-end g-2 m-0">
+                        <div class="col">
+                            <div class="auto-input auto-text-box auto-input-flex">
+                                <label>
+                                    <span class="auto-input-name">${translateableHtml(escapeHtml(label))}</span>
+                                </label>
+                                <input type="text" class="auto-text auto-text-block" id="edit_model_override_${paramId}" data-name="${escapeHtml(label)}" placeholder="Leave blank to not override" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-auto d-flex gap-1">
+                            <button type="button" class="btn btn-sm btn-secondary basic-button translate" onclick="setOverrideFromCurrent('${paramId}')" title="Copy current ${label.toLowerCase()} value to override">Set</button>
+                            <button type="button" class="btn btn-sm btn-danger basic-button translate" onclick="clearOverride('${paramId}')">Clear</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        html += fieldHtml;
+    }
+    
+    container.innerHTML = html;
+    
+    // Sliders need to be enabled after being added to DOM
+    for (let elem of container.querySelectorAll('.auto-slider-box')) {
+        let numberInput = elem.querySelector('input[type="number"]');
+        if (numberInput) {
+            enableSliderForBox(elem);
+            // Attach zero-as-unset behavior for applicable numeric params
+            let paramId = numberInput.id.replace('edit_model_override_', '');
+            if (TREAT_ZERO_AS_UNSET_PARAMS.includes(paramId)) {
+                numberInput.dataset.treatZeroAsUnset = 'true';
+                numberInput.addEventListener('change', function() {
+                    if ((this.value === '0' || this.value === '')) {
+                        this.value = '';
+                    }
+                });
+                let sliderRange = elem.querySelector('input[type="range"]');
+                sliderRange?.addEventListener('change', function() {
+                    if (this.value === '0') {
+                        numberInput.value = '';
+                        numberInput.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+        }
+    }
+    
+    // Apply autoSelectWidth for dropdowns after DOM is ready
+    for (let selectElem of container.querySelectorAll('select')) {
+        setTimeout(() => {
+            autoSelectWidth(selectElem);
+        }, 0);
+    }
+    
+    // Initialize Clear button states and attach change listeners
+    for (let paramId of MODEL_OVERRIDE_PARAMS) {
+        let input = document.getElementById(`edit_model_override_${paramId}`);
+        if (input) {
+            updateOverrideClearButtonState(paramId);
+            // Attach listener for state changes
+            input.addEventListener('change', function() {
+                updateOverrideClearButtonState(paramId);
+            });
+            input.addEventListener('input', function() {
+                updateOverrideClearButtonState(paramId);
+            });
+        }
+    }
 }
 
 getRequiredElementById('current_model').addEventListener('change', currentModelChanged);
