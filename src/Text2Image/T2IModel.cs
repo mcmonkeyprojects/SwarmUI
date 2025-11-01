@@ -195,6 +195,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                     Logs.Verbose("Metadata resave: must rebuild hash");
                     // Metadata fix for when we generated hashes into the file metadata headers, but did not save them into the metadata cache
                     Metadata.Hash = (metaHeader?.ContainsKey("modelspec.hash_sha256") ?? false) ? metaHeader.Value<string>("modelspec.hash_sha256") : "0x" + Utilities.BytesToHex(SHA256.HashData(reader));
+                    Logs.Verbose("Metadata resave: do metadata reset for hash");
                     Handler.ResetMetadataFrom(this);
                 }
                 void specSet(string key, string val)
