@@ -460,12 +460,13 @@ function copy_current_image_params() {
  * Shifts the current image view (and full-view if open) to the next or previous image.
  * Returns true if the shift was successful, returns false if there was nothing to shift to.
  */
-function shiftToNextImagePreview(next = true, expand = false) {
+function shiftToNextImagePreview(next = true, expand = false, isDeleting = false) {
     let curImgElem = document.getElementById('current_image_img');
     if (!curImgElem) {
         return false;
     }
     let doCycle = getUserSetting('ui.imageshiftingcycles', true);
+    let deleteCycle = getUserSetting('ui.deleteimagecycleend', true);
     let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
     if (curImgElem.dataset.batch_id == 'history') {
         let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
@@ -475,17 +476,34 @@ function shiftToNextImagePreview(next = true, expand = false) {
             return false;
         }
         let newIndex = index + (next ? 1 : -1);
+        let shouldCycle = isDeleting ? deleteCycle : doCycle;
         if (newIndex < 0) {
-            if (!doCycle) {
-                return false;
+            if (shouldCycle) {
+                newIndex = divs.length - 1;
+            } else {
+                if (!isDeleting) {
+                    return false;
+                }
+                if (divs.length > 1) {
+                    newIndex = 1;
+                } else {
+                    return false;
+                }
             }
-            newIndex = divs.length - 1;
         }
         else if (newIndex >= divs.length) {
-            if (!doCycle) {
-                return false;
+            if (shouldCycle) {
+                newIndex = 0;
+            } else {
+                if (!isDeleting) {
+                    return false;
+                }
+                if (divs.length > 1) {
+                    newIndex = divs.length - 2;
+                } else {
+                    return false;
+                }
             }
-            newIndex = 0;
         }
         if (newIndex == index) {
             return false;
@@ -507,17 +525,34 @@ function shiftToNextImagePreview(next = true, expand = false) {
         return false;
     }
     let newIndex = index + (next ? 1 : -1);
+    let shouldCycle = isDeleting ? deleteCycle : doCycle;
     if (newIndex < 0) {
-        if (!doCycle) {
-            return false;
+        if (shouldCycle) {
+            newIndex = imgs.length - 1;
+        } else {
+            if (!isDeleting) {
+                return false;
+            }
+            if (imgs.length > 1) {
+                newIndex = 1;
+            } else {
+                return false;
+            }
         }
-        newIndex = imgs.length - 1;
     }
     else if (newIndex >= imgs.length) {
-        if (!doCycle) {
-            return false;
+        if (shouldCycle) {
+            newIndex = 0;
+        } else {
+            if (!isDeleting) {
+                return false;
+            }
+            if (imgs.length > 1) {
+                newIndex = imgs.length - 2;
+            } else {
+                return false;
+            }
         }
-        newIndex = 0;
     }
     if (newIndex == index) {
         return false;
