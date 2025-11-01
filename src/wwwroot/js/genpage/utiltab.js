@@ -335,6 +335,9 @@ class ModelDownloaderUtil {
                         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                         applyMetadata(canvas.toDataURL());
                     };
+                    video.onerror = () => {
+                        applyMetadata('');
+                    };
                     video.src = url;
                 }
                 else {
