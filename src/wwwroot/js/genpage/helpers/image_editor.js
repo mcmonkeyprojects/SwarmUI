@@ -934,9 +934,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.strokeWidth = parseInt(this.strokeNumber.value);
         this.editor.redraw();
     }
-    
-    
-    
+
     draw() {
         if (this.isDrawing) {
             this.editor.ctx.save();
@@ -2225,7 +2223,6 @@ class ImageEditor {
             let [selectX, selectY] = this.imageCoordToCanvasCoord(this.selectX, this.selectY);
             this.drawSelectionBox(selectX, selectY, this.selectWidth * this.zoomLevel, this.selectHeight * this.zoomLevel, this.uiColor, 8 * this.zoomLevel, 0);
         }
-        
         this.activeTool.draw();
         this.ctx.restore();
     }
@@ -2240,8 +2237,6 @@ class ImageEditor {
                 layer.drawToBack(ctx, this.finalOffsetX, this.finalOffsetY, 1);
             }
         }
-        
-        
         return canvas.toDataURL(format);
     }
 
@@ -2267,11 +2262,8 @@ class ImageEditor {
                 layer.drawToBack(ctx, -minX, -minY, 1);
             }
         }
-        
-        
         return canvas.toDataURL(format);
     }
-
 
     getFinalMaskData(format = 'image/png') {
         let canvas = document.createElement('canvas');
