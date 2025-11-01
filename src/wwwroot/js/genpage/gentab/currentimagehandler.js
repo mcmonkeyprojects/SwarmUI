@@ -322,14 +322,14 @@ function clickImageInBatch(div) {
 }
 
 /** Removes a preview thumbnail and moves to either previous or next image. */
-function removeImageBlockFromBatch(div) {
+function removeImageBlockFromBatch(div, shift = false) {
     if (!div.classList.contains('image-block-current')) {
         div.remove();
         return;
     }
     let chosen = div.previousElementSibling || div.nextElementSibling;
     div.remove();
-    if (chosen) {
+    if (shift && chosen) {
         clickImageInBatch(chosen);
     }
 }
@@ -350,7 +350,7 @@ function rightClickImageInBatch(e, div) {
             popoverActions.push({ key: added.label, action: added.onclick, title: added.title });
         }
     }
-    popoverActions.push({ key: 'Remove From Batch View', action: () => removeImageBlockFromBatch(div) })
+    popoverActions.push({ key: 'Remove From Batch View', action: () => removeImageBlockFromBatch(div, true) })
     let popover = new AdvancedPopover('image_batch_context_menu', popoverActions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();

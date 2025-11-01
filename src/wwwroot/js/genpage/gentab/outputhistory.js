@@ -98,7 +98,8 @@ function buttonsForImage(fullsrc, src, metadata) {
                 if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
                     return;
                 }
-                let shifted = shiftToNextImagePreview(true, imageFullView.isOpen());
+                let deleteBehavior = getUserSetting('ui.deleteimagebehavior', 'next');
+                let shifted = deleteBehavior == 'nothing' ? false : shiftToNextImagePreview(deleteBehavior == 'next', imageFullView.isOpen());
                 if (!shifted) {
                     imageFullView.close();
                 }
@@ -115,13 +116,13 @@ function buttonsForImage(fullsrc, src, metadata) {
                     if (div) {
                         div.remove();
                     }
-                    div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
-                    if (div) {
-                        removeImageBlockFromBatch(div);
-                    }
                     let currentImage = document.getElementById('current_image_img');
                     if (currentImage && currentImage.dataset.src == src) {
                         forceShowWelcomeMessage();
+                    }
+                    div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
+                    if (div) {
+                        removeImageBlockFromBatch(div);
                     }
                 });
             }
