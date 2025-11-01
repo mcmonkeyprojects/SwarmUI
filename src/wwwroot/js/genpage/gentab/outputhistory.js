@@ -98,7 +98,10 @@ function buttonsForImage(fullsrc, src, metadata) {
                 if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
                     return;
                 }
-                shiftToNextImagePreview(true, imageFullView.isOpen());
+                let shifted = shiftToNextImagePreview(true, imageFullView.isOpen());
+                if (!shifted) {
+                    imageFullView.close();
+                }
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
                     if (e) {
                         e.remove();
