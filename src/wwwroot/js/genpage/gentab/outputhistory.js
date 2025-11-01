@@ -98,6 +98,31 @@ function buttonsForImage(fullsrc, src, metadata) {
                 if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
                     return;
                 }
+                let wasFullView = imageFullView && imageFullView.isOpen && imageFullView.isOpen();
+                let curImg = document.getElementById('current_image_img');
+                let keepOpen = false;
+                if (wasFullView && curImg) {
+                    if (curImg.dataset.batch_id == 'history' && lastHistoryImageDiv && lastHistoryImageDiv.parentElement) {
+                        let divs = [...lastHistoryImageDiv.parentElement.children].filter(d => d.classList && d.classList.contains('image-block'));
+                        if (divs.length > 1) {
+                            let index = divs.findIndex(div => div == lastHistoryImageDiv);
+                            let goNext = index == 0;
+                            shiftToNextImagePreview(goNext, true);
+                            keepOpen = true;
+                        }
+                    }
+                    else {
+                        let batchArea = getRequiredElementById('current_image_batch');
+                        let blocks = [...batchArea.getElementsByClassName('image-block')].filter(d => !d.classList.contains('image-block-placeholder'));
+                        if (blocks.length > 1) {
+                            let currentBlock = batchArea.querySelector('.image-block-current');
+                            let index = currentBlock ? blocks.findIndex(b => b == currentBlock) : -1;
+                            let goNext = index == 0;
+                            shiftToNextImagePreview(goNext, true);
+                            keepOpen = true;
+                        }
+                    }
+                }
                 genericRequest('DeleteImage', {'path': fullsrc}, data => {
                     if (e) {
                         e.remove();
@@ -114,6 +139,9 @@ function buttonsForImage(fullsrc, src, metadata) {
                     div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
                     if (div) {
                         removeImageBlockFromBatch(div);
+                    }
+                    if (keepOpen) {
+                        return;
                     }
                     let currentImage = document.getElementById('current_image_img');
                     if (currentImage && currentImage.dataset.src == src) {

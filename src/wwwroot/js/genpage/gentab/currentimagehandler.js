@@ -178,6 +178,7 @@ class ImageFullViewHelper {
     }
 
     showImage(src, metadata, batchId = null) {
+        let wasOpen = this.isOpen();
         this.currentSrc = src;
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
@@ -225,24 +226,26 @@ class ImageFullViewHelper {
                 }
             }
         }
-        if (this.fixButtonDelay) {
-            clearTimeout(this.fixButtonDelay);
-        }
-        if (Date.now() - this.lastClosed > 200) {
-            subDiv.style.pointerEvents = 'none';
-            for (let button of subDiv.getElementsByTagName('button')) {
-                button.disabled = true;
-                button.classList.add('simpler-button-disable');
+        if (!wasOpen) {
+            if (this.fixButtonDelay) {
+                clearTimeout(this.fixButtonDelay);
             }
-            this.fixButtonDelay = setTimeout(() => {
-                if (subDiv && subDiv.parentElement) {
-                    subDiv.style.pointerEvents = 'auto';
-                    for (let button of subDiv.getElementsByTagName('button')) {
-                        button.disabled = false;
-                    }
+            if (Date.now() - this.lastClosed > 200) {
+                subDiv.style.pointerEvents = 'none';
+                for (let button of subDiv.getElementsByTagName('button')) {
+                    button.disabled = true;
+                    button.classList.add('simpler-button-disable');
                 }
-                this.fixButtonDelay = null;
-            }, 500);
+                this.fixButtonDelay = setTimeout(() => {
+                    if (subDiv && subDiv.parentElement) {
+                        subDiv.style.pointerEvents = 'auto';
+                        for (let button of subDiv.getElementsByTagName('button')) {
+                            button.disabled = false;
+                        }
+                    }
+                    this.fixButtonDelay = null;
+                }, 500);
+            }
         }
     }
 
