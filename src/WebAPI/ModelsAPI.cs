@@ -481,7 +481,7 @@ public static class ModelsAPI
         [API.APIParameter("New model `is_negative_embedding` metadata value.")] bool is_negative_embedding = false,
         [API.APIParameter("New model `lora_default_weight` metadata value.")] string lora_default_weight = "",
         [API.APIParameter("New model `lora_default_confinement` metadata value.")] string lora_default_confinement = "",
-        [API.APIParameter("Parameter overrides as sparse JSON dictionary, eg {\"steps\": \"30\", \"cfgscale\": \"7.5\"}. Use null/empty to clear all overrides.")] string parameter_overrides = null,
+        [API.APIParameter("Preset to use for parameter overrides, or null/empty to clear.")] string parameter_override_preset_id = null,
         [API.APIParameter("The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc.")] string subtype = "Stable-Diffusion")
     {
         using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
@@ -541,22 +541,7 @@ public static class ModelsAPI
             actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
             actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
-            // Handle parameter overrides
-            actualModel.Metadata.ParameterOverrides = null;
-            if (!string.IsNullOrWhiteSpace(parameter_overrides))
-            {
-                try
-                {
-                    JObject overridesObj = JObject.Parse(parameter_overrides);
-                    actualModel.Metadata.ParameterOverrides = (overridesObj.ToObject<Dictionary<string, string>>() ?? [])
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-                }
-                catch (Exception ex)
-                {
-                    Logs.Warning($"Failed to parse parameter overrides for model {model}: {ex.Message}");
-                }
-            }
+            actualModel.Metadata.ParameterOverridePresetId = string.IsNullOrWhiteSpace(parameter_override_preset_id) ? null : parameter_override_preset_id;
             handler.ResetMetadataFrom(actualModel);
         }
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");

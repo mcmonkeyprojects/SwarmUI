@@ -145,8 +145,8 @@ public class T2IModelHandler
         /// <summary>Special format indicators, such as "bnb_nf4".</summary>
         public string SpecialFormat { get; set; }
 
-        /// <summary>Model-specific parameter overrides, mapping parameter names to override values. Keys can be "steps", "cfgscale", etc.</summary>
-        public Dictionary<string, string> ParameterOverrides { get; set; }
+        /// <summary>ID of the Preset to use for parameter overrides.</summary>
+        public string ParameterOverridePresetId { get; set; }
     }
 
     public T2IModelHandler()
