@@ -181,6 +181,7 @@ class ImageFullViewHelper {
         this.currentSrc = src;
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
+        let wasAlreadyOpen = this.isOpen();
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
@@ -228,7 +229,7 @@ class ImageFullViewHelper {
         if (this.fixButtonDelay) {
             clearTimeout(this.fixButtonDelay);
         }
-        if (Date.now() - this.lastClosed > 200) {
+        if (Date.now() - this.lastClosed > 200 && !wasAlreadyOpen) {
             subDiv.style.pointerEvents = 'none';
             for (let button of subDiv.getElementsByTagName('button')) {
                 button.disabled = true;
