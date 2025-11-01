@@ -99,7 +99,7 @@ function buttonsForImage(fullsrc, src, metadata) {
                     return;
                 }
                 let deleteBehavior = getUserSetting('ui.deleteimagebehavior', 'next');
-                let shifted = deleteBehavior == 'nothing' ? false : shiftToNextImagePreview(deleteBehavior == 'next', imageFullView.isOpen());
+                let shifted = deleteBehavior == 'nothing' ? false : shiftToNextImagePreview(deleteBehavior == 'next', imageFullView.isOpen(), true);
                 if (!shifted) {
                     imageFullView.close();
                 }

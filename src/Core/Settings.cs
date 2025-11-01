@@ -390,6 +390,9 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("If true, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf false, shifting will simply stop at the ends.")]
             public bool ImageShiftingCycles = true;
+
+            [ConfigComment("If true, deleting an image at the beginning or end of list may cycle to the other end, depending on your selected Delete Image Behavior.\nIf false, will not jump to the other end.")]
+            public bool DeleteImageCycleEnd = true;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
