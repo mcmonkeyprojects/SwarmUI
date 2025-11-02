@@ -183,7 +183,7 @@ function editModel(model, browser) {
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     let run = () => {
         buildModelOverridePresetInput();
-        updatePresetClearButtonState();
+        updatePresetLinkButtonState('edit_model_override_preset_id');
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
     };
@@ -920,21 +920,8 @@ function directSetModel(model) {
     try {
         let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
         if (presetTitle) {
-            // Only remove other model-linked presets if THIS model has a preset to apply
-            if (sdModelBrowser?.models) {
-                let modelLinkedPresetTitles = new Set();
-                for (let otherModelName in sdModelBrowser.models) {
-                    // Only remove presets from OTHER models, not the current one
-                    let otherPresetTitle = getItemPresetLink('model', otherModelName);
-                    // Only add to removal set if it has a preset linked
-                    if (otherPresetTitle && extractItemKeyName(otherModelName) !== extractItemKeyName(model.name || modelName)) {
-                        modelLinkedPresetTitles.add(otherPresetTitle);
-                    }
-                }
-                if (modelLinkedPresetTitles.size > 0) {
-                    currentPresets = currentPresets.filter(p => !modelLinkedPresetTitles.has(p.title));
-                }
-            }
+            // Enforce mutual exclusivity - remove other models' presets
+            currentPresets = removeOtherModelPresets(model.name || modelName);
             let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
             if (presetData) {
                 if (autoApply) {
@@ -954,7 +941,7 @@ function directSetModel(model) {
                             if (data.itemPresetLinks && typeof itemPresetLinkManager !== 'undefined') {
                                 itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
                             }
-                            handleLoraPresetsFromLoraList(presetData.param_map.loras, presetData.param_map.loraweights);
+                            selectOrApplyLoraPresetsFromList(presetData.param_map.loras, presetData.param_map.loraweights);
                         });
                     }
                 }
@@ -1104,6 +1091,30 @@ function doModelInstallRequiredCheck() {
 }
 
 /**
+ * Removes preset links from other models when a model with its own preset is selected.
+ * This enforces mutual exclusivity of model presets - only one model's preset should be active.
+ * @param {string} currentModelName - The full path/name of the currently-selected model
+ * @returns {array} Updated currentPresets array with other models' presets removed
+ */
+function removeOtherModelPresets(currentModelName) {
+    if (!sdModelBrowser?.models || !currentModelName) {
+        return currentPresets;
+    }
+    let otherModelPresets = new Set();
+    for (let otherModelName in sdModelBrowser.models) {
+        let otherPresetTitle = getItemPresetLink('model', otherModelName);
+        // Skip presets from the current model and models without presets
+        if (otherPresetTitle && extractItemKeyNameFromPath(otherModelName) !== extractItemKeyNameFromPath(currentModelName)) {
+            otherModelPresets.add(otherPresetTitle);
+        }
+    }
+    // Return filtered presets if there are any to remove, otherwise return unchanged
+    return otherModelPresets.size > 0 
+        ? currentPresets.filter(p => !otherModelPresets.has(p.title))
+        : currentPresets;
+}
+
+/**
  * Extract the base filename from a full model/LoRA path.
  * This is used as the key for preset linking to ensure links don't break if the user reorganizes
  * their files.
@@ -1116,7 +1127,7 @@ function doModelInstallRequiredCheck() {
  * @param {string} itemName - The full model/LoRA name (path or filename)
  * @returns {string} The base filename without path or extension
  */
-function extractItemKeyName(itemName) {
+function extractItemKeyNameFromPath(itemName) {
     if (!itemName) {
         return '';
     }
@@ -1141,7 +1152,7 @@ function getItemPresetLink(itemType, itemName) {
     if (!itemName) {
         return null;
     }
-    let keyName = extractItemKeyName(itemName);
+    let keyName = extractItemKeyNameFromPath(itemName);
     return itemPresetLinkManager.getLink(itemType, keyName);
 }
 
@@ -1157,8 +1168,7 @@ function saveItemPresetLink(itemType, itemName, presetTitle) {
     if (!itemName) {
         return;
     }
-    let keyName = extractItemKeyName(itemName);
-    
+    let keyName = extractItemKeyNameFromPath(itemName);
     if (presetTitle && presetTitle.trim()) {
         genericRequest('SaveItemPresetLink', { 'itemType': itemType, 'itemName': keyName, 'presetTitle': presetTitle }, data => {
             itemPresetLinkManager.setLink(itemType, keyName, presetTitle);
@@ -1167,28 +1177,6 @@ function saveItemPresetLink(itemType, itemName, presetTitle) {
         genericRequest('ClearItemPresetLink', { 'itemType': itemType, 'itemName': keyName }, data => {
             itemPresetLinkManager.clearLink(itemType, keyName);
         });
-    }
-}
-
-function updatePresetClearButtonState() {
-    let presetSelect = document.getElementById('edit_model_override_preset_id');
-    if (!presetSelect) return;
-    let clearBtn = document.getElementById('edit_model_preset_clear_btn');
-    let setBtn = document.getElementById('edit_model_preset_set_btn');
-    if (clearBtn) {
-        if (presetSelect.value === '') {
-            clearBtn.classList.add('disabled-dim');
-        } else {
-            clearBtn.classList.remove('disabled-dim');
-        }
-    }
-    if (setBtn) {
-        // Dim Set button if no presets are currently selected
-        if (!currentPresets || currentPresets.length === 0) {
-            setBtn.classList.add('disabled-dim');
-        } else {
-            setBtn.classList.remove('disabled-dim');
-        }
     }
 }
 
@@ -1201,7 +1189,7 @@ function applyPresetOverride() {
             presetSelect.dispatchEvent(new Event('change'));
         }
     }
-    updatePresetClearButtonState();
+    updatePresetLinkButtonState('edit_model_override_preset_id');
 }
 
 function clearPresetOverride() {
@@ -1210,13 +1198,13 @@ function clearPresetOverride() {
         presetSelect.value = '';
         presetSelect.dispatchEvent(new Event('change'));
     }
-    updatePresetClearButtonState();
+    updatePresetLinkButtonState('edit_model_override_preset_id');
 }
 
 
 function buildModelOverridePresetInput() {
-    // Pass the full model name; buildItemPresetLinkInput will handle key extraction
-    buildItemPresetLinkInput('model', curModelMenuModel.name, 'edit_model_override_preset', 'edit_model_override_preset_id');
+    // Pass the full model name; buildPresetLinkSelectorForItem will handle key extraction
+    buildPresetLinkSelectorForItem('model', curModelMenuModel.name, 'edit_model_override_preset', 'edit_model_override_preset_id');
 }
 
 getRequiredElementById('current_model').addEventListener('change', currentModelChanged);

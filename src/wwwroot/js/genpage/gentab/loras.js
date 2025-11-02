@@ -276,7 +276,7 @@ class LoraHelper {
         else {
             this.selected.push(new SelectedLora(name, null, null, data));
             // Handle LoRA preset selection/application when adding a LoRA
-            handleLoraPresetOnSelection(name);
+            selectOrApplyLoraPresetOnSelection(name);
         }
         this.rebuildParams();
         this.rebuildUI();

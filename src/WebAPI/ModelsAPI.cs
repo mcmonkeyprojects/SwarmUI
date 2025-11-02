@@ -31,7 +31,7 @@ public static class ModelsAPI
         API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(SaveItemPresetLink, true, Permissions.ManagePresets);
         API.RegisterAPICall(ClearItemPresetLink, true, Permissions.ManagePresets);
-        API.RegisterAPICall(DoModelDownloadWS, true, Permissions.LoadModelsNow);
+        API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
         API.RegisterAPICall(DeleteModel, false, Permissions.DeleteModels);
@@ -892,6 +892,12 @@ public static class ModelsAPI
         return new JObject() { ["success"] = true };
     }
 
+    /// <summary>Saves a reference to a preset for a model or LoRA to the user's data.</summary>
+    /// <param name="session">The user session context.</param>
+    /// <param name="itemType">The type of item: 'model' or 'lora'.</param>
+    /// <param name="itemName">The name/identifier of the model or LoRA.</param>
+    /// <param name="presetTitle">The title of the preset to link, or empty string to clear the link.</param>
+    /// <returns>A JSON object containing the success status, the key that was saved/cleared, and the preset title.</returns>
     public static async Task<JObject> SaveItemPresetLink(Session session, string itemType, string itemName, string presetTitle)
     {
         Logs.Debug($"[SaveItemPresetLink] Received: itemType='{itemType}' (type: {itemType?.GetType()?.Name}), itemName='{itemName}', presetTitle='{presetTitle}'");
@@ -921,6 +927,11 @@ public static class ModelsAPI
         }
     }
 
+    /// <summary>Clears a reference to a preset for a model or LoRA from the user's data.</summary>
+    /// <param name="session">The user session context.</param>
+    /// <param name="itemType">The type of item: 'model' or 'lora'.</param>
+    /// <param name="itemName">The name/identifier of the model or LoRA.</param>
+    /// <returns>A JSON object containing the success status and the key that was cleared.</returns>
     public static async Task<JObject> ClearItemPresetLink(Session session, string itemType, string itemName)
     {
         string key = $"{itemType}:{itemName}";

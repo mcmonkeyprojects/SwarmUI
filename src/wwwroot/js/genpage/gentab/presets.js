@@ -321,6 +321,9 @@ function applyOnePreset(preset, isNestedPreset = false) {
                     // Merge LoRA lists: update weights for existing LoRAs, add new ones
                     let currentLoras = rawVal.split(',').map(l => l.trim()).filter(l => l.length > 0);
                     let weightsParam = gen_param_types.find(p => p.id == 'loraweights');
+                    if (!weightsParam) {
+                        console.warn('[Preset] Warning: loraweights parameter not found when merging LoRA lists');
+                    }
                     let weightsVal = weightsParam ? getInputVal(weightsParam) : '';
                     let currentWeights = (weightsVal || '').split(',').map(w => {
                         let parsed = parseFloat(w.trim());
@@ -365,7 +368,7 @@ function applyOnePreset(preset, isNestedPreset = false) {
     }    
     // Handle LoRA preset selection/application (only if not already a nested preset to prevent recursion)
     if (!isNestedPreset && preset.param_map.loras) {
-        handleLoraPresetsFromLoraList(preset.param_map.loras, preset.param_map.loraweights);
+        selectOrApplyLoraPresetsFromList(preset.param_map.loras, preset.param_map.loraweights);
     }
 }
 
@@ -400,7 +403,7 @@ function applyOrSelectPreset(source, itemName, presetData, isNested, shouldUpdat
  * @param {string} lorasStr - Comma-separated list of LoRA names
  * @param {string} weightsStr - Comma-separated list of LoRA weights
  */
-function handleLoraPresetsFromLoraList(lorasStr, weightsStr) {
+function selectOrApplyLoraPresetsFromList(lorasStr, weightsStr) {
     if (!lorasStr) {
         return;
     }
@@ -459,7 +462,7 @@ function handleLoraPresetsFromLoraList(lorasStr, weightsStr) {
  * Handle LoRA preset selection/application when a LoRA is manually selected.
  * @param {string} loraName - The name of the LoRA being selected
  */
-function handleLoraPresetOnSelection(loraName) {
+function selectOrApplyLoraPresetOnSelection(loraName) {
     try {
         let presetTitle = getItemPresetLink('lora', loraName);
         if (presetTitle) {
@@ -986,7 +989,7 @@ function closeImportPresetViewer() {
  * @param {string} containerId - The ID of the container element to populate
  * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_override_preset_id')
  */
-function buildItemPresetLinkInput(itemType, itemName, containerId, selectId) {
+function buildPresetLinkSelectorForItem(itemType, itemName, containerId, selectId) {
     let container = getRequiredElementById(containerId);
     container.innerHTML = '';
     
@@ -1026,21 +1029,21 @@ function buildItemPresetLinkInput(itemType, itemName, containerId, selectId) {
     
     select.addEventListener('change', () => {
         // Update button state when selection changes
-        updateItemPresetLinkButtonState(selectId);
+        updatePresetLinkButtonState(selectId);
     });
     select.addEventListener('input', () => {
-        updateItemPresetLinkButtonState(selectId);
+        updatePresetLinkButtonState(selectId);
     });
     
     container.appendChild(select);
-    updateItemPresetLinkButtonState(selectId);
+    updatePresetLinkButtonState(selectId);
 }
 
 /**
  * Update the enabled state of Set/Clear buttons based on preset selector state.
  * @param {string} selectId - The ID of the select element
  */
-function updateItemPresetLinkButtonState(selectId) {
+function updatePresetLinkButtonState(selectId) {
     let select = document.getElementById(selectId);
     if (!select) return;
     
@@ -1050,19 +1053,11 @@ function updateItemPresetLinkButtonState(selectId) {
     let setBtn = document.getElementById(`${baseId}_set_btn`);
     
     if (clearBtn) {
-        if (select.value == '') {
-            clearBtn.classList.add('disabled-dim');
-        } else {
-            clearBtn.classList.remove('disabled-dim');
-        }
+        clearBtn.classList.toggle('disabled-dim', select.value == '');
     }
     
     if (setBtn) {
         // Dim Set button if no presets are currently selected
-        if (!currentPresets || currentPresets.length == 0) {
-            setBtn.classList.add('disabled-dim');
-        } else {
-            setBtn.classList.remove('disabled-dim');
-        }
+        setBtn.classList.toggle('disabled-dim', !currentPresets?.length);
     }
 }
