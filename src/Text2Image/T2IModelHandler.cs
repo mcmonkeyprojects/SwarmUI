@@ -144,9 +144,6 @@ public class T2IModelHandler
 
         /// <summary>Special format indicators, such as "bnb_nf4".</summary>
         public string SpecialFormat { get; set; }
-
-        /// <summary>ID of the Preset to use for parameter overrides.</summary>
-        public string ParameterOverridePresetId { get; set; }
     }
 
     public T2IModelHandler()

@@ -29,7 +29,9 @@ public static class ModelsAPI
         API.RegisterAPICall(TestPromptFill, false, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(EditWildcard, true, Permissions.EditWildcards);
         API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
-        API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
+        API.RegisterAPICall(SaveItemPresetLink, true, Permissions.ManagePresets);
+        API.RegisterAPICall(ClearItemPresetLink, true, Permissions.ManagePresets);
+        API.RegisterAPICall(DoModelDownloadWS, true, Permissions.LoadModelsNow);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
         API.RegisterAPICall(DeleteModel, false, Permissions.DeleteModels);
@@ -481,7 +483,6 @@ public static class ModelsAPI
         [API.APIParameter("New model `is_negative_embedding` metadata value.")] bool is_negative_embedding = false,
         [API.APIParameter("New model `lora_default_weight` metadata value.")] string lora_default_weight = "",
         [API.APIParameter("New model `lora_default_confinement` metadata value.")] string lora_default_confinement = "",
-        [API.APIParameter("Preset to use for parameter overrides, or null/empty to clear.")] string parameter_override_preset_id = null,
         [API.APIParameter("The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc.")] string subtype = "Stable-Diffusion")
     {
         using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
@@ -541,7 +542,6 @@ public static class ModelsAPI
             actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
             actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
             actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
-            actualModel.Metadata.ParameterOverridePresetId = string.IsNullOrWhiteSpace(parameter_override_preset_id) ? null : parameter_override_preset_id;
             handler.ResetMetadataFrom(actualModel);
         }
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
@@ -890,5 +890,57 @@ public static class ModelsAPI
         }
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
+    }
+
+    public static async Task<JObject> SaveItemPresetLink(Session session, string itemType, string itemName, string presetTitle)
+    {
+        Logs.Debug($"[SaveItemPresetLink] Received: itemType='{itemType}' (type: {itemType?.GetType()?.Name}), itemName='{itemName}', presetTitle='{presetTitle}'");
+        string key = $"{itemType}:{itemName}";
+        Logs.Debug($"[SaveItemPresetLink] Constructed key: '{key}'");
+        try
+        {
+            string rawJson = session.User.GetGenericData("itempresetlinks", "data") ?? "{}";
+            JObject links = JObject.Parse(rawJson);
+            if (!string.IsNullOrWhiteSpace(presetTitle))
+            {
+                links[key] = presetTitle;
+            }
+            else if (links.ContainsKey(key))
+            {
+                links.Remove(key);
+            }
+            string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
+            session.User.SaveGenericData("itempresetlinks", "data", newJson);
+            Logs.Debug($"[SaveItemPresetLink] Saved successfully with key '{key}'");
+            return new JObject() { ["success"] = true, ["key"] = key, ["preset"] = presetTitle };
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Error saving preset link: {ex.Message}");
+            return new JObject() { ["success"] = false, ["error"] = ex.Message };
+        }
+    }
+
+    public static async Task<JObject> ClearItemPresetLink(Session session, string itemType, string itemName)
+    {
+        string key = $"{itemType}:{itemName}";
+        try
+        {
+            string rawJson = session.User.GetGenericData("itempresetlinks", "data") ?? "{}";
+            JObject links = JObject.Parse(rawJson);
+            if (links.ContainsKey(key))
+            {
+                links.Remove(key);
+                string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
+                session.User.SaveGenericData("itempresetlinks", "data", newJson);
+                Logs.Debug($"[Preset Link] Cleared {key}, new JSON: {newJson}");
+            }
+            return new JObject() { ["success"] = true, ["key"] = key };
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Error clearing preset link: {ex.Message}");
+            return new JObject() { ["success"] = false, ["error"] = ex.Message };
+        }
     }
 }

@@ -55,6 +55,10 @@ public static class AdminAPI
         JObject output = [];
         foreach ((string key, AutoConfiguration.Internal.SingleFieldData data) in config.InternalData.SharedData.Fields)
         {
+            if (data.Field.GetCustomAttribute<SettingHiddenAttribute>() is not null)
+            {
+                continue;
+            }
             bool isSecret = data.Field.GetCustomAttribute<ValueIsSecretAttribute>() is not null;
             string typeName = data.IsSection ? "group" : T2IParamTypes.SharpTypeToDataType(data.Field.FieldType, false).ToString();
             if (typeName is null || typeName == T2IParamDataType.UNSET.ToString())
@@ -65,10 +69,6 @@ public static class AdminAPI
             if (val is AutoConfiguration subConf)
             {
                 val = AutoConfigToParamData(subConf);
-            }
-            if (data.Field.GetCustomAttribute<SettingHiddenAttribute>() is not null)
-            {
-                continue;
             }
             if (hideRestricted && data.Field.GetCustomAttribute<ValueIsRestrictedAttribute>() is not null)
             {

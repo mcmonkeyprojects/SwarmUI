@@ -10,6 +10,45 @@ class PresetHelpers {
     }
 }
 
+/** Manages preset links for models and LoRAs. User-scoped storage in User.UserUIData.ItemPresetLinks */
+class ItemPresetLinkManager {
+    constructor() {
+        this.links = {}; // { 'model:name': 'preset_title', 'lora:name': 'preset_title', ... }
+    }
+
+    getLink(itemType, itemName) {
+        let key = `${itemType}:${itemName}`;
+        return this.links[key] || null;
+    }
+
+    setLink(itemType, itemName, presetTitle) {
+        let key = `${itemType}:${itemName}`;
+        if (presetTitle && presetTitle.trim()) {
+            this.links[key] = presetTitle;
+        } else {
+            delete this.links[key];
+        }
+    }
+
+    clearLink(itemType, itemName) {
+        let key = `${itemType}:${itemName}`;
+        delete this.links[key];
+    }
+
+    hasLink(itemType, itemName) {
+        return this.getLink(itemType, itemName) !== null;
+    }
+
+    loadFromServer(data) {
+        if (data && typeof data === 'object') {
+            this.links = { ...data };
+        }
+    }
+}
+
+/** Instance of ItemPresetLinkManager for managing model and LoRA preset links */
+let itemPresetLinkManager = new ItemPresetLinkManager();
+
 /** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
 let presetHelpers = new PresetHelpers();
 
@@ -250,7 +289,17 @@ function selectInitialPresetList() {
     }
 }
 
-function applyOnePreset(preset) {
+function applyOnePreset(preset, isNestedPreset = false) {
+    // Collect LoRA updates before applying to handle merging
+    let presetLoras = preset.param_map.loras ? preset.param_map.loras.split(',').map(l => l.trim()).filter(l => l.length > 0) : [];
+    let presetWeights = preset.param_map.loraweights ? preset.param_map.loraweights.split(',').map(w => {
+        let parsed = parseFloat(w.trim());
+        return isNaN(parsed) ? 0 : parsed;
+    }) : [];
+    
+    // Track if we've handled loraweights through loras processing
+    let loraweightsHandled = false;
+    
     for (let key of Object.keys(preset.param_map)) {
         let param = gen_param_types.filter(p => p.id == key)[0];
         if (param) {
@@ -267,11 +316,44 @@ function applyOnePreset(preset) {
                     val = val.replace("{value}", elem.value);
                 }
             }
-            else if (key == 'loras' && rawVal) {
-                val = rawVal + "," + val;
+            else if (key == 'loras') {
+                if (rawVal) {
+                    // Merge LoRA lists: update weights for existing LoRAs, add new ones
+                    let currentLoras = rawVal.split(',').map(l => l.trim()).filter(l => l.length > 0);
+                    let weightsParam = gen_param_types.find(p => p.id == 'loraweights');
+                    let weightsVal = weightsParam ? getInputVal(weightsParam) : '';
+                    let currentWeights = (weightsVal || '').split(',').map(w => {
+                        let parsed = parseFloat(w.trim());
+                        return isNaN(parsed) ? 0 : parsed;
+                    });
+                    // Update weights for LoRAs that are already present
+                    for (let i = 0; i < presetLoras.length; i++) {
+                        let idx = currentLoras.indexOf(presetLoras[i]);
+                        if (idx >= 0) {
+                            // LoRA already exists, update its weight
+                            currentWeights[idx] = presetWeights[i] !== undefined ? presetWeights[i] : 0;
+                        } else {
+                            // New LoRA, add it
+                            currentLoras.push(presetLoras[i]);
+                            currentWeights.push(presetWeights[i] !== undefined ? presetWeights[i] : 0);
+                        }
+                    }
+                    val = currentLoras.join(',');
+                    // Also update the weights value
+                    if (weightsParam) {
+                        setDirectParamValue(weightsParam, currentWeights.join(','));
+                    }
+                    loraweightsHandled = true;
+                } else {
+                    // No existing LoRAs, just use the preset's LoRAs
+                    val = preset.param_map.loras;
+                }
             }
-            else if (key == 'loraweights' && rawVal) {
-                val = rawVal + "," + val;
+            else if (key == 'loraweights') {
+                // Skip - weights are handled in loras section
+                if (loraweightsHandled) {
+                    continue;
+                }
             }
             setDirectParamValue(param, val);
             if (param.group && param.group.toggles) {
@@ -280,6 +362,113 @@ function applyOnePreset(preset) {
                 doToggleGroup(`input_group_content_${param.group.id}`);
             }
         }
+    }    
+    // Handle LoRA preset selection/application (only if not already a nested preset to prevent recursion)
+    if (!isNestedPreset && preset.param_map.loras) {
+        handleLoraPresetsFromLoraList(preset.param_map.loras, preset.param_map.loraweights);
+    }
+}
+
+/**
+ * Common helper to apply or select a preset with proper UI updates.
+ * @param {string} source - Human-readable source for logging (e.g., 'LoRA', 'Model')
+ * @param {string} itemName - Name of the item triggering the preset
+ * @param {object} presetData - The preset data object
+ * @param {boolean} isNested - Whether this is a nested call (prevent recursion)
+ * @param {boolean} shouldUpdateUI - Whether to update UI after selection
+ */
+function applyOrSelectPreset(source, itemName, presetData, isNested, shouldUpdateUI = false) {
+    let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
+    if (autoApply) {
+        console.info(`[${source} Preset] Auto-applying preset ${presetData.title} for ${itemName}`);
+        applyOnePreset(presetData, isNested);
+    } else if (!currentPresets.some(p => p.title == presetData.title)) {
+        // Select the preset if it's not already selected
+        currentPresets.push(presetData);
+        if (shouldUpdateUI) {
+            updatePresetList();
+            if (typeof presetBrowser !== 'undefined') {
+                presetBrowser.rerender();
+            }
+        }
+    }
+}
+
+/**
+ * Handle LoRA preset selection/application for LoRAs loaded by a preset.
+ * Parses the loras and loraweights strings to find non-zero weight LoRAs and select/apply their presets.
+ * @param {string} lorasStr - Comma-separated list of LoRA names
+ * @param {string} weightsStr - Comma-separated list of LoRA weights
+ */
+function handleLoraPresetsFromLoraList(lorasStr, weightsStr) {
+    if (!lorasStr) {
+        return;
+    }
+    if (!weightsStr) {
+        return;
+    }
+    try {
+        let loras = lorasStr.split(',').map(l => l.trim()).filter(l => l.length > 0);
+        let weights = weightsStr.split(',').map(w => {
+            let parsed = parseFloat(w.trim());
+            return isNaN(parsed) ? 0 : parsed;
+        });
+        let hasAnyPresets = false;
+        let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
+        for (let i = 0; i < loras.length; i++) {
+            let loraName = loras[i];
+            let weight = weights[i] !== undefined ? weights[i] : 1;
+            // Only process LoRAs with non-zero weight
+            if (weight == 0) {
+                continue;
+            }
+            // Use the centralized function to get preset links (handles key extraction)
+            let presetTitle = getItemPresetLink('lora', loraName);
+            if (!presetTitle) {
+                continue;
+            }
+            let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+            if (!presetData) {
+                continue;
+            }
+            hasAnyPresets = true;
+            if (autoApply) {
+                // Directly apply the LoRA preset (pass true for isNested to prevent recursion)
+                applyOnePreset(presetData, true);
+            } else {
+                // In non-auto-apply mode, just select the preset
+                if (!currentPresets.some(p => p.title == presetData.title)) {
+                    currentPresets.push(presetData);
+                }
+            }
+        }
+        // Update UI once if we processed any presets
+        if (hasAnyPresets) {
+            updatePresetList();
+            if (typeof presetBrowser !== 'undefined') {
+                presetBrowser.rerender();
+            }
+        }
+    } catch (e) {
+        console.warn('[LoRA Preset] Error handling LoRA presets:', e.message);
+    }
+}
+
+/**
+ * Handle LoRA preset selection/application when a LoRA is manually selected.
+ * @param {string} loraName - The name of the LoRA being selected
+ */
+function handleLoraPresetOnSelection(loraName) {
+    try {
+        let presetTitle = getItemPresetLink('lora', loraName);
+        if (presetTitle) {
+            let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+            if (presetData) {
+                applyOrSelectPreset('LoRA', loraName, presetData, true, true);
+            }
+        }
+    } catch (e) {
+        console.warn('[LoRA Preset] Error handling LoRA preset on selection:', e.message);
     }
 }
 
@@ -410,6 +599,10 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
+            // Load user's item preset links from server into the manager
+            if (data.itemPresetLinks && typeof itemPresetLinkManager !== 'undefined') {
+                itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
+            }
             proc();
         });
     }
@@ -783,4 +976,92 @@ function closeExportPresetViewer() {
 
 function closeImportPresetViewer() {
     $('#import_presets_modal').modal('hide');
+}
+
+/**
+ * Generic function to build a preset link selector for both models and LoRAs.
+ * @param {string} itemType - 'model' or 'lora'
+ * @param {string} itemName - The name of the model or LoRA
+ * @param {string} containerId - The ID of the container element to populate
+ * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_override_preset_id')
+ */
+function buildItemPresetLinkInput(itemType, itemName, containerId, selectId) {
+    let container = getRequiredElementById(containerId);
+    container.innerHTML = '';
+    
+    // Build list of all presets
+    let compatiblePresets = [];
+    if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
+        for (let preset of allPresetsUnsorted) {
+            let presetData = preset.data || preset;
+            if (presetData && presetData.title) {
+                compatiblePresets.push(presetData);
+            }
+        }
+    }
+    
+    // Create select element that UIImprovementHandler will convert to a popover
+    let select = document.createElement('select');
+    select.id = selectId;
+    select.className = 'modal_text_extra';
+    
+    let option = document.createElement('option');
+    option.value = '';
+    option.innerText = '-- Select a Preset --';
+    select.appendChild(option);
+    
+    for (let preset of compatiblePresets) {
+        option = document.createElement('option');
+        option.value = preset.title;
+        option.innerText = preset.title;
+        select.appendChild(option);
+    }
+    
+    // Set current value from itemPresetLinkManager using centralized key extraction
+    let currentLink = getItemPresetLink(itemType, itemName);
+    if (currentLink) {
+        select.value = currentLink;
+    }
+    
+    select.addEventListener('change', () => {
+        // Update button state when selection changes
+        updateItemPresetLinkButtonState(selectId);
+    });
+    select.addEventListener('input', () => {
+        updateItemPresetLinkButtonState(selectId);
+    });
+    
+    container.appendChild(select);
+    updateItemPresetLinkButtonState(selectId);
+}
+
+/**
+ * Update the enabled state of Set/Clear buttons based on preset selector state.
+ * @param {string} selectId - The ID of the select element
+ */
+function updateItemPresetLinkButtonState(selectId) {
+    let select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Determine button IDs based on select element ID
+    let baseId = select.id.replace('_id', '');
+    let clearBtn = document.getElementById(`${baseId}_clear_btn`);
+    let setBtn = document.getElementById(`${baseId}_set_btn`);
+    
+    if (clearBtn) {
+        if (select.value == '') {
+            clearBtn.classList.add('disabled-dim');
+        } else {
+            clearBtn.classList.remove('disabled-dim');
+        }
+    }
+    
+    if (setBtn) {
+        // Dim Set button if no presets are currently selected
+        if (!currentPresets || currentPresets.length == 0) {
+            setBtn.classList.add('disabled-dim');
+        } else {
+            setBtn.classList.remove('disabled-dim');
+        }
+    }
 }

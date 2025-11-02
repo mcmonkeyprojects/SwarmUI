@@ -183,22 +183,6 @@ function editModel(model, browser) {
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     let run = () => {
         buildModelOverridePresetInput();
-        if (model.parameter_override_preset_id) {
-            let presetSelect = document.getElementById('edit_model_override_preset_id');
-            if (presetSelect) {
-                presetSelect.value = model.parameter_override_preset_id;
-                presetSelect.dispatchEvent(new Event('change'));
-                // Check if auto-apply is enabled
-                try {
-                    let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
-                    if (autoApply) {
-                        applyPresetOverride();
-                    }
-                } catch (e) {
-                    // Setting may not exist yet, continue without auto-apply
-                }
-            }
-        }
         updatePresetClearButtonState();
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
@@ -289,13 +273,17 @@ function save_edit_model() {
     data['lora_default_weight'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_weight').value : '';
     data['lora_default_confinement'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_confinement').value : '';
     data.subtype = curModelMenuBrowser.subType;
-    // Gather preset override ID
-    let presetSelect = document.getElementById('edit_model_override_preset_id');
-    data['parameter_override_preset_id'] = presetSelect?.value || '';
+    
     function complete() {
         genericRequest('EditModelMetadata', data, data => {
             curModelMenuBrowser.browser.lightRefresh();
         });
+        // Save preset link using centralized function
+        let presetSelect = document.getElementById('edit_model_override_preset_id');
+        let presetTitle = presetSelect?.value || '';
+        // Determine item type based on browser subType (LoRA, Embedding, etc) or model architecture
+        let itemType = curModelMenuBrowser.subType === 'LoRA' ? 'lora' : 'model';
+        saveItemPresetLink(itemType, model.name, presetTitle);
         $('#edit_model_modal').modal('hide');
     }
     if (modelsHelpers.enableImageElem.checked) {
@@ -900,6 +888,7 @@ function directSetModel(model) {
     if (!model) {
         return;
     }
+    let modelName = null;
     if (model.name) {
         let clean = cleanModelName(model.name);
         forceSetDropdownValue('input_model', clean);
@@ -910,6 +899,7 @@ function directSetModel(model) {
         curModelArch = model.architecture;
         curModelCompatClass = model.compat_class;
         curModelSpecialFormat = model.special_format;
+        modelName = clean;
     }
     else if (model.includes(',')) {
         let [name, width, height, arch, compatClass, specialFormat] = model.split(',');
@@ -921,56 +911,68 @@ function directSetModel(model) {
         curModelArch = arch;
         curModelCompatClass = compatClass;
         curModelSpecialFormat = specialFormat;
+        modelName = name;
     }
     reviseBackendFeatureSet();
     
-    if (model?.parameter_override_preset_id) {
-        // Look up the preset by title from the presets list
-        let presetData = allPresetsUnsorted?.find(p => p.title === model.parameter_override_preset_id);
-        if (presetData) {
-            try {
-                let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
-
-                // If auto-apply is OFF, remove other model-linked presets to avoid stacking them.
-                if (!autoApply && sdModelBrowser?.models) {
-                    let modelLinkedPresetTitles = new Set();
-                    let thisPresetId = model.parameter_override_preset_id;
-                    for (let modelName in sdModelBrowser.models) {
-                        let m = sdModelBrowser.models[modelName];
-                        let modelPresetId = m.data.parameter_override_preset_id;
-                        if (modelPresetId && modelPresetId !== thisPresetId) {
-                            modelLinkedPresetTitles.add(modelPresetId);
-                        }
+    // Look up preset link using the full model name (getItemPresetLink handles extraction)
+    let presetTitle = getItemPresetLink('model', model.name || modelName);
+    try {
+        let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
+        if (presetTitle) {
+            // Only remove other model-linked presets if THIS model has a preset to apply
+            if (sdModelBrowser?.models) {
+                let modelLinkedPresetTitles = new Set();
+                for (let otherModelName in sdModelBrowser.models) {
+                    // Only remove presets from OTHER models, not the current one
+                    let otherPresetTitle = getItemPresetLink('model', otherModelName);
+                    // Only add to removal set if it has a preset linked
+                    if (otherPresetTitle && extractItemKeyName(otherModelName) !== extractItemKeyName(model.name || modelName)) {
+                        modelLinkedPresetTitles.add(otherPresetTitle);
                     }
+                }
+                if (modelLinkedPresetTitles.size > 0) {
                     currentPresets = currentPresets.filter(p => !modelLinkedPresetTitles.has(p.title));
-                    updatePresetList();
                 }
-                
-                // Select the preset if it's not already selected
-                if (!currentPresets.some(p => p.title === presetData.title)) {
-                    // Add it directly instead of using selectPreset (which toggles)
-                    currentPresets.push(presetData);
-                    updatePresetList();
-                    if (typeof presetBrowser !== 'undefined') {
-                        presetBrowser.rerender();
-                    }
-                }
-                
+            }
+            let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+            if (presetData) {
                 if (autoApply) {
-                    console.info('[Model Preset] Auto-applying preset ' + presetData.title + ' for model ' + model.name);
-                    applyOnePreset(presetData);
+                    applyOnePreset(presetData, false); // false = not nested, allow LoRA preset triggering
                     // After auto-applying, remove the preset from currentPresets so user can edit those params
-                    currentPresets = currentPresets.filter(p => p.title !== presetData.title);
-                    updatePresetList();
-                    if (typeof presetBrowser !== 'undefined') {
-                        presetBrowser.rerender();
+                    currentPresets = currentPresets.filter(p => p.title != presetData.title);
+                } else {
+                    // Select the preset if it's not already selected
+                    if (!currentPresets.some(p => p.title == presetData.title)) {
+                        // Add it directly instead of using selectPreset (which toggles)
+                        currentPresets.push(presetData);
+                    }
+                    // Still need to handle LoRA presets for selection (not auto-apply, just selection)
+                    if (presetData.param_map.loras && presetData.param_map.loraweights) {
+                        // Ensure item preset links are loaded before trying to find LoRA preset links
+                        genericRequest('GetMyUserData', {}, data => {
+                            if (data.itemPresetLinks && typeof itemPresetLinkManager !== 'undefined') {
+                                itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
+                            }
+                            handleLoraPresetsFromLoraList(presetData.param_map.loras, presetData.param_map.loraweights);
+                        });
                     }
                 }
-            } catch (e) {
-                // Setting may not exist yet, continue without auto-apply
-                console.warn('[Model Preset] Auto-apply setting error:', e.message);
+                updatePresetList();
+                if (typeof presetBrowser !== 'undefined') {
+                    presetBrowser.rerender();
+                }
+            }
+        } else {
+            // No preset linked to this model, but we may have removed other presets above
+            updatePresetList();
+            if (typeof presetBrowser !== 'undefined') {
+                presetBrowser.rerender();
             }
         }
+    } catch (e) {
+        // Setting may not exist yet, continue without auto-apply
+        console.warn('[Model Preset] Auto-apply setting error:', e.message);
     }
     
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));
@@ -1101,6 +1103,73 @@ function doModelInstallRequiredCheck() {
     return false;
 }
 
+/**
+ * Extract the base filename from a full model/LoRA path.
+ * This is used as the key for preset linking to ensure links don't break if the user reorganizes
+ * their files.
+ * 
+ * Examples:
+ * - 'SDXL/models/my_model.safetensors' -> 'my_model'
+ * - 'loras/my_lora.safetensors' -> 'my_lora'
+ * - 'my_model' -> 'my_model'
+ * 
+ * @param {string} itemName - The full model/LoRA name (path or filename)
+ * @returns {string} The base filename without path or extension
+ */
+function extractItemKeyName(itemName) {
+    if (!itemName) {
+        return '';
+    }
+    // Remove directory path
+    let lastSlash = itemName.lastIndexOf('/');
+    let name = lastSlash !== -1 ? itemName.substring(lastSlash + 1) : itemName;
+    // Remove .safetensors extension
+    if (name.endsWith('.safetensors')) {
+        name = name.substring(0, name.length - '.safetensors'.length);
+    }
+    return name;
+}
+
+/**
+ * Get a preset link for a model or LoRA using the base filename as the key.
+ * 
+ * @param {string} itemType - Either 'model' or 'lora'
+ * @param {string} itemName - The full model/LoRA name (path or filename)
+ * @returns {string|null} The linked preset title, or null if no link exists
+ */
+function getItemPresetLink(itemType, itemName) {
+    if (!itemName) {
+        return null;
+    }
+    let keyName = extractItemKeyName(itemName);
+    return itemPresetLinkManager.getLink(itemType, keyName);
+}
+
+/**
+ * Save or clear a preset link for a model or LoRA using the base filename as the key.
+ * This centralizes all preset link saving logic to ensure consistency.
+ * 
+ * @param {string} itemType - Either 'model' or 'lora'
+ * @param {string} itemName - The full model/LoRA name (path or filename)
+ * @param {string} presetTitle - The preset to link (or empty string to clear)
+ */
+function saveItemPresetLink(itemType, itemName, presetTitle) {
+    if (!itemName) {
+        return;
+    }
+    let keyName = extractItemKeyName(itemName);
+    
+    if (presetTitle && presetTitle.trim()) {
+        genericRequest('SaveItemPresetLink', { 'itemType': itemType, 'itemName': keyName, 'presetTitle': presetTitle }, data => {
+            itemPresetLinkManager.setLink(itemType, keyName, presetTitle);
+        });
+    } else {
+        genericRequest('ClearItemPresetLink', { 'itemType': itemType, 'itemName': keyName }, data => {
+            itemPresetLinkManager.clearLink(itemType, keyName);
+        });
+    }
+}
+
 function updatePresetClearButtonState() {
     let presetSelect = document.getElementById('edit_model_override_preset_id');
     if (!presetSelect) return;
@@ -1146,37 +1215,8 @@ function clearPresetOverride() {
 
 
 function buildModelOverridePresetInput() {
-    let container = getRequiredElementById('edit_model_override_preset');
-    container.innerHTML = '';
-    // Build filtered list of presets - show all for now
-    let compatiblePresets = [];
-    console.log('buildModelOverridePresetInput: allPresetsUnsorted =', allPresetsUnsorted);
-    if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
-        for (let preset of allPresetsUnsorted) {
-            let presetData = preset.data || preset;
-            if (presetData && presetData.title) {
-                compatiblePresets.push(presetData);
-            }
-        }
-    }
-    // Create a native select that UIImprovementHandler will automatically convert to a popover
-    let select = document.createElement('select');
-    select.id = 'edit_model_override_preset_id';
-    select.className = 'modal_text_extra';
-    let option = document.createElement('option');
-    option.value = '';
-    option.innerText = '-- Select a Preset --';
-    select.appendChild(option);
-    for (let preset of compatiblePresets) {
-        option = document.createElement('option');
-        option.value = preset.title;
-        option.innerText = preset.title;
-        select.appendChild(option);
-    }
-    select.addEventListener('change', updatePresetClearButtonState);
-    select.addEventListener('input', updatePresetClearButtonState);
-    container.appendChild(select);
-    updatePresetClearButtonState();
+    // Pass the full model name; buildItemPresetLinkInput will handle key extraction
+    buildItemPresetLinkInput('model', curModelMenuModel.name, 'edit_model_override_preset', 'edit_model_override_preset_id');
 }
 
 getRequiredElementById('current_model').addEventListener('change', currentModelChanged);
