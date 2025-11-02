@@ -3,6 +3,7 @@ using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 using System.IO;
 
@@ -30,7 +31,11 @@ public enum T2IParamDataType
     /// <summary>Multi-select or comma-separated data list.</summary>
     LIST,
     /// <summary>List of images.</summary>
-    IMAGE_LIST
+    IMAGE_LIST,
+    /// <summary>Raw audio data file.</summary>
+    AUDIO,
+    /// <summary>Raw video data file.</summary>
+    VIDEO,
 }
 
 /// <summary>Which format to display a number in.</summary>
@@ -216,10 +221,12 @@ public class T2IParamTypes
         if (t == typeof(float) || t == typeof(double)) return T2IParamDataType.DECIMAL;
         if (t == typeof(bool)) return T2IParamDataType.BOOLEAN;
         if (t == typeof(string)) return hasValues ? T2IParamDataType.DROPDOWN : T2IParamDataType.TEXT;
-        if (t == typeof(Image)) return T2IParamDataType.IMAGE;
-        if (t == typeof(T2IModel)) return T2IParamDataType.MODEL;
-        if (t == typeof(List<string>)) return T2IParamDataType.LIST;
-        if (t == typeof(List<Image>)) return T2IParamDataType.IMAGE_LIST;
+        if (t.IsAssignableTo(typeof(ImageFile))) return T2IParamDataType.IMAGE;
+        if (t.IsAssignableTo(typeof(T2IModel))) return T2IParamDataType.MODEL;
+        if (t.IsAssignableTo(typeof(List<string>))) return T2IParamDataType.LIST;
+        if (t.IsAssignableTo(typeof(List<Image>))) return T2IParamDataType.IMAGE_LIST;
+        if (t.IsAssignableTo(typeof(AudioFile))) return T2IParamDataType.AUDIO;
+        if (t.IsAssignableTo(typeof(VideoFile))) return T2IParamDataType.VIDEO;
         return T2IParamDataType.UNSET;
     }
 
@@ -235,6 +242,8 @@ public class T2IParamTypes
             T2IParamDataType.MODEL => typeof(T2IModel),
             T2IParamDataType.LIST => typeof(List<string>),
             T2IParamDataType.IMAGE_LIST => typeof(List<Image>),
+            T2IParamDataType.AUDIO => typeof(AudioFile),
+            T2IParamDataType.VIDEO => typeof(VideoFile),
             _ => null
         };
     }
@@ -719,7 +728,7 @@ public class T2IParamTypes
             "", IgnoreIf: "", IsAdvanced: true, Clean: ApplyStringEdit, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0
             ));
         ImageFormat = Register<string>(new("Image Format", "Optional override for the final image file format.",
-            "PNG", GetValues: (_) => [.. Enum.GetNames(typeof(Image.ImageFormat))], IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, Toggleable: true, OrderPriority: 1
+            "PNG", GetValues: (_) => [.. Enum.GetNames(typeof(ImageFile.ImageFormat))], IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, Toggleable: true, OrderPriority: 1
             ));
         BitDepth = Register<string>(new("Color Depth", "Specifies the color depth (in bits per channel) to use.\nOnly works for 'PNG' image file format currently.\n'8-bit' is normal (8 bits per red, 8 for green, 8 for blue, making 24 bits total per pixel).\nand '16-bit' encodes additional high-precision (HDR-like) data.\nNote that overprecision data is unlikely to be meaningful, as currently available models haven't been trained for that.",
             "8bit", IgnoreIf: "8bit", GetValues: (_) => ["8bit///8-bit per channel (24-bit total)", "16bit///16-bit per channel (48-bit total)"], IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 1.5
@@ -989,6 +998,8 @@ public class T2IParamTypes
                 }
                 return val;
             case T2IParamDataType.IMAGE:
+            case T2IParamDataType.AUDIO:
+            case T2IParamDataType.VIDEO:
                 if (val.StartsWith("data:"))
                 {
                     val = val.After(',');
@@ -1000,7 +1011,7 @@ public class T2IParamTypes
                 if (!ValidBase64Matcher.IsOnlyMatches(val) || val.Length < 10)
                 {
                     string shortText = val.Length > 10 ? val[..10] + "..." : val;
-                    throw new SwarmUserErrorException($"Invalid image value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                    throw new SwarmUserErrorException($"Invalid {type.Type} value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:

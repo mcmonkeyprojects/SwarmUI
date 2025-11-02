@@ -19,6 +19,7 @@ using SwarmUI.Text2Image;
 using System.Net.Sockets;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using SwarmUI.Media;
 
 namespace SwarmUI.Utils;
 
@@ -490,12 +491,12 @@ public static class Utilities
         return content;
     }
 
-    public static MultipartFormDataContent MultiPartFormContentDiscordImage(Image image, JObject jobj)
+    public static MultipartFormDataContent MultiPartFormContentDiscordFile(MediaFile file, JObject jobj)
     {
         MultipartFormDataContent content = [];
-        ByteArrayContent imageContent = new(image.ImageData);
-        imageContent.Headers.ContentType = new MediaTypeHeaderValue(image.MimeType());
-        content.Add(imageContent, "file", $"image.{image.Extension}");
+        ByteArrayContent fileContent = new(file.RawData);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.Type.MimeType);
+        content.Add(fileContent, "file", $"image.{file.Type.Extension}");
         content.Add(JSONContent(jobj), "payload_json");
         return content;
     }

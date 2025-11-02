@@ -516,7 +516,7 @@ public class T2IPromptHandling
             string matched = T2IParamTypes.GetBestModelInList(lora, context.Loras);
             if (matched is null)
             {
-                context.TrackWarning($"Lora '{lora}' does not exist and will be ignored.");
+                context.TrackWarning($"Lora '{lora}' does not exist and will be ignored (out of {context.Loras.Length} existing loras).");
                 return null;
             }
             if (matched.EndsWith(".safetensors"))

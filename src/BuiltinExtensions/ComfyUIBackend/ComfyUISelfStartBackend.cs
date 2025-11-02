@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
+using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Utils;
@@ -283,7 +284,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.27.10";
+    public static string SwarmValidatedFrontendVersion = "1.28.8";
 
     public override async Task Init()
     {
@@ -334,6 +335,19 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         {
             AddLoadStatus($"Start script '{Settings.StartScript}' looks wrong");
             Logs.Warning($"ComfyUI start script is '{Settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
+        }
+        lock (ComfyModelFileHelperLock)
+        {
+            string inputFolder = $"{Directory.GetParent(Settings.StartScript).FullName}/input";
+            if (Directory.Exists(inputFolder) && !UserImageHistoryHelper.SharedSpecialFolders.Values.Contains(inputFolder))
+            {
+                UserImageHistoryHelper.SharedSpecialFolders[$"inputs/_comfy{BackendData.ID}/"] = inputFolder;
+            }
+            string outputFolder = $"{Directory.GetParent(Settings.StartScript).FullName}/output";
+            if (Directory.Exists(outputFolder) && !UserImageHistoryHelper.SharedSpecialFolders.Values.Contains(outputFolder))
+            {
+                UserImageHistoryHelper.SharedSpecialFolders[$"_comfy{BackendData.ID}/"] = outputFolder;
+            }
         }
         Directory.CreateDirectory(Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes"));
         string autoUpdNodes = Settings.UpdateManagedNodes.ToLowerFast();
@@ -593,7 +607,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.9]).");
                     isValid = false;
                 }
-                string nunchakuTargetVersion = "1.0.0";
+                string nunchakuTargetVersion = "1.0.2";
                 // eg https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.2/nunchaku-0.3.2+torch2.5-cp310-cp310-linux_x86_64.whl
                 string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuTargetVersion}/nunchaku-{nunchakuTargetVersion}+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)

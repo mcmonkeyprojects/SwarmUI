@@ -415,7 +415,8 @@ There's a full step by step guide for video model usage here: <https://github.co
             - Reference **CFG** is `3.5`
             - Native **FPS** of `24`
         - There are some Wan 2.2 Lightx2v models available
-            - Notably this pair: <https://huggingface.co/Kijai/WanVideo_comfy/tree/main/Wan22-Lightning>
+            - Notably this pair: <https://huggingface.co/Kijai/WanVideo_comfy/tree/main/LoRAs/Wan22-Lightning>
+                - There's also an enhanced I2V Lightning High LoRA: <https://huggingface.co/Kijai/WanVideo_comfy/tree/main/LoRAs/Wan22_Lightx2v>
             - You use a separate High and Low variant together
             - There are two ways to set the pair loras...
                 - Option 1: via the UI

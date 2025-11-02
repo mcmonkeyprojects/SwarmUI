@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.IO;
@@ -451,8 +452,8 @@ public static class ModelsAPI
             }
             else
             {
-                Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-                File.WriteAllBytes(imgPath, img.ImageData);
+                ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                File.WriteAllBytes(imgPath, img.RawData);
             }
         }
         WildcardsHelper.WildcardFiles[card.ToLowerFast()] = new WildcardsHelper.Wildcard() { Name = card };
@@ -521,7 +522,7 @@ public static class ModelsAPI
                 }
                 else
                 {
-                    Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                    ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
                     if (img is not null)
                     {
                         actualModel.PreviewImage = img.AsDataString();

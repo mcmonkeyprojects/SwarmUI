@@ -1,5 +1,6 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
 using SwarmUI.Backends;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 using System.Reflection;
 
@@ -133,7 +134,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Can be enabled to cache certain backend data.\nFor example, with ComfyUI backends this will add an extended cache on the object_info data.\nDefaults to false.")]
         public bool DoBackendDataCache = false;
 
-        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nSome very minor quality changes may result.\nIf you encounter error that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
+        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nSome very minor quality changes may result.\nIf you encounter errors that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
         public bool AllowGpuSpecificOptimizations = true;
 
         [ConfigComment("How many models can be loaded in a model list at once.\nPast this count, the list will simply be cut off.\nUse sub-folder organization to prevent issues.")]
@@ -337,7 +338,7 @@ public class Settings : AutoConfiguration
         public class FileFormatData : AutoConfiguration
         {
             [ConfigComment("What format to save images in.\nDefault is '.png', but '.jpg' is recommended to save some filespace.")]
-            [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<Image.ImageFormat>))]
+            [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<ImageFile.ImageFormat>))]
             public string ImageFormat = "PNG";
 
             [ConfigComment("Quality for JPEG and WEBP formats (1-100). Other formats are ignored.\nDefault is 100, recommended 70-90.")]
@@ -376,6 +377,20 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("If enabled, trigger phrases are copied with a trailing comma added.\nIf disabled, trigger phrases are copied as-is without any trailing comma.\nThis is useful when copying them to prompts.")]
             public bool CopyTriggerPhraseWithTrailingComma = false;
+
+            [ConfigComment("If true, when you interrupt generation, any incomplete generations will be removed from the batch view.\nIf false, they will linger in the batch view with an X mark indicated they were started but not finished.\nIn both cases, they will not save to file.")]
+            public bool RemoveInterruptedGens = false;
+
+            [ConfigComment("Pipe-separated list of partial error message bodies.\nIf an error message contains any of these, it will not show in the main error popup box.\nThis is to hide intentionally-induced errors, or errors that pop up frequently but you don't want to be annoyed about.\nFor example, set this to 'Generation session interrupted.|Some Other Error.' if you frequently externally interrupt your own gens.")]
+            public string HideErrorMessages = "";
+
+            [ConfigComment("What to do when you delete an image that you are looking at in the UI:\n- Nothing: image view is closed / reset to empty\n- Next: move to the next image (right/down)\n- Previous: move to the previous image (left/up)")]
+            [ManualSettingsOptions(Vals = ["nothing", "next", "previous"], ManualNames = ["Nothing", "Next (Right/Down)", "Previous (Left/Up)"])]
+            public string DeleteImageBehavior = "next";
+
+            [ConfigComment("If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf disabled, shifting will simply stop at the ends.\nIf 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).")]
+            [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
+            public string ImageShiftingCycles = "true";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]

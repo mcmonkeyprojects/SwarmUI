@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System;
@@ -112,7 +113,7 @@ public class ScorersExtension : Extension
         return (await (await WebClient.PostAsync($"http://localhost:{Port}/{url}", Utilities.JSONContent(data))).Content.ReadAsStringAsync()).ParseToJson();
     }
 
-    public async Task<float> DoScore(Image image, string prompt, string scorer)
+    public async Task<float> DoScore(ImageFile image, string prompt, string scorer)
     {
         EnsureActive();
         JObject result = await DoPost("API/DoScore", new() { ["prompt"] = prompt, ["image"] = image.AsBase64, ["scorer"] = scorer });
@@ -141,7 +142,7 @@ public class ScorersExtension : Extension
             {
                 throw new SwarmUserErrorException($"Scorer {scorer} does not exist.");
             }
-            float score = DoScore(p.Image, p.UserInput.Get(T2IParamTypes.Prompt), scorer).Result;
+            float score = DoScore(p.File as ImageFile, p.UserInput.Get(T2IParamTypes.Prompt), scorer).Result;
             scores[scorer] = score;
             scoreAccum += score;
         }
@@ -168,7 +169,7 @@ public class ScorersExtension : Extension
             Logs.Debug($"Scorers: Limited to {bestN} images but only found {p.Images.Length} to scan, so ignoring");
             return;
         }
-        float[] scores = [.. p.Images.Select(i => i?.Img?.GetSUIMetadata()?["scoring"]?["average"]?.Value<float>() ?? 0)];
+        float[] scores = [.. p.Images.Select(i => (i?.File as ImageFile)?.GetSUIMetadata()?["scoring"]?["average"]?.Value<float>() ?? 0)];
         float[] sorted = [.. scores.OrderDescending()];
         float cutoff = sorted[bestN - 1];
         Logs.Debug($"Scorers: will cutoff to {bestN} images with score {cutoff} or above");

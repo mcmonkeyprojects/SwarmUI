@@ -181,11 +181,16 @@ class ImageFullViewHelper {
         this.currentSrc = src;
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
+        let wasAlreadyOpen = this.isOpen();
         let isVideo = isVideoExt(src);
+        let isAudio = isAudioExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
-            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted><source src="${encodedSrc}" type="video/${encodedSrc.substring(encodedSrc.lastIndexOf('.') + 1)}"></video>`;
+            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop controls><source src="${encodedSrc}" type="${isVideo}"></video>`;
+        }
+        else if (isAudio) {
+            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}"></audio>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
@@ -213,10 +218,18 @@ class ImageFullViewHelper {
             }
         }
         this.modalJq.modal('show');
+        if (isVideo || isAudio) {
+            let curImgElem = document.getElementById('current_image_img');
+            if (curImgElem) {
+                if (curImgElem.tagName == 'VIDEO' || curImgElem.tagName == 'AUDIO') {
+                    curImgElem.pause();
+                }
+            }
+        }
         if (this.fixButtonDelay) {
             clearTimeout(this.fixButtonDelay);
         }
-        if (Date.now() - this.lastClosed > 200) {
+        if (Date.now() - this.lastClosed > 200 && !wasAlreadyOpen) {
             subDiv.style.pointerEvents = 'none';
             for (let button of subDiv.getElementsByTagName('button')) {
                 button.disabled = true;
@@ -242,6 +255,7 @@ class ImageFullViewHelper {
         this.didDrag = false;
         this.modalJq.modal('hide');
         this.lastClosed = Date.now();
+        this.content.innerHTML = '';
     }
 
     isOpen() {
@@ -308,14 +322,14 @@ function clickImageInBatch(div) {
 }
 
 /** Removes a preview thumbnail and moves to either previous or next image. */
-function removeImageBlockFromBatch(div) {
+function removeImageBlockFromBatch(div, shift = false) {
     if (!div.classList.contains('image-block-current')) {
         div.remove();
         return;
     }
     let chosen = div.previousElementSibling || div.nextElementSibling;
     div.remove();
-    if (chosen) {
+    if (shift && chosen) {
         clickImageInBatch(chosen);
     }
 }
@@ -336,7 +350,7 @@ function rightClickImageInBatch(e, div) {
             popoverActions.push({ key: added.label, action: added.onclick, title: added.title });
         }
     }
-    popoverActions.push({ key: 'Remove From Batch View', action: () => removeImageBlockFromBatch(div) })
+    popoverActions.push({ key: 'Remove From Batch View', action: () => removeImageBlockFromBatch(div, true) })
     let popover = new AdvancedPopover('image_batch_context_menu', popoverActions, false, mouseX, mouseY, document.body, null);
     e.preventDefault();
     e.stopPropagation();
@@ -442,25 +456,40 @@ function copy_current_image_params() {
     hideUnsupportableParams();
 }
 
-function shiftToNextImagePreview(next = true, expand = false) {
+/**
+ * Shifts the current image view (and full-view if open) to the next or previous image.
+ * Returns true if the shift was successful, returns false if there was nothing to shift to.
+ */
+function shiftToNextImagePreview(next = true, expand = false, isArrows = false) {
     let curImgElem = document.getElementById('current_image_img');
     if (!curImgElem) {
-        return;
+        return false;
     }
+    let doCycle = getUserSetting('ui.imageshiftingcycles', 'true');
+    doCycle = doCycle == 'true' || (isArrows && doCycle == 'only_arrows');
     let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
     if (curImgElem.dataset.batch_id == 'history') {
         let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
         let index = divs.findIndex(div => div == lastHistoryImageDiv);
         if (index == -1) {
             console.log(`Image preview shift failed as current image ${lastHistoryImage} is not in history area`);
-            return;
+            return false;
         }
         let newIndex = index + (next ? 1 : -1);
         if (newIndex < 0) {
+            if (!doCycle) {
+                return false;
+            }
             newIndex = divs.length - 1;
         }
         else if (newIndex >= divs.length) {
+            if (!doCycle) {
+                return false;
+            }
             newIndex = 0;
+        }
+        if (newIndex == index) {
+            return false;
         }
         divs[newIndex].querySelector('img').click();
         if (expand) {
@@ -468,7 +497,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
             imageFullView.showImage(currentImgSrc, currentMetadataVal, 'history');
             imageFullView.pasteState(expandedState);
         }
-        return;
+        return true;
     }
     let batch_area = getRequiredElementById('current_image_batch');
     let imgs = [...batch_area.getElementsByTagName('img')].filter(i => findParentOfClass(i, 'image-block-placeholder') == null);
@@ -476,14 +505,23 @@ function shiftToNextImagePreview(next = true, expand = false) {
     if (index == -1) {
         let cleanSrc = (img) => img.src.length > 100 ? img.src.substring(0, 100) + '...' : img.src;
         console.log(`Image preview shift failed as current image ${cleanSrc(curImgElem)} is not in batch area set ${imgs.map(cleanSrc)}`);
-        return;
+        return false;
     }
     let newIndex = index + (next ? 1 : -1);
     if (newIndex < 0) {
+        if (!doCycle) {
+            return false;
+        }
         newIndex = imgs.length - 1;
     }
     else if (newIndex >= imgs.length) {
+        if (!doCycle) {
+            return false;
+        }
         newIndex = 0;
+    }
+    if (newIndex == index) {
+        return false;
     }
     let newImg = imgs[newIndex];
     let block = findParentOfClass(newImg, 'image-block');
@@ -492,6 +530,7 @@ function shiftToNextImagePreview(next = true, expand = false) {
         imageFullView.showImage(block.dataset.src, block.dataset.metadata, block.dataset.batch_id);
         imageFullView.pasteState(expandedState);
     }
+    return true;
 }
 
 window.addEventListener('keydown', function(kbevent) {
@@ -504,10 +543,10 @@ window.addEventListener('keydown', function(kbevent) {
         $('#image_fullview_modal').modal('toggle');
     }
     else if ((kbevent.key == 'ArrowLeft' || kbevent.key == 'ArrowUp') && (isFullView || isCurImgFocused)) {
-        shiftToNextImagePreview(false, isFullView);
+        shiftToNextImagePreview(false, isFullView, true);
     }
     else if ((kbevent.key == 'ArrowRight' || kbevent.key == 'ArrowDown') && (isFullView || isCurImgFocused)) {
-        shiftToNextImagePreview(true, isFullView);
+        shiftToNextImagePreview(true, isFullView, true);
     }
     else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('main_image_area'))) {
         getRequiredElementById('alt_generate_button').click();
@@ -631,7 +670,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
     currentMetadataVal = metadata;
     let isVideo = isVideoExt(src);
-    if ((smoothAdd || !metadata) && canReparse && !isVideo) {
+    let isAudio = isAudioExt(src);
+    if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
         let image = new Image();
         image.onload = () => {
             if (!metadata) {
@@ -661,11 +701,17 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         img = document.createElement('video');
         img.loop = true;
         img.autoplay = true;
-        img.muted = true;
+        img.controls = true;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
-        sourceObj.type = `video/${src.substring(src.lastIndexOf('.') + 1)}`;
+        sourceObj.type = isVideo;
         img.appendChild(sourceObj);
+    }
+    else if (isAudio) {
+        curImg.innerHTML = '';
+        img = document.createElement('audio');
+        img.controls = true;
+        srcTarget = img;
     }
     else {
         img = document.getElementById('current_image_img');
@@ -685,6 +731,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         if (isVideo) {
             return [img.videoWidth, img.videoHeight];
         }
+        else if (isAudio) {
+            return [200, 50];
+        }
         else {
             return [img.naturalWidth, img.naturalHeight];
         }
@@ -698,7 +747,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         alignImageDataFormat();
     }
-    if (isVideo) {
+    if (isVideo || isAudio) {
         img.addEventListener('loadeddata', function() {
             if (img) {
                 img.onload();
@@ -888,7 +937,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
             getRequiredElementById('imagehistorytabclickable').click();
             imageHistoryBrowser.navigate(folder);
-        }, '', 'Jumps the Image History browser to where this image is at.');
+        }, '', 'Jumps the History browser to where this file is at.');
     }
     for (let added of buttonsForImage(imagePathClean, src, metadata)) {
         if (added.label == 'Star' || added.label == 'Unstar') {
@@ -946,7 +995,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
     }
-    container.dataset.numImages = (container.dataset.numImages ?? 0) + 1;
+    container.dataset.numImages = parseInt(container.dataset.numImages ?? 0) + 1;
     let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
     div.dataset.batch_id = batchId;
     div.dataset.preview_text = textPreview;
@@ -965,6 +1014,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     div.dataset.src = imageSrc;
     div.dataset.metadata = metadata;
     let isVideo = isVideoExt(imageSrc);
+    let isAudio = isAudioExt(imageSrc);
     let img, srcTarget;
     if (isVideo) {
         img = document.createElement('video');
@@ -974,16 +1024,21 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         img.width = 16 * 10;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
-        sourceObj.type = `video/${imageSrc.substring(imageSrc.lastIndexOf('.') + 1)}`;
+        sourceObj.type = isVideo;
         img.appendChild(sourceObj);
+    }
+    else if (isAudio) {
+        imageSrc = 'imgs/audio_placeholder.jpg';
+        img = document.createElement('img');
+        srcTarget = img;
     }
     else {
         img = document.createElement('img');
         srcTarget = img;
     }
-    img.addEventListener('load', () => {
+    img.addEventListener(isVideo ? 'loadeddata' : 'load', () => {
         if (batchId != "folder") {
-            let ratio = img.naturalWidth / img.naturalHeight;
+            let ratio = (img.naturalWidth || img.videoWidth) / (img.naturalHeight || img.videoHeight);
             div.style.width = `calc(${roundToStr(ratio * 10, 2)}rem + 2px)`;
         }
     });

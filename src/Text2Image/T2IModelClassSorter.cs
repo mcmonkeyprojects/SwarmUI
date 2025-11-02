@@ -91,6 +91,7 @@ public class T2IModelClassSorter
         bool isCosmosPredict2_14B(JObject h) => h.ContainsKey("net.blocks.0.adaln_modulation_cross_attn.1.weight");
         bool isLumina2(JObject h) => h.ContainsKey("model.diffusion_model.cap_embedder.0.weight") || h.ContainsKey("cap_embedder.0.weight");
         bool tryGetWanTok(JObject h, out JToken tok) => h.TryGetValue("model.diffusion_model.blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("lora_unet_blocks_0_cross_attn_k.lora_down.weight", out tok);
+        bool tryGetPatchEmbedTok(JObject h, out JToken tok) => h.TryGetValue("patch_embedding.weight", out tok) || h.TryGetValue("model.diffusion_model.patch_embedding.weight", out tok);
         bool isWan21_1_3b(JObject h) => tryGetWanTok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 1536;
         bool isWan21_14b(JObject h) => tryGetWanTok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 5120;
         bool isWan22_5b(JObject h) => tryGetWanTok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 3072;
@@ -98,13 +99,14 @@ public class T2IModelClassSorter
         bool isWan21_1_3bLora(JObject h) => tryGetWanLoraTok(h, out JToken tok) && tok["shape"].ToArray()[1].Value<long>() == 1536;
         bool isWan21_14bLora(JObject h) => tryGetWanLoraTok(h, out JToken tok) && tok["shape"].ToArray()[1].Value<long>() == 5120;
         bool isWanI2v(JObject h) => h.ContainsKey("model.diffusion_model.blocks.0.cross_attn.k_img.bias") || h.ContainsKey("blocks.0.cross_attn.k_img.bias");
-        bool hasWani2vpatch(JObject h) => h.TryGetValue("patch_embedding.weight", out JToken tok) && (tok["shape"].ToArray()[1].Value<long>() == 36 || tok["shape"].ToArray()[^2].Value<long>() == 36); // gguf convs have a reversed shape? wtf?
+        bool hasWani2vpatch(JObject h) => tryGetPatchEmbedTok(h, out JToken tok) && (tok["shape"].ToArray()[1].Value<long>() == 36 || tok["shape"].ToArray()[^2].Value<long>() == 36); // gguf convs have a reversed shape? wtf?
         bool isWan21i2v(JObject h) => h.ContainsKey("img_emb.proj.0.bias");
         bool isWanflf2v(JObject h) => h.ContainsKey("model.diffusion_model.img_emb.emb_pos") || h.ContainsKey("img_emb.emb_pos");
         bool isWanVace(JObject h) => h.ContainsKey("model.diffusion_model.vace_blocks.0.after_proj.bias") || h.ContainsKey("vace_blocks.0.after_proj.bias");
         bool isHiDream(JObject h) => h.ContainsKey("caption_projection.0.linear.weight");
         bool isHiDreamLora(JObject h) => h.ContainsKey("diffusion_model.double_stream_blocks.0.block.ff_i.shared_experts.w1.lora_A.weight");
         bool isChroma(JObject h) => h.ContainsKey("distilled_guidance_layer.in_proj.bias") && h.ContainsKey("double_blocks.0.img_attn.proj.bias");
+        bool isChromaRadiance(JObject h) => h.ContainsKey("nerf_image_embedder.embedder.0.bias");
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
@@ -115,7 +117,8 @@ public class T2IModelClassSorter
                                             || (h.ContainsKey("lora_unet_transformer_blocks_0_attn_add_k_proj.lora_down.weight") && h.ContainsKey("lora_unet_transformer_blocks_0_img_mlp_net_0_proj.lora_down.weight"));
         bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
         bool isHyImg(JObject h) => h.ContainsKey("byt5_in.fc1.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
-        bool isHyImgRefiner(JObject h) => h.ContainsKey("time_r_in.mlp.0.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
+        bool isHyImgRefiner(JObject h) => h.ContainsKey("double_blocks.0.img_attn_k_norm.weight") && h.TryGetValue("time_r_in.mlp.0.bias", out JToken timeTok) && timeTok["shape"].ToArray()[0].Value<long>() == 3328;
+        bool isAuraFlow(JObject h) => h.ContainsKey("model.cond_seq_linear.weight") && h.ContainsKey("model.double_layers.0.attn.w1k.weight");
         // ====================== Stable Diffusion v1 ======================
         Register(new() { ID = "stable-diffusion-v1", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -446,7 +449,11 @@ public class T2IModelClassSorter
         // ====================== Random Other Models ======================
         Register(new() { ID = "chroma", CompatClass = "chroma", Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isChroma(h);
+            return isChroma(h) && !isChromaRadiance(h);
+        }});
+        Register(new() { ID = "chroma-radiance", CompatClass = "chroma-radiance", Name = "Chroma Radiance", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isChroma(h) && isChromaRadiance(h);
         }});
         Register(new() { ID = "alt_diffusion_v1_512_placeholder", CompatClass = "alt_diffusion_v1", Name = "Alt-Diffusion", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) =>
         {
@@ -537,6 +544,11 @@ public class T2IModelClassSorter
         {
             return false;
         }});
+        // ====================== AuraFlow v1 ======================
+        Register(new() { ID = "auraflow-v1", CompatClass = "auraflow-v1", Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isAuraFlow(h);
+        }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
         Register(new() { ID = "stable-diffusion-v1/vae", CompatClass = "stable-diffusion-v1", Name = "Stable Diffusion v1 VAE", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
@@ -564,7 +576,6 @@ public class T2IModelClassSorter
         // Other model classes
         Register(new() { ID = "pixart-ms-sigma-xl-2", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "pixart-ms-sigma-xl-2-2k", CompatClass = "pixart-ms-sigma-xl-2", Name = "PixArtMS Sigma XL 2 (2K)", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) => { return false; } });
-        Register(new() { ID = "auraflow-v1", CompatClass = "auraflow-v1", Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         Register(new() { ID = "auraflow-v1/tensorrt", CompatClass = "auraflow-v1", Name = "AuraFlow (TensorRT Engine)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) => { return false; } });
         // ====================== General correction remaps ======================
         Remaps["flux-1-dev"] = "Flux.1-dev";

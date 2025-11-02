@@ -14,6 +14,7 @@
 #   'parameters': Adds new T2I Parameters
 #   'tabs': adds new tabs on the main page (including subtabs, eg inside Utilities)
 #   'ui': modifies the UI in some way (including 'tabs' above, also themes and etc.)
+#   'tools': adds new tools to the Tools menu
 #   'nodes': adds Comfy nodes
 #   'backend': adds a new backend
 # Meta:
@@ -186,3 +187,12 @@ MoreThemes:
     license: MIT
     tags:
     - ui
+
+PromptBuilder:
+    author: Juan Treminio
+    description: Adds a new tool UI to browse clickable Danbooru tags to build your prompt. Appears under Tools tab dropdown.
+    url: https://github.com/jtreminio/SwarmUI-PromptBuilderExtension
+    license: MIT
+    tags:
+    - ui
+    - tools

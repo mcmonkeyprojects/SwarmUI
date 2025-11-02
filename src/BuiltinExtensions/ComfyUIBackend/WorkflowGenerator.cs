@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.IO;
@@ -182,6 +183,13 @@ public class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is AuraFlow.</summary>
+    public bool IsAuraFlow()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "auraflow-v1";
+    }
+
     /// <summary>Returns true if the current model is a Kontext model (eg Flux.1 Kontext Dev).</summary>
     public bool IsKontext()
     {
@@ -194,6 +202,13 @@ public class WorkflowGenerator
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz == "chroma";
+    }
+    
+    /// <summary>Returns true if the current model is Chroma Radiance.</summary>
+    public bool IsChromaRadiance()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "chroma-radiance";
     }
 
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
@@ -321,10 +336,16 @@ public class WorkflowGenerator
         return clazz is not null && clazz.StartsWith("wan-2_1-vace-");
     }
 
+    /// <summary>Returns true if the current model is any Wan variant.</summary>
+    public bool IsAnyWanModel()
+    {
+        return IsWanVideo() || IsWanVideo22();
+    }
+
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsWanVideo() || IsWanVideo22();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsAnyWanModel();
     }
 
     /// <summary>Gets a dynamic ID within a semi-stable registration set.</summary>
@@ -544,7 +565,7 @@ public class WorkflowGenerator
     }
 
     /// <summary>Creates a new node to load an image.</summary>
-    public string CreateLoadImageNode(Image img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
+    public string CreateLoadImageNode(ImageFile img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
     {
         if (nodeId is null && NodeHelpers.TryGetValue($"imgloader_{param}_{resize}", out string alreadyLoaded))
         {
@@ -553,7 +574,7 @@ public class WorkflowGenerator
         string result;
         if (Features.Contains("comfy_loadimage_b64") && !RestrictCustomNodes)
         {
-            if (img.Type == Image.ImageType.IMAGE)
+            if (img.Type.MetaType == MediaMetaType.Image)
             {
                 result = CreateNode("SwarmLoadImageB64", new JObject()
                 {
@@ -854,6 +875,10 @@ public class WorkflowGenerator
         {
             return requireClipModel("byt5_small_glyphxl_fp16.safetensors", "https://huggingface.co/Comfy-Org/HunyuanImage_2.1_ComfyUI/resolve/main/split_files/text_encoders/byt5_small_glyphxl_fp16.safetensors", "516910bb4c9b225370290e40585d1b0e6c8cd3583690f7eec2f7fb593990fb48", T2IParamTypes.T5XXLModel);
         }
+        string getPileT5XLAuraFlow()
+        {
+            return requireClipModel("pile_t5xl_auraflow.safetensors", "https://huggingface.co/fal/AuraFlow-v0.2/resolve/main/text_encoder/model.safetensors", "0a07449cf1141c0ec86e653c00465f6f0d79c6e58a2c60c8bcf4203d0e4ec4f6", T2IParamTypes.T5XXLModel);
+        }
         string getOmniQwenModel()
         {
             return requireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", T2IParamTypes.QwenModel);
@@ -1087,7 +1112,7 @@ public class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma())
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance())
                     {
                         dtype = "default";
                     }
@@ -1256,7 +1281,29 @@ public class WorkflowGenerator
             LoadingClip = [dualClipLoader, 0];
             doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
-        else if (IsChroma())
+        else if (IsAuraFlow() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
+        {
+            string loaderType = "CLIPLoader";
+            if (getPileT5XLAuraFlow().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string dualClipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = getPileT5XLAuraFlow(),
+                ["type"] = "chroma"
+            });
+            LoadingClip = [dualClipLoader, 0];
+            string t5Patch = CreateNode("T5TokenizerOptions", new JObject()
+            {
+                ["clip"] = LoadingClip,
+                ["min_padding"] = 768,
+                ["min_length"] = 768
+            });
+            LoadingClip = [t5Patch, 0];
+            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE, "stable-diffusion-xl-v1", "sdxl-vae");
+        }
+        else if (IsChroma() || IsChromaRadiance())
         {
             string loaderType = "CLIPLoader";
             if (getT5XXLModel().EndsWith(".gguf"))
@@ -1272,11 +1319,24 @@ public class WorkflowGenerator
             string t5Patch = CreateNode("T5TokenizerOptions", new JObject() // TODO: This node is a temp patch
             {
                 ["clip"] = LoadingClip,
-                ["min_padding"] = 1,
+                ["min_padding"] = 0,
                 ["min_length"] = 0
             });
             LoadingClip = [t5Patch, 0];
-            doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1)
+            });
+            LoadingModel = [samplingNode, 0];
+            if (IsChromaRadiance())
+            {
+                LoadingVAE = CreateVAELoader("pixel_space");
+            }
+            else
+            {
+                doVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+            }
         }
         else if (IsHiDream())
         {
@@ -1516,7 +1576,7 @@ public class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream() || IsChroma())
+            else if (IsHunyuanVideo() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
@@ -1582,7 +1642,7 @@ public class WorkflowGenerator
                 ["samples"] = latent,
                 ["tile_size"] = UserInput.Get(T2IParamTypes.VAETileSize, 256),
                 ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64),
-                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, 32),
+                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, IsAnyWanModel() ? 9999 : 32),
                 ["temporal_overlap"] = UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 4)
             }, id);
         }
@@ -1673,7 +1733,11 @@ public class WorkflowGenerator
         {
             defscheduler ??= "simple";
         }
-        bool willCascadeFix = false;
+        else if (IsChroma() || IsChromaRadiance())
+        {
+            defscheduler ??= "beta";
+        }
+            bool willCascadeFix = false;
         JArray cascadeModel = null;
         if (!rawSampler && IsCascade() && FinalLoadedModel.Name.Contains("stage_c") && Program.MainSDModels.Models.TryGetValue(FinalLoadedModel.Name.Replace("stage_c", "stage_b"), out T2IModel bModel))
         {
@@ -2258,6 +2322,15 @@ public class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
+        else if (IsChromaRadiance())
+        {
+            return CreateNode("EmptyChromaRadianceLatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
         else if (UserInput.Get(ComfyUIBackendExtension.ShiftedLatentAverageInit, false))
         {
             double offA = 0, offB = 0, offC = 0, offD = 0;
@@ -2361,16 +2434,18 @@ public class WorkflowGenerator
         {
             string modelLoader = CreateNode("DownloadAndLoadGIMMVFIModel", new JObject()
             {
-                ["model"] = "gimmvfi_f_arb_lpips_fp32.safetensors"
+                ["model"] = "gimmvfi_f_arb_lpips_fp32.safetensors",
+                ["precision"] = "fp16",
+                ["torch_compile"] = false
             });
             string gimm = CreateNode("GIMMVFI_interpolate", new JObject()
             {
                 ["gimmvfi_model"] = new JArray() { modelLoader, 0 },
                 ["images"] = imageIn,
-                ["multiplier"] = mult,
-                ["ds_factor"] = 1,
+                ["ds_factor"] = 0.5, // TODO: They recommend this as a factor relative to size. 0.5 for 2k, 0.25 for 4k. This is a major performance alteration.
                 ["interpolation_factor"] = mult,
-                ["seed"] = 1
+                ["seed"] = 1,
+                ["output_flows"] = false
             });
             return [gimm, 0];
         }

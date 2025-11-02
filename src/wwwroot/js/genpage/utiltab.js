@@ -324,7 +324,7 @@ class ModelDownloaderUtil {
             }
             else {
                 let videos = rawVersion.images ? rawVersion.images.filter(img => img.type == 'video') : [];
-                if (videos) {
+                if (videos && videos.length > 0) {
                     let url = videos[0].url;
                     let video = document.createElement('video');
                     video.crossOrigin = 'Anonymous';
@@ -334,6 +334,9 @@ class ModelDownloaderUtil {
                         canvas.height = video.videoHeight;
                         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                         applyMetadata(canvas.toDataURL());
+                    };
+                    video.onerror = () => {
+                        applyMetadata('');
                     };
                     video.src = url;
                 }

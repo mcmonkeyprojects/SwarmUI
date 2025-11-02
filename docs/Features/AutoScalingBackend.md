@@ -1,6 +1,6 @@
 # Auto-Scaling Backend (WIP)
 
-## WARNING: WORK IN PROGRESS. NOT READY FOR USE.
+## WARNING: THE AUTO-SCALING BACKEND IS A WORK IN PROGRESS.
 
 SwarmUI supports spreading across multiple backend systems, see [Using More GPUS](/docs/Using%20More%20GPUs.md) for info on this.
 

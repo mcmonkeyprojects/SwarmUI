@@ -43,7 +43,7 @@ function clearPresetView() {
     getRequiredElementById('new_preset_name').value = '';
     getRequiredElementById('preset_description').value = '';
     getRequiredElementById('new_preset_modal_error').value = '';
-    clearImageFileInput(presetHelpers.imageElem);
+    clearMediaFileInput(presetHelpers.imageElem);
     presetHelpers.enableImageElem.checked = false;
     triggerChangeFor(presetHelpers.enableImageElem);
     for (let type of gen_param_types) {
@@ -90,8 +90,8 @@ function create_new_preset_button() {
         $('#add_preset_modal').modal('show');
     };
     if (curImg && curImg.tagName == 'IMG') {
-        setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            presetHelpers.enableImageElem.checked = true;
+        setMediaFileDirect(presetHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
+            presetHelpers.enableImageElem.checked = false;
             run();
         });
     }
@@ -321,8 +321,8 @@ function editPreset(preset) {
         fixPresetParamClickables();
     };
     if (curImg && curImg.tagName == 'IMG') {
-        setImageFileDirect(presetHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            presetHelpers.enableImageElem.checked = !preset.preview_image || preset.preview_image == 'imgs/model_placeholder.jpg';
+        setMediaFileDirect(presetHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
+            presetHelpers.enableImageElem.checked = false;
             run();
         });
     }
@@ -370,11 +370,11 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
             let sortReverseElem = document.getElementById('preset_list_sort_reverse');
             sortElem.addEventListener('change', () => {
                 localStorage.setItem('preset_list_sort_by', sortElem.value);
-                presetBrowser.update();
+                presetBrowser.lightRefresh();
             });
             sortReverseElem.addEventListener('change', () => {
                 localStorage.setItem('preset_list_sort_reverse', sortReverseElem.checked);
-                presetBrowser.update();
+                presetBrowser.lightRefresh();
             });
         }
     }
