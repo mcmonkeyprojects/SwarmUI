@@ -1121,8 +1121,8 @@ function extractItemKeyNameFromPath(itemName) {
     if (!itemName) {
         return '';
     }
-    // Remove directory path
-    let lastSlash = itemName.lastIndexOf('/');
+    // Remove directory path (handles both / and \ separators)
+    let lastSlash = Math.max(itemName.lastIndexOf('/'), itemName.lastIndexOf('\\'));
     let name = lastSlash !== -1 ? itemName.substring(lastSlash + 1) : itemName;
     // Remove .safetensors extension
     if (name.endsWith('.safetensors')) {
