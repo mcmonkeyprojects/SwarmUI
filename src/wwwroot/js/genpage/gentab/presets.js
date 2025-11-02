@@ -415,11 +415,12 @@ function handleLoraPresetsFromLoraList(lorasStr, weightsStr) {
         });
         let hasAnyPresets = false;
         let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
+        let ignoreZeroWeightLoraPresets = getUserSetting('ui.ignoreModelPresetZeroWeightLoraPresets', false);
         for (let i = 0; i < loras.length; i++) {
             let loraName = loras[i];
             let weight = weights[i] !== undefined ? weights[i] : 1;
-            // Only process LoRAs with non-zero weight
-            if (weight == 0) {
+            // Only process LoRAs with non-zero weight (if setting is enabled)
+            if (ignoreZeroWeightLoraPresets && weight == 0) {
                 continue;
             }
             // Use the centralized function to get preset links (handles key extraction)
