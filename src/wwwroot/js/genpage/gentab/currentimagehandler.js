@@ -460,12 +460,13 @@ function copy_current_image_params() {
  * Shifts the current image view (and full-view if open) to the next or previous image.
  * Returns true if the shift was successful, returns false if there was nothing to shift to.
  */
-function shiftToNextImagePreview(next = true, expand = false) {
+function shiftToNextImagePreview(next = true, expand = false, isArrows = false) {
     let curImgElem = document.getElementById('current_image_img');
     if (!curImgElem) {
         return false;
     }
-    let doCycle = getUserSetting('ui.imageshiftingcycles', true);
+    let doCycle = getUserSetting('ui.imageshiftingcycles', 'true');
+    doCycle = doCycle == 'true' || (isArrows && doCycle == 'only_arrows');
     let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
     if (curImgElem.dataset.batch_id == 'history') {
         let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
@@ -542,10 +543,10 @@ window.addEventListener('keydown', function(kbevent) {
         $('#image_fullview_modal').modal('toggle');
     }
     else if ((kbevent.key == 'ArrowLeft' || kbevent.key == 'ArrowUp') && (isFullView || isCurImgFocused)) {
-        shiftToNextImagePreview(false, isFullView);
+        shiftToNextImagePreview(false, isFullView, true);
     }
     else if ((kbevent.key == 'ArrowRight' || kbevent.key == 'ArrowDown') && (isFullView || isCurImgFocused)) {
-        shiftToNextImagePreview(true, isFullView);
+        shiftToNextImagePreview(true, isFullView, true);
     }
     else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('main_image_area'))) {
         getRequiredElementById('alt_generate_button').click();

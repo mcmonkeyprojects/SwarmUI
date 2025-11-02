@@ -384,12 +384,13 @@ public class Settings : AutoConfiguration
             [ConfigComment("Pipe-separated list of partial error message bodies.\nIf an error message contains any of these, it will not show in the main error popup box.\nThis is to hide intentionally-induced errors, or errors that pop up frequently but you don't want to be annoyed about.\nFor example, set this to 'Generation session interrupted.|Some Other Error.' if you frequently externally interrupt your own gens.")]
             public string HideErrorMessages = "";
 
-            [ConfigComment("What to do when you delete an image that you are looking at in the UI:\n- Nothing\n- Next: move to the next image\n- Previous: move to the previous image")]
-            [ManualSettingsOptions(Vals = ["nothing", "next", "previous"])]
+            [ConfigComment("What to do when you delete an image that you are looking at in the UI:\n- Nothing: image view is closed / reset to empty\n- Next: move to the next image (right/down)\n- Previous: move to the previous image (left/up)")]
+            [ManualSettingsOptions(Vals = ["nothing", "next", "previous"], ManualNames = ["Nothing", "Next (Right/Down)", "Previous (Left/Up)"])]
             public string DeleteImageBehavior = "next";
 
-            [ConfigComment("If true, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf false, shifting will simply stop at the ends.")]
-            public bool ImageShiftingCycles = true;
+            [ConfigComment("If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf disabled, shifting will simply stop at the ends.\nIf 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).")]
+            [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
+            public string ImageShiftingCycles = "true";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
