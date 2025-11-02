@@ -991,7 +991,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         if (this.isDrawing) {
             this.finishDrawing();
         }
-        this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         this.isDrawing = true;
         this.startX = mouseX;
@@ -1016,48 +1015,48 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     finishDrawing() {
-        if (this.isDrawing && this.bufferLayer) {
-            const parent = this.editor.activeLayer;
-            if (!parent) {
-                this.bufferLayer = null;
-                this.isDrawing = false;
-                this.hasDrawn = false;
-                this.editor.redraw();
-                return;
-            }
-            if (!this.hasDrawn) {
-                const idx = parent.childLayers.indexOf(this.bufferLayer);
-                if (idx !== -1) {
-                    parent.childLayers.splice(idx, 1);
-                }
-                this.bufferLayer = null;
-                this.isDrawing = false;
-                this.hasDrawn = false;
-                this.editor.redraw();
-                return;
-            }
-            this.drawShape();
+        if (!this.isDrawing || !this.bufferLayer) {
+            return;
+        }
+        const parent = this.editor.activeLayer;
+        if (!parent) {
+            this.bufferLayer = null;
+            this.isDrawing = false;
+            this.hasDrawn = false;
+            this.editor.redraw();
+            return;
+        }
+        if (!this.hasDrawn) {
             const idx = parent.childLayers.indexOf(this.bufferLayer);
             if (idx !== -1) {
                 parent.childLayers.splice(idx, 1);
             }
-            const offset = parent.getOffset();
-            parent.saveBeforeEdit();
-            this.bufferLayer.drawToBackDirect(parent.ctx, -offset[0], -offset[1], 1);
-            parent.hasAnyContent = true;
             this.bufferLayer = null;
             this.isDrawing = false;
             this.hasDrawn = false;
-            this.editor.markChanged();
             this.editor.redraw();
+            return;
         }
+        this.drawShape();
+        const idx = parent.childLayers.indexOf(this.bufferLayer);
+        if (idx !== -1) {
+            parent.childLayers.splice(idx, 1);
+        }
+        const offset = parent.getOffset();
+        parent.saveBeforeEdit();
+        this.bufferLayer.drawToBackDirect(parent.ctx, -offset[0], -offset[1], 1);
+        parent.hasAnyContent = true;
+        this.bufferLayer = null;
+        this.isDrawing = false;
+        this.hasDrawn = false;
+        this.editor.markChanged();
+        this.editor.redraw();
     }
     
     onMouseMove(e) {
         if (!this.isDrawing) {
             return;
         }
-        this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         this.currentX = mouseX;
         this.currentY = mouseY;
@@ -1071,31 +1070,25 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
 
     onGlobalMouseMove(e) {
-        if (this.isDrawing) {
-            this.editor.updateMousePosFrom(e);
-            let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
-            this.currentX = mouseX;
-            this.currentY = mouseY;
-            let target = this.editor.activeLayer;
-            if (target) {
-                let [layerX, layerY] = target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
-                this.currentLayerX = layerX;
-                this.currentLayerY = layerY;
-            }
-            this.drawShape();
-            return true;
-        }
-        return false;
-    }
-    
-    onMouseUp(e) {
-        if (e.button !== 0 && e.button !== undefined) {
-            return;
-        }
         if (!this.isDrawing) {
             return;
         }
-        this.editor.updateMousePosFrom(e);
+        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        this.currentX = mouseX;
+        this.currentY = mouseY;
+        let target = this.editor.activeLayer;
+        if (target) {
+            let [layerX, layerY] = target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
+            this.currentLayerX = layerX;
+            this.currentLayerY = layerY;
+        }
+        this.drawShape();
+    }
+    
+    onMouseUp(e) {
+        if (e.button != 0 || !this.isDrawing) {
+            return;
+        }
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         this.currentX = mouseX;
         this.currentY = mouseY;
@@ -1109,15 +1102,10 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     onGlobalMouseUp(e) {
-        if (e.button !== 0 && e.button !== undefined) {
-            return false;
+        if (e.button != 0 || !this.isDrawing) {
+            return;
         }
-        if (this.isDrawing) {
-            this.editor.updateMousePosFrom(e);
-            this.finishDrawing();
-            return true;
-        }
-        return false;
+        this.finishDrawing();
     }
     
     drawShape() {
