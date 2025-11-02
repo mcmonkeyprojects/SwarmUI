@@ -24,13 +24,13 @@ These are the presets that were used on DreamStudio (Stability AI's web generati
 
 ## Linking Models and LoRA to a Preset
 
-It is common for certain models and LoRA to have specific recommended values for CFG scale, steps, resolution, sampler, etc. Or, you may just have a default preference for getting the "look" you want from them.
+It's common for models and LoRA to have specific recommended values for CFG scale, steps, resolution, sampler, etc. Or, you may just have your own preferences for getting the "look" you want from them.
 
-If you create a Preset with a particular set of parameter values you would like to use by default, you can go to the *Edit Metadata* dialog for a model or LoRA and "link" it to the desired preset. Then, by default, whenever you select that model or LoRA, the linked preset is also selected and can be applied.
+To do this, create a preset with your preferred settings. Then, go to the *Edit Metadata* dialog for the model or LoRA and pick the preset from the dropdown and save. After that, any time you select that model or LoRA, the linked preset is also selected and can be applied.
 
 Some nuances of this feature:
 
-1. Presets linked to *models* are considered *mutually exclusive* when selecting models. So, if you select a model, its preset is selected, and if you click another model that has its own preset, the first model's preset is unselected and the new model's preset is selected. This avoids accidentally "stacking" incompatible presets for different models. (LoRA presets don't work this way -- they are just selected with the LoRA.)
+1. Presets linked to *models* are considered *mutually exclusive* to one another. So, if you select a model, its preset is selected, and if you click another model that has its own preset, the first model's preset is unselected and the new model's preset is selected. This avoids accidentally "stacking" incompatible presets for different models. (LoRA presets don't work this way -- they are just selected with the LoRA and are *not* automatically de-selected if you disable the LoRA.)
 
 2. You *can* have a single Preset linked to multiple models or LoRA, but you can only link one preset at a time to each model or LoRA.
 
