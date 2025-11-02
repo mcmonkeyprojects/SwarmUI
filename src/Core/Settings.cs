@@ -395,7 +395,7 @@ public class Settings : AutoConfiguration
             [ConfigComment("When a model with a linked preset is selected, should the preset parameters be applied immediately? By default, the preset is just selected for review.")]
             public bool AutoApplyModelPresets = false;
 
-            [ConfigComment("If enabled, when applying the model's preset that includes a LoRA with a weight of 0, the LoRA's own preset is ignored.\nFor example, it may be useful on a DMD model to preset an LCM LoRA to 0, effectively disabling it if it was already selected (because you can't set a preset to remove a LoRA, only to include it). In that situation, you would not want the LCM LoRA's own preset settings to be applied.")]
+            [ConfigComment("If enabled, when applying the model's preset that includes a LoRA with a weight of 0, the LoRA's own preset is ignored.")]
             public bool IgnoreModelPresetZeroWeightLoraPresets = false;
         }
 
