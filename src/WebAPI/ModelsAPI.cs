@@ -900,9 +900,7 @@ public static class ModelsAPI
     /// <returns>A JSON object containing the success status, the key that was saved/cleared, and the preset title.</returns>
     public static async Task<JObject> SaveItemPresetLink(Session session, string itemType, string itemName, string presetTitle)
     {
-        Logs.Debug($"[SaveItemPresetLink] Received: itemType='{itemType}' (type: {itemType?.GetType()?.Name}), itemName='{itemName}', presetTitle='{presetTitle}'");
         string key = $"{itemType}:{itemName}";
-        Logs.Debug($"[SaveItemPresetLink] Constructed key: '{key}'");
         try
         {
             string rawJson = session.User.GetGenericData("itempresetlinks", "data") ?? "{}";
@@ -917,7 +915,6 @@ public static class ModelsAPI
             }
             string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
             session.User.SaveGenericData("itempresetlinks", "data", newJson);
-            Logs.Debug($"[SaveItemPresetLink] Saved successfully with key '{key}'");
             return new JObject() { ["success"] = true, ["key"] = key, ["preset"] = presetTitle };
         }
         catch (Exception ex)
@@ -944,7 +941,6 @@ public static class ModelsAPI
                 links.Remove(key);
                 string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
                 session.User.SaveGenericData("itempresetlinks", "data", newJson);
-                Logs.Debug($"[Preset Link] Cleared {key}, new JSON: {newJson}");
             }
             return new JObject() { ["success"] = true, ["key"] = key };
         }

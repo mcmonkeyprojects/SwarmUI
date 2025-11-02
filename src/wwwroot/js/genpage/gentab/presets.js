@@ -390,9 +390,7 @@ function applyOrSelectPreset(source, itemName, presetData, isNested, shouldUpdat
         currentPresets.push(presetData);
         if (shouldUpdateUI) {
             updatePresetList();
-            if (typeof presetBrowser !== 'undefined') {
-                presetBrowser.rerender();
-            }
+            presetBrowser?.rerender();
         }
     }
 }
@@ -449,9 +447,7 @@ function selectOrApplyLoraPresetsFromList(lorasStr, weightsStr) {
         // Update UI once if we processed any presets
         if (hasAnyPresets) {
             updatePresetList();
-            if (typeof presetBrowser !== 'undefined') {
-                presetBrowser.rerender();
-            }
+            presetBrowser?.rerender();
         }
     } catch (e) {
         console.warn('[LoRA Preset] Error handling LoRA presets:', e.message);
@@ -604,7 +600,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
             // Load user's item preset links from server into the manager
-            if (data.itemPresetLinks && typeof itemPresetLinkManager !== 'undefined') {
+            if (data.itemPresetLinks && itemPresetLinkManager) {
                 itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
             }
             proc();

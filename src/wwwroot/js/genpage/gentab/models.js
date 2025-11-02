@@ -13,12 +13,6 @@ class ModelsHelpers {
 /** Collection of helper functions and data related to models, just an instance of {@link ModelsHelpers}. */
 let modelsHelpers = new ModelsHelpers();
 
-/** Model Parameter Overrides Configuration */
-// Currently-supported parameters for overrides
-const MODEL_OVERRIDE_PARAMS = ['steps', 'cfgscale', 'sampler', 'scheduler', 'clipskip', 'width', 'height'];
-// Parameters where 0 means "unset" rather than a valid value (0 is only unset for numeric params with Min > 0)
-const TREAT_ZERO_AS_UNSET_PARAMS = ['steps', 'cfgscale', 'width', 'height'];
-
 //////////// TODO: Merge all the below into the class above (or multiple separate classes)
 
 let models = {};
@@ -938,7 +932,7 @@ function directSetModel(model) {
                     if (presetData.param_map.loras && presetData.param_map.loraweights) {
                         // Ensure item preset links are loaded before trying to find LoRA preset links
                         genericRequest('GetMyUserData', {}, data => {
-                            if (data.itemPresetLinks && typeof itemPresetLinkManager !== 'undefined') {
+                            if (data.itemPresetLinks && itemPresetLinkManager) {
                                 itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
                             }
                             selectOrApplyLoraPresetsFromList(presetData.param_map.loras, presetData.param_map.loraweights);
@@ -946,16 +940,12 @@ function directSetModel(model) {
                     }
                 }
                 updatePresetList();
-                if (typeof presetBrowser !== 'undefined') {
-                    presetBrowser.rerender();
-                }
+                presetBrowser?.rerender();
             }
         } else {
             // No preset linked to this model, but we may have removed other presets above
             updatePresetList();
-            if (typeof presetBrowser !== 'undefined') {
-                presetBrowser.rerender();
-            }
+            presetBrowser?.rerender();
         }
     } catch (e) {
         // Setting may not exist yet, continue without auto-apply
