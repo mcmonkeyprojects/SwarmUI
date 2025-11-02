@@ -607,7 +607,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.9]).");
                     isValid = false;
                 }
-                string nunchakuTargetVersion = "1.0.0";
+                string nunchakuTargetVersion = "1.0.2";
                 // eg https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.2/nunchaku-0.3.2+torch2.5-cp310-cp310-linux_x86_64.whl
                 string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuTargetVersion}/nunchaku-{nunchakuTargetVersion}+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)
