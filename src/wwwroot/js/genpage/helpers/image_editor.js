@@ -931,12 +931,13 @@ class ImageEditorToolShape extends ImageEditorTool {
     drawShapeToCanvas(ctx, type, x, y, width, height) {
         ctx.beginPath();
         if (type == 'rectangle') {
-            ctx.rect(x, y, width, height);
+            ctx.rect(Math.round(x), Math.round(y), Math.round(width), Math.round(height));
         }
         else if (type == 'circle') {
             let radius = Math.sqrt(width * width + height * height) / 2;
-            ctx.arc(x + width / 2, y + height / 2, radius, 0, 2 * Math.PI);
+            ctx.arc(Math.round(x + width / 2), Math.round(y + height / 2), Math.round(radius), 0, 2 * Math.PI);
         }
+        ctx.stroke();
     }
 
     draw() {
@@ -950,7 +951,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         let width = Math.abs(this.currentX - this.startX) * this.editor.zoomLevel;
         let height = Math.abs(this.currentY - this.startY) * this.editor.zoomLevel;
         this.drawShapeToCanvas(this.editor.ctx, this.shape, x, y, width, height);
-        this.editor.ctx.stroke();
         this.editor.ctx.restore();
     }
     
@@ -962,7 +962,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         let width = Math.abs(shape.width) * this.editor.zoomLevel;
         let height = Math.abs(shape.height) * this.editor.zoomLevel;
         this.drawShapeToCanvas(this.editor.ctx, shape.type, x, y, width, height);
-        this.editor.ctx.stroke();
         this.editor.ctx.restore();
     }
     
@@ -975,7 +974,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         let width = Math.abs(shape.width) * zoom;
         let height = Math.abs(shape.height) * zoom;
         this.drawShapeToCanvas(ctx, shape.type, x, y, width, height);
-        ctx.stroke();
         ctx.restore();
     }
           
