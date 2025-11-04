@@ -865,7 +865,6 @@ class ImageEditorToolShape extends ImageEditorTool {
             <input type="color" class="id-col2" value="#ff0000">
             <button class="basic-button id-col3">Pick</button>
         </div>`;
-		
         let shapeHTML = `
         <div class="image-editor-tool-block">
             <label>Shape:&nbsp;</label>
@@ -874,7 +873,6 @@ class ImageEditorToolShape extends ImageEditorTool {
                 <option value="circle">Circle</option>
             </select>
         </div>`;
-        
         let strokeHTML = `
         <div class="image-editor-tool-block id-stroke-block">
             <label>Width:&nbsp;</label>
@@ -883,7 +881,6 @@ class ImageEditorToolShape extends ImageEditorTool {
                 <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
             </div>
         </div>`;
-        
         this.configDiv.innerHTML = colorHTML + shapeHTML + strokeHTML;
         this.colorText = this.configDiv.querySelector('.id-col1');
         this.colorSelector = this.configDiv.querySelector('.id-col2');
