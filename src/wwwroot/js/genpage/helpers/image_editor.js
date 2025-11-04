@@ -865,6 +865,7 @@ class ImageEditorToolShape extends ImageEditorTool {
             <input type="color" class="id-col2" value="#ff0000">
             <button class="basic-button id-col3">Pick</button>
         </div>`;
+		
         let shapeHTML = `
         <div class="image-editor-tool-block">
             <label>Shape:&nbsp;</label>
@@ -873,14 +874,16 @@ class ImageEditorToolShape extends ImageEditorTool {
                 <option value="circle">Circle</option>
             </select>
         </div>`;
+        
         let strokeHTML = `
         <div class="image-editor-tool-block id-stroke-block">
             <label>Width:&nbsp;</label>
             <input type="number" style="width: 40px;" class="auto-number id-stroke1" min="1" max="20" step="1" value="4">
             <div class="auto-slider-range-wrapper" style="${getRangeStyle(4, 1, 20)}">
-                <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="50" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+                <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
             </div>
         </div>`;
+        
         this.configDiv.innerHTML = colorHTML + shapeHTML + strokeHTML;
         this.colorText = this.configDiv.querySelector('.id-col1');
         this.colorSelector = this.configDiv.querySelector('.id-col2');
@@ -928,6 +931,20 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.editor.redraw();
     }
 
+    drawRectangleBorder(ctx, x, y, width, height, thickness) {
+        width = Math.max(1, Math.floor(width));
+        height = Math.max(1, Math.floor(height));
+        thickness = Math.max(1, Math.floor(thickness));
+        thickness = Math.min(thickness, width, height);
+        ctx.fillRect(x, y, width, thickness);
+        ctx.fillRect(x, y + height - thickness, width, thickness);
+        let verticalHeight = height - thickness * 2;
+        if (verticalHeight > 0) {
+            ctx.fillRect(x, y + thickness, thickness, verticalHeight);
+            ctx.fillRect(x + width - thickness, y + thickness, thickness, verticalHeight);
+        }
+    }
+
     drawShapeToCanvas(ctx, type, x, y, width, height) {
         ctx.beginPath();
         if (type == 'rectangle') {
@@ -937,46 +954,50 @@ class ImageEditorToolShape extends ImageEditorTool {
             let radius = Math.sqrt(width * width + height * height) / 2;
             ctx.arc(Math.round(x + width / 2), Math.round(y + height / 2), Math.round(radius), 0, 2 * Math.PI);
         }
-        ctx.stroke();
     }
 
     draw() {
         if (!this.isDrawing) {
             return;
         }
+        const target = this.editor.activeLayer;
+        if (!target) {
+            return;
+        }
+        const startX = Math.min(this.startLayerX, this.currentLayerX);
+        const startY = Math.min(this.startLayerY, this.currentLayerY);
+        const endX = Math.max(this.startLayerX, this.currentLayerX);
+        const endY = Math.max(this.startLayerY, this.currentLayerY);
+        const width = endX - startX;
+        const height = endY - startY;
+        if (width == 0 && height == 0) {
+            return;
+        }
+        const [imageX1, imageY1] = target.layerCoordToImageCoord(startX, startY);
+        const [imageX2, imageY2] = target.layerCoordToImageCoord(endX, endY);
+        const [canvasX1, canvasY1] = this.editor.imageCoordToCanvasCoord(imageX1, imageY1);
+        const [canvasX2, canvasY2] = this.editor.imageCoordToCanvasCoord(imageX2, imageY2);
+        const canvasWidth = canvasX2 - canvasX1;
+        const canvasHeight = canvasY2 - canvasY1;
         this.editor.ctx.save();
-        this.editor.ctx.strokeStyle = this.color;
-        this.editor.ctx.lineWidth = this.strokeWidth * this.editor.zoomLevel;
-        let [x, y] = this.editor.imageCoordToCanvasCoord(Math.min(this.startX, this.currentX), Math.min(this.startY, this.currentY));
-        let width = Math.abs(this.currentX - this.startX) * this.editor.zoomLevel;
-        let height = Math.abs(this.currentY - this.startY) * this.editor.zoomLevel;
-        this.drawShapeToCanvas(this.editor.ctx, this.shape, x, y, width, height);
+        const prevSmoothing = this.editor.ctx.imageSmoothingEnabled;
+        this.editor.ctx.imageSmoothingEnabled = false;
+        this.editor.ctx.setLineDash([]);
+        if (this.shape == 'rectangle') {
+            const thickness = Math.max(1, Math.round(this.strokeWidth * this.editor.zoomLevel));
+            this.editor.ctx.fillStyle = this.color;
+            this.drawRectangleBorder(this.editor.ctx, Math.round(canvasX1), Math.round(canvasY1), Math.round(canvasWidth), Math.round(canvasHeight), thickness);
+        }
+        else {
+            this.editor.ctx.strokeStyle = this.color;
+            this.editor.ctx.lineWidth = Math.max(1, Math.round(this.strokeWidth * this.editor.zoomLevel));
+            this.drawShapeToCanvas(this.editor.ctx, this.shape, canvasX1, canvasY1, canvasWidth, canvasHeight);
+            this.editor.ctx.stroke();
+        }
+        this.editor.ctx.imageSmoothingEnabled = prevSmoothing;
         this.editor.ctx.restore();
     }
     
-    drawShape(shape) {
-        this.editor.ctx.save();
-        this.editor.ctx.strokeStyle = shape.color;
-        this.editor.ctx.lineWidth = shape.strokeWidth * this.editor.zoomLevel;
-        let [x, y] = this.editor.imageCoordToCanvasCoord(shape.x, shape.y);
-        let width = Math.abs(shape.width) * this.editor.zoomLevel;
-        let height = Math.abs(shape.height) * this.editor.zoomLevel;
-        this.drawShapeToCanvas(this.editor.ctx, shape.type, x, y, width, height);
-        this.editor.ctx.restore();
-    }
-    
-    drawShapeObjectToCanvas(ctx, shape, zoom, offsetX = 0, offsetY = 0) {
-        ctx.save();
-        ctx.strokeStyle = shape.color;
-        ctx.lineWidth = shape.strokeWidth;
-        let x = (shape.x + offsetX) * zoom;
-        let y = (shape.y + offsetY) * zoom;
-        let width = Math.abs(shape.width) * zoom;
-        let height = Math.abs(shape.height) * zoom;
-        this.drawShapeToCanvas(ctx, shape.type, x, y, width, height);
-        ctx.restore();
-    }
-          
     onMouseDown(e) {
         if (e.button != 0) {
             return;
@@ -984,7 +1005,10 @@ class ImageEditorToolShape extends ImageEditorTool {
         if (this.isDrawing) {
             this.finishDrawing();
         }
+        this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.round(mouseX);
+        mouseY = Math.round(mouseY);
         this.isDrawing = true;
         this.startX = mouseX;
         this.startY = mouseY;
@@ -997,7 +1021,9 @@ class ImageEditorToolShape extends ImageEditorTool {
             this.isDrawing = false;
             return;
         }
-        let [layerX, layerY] = target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
+        let [layerX, layerY] = target.imageCoordToLayerCoord(mouseX, mouseY);
+        layerX = Math.round(layerX);
+        layerY = Math.round(layerY);
         this.startLayerX = layerX;
         this.startLayerY = layerY;
         this.currentLayerX = layerX;
@@ -1008,72 +1034,75 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     finishDrawing() {
-        if (!this.isDrawing || !this.bufferLayer) {
-            return;
-        }
-        let parent = this.editor.activeLayer;
-        if (!parent) {
-            this.bufferLayer = null;
-            this.isDrawing = false;
-            this.hasDrawn = false;
-            this.editor.redraw();
-            return;
-        }
-        if (!this.hasDrawn) {
-            let idx = parent.childLayers.indexOf(this.bufferLayer);
-            if (idx != -1) {
+        if (this.isDrawing && this.bufferLayer) {
+            const parent = this.editor.activeLayer;
+            if (!parent) {
+                this.bufferLayer = null;
+                this.isDrawing = false;
+                this.hasDrawn = false;
+                this.editor.redraw();
+                return;
+            }
+            if (!this.hasDrawn) {
+                const idx = parent.childLayers.indexOf(this.bufferLayer);
+                if (idx !== -1) {
+                    parent.childLayers.splice(idx, 1);
+                }
+                this.bufferLayer = null;
+                this.isDrawing = false;
+                this.hasDrawn = false;
+                this.editor.redraw();
+                return;
+            }
+            this.drawShape();
+            const idx = parent.childLayers.indexOf(this.bufferLayer);
+            if (idx !== -1) {
                 parent.childLayers.splice(idx, 1);
             }
+            const offset = parent.getOffset();
+            parent.saveBeforeEdit();
+            this.bufferLayer.drawToBackDirect(parent.ctx, -offset[0], -offset[1], 1);
+            parent.hasAnyContent = true;
             this.bufferLayer = null;
             this.isDrawing = false;
             this.hasDrawn = false;
+            this.editor.markChanged();
             this.editor.redraw();
-            return;
         }
-        this.drawShape();
-        let idx = parent.childLayers.indexOf(this.bufferLayer);
-        if (idx != -1) {
-            parent.childLayers.splice(idx, 1);
-        }
-        let offset = parent.getOffset();
-        parent.saveBeforeEdit();
-        this.bufferLayer.drawToBackDirect(parent.ctx, -offset[0], -offset[1], 1);
-        parent.hasAnyContent = true;
-        this.bufferLayer = null;
-        this.isDrawing = false;
-        this.hasDrawn = false;
-        this.editor.markChanged();
-        this.editor.redraw();
     }
     
     onMouseMove(e) {
         if (!this.isDrawing) {
             return;
         }
+        this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.round(mouseX);
+        mouseY = Math.round(mouseY);
         this.currentX = mouseX;
         this.currentY = mouseY;
         let target = this.editor.activeLayer;
         if (target) {
-            let [layerX, layerY] = target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
-            this.currentLayerX = layerX;
-            this.currentLayerY = layerY;
+            let [layerX, layerY] = target.imageCoordToLayerCoord(mouseX, mouseY);
+            this.currentLayerX = Math.round(layerX);
+            this.currentLayerY = Math.round(layerY);
         }
         this.drawShape();
     }
 
     onGlobalMouseMove(e) {
-        if (!this.isDrawing) {
-            return;
-        }
+        if (this.isDrawing) {
+        this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.round(mouseX);
+        mouseY = Math.round(mouseY);
         this.currentX = mouseX;
         this.currentY = mouseY;
         let target = this.editor.activeLayer;
         if (target) {
-            let [layerX, layerY] = target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
-            this.currentLayerX = layerX;
-            this.currentLayerY = layerY;
+            let [layerX, layerY] = target.imageCoordToLayerCoord(mouseX, mouseY);
+            this.currentLayerX = Math.round(layerX);
+            this.currentLayerY = Math.round(layerY);
         }
         this.drawShape();
     }
@@ -1082,14 +1111,20 @@ class ImageEditorToolShape extends ImageEditorTool {
         if (e.button != 0 || !this.isDrawing) {
             return;
         }
+        if (!this.isDrawing) {
+            return;
+        }
+        this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.round(mouseX);
+        mouseY = Math.round(mouseY);
         this.currentX = mouseX;
         this.currentY = mouseY;
         let target = this.editor.activeLayer;
         if (target) {
-            let [layerX, layerY] = target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
-            this.currentLayerX = layerX;
-            this.currentLayerY = layerY;
+            let [layerX, layerY] = target.imageCoordToLayerCoord(mouseX, mouseY);
+            this.currentLayerX = Math.round(layerX);
+            this.currentLayerY = Math.round(layerY);
         }
         this.finishDrawing();
     }
@@ -1098,42 +1133,62 @@ class ImageEditorToolShape extends ImageEditorTool {
         if (e.button != 0 || !this.isDrawing) {
             return;
         }
-        this.finishDrawing();
+        if (this.isDrawing) {
+            this.editor.updateMousePosFrom(e);
+            let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+            mouseX = Math.round(mouseX);
+            mouseY = Math.round(mouseY);
+            this.currentX = mouseX;
+            this.currentY = mouseY;
+            let target = this.editor.activeLayer;
+            if (target) {
+                let [layerX, layerY] = target.imageCoordToLayerCoord(mouseX, mouseY);
+                this.currentLayerX = Math.round(layerX);
+                this.currentLayerY = Math.round(layerY);
+            }
+            this.finishDrawing();
+            return true;
+        }
+        return false;
     }
     
     drawShape() {
         if (!this.isDrawing || !this.bufferLayer) {
             return;
         }
-        let parent = this.editor.activeLayer;
+        const parent = this.editor.activeLayer;
         if (!parent) {
             return;
         }
         this.bufferLayer.ctx.clearRect(0, 0, this.bufferLayer.canvas.width, this.bufferLayer.canvas.height);
-        let layerX1 = Math.min(this.startLayerX, this.currentLayerX);
-        let layerY1 = Math.min(this.startLayerY, this.currentLayerY);
-        let width = Math.abs(this.currentLayerX - this.startLayerX);
-        let height = Math.abs(this.currentLayerY - this.startLayerY);
-        if (width < 0.5 && height < 0.5) {
+        const startX = Math.round(Math.min(this.startLayerX, this.currentLayerX));
+        const startY = Math.round(Math.min(this.startLayerY, this.currentLayerY));
+        const endX = Math.round(Math.max(this.startLayerX, this.currentLayerX));
+        const endY = Math.round(Math.max(this.startLayerY, this.currentLayerY));
+        const width = endX - startX;
+        const height = endY - startY;
+        if (width == 0 && height == 0) {
             this.bufferLayer.hasAnyContent = false;
             this.hasDrawn = false;
             this.editor.redraw();
             return;
         }
         this.bufferLayer.ctx.save();
-        this.bufferLayer.ctx.strokeStyle = this.color;
-        this.bufferLayer.ctx.lineWidth = this.strokeWidth;
-        this.bufferLayer.ctx.beginPath();
+        const prevSmoothing = this.bufferLayer.ctx.imageSmoothingEnabled;
+        this.bufferLayer.ctx.imageSmoothingEnabled = false;
+        this.bufferLayer.ctx.setLineDash([]);
         if (this.shape == 'rectangle') {
-            this.bufferLayer.ctx.rect(layerX1, layerY1, width, height);
+            const thickness = Math.max(1, Math.round(this.strokeWidth));
+            this.bufferLayer.ctx.fillStyle = this.color;
+            this.drawRectangleBorder(this.bufferLayer.ctx, startX, startY, width, height, thickness);
         }
-        else if (this.shape == 'circle') {
-            let cx = layerX1 + width / 2;
-            let cy = layerY1 + height / 2;
-            let radius = Math.sqrt(width * width + height * height) / 2;
-            this.bufferLayer.ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        else {
+            this.bufferLayer.ctx.strokeStyle = this.color;
+            this.bufferLayer.ctx.lineWidth = Math.max(1, Math.round(this.strokeWidth));
+            this.drawShapeToCanvas(this.bufferLayer.ctx, this.shape, startX, startY, width, height);
+            this.bufferLayer.ctx.stroke();
         }
-        this.bufferLayer.ctx.stroke();
+        this.bufferLayer.ctx.imageSmoothingEnabled = prevSmoothing;
         this.bufferLayer.ctx.restore();
         this.bufferLayer.hasAnyContent = true;
         this.hasDrawn = true;
@@ -1331,6 +1386,22 @@ class ImageEditorLayer {
         return [x2, y2];
     }
 
+    imageCoordToLayerCoord(x, y) {
+        let [offsetX, offsetY] = this.getOffset();
+        let relWidth = this.width / this.canvas.width;
+        let relHeight = this.height / this.canvas.height;
+        [x, y] = [x - offsetX, y - offsetY];
+        let angle = -this.rotation;
+        let [cx, cy] = [this.width / 2, this.height / 2];
+        let [x2, y2] = [x - cx, y - cy];
+        let cos = Math.cos(angle), sin = Math.sin(angle);
+        let xRot = x2 * cos - y2 * sin;
+        let yRot = x2 * sin + y2 * cos;
+        xRot += cx;
+        yRot += cy;
+        return [xRot / relWidth, yRot / relHeight];
+    }
+
     layerCoordToCanvasCoord(x, y) {
         let [x2, y2] = this.editor.imageCoordToCanvasCoord(x, y);
         let [offsetX, offsetY] = this.getOffset();
@@ -1338,6 +1409,22 @@ class ImageEditorLayer {
         let relHeight = this.height / this.canvas.height;
         [x2, y2] = [x2 * relWidth + offsetX, y2 * relHeight + offsetY];
         return [x2, y2];
+    }
+
+    layerCoordToImageCoord(x, y) {
+        let relWidth = this.width / this.canvas.width;
+        let relHeight = this.height / this.canvas.height;
+        [x, y] = [x * relWidth, y * relHeight];
+        let angle = this.rotation;
+        let [cx, cy] = [this.width / 2, this.height / 2];
+        let [x2, y2] = [x - cx, y - cy];
+        let cos = Math.cos(angle), sin = Math.sin(angle);
+        let xRot = x2 * cos - y2 * sin;
+        let yRot = x2 * sin + y2 * cos;
+        xRot += cx;
+        yRot += cy;
+        let [offsetX, offsetY] = this.getOffset();
+        return [xRot + offsetX, yRot + offsetY];
     }
 
     drawFilledCircle(x, y, radius, color) {
