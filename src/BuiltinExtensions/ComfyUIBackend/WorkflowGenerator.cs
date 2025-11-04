@@ -2205,24 +2205,33 @@ public class WorkflowGenerator
                 ["compression"] = UserInput.Get(T2IParamTypes.CascadeLatentCompression, 32)
             }, id);
         }
-        else
+        if (mask is not null && (UserInput.Get(T2IParamTypes.UseInpaintingEncode) || (CurrentModelClass()?.ID ?? "").EndsWith("/inpaint")))
         {
-            if (mask is not null && (UserInput.Get(T2IParamTypes.UseInpaintingEncode) || (CurrentModelClass()?.ID ?? "").EndsWith("/inpaint")))
-            {
-                return CreateNode("VAEEncodeForInpaint", new JObject()
-                {
-                    ["vae"] = vae,
-                    ["pixels"] = image,
-                    ["mask"] = mask,
-                    ["grow_mask_by"] = 6
-                }, id);
-            }
-            return CreateNode("VAEEncode", new JObject()
+            return CreateNode("VAEEncodeForInpaint", new JObject()
             {
                 ["vae"] = vae,
-                ["pixels"] = image
+                ["pixels"] = image,
+                ["mask"] = mask,
+                ["grow_mask_by"] = 6
             }, id);
         }
+        if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
+        {
+            return CreateNode("VAEEncodeTiled", new JObject()
+            {
+                ["vae"] = vae,
+                ["pixels"] = image,
+                ["tile_size"] = UserInput.Get(T2IParamTypes.VAETileSize, 256),
+                ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64),
+                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, IsAnyWanModel() ? 9999 : 32),
+                ["temporal_overlap"] = UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 4)
+            }, id);
+        }
+        return CreateNode("VAEEncode", new JObject()
+        {
+            ["vae"] = vae,
+            ["pixels"] = image
+        }, id);
     }
 
     /// <summary>Creates an Empty Latent Image node.</summary>
