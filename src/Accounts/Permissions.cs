@@ -43,6 +43,7 @@ public static class Permissions
 
     public static PermInfo ConfigureRoles = Register(new("configure_roles", "Configure Roles", "Allows access to role configuration.\nThis is basically total control, as you can give yourself more permissions with this.", PermissionDefault.NOBODY, GroupAdmin, PermSafetyLevel.POWERFUL));
     public static PermInfo ManageUsers = Register(new("manage_users", "Manage Users", "Allows access to administrative user management.\nThis is basically total control, as you can give yourself more permissions with this.", PermissionDefault.NOBODY, GroupAdmin, PermSafetyLevel.POWERFUL));
+    public static PermInfo InterruptOthers = Register(new("interrupt_others", "Interrupt Others", "Allows an admin to interrupt other user's sessions at will.", PermissionDefault.ADMINS, GroupAdmin, PermSafetyLevel.POWERFUL));
     public static PermInfo Shutdown = Register(new("shutdown", "Shutdown Server", "Allows the user to fully shut down the server.", PermissionDefault.NOBODY, GroupAdmin, PermSafetyLevel.SAFE));
     public static PermInfo Restart = Register(new("restart", "Restart Server", "Allows the user to fully restart the server.", PermissionDefault.ADMINS, GroupAdmin, PermSafetyLevel.SAFE));
     public static PermInfo ReadServerSettings = Register(new("read_server_settings", "Read Server Settings", "Allows the user to read (but not necessarily edit) server settings.", PermissionDefault.ADMINS, GroupAdmin, PermSafetyLevel.SAFE));

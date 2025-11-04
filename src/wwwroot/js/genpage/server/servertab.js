@@ -582,6 +582,10 @@ function server_clear_sysram() {
     genericRequest('FreeBackendMemory', { 'system_ram': true }, data => {});
 }
 
+function adminInterruptUser(userId) {
+    genericRequest('AdminInterruptUser', { 'name': userId }, data => {});
+}
+
 function serverResourceLoop() {
     if (isVisible(getRequiredElementById('server_tab'))) {
         fixTabHeights();
@@ -620,9 +624,10 @@ function serverResourceLoop() {
                 priorWidth = parseFloat(target.style.minWidth.replaceAll('px', ''));
             }
             target.style.minWidth = `${Math.max(priorWidth, target.offsetWidth)}px`;
-            let html = '<table class="simple-table"><tr><th>Name</th><th>Last Active</th><th>Active Sessions</th></tr>';
+            let html = '<table class="simple-table"><tr><th>Name</th><th>Last Active</th><th>Active Sessions</th><th>Current Gens</th></tr>';
             for (let user of data.users) {
-                html += `<tr><td>${user.id}</td><td>${user.last_active}</td><td>${user.active_sessions.map(sess => `${sess.count}x from ${sess.address}`).join(', ')}</td></tr>`;
+                let button = (user.waiting_gens == 0 && user.loading_models == 0 && user.waiting_backends == 0 && user.live_gens == 0) ? '' : `<button class="basic-button" onclick="adminInterruptUser('${escapeHtml(user.id)}')">Interrupt</button>`;
+                html += `<tr><td>${user.id}</td><td>${user.last_active}</td><td>${user.active_sessions.map(sess => `${sess.count}x from ${sess.address}`).join(', ')}</td><td>${currentGenString(user.waiting_gens, user.loading_models, user.live_gens, user.waiting_backends)}${button}</td></tr>`;
             }
             html += '</table>';
             target.innerHTML = html;

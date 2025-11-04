@@ -2,16 +2,18 @@
 using FreneticUtilities.FreneticToolkit;
 using LiteDB;
 using Newtonsoft.Json.Linq;
+using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using System.IO;
 
 namespace SwarmUI.Utils;
 
-/// <summary>Helper class to track image file metadata.</summary>
-public static class ImageMetadataTracker
+/// <summary>Helper class to track output file metadata.</summary>
+public static class OutputMetadataTracker
 {
     /// <summary>BSON database entry for image metadata.</summary>
-    public class ImageMetadataEntry
+    public class OutputMetadataEntry
     {
         [BsonId]
         public string FileName { get; set; }
@@ -24,7 +26,7 @@ public static class ImageMetadataTracker
     }
 
     /// <summary>BSON database entry for image preview thumbnails.</summary>
-    public class ImagePreviewEntry
+    public class OutputPreviewEntry
     {
         [BsonId]
         public string FileName { get; set; }
@@ -39,7 +41,7 @@ public static class ImageMetadataTracker
         public byte[] SimplifiedData { get; set; }
     }
 
-    public record class ImageDatabase(string Folder, LockObject Lock, LiteDatabase Database, ILiteCollection<ImageMetadataEntry> Metadata, ILiteCollection<ImagePreviewEntry> Previews)
+    public record class OutputDatabase(string Folder, LockObject Lock, LiteDatabase Database, ILiteCollection<OutputMetadataEntry> Metadata, ILiteCollection<OutputPreviewEntry> Previews)
     {
         public volatile int Errors = 0;
 
@@ -60,7 +62,7 @@ public static class ImageMetadataTracker
                 catch (Exception) { }
                 try
                 {
-                    File.Delete($"{Folder}/image_metadata.ldb");
+                    File.Delete($"{Folder}/swarm_metadata.ldb");
                 }
                 catch (Exception) { }
                 Databases.TryRemove(Folder, out _);
@@ -81,10 +83,10 @@ public static class ImageMetadataTracker
     }
 
     /// <summary>Set of all image metadatabases, as a map from folder name to database.</summary>
-    public static ConcurrentDictionary<string, ImageDatabase> Databases = new();
+    public static ConcurrentDictionary<string, OutputDatabase> Databases = new();
 
     /// <summary>Returns the database corresponding to the given folder path.</summary>
-    public static ImageDatabase GetDatabaseForFolder(string folder)
+    public static OutputDatabase GetDatabaseForFolder(string folder)
     {
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
@@ -96,7 +98,7 @@ public static class ImageMetadataTracker
         }
         return Databases.GetOrCreate(folder, () =>
         {
-            string path = $"{folder}/image_metadata.ldb";
+            string path = $"{folder}/swarm_metadata.ldb";
             LiteDatabase ldb;
             try
             {
@@ -104,11 +106,16 @@ public static class ImageMetadataTracker
             }
             catch (Exception)
             {
-                Logs.Warning($"Image metadata store at '{path}' is corrupt, deleting it and rebuilding.");
+                Logs.Warning($"Swarm output metadata store at '{path}' is corrupt, deleting it and rebuilding.");
                 File.Delete(path);
                 ldb = new(path);
             }
-            return new(folder, new(), ldb, ldb.GetCollection<ImageMetadataEntry>("image_metadata"), ldb.GetCollection<ImagePreviewEntry>("image_previews"));
+            // TODO: TEMP 0.9.7: Clear out old image_metadata files.
+            if (File.Exists($"{folder}/image_metadata.ldb"))
+            {
+                File.Delete($"{folder}/image_metadata.ldb");
+            }
+            return new(folder, new(), ldb, ldb.GetCollection<OutputMetadataEntry>("output_metadata"), ldb.GetCollection<OutputPreviewEntry>("output_previews"));
         });
     }
 
@@ -125,7 +132,7 @@ public static class ImageMetadataTracker
     public static void RemoveMetadataFor(string file)
     {
         string folder = file.BeforeAndAfterLast('/', out string filename);
-        ImageDatabase metadata = GetDatabaseForFolder(folder);
+        OutputDatabase metadata = GetDatabaseForFolder(folder);
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
@@ -138,19 +145,25 @@ public static class ImageMetadataTracker
     }
 
     /// <summary>Get the preview bytes for the given image, going through a cache manager.</summary>
-    public static ImagePreviewEntry GetOrCreatePreviewFor(string file)
+    public static OutputPreviewEntry GetOrCreatePreviewFor(string file)
     {
+        file = file.Replace('\\', '/');
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
+        MediaType expectedMediaType = MediaType.GetByExtension(ext);
+        if (expectedMediaType is not null && expectedMediaType.MetaType == MediaMetaType.Audio)
+        {
+            return null;
+        }
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
         }
-        ImageDatabase metadata = GetDatabaseForFolder(folder);
+        OutputDatabase metadata = GetDatabaseForFolder(folder);
         long timeNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         try
         {
-            ImagePreviewEntry entry;
+            OutputPreviewEntry entry;
             lock (metadata.Lock)
             {
                 entry = metadata.Previews.FindById(filename);
@@ -213,25 +226,43 @@ public static class ImageMetadataTracker
             }
             if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
-                if (!ExtensionsForAnimatedImages.Contains(ext))
+                altPreview = animPreview;
+                if (ExtensionsForAnimatedImages.Contains(ext))
                 {
-                    return null;
+                    byte[] data = File.ReadAllBytes(file);
+                    ImageFile img = new Image(data, MediaType.GetByExtension(ext));
+                    fileData = data;
+                    ImageFile simplified = new Image(data, img.Type);
+                    simplifiedData = simplified.ToMetadataJpg().RawData;
+                    File.WriteAllBytes(jpegPreview, simplifiedData);
+                    ImageFile webpAnim = img.ToWebpPreviewAnim();
+                    if (webpAnim is null)
+                    {
+                        fileData = simplifiedData;
+                        simplifiedData = null;
+                        altPreview = jpegPreview;
+                        altExists = true;
+                    }
+                    else
+                    {
+                        fileData = webpAnim.RawData;
+                        File.WriteAllBytes(animPreview, fileData);
+                        altExists = true;
+                    }
                 }
-                byte[] data = File.ReadAllBytes(file);
-                Image img = new(data, Image.ImageType.ANIMATION, ext);
-                fileData = data;
-                simplifiedData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
-                File.WriteAllBytes(jpegPreview, simplifiedData);
-                Image webpAnim = img.ToWebpPreviewAnim();
-                if (webpAnim is null)
+                else if (ExtensionsForFfmpegables.Contains(ext))
                 {
-                    fileData = simplifiedData;
-                    simplifiedData = null;
+                    UserImageHistoryHelper.DoFfmpegPreviewGeneration(file).Wait();
+                    altExists = Program.ServerSettings.UI.AllowAnimatedPreviews && File.Exists(altPreview);
+                    if (!altExists)
+                    {
+                        altPreview = jpegPreview;
+                        altExists = File.Exists(altPreview);
+                    }
                 }
                 else
                 {
-                    fileData = webpAnim.ImageData;
-                    File.WriteAllBytes(animPreview, fileData);
+                    return null;
                 }
             }
             if (fileData is null)
@@ -251,7 +282,8 @@ public static class ImageMetadataTracker
                 }
                 else
                 {
-                    fileData = new Image(data, Image.ImageType.IMAGE, ext).ToMetadataJpg().ImageData;
+                    ImageFile newFile = new Image(data, MediaType.GetByExtension(ext));
+                    fileData = newFile.ToMetadataJpg()?.RawData;
                 }
             }
         }
@@ -262,7 +294,7 @@ public static class ImageMetadataTracker
         }
         try
         {
-            ImagePreviewEntry entry = new() { FileName = filename, PreviewData = fileData, SimplifiedData = simplifiedData, LastVerified = timeNow, FileTime = fileTime };
+            OutputPreviewEntry entry = new() { FileName = filename, PreviewData = fileData, SimplifiedData = simplifiedData, LastVerified = timeNow, FileTime = fileTime };
             lock (metadata.Lock)
             {
                 metadata.Previews.Upsert(entry);
@@ -278,19 +310,20 @@ public static class ImageMetadataTracker
     }
 
     /// <summary>Get the metadata text for the given file, going through a cache manager.</summary>
-    public static ImageMetadataEntry GetMetadataFor(string file, string root, bool starNoFolders)
+    public static OutputMetadataEntry GetMetadataFor(string file, string root, bool starNoFolders)
     {
+        file = file.Replace('\\', '/');
         string ext = file.AfterLast('.');
         string folder = file.BeforeAndAfterLast('/', out string filename);
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
         }
-        ImageDatabase metadata = GetDatabaseForFolder(folder);
+        OutputDatabase metadata = GetDatabaseForFolder(folder);
         long timeNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         try
         {
-            ImageMetadataEntry existingEntry;
+            OutputMetadataEntry existingEntry;
             lock (metadata.Lock)
             {
                 existingEntry = metadata.Metadata.FindById(filename);
@@ -345,7 +378,7 @@ public static class ImageMetadataTracker
                 {
                     return null;
                 }
-                fileData = new Image(data, Image.ImageType.IMAGE, ext).GetMetadata();
+                fileData = new Image(data, MediaType.GetByExtension(ext)).GetMetadata();
             }
             if (string.IsNullOrWhiteSpace(fileData) && File.Exists(altMetaPath))
             {
@@ -379,7 +412,7 @@ public static class ImageMetadataTracker
             Logs.Warning($"Error reading image metadata for file '{file}': {ex.ReadableString()}");
             return null;
         }
-        ImageMetadataEntry entry = new() { FileName = filename, Metadata = fileData, LastVerified = timeNow, FileTime = fileTime };
+        OutputMetadataEntry entry = new() { FileName = filename, Metadata = fileData, LastVerified = timeNow, FileTime = fileTime };
         try
         {
             lock (metadata.Lock)
@@ -398,9 +431,9 @@ public static class ImageMetadataTracker
     /// <summary>Shuts down and stores metadata helper files.</summary>
     public static void Shutdown()
     {
-        ImageDatabase[] dbs = [.. Databases.Values];
+        OutputDatabase[] dbs = [.. Databases.Values];
         Databases.Clear();
-        foreach (ImageDatabase db in dbs)
+        foreach (OutputDatabase db in dbs)
         {
             lock (db.Lock)
             {
@@ -411,11 +444,20 @@ public static class ImageMetadataTracker
 
     public static void MassRemoveMetadata()
     {
-        KeyValuePair<string, ImageDatabase>[] dbs = [.. Databases];
+        KeyValuePair<string, OutputDatabase>[] dbs = [.. Databases];
         static void remove(string name)
         {
             try
             {
+                if (File.Exists($"{name}/swarm_metadata.ldb"))
+                {
+                    File.Delete($"{name}/swarm_metadata.ldb");
+                }
+                if (File.Exists($"{name}/swarm_metadata-log.ldb"))
+                {
+                    File.Delete($"{name}/swarm_metadata-log.ldb");
+                }
+                // TODO: TEMP: 0.9.7: "image_metadata" used to be the name of these files.
                 if (File.Exists($"{name}/image_metadata.ldb"))
                 {
                     File.Delete($"{name}/image_metadata.ldb");
@@ -427,7 +469,7 @@ public static class ImageMetadataTracker
             }
             catch (IOException) { }
         }
-        foreach ((string name, ImageDatabase db) in dbs)
+        foreach ((string name, OutputDatabase db) in dbs)
         {
             lock (db.Lock)
             {

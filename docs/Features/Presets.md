@@ -4,7 +4,7 @@
 
 # Official SDXL Preset Pack
 
-These are the presets used on DreamStudio.
+These are the presets that were used on DreamStudio (Stability AI's web generation platform) around the time that SDXL was launched to the public in 2023.
 
 - Download this file: [SDXL Official Presets.json](https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/SDXL.Official.Presets.json) and save it somewhere (anywhere, desktop is fine)
 - Open SwarmUI and open the `Presets` tab at the bottom

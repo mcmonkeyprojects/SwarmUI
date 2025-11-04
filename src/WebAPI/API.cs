@@ -47,6 +47,7 @@ public class API
         try
         {
             JObject input;
+            // TODO: Receive limits should be low for unaunthenticated sessions, higher for authenticated ones.
             if (context.WebSockets.IsWebSocketRequest)
             {
                 socket = await context.WebSockets.AcceptWebSocketAsync();

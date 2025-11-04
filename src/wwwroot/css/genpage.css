@@ -1541,6 +1541,17 @@ body {
     text-align: right;
     white-space: nowrap;
 }
+.simple_batch_clear_button {
+    /* Floats above */
+    display: block;
+    position: relative;
+    top: -1rem;
+    left: -1rem;
+    width: 0;
+    height: 0;
+    color: var(--button-text);
+    background-color: var(--button-background);
+}
 .simple_current_image_batch .image-block {
     margin-left: 0.5rem;
     height: 10rem;

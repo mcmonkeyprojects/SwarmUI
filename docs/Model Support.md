@@ -15,6 +15,8 @@
 [Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Just Bad |
 [AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Recent, High Quality |
+[Chroma](#chroma) | MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Decent Quality |
+[Chroma Radiance](#chroma-radiance) | Pixel MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Bad Quality (WIP) |
 [Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Passable Quality |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Modern, High Quality, very memory intense |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Just Bad |
@@ -194,11 +196,14 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 ![img](/docs/images/models/auraflow-02.jpg)
 *(above image is AuraFlow v0.2)*
 
-[Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) and [v0.2](https://huggingface.co/fal/AuraFlow-v0.2) and v0.3 are supported in Swarm, but you must manually select architecture to use it.
-
-Download the model, then click "`Edit Metadata`" and select `AuraFlow` as the architecture, and set resolution to `1024x1024`.
-
-Parameters and usage is the same as any other normal model.
+- [Fal.ai's AuraFlow v0.1](https://huggingface.co/fal/AuraFlow/tree/main) and [v0.2](https://huggingface.co/fal/AuraFlow-v0.2) and v0.3 are supported in Swarm, but you must manually select architecture to use it.
+- The model used "Pile T5-XXL" as it's text encoder.
+- The model used the SDXL VAE as its VAE.
+- This model group was quickly forgotten by the community due to quality issues, but came back into popular attention much later via community finetune "Pony v7".
+    - Pony wants to be in the `diffusion_models` folder, but regular AuraFlow goes in `Stable-Diffusion` folder
+- Parameters and usage is the same as any other normal model.
+    - CFG recommended around 3.5 or 4.
+    - Pony v7 allows higher resolutions than base AuraFlow normally targets.
 
 # Black Forest Labs' Flux.1 Models
 
@@ -306,19 +311,46 @@ Parameters and usage is the same as any other normal model.
     - Add a Mask, draw a dot anywhere in the empty area (this is just a trick to tell the editor to automask all the empty area to the side, you don't need to mask it manually)
     - Type your prompt, hit generate
 
-### Chroma
+# Chroma
 
 - Chroma is a derivative of Flux, and is supported in SwarmUI
-    - FP8 Scaled versions here: <https://huggingface.co/Clybius/Chroma-fp8-scaled/tree/main>
+    - FP8 Scaled versions here: <https://huggingface.co/silveroxides/Chroma1-HD-fp8-scaled/tree/main>
+        - Or older revs <https://huggingface.co/Clybius/Chroma-fp8-scaled/tree/main>
     - Or GGUF versions here: <https://huggingface.co/silveroxides/Chroma-GGUF>
     - Or original BF16 here (not recommended): <https://huggingface.co/lodestones/Chroma/tree/main>
     - Model files goes in `diffusion_models`
     - Uses standard CFG, not distilled to 1 like other Flux models
-    - Official reference workflow uses Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
+    - Original official reference workflow used Scheduler=`Align Your Steps` with Steps=`26` and CFG Scale=`4`
         - (It's named `Optimal Steps` in their workflow, but Swarm's AYS scheduler is equivalent to that)
+        - "Sigmoid Offset" scheduler was their later recommendation, it requires a custom node
+            - You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
+        - Or, "power_shift" / "beta42" from <https://github.com/silveroxides/ComfyUI_PowerShiftScheduler> may be better
+            - Works the same, `git clone https://github.com/silveroxides/ComfyUI_PowerShiftScheduler` into your ComfyUI `custom_nodes` and restart
     - Generally works better with longer prompts. Adding some "prompt fluff" on the end can help clean it up. This is likely related to it being a beta model with an odd training dataset.
-    - "Sigmoid Offset" scheduler is their newer recommendation, it requires a custom node
-        - You can `git clone https://github.com/silveroxides/ComfyUI_SigmoidOffsetScheduler` into your ComfyUI `custom_nodes`, and then restart SwarmUI, and it will be available from the `Scheduler` param dropdown
+- **Parameters**
+    - **CFG Scale:** around `3.5`
+    - **Sampler:** Defaults to regular `Euler`
+    - **Scheduler:** Defaults to `Beta`
+    - **Steps:** Normal step counts work, official recommendation is `26`
+    - **Sigma Shift:** Defaults to `1`
+    - **Resolution:** `1024x1024` or nearby values. The *HD* models were trained extra on `1152x1152`.
+
+# Chroma Radiance
+
+- Chroma Radiance is a pixel-space model derived from Flux, and is supported in SwarmUI
+    - It is a work in progress, expect quality to be limited for now
+    - Download here <https://huggingface.co/lodestones/Chroma1-Radiance/tree/main>
+        - Model files goes in `diffusion_models`
+    - It does not use a VAE
+- **Parameters**
+    - **CFG Scale:** around `3.5`
+    - **Sampler:** Defaults to regular `Euler`
+    - **Scheduler:** Defaults to `Beta`
+    - **Steps:** Normal step counts work, higher is recommended to reduce quality issues
+    - **Sigma Shift:** Defaults to `1`
+    - **Prompt:** Long and detailed prompts are recommended.
+    - **Negative Prompt:** Due to the model's experimental early train status, a good negative prompt is essential.
+        - Official example: `This low quality greyscale unfinished sketch is inaccurate and flawed. The image is very blurred and lacks detail with excessive chromatic aberrations and artifacts. The image is overly saturated with excessive bloom. It has a toony aesthetic with bold outlines and flat colors.`
 
 # Lumina 2
 
@@ -438,7 +470,7 @@ Parameters and usage is the same as any other normal model.
     - **Resolution:** 1328x1328 is their recommended resolution, but you can shift it around to other resolutions in a range between 928 up to 1472.
     - **Performance:** Can be fast on Res=928x928 CFG=1 Steps=20, but standard params are very slow (one full minute for a standard res 20 step cfg 4 image on a 4090, compared to ~10 seconds for Flux on the same).
         - Requires >30 gigs of system RAM just to load at all in fp8. If you have limited sysram you're gonna have a bad time. Pagefile can help.
-    - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles
+    - **Prompts:** TBD, but it seems very friendly to general prompts in both natural language and booru-tag styles. Official recommendations are very long LLM-ish prompts though.
     - **Sigma Shift:** Comfy defaults it to `1.15`, but this ruins fine details, so Swarm defaults it to `3` instead. Many different values are potentially valid. Proper guidance on choices TBD.
 
 ### Controlnets
@@ -474,6 +506,7 @@ Parameters and usage is the same as any other normal model.
         - It will focus the first image, but you can get it to pull features from additional images (with limited quality)
         - Qwen Image Edit Plus works with up to 3 images well
         - Use phrasing like `The person in Picture 1` to refer to the content of specific input images in the prompt
+        - There are a few samples of how to prompt here <https://www.alibabacloud.com/help/en/model-studio/qwen-image-edit-api>
     - There are a couple dedicated Qwen Image Edit Lightning Loras <https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>
         - Take care to separate the Edit lora vs the base Qwen Image lora.
 

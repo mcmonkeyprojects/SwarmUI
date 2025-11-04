@@ -1021,10 +1021,47 @@ function guessMimeTypeForExtension(filename) {
     return mimeTypeForExtension[ext] || '';
 }
 
-/** Returns true if the given filename is for a video file based on the extension, or false if it is not. */
+/** Returns a mimetype if the given filename is for a video file based on the extension, or boolean false if it is not. */
 function isVideoExt(filename) {
+    if (filename.startsWith('data:')) {
+        let semicolonIndex = filename.indexOf(';');
+        let colonIndex = filename.indexOf(':');
+        if (semicolonIndex >= 0 && colonIndex >= 0) {
+            let mimeType = filename.substring(colonIndex + 1, semicolonIndex);
+            if (mimeType == 'video/webp') {
+                return false;
+            }
+            if (mimeType.startsWith('video/')) {
+                return mimeType;
+            }
+        }
+        return false;
+    }
     let ext = filename.split('.').pop();
-    return ['mp4', 'mpeg', 'mov', 'webm'].includes(ext);
+    if (['mp4', 'mpeg', 'mov', 'webm'].includes(ext)) {
+        return `video/${ext}`;
+    }
+    return false;
+}
+
+/** Returns a mimetype if the given filename is for an audio file based on the extension, or boolean false if it is not. */
+function isAudioExt(filename) {
+    if (filename.startsWith('data:')) {
+        let semicolonIndex = filename.indexOf(';');
+        let colonIndex = filename.indexOf(':');
+        if (semicolonIndex >= 0 && colonIndex >= 0) {
+            let mimeType = filename.substring(colonIndex + 1, semicolonIndex);
+            if (mimeType.startsWith('audio/')) {
+                return mimeType;
+            }
+            return false;
+        }
+    }
+    let ext = filename.split('.').pop();
+    if (['mp3', 'wav', 'aac', 'ogg', 'flac'].includes(ext)) {
+        return `audio/${ext}`;
+    }
+    return false;
 }
 
 /** 'string.split' with a count limit, and without the stupid misbehavior of the default JS 'string.split'. */
