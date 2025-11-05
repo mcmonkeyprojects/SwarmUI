@@ -1206,7 +1206,7 @@ function hideUnsupportableParams() {
             param.feature_missing = !supported;
             let show = supported && param.visible;
             let paramToggler = document.getElementById(`input_${param.id}_toggle`);
-            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != param.default;
+            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != `${param.default}`;
             let group = param.original_group || param.group;
             if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
                 isAltered = false;
