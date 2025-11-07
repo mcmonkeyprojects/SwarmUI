@@ -403,6 +403,10 @@ class PromptPlusButton {
         this.segmentModalOther.innerHTML =
             makeGenericPopover('text_prompt_segment_model', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
             + makeDropdownInput(null, 'text_prompt_segment_model', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
+            + makeGenericPopover('text_prompt_segment_sampler', 'Segment Sampler', 'Sampler', "Sampler to use for the segment stage.", '')
+            + makeDropdownInput(null, 'text_prompt_segment_sampler', '', 'Sampler', '', [], '', true, true, [])
+            + makeGenericPopover('text_prompt_segment_scheduler', 'Segment Scheduler', 'Scheduler', "Scheduler to use for the segment stage.", '')
+            + makeDropdownInput(null, 'text_prompt_segment_scheduler', '', 'Scheduler', '', [], '', true, true, [])
             + makeGenericPopover('text_prompt_segment_textmatch', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
             + makeTextInput(null, 'text_prompt_segment_textmatch', '', 'Text Match', '', '', 'normal', '', false, false, true)
             + makeGenericPopover('text_prompt_segment_yoloid', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
@@ -418,6 +422,8 @@ class PromptPlusButton {
             + makeGenericPopover('text_prompt_segment_gentext', 'Prompt Syntax: Segment Generation Prompt', 'text', 'The prompt to use when regenerating the matched area.\nShould be a full text on its own, can use a subset of general prompting syntax.', '')
             + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
         this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
+        this.segmentModalSampler = getRequiredElementById('text_prompt_segment_sampler');
+        this.segmentModalScheduler = getRequiredElementById('text_prompt_segment_scheduler');
         this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
         this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
         this.segmentModalClassIds = getRequiredElementById('text_prompt_segment_classids');
@@ -428,6 +434,7 @@ class PromptPlusButton {
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
+        this.populateSegmentSamplerScheduler();
         this.regionModalOther = getRequiredElementById('text_prompt_region_other_inputs');
         this.regionModalOther.innerHTML =
             makeGenericPopover('text_prompt_region_x', 'Prompt Syntax: Region Left X', 'Left X', "The left X coordinate of the region's box.", '')
@@ -532,6 +539,7 @@ class PromptPlusButton {
         this.segmentModalModelSelect.innerHTML = html;
         this.segmentModalModelSelect.value = 'CLIP-Seg';
         this.segmentModalMainText.value = '';
+        this.populateSegmentSamplerScheduler();
         this.segmentModalCreativity.value = 0.6;
         this.segmentModalThreshold.value = 0.5;
         this.segmentModalTextMatch.value = '';
@@ -573,7 +581,64 @@ class PromptPlusButton {
             }
         }
         $('#text_prompt_segment_modal').modal('hide');
-        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+        let prepend = '';
+        if (this.segmentModalSampler && !this.segmentModalSampler.classList.contains('disabled-input') && !this.segmentModalSampler.disabled && this.segmentModalSampler.value) {
+            prepend += `<param[segment_sampler]:${this.segmentModalSampler.value}> `;
+        }
+        if (this.segmentModalScheduler && !this.segmentModalScheduler.classList.contains('disabled-input') && !this.segmentModalScheduler.disabled && this.segmentModalScheduler.value) {
+            prepend += `<param[segment_scheduler]:${this.segmentModalScheduler.value}> `;
+        }
+        this.applyNewSyntax(`${prepend}<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+
+    }
+
+    populateSegmentSamplerScheduler() {
+        try {
+            // Helper to clone options from an existing select into our modal select
+            let copyOptions = (sourceId, destSelect) => {
+                if (!destSelect) {
+                    return;
+                }
+                let cur = destSelect.value || '';
+                destSelect.innerHTML = '';
+                let src = document.getElementById(sourceId);
+                if (src && src.options && src.options.length) {
+                    for (let i = 0; i < src.options.length; i++) {
+                        let srcOpt = src.options[i];
+                        let opt = document.createElement('option');
+                        opt.value = srcOpt.value;
+                        opt.textContent = srcOpt.textContent;
+                        destSelect.appendChild(opt);
+                    }
+                }
+                // Restore selection if still valid, else leave first option selected
+                let values = Array.from(destSelect.options).map(o => o.value);
+                destSelect.value = values.includes(cur) ? cur : (destSelect.options.length > 0 ? destSelect.options[0].value : '');
+            };
+            copyOptions('input_sampler', this.segmentModalSampler);
+            copyOptions('input_scheduler', this.segmentModalScheduler);
+            if (this.segmentModalSampler) {
+                let samplerToggle = document.getElementById('text_prompt_segment_sampler_toggle');
+                if (samplerToggle && (!samplerToggle.checked || samplerToggle.disabled)) {
+                    this.segmentModalSampler.classList.add('disabled-input');
+                }
+                else {
+                    this.segmentModalSampler.classList.remove('disabled-input');
+                }
+            }
+            if (this.segmentModalScheduler) {
+                let schedulerToggle = document.getElementById('text_prompt_segment_scheduler_toggle');
+                if (schedulerToggle && (!schedulerToggle.checked || schedulerToggle.disabled)) {
+                    this.segmentModalScheduler.classList.add('disabled-input');
+                }
+                else {
+                    this.segmentModalScheduler.classList.remove('disabled-input');
+                }
+            }
+        }
+        catch (e) {
+            // Safe guard: don't break UI if globals not ready
+        }
     }
 
     regionModalClear() {
