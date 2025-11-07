@@ -607,7 +607,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
+    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, SegmentSamplerParam, SegmentSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG;
 
@@ -726,6 +726,14 @@ public class ComfyUIBackendExtension : Extension
             ));
         RefinerSchedulerParam = T2IParamTypes.Register<string>(new("Refiner Scheduler", SchedulerParam.Type.Description + "\nThis is an override to only affect the Refine/Upscale stage.",
             "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRefinerOverrides, OrderPriority: -1.5,
+            GetValues: (_) => Schedulers
+            ));
+        SegmentSamplerParam = T2IParamTypes.Register<string>(new("Segment Sampler", SamplerParam.Type.Description + "\nThis is an override to only affect the Segment stage.",
+            "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSegmentOverrides, OrderPriority: 2.1,
+            GetValues: (_) => Samplers
+            ));
+        SegmentSchedulerParam = T2IParamTypes.Register<string>(new("Segment Scheduler", SchedulerParam.Type.Description + "\nThis is an override to only affect the Segment stage.",
+            "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSegmentOverrides, OrderPriority: 2.2,
             GetValues: (_) => Schedulers
             ));
         for (int i = 0; i < 3; i++)
