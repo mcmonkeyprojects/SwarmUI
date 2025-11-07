@@ -533,20 +533,110 @@ function shiftToNextImagePreview(next = true, expand = false, isArrows = false) 
     return true;
 }
 
+let deleteKeyPrimed = false;
+let deleteKeyTimer = null;
+let deleteKeyCancelListeners = [];
+
+function cancelDeletePrime() {
+    if (!deleteKeyPrimed) {
+        return;
+    }
+    deleteKeyPrimed = false;
+    if (deleteKeyTimer) {
+        clearTimeout(deleteKeyTimer);
+        deleteKeyTimer = null;
+    }
+    for (let [eventName, handler] of deleteKeyCancelListeners) {
+        document.removeEventListener(eventName, handler, true);
+    }
+    deleteKeyCancelListeners = [];
+}
+
+/** Pressing 'D' primes the delete image process. Pressing again within 500ms triggers the delete. */
+function primeDeleteKey() {
+    cancelDeletePrime();
+    deleteKeyPrimed = true;
+    deleteKeyTimer = setTimeout(() => cancelDeletePrime(), 500);
+    let cancelHandler = () => cancelDeletePrime();
+    for (let ev of ['mousedown', 'wheel', 'scroll', 'touchstart', 'pointerdown', 'contextmenu']) {
+        document.addEventListener(ev, cancelHandler, true);
+        deleteKeyCancelListeners.push([ev, cancelHandler]);
+    }
+}
+
+function deleteCurrentImage(buttonElem, fullsrc, rawSrc) {
+    if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
+        return;
+    }
+    let deleteBehavior = getUserSetting('ui.deleteimagebehavior', 'next');
+    let shifted = deleteBehavior == 'nothing' ? false : shiftToNextImagePreview(deleteBehavior == 'next', imageFullView.isOpen());
+    if (!shifted) {
+        imageFullView.close();
+    }
+    genericRequest('DeleteImage', {'path': fullsrc}, data => {
+        if (buttonElem) {
+            buttonElem.remove();
+        }
+        let historySection = getRequiredElementById('imagehistorybrowser-content');
+        let imgDiv = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
+        if (imgDiv) {
+            imgDiv.remove();
+        }
+        imgDiv = historySection.querySelector(`.image-block[data-name="${rawSrc}"]`);
+        if (imgDiv) {
+            imgDiv.remove();
+        }
+        let currentImage = document.getElementById('current_image_img');
+        if (currentImage && currentImage.dataset.src == rawSrc) {
+            forceShowWelcomeMessage();
+        }
+        imgDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
+        if (imgDiv) {
+            removeImageBlockFromBatch(imgDiv);
+        }
+    });
+}
+
 window.addEventListener('keydown', function(kbevent) {
     let isFullView = imageFullView.isOpen();
     let isCurImgFocused = document.activeElement &&
         (findParentOfClass(document.activeElement, 'current_image')
         || findParentOfClass(document.activeElement, 'current_image_batch')
         || document.activeElement.tagName == 'BODY');
+    let keyLower = (kbevent.key || '').toLowerCase();
+    if (deleteKeyPrimed && keyLower != 'd') {
+        cancelDeletePrime();
+    }
     if (isFullView && kbevent.key == 'Escape') {
         $('#image_fullview_modal').modal('toggle');
     }
-    else if ((kbevent.key == 'ArrowLeft' || kbevent.key == 'ArrowUp') && (isFullView || isCurImgFocused)) {
+    else if ((['arrowleft', 'arrowup', 'w'].includes(keyLower)) && (isFullView || isCurImgFocused)) {
         shiftToNextImagePreview(false, isFullView, true);
     }
-    else if ((kbevent.key == 'ArrowRight' || kbevent.key == 'ArrowDown') && (isFullView || isCurImgFocused)) {
+    else if ((['arrowright', 'arrowdown', 's'].includes(keyLower)) && (isFullView || isCurImgFocused)) {
         shiftToNextImagePreview(true, isFullView, true);
+    }
+    else if ((keyLower == 'a') && (isFullView || isCurImgFocused)) {
+        let starBtn = getRequiredElementById('current_image').querySelector('.star-button');
+        if (starBtn) {
+            starBtn.click();
+        }
+    }
+    else if ((keyLower == 'd') && (isFullView || isCurImgFocused)) {
+        if (deleteKeyPrimed) {
+            let curImgElem = document.getElementById('current_image_img');
+            if (!curImgElem) {
+                return;
+            }
+            let src = curImgElem.dataset.src;
+            if (src && !src.startsWith('data:')) {
+                cancelDeletePrime();
+                deleteCurrentImage(null, getImageFullSrc(src), src);
+            }
+        }
+        else {
+            primeDeleteKey();
+        }
     }
     else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('main_image_area'))) {
         getRequiredElementById('alt_generate_button').click();

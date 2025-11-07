@@ -95,36 +95,7 @@ function buttonsForImage(fullsrc, src, metadata) {
             label: 'Delete',
             title: 'Deletes this image from the server.',
             onclick: (e) => {
-                if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm('Are you sure you want to delete this image?\nHold shift to bypass.')) {
-                    return;
-                }
-                let deleteBehavior = getUserSetting('ui.deleteimagebehavior', 'next');
-                let shifted = deleteBehavior == 'nothing' ? false : shiftToNextImagePreview(deleteBehavior == 'next', imageFullView.isOpen());
-                if (!shifted) {
-                    imageFullView.close();
-                }
-                genericRequest('DeleteImage', {'path': fullsrc}, data => {
-                    if (e) {
-                        e.remove();
-                    }
-                    let historySection = getRequiredElementById('imagehistorybrowser-content');
-                    let div = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
-                    if (div) {
-                        div.remove();
-                    }
-                    div = historySection.querySelector(`.image-block[data-name="${src}"]`);
-                    if (div) {
-                        div.remove();
-                    }
-                    let currentImage = document.getElementById('current_image_img');
-                    if (currentImage && currentImage.dataset.src == src) {
-                        forceShowWelcomeMessage();
-                    }
-                    div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
-                    if (div) {
-                        removeImageBlockFromBatch(div);
-                    }
-                });
+                deleteCurrentImage(e, fullsrc, src);
             }
         });
     }
