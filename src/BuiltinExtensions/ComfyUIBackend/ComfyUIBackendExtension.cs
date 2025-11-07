@@ -729,11 +729,11 @@ public class ComfyUIBackendExtension : Extension
             GetValues: (_) => Schedulers
             ));
         SegmentSamplerParam = T2IParamTypes.Register<string>(new("Segment Sampler", SamplerParam.Type.Description + "\nThis is an override to only affect the Segment stage.",
-            "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSegmentOverrides, OrderPriority: 2.3,
+            "euler", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSegmentOverrides, OrderPriority: 2.3, VisibleNormally: false,
             GetValues: (_) => Samplers
             ));
         SegmentSchedulerParam = T2IParamTypes.Register<string>(new("Segment Scheduler", SchedulerParam.Type.Description + "\nThis is an override to only affect the Segment stage.",
-            "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSegmentOverrides, OrderPriority: 2.4,
+            "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSegmentOverrides, OrderPriority: 2.4, VisibleNormally: false,
             GetValues: (_) => Schedulers
             ));
         for (int i = 0; i < 3; i++)

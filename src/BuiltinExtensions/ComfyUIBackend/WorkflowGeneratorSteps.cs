@@ -1379,10 +1379,6 @@ public class WorkflowGeneratorSteps
                     g.FinalLoadedModel = t2iModel;
                     g.FinalModel = model;
                 }
-                if (g.UserInput.TryGet(T2IParamTypes.SegmentVAE, out T2IModel segmentVae))
-                {
-                    vae = g.CreateVAELoader(segmentVae.ToString(g.ModelFolderFormat), g.HasNode("11") ? null : "11");
-                }
                 PromptRegion negativeRegion = new(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""));
                 PromptRegion.Part[] negativeParts = [.. negativeRegion.Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
                 for (int i = 0; i < parts.Length; i++)
