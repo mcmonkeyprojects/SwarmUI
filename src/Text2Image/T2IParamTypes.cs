@@ -315,7 +315,7 @@ public class T2IParamTypes
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
-    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, VideoExtendModel, VideoExtendSwapModel;
+    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, SegmentVAE, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, VideoExtendModel, VideoExtendSwapModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
     public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang, FluxDisableGuidance, SmartImagePromptResizing,
@@ -800,12 +800,15 @@ public class T2IParamTypes
         SegmentModel = Register<T2IModel>(new("Segment Model", "Optionally specify a distinct model to use for 'segment' values.",
             "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupSegmentOverrides, OrderPriority: 2, IsAdvanced: true
             ));
+        SegmentVAE = Register<T2IModel>(new("Segment VAE", "Optional VAE replacement for the segment stage.",
+            "None", IgnoreIf: "None", GetValues: listVaes, IsAdvanced: true, OrderPriority: 2.05, Group: GroupSegmentOverrides, Subtype: "VAE", ChangeWeight: 7, DoNotPreview: true
+            ));
         SegmentSteps = Register<int>(new("Segment Steps", "Alternate Steps value for when calculating the segment stage.\nThis replaces the 'Steps' total count before calculating the Segment Creativity.",
-            "40", Min: 1, Max: 200, ViewMax: 100, Step: 1, Examples: ["20", "40", "60"], OrderPriority: 4, Toggleable: true, IsAdvanced: true, Group: GroupSegmentOverrides, ViewType: ParamViewType.SLIDER
+            "40", Min: 1, Max: 200, ViewMax: 100, Step: 1, Examples: ["20", "40", "60"], OrderPriority: 2.1, Toggleable: true, IsAdvanced: true, Group: GroupSegmentOverrides, ViewType: ParamViewType.SLIDER
             ));
         SegmentCFGScale = Register<double>(new("Segment CFG Scale", "For the segment model independently of the base model, how strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Turbo, expect CFG around 1.",
-            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: 5, ViewType: ParamViewType.SLIDER, Group: GroupSegmentOverrides, ChangeWeight: -3, Toggleable: true, IsAdvanced: true
+            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: 2.2, ViewType: ParamViewType.SLIDER, Group: GroupSegmentOverrides, ChangeWeight: -3, Toggleable: true, IsAdvanced: true
             ));
         // ================================================ Advanced Sampling ================================================
         GroupAdvancedSampling = new("Advanced Sampling", Open: false, OrderPriority: 15, IsAdvanced: true);
