@@ -583,12 +583,12 @@ class PromptPlusButton {
         $('#text_prompt_segment_modal').modal('hide');
         let append = '';
         if (this.segmentModalSampler && !this.segmentModalSampler.classList.contains('disabled-input') && !this.segmentModalSampler.disabled && this.segmentModalSampler.value) {
-            append += ` <param[segment_sampler]:${this.segmentModalSampler.value}>`;
+            append += `<param[segment_sampler]:${this.segmentModalSampler.value}>`;
         }
         if (this.segmentModalScheduler && !this.segmentModalScheduler.classList.contains('disabled-input') && !this.segmentModalScheduler.disabled && this.segmentModalScheduler.value) {
-            append += ` <param[segment_scheduler]:${this.segmentModalScheduler.value}>`;
+            append += `<param[segment_scheduler]:${this.segmentModalScheduler.value}>`;
         }
-        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}${append}`);
+        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}>${append} ${this.segmentModalMainText.value.trim()}`);
 
     }
 
