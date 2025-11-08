@@ -478,15 +478,25 @@ function shiftToNextImagePreview(next = true, expand = false, isArrows = false) 
         let newIndex = index + (next ? 1 : -1);
         if (newIndex < 0) {
             if (!doCycle) {
-                return false;
+                newIndex = index + 1;
+                if (newIndex >= divs.length) {
+                    return false;
+                }
             }
-            newIndex = divs.length - 1;
+            else {
+                newIndex = divs.length - 1;
+            }
         }
         else if (newIndex >= divs.length) {
             if (!doCycle) {
-                return false;
+                newIndex = index - 1;
+                if (newIndex < 0) {
+                    return false;
+                }
             }
-            newIndex = 0;
+            else {
+                newIndex = 0;
+            }
         }
         if (newIndex == index) {
             return false;
@@ -510,15 +520,27 @@ function shiftToNextImagePreview(next = true, expand = false, isArrows = false) 
     let newIndex = index + (next ? 1 : -1);
     if (newIndex < 0) {
         if (!doCycle) {
-            return false;
+            // If we can't cycle and hit the start, try going forward instead
+            newIndex = index + 1;
+            if (newIndex >= imgs.length) {
+                return false;
+            }
         }
-        newIndex = imgs.length - 1;
+        else {
+            newIndex = imgs.length - 1;
+        }
     }
     else if (newIndex >= imgs.length) {
         if (!doCycle) {
-            return false;
+            // If we can't cycle and hit the end, try going backward instead
+            newIndex = index - 1;
+            if (newIndex < 0) {
+                return false;
+            }
         }
-        newIndex = 0;
+        else {
+            newIndex = 0;
+        }
     }
     if (newIndex == index) {
         return false;
