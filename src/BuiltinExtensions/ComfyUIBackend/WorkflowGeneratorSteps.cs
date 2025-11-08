@@ -1389,6 +1389,10 @@ public class WorkflowGeneratorSteps
                     {
                         vaeName = settingsVaes?.DefaultSDv1VAE;
                     }
+                    else if (compat == "stable-video-diffusion-img2vid-v1")
+                    {
+                        vaeName = settingsVaes?.DefaultSVDVAE;
+                    }
                     else if (compat is not null && compat.StartsWith("stable-diffusion-v3"))
                     {
                         vaeName = settingsVaes?.DefaultSD3VAE;
@@ -1396,6 +1400,10 @@ public class WorkflowGeneratorSteps
                     else if (compat == "flux-1")
                     {
                         vaeName = settingsVaes?.DefaultFluxVAE;
+                    }
+                    else if (compat == "genmo-mochi-1")
+                    {
+                        vaeName = settingsVaes?.DefaultMochiVAE;
                     }
                     if (!string.IsNullOrWhiteSpace(vaeName) && vaeName.ToLowerFast() != "none")
                     {
