@@ -583,10 +583,10 @@ class PromptPlusButton {
         $('#text_prompt_segment_modal').modal('hide');
         let append = '';
         if (this.segmentModalSampler && !this.segmentModalSampler.classList.contains('disabled-input') && !this.segmentModalSampler.disabled && this.segmentModalSampler.value) {
-            append += `<param[segment_sampler]:${this.segmentModalSampler.value}>`;
+            append += `<param[sampler]:${this.segmentModalSampler.value}>`;
         }
         if (this.segmentModalScheduler && !this.segmentModalScheduler.classList.contains('disabled-input') && !this.segmentModalScheduler.disabled && this.segmentModalScheduler.value) {
-            append += `<param[segment_scheduler]:${this.segmentModalScheduler.value}>`;
+            append += `<param[scheduler]:${this.segmentModalScheduler.value}>`;
         }
         this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}>${append} ${this.segmentModalMainText.value.trim()}`);
 
@@ -594,50 +594,34 @@ class PromptPlusButton {
 
     populateSegmentSamplerScheduler() {
         try {
-            // Helper to clone options from an existing select into our modal select
-            let copyOptions = (sourceId, destSelect) => {
-                if (!destSelect) {
+            let setupDropdown = (sourceId, destSelect, targetId) => {
+                let src = document.getElementById(sourceId);
+                if (!destSelect || !src || !src.options || !src.options.length) {
                     return;
                 }
-                let cur = destSelect.value || '';
+
                 destSelect.innerHTML = '';
-                let src = document.getElementById(sourceId);
-                if (src && src.options && src.options.length) {
-                    for (let i = 0; i < src.options.length; i++) {
-                        let srcOpt = src.options[i];
-                        let opt = document.createElement('option');
-                        opt.value = srcOpt.value;
-                        opt.textContent = srcOpt.textContent;
-                        destSelect.appendChild(opt);
-                    }
+                for (let i = 0; i < src.options.length; i++) {
+                    let srcOpt = src.options[i];
+                    let opt = document.createElement('option');
+                    opt.value = srcOpt.value;
+                    opt.textContent = srcOpt.textContent;
+                    destSelect.appendChild(opt);
                 }
-                // Restore selection if still valid, else leave first option selected
-                let values = Array.from(destSelect.options).map(o => o.value);
-                destSelect.value = values.includes(cur) ? cur : (destSelect.options.length > 0 ? destSelect.options[0].value : '');
+
+                let targetToggler = document.getElementById(targetId);
+                if (targetToggler && (!targetToggler.checked || targetToggler.disabled)) {
+                    destSelect.classList.add('disabled-input');
+                }
+                else {
+                    destSelect.classList.remove('disabled-input');
+                }
             };
-            copyOptions('input_sampler', this.segmentModalSampler);
-            copyOptions('input_scheduler', this.segmentModalScheduler);
-            if (this.segmentModalSampler) {
-                let samplerToggle = document.getElementById('text_prompt_segment_sampler_toggle');
-                if (samplerToggle && (!samplerToggle.checked || samplerToggle.disabled)) {
-                    this.segmentModalSampler.classList.add('disabled-input');
-                }
-                else {
-                    this.segmentModalSampler.classList.remove('disabled-input');
-                }
-            }
-            if (this.segmentModalScheduler) {
-                let schedulerToggle = document.getElementById('text_prompt_segment_scheduler_toggle');
-                if (schedulerToggle && (!schedulerToggle.checked || schedulerToggle.disabled)) {
-                    this.segmentModalScheduler.classList.add('disabled-input');
-                }
-                else {
-                    this.segmentModalScheduler.classList.remove('disabled-input');
-                }
-            }
+
+            setupDropdown('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
+            setupDropdown('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
         }
         catch (e) {
-            // Safe guard: don't break UI if globals not ready
         }
     }
 
