@@ -1598,8 +1598,46 @@ public class WorkflowGenerator
             }
             throw new SwarmUserErrorException($"Model loader for {model.Name} didn't work - are you sure it has an architecture ID set properly? (Currently set to: '{model.Metadata?.ModelClassType}')");
         }
+        ApplyDefaultVAEOverride(model);
         NodeHelpers[helper] = $"{LoadingModel[0]}:{LoadingModel[1]}" + (LoadingClip is null ? "::" : $":{LoadingClip[0]}:{LoadingClip[1]}") + (LoadingVAE is null ? "::" : $":{LoadingVAE[0]}:{LoadingVAE[1]}");
         return (model, LoadingModel, LoadingClip, LoadingVAE);
+    }
+
+    /// <summary>Applies user-configured default VAE override based on model compatibility class.</summary>
+    private void ApplyDefaultVAEOverride(T2IModel model)
+    {
+        string compatClass = model.ModelClass?.CompatClass;
+        string defaultVae = null;
+        var settingsVaes = UserInput.SourceSession?.User?.Settings?.VAEs;
+        if (compatClass == "stable-diffusion-xl-v1")
+        {
+            defaultVae = settingsVaes?.DefaultSDXLVAE;
+        }
+        else if (compatClass == "stable-diffusion-v1" || compatClass == "stable-diffusion-v2")
+        {
+            defaultVae = settingsVaes?.DefaultSDv1VAE;
+        }
+        else if (compatClass == "stable-video-diffusion-img2vid-v1")
+        {
+            defaultVae = settingsVaes?.DefaultSVDVAE;
+        }
+        else if (compatClass is not null && compatClass.StartsWith("stable-diffusion-v3"))
+        {
+            defaultVae = settingsVaes?.DefaultSD3VAE;
+        }
+        else if (compatClass == "flux-1")
+        {
+            defaultVae = settingsVaes?.DefaultFluxVAE;
+        }
+        else if (compatClass == "genmo-mochi-1")
+        {
+            defaultVae = settingsVaes?.DefaultMochiVAE;
+        }
+        // Override VAE if user has configured one and it's not "None"
+        if (!string.IsNullOrWhiteSpace(defaultVae) && defaultVae.ToLowerFast() != "none" && Program.T2IModelSets["VAE"].Models.ContainsKey(defaultVae))
+        {
+            LoadingVAE = CreateVAELoader(defaultVae);
+        }
     }
 
     /// <summary>Creates a VAELoader node and returns its node ID. Avoids duplication.</summary>
