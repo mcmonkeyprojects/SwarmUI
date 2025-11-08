@@ -1378,6 +1378,34 @@ public class WorkflowGeneratorSteps
                     (t2iModel, model, clip, vae) = g.CreateStandardModelLoader(t2iModel, "Refiner");
                     g.FinalLoadedModel = t2iModel;
                     g.FinalModel = model;
+                    string compat = t2iModel.ModelClass?.CompatClass;
+                    string vaeName = null;
+                    var settingsVaes = g.UserInput.SourceSession?.User?.Settings?.VAEs;
+                    if (compat == "stable-diffusion-xl-v1")
+                    {
+                        vaeName = settingsVaes?.DefaultSDXLVAE;
+                    }
+                    else if (compat == "stable-diffusion-v1" || compat == "stable-diffusion-v2")
+                    {
+                        vaeName = settingsVaes?.DefaultSDv1VAE;
+                    }
+                    else if (compat is not null && compat.StartsWith("stable-diffusion-v3"))
+                    {
+                        vaeName = settingsVaes?.DefaultSD3VAE;
+                    }
+                    else if (compat == "flux-1")
+                    {
+                        vaeName = settingsVaes?.DefaultFluxVAE;
+                    }
+                    if (!string.IsNullOrWhiteSpace(vaeName) && vaeName.ToLowerFast() != "none")
+                    {
+                        string match = T2IParamTypes.GetBestModelInList(vaeName, Program.T2IModelSets["VAE"].ListModelNamesFor(g.UserInput.SourceSession));
+                        if (match is not null)
+                        {
+                            T2IModel vaeModel = Program.T2IModelSets["VAE"].Models[match];
+                            vae = g.CreateVAELoader(vaeModel.ToString(g.ModelFolderFormat), g.HasNode("11") ? null : "11");
+                        }
+                    }
                 }
                 PromptRegion negativeRegion = new(g.UserInput.Get(T2IParamTypes.NegativePrompt, ""));
                 PromptRegion.Part[] negativeParts = [.. negativeRegion.Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
