@@ -54,6 +54,7 @@ Writing an extension with custom python? If it's comfy nodes, consider writing i
 
 Want to help translate Swarm into another language?
 
+- Translations are likely going to be reworked from the ground up soon, maybe hold off on language updates.
 - First: you're going to have to speak English. The English text is the "one true root" language that all other languages are derived from, it would be problematic to translate a translation.
 - Are you just helping improve an existing language?
     - Great! Just edit the file in `languages/(language-code).json` and improve the translations included
