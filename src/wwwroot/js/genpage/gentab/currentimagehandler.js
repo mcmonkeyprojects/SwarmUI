@@ -974,6 +974,21 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
         }
     }
+    let historyContainer = document.getElementById('imagehistorybrowser-content');
+    if (historyContainer) {
+        let normalizedSrc = getImageFullSrc(src);
+        for (let i of historyContainer.getElementsByClassName('image-block')) {
+            // History browser images may have data-src (if clicked) or just data-name (if not clicked yet)
+            let historyImgSrc = i.dataset.src || i.dataset.name;
+            let normalizedHistorySrc = historyImgSrc ? getImageFullSrc(historyImgSrc) : null;
+            if (normalizedHistorySrc && normalizedSrc == normalizedHistorySrc) {
+                i.classList.add('image-block-current');
+            }
+            else {
+                i.classList.remove('image-block-current');
+            }
+        }
+    }
 }
 
 /** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
