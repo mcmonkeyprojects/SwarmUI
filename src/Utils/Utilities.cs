@@ -311,7 +311,7 @@ public static class Utilities
         {
             result = await socket.ReceiveAsync(buffer, limit);
             ms.Write(buffer, 0, result.Count);
-            if (ms.Length > maxBytes)
+            if (ms.Length > maxBytes || ms.Length >= int.MaxValue)
             {
                 throw new IOException($"Received too much data! (over {maxBytes} bytes)");
             }

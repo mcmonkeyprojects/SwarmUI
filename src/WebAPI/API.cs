@@ -51,7 +51,7 @@ public class API
             if (context.WebSockets.IsWebSocketRequest)
             {
                 socket = await context.WebSockets.AcceptWebSocketAsync();
-                input = await socket.ReceiveJson(TimeSpan.FromMinutes(1), Program.ServerSettings.Network.MaxNetworkRequestMegabytes * (1024 * 1024));
+                input = await socket.ReceiveJson(TimeSpan.FromMinutes(1), Program.ServerSettings.Network.MaxReceiveBytes);
             }
             else if (context.Request.Method == "POST")
             {
@@ -61,13 +61,14 @@ public class API
                     context.Response.Redirect("/Error/BasicAPI");
                     return;
                 }
-                if (context.Request.ContentLength <= 0 || context.Request.ContentLength >= Program.ServerSettings.Network.MaxNetworkRequestMegabytes * (1024 * 1024))
+                // Note: int32 size limit due to array allocation. Can't singular read direct more than 2 gig.
+                if (!context.Request.ContentLength.HasValue || context.Request.ContentLength <= 0 || context.Request.ContentLength >= Program.ServerSettings.Network.MaxReceiveBytes || context.Request.ContentLength >= int.MaxValue)
                 {
                     Error($"Request has invalid content length: {context.Request.ContentLength}");
                     context.Response.Redirect("/Error/BasicAPI");
                     return;
                 }
-                byte[] rawData = new byte[(int)context.Request.ContentLength];
+                byte[] rawData = new byte[(int)context.Request.ContentLength.Value];
                 await context.Request.Body.ReadExactlyAsync(rawData, 0, rawData.Length);
                 input = JObject.Parse(Encoding.UTF8.GetString(rawData));
             }

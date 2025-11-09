@@ -100,7 +100,7 @@ public static class T2IAPI
                 int batchOffset = images * guessBatchSize(rawInput);
                 while (!cancelTok.IsCancellationRequested)
                 {
-                    byte[] rec = await socket.ReceiveData(Program.ServerSettings.Network.MaxNetworkRequestMegabytes * (1024 * 1024), linked.Token);
+                    byte[] rec = await socket.ReceiveData(Program.ServerSettings.Network.MaxReceiveBytes, linked.Token);
                     Volatile.Write(ref retain, true);
                     if (socket.State != WebSocketState.Open || cancelTok.IsCancellationRequested || Volatile.Read(ref ended))
                     {
