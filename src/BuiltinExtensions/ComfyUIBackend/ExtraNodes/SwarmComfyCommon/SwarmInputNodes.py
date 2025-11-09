@@ -7,8 +7,8 @@ import os, base64, io
 try:
     from comfy_extras.nodes_audio import LoadAudio
     from comfy_extras.nodes_audio import load as raw_audio_load
-except ImportError:
-    print("Error: Nodes_Audio failed to import")
+except:
+    print("Error: Nodes_Audio failed to import, Swarm will not be able to load audio files.")
 
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
