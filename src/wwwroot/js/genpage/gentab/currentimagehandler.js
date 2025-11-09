@@ -643,6 +643,9 @@ function toggleStar(path, rawSrc) {
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
 function getImageFullSrc(src) {
+    if (src == null) {
+        return null;
+    }
     let fullSrc = src;
     if (fullSrc.startsWith("http://") || fullSrc.startsWith("https://")) {
         fullSrc = fullSrc.substring(fullSrc.indexOf('/', fullSrc.indexOf('/') + 2));
@@ -669,6 +672,11 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         metadata = interpretMetadata(metadata);
     }
     currentMetadataVal = metadata;
+    if (src == null) {
+        highlightSelectedImage(src);
+        forceShowWelcomeMessage();
+        return;
+    }
     let isVideo = isVideoExt(src);
     let isAudio = isAudioExt(src);
     if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
@@ -962,6 +970,10 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(img);
         curImg.appendChild(extrasWrapper);
     }
+    highlightSelectedImage(src);
+}
+
+function highlightSelectedImage(src) {
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
