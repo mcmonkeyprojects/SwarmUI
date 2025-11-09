@@ -343,7 +343,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     await doInterruptNow();
                     return;
                 }
-                Task<byte[]> getData = socket.ReceiveData(1024 * 1024 * 1024, Program.GlobalProgramCancel);
+                Task<byte[]> getData = socket.ReceiveData(Utilities.ExtraLargeMaxReceive, Program.GlobalProgramCancel);
                 Task t = await Task.WhenAny(getData, interruptTask);
                 if (t == interruptTask)
                 {

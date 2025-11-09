@@ -233,6 +233,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("How many entries in an X-Forwarded-For header to trust.\nDefaults to 3.\nSet to 0 to not trust any forwarded-for.")]
         public int MaxXForwardedFor = 3;
+
+        [ConfigComment("Maximum megabytes that can be sent as a single message from a client to the Swarm server.\nSet this lower to limit above, set this higher to allow very large file uploads.")]
+        public int MaxNetworkRequestMegabytes = 200;
     }
 
     /// <summary>Settings related to file paths.</summary>
