@@ -434,7 +434,8 @@ class PromptPlusButton {
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
-        this.populateSegmentSamplerScheduler();
+        this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
+        this.populateDropdownFromSource('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
         this.regionModalOther = getRequiredElementById('text_prompt_region_other_inputs');
         this.regionModalOther.innerHTML =
             makeGenericPopover('text_prompt_region_x', 'Prompt Syntax: Region Left X', 'Left X', "The left X coordinate of the region's box.", '')
@@ -539,7 +540,8 @@ class PromptPlusButton {
         this.segmentModalModelSelect.innerHTML = html;
         this.segmentModalModelSelect.value = 'CLIP-Seg';
         this.segmentModalMainText.value = '';
-        this.populateSegmentSamplerScheduler();
+        this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
+        this.populateDropdownFromSource('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
         this.segmentModalCreativity.value = 0.6;
         this.segmentModalThreshold.value = 0.5;
         this.segmentModalTextMatch.value = '';
@@ -592,36 +594,27 @@ class PromptPlusButton {
 
     }
 
-    populateSegmentSamplerScheduler() {
-        try {
-            let setupDropdown = (sourceId, destSelect, targetId) => {
-                let src = document.getElementById(sourceId);
-                if (!destSelect || !src || !src.options || !src.options.length) {
-                    return;
-                }
-
-                destSelect.innerHTML = '';
-                for (let i = 0; i < src.options.length; i++) {
-                    let srcOpt = src.options[i];
-                    let opt = document.createElement('option');
-                    opt.value = srcOpt.value;
-                    opt.textContent = srcOpt.textContent;
-                    destSelect.appendChild(opt);
-                }
-
-                let targetToggler = document.getElementById(targetId);
-                if (targetToggler && (!targetToggler.checked || targetToggler.disabled)) {
-                    destSelect.classList.add('disabled-input');
-                }
-                else {
-                    destSelect.classList.remove('disabled-input');
-                }
-            };
-
-            setupDropdown('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
-            setupDropdown('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
+    populateDropdownFromSource(sourceId, destSelect, targetId) {
+        let src = document.getElementById(sourceId);
+        if (!destSelect || !src || !src.options || !src.options.length) {
+            return;
         }
-        catch (e) {
+
+        destSelect.innerHTML = '';
+        for (let i = 0; i < src.options.length; i++) {
+            let srcOpt = src.options[i];
+            let opt = document.createElement('option');
+            opt.value = srcOpt.value;
+            opt.textContent = srcOpt.textContent;
+            destSelect.appendChild(opt);
+        }
+
+        let targetToggler = document.getElementById(targetId);
+        if (targetToggler && (!targetToggler.checked || targetToggler.disabled)) {
+            destSelect.classList.add('disabled-input');
+        }
+        else {
+            destSelect.classList.remove('disabled-input');
         }
     }
 

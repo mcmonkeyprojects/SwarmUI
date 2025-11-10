@@ -801,11 +801,11 @@ public class T2IParamTypes
             "", Toggleable: true, Subtype: "Stable-Diffusion", Group: GroupSegmentOverrides, OrderPriority: 2, IsAdvanced: true
             ));
         SegmentSteps = Register<int>(new("Segment Steps", "Alternate Steps value for when calculating the segment stage.\nThis replaces the 'Steps' total count before calculating the Segment Creativity.",
-            "40", Min: 1, Max: 200, ViewMax: 100, Step: 1, Examples: ["20", "40", "60"], OrderPriority: 2.1, Toggleable: true, IsAdvanced: true, Group: GroupSegmentOverrides, ViewType: ParamViewType.SLIDER
+            "40", Min: 1, Max: 200, ViewMax: 100, Step: 1, Examples: ["20", "40", "60"], OrderPriority: 4, Toggleable: true, IsAdvanced: true, Group: GroupSegmentOverrides, ViewType: ParamViewType.SLIDER
             ));
         SegmentCFGScale = Register<double>(new("Segment CFG Scale", "For the segment model independently of the base model, how strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
             + "Too-high values can cause corrupted/burnt images, too-low can cause nonsensical images.\n7 is a good baseline. Normal usages vary between 4 and 9.\nSome model types, such as Turbo, expect CFG around 1.",
-            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: 2.2, ViewType: ParamViewType.SLIDER, Group: GroupSegmentOverrides, ChangeWeight: -3, Toggleable: true, IsAdvanced: true
+            "7", Min: 0, Max: 100, ViewMax: 20, Step: 0.5, Examples: ["5", "6", "7", "8", "9"], OrderPriority: 5, ViewType: ParamViewType.SLIDER, Group: GroupSegmentOverrides, ChangeWeight: -3, Toggleable: true, IsAdvanced: true
             ));
         // ================================================ Advanced Sampling ================================================
         GroupAdvancedSampling = new("Advanced Sampling", Open: false, OrderPriority: 15, IsAdvanced: true);
