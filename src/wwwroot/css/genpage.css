@@ -1345,6 +1345,9 @@ body {
     vertical-align: top;
     overflow-y: auto;
 }
+.manage-users-right {
+    padding-bottom: 5rem;
+}
 .manage-users-left {
     margin-left: 0.5rem;
     width: 20rem;
