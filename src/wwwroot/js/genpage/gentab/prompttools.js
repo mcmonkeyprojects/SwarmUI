@@ -54,7 +54,7 @@ class PromptTabCompleteClass {
         this.registerAltPrefix('p', 'preset');
         this.registerPrefix('embed', 'Use a pretrained CLIP TI Embedding', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(coreModelMap['Embedding'].map(cleanModelName), prefixLow);
+            return this.getOrderedMatches(Object.values(modelsHelpers.models['Embedding']).map(m => {return {raw: true, name: `<embed:${m.cleanName}>`, clean_html: m.cleanDropdown()};}), prefixLow);
         });
         this.registerAltPrefix('embedding', 'embed');
         this.registerPrefix('lora', 'Forcibly apply a pretrained LoRA model (useful eg inside wildcards or other automatic inclusions - normally use the LoRAs UI tab)', (prefix) => {
