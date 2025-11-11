@@ -108,6 +108,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             Logs.Error($"Comfy backend {BackendData.ID} failed to load raw node backend info: {ex.ReadableString()}");
         }
         Logs.Verbose($"Comfy backend {BackendData.ID} loaded value set and parsed.");
+        if (!NodeTypes.Contains("SwarmKSampler"))
+        {
+            Logs.Warning($"Comfy backend {BackendData.ID} is missing the Swarm core nodes! Core functionalities will be missing. Please ensure you are using a well-installed ComfyUI Self-Starting backend. If you are, check debug logs for backend errors.");
+        }
         AddLoadStatus("Done parsing value set.");
     }
 
