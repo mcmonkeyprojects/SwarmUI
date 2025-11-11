@@ -1139,6 +1139,7 @@ function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     if (aspect) { // Fix resolution trick incase the reset broke it
         triggerChangeFor(aspect);
     }
+    clearPromptImages();
     currentModelChanged();
     clearPresets();
     let defaultPreset = getPresetByTitle('default');
