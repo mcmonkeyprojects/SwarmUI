@@ -109,3 +109,15 @@ try:
 except Exception as e:
     import traceback
     traceback.print_exc()
+
+# Hide .swarmpreview files from Comfy image load list
+try:
+    orig = folder_paths.filter_files_content_types
+    def filter_files_content_types(*args, **kwargs):
+        files = orig(*args, **kwargs)
+        files = [f for f in files if not f.endswith(".swarmpreview.jpg") and not f.endswith(".swarmpreview.webp")]
+        return files
+    folder_paths.filter_files_content_types = filter_files_content_types
+except Exception as e:
+    import traceback
+    traceback.print_exc()
