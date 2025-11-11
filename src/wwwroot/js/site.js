@@ -826,10 +826,10 @@ function htmlWithParen(text) {
     let prefix = text.substring(0, start);
     let mid = text.substring(start, end + 1);
     let suffix = text.substring(end + 1);
-    return `${htmlWithParen(prefix)}<span class='parens'>${escapeHtml(mid)}</span>${htmlWithParen(suffix)}`;
+    return `${htmlWithParen(prefix)}<span class="parens">${escapeHtml(mid)}</span>${htmlWithParen(suffix)}`;
 }
 
-function makeDropdownInput(featureid, id, paramid, name, description, values, defaultVal, toggles = false, popover_button = true, alt_names = null) {
+function makeDropdownInput(featureid, id, paramid, name, description, values, defaultVal, toggles = false, popover_button = true, alt_names = null, reparse_alt_names = true) {
     name = escapeHtml(name);
     featureid = featureid ? ` data-feature-require="${featureid}"` : '';
     let [popover, featureid2] = getPopoverElemsFor(id, popover_button);
@@ -844,8 +844,9 @@ function makeDropdownInput(featureid, id, paramid, name, description, values, de
         let value = values[i];
         let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
         let selected = value == defaultVal ? ' selected="true"' : '';
-        let cleanName = htmlWithParen(alt_name);
-        html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
+        let simpleName = reparse_alt_names ? htmlWithParen(alt_name) : escapeHtmlNoBr(value);
+        let cleanName = reparse_alt_names ? htmlWithParen(alt_name) : alt_name;
+        html += `<option data-cleanname="${escapeHtmlNoBr(cleanName)}" value="${escapeHtmlNoBr(value)}"${selected}>${simpleName}</option>\n`;
     }
     html += `
         </select>

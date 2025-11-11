@@ -147,9 +147,19 @@ function getHtmlForParam(param, prefix) {
                 }
                 return {html: makeTextInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, param.view_type, param.description, param.toggleable, false, !param.no_popover) + pop};
             case 'model':
-                let modelList = param.values && param.values.length > 0 ? param.values : coreModelMap[param.subtype || 'Stable-Diffusion'];
-                modelList = modelList.map(m => cleanModelName(m));
-                return {html: makeDropdownInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, modelList, param.default, param.toggleable, !param.no_popover) + pop,
+                let subType = param.subtype || 'Stable-Diffusion';
+                let modelList = param.values && param.values.length > 0 ? param.values : modelsHelpers.listModelNames(subType);
+                let modelAltNames = [];
+                for (let i = 0; i < modelList.length; i++) {
+                    let model = modelsHelpers.getDataFor(subType, modelList[i]);
+                    if (!model) {
+                        modelAltNames[i] = escapeHtml(modelList[i]);
+                        continue;
+                    }
+                    modelList[i] = model.cleanName;
+                    modelAltNames[i] = model.cleanDropdown();
+                }
+                return {html: makeDropdownInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, modelList, param.default, param.toggleable, !param.no_popover, modelAltNames, false) + pop,
                     runnable: () => autoSelectWidth(getRequiredElementById(`${prefix}${param.id}`))};
             case 'image':
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
@@ -1004,7 +1014,15 @@ function refreshParameterValues(strong = true, refreshType = null, callback = nu
                         let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
                         let selected = value == val ? ' selected="true"' : '';
                         let cleanName = htmlWithParen(alt_name);
-                        html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
+                        let simpleName = cleanName;
+                        if (param.type == "model") {
+                            let model = modelsHelpers.getDataFor(param.subtype, value);
+                            if (model) {
+                                cleanName = model.cleanDropdown();
+                                simpleName = escapeHtmlNoBr(model.cleanName);
+                            }
+                        }
+                        html += `<option data-cleanname="${escapeHtmlNoBr(cleanName)}" value="${escapeHtmlNoBr(value)}"${selected}>${simpleName}</option>\n`;
                     }
                     elem.innerHTML = html;
                     elem.value = val;

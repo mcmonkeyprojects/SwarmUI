@@ -59,7 +59,7 @@ class PromptTabCompleteClass {
         this.registerAltPrefix('embedding', 'embed');
         this.registerPrefix('lora', 'Forcibly apply a pretrained LoRA model (useful eg inside wildcards or other automatic inclusions - normally use the LoRAs UI tab)', (prefix) => {
             let prefixLow = prefix.toLowerCase();
-            return this.getOrderedMatches(coreModelMap['LoRA'].map(cleanModelName), prefixLow);
+            return this.getOrderedMatches(Object.values(modelsHelpers.models['LoRA']).map(m => {return {raw: true, name: `<lora:${m.cleanName}>`, clean_html: m.cleanDropdown()};}), prefixLow);
         });
         this.registerPrefix('region', 'Apply a different prompt to a sub-region within the image', (prefix) => {
             return ['\nx,y,width,height eg "0.25,0.25,0.5,0.5"', '\nor x,y,width,height,strength eg "0,0,1,1,0.5"', '\nwhere strength is how strongly to apply the prompt to the region (vs global prompt). Can do "region:background" for background-only region.'];
@@ -151,9 +151,15 @@ class PromptTabCompleteClass {
     }
 
     getOrderedMatches(set, prefixLow) {
-        let matched = set.filter(m => m.toLowerCase().includes(prefixLow));
-        let prefixed = matched.filter(m => m.toLowerCase().startsWith(prefixLow));
-        let suffixed = matched.filter(m => !m.toLowerCase().startsWith(prefixLow));
+        function getNameLow(item) {
+            if (typeof item == 'object') {
+                return item.name.toLowerCase();
+            }
+            return item.toLowerCase();
+        }
+        let matched = set.filter(m => getNameLow(m).includes(prefixLow));
+        let prefixed = matched.filter(m => getNameLow(m).startsWith(prefixLow));
+        let suffixed = matched.filter(m => !getNameLow(m).startsWith(prefixLow));
         return prefixed.concat(suffixed);
     }
 
@@ -275,6 +281,9 @@ class PromptTabCompleteClass {
             return [];
         }
         return this.prefixes[prefix].completer(suffix, prompt).map(p => {
+            if (typeof p == 'object') {
+                return p;
+            }
             if (p.startsWith('\n')) {
                 return p;
             }
@@ -338,8 +347,11 @@ class PromptTabCompleteClass {
                 if (val.raw) {
                     name = val.name || '';
                     desc = val.desc || '';
+                    if (val.clean_html) {
+                        clean_name = val.clean_html;
+                    }
                     if (val.clean) {
-                        clean_name = val.clean;
+                        clean_name = escapeHtml(val.clean);
                     }
                     if (val.tag) {
                         className = `tag-text tag-type-${val.tag}`;
@@ -367,10 +379,10 @@ class PromptTabCompleteClass {
             }
             let button = { key: name, className: className };
             if (desc) {
-                button.key_html = `${escapeHtml(clean_name || name)} <span class="parens">- ${escapeHtml(desc)}</span>`;
+                button.key_html = `${clean_name || escapeHtml(name)} <span class="parens">- ${escapeHtml(desc)}</span>`;
             }
             else {
-                button.key_html = escapeHtml(clean_name || name);
+                button.key_html = clean_name || escapeHtml(name);
             }
             if (isClickable) {
                 button.action = () => {
