@@ -526,7 +526,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.brushing = false;
         this.isEraser = isEraser;
         let colorHTML = `
-        <div class="image-editor-tool-block">
+        <div class="image-editor-tool-block tool-block-nogrow">
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
             <input type="color" class="id-col2" value="#ffffff">
@@ -699,7 +699,7 @@ class ImageEditorToolBucket extends ImageEditorTool {
         this.threshold = 10;
         this.opacity = 1;
         let colorHTML = `
-        <div class="image-editor-tool-block">
+        <div class="image-editor-tool-block tool-block-nogrow">
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
             <input type="color" class="id-col2" value="#ffffff">
@@ -859,14 +859,14 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.bufferLayer = null;
         this.hasDrawn = false;
         let colorHTML = `
-        <div class="image-editor-tool-block">
+        <div class="image-editor-tool-block tool-block-nogrow">
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ff0000">
             <input type="color" class="id-col2" value="#ff0000">
             <button class="basic-button id-col3">Pick</button>
         </div>`;
         let shapeHTML = `
-        <div class="image-editor-tool-block">
+        <div class="image-editor-tool-block tool-block-nogrow">
             <label>Shape:&nbsp;</label>
             <select class="id-shape" style="width:100px;">
                 <option value="rectangle">Rectangle</option>
