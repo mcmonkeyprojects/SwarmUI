@@ -320,6 +320,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, image metadata will include a list of models with their hashes.\nThis is useful for services like civitai to automatically link models.\nThis will cause extra time to be taken when new hashes need to be loaded.")]
         public bool ImageMetadataIncludeModelHash = true;
+
+        [ConfigComment("How many kilobytes of blank spacer to include in model headers.\nThis allows for future expansion of metadata without rewriting the entire model file.\nDefaults to 64 KB.\nThe average header length of a standard model is already between several hundred kilobytes to a few megabytes,\nso 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.")]
+        public int ModelMetadataSpacerKilobytes = 64;
     }
 
     /// <summary>Settings per-user.</summary>
