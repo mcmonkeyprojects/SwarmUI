@@ -236,15 +236,21 @@ function formatMetadata(metadata) {
     if ('loras' in data.sui_image_params && 'loraweights' in data.sui_image_params) {
         let loras = data.sui_image_params.loras;
         let loraWeights = data.sui_image_params.loraweights;
+        let loraSectionConfinement = data.sui_image_params['lorasectionconfinement'];
         let simpleLoras = [];
         // TODO: Maybe look up some metadata on the models here?
         for (let i = 0; i < loras.length; i++) {
             let lora = loras[i];
-            let weight = loraWeights[i];
+            let weight = `${loraWeights[i]}`;
+            if (loraSectionConfinement && loraSectionConfinement[i] != 0) {
+                let name = loraHelper.confinementNames[loraSectionConfinement[i]] || loraSectionConfinement[i];
+                weight = `${weight} (${name})`;
+            }
             simpleLoras.push(`${lora} : ${weight}`);
         }
         delete data.sui_image_params.loras;
         delete data.sui_image_params.loraweights;
+        delete data.sui_image_params['lorasectionconfinement'];
         data.sui_image_params['loras'] = simpleLoras;
     }
     appendObject(data.sui_image_params);
