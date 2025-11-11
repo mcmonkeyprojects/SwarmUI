@@ -886,7 +886,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         if (parent && parent.dataset.disabled == 'true') {
             continue;
         }
-        let val = getInputVal(elem);
+        let val = getInputVal(elem, true);
         if (val != null) {
             input[type.id] = val;
         }
@@ -901,7 +901,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
                 addedImageArea.style.display = '';
                 let imgs = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
                 if (imgs.length > 0) {
-                    input["promptimages"] = imgs.map(img => img.dataset.filedata).join('|');
+                    input["promptimages"] = imgs.map(img => img.dataset.filedata);
                 }
             }
         }
@@ -925,7 +925,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let revisionImageArea = getRequiredElementById('alt_prompt_image_area');
     let revisionImages = [...revisionImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
     if (revisionImages.length > 0) {
-        input["promptimages"] = revisionImages.map(img => img.dataset.filedata).join('|');
+        input["promptimages"] = revisionImages.map(img => img.dataset.filedata);
     }
     if (imageEditor.active) {
         extraMetadata["used_image_editor"] = "true";

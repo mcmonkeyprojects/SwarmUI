@@ -179,16 +179,16 @@ public class T2IParamSet
             T2IParamDataType.BOOLEAN => bool.Parse(val),
             T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
             T2IParamDataType.IMAGE => imageFor(val),
-            T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => imageFor(v) as Image).ToList(),
+            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v) as Image).ToList(),
             T2IParamDataType.MODEL => getModel(val),
-            T2IParamDataType.LIST => val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+            T2IParamDataType.LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : ",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
             T2IParamDataType.AUDIO => audioFor(val),
             T2IParamDataType.VIDEO => videoFor(val),
             _ => throw new NotImplementedException()
         };
         if (param.SharpType == typeof(int))
         {
-            obj = unchecked((int)(long)obj); // WTF. Yes this double-cast is needed. No I can't explain why. Ternaries are broken maybe?
+            obj = unchecked((int)(long)obj); // Yes this double-cast is needed. Unbox then data convert.
         }
         if (param.SharpType == typeof(float))
         {

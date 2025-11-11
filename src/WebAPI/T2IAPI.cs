@@ -208,7 +208,9 @@ public static class T2IAPI
             }
             else if (T2IParamTypes.TryGetType(key, out _, user_input))
             {
-                T2IParamTypes.ApplyParameter(key, rawInput[key].ToString(), user_input);
+                JToken val = rawInput[key];
+                string valStr = val is JArray jarr ? jarr.Select(v => $"{v}").JoinString("\n|||\n") : $"{val}";
+                T2IParamTypes.ApplyParameter(key, valStr, user_input);
             }
             else
             {
