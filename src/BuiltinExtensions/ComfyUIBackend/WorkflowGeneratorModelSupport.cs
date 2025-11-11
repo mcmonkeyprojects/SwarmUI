@@ -14,6 +14,12 @@ namespace SwarmUI.Builtin_ComfyUIBackend;
 
 public partial class WorkflowGenerator
 {
+    /// <summary>
+    /// Map of model architecture IDs to Func(int width, int height, int batchSize, string id = null) => string NodeID.
+    /// Used for custom model classes to implement <see cref="CreateEmptyImage(int, int, int, string)"/>
+    /// </summary>
+    public static Dictionary<string, Func<int, int, int, string, string>> EmptyImageCreators = [];
+
     /// <summary>Returns true if the current model is Stable Cascade.</summary>
     public bool IsCascade()
     {
@@ -225,6 +231,10 @@ public partial class WorkflowGenerator
     /// <summary>Creates an Empty Latent Image node.</summary>
     public string CreateEmptyImage(int width, int height, int batchSize, string id = null)
     {
+        if (EmptyImageCreators.TryGetValue(CurrentModelClass()?.ID, out Func<int, int, int, string, string> creator))
+        {
+            return creator(width, height, batchSize, id);
+        }
         if (IsCascade())
         {
             return CreateNode("StableCascade_EmptyLatentImage", new JObject()

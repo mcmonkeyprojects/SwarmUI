@@ -26,6 +26,15 @@ public record class T2IModelCompatClass
     /// <summary>ID of this model compat type.</summary>
     public string ID;
 
+    /// <summary>A short label for this compat class, usually 4 letters long (but not always), used for quick previewing model types in UI.</summary>
+    public string ShortCode;
+
     /// <summary>If true, loras may target the text encoder. If false, they never do.</summary>
     public bool LorasTargetTextEnc = true;
+
+    /// <summary>If true, this class group can input text and output video. May be over-broad.</summary>
+    public bool IsText2Video = false;
+
+    /// <summary>If true, this class group can input an image and output video. May be over-broad.</summary>
+    public bool IsImage2Video = false;
 }
