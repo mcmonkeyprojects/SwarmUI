@@ -654,12 +654,12 @@ public static class ModelsAPI
             {
                 File.WriteAllText($"{handler.DownloadFolderPath}/{name}.swarm.json", metadata);
             }
+            using (ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite())
+            {
+                handler.Refresh();
+            }
             if (Program.ServerSettings.Paths.DownloaderAlwaysResave)
             {
-                using (ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite())
-                {
-                    handler.Refresh();
-                }
                 if (handler.Models.TryGetValue($"{name}.safetensors", out T2IModel model))
                 {
                     model.ResaveModel();
