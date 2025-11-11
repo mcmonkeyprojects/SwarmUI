@@ -84,7 +84,6 @@ body {
 }
 .top-status-bar-wrapper:hover {
     display: none;
-    opacity: 0.5;
 }
 .top-status-bar {
     position: absolute;
@@ -121,15 +120,15 @@ body {
 .auto-input-flex-wide {
     flex-basis: 100% !important;
 }
-.auto-input-image-preview {
+.auto-input-preview {
     width: fit-content;
     margin: auto;
 }
-.auto-input-image-remove-button {
+.auto-input-remove-button {
     position: absolute;
     left: 0.5rem;
 }
-.auto-input-image-preview img {
+.auto-input-preview img, .auto-input-preview video {
     max-width: 50rem;
     max-height: 10rem;
     margin: auto;
@@ -1070,11 +1069,11 @@ input[type="range"]::-moz-range-track {
 .input-group .auto-file-box {
     min-width: 100%;
 }
-.auto-input-image-preview img {
+.auto-input-preview img, .auto-input-preview video {
     width: 100%;
     object-fit: contain;
 }
-.auto-input-image-remove-button {
+.auto-input-remove-button {
     margin-top: 0.5rem;
 }
 .auto-file {

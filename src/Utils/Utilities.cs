@@ -19,6 +19,7 @@ using SwarmUI.Text2Image;
 using System.Net.Sockets;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using SwarmUI.Media;
 
 namespace SwarmUI.Utils;
 
@@ -297,8 +298,11 @@ public static class Utilities
         return Task.WhenAny(tasks);
     }
 
+    /// <summary>Effectively-unlimited max receive length, for internal transfers. Set to 100 gigabytes.</summary>
+    public static long ExtraLargeMaxReceive = 100L * 1024 * 1024 * 1024;
+
     /// <summary>Receive raw binary data from a WebSocket.</summary>
-    public static async Task<byte[]> ReceiveData(this WebSocket socket, int maxBytes, CancellationToken limit)
+    public static async Task<byte[]> ReceiveData(this WebSocket socket, long maxBytes, CancellationToken limit)
     {
         byte[] buffer = new byte[8192];
         using MemoryStream ms = new();
@@ -307,7 +311,7 @@ public static class Utilities
         {
             result = await socket.ReceiveAsync(buffer, limit);
             ms.Write(buffer, 0, result.Count);
-            if (ms.Length > maxBytes)
+            if (ms.Length > maxBytes || ms.Length >= int.MaxValue)
             {
                 throw new IOException($"Received too much data! (over {maxBytes} bytes)");
             }
@@ -317,14 +321,14 @@ public static class Utilities
     }
 
     /// <summary>Receive raw binary data from a WebSocket.</summary>
-    public static async Task<byte[]> ReceiveData(this WebSocket socket, TimeSpan maxDuration, int maxBytes)
+    public static async Task<byte[]> ReceiveData(this WebSocket socket, TimeSpan maxDuration, long maxBytes)
     {
         using CancellationTokenSource cancel = TimedCancel(maxDuration);
         return await ReceiveData(socket, maxBytes, cancel.Token);
     }
 
     /// <summary>Receive JSON data from a WebSocket.</summary>
-    public static async Task<JObject> ReceiveJson(this WebSocket socket, int maxBytes, bool nullOnEmpty = false)
+    public static async Task<JObject> ReceiveJson(this WebSocket socket, long maxBytes, bool nullOnEmpty = false)
     {
         string raw = Encoding.UTF8.GetString(await ReceiveData(socket, maxBytes, Program.GlobalProgramCancel));
         if (nullOnEmpty && string.IsNullOrWhiteSpace(raw))
@@ -335,7 +339,7 @@ public static class Utilities
     }
 
     /// <summary>Receive JSON data from a WebSocket.</summary>
-    public static async Task<JObject> ReceiveJson(this WebSocket socket, TimeSpan maxDuration, int maxBytes, bool nullOnEmpty = false)
+    public static async Task<JObject> ReceiveJson(this WebSocket socket, TimeSpan maxDuration, long maxBytes, bool nullOnEmpty = false)
     {
         string raw = Encoding.UTF8.GetString(await ReceiveData(socket, maxDuration, maxBytes));
         if (nullOnEmpty && string.IsNullOrWhiteSpace(raw))
@@ -490,12 +494,12 @@ public static class Utilities
         return content;
     }
 
-    public static MultipartFormDataContent MultiPartFormContentDiscordImage(Image image, JObject jobj)
+    public static MultipartFormDataContent MultiPartFormContentDiscordFile(MediaFile file, JObject jobj)
     {
         MultipartFormDataContent content = [];
-        ByteArrayContent imageContent = new(image.ImageData);
-        imageContent.Headers.ContentType = new MediaTypeHeaderValue(image.MimeType());
-        content.Add(imageContent, "file", $"image.{image.Extension}");
+        ByteArrayContent fileContent = new(file.RawData);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.Type.MimeType);
+        content.Add(fileContent, "file", $"image.{file.Type.Extension}");
         content.Add(JSONContent(jobj), "payload_json");
         return content;
     }

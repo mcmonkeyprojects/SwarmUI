@@ -20,7 +20,7 @@ let neverTranslateCodes = [
     'GeForce RTX', // hardware (eg server info resources)
     'Stable Diffusion XL 1.0 Base', // Models list data
     'sdxlofficial/', // presets list
-    'raw/2024-', 'raw/2025-' // image history list
+    'raw/2024-', 'raw/2025-' // history list
 ]
 
 /** Safety check for known text keys that definitely shouldn't be translated */

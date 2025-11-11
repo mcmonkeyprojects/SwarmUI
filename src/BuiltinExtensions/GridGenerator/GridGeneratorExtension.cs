@@ -16,6 +16,7 @@ using static SwarmUI.Builtin_GridGeneratorExtension.GridGenCore;
 using Image = SwarmUI.Utils.Image;
 using ISImage = SixLabors.ImageSharp.Image;
 using ISImageRGBA = SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgba32>;
+using SwarmUI.Media;
 
 namespace SwarmUI.Builtin_GridGeneratorExtension;
 
@@ -185,9 +186,9 @@ public class GridGeneratorExtension : Extension
                     string mainpath = $"{set.Grid.Runner.BasePath}/{set.BaseFilepath}";
                     string ext = set.Grid.Format;
                     string metaExtra = "";
-                    if (image.Img.Type != Image.ImageType.IMAGE)
+                    if (image.File.Type.MetaType != MediaMetaType.Image)
                     {
-                        ext = image.Img.Extension;
+                        ext = image.File.Type.Extension;
                         metaExtra += $"file_extensions_alt[\"{set.BaseFilepath}\"] = \"{ext}\"\nfix_video(\"{set.BaseFilepath}\")";
                     }
                     string targetPath = $"{mainpath}.{ext}";
@@ -198,7 +199,7 @@ public class GridGeneratorExtension : Extension
                         {
                             Directory.CreateDirectory(dir);
                         }
-                        File.WriteAllBytes(targetPath, image.ActualImageTask is not null ? image.ActualImageTask.Result.ImageData : image.Img.ImageData);
+                        File.WriteAllBytes(targetPath, image.ActualFileTask is not null ? image.ActualFileTask.Result.RawData : image.File.RawData);
                         if (set.Grid.PublishMetadata && (!string.IsNullOrWhiteSpace(metadata) || !string.IsNullOrWhiteSpace(metaExtra)))
                         {
                             metadata ??= "{}";
@@ -209,11 +210,11 @@ public class GridGeneratorExtension : Extension
                         {
                             data.AddOutput(new JObject() { ["image"] = output, ["batch_index"] = $"{iteration}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = metadata });
                         }
-                        WebhookManager.SendEveryGenWebhook(thisParams, output, image.Img);
+                        WebhookManager.SendEveryGenWebhook(thisParams, output, image.File);
                     }
                     else
                     {
-                        (string url, string filePath) = thisParams.Get(T2IParamTypes.DoNotSave, false) ? (data.Session.GetImageB64(image.Img), null) : data.Session.SaveImage(image, iteration, thisParams, metadata);
+                        (string url, string filePath) = thisParams.Get(T2IParamTypes.DoNotSave, false) ? (image.File.AsDataString(), null) : data.Session.SaveImage(image, iteration, thisParams, metadata);
                         if (url == "ERROR")
                         {
                             setError($"Server failed to save an image.");
@@ -223,10 +224,10 @@ public class GridGeneratorExtension : Extension
                         {
                             data.AddOutput(new JObject() { ["image"] = url, ["batch_index"] = $"{iteration}", ["request_id"] = $"{thisParams.UserRequestId}", ["metadata"] = string.IsNullOrWhiteSpace(metadata) ? null : metadata });
                         }
-                        WebhookManager.SendEveryGenWebhook(thisParams, url, image.Img);
+                        WebhookManager.SendEveryGenWebhook(thisParams, url, image.File);
                         if (set.Grid.OutputType == Grid.OutputyTypeEnum.GRID_IMAGE)
                         {
-                            data.GeneratedOutputs.TryAdd(set.BaseFilepath, image.Img);
+                            data.GeneratedOutputs.TryAdd(set.BaseFilepath, image.File);
                         }
                     }
                 }));
@@ -344,7 +345,7 @@ public class GridGeneratorExtension : Extension
 
         public AsyncAutoResetEvent Signal = new(false);
 
-        public ConcurrentDictionary<string, Image> GeneratedOutputs = new();
+        public ConcurrentDictionary<string, MediaFile> GeneratedOutputs = new();
 
         public bool ContinueOnError = false;
 
@@ -454,7 +455,7 @@ public class GridGeneratorExtension : Extension
         Grid grid = null;
         try
         {
-            string ext = Image.ImageFormatToExtension(session.User.Settings.FileFormat.ImageFormat);
+            string ext = ImageFile.ImageFormatToExtension(session.User.Settings.FileFormat.ImageFormat);
             string urlBase = Program.ServerSettings.Paths.AppendUserNameToOutputPath ? $"View/{session.User.UserID}" : "Output";
             Task mainRun = Task.Run(() => grid = Run(baseParams, raw["gridAxes"], data, null, session.User.OutputDirectory, urlBase, outputFolderName, doOverwrite, fastSkip, generatePage, publishGenMetadata, dryRun, weightOrder, outputType, ext, () => claim.ShouldCancel));
             while (!mainRun.IsCompleted || data.GetActive().Any() || data.Generated.Any())
@@ -476,8 +477,9 @@ public class GridGeneratorExtension : Extension
                 List<(string, string)> xAxis = [.. grid.Axes[0].Values.Where(v => !v.Skip).Select(proc)];
                 List<(string, string)> yAxis = grid.Axes.Count > 1 ? [.. grid.Axes[1].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
                 List<(string, string)> y2Axis = grid.Axes.Count > 2 ? [.. grid.Axes[2].Values.Where(v => !v.Skip).Select(proc)] : [(null, null)];
-                int maxWidth = data.GeneratedOutputs.Max(x => x.Value.ToIS.Width);
-                int maxHeight = data.GeneratedOutputs.Max(x => x.Value.ToIS.Height);
+                ImageFile[] images = [.. data.GeneratedOutputs.Values.Select(i => i as ImageFile).Where(i => i is not null)];
+                int maxWidth = images.Max(x => x.ToIS.Width);
+                int maxHeight = images.Max(x => x.ToIS.Height);
                 float extraSizeMult = 1;
                 if (maxWidth > 800 || maxHeight > 800)
                 {
@@ -561,7 +563,7 @@ public class GridGeneratorExtension : Extension
                                         imgPath = $"{imgPath}/{y2}";
                                     }
                                 }
-                                ISImage img = data.GeneratedOutputs[imgPath].ToIS;
+                                ISImage img = (data.GeneratedOutputs[imgPath] as ImageFile).ToIS;
                                 m.DrawImage(img, new Point(xIndex * maxWidth + textWidth, (int)(yIndex * maxHeight + textHeight)), 1);
                                 xIndex++;
                             }
@@ -573,10 +575,10 @@ public class GridGeneratorExtension : Extension
                 Image outImg = new(gridImg);
                 int batchId = (xAxis.Count * yAxis.Count * y2Axis.Count) + 1;
                 Logs.Verbose("Apply metadata...");
-                (Task<Image> imgTask, string metadata) = session.ApplyMetadata(outImg, grid.InitialParams, batchId);
-                T2IEngine.ImageOutput imageOut = new() { Img = outImg, ActualImageTask = imgTask };
+                (Task<MediaFile> imgTask, string metadata) = session.ApplyMetadata(outImg, grid.InitialParams, batchId);
+                T2IEngine.ImageOutput imageOut = new() { File = outImg, ActualFileTask = imgTask };
                 Logs.Verbose("Metadata applied, save to file...");
-                (string url, string filePath) = grid.InitialParams.Get(T2IParamTypes.DoNotSave, false) ? (data.Session.GetImageB64(outImg), null) : data.Session.SaveImage(imageOut, batchId, grid.InitialParams, metadata);
+                (string url, string filePath) = grid.InitialParams.Get(T2IParamTypes.DoNotSave, false) ? (outImg.AsDataString(), null) : data.Session.SaveImage(imageOut, batchId, grid.InitialParams, metadata);
                 if (url == "ERROR")
                 {
                     data.ErrorOut = new JObject() { ["error"] = $"Server failed to save an image." };

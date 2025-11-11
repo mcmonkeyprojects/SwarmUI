@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.IO;
@@ -427,7 +428,7 @@ public static class ModelsAPI
     public static async Task<JObject> EditWildcard(Session session,
         [API.APIParameter("Exact filepath name of the wildcard.")] string card,
         [API.APIParameter("Newline-separated string listing of wildcard options.")] string options,
-        [API.APIParameter("Image-data-string of a preview, or null to not change.")] string preview_image = null,
+        [API.APIParameter("Image-data-string of a preview, 'clear' to remove, or null to not change.")] string preview_image = null,
         [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null)
     {
         card = Utilities.StrictFilenameClean(card);
@@ -439,10 +440,21 @@ public static class ModelsAPI
         string folder = Path.GetDirectoryName(path);
         Directory.CreateDirectory(folder);
         File.WriteAllBytes(path, StringConversionHelper.UTF8Encoding.GetBytes(options));
+        string imgPath = $"{WildcardsHelper.Folder}/{card}.jpg";
         if (!string.IsNullOrWhiteSpace(preview_image))
         {
-            Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-            File.WriteAllBytes($"{WildcardsHelper.Folder}/{card}.jpg", img.ImageData);
+            if (preview_image == "clear")
+            {
+                if (File.Exists(imgPath))
+                {
+                    File.Delete(imgPath);
+                }
+            }
+            else
+            {
+                ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                File.WriteAllBytes(imgPath, img.RawData);
+            }
         }
         WildcardsHelper.WildcardFiles[card.ToLowerFast()] = new WildcardsHelper.Wildcard() { Name = card };
         Interlocked.Increment(ref ModelEditID);
@@ -464,7 +476,7 @@ public static class ModelsAPI
         [API.APIParameter("New model `trigger_phrase` metadata value.")] string trigger_phrase,
         [API.APIParameter("New model `prediction_type` metadata value.")] string prediction_type,
         [API.APIParameter("New model `tags` metadata value (comma-separated list).")] string tags,
-        [API.APIParameter("New model `preview_image` metadata value (image-data-string format, or null to not change).")] string preview_image = null,
+        [API.APIParameter("New model `preview_image` metadata value (image-data-string format, 'clear' to remove, or null to not change).")] string preview_image = null,
         [API.APIParameter("Optional raw text of metadata to inject to the preview image.")] string preview_image_metadata = null,
         [API.APIParameter("New model `is_negative_embedding` metadata value.")] bool is_negative_embedding = false,
         [API.APIParameter("New model `lora_default_weight` metadata value.")] string lora_default_weight = "",
@@ -503,11 +515,19 @@ public static class ModelsAPI
             actualModel.Metadata ??= new();
             if (!string.IsNullOrWhiteSpace(preview_image))
             {
-                Image img = Image.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-                if (img is not null)
+                if (preview_image == "clear")
                 {
-                    actualModel.PreviewImage = img.AsDataString();
-                    actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                    actualModel.PreviewImage = "imgs/model_placeholder.jpg";
+                    actualModel.Metadata.PreviewImage = null;
+                }
+                else
+                {
+                    ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                    if (img is not null)
+                    {
+                        actualModel.PreviewImage = img.AsDataString();
+                        actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                    }
                 }
             }
             actualModel.Metadata.Author = author;
@@ -552,6 +572,16 @@ public static class ModelsAPI
             await ws.SendJson(new JObject() { ["error"] = "Invalid type." }, API.WebsocketTimeout);
             return null;
         }
+        string extension = "safetensors";
+        string folder = handler.DownloadFolderPath;
+        if (url.EndsWith(".gguf"))
+        {
+            extension = "gguf";
+            if (type == "Stable-Diffusion")
+            {
+                folder += "/../diffusion_models"; // Hacky but oughtta do, gguf in diffusion_models is a silly special case
+            }
+        }
         string originalUrl = url;
         url = url.Before('#');
         Dictionary<string, string> headers = [];
@@ -578,18 +608,19 @@ public static class ModelsAPI
         }
         try
         {
-            string outPath = $"{handler.DownloadFolderPath}/{name}.safetensors";
+            string outPath = $"{folder}/{name}.{extension}";
             if (File.Exists(outPath))
             {
                 await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
                 return null;
             }
-            string tempPath = $"{handler.DownloadFolderPath}/{name}.download.tmp";
+            string tempPath = $"{folder}/{name}.download.tmp";
             if (File.Exists(tempPath))
             {
                 File.Delete(tempPath);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+            Logs.Debug($"Will download model from '{url}' to '{Path.GetFullPath(outPath)}'");
             using CancellationTokenSource canceller = new();
             Task downloading = Utilities.DownloadFile(url, tempPath, (progress, total, perSec) =>
             {
@@ -632,14 +663,14 @@ public static class ModelsAPI
             File.Move(tempPath, outPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
-                File.WriteAllText($"{handler.DownloadFolderPath}/{name}.swarm.json", metadata);
+                File.WriteAllText($"{folder}/{name}.swarm.json", metadata);
             }
-            if (Program.ServerSettings.Paths.DownloaderAlwaysResave)
+            using (ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite())
             {
-                using (ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite())
-                {
-                    handler.Refresh();
-                }
+                handler.Refresh();
+            }
+            if (Program.ServerSettings.Paths.DownloaderAlwaysResave && extension == "safetensors")
+            {
                 if (handler.Models.TryGetValue($"{name}.safetensors", out T2IModel model))
                 {
                     model.ResaveModel();

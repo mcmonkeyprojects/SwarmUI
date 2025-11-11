@@ -18,10 +18,15 @@ function comfyTryToLoad() {
     if (hasComfyLoaded) {
         return;
     }
+    let oldSpinner = document.getElementById('comfy_workflow_loadspinner');
+    if (oldSpinner) {
+        oldSpinner.remove();
+    }
     hasComfyLoaded = true;
     comfyButtonsArea.style.display = 'block';
     let container = getRequiredElementById('comfy_workflow_frameholder');
-    container.innerHTML = `<iframe class="comfy_workflow_frame" id="comfy_workflow_frame" src="ComfyBackendDirect/" onload="comfyOnLoadCallback()"></iframe>`;
+    container.innerHTML = `<div id="comfy_workflow_loadspinner" class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div><iframe class="comfy_workflow_frame" id="comfy_workflow_frame" src="ComfyBackendDirect/" style="visibility:hidden;" onload="comfyOnLoadCallback()" allowtransparency="true"></iframe>`;
+    uiImprover.runLoadSpinner(getRequiredElementById('comfy_workflow_loadspinner'));
 }
 
 /** Returns the ComfyUI workflow frame (or errors if not present). */
@@ -126,6 +131,7 @@ let comfyTryAgain = translatable(`Try Again?`);
  * Callback triggered when the ComfyUI workflow frame loads.
  */
 function comfyOnLoadCallback() {
+    comfyReloadObjectInfo(true);
     if (comfyFrame().contentWindow.document.body.getElementsByClassName('comfy-failed-to-load').length == 1) {
         hasComfyLoaded = false;
         comfyButtonsArea.style.display = 'none';
@@ -156,6 +162,11 @@ function comfyOnLoadCallback() {
                     return await origRefreshFunc();
                 };
                 app.swarmHasReplacedRefresh = true;
+            }
+            comfyFrame().style.visibility = 'visible';
+            let spinner = document.getElementById('comfy_workflow_loadspinner');
+            if (spinner) {
+                spinner.remove();
             }
             comfyFixMenuLocation();
             clearInterval(comfyRefreshControlInterval);
@@ -222,7 +233,10 @@ function comfyOnLoadCallback() {
 /**
  * Callback when params refresh, to re-assign object_info.
  */
-function comfyReloadObjectInfo() {
+function comfyReloadObjectInfo(needed = false) {
+    if (!needed && !comfyObjectData && !gen_param_types.some(p => p.revalueGetter)) {
+        return;
+    }
     let resolve = undefined;
     let promise = new Promise(r => { resolve = r });
     getJsonDirect('ComfyBackendDirect/object_info', (_, data) => {
@@ -546,6 +560,8 @@ function comfyBuildParams(requireSave, callback) {
                     break;
                     case 'SwarmInputBoolean': type = 'boolean'; doFixMe = true; break;
                     case 'SwarmInputImage': type = 'image'; break;
+                    case 'SwarmInputAudio': type = 'audio'; break;
+                    case 'SwarmInputVideo': type = 'video'; break;
                     default: throw new Error(`Unknown SwarmInput type ${node.class_type}`);
                 }
                 let inputIdDirect = node.inputs['raw_id'] || cleanParamName(node.inputs['title']);
@@ -663,9 +679,9 @@ function comfyBuildParams(requireSave, callback) {
                         if (paramDataRaw && paramDataRaw[0] == 'INT' && paramDataRaw.length == 2) {
                             type = 'integer';
                             view_type = 'big';
-                            min = paramDataRaw[1].min;
-                            max = paramDataRaw[1].max;
-                            step = 1;
+                            min = paramDataRaw[1].min ?? min;
+                            max = paramDataRaw[1].max ?? max;
+                            step = paramDataRaw[1].step ?? 1;
                             if (inputId == 'batch_size' && getUserSetting('resetbatchsizetoone') && !claimedByPrimitives.includes('batchsize')) {
                                 val = 1;
                             }
@@ -673,9 +689,9 @@ function comfyBuildParams(requireSave, callback) {
                         else if (paramDataRaw && paramDataRaw[0] == 'FLOAT' && paramDataRaw.length == 2) {
                             type = 'decimal';
                             view_type = 'slider';
-                            min = paramDataRaw[1].min;
-                            max = paramDataRaw[1].max;
-                            step = (max - min) * 0.01;
+                            min = paramDataRaw[1].min ?? min;
+                            max = paramDataRaw[1].max ?? max;
+                            step = paramDataRaw[1].step ?? ((max - min) * 0.01);
                         }
                         else {
                             type = 'decimal';
@@ -1218,14 +1234,12 @@ function comfyImportWorkflow() {
 
 getRequiredElementById('maintab_comfyworkflow').addEventListener('click', comfyTryToLoad);
 
-backendsRevisedCallbacks.push(() => {
-    let hasAny = Object.values(backends_loaded).filter(x => x.type.startsWith('comfyui_')
-        || x.type == 'swarmswarmbackend' // TODO: Actually check if the backend has a comfy instance rather than just assuming swarmback==comfy
-        ).length > 0;
+featureSetChangedCallbacks.push(() => {
+    let hasAny = currentBackendFeatureSet.includes('comfyui');
     getRequiredElementById('maintab_comfyworkflow').style.display = hasAny ? 'block' : 'none';
     if (hasAny && !comfyHasTriedToLoad) {
         comfyHasTriedToLoad = true;
-        comfyReloadObjectInfo();
+        comfyReloadObjectInfo(false);
     }
 });
 

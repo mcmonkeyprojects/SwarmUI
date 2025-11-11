@@ -137,7 +137,7 @@
             <div class="sui_popover_model_button translate" onclick="openEmptyEditor()">Open Empty Image Editor</div>
             <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
             <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
-            <div class="sui_popover_model_button translate" onclick="forceShowWelcomeMessage()">Reshow Welcome Message</div>
+            <div class="sui_popover_model_button translate" onclick="setCurrentImage(null)">Reshow Welcome Message</div>
             <div class="sui_popover_model_button translate" onclick="hideUnalteredParameters()">Hide Unaltered Parameters</div>
         </div>
     </div>
@@ -153,7 +153,7 @@
     </div>
     <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Bottom Bar" data-content="t2i_bottom_bar_content" role="tablist" id="bottombartabcollection">
         <li class="nav-item" role="presentation">
-            <a class="nav-link active translate" id="imagehistorytabclickable" data-bs-toggle="tab" href="#Image-History-Tab" aria-selected="true" role="tab">Image History</a>
+            <a class="nav-link active translate" id="imagehistorytabclickable" data-bs-toggle="tab" href="#Image-History-Tab" aria-selected="true" role="tab">History</a>
         </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link translate" data-bs-toggle="tab" href="#Presets-Tab" aria-selected="false" tabindex="-1" role="tab">Presets</a>

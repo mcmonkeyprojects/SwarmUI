@@ -88,7 +88,7 @@ function doDeleteModelNow() {
         return;
     }
     genericRequest('DeleteModel', { 'modelName': model.name, 'subtype': curModelMenuBrowser.subType }, data => {
-        curModelMenuBrowser.browser.update();
+        curModelMenuBrowser.browser.lightRefresh();
     });
     $('#delete_model_modal').modal('hide');
 }
@@ -145,7 +145,7 @@ function editModel(model, browser) {
     }
     curModelMenuModel = model;
     curModelMenuBrowser = browser;
-    clearImageFileInput(modelsHelpers.imageElem);
+    clearMediaFileInput(modelsHelpers.imageElem);
     modelsHelpers.enableImageElem.checked = false;
     triggerChangeFor(modelsHelpers.enableImageElem);
     editModelFillTechnicalInfo(model);
@@ -181,8 +181,8 @@ function editModel(model, browser) {
     };
     let curImg = document.getElementById('current_image_img');
     if (curImg && curImg.tagName == 'IMG') {
-        setImageFileDirect(modelsHelpers.imageElem, curImg.src, 'cur', 'cur', () => {
-            modelsHelpers.enableImageElem.checked = !model.preview_image || model.preview_image == 'imgs/model_placeholder.jpg';
+        setMediaFileDirect(modelsHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
+            modelsHelpers.enableImageElem.checked = false;
             run();
         });
     }
@@ -234,8 +234,8 @@ function edit_model_load_civitai() {
             }
         }
         if (img) {
-            setImageFileDirect(modelsHelpers.imageElem, img, 'cur', 'cur', () => {
-                modelsHelpers.enableImageElem.checked = true;
+            setMediaFileDirect(modelsHelpers.imageElem, img, 'image', 'cur', 'cur', () => {
+                modelsHelpers.enableImageElem.checked = false;
                 triggerChangeFor(modelsHelpers.enableImageElem);
             });
         }
@@ -267,7 +267,7 @@ function save_edit_model() {
     data.subtype = curModelMenuBrowser.subType;
     function complete() {
         genericRequest('EditModelMetadata', data, data => {
-            curModelMenuBrowser.browser.update();
+            curModelMenuBrowser.browser.lightRefresh();
         });
         $('#edit_model_modal').modal('hide');
     }
@@ -280,6 +280,10 @@ function save_edit_model() {
                 complete();
             }, true);
             return;
+        }
+        else {
+            data['preview_image'] = 'clear';
+            delete data['preview_image_metadata'];
         }
     }
     complete();
@@ -334,6 +338,7 @@ class ModelBrowserWrapper {
         this.browser.refreshHandler = (callback) => {
             refreshParameterValues(true, subType == 'Wildcards' ? 'wildcards' : null, callback);
         };
+        this.modelDescribeCallbacks = [];
     }
 
     sortModelLocal(a, b, files) {
@@ -398,11 +403,11 @@ class ModelBrowserWrapper {
                 sortReverseElem.checked = reverse;
                 sortElem.addEventListener('change', () => {
                     localStorage.setItem(`models_${this.subType}_sort_by`, sortElem.value);
-                    this.browser.update();
+                    this.browser.lightRefresh();
                 });
                 sortReverseElem.addEventListener('change', () => {
                     localStorage.setItem(`models_${this.subType}_sort_reverse`, sortReverseElem.checked);
-                    this.browser.update();
+                    this.browser.lightRefresh();
                 });
             }
         }
@@ -495,6 +500,9 @@ class ModelBrowserWrapper {
 
     formatTriggerPhrases(val) {
         let phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
+        if (phrases.length > 128) {
+            phrases = phrases.slice(0, 128);
+        }
         return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
     }
 
@@ -607,7 +615,11 @@ class ModelBrowserWrapper {
             let isSelected = match && match.length > 0;
             let className = isSelected ? 'model-selected' : '';
             let searchable = `${model.data.name}, ${name}, ${raw}`;
-            return { name, description, buttons, className, searchable, 'image': model.data.image, display, detail_list };
+            let result = { name, description, buttons, className, searchable, 'image': model.data.image, display, detail_list };
+            for (let callback of this.modelDescribeCallbacks) {
+                callback(result, model);
+            }
+            return result;
         }
         let isCorrect = this.subType == 'Stable-Diffusion' || isModelArchCorrect(model.data);
         let interject = '';
@@ -655,7 +667,11 @@ class ModelBrowserWrapper {
         }
         let className = this.getClassFor(model, isCorrect);
         let searchable = `${model.data.name}, ${searchableAdded}, ${model.data.license}, ${model.data.architecture||'no-arch'}, ${model.data.usage_hint}, ${model.data.trigger_phrase}, ${model.data.merged_from}, ${model.data.tags}`;
-        return { name, description, buttons, 'image': model.data.preview_image, className, searchable, display, detail_list };
+        let result = { name, description, buttons, 'image': model.data.preview_image, className, searchable, display, detail_list };
+        for (let callback of this.modelDescribeCallbacks) {
+            callback(result, model);
+        }
+        return result;
     }
 
     isSelected(name) {
@@ -887,7 +903,7 @@ function directSetModel(model) {
     }
     sdModelBrowser.rebuildSelectedClasses();
     for (let browser of subModelBrowsers) {
-        browser.browser.updateWithoutDup();
+        browser.browser.update();
     }
 }
 

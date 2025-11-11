@@ -123,7 +123,7 @@ public class BackendAPI
         backend.Backend.IsEnabled = enabled;
         backend.Backend.ShutDownReserve = true;
         Program.Backends.BackendsEdited = true;
-        while (backend.CheckIsInUse)
+        while (backend.CheckIsInUse && backend.Backend.MaxUsages > 0)
         {
             if (Program.GlobalProgramCancel.IsCancellationRequested)
             {

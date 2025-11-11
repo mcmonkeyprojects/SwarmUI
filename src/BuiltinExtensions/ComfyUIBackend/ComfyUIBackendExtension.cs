@@ -131,22 +131,40 @@ public class ComfyUIBackendExtension : Extension
         T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, InternalListModelsFor("gligen", false));
         T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, InternalListModelsFor("style_models", true));
         SwarmSwarmBackend.OnSwarmBackendAdded += OnSwarmBackendAdded;
+        SwarmSwarmBackend.ReviseRemotesEvent += (backend) =>
+        {
+            if (backend.IsAControlInstance || !backend.LinkedRemoteBackendType.StartsWith("comfyui_"))
+            {
+                return;
+            }
+            Utilities.RunCheckedTask(async () =>
+            {
+                JObject types = await backend.SendAPIJSON("ComfyGetNodeTypesForBackend", new JObject() { ["backend"] = backend.LinkedRemoteBackendID });
+                backend.ExtensionData["ComfyNodeTypes"] = new HashSet<string>(types["node_types"].Values<string>());
+            });
+        };
     }
 
     /// <summary>Helper to quickly read a list of model files in a model subfolder, for prepopulating model lists during startup.</summary>
     public static string[] InternalListModelsFor(string subpath, bool createDir)
     {
-        string path = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, subpath);
-        if (createDir)
-        {
-            Directory.CreateDirectory(path);
-        }
-        else if (!Directory.Exists(path))
-        {
-            return [];
-        }
         static bool isModelFile(string f) => T2IModel.LegacyModelExtensions.Contains(f.AfterLast('.')) || T2IModel.NativelySupportedModelExtensions.Contains(f.AfterLast('.'));
-        return [.. Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(isModelFile).Select(f => Path.GetRelativePath(path, f))];
+        List<string> results = [];
+        foreach (string root in Program.ServerSettings.Paths.ActualModelRoots)
+        {
+            string path = Utilities.CombinePathWithAbsolute(root, subpath);
+            if (createDir)
+            {
+                Directory.CreateDirectory(path);
+            }
+            else if (!Directory.Exists(path))
+            {
+                continue;
+            }
+            results.AddRange(Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories).Where(isModelFile).Select(f => Path.GetRelativePath(path, f)));
+            createDir = false; // Only first root autocreates
+        }
+        return [.. results];
     }
 
     /// <inheritdoc/>
@@ -318,29 +336,37 @@ public class ComfyUIBackendExtension : Extension
             CustomWorkflows.TryRemove(name, out _);
             return null;
         }
-        JObject json = File.ReadAllText(path).ParseToJson();
-        string getStringFor(string key)
+        try
         {
-            if (!json.TryGetValue(key, out JToken data))
+            JObject json = File.ReadAllText(path).ParseToJson();
+            string getStringFor(string key)
             {
-                return null;
+                if (!json.TryGetValue(key, out JToken data))
+                {
+                    return null;
+                }
+                if (data.Type == JTokenType.String)
+                {
+                    return data.ToString();
+                }
+                return data.ToString(Formatting.None);
             }
-            if (data.Type == JTokenType.String)
-            {
-                return data.ToString();
-            }
-            return data.ToString(Formatting.None);
+            string workflowData = getStringFor("workflow");
+            string prompt = getStringFor("prompt");
+            string customParams = getStringFor("custom_params");
+            string paramValues = getStringFor("param_values");
+            string image = getStringFor("image") ?? "/imgs/model_placeholder.jpg";
+            string description = getStringFor("description");
+            bool enableInSimple = json.TryGetValue("enable_in_simple", out JToken enableInSimpleTok) && enableInSimpleTok.ToObject<bool>();
+            workflow = new(name, workflowData, prompt, customParams, paramValues, image, description, enableInSimple);
+            CustomWorkflows[name] = workflow;
+            return workflow;
         }
-        string workflowData = getStringFor("workflow");
-        string prompt = getStringFor("prompt");
-        string customParams = getStringFor("custom_params");
-        string paramValues = getStringFor("param_values");
-        string image = getStringFor("image") ?? "/imgs/model_placeholder.jpg";
-        string description = getStringFor("description");
-        bool enableInSimple = json.TryGetValue("enable_in_simple", out JToken enableInSimpleTok) && enableInSimpleTok.ToObject<bool>();
-        workflow = new(name, workflowData, prompt, customParams, paramValues, image, description, enableInSimple);
-        CustomWorkflows[name] = workflow;
-        return workflow;
+        catch (Exception ex)
+        {
+            Logs.Error($"Error loading ComfyUI custom workflow '{name}': {ex.ReadableString()}");
+            return null;
+        }
     }
 
     public void Refresh()
@@ -421,70 +447,96 @@ public class ComfyUIBackendExtension : Extension
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 
+    public static bool TryGetRequiredInputs(JObject raw, string node, string id, out JToken list)
+    {
+        if (!raw.TryGetValue(node, out JToken key))
+        {
+            list = null;
+            return false;
+        }
+        JToken req = key["input"]["required"][id];
+        foreach (JToken val in req)
+        {
+            if (val.Type == JTokenType.String) { continue; } // Some have "COMBO" as first string now
+            else if (val.Type == JTokenType.Array) { list = val; return true; }
+            else if (val.Type == JTokenType.Object && val["options"] is JToken opts && opts.Type == JTokenType.Array) { list = opts; return true; }
+            else { Logs.Warning($"Invalid JSON data type in object_info entry for node '{node}' input '{id}': {val.Type} ... {val}"); }
+        }
+        Logs.Warning($"object_info has node '{node}' but the input '{id}' is missing or invalid");
+        list = null;
+        return false;
+    }
+
     public static void AssignValuesFromRaw(JObject rawObjectInfo)
     {
         lock (ValueAssignmentLocker)
         {
-            if (rawObjectInfo.TryGetValue("UpscaleModelLoader", out JToken modelLoader))
+            if (TryGetRequiredInputs(rawObjectInfo, "UpscaleModelLoader", "model_name", out JToken upscaleModels))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, modelLoader["input"]["required"]["model_name"][0].Select(u => $"model-{u}///Model: {u}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, upscaleModels.Select(u => $"model-{u}///Model: {u}"));
             }
-            if (rawObjectInfo.TryGetValue("SwarmKSampler", out JToken swarmksampler))
+            if (TryGetRequiredInputs(rawObjectInfo, "SwarmKSampler", "sampler_name", out JToken swarmksamplerNames))
             {
-                string[] dropped = [.. Samplers.Select(s => s.Before("///")).Except([.. swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}")])];
+                string[] dropped = [.. Samplers.Select(s => s.Before("///")).Except([.. swarmksamplerNames.Select(u => $"{u}")])];
                 if (dropped.Any())
                 {
                     Logs.Warning($"Samplers are listed, but not included in SwarmKSampler internal list: {dropped.JoinString(", ")}");
                 }
-                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, swarmksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}///{u} (New)"));
-                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, swarmksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}///{u} (New)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, swarmksamplerNames.Select(u => $"{u}///{u} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("KSampler", out JToken ksampler))
+            if (TryGetRequiredInputs(rawObjectInfo, "SwarmKSampler", "scheduler", out JToken swarmksamplerSchedulers))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, ksampler["input"]["required"]["sampler_name"][0].Select(u => $"{u}///{u} (New in KS)"));
-                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, ksampler["input"]["required"]["scheduler"][0].Select(u => $"{u}///{u} (New in KS)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, swarmksamplerSchedulers.Select(u => $"{u}///{u} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoader", out JToken ipadapterCubiqUnified))
+            if (TryGetRequiredInputs(rawObjectInfo, "KSampler", "sampler_name", out JToken ksamplerSamplers))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnified["input"]["required"]["preset"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref Samplers, ksamplerSamplers.Select(u => $"{u}///{u} (New in KS)"));
+            }
+            if (TryGetRequiredInputs(rawObjectInfo, "KSampler", "scheduler", out JToken ksamplerSchedulers))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref Schedulers, ksamplerSchedulers.Select(u => $"{u}///{u} (New in KS)"));
+            }
+            if (TryGetRequiredInputs(rawObjectInfo, "IPAdapterUnifiedLoader", "preset", out JToken ipadapterCubiqUnified))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnified.Select(m => $"{m}"));
             }
             else if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter) && (ipadapter["input"]["required"] as JObject).TryGetValue("model_name", out JToken ipAdapterModelName))
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipAdapterModelName[0].Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("IPAdapterModelLoader", out JToken ipadapterCubiq))
+            if (TryGetRequiredInputs(rawObjectInfo, "IPAdapterModelLoader", "ipadapter_file", out JToken ipadapterCubiq))
             {
                 HashSet<string> native = ["ip-adapter-faceid-portrait-v11_sd15.bin", "ip-adapter-faceid-portrait_sdxl.bin", "ip-adapter-faceid-portrait_sdxl_unnorm.bin", "ip-adapter-faceid-plusv2_sd15.bin", "ip-adapter-faceid-plusv2_sdxl.bin", "ip-adapter-faceid-plus_sd15.bin", "ip-adapter-faceid_sd15.bin", "ip-adapter-faceid_sdxl.bin", "full_face_sd15.safetensors", "ip-adapter-plus-face_sd15.safetensors", "ip-adapter-plus-face_sdxl_vit-h.safetensors", "ip-adapter-plus_sd15.safetensors", "ip-adapter-plus_sdxl_vit-h.safetensors", "ip-adapter_sd15_vit-G.safetensors", "ip-adapter_sdxl.safetensors", "ip-adapter_sd15.safetensors", "ip-adapter_sdxl_vit-h.safetensors", "sd15_light_v11.bin"];
-                string[] models = [.. ipadapterCubiq["input"]["required"]["ipadapter_file"][0].Select(m => $"{m}").Where(m => !native.Contains(m))];
+                string[] models = [.. ipadapterCubiq.Select(m => $"{m}").Where(m => !native.Contains(m))];
                 T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, models.Select(m => $"file:{m}///Model File: {m}"));
             }
             if (rawObjectInfo.TryGetValue("IPAdapter", out JToken ipadapter2) && (ipadapter2["input"]["required"] as JObject).TryGetValue("weight_type", out JToken ipAdapterWeightType))
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterWeightTypes, ipAdapterWeightType[0].Select(m => $"{m}///{m} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("IPAdapterUnifiedLoaderFaceID", out JToken ipadapterCubiqUnifiedFace))
+            if (TryGetRequiredInputs(rawObjectInfo, "IPAdapterUnifiedLoaderFaceID", "preset", out JToken ipadapterCubiqUnifiedFace))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnifiedFace["input"]["required"]["preset"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref IPAdapterModels, ipadapterCubiqUnifiedFace.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("GLIGENLoader", out JToken gligenLoader))
+            if (TryGetRequiredInputs(rawObjectInfo, "GLIGENLoader", "gligen_name", out JToken gligenLoader))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, gligenLoader["input"]["required"]["gligen_name"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, gligenLoader.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("StyleModelLoader", out JToken styleModelLoader))
+            if (TryGetRequiredInputs(rawObjectInfo, "StyleModelLoader", "style_model_name", out JToken styleModelLoader))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, styleModelLoader["input"]["required"]["style_model_name"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, styleModelLoader.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("SwarmYoloDetection", out JToken yoloDetection))
+            if (TryGetRequiredInputs(rawObjectInfo, "SwarmYoloDetection", "model_name", out JToken yoloDetection))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, yoloDetection["input"]["required"]["model_name"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, yoloDetection.Select(m => $"{m}"));
             }
-            if (rawObjectInfo.TryGetValue("SetUnionControlNetType", out JToken unionCtrlNet))
+            if (TryGetRequiredInputs(rawObjectInfo, "SetUnionControlNetType", "type", out JToken unionCtrlNet))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet["input"]["required"]["type"][0].Select(m => $"{m}///{m} (New)"));
+                T2IParamTypes.ConcatDropdownValsClean(ref ControlnetUnionTypes, unionCtrlNet.Select(m => $"{m}///{m} (New)"));
             }
-            if (rawObjectInfo.TryGetValue("OverrideCLIPDevice", out JToken overrideClipDevice))
+            if (TryGetRequiredInputs(rawObjectInfo, "OverrideCLIPDevice", "device", out JToken overrideClipDevice))
             {
-                T2IParamTypes.ConcatDropdownValsClean(ref SetClipDevices, overrideClipDevice["input"]["required"]["device"][0].Select(m => $"{m}"));
+                T2IParamTypes.ConcatDropdownValsClean(ref SetClipDevices, overrideClipDevice.Select(m => $"{m}"));
             }
             if (rawObjectInfo.TryGetValue("Sam2AutoSegmentation", out JToken nodeData))
             {
@@ -555,7 +607,7 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> WorkflowParam, CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
+    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG;
 
@@ -606,13 +658,13 @@ public class ComfyUIBackendExtension : Extension
             "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 17, IsAdvanced: true, Examples: ["0", "0.2", "0.5"], DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
         IPAdapterEnd = T2IParamTypes.Register<double>(new("IP-Adapter End", "When to stop applying IP-Adapter, as a fraction of steps (if enabled).\nFor example, 0.5 stops applying halfway (50%) through. Must be greater than IP-Adapter Start.",
-            "1", IgnoreIf: "1",  Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"], DependNonDefault: UseIPAdapterForRevision.Type.ID
+            "1", IgnoreIf: "1", Min: 0.0, Max: 1.0, Step: 0.05, FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 18, IsAdvanced: true, Examples: ["1", "0.8", "0.5"], DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
         IPAdapterWeightType = T2IParamTypes.Register<string>(new("IP-Adapter Weight Type", "How to shift the weighting of the IP-Adapter.\nThis can produce subtle but useful different effects.",
             "standard", FeatureFlag: "ipadapter", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 19, IsAdvanced: true, GetValues: _ => IPAdapterWeightTypes, DependNonDefault: UseIPAdapterForRevision.Type.ID
             ));
         UseStyleModel = T2IParamTypes.Register<string>(new("Use Style Model", $"Select a Style model to use it for image-prompt input handling.\nFlux.1 Redux is an example of a style model.\nPlace these models in `(Swarm)/Models/style_models`.",
-            "None", IgnoreIf: "None", FeatureFlag: "comfyui", GetValues: _ => StyleModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 14, ChangeWeight: 1
+            "None", IgnoreIf: "None", GetValues: _ => StyleModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 14, ChangeWeight: 1, FeatureFlag: "flux-dev"
             ));
         StyleModelMergeStrength = T2IParamTypes.Register<double>(new("Style Model Merge Strength", "How strongly to merge in the effects of the style model.\nAt 1, the style model is fully used.\nAt 0, the style model is ignored.\nFor Flux Redux, very low values (eg 0.1) are recommended.",
             "1", IgnoreIf: "1", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.5, IsAdvanced: true, Examples: ["0", "0.25", "0.5", "0.75", "1"], DependNonDefault: UseStyleModel.Type.ID
@@ -743,10 +795,14 @@ public class ComfyUIBackendExtension : Extension
         SetClipDevice = T2IParamTypes.Register<string>(new("Set CLIP Device", "Override the hardware device that text encoders run on.",
             "cpu", FeatureFlag: "set_clip_device", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => SetClipDevices, OrderPriority: 70
             ));
-        Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
-        Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);
+        BackendApiType = Program.Backends.RegisterBackendType<ComfyUIAPIBackend>("comfyui_api", "ComfyUI API By URL", "A backend powered by a pre-existing installation of ComfyUI, referenced via API base URL.", true);
+        BackendSelfStartType = Program.Backends.RegisterBackendType<ComfyUISelfStartBackend>("comfyui_selfstart", "ComfyUI Self-Starting", "A backend powered by a pre-existing installation of the ComfyUI, automatically launched and managed by this UI server.", isStandard: true);
+        SwarmSwarmBackend.ValidityChecks[BackendApiType.ID] = (backend, input) => ComfyUIAPIAbstractBackend.TryIsValid(input, backend.ExtensionData.GetValueOrDefault("ComfyNodeTypes", null) as HashSet<string>);
+        SwarmSwarmBackend.ValidityChecks[BackendSelfStartType.ID] = SwarmSwarmBackend.ValidityChecks[BackendApiType.ID];
         ComfyUIWebAPI.Register();
     }
+
+    public BackendHandler.BackendType BackendApiType, BackendSelfStartType;
 
     public override void OnPreLaunch()
     {

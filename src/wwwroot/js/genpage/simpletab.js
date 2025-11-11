@@ -13,6 +13,7 @@ class SimpleTab {
         this.wrapperDiv = getRequiredElementById('simpletabbrowserwrapper');
         this.imageContainer = getRequiredElementById('simple_image_container');
         this.imageElem = getRequiredElementById('simple_image_container_img');
+        this.imageElemWrapper = getRequiredElementById('simple_image_container_img_wrapper');
         this.progressWrapper = getRequiredElementById('simpletab_progress_wrapper');
         this.loadingSpinner = getRequiredElementById('simple_loading_spinner');
         this.batchArea = getRequiredElementById('simple_current_image_batch');
@@ -31,9 +32,19 @@ class SimpleTab {
         this.genHandler.imageContainerDivId = 'simple_image_container';
         this.genHandler.imageId = 'simple_image_container_img';
         this.mustSelectTarget = null;
+        this.histories = {};
+    }
+
+    getHistoryFor(workflow) {
+        if (!(workflow in this.histories)) {
+            this.histories[workflow] = new SimpleTabHistory(workflow);
+            this.histories[workflow].load();
+        }
+        return this.histories[workflow];
     }
 
     onFolderSelected() {
+        this.setNoImage();
         this.browser.fullContentDiv.style.display = 'inline-block';
         this.containerDiv.style.display = 'none';
         setTimeout(() => updateHash(), 10);
@@ -53,11 +64,10 @@ class SimpleTab {
     }
 
     onTabClicked() {
-        this.browser.navigate('');
         if (this.hasLoaded) {
-            this.onFolderSelected();
             return;
         }
+        this.browser.navigate('');
         for (let key in sessionStorage) {
             if (key.startsWith('simpletablast_')) {
                 sessionStorage.removeItem(key);
@@ -84,6 +94,7 @@ class SimpleTab {
             let value = getInputVal(elem);
             inputs[id] = value;
         }
+        inputs['personalnote'] = `SimpleTab: Workflow: ${this.browser.selected}`;
         this.genHandler.doGenerate(inputs);
     }
 
@@ -91,24 +102,55 @@ class SimpleTab {
     }
 
     setImage(imgSrc) {
-        this.imageElem.src = imgSrc;
-        this.imageElem.style.opacity = 1;
+        let isVideo = isVideoExt(imgSrc);
+        let isAudio = isAudioExt(imgSrc);
+        if (isVideo) {
+            if (this.imageElem.tagName == 'VIDEO') {
+                this.imageElem.src = imgSrc;
+            }
+            else {
+                this.imageElemWrapper.innerHTML = `<video class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop controls><source src="${imgSrc}" id="simple_image_container_img" type="${isVideo}"></video>`;
+                this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+            }
+        }
+        else if (isAudio) {
+            if (this.imageElem.tagName == 'AUDIO') {
+                this.imageElem.src = imgSrc;
+            }
+            else {
+                this.imageElemWrapper.innerHTML = `<audio class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${imgSrc}"></audio>`;
+                this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+            }
+        }
+        else {
+            if (this.imageElem.tagName == 'IMG') {
+                this.imageElem.src = imgSrc;
+            }
+            else {
+                this.imageElemWrapper.innerHTML = `<img class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${imgSrc}">`;
+                this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+            }
+        }
+        this.imageElemWrapper.style.opacity = 1;
     }
 
     markLoading() {
         this.loadingSpinner.style.display = '';
-        this.imageElem.style.filter = 'blur(5px)';
+        this.imageElemWrapper.style.filter = 'blur(5px)';
         uiImprover.runLoadSpinner(this.loadingSpinner);
     }
 
     markDoneLoading() {
         this.loadingSpinner.style.display = 'none';
-        this.imageElem.style.filter = '';
+        this.imageElemWrapper.style.filter = '';
         this.genHandler.gotProgress(-1, -1, '');
     }
 
     setNoImage() {
-        this.imageElem.style.opacity = 0;
+        this.imageElemWrapper.style.opacity = 0;
+        if (this.imageElem.tagName == 'VIDEO' || this.imageElem.tagName == 'AUDIO') {
+            this.imageElem.pause();
+        }
     }
 
     browserDescribeEntry(workflow) {
@@ -116,7 +158,7 @@ class SimpleTab {
         return { name: workflow.name, description: `<b>${escapeHtmlNoBr(workflow.name)}</b><br>${escapeHtmlNoBr(workflow.data.description ?? "")}`, image: workflow.data.image, buttons: buttons, className: '', searchable: `${workflow.name}\n${workflow.data.description}` };
     }
 
-    browserSelectEntry(workflow) {
+    browserSelectEntry(workflow, callback = null) {
         this.browser.selected = workflow.name;
         updateHash();
         this.browser.rerender();
@@ -216,6 +258,11 @@ class SimpleTab {
             for (let runnable of runnables) {
                 runnable();
             }
+            this.batchArea.innerHTML = '';
+            this.getHistoryFor(workflow.name).applyToBatchView();
+            if (callback && typeof callback == 'function') {
+                callback();
+            }
         });
     }
 
@@ -233,12 +280,93 @@ class SimpleTab {
             callback(folders, mapped);
         });
     }
+
+    clearBatch() {
+        this.batchArea.innerHTML = '';
+        this.getHistoryFor(this.browser.selected).clear();
+    }
+}
+
+class SimpleTabHistory {
+
+    constructor(workflow) {
+        this.workflow = workflow;
+        this.entries = [];
+        this.maxPersist = 20;
+    }
+
+    load() {
+        let data = localStorage.getItem(`simpletabhistory_${this.workflow}`);
+        if (data) {
+            this.entries = JSON.parse(data).map(e => {
+                return { src: e, isLoading: false };
+            });
+        }
+    }
+
+    save() {
+        let simpleEntries = this.entries.filter(e => !e.isLoading && !e.src.startsWith('DOPLACEHOLDER:') && !e.src.startsWith('data:')).map(e => e.src);
+        if (simpleEntries.length > this.maxPersist) {
+            simpleEntries = simpleEntries.slice(simpleEntries.length - this.maxPersist);
+        }
+        localStorage.setItem(`simpletabhistory_${this.workflow}`, JSON.stringify(simpleEntries));
+    }
+
+    add(src, metadata, batchId, isLoading) {
+        let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
+        let batch_div = null;
+        if (simpleTab.browser.selected == this.workflow) {
+            batch_div = appendImage(simpleTab.batchArea, src, batchId, fname, metadata, 'batch');
+            if (isLoading) {
+                batch_div.dataset.is_loading = isLoading;
+            }
+            else {
+                delete batch_div.dataset.is_loading;
+            }
+            batch_div.addEventListener('click', () => {
+                simpleTab.genHandler.setCurrentImage(batch_div.dataset.src, batch_div.dataset.metadata, batchId);
+                if (batch_div.dataset.is_loading) {
+                    simpleTab.markLoading();
+                }
+            });
+        }
+        let entry = { src: src, metadata: metadata, batchId: batchId, fname: fname, div: batch_div, isLoading: isLoading };
+        this.entries.push(entry);
+        this.save();
+        return entry;
+    }
+
+    applyToBatchView() {
+        for (let entry of this.entries) {
+            if (entry.isLoading) {
+                // TODO: Restore properly?
+                continue;
+            }
+            let fname = entry.fname || (entry.src && entry.src.includes('/') ? entry.src.substring(entry.src.lastIndexOf('/') + 1) : entry.src);
+            let batch_div = appendImage(simpleTab.batchArea, entry.src, entry.batchId || 'none', fname, entry.metadata || '{}', 'batch', true);
+            batch_div.addEventListener('click', () => simpleTab.genHandler.setCurrentImage(entry.src, entry.metadata, entry.batchId));
+            if (entry.isLoading) {
+                batch_div.dataset.is_loading = entry.isLoading;
+            }
+            else {
+                delete batch_div.dataset.is_loading;
+            }
+            entry.div = batch_div;
+        }
+    }
+
+    clear() {
+        this.entries = [];
+        localStorage.removeItem(`simpletabhistory_${this.workflow}`);
+    }
 }
 
 class SimpleTabGenerateHandler extends GenerateHandler {
 
     constructor() {
         super();
+        this.currentDisplayedRequestId = null;
+        this.batchDiv = document.getElementById('simple_current_image_batch');
     }
 
     resetBatchIfNeeded() {
@@ -261,36 +389,94 @@ class SimpleTabGenerateHandler extends GenerateHandler {
         return data;
     }
 
-    setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false) {
+    getRequestIdFor(batchId) {
+        if (!batchId) {
+            return null;
+        }
+        return batchId.split('_')[0];
+    }
+
+    getHistoryFor(metadata) {
+        let workflow = simpleTab.browser.selected;
+        if (metadata) {
+            let metadataParsed = JSON.parse(metadata);
+            let note = metadataParsed.sui_image_params?.personalnote;
+            if (note && note.startsWith('SimpleTab: Workflow: ')) {
+                workflow = note.substring('SimpleTab: Workflow: '.length);
+
+            }
+        }
+        return simpleTab.getHistoryFor(workflow);
+    }
+
+    isCurrentRequest(batchId) {
+        if (this.currentDisplayedRequestId == null) {
+            return true;
+        }
+        let requestId = this.getRequestIdFor(batchId);
+        if (requestId == null || requestId == '') {
+            return true;
+        }
+        return this.currentDisplayedRequestId == requestId;
+    }
+
+    setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, smoothAdd = false, existingBatchDiv = null) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(src);
     }
 
     gotImageResult(image, metadata, batchId) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markDoneLoading();
         simpleTab.setImage(image);
-        let fname = image && image.includes('/') ? image.substring(image.lastIndexOf('/') + 1) : image;
-        let batch_div = appendImage(simpleTab.batchArea, image, batchId, fname, metadata, 'batch');
-        batch_div.addEventListener('click', () => this.setCurrentImage(image));
+        let history = this.getHistoryFor(metadata);
+        history.entries.filter(e => this.getRequestIdFor(e.batchId) == this.getRequestIdFor(batchId) && e.isLoading && e.div).forEach(e => e.div.remove());
+        history.add(image, metadata, batchId, false);
+    }
+
+    gotTrackedImageResult(image, metadata, batchId, existingDiv = null) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
+        simpleTab.markDoneLoading();
+        simpleTab.setImage(image);
+        if (existingDiv) {
+            delete existingDiv.dataset.is_loading;
+        }
+        let history = this.getHistoryFor(metadata);
+        history.entries.filter(e => e.batchId == batchId).forEach(e => { e.src = image; e.metadata = metadata; e.isLoading = false; });
+        history.save();
     }
 
     gotImagePreview(image, metadata, batchId) {
+        this.currentDisplayedRequestId = this.getRequestIdFor(batchId);
         simpleTab.markLoading();
+        let entry = this.getHistoryFor(metadata).add(image, metadata, batchId, true);
+        let batch_div = entry.div;
         if (image.startsWith('DOPLACEHOLDER:')) {
-            return;
+            return batch_div;
         }
         simpleTab.setImage(image);
+        return batch_div;
+    }
+
+    gotTrackedImagePreview(image, metadata, batchId) {
+        if (this.isCurrentRequest(batchId)) {
+            simpleTab.markLoading();
+            simpleTab.setImage(image);
+        }
     }
 
     gotProgress(current, overall, batchId) {
-        if (current < 0) {
-            simpleTab.progressWrapper.style.display = 'none';
-            return;
+        if (this.isCurrentRequest(batchId)) {
+            if (current < 0) {
+                simpleTab.progressWrapper.style.display = 'none';
+                return;
+            }
+            simpleTab.markLoading();
+            simpleTab.progressWrapper.style.display = '';
+            simpleTab.progressWrapper.querySelector('.image-preview-progress-current').style.width = `${current * 100}%`;
+            simpleTab.progressWrapper.querySelector('.image-preview-progress-overall').style.width = `${overall * 100}%`;
         }
-        simpleTab.markLoading();
-        simpleTab.progressWrapper.style.display = '';
-        simpleTab.progressWrapper.querySelector('.image-preview-progress-current').style.width = `${current * 100}%`;
-        simpleTab.progressWrapper.querySelector('.image-preview-progress-overall').style.width = `${overall * 100}%`;
     }
 
     hadError(msg) {

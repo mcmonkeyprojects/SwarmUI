@@ -103,7 +103,7 @@ function getHtmlForParam(param, prefix) {
                     let pElem = getRequiredElementById(`${prefix}${param.id}`);
                     textPromptAddKeydownHandler(pElem);
                     textPromptInputHandle(pElem);
-                } : (param.view_type == 'big' ? () => dynamicSizeTextBox(getRequiredElementById(`${prefix}${param.id}`, 32)): null);
+                } : (param.view_type == 'big' ? () => dynamicSizeTextBox(getRequiredElementById(`${prefix}${param.id}`), 32, 50): null);
                 return {html: makeTextInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, param.view_type, param.description, param.toggleable, false, !param.no_popover) + pop, runnable: runnable};
             case 'decimal':
             case 'integer':
@@ -153,6 +153,10 @@ function getHtmlForParam(param, prefix) {
                     runnable: () => autoSelectWidth(getRequiredElementById(`${prefix}${param.id}`))};
             case 'image':
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+            case 'audio':
+                return {html: makeAudioInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+            case 'video':
+                return {html: makeVideoInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
             case 'image_list':
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
         }
@@ -623,7 +627,7 @@ function genInputs(delay_final = false) {
         }
         let inputInitImage = document.getElementById('input_initimage');
         if (inputInitImage && inputAspectRatio && inputWidth && inputHeight) {
-            let targetDiv = findParentOfClass(inputInitImage, 'auto-input').querySelector('.auto-image-input-label');
+            let targetDiv = findParentOfClass(inputInitImage, 'auto-input').querySelector('.auto-file-input-label');
             if (targetDiv) {
                 let button = document.createElement('button');
                 button.className = 'basic-button';
@@ -911,6 +915,9 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             }
         }
     }
+    if (input['aspectratio'] == 'Custom') {
+        delete input['sidelength'];
+    }
     if (!input['vae'] || input['vae'] == 'Automatic') {
         input['automaticvae'] = true;
         delete input['vae'];
@@ -1040,8 +1047,8 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         $(paramElem).val(vals);
         $(paramElem).trigger('change');
     }
-    else if (param.type == "image" || param.type == "image_list") {
-        // do not edit images directly, this will just misbehave
+    else if (param.type == "image" || param.type == "image_list" || param.type == "audio" || param.type == "video") {
+        // do not edit raw data files directly, this will just misbehave
     }
     else if (paramElem.tagName == "SELECT") {
         if (![...paramElem.querySelectorAll('option')].map(o => o.value).includes(value)) {
@@ -1199,7 +1206,7 @@ function hideUnsupportableParams() {
             param.feature_missing = !supported;
             let show = supported && param.visible;
             let paramToggler = document.getElementById(`input_${param.id}_toggle`);
-            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != param.default;
+            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != `${param.default}`;
             let group = param.original_group || param.group;
             if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
                 isAltered = false;

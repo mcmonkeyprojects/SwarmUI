@@ -132,14 +132,11 @@ class LoraExtractorUtil {
         if (outName.startsWith('/')) {
             outName = outName.substring(1);
         }
-        if (outName.endsWith('.safetensors')) {
-            outName = outName.substring(0, outName.length - '.safetensors'.length);
-        }
-        if (outName.endsWith('.sft')) {
-            outName = outName.substring(0, outName.length - '.sft'.length);
-        }
-        if (outName.endsWith('.ckpt')) {
-            outName = outName.substring(0, outName.length - '.ckpt'.length);
+        for (let extension of ['.safetensors', '.sft', '.gguf', '.ckpt']) {
+            if (outName.endsWith(extension)) {
+                outName = outName.substring(0, outName.length - extension.length);
+                break;
+            }
         }
         if (!baseModel || !otherModel || !outName) {
             this.textArea.innerText = "Missing required values, cannot extract.";
@@ -276,7 +273,7 @@ class ModelDownloaderUtil {
                 baseLoop:
                 for (let vers of rawData.modelVersions) {
                     for (let vFile of vers.files) {
-                        if (vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`)) {
+                        if (vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`) || vFile.name.endsWith(`.gguf`)) {
                             rawVersion = vers;
                             file = vFile;
                             break baseLoop;
@@ -284,9 +281,9 @@ class ModelDownloaderUtil {
                     }
                 }
             }
-            if (validateSafe && !file.name.endsWith('.safetensors') && !file.name.endsWith('.sft')) {
+            if (validateSafe && !file.name.endsWith('.safetensors') && !file.name.endsWith('.sft') && !file.name.endsWith('.gguf')) {
                 console.log(`refuse civitai url because download url is ${file.downloadUrl} / ${file.name} / ${identifier}`);
-                doError(`Cannot download model from that URL because it is not a safetensors file. Filename is '${file.name}'`);
+                doError(`Cannot download model from that URL because it is not a safetensors or GGUF file. Filename is '${file.name}'`);
                 return;
             }
             if (rawData.type == 'Checkpoint') { modelType = 'Stable-Diffusion'; }
@@ -295,6 +292,10 @@ class ModelDownloaderUtil {
             if (rawData.type == 'ControlNet') { modelType = 'ControlNet'; }
             if (rawData.type == 'VAE') { modelType = 'VAE'; }
             let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
+            let downloadUrl = file.downloadUrl;
+            if (file.name.endsWith('.gguf')) {
+                downloadUrl += `#.gguf`;
+            }
             let applyMetadata = (img) => {
                 let url = versId ? `${this.civitPrefix}models/${id}?modelVersionId=${versId}` : `${this.civitPrefix}models/${id}`;
                 metadata = {
@@ -317,14 +318,14 @@ class ModelDownloaderUtil {
                 if (['Illustrious', 'Pony'].includes(rawVersion.baseModel)) {
                     metadata['modelspec.usage_hint'] = rawVersion.baseModel;
                 }
-                callback(rawData, rawVersion, metadata, modelType, file.downloadUrl, img, imgs.map(x => x.url), null);
+                callback(rawData, rawVersion, metadata, modelType, downloadUrl, img, imgs.map(x => x.url), null);
             }
             if (imgs.length > 0) {
                 imageToData(imgs[0].url, img => applyMetadata(img), true);
             }
             else {
                 let videos = rawVersion.images ? rawVersion.images.filter(img => img.type == 'video') : [];
-                if (videos) {
+                if (videos && videos.length > 0) {
                     let url = videos[0].url;
                     let video = document.createElement('video');
                     video.crossOrigin = 'Anonymous';
@@ -334,6 +335,9 @@ class ModelDownloaderUtil {
                         canvas.height = video.videoHeight;
                         canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
                         applyMetadata(canvas.toDataURL());
+                    };
+                    video.onerror = () => {
+                        applyMetadata('');
                     };
                     video.src = url;
                 }
@@ -395,8 +399,8 @@ class ModelDownloaderUtil {
                 parts[4] = parts[4].substring(0, parts[4].length - '?download=true'.length);
                 this.url.value = `${this.hfPrefix}${parts.join('/')}`;
             }
-            if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft')) {
-                this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a safetensors file. Only safetensors can be auto-downloaded.";
+            if (!parts[4].endsWith('.safetensors') && !parts[4].endsWith('.sft') && !parts[4].endsWith('.gguf')) {
+                this.urlStatusArea.innerText = "URL appears to be a huggingface link, but not a safetensors file. Only safetensors and GGUF can be auto-downloaded.";
                 this.button.disabled = true;
                 return;
             }
@@ -405,14 +409,14 @@ class ModelDownloaderUtil {
                 this.url.value = `${this.hfPrefix}${parts.join('/')}`;
                 this.urlStatusArea.innerText = "URL appears to be a huggingface link, and has been autocorrected to a download link.";
                 this.button.disabled = false;
-                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '');
+                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '').replaceAll('.gguf', '');
                 this.nameInput();
                 return;
             }
             if (parts[2] == 'resolve') {
                 this.urlStatusArea.innerText = "URL appears to be a valid HuggingFace download link.";
                 this.button.disabled = false;
-                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '');
+                this.name.value = parts.slice(4).join('/').replaceAll('.safetensors', '').replaceAll('.sft', '').replaceAll('.gguf', '');
                 this.nameInput();
                 return;
             }

@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
@@ -22,6 +23,7 @@ public static class ComfyUIWebAPI
         API.RegisterAPICall(ComfyDeleteWorkflow, true, ComfyUIBackendExtension.PermEditWorkflows);
         API.RegisterAPICall(ComfyGetGeneratedWorkflow, false, ComfyUIBackendExtension.PermDirectCalls);
         API.RegisterAPICall(DoLoraExtractionWS, true, Permissions.ExtractLoRAs);
+        API.RegisterAPICall(ComfyGetNodeTypesForBackend, false, Permissions.ViewBackendsList);
         API.RegisterAPICall(ComfyEnsureRefreshable, false, ComfyUIBackendExtension.PermDirectCalls);
         API.RegisterAPICall(ComfyInstallFeatures, true, Permissions.InstallFeatures);
         API.RegisterAPICall(DoTensorRTCreateWS, true, Permissions.CreateTRT);
@@ -36,7 +38,7 @@ public static class ComfyUIWebAPI
         Directory.CreateDirectory(Directory.GetParent(path).FullName);
         if (!string.IsNullOrWhiteSpace(image))
         {
-            image = Image.FromDataString(image).ToMetadataFormat();
+            image = ImageFile.FromDataString(image).ToMetadataFormat();
         }
         else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(origPath))
         {
@@ -101,7 +103,7 @@ public static class ComfyUIWebAPI
     public static async Task<JObject> ComfyListWorkflows(Session session)
     {
         return new JObject() { ["workflows"] = JToken.FromObject(ComfyUIBackendExtension.CustomWorkflows.Keys.ToList()
-            .Select(ComfyUIBackendExtension.GetWorkflowByName).OrderBy(w => w.Name).Select(w => new JObject()
+            .Select(ComfyUIBackendExtension.GetWorkflowByName).Where(w => w is not null).OrderBy(w => w.Name).Select(w => new JObject()
             {
                 ["name"] = w.Name,
                 ["image"] = w.Image ?? "/imgs/model_placeholder.jpg",
@@ -124,7 +126,6 @@ public static class ComfyUIWebAPI
             return new JObject() { ["error"] = "Unknown custom workflow name." };
         }
         File.Delete(fullPath);
-        Logs.Debug($"check {path} against {ComfyUIBackendExtension.ExampleWorkflowNames.JoinString(", ")}");
         if (ComfyUIBackendExtension.ExampleWorkflowNames.Contains(path.After("Examples/") + ".json"))
         {
             File.WriteAllText($"{fullPath}.deleted", "deleted-by-user");
@@ -157,6 +158,16 @@ public static class ComfyUIWebAPI
         {
             return new JObject() { ["error"] = ex.Message };
         }
+    }
+
+    /// <summary>API route to read the node types for a specific backend.</summary>
+    public static async Task<JObject> ComfyGetNodeTypesForBackend(Session session, int backend)
+    {
+        if (Program.Backends.T2IBackends.TryGetValue(backend, out BackendHandler.T2IBackendData data) && data.Backend is ComfyUIAPIAbstractBackend comfyBack)
+        {
+            return new JObject() { ["node_types"] = JArray.FromObject(comfyBack.NodeTypes.ToList()) };
+        }
+        return new JObject() { ["error"] = "Unknown backend ID or not a ComfyUI backend." };
     }
 
     /// <summary>API route to ensure that a ComfyUI refresh hit will actually do a native refresh.</summary>

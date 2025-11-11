@@ -80,6 +80,9 @@ public class Program
     /// <summary>Event-action fired when the model paths have changed (eg via settings change).</summary>
     public static Action ModelPathsChangedEvent;
 
+    /// <summary>Event-action fired when shutdown has begun but before the global cancel has set.</summary>
+    public static Action PreShutdownEvent;
+
     /// <summary>General data directory root.</summary>
     public static string DataDir = "Data";
 
@@ -94,6 +97,9 @@ public class Program
 
     /// <summary>If non-zero, a remote automated API must declare that it is in control of this instance every this many milliseconds, or else the server will shut down.</summary>
     public static long RequireControlPingEveryMS = 0;
+
+    /// <summary>If true, user has requested that the server avoid saving data. This is not a hard requirement.</summary>
+    public static bool NoPersist = false;
 
     /// <summary>Primary execution entry point.</summary>
     public static void Main(string[] args)
@@ -208,12 +214,12 @@ public class Program
                 DateTimeOffset date = DateTimeOffset.Parse(parts[1].Trim()).ToUniversalTime();
                 CurrentGitDate = $"{date:yyyy-MM-dd HH:mm:ss}";
                 TimeSpan relative = DateTimeOffset.UtcNow - date;
-                string ago = $"{relative.Hours} hour{(relative.Hours == 1 ? "" : "s")} ago";
-                if (relative.Hours > 48)
+                string ago = $"{Math.Floor(relative.TotalHours)} hour{(Math.Floor(relative.TotalHours) == 1 ? "" : "s")} ago";
+                if (relative.TotalHours > 48)
                 {
-                    ago = $"{relative.Days} day{(relative.Days == 1 ? "" : "s")} ago";
+                    ago = $"{Math.Floor(relative.TotalDays)} day{(Math.Floor(relative.TotalDays) == 1 ? "" : "s")} ago";
                 }
-                else if (relative.Hours == 0)
+                else if (relative.TotalHours < 1)
                 {
                     ago = $"{relative.Minutes} minute{(relative.Minutes == 1 ? "" : "s")} ago";
                 }
@@ -227,9 +233,8 @@ public class Program
         }, "check current git commit"));
         waitFor.Add(Utilities.RunCheckedTask(async () =>
         {
-            NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
             SystemStatusMonitor.HardwareInfo.RefreshMemoryStatus();
-            MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo.MemoryStatus;
+            MemoryStatus memStatus = SystemStatusMonitor.HardwareInfo?.MemoryStatus ?? new();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalPageFile)} total page file, {new MemoryNum((long)memStatus.AvailablePageFile)} available page file");
@@ -246,6 +251,10 @@ public class Program
             {
                 Logs.Init($"CPU Cores: {Environment.ProcessorCount} | RAM: {new MemoryNum((long)memStatus.TotalPhysical)} total, {new MemoryNum((long)memStatus.AvailablePhysical)} available, {new MemoryNum((long)memStatus.TotalVirtual)} virtual, {new MemoryNum((long)memStatus.TotalVirtual - (long)memStatus.TotalPhysical)} swap");
             }
+        }, "load cpu hardware info"));
+        waitFor.Add(Utilities.RunCheckedTask(async () =>
+        {
+            NvidiaUtil.NvidiaInfo[] gpuInfo = NvidiaUtil.QueryNvidia();
             if (gpuInfo is not null && gpuInfo.Length > 0)
             {
                 JObject gpus = [];
@@ -510,6 +519,7 @@ public class Program
         Task.WaitAny(waitShutdown, Task.Delay(TimeSpan.FromMinutes(2)));
         Environment.ExitCode = code;
         Logs.Info("Shutting down...");
+        PreShutdownEvent?.Invoke();
         GlobalCancelSource.Cancel();
         Logs.Verbose("Shutdown webserver...");
         WebServer.WebApp?.StopAsync().Wait();
@@ -528,7 +538,7 @@ public class Program
         Extensions.RunOnAllExtensions(e => e.OnShutdown());
         Extensions.Extensions.Clear();
         Logs.Verbose("Shutdown image metadata tracker...");
-        ImageMetadataTracker.Shutdown();
+        OutputMetadataTracker.Shutdown();
         Logs.Info("All core shutdowns complete.");
         if (Logs.LogSaveThread is not null)
         {
@@ -723,6 +733,7 @@ public class Program
         {
             TimeLastRemoteControlPing = Environment.TickCount64;
         }
+        NoPersist = GetCommandLineFlagAsBool("no_persist", false);
     }
 
     /// <summary>Applies runtime-changable settings.</summary>
@@ -818,7 +829,7 @@ public class Program
               [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
               [--user_id <username>] [--lock_settings <true/false>] [--ngrok-path <path>] [--cloudflared-path <path>]
               [--proxy-region <region>] [--proxy-added-args <args>] [--ngrok-basic-auth <auth-info>]
-              [--launch_mode <mode>] [--require_control_within <minutes>] [--help <true/false>]
+              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--help <true/false>]
 
             Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
               - `settings_file`, `lock_settings`, `backends_file`, `loglevel` may be useful to advanced users will multiple instances.

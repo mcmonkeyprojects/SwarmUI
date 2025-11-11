@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 
 namespace SwarmUI.Text2Image;
@@ -147,13 +148,29 @@ public class T2IParamSet
             ValuesInput.Remove(param.ID);
             return;
         }
-        Image imageFor(string val)
+        ImageFile imageFor(string val)
         {
             if (val.StartsWithFast("data:"))
             {
-                return Image.FromDataString(val);
+                return ImageFile.FromDataString(val);
             }
-            return new Image(val, Image.ImageType.IMAGE, "png");
+            return ImageFile.FromBase64(val, MediaType.ImagePng);
+        }
+        AudioFile audioFor(string val)
+        {
+            if (val.StartsWithFast("data:"))
+            {
+                return AudioFile.FromDataString(val);
+            }
+            return AudioFile.FromBase64(val, MediaType.AudioWav);
+        }
+        VideoFile videoFor(string val)
+        {
+            if (val.StartsWithFast("data:"))
+            {
+                return VideoFile.FromDataString(val);
+            }
+            return VideoFile.FromBase64(val, MediaType.AudioWav);
         }
         object obj = param.Type switch
         {
@@ -162,9 +179,11 @@ public class T2IParamSet
             T2IParamDataType.BOOLEAN => bool.Parse(val),
             T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
             T2IParamDataType.IMAGE => imageFor(val),
-            T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => imageFor(v)).ToList(),
+            T2IParamDataType.IMAGE_LIST => val.Split('|').Select(v => imageFor(v) as Image).ToList(),
             T2IParamDataType.MODEL => getModel(val),
             T2IParamDataType.LIST => val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
+            T2IParamDataType.AUDIO => audioFor(val),
+            T2IParamDataType.VIDEO => videoFor(val),
             _ => throw new NotImplementedException()
         };
         if (param.SharpType == typeof(int))
@@ -178,10 +197,6 @@ public class T2IParamSet
         if (obj is null)
         {
             Logs.Debug($"Ignoring input to parameter '{param.ID}' of '{val}' because the value maps to null.");
-            if (param.ID == "model")
-            {
-                Logs.Warning($"Model input '{val}' appears to be null.");
-            }
             return;
         }
         ValuesInput[param.ID] = obj;

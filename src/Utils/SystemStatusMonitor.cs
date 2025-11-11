@@ -19,7 +19,7 @@ public static class SystemStatusMonitor
     public static long LastTick = Environment.TickCount64;
 
     /// <summary>General hardware info provider.</summary>
-    public static HardwareInfo HardwareInfo = new();
+    public static HardwareInfo HardwareInfo;
 
     /// <summary>Semaphore to prevent the monitor tick firing off overlapping.</summary>
     public static SemaphoreSlim DeDuplicator = new(1, 1);
@@ -30,11 +30,27 @@ public static class SystemStatusMonitor
     /// <summary>Holds recent hardware info reports for the last <see cref="QueueSize"/> seconds.</summary>
     public static ConcurrentQueue<HardwareInfo> HardwareInfoQueue = new();
 
+    static SystemStatusMonitor()
+    {
+        try
+        {
+            HardwareInfo = new HardwareInfo();
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"SystemStatusMonitor static constructor HW Info failure: {ex.ReadableString()}");
+        }
+    }
+
     /// <summary>Updates system status.</summary>
     public static void Tick()
     {
         Task.Run(() =>
         {
+            if (HardwareInfo is null) // Failed to init
+            {
+                return;
+            }
             if (DeDuplicator.CurrentCount == 0)
             {
                 return;

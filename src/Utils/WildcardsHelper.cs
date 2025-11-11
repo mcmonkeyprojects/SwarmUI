@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.WebAPI;
 using System.IO;
 
@@ -96,7 +97,7 @@ public class WildcardsHelper
             wildcard.Options = [.. rawText.Split('\n').Select(card => card.Before('#').Trim()).Where(card => !string.IsNullOrWhiteSpace(card))];
             if (wildcard.Image is null && File.Exists($"{Folder}/{name}.jpg"))
             {
-                wildcard.Image = new Image(File.ReadAllBytes($"{Folder}/{name}.jpg"), Image.ImageType.IMAGE, "jpg").AsDataString();
+                wildcard.Image = new Image(File.ReadAllBytes($"{Folder}/{name}.jpg"), MediaType.ImageJpg).AsDataString();
             }
         }
         return wildcard;

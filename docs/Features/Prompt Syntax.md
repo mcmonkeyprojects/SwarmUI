@@ -135,7 +135,9 @@
 
 - You can directly set generation parameters via `<param[paramName]:paramValue>`
     - For example, `<param[CFG Scale]:1>` or `<param[cfgscale]:1>` sets CFG Scale to 1.
+        - Note the name is case-insensitive, and spaces are ignored. You can copy-paste names directly from the UI, API structure, Metadata, wherever, it'll just work, as long as you don't typo it.
     - You can combine this with sub-syntax, eg `<param[cfgscale]:<random:1,2,3>>` to set CFG Scale to a random value.
+    - This supports any parameter in SwarmUI - that is, the inputs listed on the left side of the Generate tab.
     - Some parameters can be 'sectionalized' - that is, apply to specific sections, such as `<refiner>` or `<base>` or `<video>` or `<segment:...>` or `<extend:...>` etc.
         - This includes: `CFG Scale`, `Steps`, `Sampler`, `Scheduler`
         - So for example, `<video> <param[cfgscale]:5>` will set the CFG Scale of the video section only to `5`.

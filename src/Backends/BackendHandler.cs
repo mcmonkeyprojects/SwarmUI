@@ -52,6 +52,46 @@ public class BackendHandler
     /// <summary>The number of currently loaded backends.</summary>
     public int Count => T2IBackends.Count;
 
+    /// <summary>Possible outcomes of requesting a backend scale.</summary>
+    public enum ScaleResult
+    {
+        /// <summary>Something brand new has been launched.</summary>
+        FreshLaunch,
+        /// <summary>Something not-so-new has been launched (other instances of same work present).</summary>
+        AddedLaunch,
+        /// <summary>Nothing was launched.</summary>
+        NoLaunch
+    }
+
+    /// <summary>Events fired when generations are being attempted, but no space is available - a new backend is needed, if any scalers are configured and able to provide one. Key is recommended to be a backend ID, but any unique int will do.</summary>
+    public ConcurrentDictionary<int, Func<Task<ScaleResult>>> NewBackendNeededEvent = [];
+
+    /// <summary>Try to cause a new backend to be created. Only does anything if a scaling provider is available.</summary>
+    /// <param name="needFresh">If true, only return if a *fresh* new backend has returned, return true only if a fresh launch was caused.</param>
+    public async Task<bool> TryToScaleANewBackend(bool needFresh)
+    {
+        foreach (Func<Task<ScaleResult>> func in NewBackendNeededEvent.Values)
+        {
+            try
+            {
+                ScaleResult result = await func();
+                if (result == ScaleResult.FreshLaunch)
+                {
+                    return true;
+                }
+                else if (result == ScaleResult.AddedLaunch && !needFresh)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logs.Error($"Error while trying to scale a new backend: {ex.ReadableString()}");
+            }
+        }
+        return false;
+    }
+
     /// <summary>Getter for the current overall backend status report.</summary>
     public SingleValueExpiringCacheAsync<JObject> CurrentBackendStatus;
 
@@ -61,10 +101,13 @@ public class BackendHandler
         return [.. T2IBackends.Values.Where(b => b is not null && b.Backend.IsEnabled && b.Backend.Status != BackendStatus.IDLE).SelectMany(b => b.Backend.SupportedFeatures)];
     }
 
+    /// <summary>Registered core backend types.</summary>
+    public BackendType SwarmBackendType, AutoScalingBackendType;
+
     public BackendHandler()
     {
-        RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
-        RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
+        SwarmBackendType = RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
+        AutoScalingBackendType = RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
         Program.ModelRefreshEvent += () =>
         {
             List<Task> waitFor = [];
@@ -294,7 +337,7 @@ public class BackendHandler
     }
 
     /// <summary>Adds a new backend that is not a 'real' backend (it will not save nor show in the UI, but is available for generation calls).</summary>
-    public T2IBackendData AddNewNonrealBackend(BackendType type, T2IBackendData parent, AutoConfiguration config = null)
+    public T2IBackendData AddNewNonrealBackend(BackendType type, T2IBackendData parent, AutoConfiguration config = null, Action<T2IBackendData> preModify = null)
     {
         T2IBackendData data = new()
         {
@@ -311,6 +354,7 @@ public class BackendHandler
             data.ID = LastNonrealBackendID--;
             T2IBackends.TryAdd(data.ID, data);
         }
+        preModify?.Invoke(data);
         DoInitBackend(data);
         NewBackendInitSignal.Set();
         return data;
@@ -322,7 +366,7 @@ public class BackendHandler
         data.Backend.ShutDownReserve = true;
         try
         {
-            while (data.CheckIsInUse)
+            while (data.CheckIsInUse && data.Backend.MaxUsages > 0)
             {
                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                 {
@@ -416,6 +460,9 @@ public class BackendHandler
         new Thread(new ThreadStart(RequestHandlingLoop)).Start();
     }
 
+    /// <summary>If true, backends handler is still loading.</summary>
+    public static bool IsLoading = true;
+
     /// <summary>Internal route for loading backends. Do not call directly.</summary>
     public void LoadInternal()
     {
@@ -466,7 +513,11 @@ public class BackendHandler
                 T2IBackends.TryAdd(data.ID, data);
             }
         }
+        IsLoading = false;
     }
+
+    /// <summary>How many backends have fast-loaded thus far.</summary>
+    public static long CountBackendsFastLoaded = 0;
 
     /// <summary>Cause a backend to run its initializer, either immediately or in the next available slot.</summary>
     public void DoInitBackend(T2IBackendData data)
@@ -474,9 +525,19 @@ public class BackendHandler
         data.Backend.LoadStatusReport ??= [];
         data.Backend.Status = BackendStatus.WAITING;
         data.Backend.AddLoadStatus("Waiting to load...");
-        if (data.BackType.CanLoadFast)
+        if (data.BackType.CanLoadFast || Program.ServerSettings.Backends.AllBackendsLoadFast)
         {
-            Task.Run(() => LoadBackendDirect(data));
+            long count = Interlocked.Increment(ref CountBackendsFastLoaded);
+            bool shouldWait = count > 1 && IsLoading;
+            Task.Run(async () =>
+            {
+                if (shouldWait)
+                {
+                    // Tiny delay on fast-loads at first boot just to prevent hyperthrash of first-time loadup, since there's a lot of prep stuff that happens
+                    await Task.Delay(TimeSpan.FromSeconds(1 + Math.Min(5, count / 10.0)));
+                }
+                await LoadBackendDirect(data);
+            });
         }
         else
         {
@@ -660,7 +721,7 @@ public class BackendHandler
         }
         Logs.Verbose($"Got request to load model on all: {model.Name}");
         bool any = false;
-        T2IBackendData[] filtered = [.. T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.CanLoadModels)];
+        T2IBackendData[] filtered = [.. T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.MaxUsages > 0 && b.Backend.CanLoadModels)];
         if (!filtered.Any())
         {
             Logs.Warning($"Cannot load model as no backends are available.");
@@ -678,7 +739,7 @@ public class BackendHandler
         foreach (T2IBackendData backend in filtered)
         {
             backend.ReserveModelLoad = true;
-            while (backend.CheckIsInUseNoModelReserve)
+            while (backend.CheckIsInUseNoModelReserve && backend.Backend.MaxUsages > 0)
             {
                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                 {
@@ -723,7 +784,7 @@ public class BackendHandler
             tasks.Add((backend, Task.Run(async () =>
             {
                 int backTicks = 0;
-                while (backend.CheckIsInUse)
+                while (backend.CheckIsInUse && backend.Backend.MaxUsages > 0)
                 {
                     if (backTicks++ > 50)
                     {
@@ -830,6 +891,8 @@ public class BackendHandler
 
         public Exception Failure;
 
+        public Task<bool> WaitingOnScalingAttempt = null;
+
         public void ReleasePressure(bool failed)
         {
             if (Pressure is null)
@@ -857,16 +920,27 @@ public class BackendHandler
 
         public void TryFind()
         {
+            if (WaitingOnScalingAttempt is not null && !WaitingOnScalingAttempt.IsCompleted)
+            {
+                return;
+            }
             List<T2IBackendData> currentBackends = [.. Handler.T2IBackends.Values];
-            List<T2IBackendData> possible = [.. currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.Status == BackendStatus.RUNNING)];
+            List<T2IBackendData> possible = [.. currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.MaxUsages > 0 && b.Backend.Status == BackendStatus.RUNNING)];
             Logs.Verbose($"[BackendHandler] Backend request #{ID} searching for backend... have {possible.Count}/{currentBackends.Count} possible");
             if (!possible.Any())
             {
                 if (!currentBackends.Any(b => b.Backend.Status == BackendStatus.LOADING || b.Backend.Status == BackendStatus.WAITING))
                 {
-                    Logs.Verbose($"[BackendHandler] count notEnabled = {currentBackends.Count(b => !b.Backend.IsEnabled)}, shutDownReserve = {currentBackends.Count(b => b.Backend.ShutDownReserve)}, directReserved = {currentBackends.Count(b => b.Backend.Reservations > 0)}, statusNotRunning = {currentBackends.Count(b => b.Backend.Status != BackendStatus.RUNNING)}");
-                    Logs.Warning("[BackendHandler] No backends are available! Cannot generate anything.");
-                    Failure = new SwarmUserErrorException("No backends available!");
+                    if (WaitingOnScalingAttempt is null)
+                    {
+                        WaitingOnScalingAttempt = Handler.TryToScaleANewBackend(false);
+                    }
+                    else
+                    {
+                        Logs.Verbose($"[BackendHandler] count notEnabled = {currentBackends.Count(b => !b.Backend.IsEnabled)}, shutDownReserve = {currentBackends.Count(b => b.Backend.ShutDownReserve)}, directReserved = {currentBackends.Count(b => b.Backend.Reservations > 0)}, statusNotRunning = {currentBackends.Count(b => b.Backend.Status != BackendStatus.RUNNING)}");
+                        Logs.Warning("[BackendHandler] No backends are available! Cannot generate anything.");
+                        Failure = new SwarmUserErrorException("No backends available!");
+                    }
                 }
                 return;
             }
@@ -878,8 +952,15 @@ public class BackendHandler
                 {
                     reason = $" Backends refused for the following reason(s):\n{UserInput.RefusalReasons.Select(r => $"- {r}").JoinString("\n")}";
                 }
-                Logs.Warning($"[BackendHandler] No backends match the request! Cannot generate anything.{reason}");
-                Failure = new SwarmUserErrorException($"No backends match the settings of the request given!{reason}");
+                if (WaitingOnScalingAttempt is null)
+                {
+                    WaitingOnScalingAttempt = Handler.TryToScaleANewBackend(true);
+                }
+                else
+                {
+                    Logs.Warning($"[BackendHandler] No backends match the request! Cannot generate anything.{reason}");
+                    Failure = new SwarmUserErrorException($"No backends match the settings of the request given!{reason}");
+                }
                 return;
             }
             List<T2IBackendData> available = [.. possible.Where(b => !b.CheckIsInUse).OrderBy(b => b.Usages)];
@@ -919,10 +1000,7 @@ public class BackendHandler
                     Pressure.Requests.Add(this);
                 }
             }
-            if (available.Any())
-            {
-                Handler.LoadHighestPressureNow(possible, available, () => ReleasePressure(true), Pressure, Cancel);
-            }
+            Handler.LoadHighestPressureNow(possible, available, () => ReleasePressure(true), Pressure, Cancel);
             if (Pressure is not null && Pressure.IsLoading && NotifyWillLoad is not null)
             {
                 NotifyWillLoad();
@@ -1123,7 +1201,7 @@ public class BackendHandler
     /// <summary>Internal helper route for <see cref="GetNextT2IBackend"/> to trigger a backend model load.</summary>
     public void LoadHighestPressureNow(List<T2IBackendData> possible, List<T2IBackendData> available, Action releasePressure, ModelRequestPressure pressure, CancellationToken cancel)
     {
-        List<T2IBackendData> availableLoaders = [.. available.Where(b => b.Backend.CanLoadModels)];
+        List<T2IBackendData> availableLoaders = [.. available.Where(b => b.Backend.CanLoadModels && b.Backend.MaxUsages > 0)];
         if (availableLoaders.IsEmpty())
         {
             if (pressure?.IsLoading ?? false)
@@ -1133,6 +1211,7 @@ public class BackendHandler
             else
             {
                 Logs.Verbose($"[BackendHandler] No current backends are able to load models.");
+                Utilities.RunCheckedTask(() => TryToScaleANewBackend(false));
             }
             return;
         }
@@ -1226,7 +1305,7 @@ public class BackendHandler
                         {
                             availableBackend.ReserveModelLoad = true;
                             int ticks = 0;
-                            while (availableBackend.CheckIsInUseNoModelReserve)
+                            while (availableBackend.CheckIsInUseNoModelReserve && availableBackend.Backend.MaxUsages > 0)
                             {
                                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                                 {

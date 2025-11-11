@@ -1,5 +1,6 @@
 ﻿using FreneticUtilities.FreneticDataSyntax;
 using SwarmUI.Backends;
+using SwarmUI.Media;
 using SwarmUI.Utils;
 using System.Reflection;
 
@@ -133,7 +134,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Can be enabled to cache certain backend data.\nFor example, with ComfyUI backends this will add an extended cache on the object_info data.\nDefaults to false.")]
         public bool DoBackendDataCache = false;
 
-        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nSome very minor quality changes may result.\nIf you encounter error that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
+        [ConfigComment("If true, Swarm may use GPU-specific optimizations.\nIf false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.\nSome very minor quality changes may result.\nIf you encounter errors that are solved by turning this off, please report that as a bug immediately.\nDefaults to 'true'. Should be left as 'true' in almost all circumstances.")]
         public bool AllowGpuSpecificOptimizations = true;
 
         [ConfigComment("How many models can be loaded in a model list at once.\nPast this count, the list will simply be cut off.\nUse sub-folder organization to prevent issues.")]
@@ -172,6 +173,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("Preference for order of backend selection when loading a new model.\n'Last Used' will load the model on the last backend to load a model. This tends to distribute work between GPUs fairly.\n'First Free' will load the model on the first free backend. This tends to cause frequent model reloading on your first backend, and underuse of others.\nDefaults to Last Used.")]
         [ManualSettingsOptions(ManualNames = ["Last Used", "First Free"], Vals = ["last_used", "first_free"])]
         public string ModelLoadOrderPreference = "last_used";
+
+        [ConfigComment("If true, presume all backends can fast-load.\nFor example, if you have multiple local comfy instances, allow them all to boot up at the same time.")]
+        public bool AllBackendsLoadFast = false;
     }
 
     /// <summary>Settings related to networking and the webserver.</summary>
@@ -229,6 +233,12 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("How many entries in an X-Forwarded-For header to trust.\nDefaults to 3.\nSet to 0 to not trust any forwarded-for.")]
         public int MaxXForwardedFor = 3;
+
+        [ConfigComment("Maximum megabytes that can be sent as a single message from a client to the Swarm server.\nSet this lower to limit above, set this higher to allow very large file uploads.\nServer needs a restart for this to fully apply.")]
+        public int MaxNetworkRequestMegabytes = 200;
+
+        /// <summary>Converts <see cref="MaxNetworkRequestMegabytes"/> to bytes as a long.</summary>
+        public long MaxReceiveBytes => MaxNetworkRequestMegabytes * (1024L * 1024);
     }
 
     /// <summary>Settings related to file paths.</summary>
@@ -241,6 +251,8 @@ public class Settings : AutoConfiguration
         public int DownloadToRootID = 0;
 
         public string ActualModelRoot => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ModelRoot.Split(';')[0]);
+
+        public IEnumerable<string> ActualModelRoots => ModelRoot.Split(';').Select(r => Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, r));
 
         [ConfigComment("The model folder to use within 'ModelRoot'.\nDefaults to 'Stable-Diffusion'.\n'checkpoints' should be used for matching pre-existing ComfyUI model directories.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
         public string SDModelFolder = "Stable-Diffusion";
@@ -308,6 +320,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, image metadata will include a list of models with their hashes.\nThis is useful for services like civitai to automatically link models.\nThis will cause extra time to be taken when new hashes need to be loaded.")]
         public bool ImageMetadataIncludeModelHash = true;
+
+        [ConfigComment("How many kilobytes of blank spacer to include in model headers.\nThis allows for future expansion of metadata without rewriting the entire model file.\nDefaults to 64 KiB.\nThe average header length of a standard model is already between several hundred kilobytes to a few megabytes,\nso 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.")]
+        public int ModelMetadataSpacerKilobytes = 64;
     }
 
     /// <summary>Settings per-user.</summary>
@@ -332,7 +347,7 @@ public class Settings : AutoConfiguration
         public class FileFormatData : AutoConfiguration
         {
             [ConfigComment("What format to save images in.\nDefault is '.png', but '.jpg' is recommended to save some filespace.")]
-            [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<Image.ImageFormat>))]
+            [SettingsOptions(Impl = typeof(SettingsOptionsAttribute.ForEnum<ImageFile.ImageFormat>))]
             public string ImageFormat = "PNG";
 
             [ConfigComment("Quality for JPEG and WEBP formats (1-100). Other formats are ignored.\nDefault is 100, recommended 70-90.")]
@@ -371,6 +386,20 @@ public class Settings : AutoConfiguration
 
             [ConfigComment("If enabled, trigger phrases are copied with a trailing comma added.\nIf disabled, trigger phrases are copied as-is without any trailing comma.\nThis is useful when copying them to prompts.")]
             public bool CopyTriggerPhraseWithTrailingComma = false;
+
+            [ConfigComment("If true, when you interrupt generation, any incomplete generations will be removed from the batch view.\nIf false, they will linger in the batch view with an X mark indicated they were started but not finished.\nIn both cases, they will not save to file.")]
+            public bool RemoveInterruptedGens = false;
+
+            [ConfigComment("Pipe-separated list of partial error message bodies.\nIf an error message contains any of these, it will not show in the main error popup box.\nThis is to hide intentionally-induced errors, or errors that pop up frequently but you don't want to be annoyed about.\nFor example, set this to 'Generation session interrupted.|Some Other Error.' if you frequently externally interrupt your own gens.")]
+            public string HideErrorMessages = "";
+
+            [ConfigComment("What to do when you delete an image that you are looking at in the UI:\n- Nothing: image view is closed / reset to empty\n- Next: move to the next image (right/down)\n- Previous: move to the previous image (left/up)")]
+            [ManualSettingsOptions(Vals = ["nothing", "next", "previous"], ManualNames = ["Nothing", "Next (Right/Down)", "Previous (Left/Up)"])]
+            public string DeleteImageBehavior = "next";
+
+            [ConfigComment("If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf disabled, shifting will simply stop at the ends.\nIf 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).")]
+            [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
+            public string ImageShiftingCycles = "true";
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]

@@ -60,6 +60,10 @@ public class SessionHandler
     /// <summary>Saves persistent data to file.</summary>
     public void Save()
     {
+        if (Program.NoPersist)
+        {
+            return;
+        }
         lock (DBLock)
         {
             FDSSection roleSection = new();
@@ -259,6 +263,10 @@ public class SessionHandler
 
     public void CleanOldSessions()
     {
+        if (Program.NoPersist)
+        {
+            return;
+        }
         long cutOffTimeUTC = DateTimeOffset.UtcNow.Subtract(MaxSessionAge).ToUnixTimeSeconds();
         lock (DBLock)
         {
@@ -296,9 +304,12 @@ public class SessionHandler
             if (Sessions.TryAdd(sess.ID, sess))
             {
                 sess.User.CurrentSessions[sess.ID] = sess;
-                lock (DBLock)
+                if (!Program.NoPersist)
                 {
-                    SessionDatabase.Upsert(sess.MakeDBEntry());
+                    lock (DBLock)
+                    {
+                        SessionDatabase.Upsert(sess.MakeDBEntry());
+                    }
                 }
                 return sess;
             }
@@ -316,9 +327,12 @@ public class SessionHandler
         catch (Exception) { }
         Sessions.TryRemove(session.ID, out _);
         session.User.CurrentSessions.TryRemove(session.ID, out _);
-        lock (DBLock)
+        if (!Program.NoPersist)
         {
-            SessionDatabase.Delete(session.ID);
+            lock (DBLock)
+            {
+                SessionDatabase.Delete(session.ID);
+            }
         }
     }
 
@@ -375,7 +389,10 @@ public class SessionHandler
                 {
                     if (LoginSessions.FindById(existing.OriginToken) is null)
                     {
-                        SessionDatabase.Delete(id);
+                        if (!Program.NoPersist)
+                        {
+                            SessionDatabase.Delete(id);
+                        }
                         return false;
                     }
                 }
@@ -389,7 +406,10 @@ public class SessionHandler
                 if (Sessions.TryAdd(session.ID, session))
                 {
                     session.User.CurrentSessions[session.ID] = session;
-                    SessionDatabase.Upsert(session.MakeDBEntry());
+                    if (!Program.NoPersist)
+                    {
+                        SessionDatabase.Upsert(session.MakeDBEntry());
+                    }
                     return true;
                 }
             }

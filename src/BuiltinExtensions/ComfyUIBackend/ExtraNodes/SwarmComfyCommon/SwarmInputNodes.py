@@ -1,7 +1,14 @@
 from . import SwarmLoadImageB64
 import folder_paths
 from nodes import CheckpointLoaderSimple, LoadImage
-import os
+from comfy_extras.nodes_video import LoadVideo
+from comfy_api.input_impl import VideoFromFile
+import os, base64, io
+try:
+    from comfy_extras.nodes_audio import LoadAudio
+    from comfy_extras.nodes_audio import load as raw_audio_load
+except:
+    print("Error: Nodes_Audio failed to import, Swarm will not be able to load audio files.")
 
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
@@ -72,11 +79,11 @@ class SwarmInputFloat:
         return {
             "required": {
                 "title": ("STRING", {"default": "My Floating-Point Number", "tooltip": "The name of the input."}),
-                "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The default value of the input."}),
+                "value": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The default value of the input."}),
                 "step": ("FLOAT", {"default": 0.1, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The step size of the input. That is, how much the value changes when you click the up/down arrows or move the slider."}),
-                "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The minimum value of the input."}),
-                "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input."}),
-                "view_max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.1, "round": 0.0000001, "tooltip": "The maximum value of the input that is displayed in the UI when using a slider. This is useful if you want to allow a higher range of values, but don't want to clutter the UI with a huge slider."}),
+                "min": ("FLOAT", {"default": 0, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The minimum value of the input."}),
+                "max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The maximum value of the input."}),
+                "view_max": ("FLOAT", {"default": 100, "min": INT_MIN, "max": INT_MAX, "step": 0.01, "round": 0.0000001, "tooltip": "The maximum value of the input that is displayed in the UI when using a slider. This is useful if you want to allow a higher range of values, but don't want to clutter the UI with a huge slider."}),
                 "view_type": (["big", "small", "slider", "pot_slider"], {"tooltip": "The type of input control to use. 'big' is a large text input, 'small' is a small text input, 'slider' is a slider, and 'pot_slider' is a Power-Of-Two scaled slider - this is useful for large inputs like resolutions to allow a more natural feeling selection range."}),
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
@@ -97,7 +104,7 @@ class SwarmInputText:
             "required": {
                 "title": ("STRING", {"default": "My Text", "tooltip": "The name of the input."}),
                 "value": ("STRING", {"default": "", "multiline": True, "tooltip": "The default value of the input."}),
-                "view_type": (["normal", "prompt"], {"tooltip": "How to format this text input. 'normal' is a simple single line text input, 'prompt' is a prompt-like text input that has multiple lines and other prompting-specific features."}),
+                "view_type": (["normal", "prompt", "big"], {"tooltip": "How to format this text input. 'normal' is a simple single line text input, 'prompt' is a prompt-like text input that has multiple lines and other prompting-specific features, 'big' is an extra large multiline text box."}),
             } | STANDARD_REQ_INPUTS,
         } | STANDARD_OTHER_INPUTS
 
@@ -216,6 +223,67 @@ class SwarmInputImage:
             return SwarmLoadImageB64.b64_to_img_and_mask(value)
 
 
+class SwarmInputAudio:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["audio"])
+        return {
+            "required": {
+                "title": ("STRING", {"default": "My Audio", "tooltip": "The name of the input."}),
+                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+            } | STANDARD_REQ_INPUTS | {
+                # TODO: This explodes the comfy frontend for some reason
+                #"audio": (sorted(files), {"audio_upload": True}),
+            },
+        } | STANDARD_OTHER_INPUTS
+
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ("AUDIO",)
+    FUNCTION = "do_input"
+    DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Audio lets you input an audio file. Internally this node uses a Base64 string as input when value is set by SwarmUI server (Generate tab), otherwise use select Audio (Comfy Workflow tab)."
+
+    def do_input(self, value=None, audio=None, **kwargs):
+        if not value or value == "(Do Not Set Me)":
+            return LoadAudio().load_audio(audio)
+        else:
+            audio_data = base64.b64decode(value)
+            audio_bytes = io.BytesIO(audio_data)
+            waveform, sample_rate = raw_audio_load(audio_bytes)
+            audio = {"waveform": waveform.unsqueeze(0), "sample_rate": sample_rate}
+            return (audio, )
+
+
+class SwarmInputVideo:
+    @classmethod
+    def INPUT_TYPES(s):
+        input_dir = folder_paths.get_input_directory()
+        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        files = folder_paths.filter_files_content_types(files, ["video"])
+        return {
+            "required": {
+                "title": ("STRING", {"default": "My Video", "tooltip": "The name of the input."}),
+                "value": ("STRING", {"default": "(Do Not Set Me)", "multiline": True, "tooltip": "Always leave this blank, the SwarmUI server will fill it for you."}),
+            } | STANDARD_REQ_INPUTS | {
+                "video": (sorted(files), {"video_upload": True}),
+            },
+        } | STANDARD_OTHER_INPUTS
+
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ("VIDEO",)
+    FUNCTION = "do_input"
+    DESCRIPTION = "SwarmInput nodes let you define custom input controls in Swarm-Comfy Workflows. Video lets you input a video file. Internally this node uses a Base64 string as input when value is set by SwarmUI server (Generate tab), otherwise use select Video (Comfy Workflow tab)."
+
+    def do_input(self, value=None, video=None, **kwargs):
+        if not value or value == "(Do Not Set Me)":
+            return LoadVideo.execute(video)
+        else:
+            video_data = base64.b64decode(value)
+            video_bytes = io.BytesIO(video_data)
+            return (VideoFromFile(video_bytes), )
+
+
 NODE_CLASS_MAPPINGS = {
     "SwarmInputGroup": SwarmInputGroup,
     "SwarmInputInteger": SwarmInputInteger,
@@ -226,4 +294,6 @@ NODE_CLASS_MAPPINGS = {
     "SwarmInputDropdown": SwarmInputDropdown,
     "SwarmInputBoolean": SwarmInputBoolean,
     "SwarmInputImage": SwarmInputImage,
+    "SwarmInputAudio": SwarmInputAudio,
+    "SwarmInputVideo": SwarmInputVideo,
 }

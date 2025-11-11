@@ -3,6 +3,7 @@ using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using SwarmUI.WebAPI;
@@ -78,8 +79,27 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Map of models on the remote server.</summary>
     public ConcurrentDictionary<string, Dictionary<string, JObject>> RemoteModels = null;
 
+    /// <summary>Data about the remote backend supplied by extensions.</summary>
+    public ConcurrentDictionary<string, object> ExtensionData = new();
+
     /// <summary>Gets the current target address.</summary>
     public string Address => Settings.Address.TrimEnd('/'); // Remove trailing slash to avoid issues.
+
+    /// <summary>If true, an external handler controls this as a specialty non-real backend. This is a real master instance, but not on the backends list.
+    /// For example, <see cref="AutoScalingBackend"/> uses this.</summary>
+    public bool IsSpecialControlled = false;
+
+    /// <summary>If true, this instance is the master referencing a single swarm instance, controlling several child backends for the remote backends.</summary>
+    public bool IsAControlInstance => IsReal || IsSpecialControlled;
+
+    /// <summary>How many times to re-try the first load if it fails.</summary>
+    public int FirstLoadRetries = 0;
+
+    /// <summary>How many seconds to wait between each re-try.</summary>
+    public int FirstLoadRetryWaitSeconds = 5;
+
+    /// <summary>Event fired when a backend is revising its remote data.</summary>
+    public static Action<SwarmSwarmBackend> ReviseRemotesEvent;
 
     /// <summary>Gets a request adapter appropriate to this Swarm backend, including eg auth headers.</summary>
     public Action<HttpRequestMessage> RequestAdapter()
@@ -110,7 +130,12 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     {
         using CancellationTokenSource timeout = Utilities.TimedCancel(TimeSpan.FromSeconds(Settings.ConnectionAttemptTimeoutSeconds));
         JObject sessData = await HttpClient.PostJson($"{Address}/API/GetNewSession", [], RequestAdapter(), timeout.Token);
-        Session = sessData["session_id"].ToString();
+        if (!sessData.TryGetValue("session_id", out JToken sessTok))
+        {
+            Logs.Debug($"{HandlerTypeData.Name} {BackendData.ID} failed to get session ID from remote swarm at {Address}: yielded raw json {sessData.ToDenseDebugString(true)}");
+            throw new Exception("Failed to get session ID from remote swarm. Check debug logs for details.");
+        }
+        Session = sessTok.ToString();
         string id = sessData["server_id"]?.ToString();
         Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Connected to remote Swarm instance {Address} with server ID '{id}'.");
         if (id == Utilities.LoopPreventionID.ToString())
@@ -136,7 +161,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
 
     public Task TriggerRefresh()
     {
-        if (!IsReal)
+        if (!IsAControlInstance)
         {
             return Task.CompletedTask;
         }
@@ -166,7 +191,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             {
                 Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Got backend data list");
             }
-            if (IsReal && fullLoad)
+            if (IsAControlInstance && fullLoad)
             {
                 List<Task> tasks = [];
                 RemoteModels ??= [];
@@ -203,8 +228,8 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             }
             HashSet<string> features = [], types = [];
             bool isLoading = false;
-            HashSet<int> ids = IsReal ? new(ControlledNonrealBackends.Keys) : null;
-            if (!IsReal)
+            HashSet<int> ids = IsAControlInstance ? new(ControlledNonrealBackends.Keys) : null;
+            if (!IsAControlInstance)
             {
                 if (backendData.TryGetValue($"{LinkedRemoteBackendID}", out JToken data))
                 {
@@ -228,18 +253,20 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     string type = backend["type"].ToString();
                     string title = backend["title"].ToString();
                     types.Add(type);
-                    if (IsReal && !ids.Remove(id) && (Settings.AllowForwarding || type != "swarmswarmbackend"))
+                    if (IsAControlInstance && !ids.Remove(id) && (Settings.AllowForwarding || type != "swarmswarmbackend"))
                     {
                         Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {id} ({type}) '{title}'");
-                        BackendHandler.T2IBackendData newData = Handler.AddNewNonrealBackend(HandlerTypeData, BackendData, SettingsRaw);
-                        SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
-                        newSwarm.LinkedRemoteBackendID = id;
-                        newSwarm.Models = Models;
-                        newSwarm.LinkedRemoteBackendType = type;
-                        newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] {title}";
-                        newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
-                        OnSwarmBackendAdded?.Invoke(newSwarm);
-                        ControlledNonrealBackends.TryAdd(id, newData);
+                        Handler.AddNewNonrealBackend(HandlerTypeData, BackendData, SettingsRaw, (newData) =>
+                        {
+                            SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
+                            newSwarm.LinkedRemoteBackendID = id;
+                            newSwarm.Models = Models;
+                            newSwarm.LinkedRemoteBackendType = type;
+                            newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] {title}";
+                            newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
+                            OnSwarmBackendAdded?.Invoke(newSwarm);
+                            ControlledNonrealBackends.TryAdd(id, newData);
+                        });
                     }
                     if (ControlledNonrealBackends.TryGetValue(id, out BackendHandler.T2IBackendData data))
                     {
@@ -252,7 +279,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     isLoading = true;
                 }
             }
-            if (IsReal)
+            if (IsAControlInstance)
             {
                 foreach (int id in ids)
                 {
@@ -273,6 +300,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             }
             AnyLoading = isLoading;
             RemoteBackendTypes = types;
+            ReviseRemotesEvent?.Invoke(this);
         });
     }
 
@@ -297,8 +325,8 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task Init()
     {
-        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Init, IsReal={IsReal}, Address={Settings.Address}");
-        if (IsReal)
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} Init, IsReal={IsReal}, IsControl={IsAControlInstance}, Address={Settings.Address}");
+        if (IsAControlInstance)
         {
             CanLoadModels = false;
             Models = [];
@@ -308,7 +336,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
             Status = BackendStatus.DISABLED;
             return;
         }
-        if (!IsReal)
+        if (!IsAControlInstance)
         {
             Status = BackendStatus.LOADING;
             try
@@ -352,53 +380,64 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 Idler.Start();
             }
         }
-        try
+        int attempts = 0;
+        while (true)
         {
-            Status = BackendStatus.LOADING;
-            await ValidateAndBuild();
-            _ = Task.Run(async () =>
+            try
             {
-                try
+                Status = BackendStatus.LOADING;
+                await ValidateAndBuild();
+                _ = Task.Run(async () =>
                 {
-                    while (AnyLoading)
+                    try
                     {
-                        Logs.Debug($"{HandlerTypeData.Name} {BackendData.ID} waiting for remote backends to load, have featureset {RemoteFeatureCombo.Keys.JoinString(", ")}");
-                        if (Program.GlobalProgramCancel.IsCancellationRequested
-                            || Status != BackendStatus.LOADING)
+                        while (AnyLoading)
                         {
+                            Logs.Debug($"{HandlerTypeData.Name} {BackendData.ID} waiting for remote backends to load, have featureset {RemoteFeatureCombo.Keys.JoinString(", ")}");
+                            if (Program.GlobalProgramCancel.IsCancellationRequested
+                                || Status != BackendStatus.LOADING)
+                            {
+                                return;
+                            }
+                            await Task.Delay(TimeSpan.FromSeconds(1));
+                            await ReviseRemoteDataList(true);
+                        }
+                        Status = BackendStatus.RUNNING;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!Settings.AllowIdle || NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
+                        {
+                            Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex.ReadableString()}");
+                            Status = BackendStatus.ERRORED;
                             return;
                         }
-                        await Task.Delay(TimeSpan.FromSeconds(1));
-                        await ReviseRemoteDataList(true);
                     }
-                    Status = BackendStatus.RUNNING;
-                }
-                catch (Exception ex)
+                    await PostEnable();
+                });
+                break;
+            }
+            catch (Exception)
+            {
+                if (attempts++ < FirstLoadRetries)
                 {
-                    if (!Settings.AllowIdle || NetworkBackendUtils.IdleMonitor.ExceptionIsNonIdleable(ex))
-                    {
-                        Logs.Error($"{HandlerTypeData.Name} {BackendData.ID} failed to load: {ex.ReadableString()}");
-                        Status = BackendStatus.ERRORED;
-                        return;
-                    }
+                    await Task.Delay(TimeSpan.FromSeconds(FirstLoadRetryWaitSeconds));
+                    continue;
+                }
+                if (!Settings.AllowIdle)
+                {
+                    throw;
                 }
                 await PostEnable();
-            });
-        }
-        catch (Exception)
-        {
-            if (!Settings.AllowIdle)
-            {
-                throw;
+                break;
             }
-            await PostEnable();
         }
     }
 
     /// <inheritdoc/>
     public override async Task Shutdown()
     {
-        if (IsReal)
+        if (IsAControlInstance)
         {
             Logs.Info($"{HandlerTypeData.Name} {BackendData.ID} shutting down...");
             Idler.Stop();
@@ -414,7 +453,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <inheritdoc/>
     public override async Task<bool> LoadModel(T2IModel model, T2IParamInput input)
     {
-        if (IsReal)
+        if (IsAControlInstance)
         {
             return false;
         }
@@ -443,6 +482,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Tell the remote SwarmUI instance to shut down fully.</summary>
     public async Task TriggerRemoteShutdown()
     {
+        Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} triggering remote swarm shutdown at {Address}");
         await SendAPIJSON("ShutdownServer", []);
     }
 
@@ -472,7 +512,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         req[T2IParamTypes.DoNotSave.Type.ID] = true;
         req.Remove(T2IParamTypes.ExactBackendID.Type.ID);
         req.Remove(T2IParamTypes.BackendType.Type.ID);
-        if (!IsReal)
+        if (!IsAControlInstance)
         {
             req[T2IParamTypes.ExactBackendID.Type.ID] = LinkedRemoteBackendID;
         }
@@ -484,7 +524,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     {
         user_input.ProcessPromptEmbeds(x => $"<embedding:{x}>");
         JObject generated = SendAPIJSON("GenerateText2Image", BuildRequest(user_input)).Result;
-        Image[] images = [.. generated["images"].Select(img => Image.FromDataString(img.ToString()))];
+        Image[] images = [.. generated["images"].Select(img => ImageFile.FromDataString(img.ToString()) as Image)];
         return images;
     }
 
@@ -494,9 +534,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         if (!Settings.AllowWebsocket)
         {
             Image[] results = await Generate(user_input);
-            foreach (Image img in results)
+            foreach (MediaFile file in results)
             {
-                takeOutput(img);
+                takeOutput(file);
             }
             return;
         }
@@ -531,7 +571,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     // TODO: This will require separate remote sessions per-user for multiuser support
                     await HttpClient.PostJson($"{Address}/API/InterruptAll", new() { ["session_id"] = Session, ["other_sessions"] = false }, RequestAdapter());
                 }
-                JObject response = await websocket.ReceiveJson(1024 * 1024 * 100, true);
+                JObject response = await websocket.ReceiveJson(Utilities.ExtraLargeMaxReceive, true);
                 if (response is not null)
                 {
                     AutoThrowException(response);
@@ -557,7 +597,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     else if (response.TryGetValue("image", out val))
                     {
                         Logs.Verbose($"[{HandlerTypeData.Name}] Got image from websocket");
-                        takeOutput(Image.FromDataString(val.ToString()));
+                        takeOutput(ImageFile.FromDataString(val.ToString()));
                     }
                     else
                     {
@@ -573,10 +613,33 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         });
     }
 
+    /// <summary>Implementations for <see cref="IsValidForThisBackend(T2IParamInput)"/> mapped by backend type id.</summary>
+    public static ConcurrentDictionary<string, Func<SwarmSwarmBackend, T2IParamInput, bool>> ValidityChecks = [];
+
+    /// <inheritdoc/>
+    public override bool IsValidForThisBackend(T2IParamInput input)
+    {
+        if (IsAControlInstance)
+        {
+            input.RefusalReasons.Add("Control instances cannot generate.");
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(LinkedRemoteBackendType))
+        {
+            input.RefusalReasons.Add("No loaded remote backend.");
+            return false;
+        }
+        if (ValidityChecks.TryGetValue(LinkedRemoteBackendType, out Func<SwarmSwarmBackend, T2IParamInput, bool> func))
+        {
+            return func(this, input);
+        }
+        return true;
+    }
+
     /// <inheritdoc/>
     public override async Task<bool> FreeMemory(bool systemRam)
     {
-        if (IsReal)
+        if (IsAControlInstance)
         {
             return false;
         }

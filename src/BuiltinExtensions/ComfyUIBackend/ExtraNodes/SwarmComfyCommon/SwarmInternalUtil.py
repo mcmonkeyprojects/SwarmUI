@@ -1,4 +1,5 @@
 import comfy, folder_paths, execution
+from server import PromptServer
 from comfy import samplers
 import functools
 
@@ -92,6 +93,19 @@ try:
             interceptor.reconfigure(encoding='utf-8')
     patch_interceptor(logger.stdout_interceptor)
     patch_interceptor(logger.stderr_interceptor)
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+
+# comfy's server/PromptServer is janky with EventID=4, so overwrite send_bytes to interpret EventID=9999123 as 4
+try:
+    server = PromptServer.instance
+    orig = server.send_bytes
+    async def send_bytes(self, event, data, sid=None):
+        if event == 9999123:
+            event = 4
+        await orig(event, data, sid=sid)
+    server.send_bytes = functools.partial(send_bytes, server)
 except Exception as e:
     import traceback
     traceback.print_exc()

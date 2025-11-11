@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
+using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
 using SwarmUI.Utils;
@@ -43,7 +44,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ConfigComment("Which GPU to use, if multiple are available.\nShould be a single number, like '0'.\nYou can use syntax like '0,1' to provide multiple GPUs to one backend (only applicable if you have custom nodes that can take advantage of this.)")]
         public string GPU_ID = "0";
 
-        [ConfigComment("How many extra requests may queue up on this backend while one is processing.")]
+        [ConfigComment("How many extra requests may queue up on this backend while one is processing.\n0 means one a single live gen, 1 means a live gen and an extra waiting.\n-1 means this is a UI-only instance that cannot do actual gens.")]
         public int OverQueue = 1;
 
         [ConfigComment("If checked, if the backend crashes it will automatically restart.\nIf false, if the backend crashes it will sit in an errored state until manually restarted.")]
@@ -283,7 +284,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.26.13";
+    public static string SwarmValidatedFrontendVersion = "1.28.8";
 
     public override async Task Init()
     {
@@ -334,6 +335,19 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         {
             AddLoadStatus($"Start script '{Settings.StartScript}' looks wrong");
             Logs.Warning($"ComfyUI start script is '{Settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
+        }
+        lock (ComfyModelFileHelperLock)
+        {
+            string inputFolder = $"{Directory.GetParent(Settings.StartScript).FullName}/input";
+            if (Directory.Exists(inputFolder) && !UserImageHistoryHelper.SharedSpecialFolders.Values.Contains(inputFolder))
+            {
+                UserImageHistoryHelper.SharedSpecialFolders[$"inputs/_comfy{BackendData.ID}/"] = inputFolder;
+            }
+            string outputFolder = $"{Directory.GetParent(Settings.StartScript).FullName}/output";
+            if (Directory.Exists(outputFolder) && !UserImageHistoryHelper.SharedSpecialFolders.Values.Contains(outputFolder))
+            {
+                UserImageHistoryHelper.SharedSpecialFolders[$"_comfy{BackendData.ID}/"] = outputFolder;
+            }
         }
         Directory.CreateDirectory(Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes"));
         string autoUpdNodes = Settings.UpdateManagedNodes.ToLowerFast();
@@ -461,15 +475,15 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await install(libFolder, pipName);
             }
             string numpyVers = getVers("numpy");
-            if (numpyVers is null || Version.Parse(numpyVers) < Version.Parse("1.25"))
+            if (numpyVers is null || ParseVersion(numpyVers) < Version.Parse("1.25"))
             {
                 await update("numpy", "numpy==1.26.4");
             }
             foreach ((string libFolder, string pipName, string rel, string version) in RequiredVersionPythonPackages)
             {
                 string curVersRaw = getVers(libFolder);
-                Version curVers = curVersRaw is null ? null : Version.Parse(curVersRaw);
-                Version actualVers = Version.Parse(version);
+                Version curVers = curVersRaw is null ? null : ParseVersion(curVersRaw);
+                Version actualVers = ParseVersion(version);
                 bool doUpdate = curVers is null;
                 if (!doUpdate)
                 {
@@ -593,13 +607,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.9]).");
                     isValid = false;
                 }
-                string nunchakuTargetVersion = "1.0.0";
+                string nunchakuTargetVersion = "1.0.2";
                 // eg https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.2/nunchaku-0.3.2+torch2.5-cp310-cp310-linux_x86_64.whl
                 string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuTargetVersion}/nunchaku-{nunchakuTargetVersion}+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)
                 {
                     string nunchakuVers = getVers("nunchaku");
-                    if (nunchakuVers is not null && (Version.Parse(nunchakuVers.Before(".dev")) < Version.Parse(nunchakuTargetVersion.Before(".dev")) || nunchakuVers.Contains(".dev")))
+                    if (nunchakuVers is not null && (ParseVersion(nunchakuVers) < ParseVersion(nunchakuTargetVersion) || nunchakuVers.Contains(".dev")))
                     {
                         await update("nunchaku", url);
                     }
@@ -622,6 +636,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             }
             AddLoadStatus("Done validating required libs.");
         }
+    }
+
+    /// <summary>Wraps <see cref="Version.Parse(string)"/> but accounting for '.dev' versions.</summary>
+    public static Version ParseVersion(string vers)
+    {
+        return Version.Parse(vers.Before(".dev"));
     }
 
     /// <summary>Strict matcher that will block any muckery, excluding URLs and etc.</summary>
