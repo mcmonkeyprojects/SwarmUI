@@ -248,7 +248,7 @@ public static class BasicAPIFeatures
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
             ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode)),
-            ["itemPresetLinks"] = itemPresetLinks
+            ["item_preset_links"] = itemPresetLinks
         };
     }
 

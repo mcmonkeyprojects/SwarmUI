@@ -10,7 +10,7 @@ class PresetHelpers {
     }
 }
 
-/** Manages preset links for models and LoRAs. User-scoped storage in User.UserUIData.ItemPresetLinks */
+/** Manages preset links for models and LoRAs. */
 class ItemPresetLinkManager {
     constructor() {
         this.links = {}; // { 'model:name': 'preset_title', 'lora:name': 'preset_title', ... }
@@ -600,8 +600,8 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
             // Load user's item preset links from server into the manager
-            if (data.itemPresetLinks && itemPresetLinkManager) {
-                itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
+            if (data.item_preset_links && itemPresetLinkManager) {
+                itemPresetLinkManager.loadFromServer(data.item_preset_links);
             }
             proc();
         });

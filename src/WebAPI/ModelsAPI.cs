@@ -498,52 +498,52 @@ public static class ModelsAPI
         {
             return new JObject() { ["error"] = "Model not found." };
         }
-        lock (handler.ModificationLock)
-        {
-            actualModel.Title = string.IsNullOrWhiteSpace(title) ? null : title;
-            actualModel.Description = description;
-            if (!string.IsNullOrWhiteSpace(type))
-            {
-                actualModel.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(type);
-            }
-            if (standard_width > 0)
-            {
-                actualModel.StandardWidth = standard_width;
-            }
-            if (standard_height > 0)
-            {
-                actualModel.StandardHeight = standard_height;
-            }
-            actualModel.Metadata ??= new();
-            if (!string.IsNullOrWhiteSpace(preview_image))
-            {
-                if (preview_image == "clear")
-                {
-                    actualModel.PreviewImage = "imgs/model_placeholder.jpg";
-                    actualModel.Metadata.PreviewImage = null;
-                }
-                else
-                {
-                    ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-                    if (img is not null)
-                    {
-                        actualModel.PreviewImage = img.AsDataString();
-                        actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
-                    }
-                }
-            }
-            actualModel.Metadata.Author = author;
-            actualModel.Metadata.UsageHint = usage_hint;
-            actualModel.Metadata.Date = date;
-            actualModel.Metadata.License = license;
-            actualModel.Metadata.TriggerPhrase = trigger_phrase;
-            actualModel.Metadata.Tags = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            actualModel.Metadata.IsNegativeEmbedding = is_negative_embedding;
-            actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
-            actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
-            actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
-            handler.ResetMetadataFrom(actualModel);
-        }
+		lock (handler.ModificationLock)
+		{
+			actualModel.Title = string.IsNullOrWhiteSpace(title) ? null : title;
+			actualModel.Description = description;
+			if (!string.IsNullOrWhiteSpace(type))
+			{
+				actualModel.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(type);
+			}
+			if (standard_width > 0)
+			{
+				actualModel.StandardWidth = standard_width;
+			}
+			if (standard_height > 0)
+			{
+				actualModel.StandardHeight = standard_height;
+			}
+			actualModel.Metadata ??= new();
+			if (!string.IsNullOrWhiteSpace(preview_image))
+			{
+				if (preview_image == "clear")
+				{
+					actualModel.PreviewImage = "imgs/model_placeholder.jpg";
+					actualModel.Metadata.PreviewImage = null;
+				}
+				else
+				{
+					ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+					if (img is not null)
+					{
+						actualModel.PreviewImage = img.AsDataString();
+						actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+					}
+				}
+			}
+			actualModel.Metadata.Author = author;
+			actualModel.Metadata.UsageHint = usage_hint;
+			actualModel.Metadata.Date = date;
+			actualModel.Metadata.License = license;
+			actualModel.Metadata.TriggerPhrase = trigger_phrase;
+			actualModel.Metadata.Tags = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+			actualModel.Metadata.IsNegativeEmbedding = is_negative_embedding;
+			actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
+			actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
+			actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
+		}
+		handler.ResetMetadataFrom(actualModel);
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
@@ -919,8 +919,7 @@ public static class ModelsAPI
         }
         catch (Exception ex)
         {
-            Logs.Error($"Error saving preset link: {ex.Message}");
-            return new JObject() { ["success"] = false, ["error"] = ex.Message };
+            Logs.Error($"Error saving preset link: {ex.ReadableString()}");
         }
     }
 

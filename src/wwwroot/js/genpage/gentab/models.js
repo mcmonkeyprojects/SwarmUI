@@ -276,8 +276,7 @@ function save_edit_model() {
         let presetSelect = document.getElementById('edit_model_override_preset_id');
         let presetTitle = presetSelect?.value || '';
         // Determine item type based on browser subType (LoRA, Embedding, etc) or model architecture
-        let itemType = curModelMenuBrowser.subType === 'LoRA' ? 'lora' : 'model';
-        saveItemPresetLink(itemType, model.name, presetTitle);
+        saveItemPresetLink(curModelMenuBrowser.subType, model.name, presetTitle);
         $('#edit_model_modal').modal('hide');
     }
     if (modelsHelpers.enableImageElem.checked) {
@@ -655,15 +654,12 @@ class ModelBrowserWrapper {
                 searchableAdded += `, Default LoRA Weight: ${model.data.lora_default_weight}, Default LoRA Confinement: ${confinementName}`;
             }
             // Add linked preset info if available
-            let presetItemType = this.subType === 'Stable-Diffusion' ? 'model' : (this.subType === 'LoRA' ? 'lora' : null);
             let presetLine = '';
-            if (presetItemType) {
-                let linkedPreset = getItemPresetLink(presetItemType, model.data.name);
-                if (linkedPreset) {
-                    presetLine = `<span class="model_preset">${getLine("Preset", linkedPreset)}</span>`;
-                    searchableAdded += `, Preset: ${linkedPreset}`;
-                }
-            }
+			let linkedPreset = getItemPresetLink(this.subType, model.data.name);
+			if (linkedPreset) {
+				presetLine = `<span class="model_preset">${getLine("Preset", linkedPreset)}</span>`;
+				searchableAdded += `, Preset: ${linkedPreset}`;
+			}
             description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${presetLine}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
             let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
             detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
@@ -920,11 +916,10 @@ function directSetModel(model) {
     reviseBackendFeatureSet();
     
     // Look up preset link using the full model name (getItemPresetLink handles extraction)
-    let presetTitle = getItemPresetLink('model', model.name || modelName);
+    let presetTitle = getItemPresetLink(model.subType, model.name || modelName);
     try {
         let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
         if (presetTitle) {
-            // Enforce mutual exclusivity - remove other models' presets
             currentPresets = removeOtherModelPresets(model.name || modelName);
             let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
             if (presetData) {
@@ -932,7 +927,8 @@ function directSetModel(model) {
                     applyOnePreset(presetData, false); // false = not nested, allow LoRA preset triggering
                     // After auto-applying, remove the preset from currentPresets so user can edit those params
                     currentPresets = currentPresets.filter(p => p.title != presetData.title);
-                } else {
+                }
+				else {
                     // Select the preset if it's not already selected
                     if (!currentPresets.some(p => p.title == presetData.title)) {
                         // Add it directly instead of using selectPreset (which toggles)
@@ -942,8 +938,8 @@ function directSetModel(model) {
                     if (presetData.param_map.loras && presetData.param_map.loraweights) {
                         // Ensure item preset links are loaded before trying to find LoRA preset links
                         genericRequest('GetMyUserData', {}, data => {
-                            if (data.itemPresetLinks && itemPresetLinkManager) {
-                                itemPresetLinkManager.loadFromServer(data.itemPresetLinks);
+                            if (data.item_preset_links && itemPresetLinkManager) {
+                                itemPresetLinkManager.loadFromServer(data.item_preset_links);
                             }
                             selectOrApplyLoraPresetsFromList(presetData.param_map.loras, presetData.param_map.loraweights);
                         });
@@ -1102,7 +1098,7 @@ function removeOtherModelPresets(currentModelName) {
     }
     let otherModelPresets = new Set();
     for (let otherModelName in sdModelBrowser.models) {
-        let otherPresetTitle = getItemPresetLink('model', otherModelName);
+        let otherPresetTitle = getItemPresetLink('Stable-Diffusion', otherModelName);
         // Skip presets from the current model and models without presets
         if (otherPresetTitle && extractItemKeyNameFromPath(otherModelName) !== extractItemKeyNameFromPath(currentModelName)) {
             otherModelPresets.add(otherPresetTitle);
@@ -1144,8 +1140,8 @@ function extractItemKeyNameFromPath(itemName) {
 /**
  * Get a preset link for a model or LoRA using the base filename as the key.
  * 
- * @param {string} itemType - Either 'model' or 'lora'
- * @param {string} itemName - The full model/LoRA name (path or filename)
+ * @param {string} itemType - Either 'Stable-Diffusion' or 'LoRA'
+ * @param {string} itemName - The full name (path or filename)
  * @returns {string|null} The linked preset title, or null if no link exists
  */
 function getItemPresetLink(itemType, itemName) {
@@ -1160,8 +1156,8 @@ function getItemPresetLink(itemType, itemName) {
  * Save or clear a preset link for a model or LoRA using the base filename as the key.
  * This centralizes all preset link saving logic to ensure consistency.
  * 
- * @param {string} itemType - Either 'model' or 'lora'
- * @param {string} itemName - The full model/LoRA name (path or filename)
+ * @param {string} itemType - Either 'Stable-Diffusion' or 'LoRA'
+ * @param {string} itemName - The full name (path or filename)
  * @param {string} presetTitle - The preset to link (or empty string to clear)
  */
 function saveItemPresetLink(itemType, itemName, presetTitle) {
