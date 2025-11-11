@@ -25,4 +25,7 @@ public record class T2IModelCompatClass
 {
     /// <summary>ID of this model compat type.</summary>
     public string ID;
+
+    /// <summary>If true, loras may target the text encoder. If false, they never do.</summary>
+    public bool LorasTargetTextEnc = true;
 }

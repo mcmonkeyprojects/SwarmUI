@@ -362,9 +362,9 @@ public class T2IModelClassSorter
             return false;
         }});
         // ====================== Wan Video ======================
-        T2IModelCompatClass compatWan21 = RegisterCompat(new() { ID = "wan-21" });
+        T2IModelCompatClass compatWan21 = RegisterCompat(new() { ID = "wan-21", LorasTargetTextEnc = false });
         Register(new() { ID = "wan-2_1-text2video/vae", CompatClass = compatWan21, Name = "Wan 2.1 VAE", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) => { return false; }});
-        T2IModelCompatClass compatWan21_1_3b = RegisterCompat(new() { ID = "wan-21-1_3b" });
+        T2IModelCompatClass compatWan21_1_3b = RegisterCompat(new() { ID = "wan-21-1_3b", LorasTargetTextEnc = false });
         Register(new() { ID = "wan-2_1-text2video-1_3b", CompatClass = compatWan21_1_3b, Name = "Wan 2.1 Text2Video 1.3B", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return isWan21_1_3b(h) && !isWanI2v(h) && !isWanVace(h);
@@ -377,7 +377,7 @@ public class T2IModelClassSorter
         {
             return isWan21_1_3bLora(h);
         }});
-        T2IModelCompatClass compatWan21_14b = RegisterCompat(new() { ID = "wan-21-14b" });
+        T2IModelCompatClass compatWan21_14b = RegisterCompat(new() { ID = "wan-21-14b", LorasTargetTextEnc = false });
         Register(new() { ID = "wan-2_1-text2video-14b", CompatClass = compatWan21_14b, Name = "Wan 2.1 Text2Video 14B", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isWan21_14b(h) && !isWanI2v(h) && !isWanVace(h) && !hasWani2vpatch(h);
@@ -402,7 +402,7 @@ public class T2IModelClassSorter
         {
             return isWan21_1_3b(h) && !isWanflf2v(h) && isWanVace(h);
         }});
-        T2IModelCompatClass compatWan22_5b = RegisterCompat(new() { ID = "wan-22-5b" });
+        T2IModelCompatClass compatWan22_5b = RegisterCompat(new() { ID = "wan-22-5b", LorasTargetTextEnc = false });
         Register(new() { ID = "wan-2_2-ti2v-5b", CompatClass = compatWan22_5b, Name = "Wan 2.2 Text/Image2Video 5B", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isWan22_5b(h);

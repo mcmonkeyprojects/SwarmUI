@@ -341,6 +341,16 @@ public partial class WorkflowGenerator
                 }, id, false);
                 model = [newId, 0];
             }
+            else if (FinalLoadedModel?.ModelClass?.CompatClass?.LorasTargetTextEnc == false || tencWeight == 0)
+            {
+                string newId = CreateNode("LoraLoaderModelOnly", new JObject()
+                {
+                    ["model"] = model,
+                    ["lora_name"] = lora.ToString(ModelFolderFormat),
+                    ["strength_model"] = weight,
+                }, id, false);
+                model = [newId, 0];
+            }
             else
             {
                 string newId = CreateNode("LoraLoader", new JObject()
