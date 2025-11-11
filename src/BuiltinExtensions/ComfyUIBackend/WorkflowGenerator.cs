@@ -136,6 +136,12 @@ public partial class WorkflowGenerator
         return FinalLoadedModel?.ModelClass;
     }
 
+    /// <summary>Gets the current loaded model compat class.</summary>
+    public T2IModelCompatClass CurrentCompat()
+    {
+        return CurrentModelClass()?.CompatClass;
+    }
+
     /// <summary>Gets the current loaded model compat class ID.</summary>
     public string CurrentCompatClass()
     {
@@ -341,7 +347,7 @@ public partial class WorkflowGenerator
                 }, id, false);
                 model = [newId, 0];
             }
-            else if (FinalLoadedModel?.ModelClass?.CompatClass?.LorasTargetTextEnc == false || tencWeight == 0)
+            else if (CurrentCompat()?.LorasTargetTextEnc == false || tencWeight == 0)
             {
                 string newId = CreateNode("LoraLoaderModelOnly", new JObject()
                 {
