@@ -7,6 +7,7 @@ using FreneticUtilities.FreneticToolkit;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticDataSyntax;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.IO;
 
 namespace SwarmUI.Accounts;
 
@@ -176,6 +177,37 @@ public class SessionHandler
 
     public SessionHandler()
     {
+        int backupCount = Program.ServerSettings.Maintenance.UserDBBackups;
+        if (backupCount > 0)
+        {
+            DateTimeOffset dateNow = DateTimeOffset.UtcNow;
+            string backupDateStr = $"{dateNow.Year}_{dateNow.DayOfYear / 7}";
+            string folder = $"{Program.DataDir}/UsersBackups";
+            Directory.CreateDirectory(folder);
+            string backupFile = $"{folder}/UsersBackup_{backupDateStr}.ldb";
+            if (!File.Exists(backupFile))
+            {
+                Logs.Init($"Will backup user database to '{backupFile}'");
+                List<string> backups = [.. Directory.EnumerateFiles(folder, "UsersBackup_*.ldb")];
+                backupCount--;
+                if (backups.Count > backupCount)
+                {
+                    backups.Sort();
+                    for (int i = 0; i <= backups.Count - backupCount; i++)
+                    {
+                        try
+                        {
+                            File.Delete(backups[i]);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logs.Error($"Failed to delete old user database backup '{backups[i]}': {ex.ReadableString()}");
+                        }
+                    }
+                }
+                File.Copy($"{Program.DataDir}/Users.ldb", backupFile);
+            }
+        }
         Database = new LiteDatabase($"{Program.DataDir}/Users.ldb");
         UserDatabase = Database.GetCollection<User.DatabaseEntry>("users");
         SessionDatabase = Database.GetCollection<Session.DatabaseEntry>("sessions");
