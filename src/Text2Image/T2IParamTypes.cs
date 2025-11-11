@@ -1023,7 +1023,7 @@ public class T2IParamTypes
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:
-                foreach (string part in val.Split('|'))
+                foreach (string part in val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|"))
                 {
                     string partVal = part.Trim();
                     if (partVal.StartsWith("data:"))
