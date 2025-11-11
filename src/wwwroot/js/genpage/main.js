@@ -390,23 +390,14 @@ function loadUserData(callback) {
 }
 
 function updateAllModels(models) {
-    coreModelMap = models;
-    allModels = models['Stable-Diffusion'];
-    let selector = getRequiredElementById('current_model');
-    let selectorVal = selector.value;
-    selector.innerHTML = '';
-    let emptyOption = document.createElement('option');
-    emptyOption.value = '';
-    emptyOption.innerText = '';
-    selector.appendChild(emptyOption);
-    for (let model of allModels) {
-        let option = document.createElement('option');
-        let clean = cleanModelName(model);
-        option.value = clean;
-        option.innerText = clean;
-        selector.appendChild(option);
+    simplifiedMap = {};
+    for (let key of Object.keys(models)) {
+        simplifiedMap[key] = models[key].map(model => {
+            return model[0];
+        });
     }
-    selector.value = selectorVal;
+    coreModelMap = simplifiedMap;
+    allModels = simplifiedMap['Stable-Diffusion'];
     pickle2safetensor_load();
     modelDownloader.reloadFolders();
 }
@@ -754,6 +745,7 @@ function genpageLoad() {
         imageHistoryBrowser.navigate('');
         initialModelListLoad();
         genericRequest('ListT2IParams', {}, data => {
+            modelsHelpers.loadClassesFromServer(data.models, data.model_compat_classes, data.model_classes);
             updateAllModels(data.models);
             wildcardHelpers.newWildcardList(data.wildcards);
             [rawGenParamTypesFromServer, rawGroupMapFromServer] = buildParameterList(data.list, data.groups);
