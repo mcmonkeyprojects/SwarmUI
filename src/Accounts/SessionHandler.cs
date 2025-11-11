@@ -177,8 +177,9 @@ public class SessionHandler
 
     public SessionHandler()
     {
+        string userDbFile = $"{Program.DataDir}/Users.ldb";
         int backupCount = Program.ServerSettings.Maintenance.UserDBBackups;
-        if (backupCount > 0)
+        if (backupCount > 0 && File.Exists(userDbFile))
         {
             DateTimeOffset dateNow = DateTimeOffset.UtcNow;
             string backupDateStr = $"{dateNow.Year}_{dateNow.DayOfYear / 7}";
@@ -205,10 +206,10 @@ public class SessionHandler
                         }
                     }
                 }
-                File.Copy($"{Program.DataDir}/Users.ldb", backupFile);
+                File.Copy(userDbFile, backupFile);
             }
         }
-        Database = new LiteDatabase($"{Program.DataDir}/Users.ldb");
+        Database = new LiteDatabase(userDbFile);
         UserDatabase = Database.GetCollection<User.DatabaseEntry>("users");
         SessionDatabase = Database.GetCollection<Session.DatabaseEntry>("sessions");
         T2IPresets = Database.GetCollection<T2IPreset>("t2i_presets");
