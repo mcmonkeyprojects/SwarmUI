@@ -249,6 +249,10 @@ public static class T2IAPI
     {
         (int images, JObject rawInput, SharedGenT2IData data, int batchOffset) = input;
         using Session.GenClaim claim = session.Claim(gens: images);
+        if (isWS)
+        {
+            output(BasicAPIFeatures.GetCurrentStatusRaw(session));
+        }
         void setError(string message)
         {
             Logs.Debug($"Refused to generate image for {session.User.UserID}: {message}");
