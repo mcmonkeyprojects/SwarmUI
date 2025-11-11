@@ -946,10 +946,20 @@ public static class T2IAPI
                 "parent": "idhere" // or null
             }
         ],
+        "model_compat_classes":
+        {
+            "stable-diffusion-xl-v1": {"shortcode": "SDXL", ... },
+            // etc
+        },
+        "model_classes":
+        {
+            "stable-diffusion-xl-v1-base": {"compat_class": "stable-diffusion-xl-v1", ... },
+            // etc
+        }
         "models":
         {
-            "Stable-Diffusion": ["model1", "model2"],
-            "LoRA": ["model1", "model2"],
+            "Stable-Diffusion": [["model1", "archid"], ["model2", "archid"]],
+            "LoRA": [["model1", "archid"], ["model2", "archid"]],
             // etc
         },
         "wildcards": ["wildcard1", "wildcard2"],
@@ -963,7 +973,7 @@ public static class T2IAPI
         JObject modelData = [];
         foreach (T2IModelHandler handler in Program.T2IModelSets.Values)
         {
-            modelData[handler.ModelType] = new JArray(handler.ListModelNamesFor(session).Order().ToArray());
+            modelData[handler.ModelType] = new JArray(handler.ListModelsFor(session).OrderBy(m => m.Name).Select(m => new JArray(m.Name, m.ModelClass?.ID)).ToArray());
         }
         T2IParamType[] types = [.. T2IParamTypes.Types.Values.Where(p => p.Permission is null || session.User.HasPermission(p.Permission))];
         Dictionary<string, T2IParamGroup> groups = new(64);
@@ -976,11 +986,23 @@ public static class T2IAPI
                 group = group.Parent;
             }
         }
+        JObject modelCompatClasses = [];
+        foreach (T2IModelCompatClass clazz in T2IModelClassSorter.CompatClasses.Values)
+        {
+            modelCompatClasses[clazz.ID] = clazz.ToNetData();
+        }
+        JObject modelClasses = [];
+        foreach (T2IModelClass clazz in T2IModelClassSorter.ModelClasses.Values)
+        {
+            modelClasses[clazz.ID] = clazz.ToNetData();
+        }
         return new JObject()
         {
             ["list"] = new JArray(types.Select(v => v.ToNet(session)).ToList()),
             ["groups"] = new JArray(groups.Values.OrderBy(g => g.OrderPriority).Select(g => g.ToNet(session)).ToList()),
             ["models"] = modelData,
+            ["model_compat_classes"] = modelCompatClasses,
+            ["model_classes"] = modelClasses,
             ["wildcards"] = new JArray(WildcardsHelper.ListFiles),
             ["param_edits"] = string.IsNullOrWhiteSpace(session.User.Data.RawParamEdits) ? null : JObject.Parse(session.User.Data.RawParamEdits)
         };
