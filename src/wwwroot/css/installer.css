@@ -26,6 +26,10 @@
     margin-bottom: 0.5rem;
     cursor: pointer;
 }
+.theme_preview {
+    max-height: 44rem;
+    overflow-y: auto;
+}
 .theme_preview .form-check {
     display: inline-block;
     width: 49%;
@@ -55,6 +59,7 @@
     position: absolute;
     bottom: 0;
     left: 0;
+    pointer-events: none;
 }
 label {
     font-size: 120%;
