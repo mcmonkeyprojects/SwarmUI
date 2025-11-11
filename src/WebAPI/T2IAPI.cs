@@ -100,7 +100,7 @@ public static class T2IAPI
                 int batchOffset = images * guessBatchSize(rawInput);
                 while (!cancelTok.IsCancellationRequested)
                 {
-                    byte[] rec = await socket.ReceiveData(1024 * 1024 * 1024, linked.Token);
+                    byte[] rec = await socket.ReceiveData(Program.ServerSettings.Network.MaxReceiveBytes, linked.Token);
                     Volatile.Write(ref retain, true);
                     if (socket.State != WebSocketState.Open || cancelTok.IsCancellationRequested || Volatile.Read(ref ended))
                     {
@@ -536,6 +536,10 @@ public static class T2IAPI
                         IEnumerable<string> subDirs = Directory.EnumerateDirectories(actualPath).Select(Path.GetFileName).OrderDescending();
                         foreach (string subDir in subDirs)
                         {
+                            if (subDir.StartsWithFast('.'))
+                            {
+                                continue;
+                            }
                             string subPath = dir == "" ? subDir : $"{dir}/{subDir}";
                             if (isAllowed(subPath))
                             {
@@ -606,7 +610,7 @@ public static class T2IAPI
                     return;
                 }
                 List<string> subFiles = [.. Directory.EnumerateFiles(actualPath).Take(localLimit)];
-                IEnumerable<string> newFileNames = subFiles.Where(isAllowed).Where(f => extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg") && !f.EndsWith(".swarmpreview.webp")).Select(f => f.Replace('\\', '/'));
+                IEnumerable<string> newFileNames = subFiles.Select(f => f.Replace('\\', '/')).Where(isAllowed).Where(f => !f.AfterLast('/').StartsWithFast('.') && extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg") && !f.EndsWith(".swarmpreview.webp"));
                 List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), OutputMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null)];
                 int leftOver = Interlocked.Add(ref remaining, -localFiles.Count);
                 sortList(localFiles);

@@ -757,10 +757,16 @@ public class T2IModelHandler
         }
         Parallel.ForEach(Directory.EnumerateDirectories(actualFolder), subfolder =>
         {
-            string path = $"{prefix}{subfolder.Replace('\\', '/').AfterLast('/')}";
-            if (path.AfterLast('/') == ".git")
+            string simpleName = subfolder.Replace('\\', '/').AfterLast('/');
+            string path = $"{prefix}{simpleName}";
+            if (simpleName == ".git")
             {
                 Logs.Warning($"You have a .git folder in your {ModelType} model folder '{pathBase}/{path}'! That's not supposed to be there.");
+                return;
+            }
+            if (simpleName.StartsWithFast('.'))
+            {
+                Logs.Verbose($"[Model Scan] Skipping hidden folder {subfolder}");
                 return;
             }
             try
@@ -780,6 +786,11 @@ public class T2IModelHandler
         {
             string fixedFileName = file.Replace('\\', '/');
             string fn = fixedFileName.AfterLast('/');
+            if (fn.StartsWithFast('.'))
+            {
+                Logs.Verbose($"[Model Scan] Skipping hidden file {fixedFileName}");
+                return;
+            }
             string fullFilename = $"{prefix}{fn}";
             if (Models.TryGetValue(fullFilename, out T2IModel existingModel))
             {

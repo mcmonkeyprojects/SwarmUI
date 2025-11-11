@@ -233,6 +233,12 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("How many entries in an X-Forwarded-For header to trust.\nDefaults to 3.\nSet to 0 to not trust any forwarded-for.")]
         public int MaxXForwardedFor = 3;
+
+        [ConfigComment("Maximum megabytes that can be sent as a single message from a client to the Swarm server.\nSet this lower to limit above, set this higher to allow very large file uploads.\nServer needs a restart for this to fully apply.")]
+        public int MaxNetworkRequestMegabytes = 200;
+
+        /// <summary>Converts <see cref="MaxNetworkRequestMegabytes"/> to bytes as a long.</summary>
+        public long MaxReceiveBytes => MaxNetworkRequestMegabytes * (1024L * 1024);
     }
 
     /// <summary>Settings related to file paths.</summary>
@@ -314,6 +320,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, image metadata will include a list of models with their hashes.\nThis is useful for services like civitai to automatically link models.\nThis will cause extra time to be taken when new hashes need to be loaded.")]
         public bool ImageMetadataIncludeModelHash = true;
+
+        [ConfigComment("How many kilobytes of blank spacer to include in model headers.\nThis allows for future expansion of metadata without rewriting the entire model file.\nDefaults to 64 KiB.\nThe average header length of a standard model is already between several hundred kilobytes to a few megabytes,\nso 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.")]
+        public int ModelMetadataSpacerKilobytes = 64;
     }
 
     /// <summary>Settings per-user.</summary>
