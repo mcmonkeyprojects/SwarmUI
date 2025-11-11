@@ -72,6 +72,18 @@
                 </div>
                 <br><br>
             }
+            if (WebUtil.NeedWindowsAdminWarn())
+            {
+                <br><br><br>
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading">Don't Run As Admin</h4>
+                    <p class="mb-0">You seem to be running this installer as administrator.
+                        <br>This is not necessary and will cause issues.
+                        <br>Please close this installer, and run it as a regular user.
+                    </p>
+                </div>
+                <br><br>
+            }
         }
     </div>
 

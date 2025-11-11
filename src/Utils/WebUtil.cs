@@ -7,6 +7,7 @@ using SwarmUI.Accounts;
 using SwarmUI.Core;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace SwarmUI.Utils;
 
@@ -200,6 +201,24 @@ public static class WebUtil
             return true;
         }
         return false;
+    }
+
+    /// <summary>Returns true if the user is trying to run as admin.</summary>
+    public static bool NeedWindowsAdminWarn()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // not `IsWindows` because C# compiler will complain
+        {
+            return false;
+        }
+        try
+        {
+            return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"Failed to check Windows admin status: {ex}");
+            return true;
+        }
     }
 
     /// <summary>Returns true if the program is running in Windows.</summary>
