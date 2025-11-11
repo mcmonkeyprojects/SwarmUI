@@ -331,7 +331,7 @@ public partial class WorkflowGenerator
         else if (UserInput.Get(ComfyUIBackendExtension.ShiftedLatentAverageInit, false))
         {
             double offA = 0, offB = 0, offC = 0, offD = 0;
-            switch (FinalLoadedModel.ModelClass?.CompatClass)
+            switch (FinalLoadedModel.ModelClass?.CompatClass?.ID)
             {
                 case "stable-diffusion-v1": // https://github.com/Birch-san/sdxl-diffusion-decoder/blob/4ba89847c02db070b766969c0eca3686a1e7512e/script/inference_decoder.py#L112
                 case "stable-diffusion-v2":
@@ -500,7 +500,7 @@ public partial class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(vaeFile))
             {
-                vaeModel = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass == compatClass);
+                vaeModel = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass?.ID == compatClass);
                 if (vaeModel is not null)
                 {
                     Logs.Debug($"Auto-selected first available VAE of compat class '{compatClass}', VAE '{vaeModel.Name}' will be applied");
@@ -557,7 +557,7 @@ public partial class WorkflowGenerator
         {
             throw new SwarmUserErrorException($"Model {model.Name} appears to be TensorRT lacks metadata to identify its architecture, cannot load");
         }
-        else if (model.ModelClass?.CompatClass == "pixart-ms-sigma-xl-2")
+        else if (model.ModelClass?.CompatClass?.ID == "pixart-ms-sigma-xl-2")
         {
             string pixartNode = CreateNode("PixArtCheckpointLoader", new JObject()
             {

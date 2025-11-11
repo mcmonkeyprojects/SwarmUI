@@ -68,7 +68,7 @@ public class WorkflowGeneratorSteps
             }
             else if (!g.NoVAEOverride && g.UserInput.TryGet(T2IParamTypes.VAE, out T2IModel vae))
             {
-                if (g.FinalLoadedModel.ModelClass?.ID == "stable-diffusion-v3-medium" && vae.ModelClass?.CompatClass != "stable-diffusion-v3")
+                if (g.FinalLoadedModel.ModelClass?.ID == "stable-diffusion-v3-medium" && vae.ModelClass?.CompatClass?.ID != "stable-diffusion-v3")
                 {
                     Logs.Warning($"Model {g.FinalLoadedModel.Title} is an SD3 model, but you have VAE {vae.Title} selected. If that VAE is not an SD3 specific VAE, this is likely a mistake. Errors may follow. If this breaks, disable the custom VAE.");
                 }
@@ -76,7 +76,7 @@ public class WorkflowGeneratorSteps
             }
             else if (!g.NoVAEOverride && g.UserInput.Get(T2IParamTypes.AutomaticVAE, false))
             {
-                string clazz = g.FinalLoadedModel.ModelClass?.CompatClass;
+                string clazz = g.FinalLoadedModel.ModelClass?.CompatClass?.ID;
                 string vaeName = null;
                 if (clazz == "stable-diffusion-xl-v1")
                 {
@@ -630,7 +630,7 @@ public class WorkflowGeneratorSteps
                         g.FinalNegativePrompt = [zeroed, 0];
                     }
                     if (!g.UserInput.TryGet(T2IParamTypes.Model, out T2IModel model) || model.ModelClass is null || 
-                        (model.ModelClass.CompatClass != "stable-diffusion-xl-v1"/* && model.ModelClass.CompatClass != "stable-diffusion-v3-medium"*/))
+                        (model.ModelClass.CompatClass?.ID != "stable-diffusion-xl-v1"/* && model.ModelClass.CompatClass?.ID != "stable-diffusion-v3-medium"*/))
                     {
                         throw new SwarmUserErrorException($"Model type must be SDXL for ReVision (currently is {model?.ModelClass?.Name ?? "Unknown"}). Set ReVision Strength to 0 if you just want IP-Adapter.");
                     }
@@ -1229,7 +1229,7 @@ public class WorkflowGeneratorSteps
                     {
                         modelMustReencode = false;
                     }
-                    if (refineModel.ModelClass?.CompatClass == "stable-diffusion-xl-v1-refiner" && baseModel.ModelClass?.CompatClass == "stable-diffusion-xl-v1")
+                    if (refineModel.ModelClass?.CompatClass?.ID == "stable-diffusion-xl-v1-refiner" && baseModel.ModelClass?.CompatClass?.ID == "stable-diffusion-xl-v1")
                     {
                         modelMustReencode = false;
                     }
@@ -1647,7 +1647,7 @@ public class WorkflowGeneratorSteps
                 int imageWidth = g.UserInput.GetImageWidth();
                 int imageHeight = g.UserInput.GetImageHeight();
                 int resPrecision = 64;
-                if (vidModel.ModelClass?.CompatClass == "hunyuan-video")
+                if (vidModel.ModelClass?.CompatClass?.ID == "hunyuan-video")
                 {
                     resPrecision = 16; // wants 720x720, which is wonky x16 and not x32 or x64
                 }

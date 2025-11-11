@@ -334,7 +334,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             [$"{prefix}loaded"] = AnyBackendsHaveLoaded,
             [$"{prefix}architecture"] = ModelClass?.ID,
             [$"{prefix}class"] = ModelClass?.Name,
-            [$"{prefix}compat_class"] = ModelClass?.CompatClass,
+            [$"{prefix}compat_class"] = ModelClass?.CompatClass?.ID,
             [$"{prefix}resolution"] = $"{StandardWidth}x{StandardHeight}",
             [$"{prefix}standard_width"] = StandardWidth <= 0 ? ModelClass?.StandardWidth ?? 0 : StandardWidth,
             [$"{prefix}standard_height"] = StandardHeight <= 0 ? ModelClass?.StandardHeight ?? 0 : StandardHeight,
