@@ -1239,6 +1239,14 @@ body {
     border: 1px solid var(--light-border);
     height: 32px;
 }
+.image-editor-tool-block input[type="color"] {
+    height: 1.6rem;
+}
+.tool-block-nogrow {
+    flex-grow: 0;
+    padding-left: 5px;
+    padding-right: 5px;
+}
 .image_editor_canvaslist {
     display: block;
     margin: 0;
