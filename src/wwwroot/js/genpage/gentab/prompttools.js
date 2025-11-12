@@ -435,7 +435,9 @@ class PromptPlusButton {
             + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
         this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
         this.segmentModalSampler = getRequiredElementById('text_prompt_segment_sampler');
+        doToggleEnable('text_prompt_segment_sampler');
         this.segmentModalScheduler = getRequiredElementById('text_prompt_segment_scheduler');
+        doToggleEnable('text_prompt_segment_scheduler');
         this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
         this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
         this.segmentModalClassIds = getRequiredElementById('text_prompt_segment_classids');
@@ -560,6 +562,10 @@ class PromptPlusButton {
         this.segmentModalYoloId.value = 0;
         this.segmentModalClassIds.value = '';
         this.segmentModalInvertMask.checked = false;
+        getRequiredElementById('text_prompt_segment_sampler_toggle').checked = false;
+        doToggleEnable('text_prompt_segment_sampler');
+        getRequiredElementById('text_prompt_segment_scheduler_toggle').checked = false;
+        doToggleEnable('text_prompt_segment_scheduler');
         triggerChangeFor(this.segmentModalCreativity);
         triggerChangeFor(this.segmentModalThreshold);
     }
@@ -596,37 +602,26 @@ class PromptPlusButton {
         }
         $('#text_prompt_segment_modal').modal('hide');
         let append = '';
-        if (this.segmentModalSampler && !this.segmentModalSampler.classList.contains('disabled-input') && !this.segmentModalSampler.disabled && this.segmentModalSampler.value) {
+        if (this.segmentModalSampler && !this.segmentModalSampler.classList.contains('disabled-input')) {
             append += `<param[sampler]:${this.segmentModalSampler.value}>`;
         }
-        if (this.segmentModalScheduler && !this.segmentModalScheduler.classList.contains('disabled-input') && !this.segmentModalScheduler.disabled && this.segmentModalScheduler.value) {
+        if (this.segmentModalScheduler && !this.segmentModalScheduler.classList.contains('disabled-input')) {
             append += `<param[scheduler]:${this.segmentModalScheduler.value}>`;
         }
         this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}>${append} ${this.segmentModalMainText.value.trim()}`);
-
     }
 
     populateDropdownFromSource(sourceId, destSelect, targetId) {
         let src = document.getElementById(sourceId);
-        if (!destSelect || !src || !src.options || !src.options.length) {
+        if (!destSelect || !src || !src.options) {
             return;
         }
-
         destSelect.innerHTML = '';
-        for (let i = 0; i < src.options.length; i++) {
-            let srcOpt = src.options[i];
+        for (let srcOpt of src.options) {
             let opt = document.createElement('option');
             opt.value = srcOpt.value;
             opt.textContent = srcOpt.textContent;
             destSelect.appendChild(opt);
-        }
-
-        let targetToggler = document.getElementById(targetId);
-        if (targetToggler && (!targetToggler.checked || targetToggler.disabled)) {
-            destSelect.classList.add('disabled-input');
-        }
-        else {
-            destSelect.classList.remove('disabled-input');
         }
     }
 
