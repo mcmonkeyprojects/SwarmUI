@@ -176,8 +176,8 @@ function editModel(model, browser) {
     getRequiredElementById('edit_model_lora_default_confinement').value = model.lora_default_confinement || '';
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     let run = () => {
-		buildPresetLinkSelectorForModel(model.subType, model.name, 'edit_model_override_preset', 'edit_model_override_preset_id');
-        updatePresetLinkButtonState('edit_model_override_preset_id');
+		buildPresetLinkSelectorForModel(model.subType, model.name, 'edit_model_preset', 'edit_model_preset_id');
+        updatePresetLinkButtonState('edit_model_preset_id');
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
     };
@@ -267,13 +267,12 @@ function save_edit_model() {
     data['lora_default_weight'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_weight').value : '';
     data['lora_default_confinement'] = (model.architecture || '').endsWith('/lora') ? getRequiredElementById('edit_model_lora_default_confinement').value : '';
     data.subtype = curModelMenuBrowser.subType;
-    
     function complete() {
         genericRequest('EditModelMetadata', data, data => {
             curModelMenuBrowser.browser.lightRefresh();
         });
         // Separately, save or clear preset link
-        let presetSelect = document.getElementById('edit_model_override_preset_id');
+        let presetSelect = document.getElementById('edit_model_preset_id');
         let presetTitle = presetSelect?.value || '';
         saveModelPresetLink(curModelMenuBrowser.subType, model.name, presetTitle);
         $('#edit_model_modal').modal('hide');
@@ -888,7 +887,10 @@ function directSetModel(model) {
         return;
     }
     let modelName = null;
+	let modelSubtype = 'Stable-Diffusion';
     if (model.name) {
+		modelName = model.name;
+		modelSubtype = model.subType;
         let clean = cleanModelName(model.name);
         forceSetDropdownValue('input_model', clean);
         forceSetDropdownValue('current_model', clean);
@@ -898,7 +900,6 @@ function directSetModel(model) {
         curModelArch = model.architecture;
         curModelCompatClass = model.compat_class;
         curModelSpecialFormat = model.special_format;
-        modelName = clean;
     }
     else if (model.includes(',')) {
         let [name, width, height, arch, compatClass, specialFormat] = model.split(',');
@@ -913,48 +914,20 @@ function directSetModel(model) {
         modelName = name;
     }
     reviseBackendFeatureSet();
-    let presetTitle = getModelPresetLink(model.subType, model.name || modelName);
-    try {
-        let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
-        if (presetTitle) {
-            currentPresets = removeOtherModelPresets(model.name || modelName);
-            let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
-            if (presetData) {
-                if (autoApply) {
-                    applyOnePreset(presetData, false); // false = not nested, allow LoRA preset triggering
-                    // After auto-applying, remove the preset from currentPresets so user can edit those params
-                    currentPresets = currentPresets.filter(p => p.title != presetData.title);
-                }
-                else {
-                    // Select the preset if it's not already selected
-                    if (!currentPresets.some(p => p.title == presetData.title)) {
-                        // Add it directly instead of using selectPreset (which toggles)
-                        currentPresets.push(presetData);
-                    }
-                    // Still need to handle LoRA presets for selection (not auto-apply, just selection)
-                    if (presetData.param_map.loras && presetData.param_map.loraweights) {
-                        // Ensure item preset links are loaded before trying to find LoRA preset links
-                        genericRequest('GetMyUserData', {}, data => {
-                            if (data.model_preset_links && modelPresetLinkManager) {
-                                modelPresetLinkManager.loadFromServer(data.model_preset_links);
-                            }
-                            selectOrApplyLoraPresetsFromList(presetData.param_map.loras, presetData.param_map.loraweights);
-                        });
-                    }
-                }
-                updatePresetList();
-                presetBrowser?.rerender();
-            }
-        }
-        else {
-            // No preset linked to this model, but we may have removed other presets above
-            updatePresetList();
-            presetBrowser?.rerender();
-        }
-    } catch (e) {
-        // Setting may not exist yet, continue without auto-apply
-        console.warn('[Model Preset] Auto-apply setting error:', e.message);
-    }
+    let presetTitle = getModelPresetLink(modelSubtype, modelName);
+	if (presetTitle) {
+		currentPresets = removeOtherModelPresets(modelName);
+		let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+		if (presetData) {
+			// Select the preset if it's not already selected
+			if (!currentPresets.some(p => p.title == presetData.title)) {
+				// Add it directly instead of using selectPreset (which toggles)
+				currentPresets.push(presetData);
+			}
+		}
+		updatePresetList();
+		presetBrowser?.rerender();
+	}
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));
     let aspect = document.getElementById('input_aspectratio');
     if (aspect) {
@@ -1109,7 +1082,7 @@ function removeOtherModelPresets(modelName) {
 }
 
 /**
- * Get a preset link for a model or LoRA using the base filename as the key.
+ * Get a preset link for a model
  * 
  * @param {string} subtype - Either 'Stable-Diffusion' or 'LoRA'
  * @param {string} modelName - Full filepath name of the model
@@ -1120,7 +1093,7 @@ function getModelPresetLink(subtype, modelName) {
 }
 
 /**
- * Save or clear a preset link for a model or LoRA using the base filename as the key.
+ * Save or clear a preset link for a model
  * This centralizes all preset link saving logic to ensure consistency.
  * 
  * @param {string} subtype - Either 'Stable-Diffusion' or 'LoRA'
@@ -1143,25 +1116,25 @@ function saveModelPresetLink(subtype, modelName, presetTitle) {
     }
 }
 
-function applyPresetOverride() {
+function setLinkedPreset() {
     // Set the dropdown to the first currently-selected preset
     if (currentPresets?.length) {
-        let presetSelect = document.getElementById('edit_model_override_preset_id');
+        let presetSelect = document.getElementById('edit_model_preset_id');
         if (presetSelect) {
             presetSelect.value = currentPresets[0].title;
             presetSelect.dispatchEvent(new Event('change'));
         }
     }
-    updatePresetLinkButtonState('edit_model_override_preset_id');
+    updatePresetLinkButtonState('edit_model_preset_id');
 }
 
-function clearPresetOverride() {
-    let presetSelect = document.getElementById('edit_model_override_preset_id');
+function clearLinkedPreset() {
+    let presetSelect = document.getElementById('edit_model_preset_id');
     if (presetSelect) {
         presetSelect.value = '';
         presetSelect.dispatchEvent(new Event('change'));
     }
-    updatePresetLinkButtonState('edit_model_override_preset_id');
+    updatePresetLinkButtonState('edit_model_preset_id');
 }
 
 getRequiredElementById('current_model').addEventListener('change', currentModelChanged);

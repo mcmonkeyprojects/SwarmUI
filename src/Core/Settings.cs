@@ -391,12 +391,6 @@ public class Settings : AutoConfiguration
             [ConfigComment("If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf disabled, shifting will simply stop at the ends.\nIf 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).")]
             [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
             public string ImageShiftingCycles = "true";
-
-            [ConfigComment("When a model with a linked preset is selected, should the preset parameters be applied immediately? By default, the preset is just selected for review.")]
-            public bool AutoApplyModelPresets = false;
-
-            [ConfigComment("If enabled, when applying the model's preset that includes a LoRA with a weight of 0, the LoRA's own preset is ignored.")]
-            public bool IgnoreModelPresetZeroWeightLoraPresets = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]

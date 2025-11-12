@@ -66,14 +66,14 @@ public static class AdminAPI
             {
                 val = AutoConfigToParamData(subConf);
             }
-            if (hideRestricted && data.Field.GetCustomAttribute<ValueIsRestrictedAttribute>() is not null)
-            {
-                continue;
-            }
             if (data.Field.GetCustomAttribute<SettingHiddenAttribute>() is not null)
             {
                 continue;
             }
+			if (hideRestricted && data.Field.GetCustomAttribute<ValueIsRestrictedAttribute>() is not null)
+			{
+				continue;
+			}
             string[] vals = data.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Options ?? null;
             string[] val_names = null;
             if (vals is not null)

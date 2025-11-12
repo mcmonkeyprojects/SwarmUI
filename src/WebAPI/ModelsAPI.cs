@@ -498,52 +498,52 @@ public static class ModelsAPI
         {
             return new JObject() { ["error"] = "Model not found." };
         }
-		lock (handler.ModificationLock)
-		{
-			actualModel.Title = string.IsNullOrWhiteSpace(title) ? null : title;
-			actualModel.Description = description;
-			if (!string.IsNullOrWhiteSpace(type))
-			{
-				actualModel.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(type);
-			}
-			if (standard_width > 0)
-			{
-				actualModel.StandardWidth = standard_width;
-			}
-			if (standard_height > 0)
-			{
-				actualModel.StandardHeight = standard_height;
-			}
-			actualModel.Metadata ??= new();
-			if (!string.IsNullOrWhiteSpace(preview_image))
-			{
-				if (preview_image == "clear")
-				{
-					actualModel.PreviewImage = "imgs/model_placeholder.jpg";
-					actualModel.Metadata.PreviewImage = null;
-				}
-				else
-				{
-					ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
-					if (img is not null)
-					{
-						actualModel.PreviewImage = img.AsDataString();
-						actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
-					}
-				}
-			}
-			actualModel.Metadata.Author = author;
-			actualModel.Metadata.UsageHint = usage_hint;
-			actualModel.Metadata.Date = date;
-			actualModel.Metadata.License = license;
-			actualModel.Metadata.TriggerPhrase = trigger_phrase;
-			actualModel.Metadata.Tags = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-			actualModel.Metadata.IsNegativeEmbedding = is_negative_embedding;
-			actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
-			actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
-			actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
-		}
-		handler.ResetMetadataFrom(actualModel);
+        lock (handler.ModificationLock)
+        {
+            actualModel.Title = string.IsNullOrWhiteSpace(title) ? null : title;
+            actualModel.Description = description;
+            if (!string.IsNullOrWhiteSpace(type))
+            {
+                actualModel.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(type);
+            }
+            if (standard_width > 0)
+            {
+                actualModel.StandardWidth = standard_width;
+            }
+            if (standard_height > 0)
+            {
+                actualModel.StandardHeight = standard_height;
+            }
+            actualModel.Metadata ??= new();
+            if (!string.IsNullOrWhiteSpace(preview_image))
+            {
+                if (preview_image == "clear")
+                {
+                    actualModel.PreviewImage = "imgs/model_placeholder.jpg";
+                    actualModel.Metadata.PreviewImage = null;
+                }
+                else
+                {
+                    ImageFile img = ImageFile.FromDataString(preview_image).ToMetadataJpg(preview_image_metadata);
+                    if (img is not null)
+                    {
+                        actualModel.PreviewImage = img.AsDataString();
+                        actualModel.Metadata.PreviewImage = actualModel.PreviewImage;
+                    }
+                }
+            }
+            actualModel.Metadata.Author = author;
+            actualModel.Metadata.UsageHint = usage_hint;
+            actualModel.Metadata.Date = date;
+            actualModel.Metadata.License = license;
+            actualModel.Metadata.TriggerPhrase = trigger_phrase;
+            actualModel.Metadata.Tags = string.IsNullOrWhiteSpace(tags) ? null : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            actualModel.Metadata.IsNegativeEmbedding = is_negative_embedding;
+            actualModel.Metadata.LoraDefaultWeight = lora_default_weight;
+            actualModel.Metadata.LoraDefaultConfinement = lora_default_confinement;
+            actualModel.Metadata.PredictionType = string.IsNullOrWhiteSpace(prediction_type) ? null : prediction_type;
+        }
+        handler.ResetMetadataFrom(actualModel);
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
@@ -821,76 +821,76 @@ public static class ModelsAPI
         return new JObject() { ["success"] = true };
     }
 
-	[API.APIDescription("Renames a model file, moving it within the model folder (allowing change of subfolders).", "\"success\": \"true\"")]
-	public static async Task<JObject> RenameModel(Session session,
-		[API.APIParameter("Full filepath name of the model being renamed.")] string oldName,
-		[API.APIParameter("New full filepath name for the model.")] string newName,
-		[API.APIParameter("What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc.")] string subtype = "Stable-Diffusion")
-	{
-		if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
-		{
-			return new JObject() { ["error"] = "Invalid sub-type." };
-		}
-		using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
-		T2IModel match = null;
-		if (session.User.IsAllowedModel(oldName))
-		{
-			if (handler.Models.TryGetValue(oldName + ".safetensors", out T2IModel model))
-			{
-				oldName += ".safetensors";
-				match = model;
-			}
-			else if (handler.Models.TryGetValue(oldName, out model))
-			{
-				match = model;
-			}
-		}
-		if (match is null)
-		{
-			return new JObject() { ["error"] = "Model not found." };
-		}
-		(string oldNameNoExt, string ext) = match.Name.BeforeAndAfterLast('.');
-		newName = newName.BeforeLast('.');
-		newName = Utilities.StrictFilenameClean(newName).Trim().Trim('/').Replace(' ', '_');
-		if (string.IsNullOrWhiteSpace(newName) || !session.User.IsAllowedModel(oldName))
-		{
-			return new JObject() { ["error"] = "Model new name is not valid." };
-		}
-		if (handler.Models.TryGetValue(newName + ".safetensors", out _) || handler.Models.TryGetValue(newName, out _))
-		{
-			return new JObject() { ["error"] = "Model new name is already taken by an existing model." };
-		}
-		if (!match.RawFilePath.EndsWith(oldName))
-		{
-			Logs.Debug($"Model path {match.RawFilePath} does not end with {oldName}??");
-			return new JObject() { ["error"] = "Paths are being mishandled by the system. Cannot rename. (Please report this bug)" };
-		}
-		void doMoveNow(string oldPath)
-		{
-			string relevantRoot = oldPath[..^oldName.Length];
-			Directory.CreateDirectory($"{relevantRoot}/{Path.GetDirectoryName(newName)}");
-			File.Move(oldPath, $"{relevantRoot}/{newName}.{ext}");
-			foreach (string str in T2IModelHandler.AllModelAttachedExtensions)
-			{
-				string altFile = $"{relevantRoot}/{oldNameNoExt}{str}";
-				if (File.Exists(altFile))
-				{
-					File.Move(altFile, $"{relevantRoot}/{newName}{str}");
-				}
-			}
-			AutoFolderRemove(handler, Path.GetDirectoryName(oldPath));
-		}
-		doMoveNow(match.RawFilePath);
-		if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
-		{
-			foreach (string altPath in match.OtherPaths)
-			{
-				doMoveNow(altPath);
-			}
-		}
-		Interlocked.Increment(ref ModelEditID);
-		return new JObject() { ["success"] = true };
-	}
+    [API.APIDescription("Renames a model file, moving it within the model folder (allowing change of subfolders).", "\"success\": \"true\"")]
+    public static async Task<JObject> RenameModel(Session session,
+        [API.APIParameter("Full filepath name of the model being renamed.")] string oldName,
+        [API.APIParameter("New full filepath name for the model.")] string newName,
+        [API.APIParameter("What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc.")] string subtype = "Stable-Diffusion")
+    {
+        if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
+        {
+            return new JObject() { ["error"] = "Invalid sub-type." };
+        }
+        using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
+        T2IModel match = null;
+        if (session.User.IsAllowedModel(oldName))
+        {
+            if (handler.Models.TryGetValue(oldName + ".safetensors", out T2IModel model))
+            {
+                oldName += ".safetensors";
+                match = model;
+            }
+            else if (handler.Models.TryGetValue(oldName, out model))
+            {
+                match = model;
+            }
+        }
+        if (match is null)
+        {
+            return new JObject() { ["error"] = "Model not found." };
+        }
+        (string oldNameNoExt, string ext) = match.Name.BeforeAndAfterLast('.');
+        newName = newName.BeforeLast('.');
+        newName = Utilities.StrictFilenameClean(newName).Trim().Trim('/').Replace(' ', '_');
+        if (string.IsNullOrWhiteSpace(newName) || !session.User.IsAllowedModel(oldName))
+        {
+            return new JObject() { ["error"] = "Model new name is not valid." };
+        }
+        if (handler.Models.TryGetValue(newName + ".safetensors", out _) || handler.Models.TryGetValue(newName, out _))
+        {
+            return new JObject() { ["error"] = "Model new name is already taken by an existing model." };
+        }
+        if (!match.RawFilePath.EndsWith(oldName))
+        {
+            Logs.Debug($"Model path {match.RawFilePath} does not end with {oldName}??");
+            return new JObject() { ["error"] = "Paths are being mishandled by the system. Cannot rename. (Please report this bug)" };
+        }
+        void doMoveNow(string oldPath)
+        {
+            string relevantRoot = oldPath[..^oldName.Length];
+            Directory.CreateDirectory($"{relevantRoot}/{Path.GetDirectoryName(newName)}");
+            File.Move(oldPath, $"{relevantRoot}/{newName}.{ext}");
+            foreach (string str in T2IModelHandler.AllModelAttachedExtensions)
+            {
+                string altFile = $"{relevantRoot}/{oldNameNoExt}{str}";
+                if (File.Exists(altFile))
+                {
+                    File.Move(altFile, $"{relevantRoot}/{newName}{str}");
+                }
+            }
+            AutoFolderRemove(handler, Path.GetDirectoryName(oldPath));
+        }
+        doMoveNow(match.RawFilePath);
+        if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
+        {
+            foreach (string altPath in match.OtherPaths)
+            {
+                doMoveNow(altPath);
+            }
+        }
+        Interlocked.Increment(ref ModelEditID);
+        return new JObject() { ["success"] = true };
+    }
 
     [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
     public static async Task<JObject> SaveModelPresetLink(Session session,

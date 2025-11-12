@@ -294,17 +294,7 @@ function selectInitialPresetList() {
     }
 }
 
-function applyOnePreset(preset, isNestedPreset = false) {
-    // Collect LoRA updates before applying to handle merging
-    let presetLoras = preset.param_map.loras ? preset.param_map.loras.split(',').map(l => l.trim()).filter(l => l.length > 0) : [];
-    let presetWeights = preset.param_map.loraweights ? preset.param_map.loraweights.split(',').map(w => {
-        let parsed = parseFloat(w.trim());
-        return isNaN(parsed) ? 0 : parsed;
-    }) : [];
-    
-    // Track if we've handled loraweights through loras processing
-    let loraweightsHandled = false;
-    
+function applyOnePreset(preset) {
     for (let key of Object.keys(preset.param_map)) {
         let param = gen_param_types.filter(p => p.id == key)[0];
         if (param) {
@@ -321,50 +311,12 @@ function applyOnePreset(preset, isNestedPreset = false) {
                     val = val.replace("{value}", elem.value);
                 }
             }
-            else if (key == 'loras') {
-                if (rawVal) {
-                    // Merge LoRA lists: update weights for existing LoRAs, add new ones
-                    let currentLoras = rawVal.split(',').map(l => l.trim()).filter(l => l.length > 0);
-                    let weightsParam = gen_param_types.find(p => p.id == 'loraweights');
-                    if (!weightsParam) {
-                        console.warn('[Preset] Warning: loraweights parameter not found when merging LoRA lists');
-                    }
-                    let weightsVal = weightsParam ? getInputVal(weightsParam) : '';
-                    let currentWeights = (weightsVal || '').split(',').map(w => {
-                        let parsed = parseFloat(w.trim());
-                        return isNaN(parsed) ? 0 : parsed;
-                    });
-                    // Update weights for LoRAs that are already present
-                    for (let i = 0; i < presetLoras.length; i++) {
-                        let idx = currentLoras.indexOf(presetLoras[i]);
-                        if (idx >= 0) {
-                            // LoRA already exists, update its weight
-                            currentWeights[idx] = presetWeights[i] !== undefined ? presetWeights[i] : 0;
-                        }
-                        else {
-                            // New LoRA, add it
-                            currentLoras.push(presetLoras[i]);
-                            currentWeights.push(presetWeights[i] !== undefined ? presetWeights[i] : 0);
-                        }
-                    }
-                    val = currentLoras.join(',');
-                    // Also update the weights value
-                    if (weightsParam) {
-                        setDirectParamValue(weightsParam, currentWeights.join(','));
-                    }
-                    loraweightsHandled = true;
-                }
-                else {
-                    // No existing LoRAs, just use the preset's LoRAs
-                    val = preset.param_map.loras;
-                }
-            }
-            else if (key == 'loraweights') {
-                // Skip - weights are handled in loras section
-                if (loraweightsHandled) {
-                    continue;
-                }
-            }
+            else if (key == 'loras' && rawVal) {
+                val = rawVal + "," + val;
+			}
+            else if (key == 'loraweights' && rawVal) {
+                val = rawVal + "," + val;
+			}
             setDirectParamValue(param, val);
             if (param.group && param.group.toggles) {
                 let toggler = document.getElementById(`input_group_content_${param.group.id}_toggle`);
@@ -372,77 +324,14 @@ function applyOnePreset(preset, isNestedPreset = false) {
                 doToggleGroup(`input_group_content_${param.group.id}`);
             }
         }
-    }    
-    // Handle LoRA preset selection/application (only if not already a nested preset to prevent recursion)
-    if (!isNestedPreset && preset.param_map.loras) {
-        selectOrApplyLoraPresetsFromList(preset.param_map.loras, preset.param_map.loraweights);
     }
 }
 
 /**
- * Handle LoRA preset selection/application for LoRAs loaded by a preset.
- * Parses the loras and loraweights strings to find non-zero weight LoRAs and select/apply their presets.
- * @param {string} lorasStr - Comma-separated list of LoRA names
- * @param {string} weightsStr - Comma-separated list of LoRA weights
- */
-function selectOrApplyLoraPresetsFromList(lorasStr, weightsStr) {
-    if (!lorasStr) {
-        return;
-    }
-    if (!weightsStr) {
-        return;
-    }
-    try {
-        let loras = lorasStr.split(',').map(l => l.trim()).filter(l => l.length > 0);
-        let weights = weightsStr.split(',').map(w => {
-            let parsed = parseFloat(w.trim());
-            return isNaN(parsed) ? 0 : parsed;
-        });
-        let hasAnyPresets = false;
-        let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
-        let ignoreZeroWeightLoraPresets = getUserSetting('ui.ignoreModelPresetZeroWeightLoraPresets', false);
-        for (let i = 0; i < loras.length; i++) {
-            let loraName = loras[i];
-            let weight = weights[i] !== undefined ? weights[i] : 1;
-            // Only process LoRAs with non-zero weight (if setting is enabled)
-            if (ignoreZeroWeightLoraPresets && weight == 0) {
-                continue;
-            }
-            let presetTitle = getModelPresetLink('LoRA', loraName);
-            if (!presetTitle) {
-                continue;
-            }
-            let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
-            if (!presetData) {
-                continue;
-            }
-            hasAnyPresets = true;
-            if (autoApply) {
-                // Directly apply the LoRA preset (pass true for isNested to prevent recursion)
-                applyOnePreset(presetData, true);
-            }
-            else {
-                // In non-auto-apply mode, just select the preset
-                if (!currentPresets.some(p => p.title == presetData.title)) {
-                    currentPresets.push(presetData);
-                }
-            }
-        }
-        // Update UI once if we processed any presets
-        if (hasAnyPresets) {
-            updatePresetList();
-            presetBrowser?.rerender();
-        }
-    } catch (e) {
-        console.warn('[LoRA Preset] Error handling LoRA presets:', e.message);
-    }
-}
-
-/**
- * Handle LoRA preset selection/application when a LoRA is manually selected.
+ * Handle LoRA preset selection when a LoRA is manually selected.
  * @param {string} modelName - The name of the LoRA being selected
  */
-function selectOrApplyLoraPresetOnSelection(modelName) {
+function selectLoraPresetOnSelection(modelName) {
     try {
         let presetTitle = getModelPresetLink('LoRA', modelName);
         if (!presetTitle) {
@@ -452,9 +341,7 @@ function selectOrApplyLoraPresetOnSelection(modelName) {
         if (!presetData) {
             return;
         }
-        if (getUserSetting('ui.autoapplymodelpresets', false)) {
-            applyOnePreset(presetData, true);
-        } else if (!currentPresets.some(p => p.title == presetData.title)) {
+        if (!currentPresets.some(p => p.title == presetData.title)) {
             // Select the preset if it's not already selected
             currentPresets.push(presetData);
             updatePresetList();
@@ -976,7 +863,7 @@ function closeImportPresetViewer() {
  * @param {string} subtype - Model's sub-type: 'Stable-Diffusion' or 'LoRA'
  * @param {string} modelName - Full filepath name of the model
  * @param {string} containerId - The ID of the container element to populate
- * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_override_preset_id')
+ * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_preset_id')
  */
 function buildPresetLinkSelectorForModel(subtype, modelName, containerId, selectId) {
     let container = getRequiredElementById(containerId);

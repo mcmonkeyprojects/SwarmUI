@@ -268,15 +268,15 @@ class LoraHelper {
             name = lora.name;
             data = lora;
         }
-        name = cleanModelName(name);
-        let selected = this.selected.find(l => l.name == name);
+        let cleanName = cleanModelName(name);
+        let selected = this.selected.find(l => l.name == cleanName);
         if (selected) {
-            this.selected = this.selected.filter(l => l.name != name);
+            this.selected = this.selected.filter(l => l.name != cleanName);
         }
         else {
-            this.selected.push(new SelectedLora(name, null, null, data));
-            // Handle LoRA preset selection/application when adding a LoRA
-            selectOrApplyLoraPresetOnSelection(name);
+            this.selected.push(new SelectedLora(cleanName, null, null, data));
+			// If LoRA has a preset, select it too (path and filename, not cleaned name)
+            selectLoraPresetOnSelection(name);
         }
         this.rebuildParams();
         this.rebuildUI();
