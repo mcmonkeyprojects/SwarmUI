@@ -83,9 +83,9 @@ try:
     from app import logger
     def patch_interceptor(interceptor):
         if interceptor:
-            orig = interceptor.write
+            orig_interceptor_write = interceptor.write
             def write(self, data):
-                orig(data)
+                orig_interceptor_write(data)
                 self.flush()
             interceptor.write = functools.partial(write, interceptor)
             # Force UTF-8 too, to prevent encoding errors (Comfy will full crash outputting some languages)
@@ -100,12 +100,24 @@ except Exception as e:
 # comfy's server/PromptServer is janky with EventID=4, so overwrite send_bytes to interpret EventID=9999123 as 4
 try:
     server = PromptServer.instance
-    orig = server.send_bytes
+    orig_server_send_bytes = server.send_bytes
     async def send_bytes(self, event, data, sid=None):
         if event == 9999123:
             event = 4
-        await orig(event, data, sid=sid)
+        await orig_server_send_bytes(event, data, sid=sid)
     server.send_bytes = functools.partial(send_bytes, server)
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+
+# Hide .swarmpreview files from Comfy image load list
+try:
+    orig_folder_paths_filter_files_content_types = folder_paths.filter_files_content_types
+    def filter_files_content_types(*args, **kwargs):
+        files = orig_folder_paths_filter_files_content_types(*args, **kwargs)
+        files = [f for f in files if not f.endswith(".swarmpreview.jpg") and not f.endswith(".swarmpreview.webp")]
+        return files
+    folder_paths.filter_files_content_types = filter_files_content_types
 except Exception as e:
     import traceback
     traceback.print_exc()

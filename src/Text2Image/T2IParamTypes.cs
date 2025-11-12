@@ -1,11 +1,14 @@
-﻿using FreneticUtilities.FreneticExtensions;
-using FreneticUtilities.FreneticToolkit;
-using Newtonsoft.Json.Linq;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Media;
 using SwarmUI.Utils;
-using System.IO;
+using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticToolkit;
+using Newtonsoft.Json.Linq;
 
 namespace SwarmUI.Text2Image;
 
@@ -970,7 +973,12 @@ public class T2IParamTypes
                 }
                 return val;
             case T2IParamDataType.LIST:
-                string[] vals = val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                string splitter =  val.Contains("\n|||\n") ? "\n|||\n" : ",";
+                string[] vals = val.Split(splitter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (vals.Length == 0)
+                {
+                    return "";
+                }
                 if (type.GetValues is not null && type.ValidateValues)
                 {
                     string[] possible = [.. type.GetValues(session).Select(v => v.Before("///"))];
@@ -994,7 +1002,7 @@ public class T2IParamTypes
                             }
                         }
                     }
-                    return vals.JoinString(",");
+                    return vals.JoinString("\n|||\n");
                 }
                 return val;
             case T2IParamDataType.IMAGE:
@@ -1015,7 +1023,7 @@ public class T2IParamTypes
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:
-                foreach (string part in val.Split('|'))
+                foreach (string part in val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|"))
                 {
                     string partVal = part.Trim();
                     if (partVal.StartsWith("data:"))

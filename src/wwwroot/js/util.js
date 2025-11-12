@@ -832,7 +832,7 @@ function filterDistinctBy(array, map) {
 }
 
 /** Gets the current value of an input element (in a checkbox-compatible way). */
-function getInputVal(input) {
+function getInputVal(input, rawLists = false) {
     if (input.tagName == 'INPUT' && input.type == 'checkbox') {
         return input.checked;
     }
@@ -844,6 +844,9 @@ function getInputVal(input) {
     }
     else if (input.tagName == 'SELECT' && input.multiple) {
         let valSet = [...input.selectedOptions].map(option => option.value);
+        if (rawLists) {
+            return valSet;
+        }
         if (valSet.length > 0) {
             return valSet.join(',');
         }

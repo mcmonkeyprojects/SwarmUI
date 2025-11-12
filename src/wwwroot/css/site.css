@@ -806,6 +806,12 @@ textarea, input, select {
 .parens {
     color: var(--text-soft);
 }
+.model-short-code {
+    color: var(--text-soft);
+    float: right;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+}
 .sui-popover-notice {
     visibility: visible;
     opacity: 1;

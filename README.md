@@ -29,6 +29,10 @@ Key feature targets not yet implemented:
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
 - convenient direct-distribution of Swarm as a program ([Tauri](https://tauri.app/), [Blazor Desktop](https://learn.microsoft.com/en-us/training/modules/build-blazor-hybrid/), or an Electron app?)
 
+# Donate
+
+SwarmUI is 100% free and open source forever. If you want to help make sure it keeps pace with the best despite my refusal to paywall access or shove ads down your throat, [donate to SwarmUI](https://patreon.com/swarmui)!
+
 # Try It On Google Colab
 
 ### Google Colab
