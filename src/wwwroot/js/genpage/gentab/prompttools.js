@@ -621,6 +621,9 @@ class PromptPlusButton {
             let opt = document.createElement('option');
             opt.value = srcOpt.value;
             opt.textContent = srcOpt.textContent;
+            if (srcOpt.dataset.cleanname) {
+                opt.dataset.cleanname = srcOpt.dataset.cleanname;
+            }
             destSelect.appendChild(opt);
         }
     }
