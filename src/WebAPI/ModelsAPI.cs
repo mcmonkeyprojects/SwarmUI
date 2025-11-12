@@ -29,8 +29,8 @@ public static class ModelsAPI
         API.RegisterAPICall(TestPromptFill, false, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(EditWildcard, true, Permissions.EditWildcards);
         API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
-        API.RegisterAPICall(SaveItemPresetLink, true, Permissions.ManagePresets);
-        API.RegisterAPICall(ClearItemPresetLink, true, Permissions.ManagePresets);
+        API.RegisterAPICall(SaveModelPresetLink, true, Permissions.ManagePresets);
+        API.RegisterAPICall(ClearModelPresetLink, true, Permissions.ManagePresets);
         API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
@@ -821,132 +821,128 @@ public static class ModelsAPI
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Renames a model file, moving it within the model folder (allowing change of subfolders).", "\"success\": \"true\"")]
-    public static async Task<JObject> RenameModel(Session session,
-        [API.APIParameter("Full filepath name of the model being renamed.")] string oldName,
-        [API.APIParameter("New full filepath name for the model.")] string newName,
-        [API.APIParameter("What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc.")] string subtype = "Stable-Diffusion")
-    {
-        if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
-        {
-            return new JObject() { ["error"] = "Invalid sub-type." };
-        }
-        using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
-        T2IModel match = null;
-        if (session.User.IsAllowedModel(oldName))
-        {
-            if (handler.Models.TryGetValue(oldName + ".safetensors", out T2IModel model))
-            {
-                oldName += ".safetensors";
-                match = model;
-            }
-            else if (handler.Models.TryGetValue(oldName, out model))
-            {
-                match = model;
-            }
-        }
-        if (match is null)
-        {
-            return new JObject() { ["error"] = "Model not found." };
-        }
-        (string oldNameNoExt, string ext) = match.Name.BeforeAndAfterLast('.');
-        newName = newName.BeforeLast('.');
-        newName = Utilities.StrictFilenameClean(newName).Trim().Trim('/').Replace(' ', '_');
-        if (string.IsNullOrWhiteSpace(newName) || !session.User.IsAllowedModel(oldName))
-        {
-            return new JObject() { ["error"] = "Model new name is not valid." };
-        }
-        if (handler.Models.TryGetValue(newName + ".safetensors", out _) || handler.Models.TryGetValue(newName, out _))
-        {
-            return new JObject() { ["error"] = "Model new name is already taken by an existing model." };
-        }
-        if (!match.RawFilePath.EndsWith(oldName))
-        {
-            Logs.Debug($"Model path {match.RawFilePath} does not end with {oldName}??");
-            return new JObject() { ["error"] = "Paths are being mishandled by the system. Cannot rename. (Please report this bug)" };
-        }
-        void doMoveNow(string oldPath)
-        {
-            string relevantRoot = oldPath[..^oldName.Length];
-            Directory.CreateDirectory($"{relevantRoot}/{Path.GetDirectoryName(newName)}");
-            File.Move(oldPath, $"{relevantRoot}/{newName}.{ext}");
-            foreach (string str in T2IModelHandler.AllModelAttachedExtensions)
-            {
-                string altFile = $"{relevantRoot}/{oldNameNoExt}{str}";
-                if (File.Exists(altFile))
-                {
-                    File.Move(altFile, $"{relevantRoot}/{newName}{str}");
-                }
-            }
-            AutoFolderRemove(handler, Path.GetDirectoryName(oldPath));
-        }
-        doMoveNow(match.RawFilePath);
-        if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
-        {
-            foreach (string altPath in match.OtherPaths)
-            {
-                doMoveNow(altPath);
-            }
-        }
-        Interlocked.Increment(ref ModelEditID);
-        return new JObject() { ["success"] = true };
-    }
+	[API.APIDescription("Renames a model file, moving it within the model folder (allowing change of subfolders).", "\"success\": \"true\"")]
+	public static async Task<JObject> RenameModel(Session session,
+		[API.APIParameter("Full filepath name of the model being renamed.")] string oldName,
+		[API.APIParameter("New full filepath name for the model.")] string newName,
+		[API.APIParameter("What model sub-type to use, can be eg `LoRA` or `Stable-Diffusion` or etc.")] string subtype = "Stable-Diffusion")
+	{
+		if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
+		{
+			return new JObject() { ["error"] = "Invalid sub-type." };
+		}
+		using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
+		T2IModel match = null;
+		if (session.User.IsAllowedModel(oldName))
+		{
+			if (handler.Models.TryGetValue(oldName + ".safetensors", out T2IModel model))
+			{
+				oldName += ".safetensors";
+				match = model;
+			}
+			else if (handler.Models.TryGetValue(oldName, out model))
+			{
+				match = model;
+			}
+		}
+		if (match is null)
+		{
+			return new JObject() { ["error"] = "Model not found." };
+		}
+		(string oldNameNoExt, string ext) = match.Name.BeforeAndAfterLast('.');
+		newName = newName.BeforeLast('.');
+		newName = Utilities.StrictFilenameClean(newName).Trim().Trim('/').Replace(' ', '_');
+		if (string.IsNullOrWhiteSpace(newName) || !session.User.IsAllowedModel(oldName))
+		{
+			return new JObject() { ["error"] = "Model new name is not valid." };
+		}
+		if (handler.Models.TryGetValue(newName + ".safetensors", out _) || handler.Models.TryGetValue(newName, out _))
+		{
+			return new JObject() { ["error"] = "Model new name is already taken by an existing model." };
+		}
+		if (!match.RawFilePath.EndsWith(oldName))
+		{
+			Logs.Debug($"Model path {match.RawFilePath} does not end with {oldName}??");
+			return new JObject() { ["error"] = "Paths are being mishandled by the system. Cannot rename. (Please report this bug)" };
+		}
+		void doMoveNow(string oldPath)
+		{
+			string relevantRoot = oldPath[..^oldName.Length];
+			Directory.CreateDirectory($"{relevantRoot}/{Path.GetDirectoryName(newName)}");
+			File.Move(oldPath, $"{relevantRoot}/{newName}.{ext}");
+			foreach (string str in T2IModelHandler.AllModelAttachedExtensions)
+			{
+				string altFile = $"{relevantRoot}/{oldNameNoExt}{str}";
+				if (File.Exists(altFile))
+				{
+					File.Move(altFile, $"{relevantRoot}/{newName}{str}");
+				}
+			}
+			AutoFolderRemove(handler, Path.GetDirectoryName(oldPath));
+		}
+		doMoveNow(match.RawFilePath);
+		if (Program.ServerSettings.Paths.EditMetadataAcrossAllDups)
+		{
+			foreach (string altPath in match.OtherPaths)
+			{
+				doMoveNow(altPath);
+			}
+		}
+		Interlocked.Increment(ref ModelEditID);
+		return new JObject() { ["success"] = true };
+	}
 
-    /// <summary>Saves a reference to a preset for a model or LoRA to the user's data.</summary>
-    /// <param name="session">The user session context.</param>
-    /// <param name="itemType">The type of item: 'model' or 'lora'.</param>
-    /// <param name="itemName">The name/identifier of the model or LoRA.</param>
-    /// <param name="presetTitle">The title of the preset to link, or empty string to clear the link.</param>
-    /// <returns>A JSON object containing the success status, the key that was saved/cleared, and the preset title.</returns>
-    public static async Task<JObject> SaveItemPresetLink(Session session, string itemType, string itemName, string presetTitle)
+    [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
+    public static async Task<JObject> SaveModelPresetLink(Session session,
+        [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
+        [API.APIParameter("Full filepath name of the model.")] string modelName,
+        [API.APIParameter("The title of the preset to link, or empty string to clear the link.")] string presetTitle)
     {
-        string key = $"{itemType}:{itemName}";
+        string key = $"{subtype}:{modelName}";
         try
         {
-            string rawJson = session.User.GetGenericData("itempresetlinks", "data") ?? "{}";
+            string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
             JObject links = JObject.Parse(rawJson);
-            if (!string.IsNullOrWhiteSpace(presetTitle))
-            {
-                links[key] = presetTitle;
-            }
-            else if (links.ContainsKey(key))
+            if (string.IsNullOrWhiteSpace(presetTitle))
             {
                 links.Remove(key);
             }
+            else
+            {
+                links[key] = presetTitle;
+            }
             string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
-            session.User.SaveGenericData("itempresetlinks", "data", newJson);
-            return new JObject() { ["success"] = true, ["key"] = key, ["preset"] = presetTitle };
+            session.User.SaveGenericData("modelpresetlinks", "data", newJson);
+            return new JObject() { ["success"] = true };
         }
         catch (Exception ex)
         {
             Logs.Error($"Error saving preset link: {ex.ReadableString()}");
+            return new JObject() { ["success"] = false };
         }
     }
 
-    /// <summary>Clears a reference to a preset for a model or LoRA from the user's data.</summary>
-    /// <param name="session">The user session context.</param>
-    /// <param name="itemType">The type of item: 'model' or 'lora'.</param>
-    /// <param name="itemName">The name/identifier of the model or LoRA.</param>
-    /// <returns>A JSON object containing the success status and the key that was cleared.</returns>
-    public static async Task<JObject> ClearItemPresetLink(Session session, string itemType, string itemName)
+    [API.APIDescription("Clears a reference to a preset for a model from the user's data.", "\"success\": \"true\"")]
+    public static async Task<JObject> ClearModelPresetLink(Session session,
+        [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
+        [API.APIParameter("Full filepath name of the model.")] string modelName)
     {
-        string key = $"{itemType}:{itemName}";
+        string key = $"{subtype}:{modelName}";
         try
         {
-            string rawJson = session.User.GetGenericData("itempresetlinks", "data") ?? "{}";
+            string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
             JObject links = JObject.Parse(rawJson);
-            if (links.ContainsKey(key))
+            if (links.Remove(key))
             {
-                links.Remove(key);
                 string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
-                session.User.SaveGenericData("itempresetlinks", "data", newJson);
+                session.User.SaveGenericData("modelpresetlinks", "data", newJson);
             }
-            return new JObject() { ["success"] = true, ["key"] = key };
+            return new JObject() { ["success"] = true };
         }
         catch (Exception ex)
         {
             Logs.Error($"Error clearing preset link: {ex.Message}");
-            return new JObject() { ["success"] = false, ["error"] = ex.Message };
+            return new JObject() { ["success"] = false };
         }
     }
 }

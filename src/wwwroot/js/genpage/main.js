@@ -374,8 +374,8 @@ function loadUserData(callback) {
         }
         allPresetsUnsorted = data.presets;
         // Load user's item preset links from server into the manager
-        if (data.item_preset_links && itemPresetLinkManager) {
-            itemPresetLinkManager.loadFromServer(data.item_preset_links);
+        if (data.model_preset_links && modelPresetLinkManager) {
+            modelPresetLinkManager.loadFromServer(data.model_preset_links);
         }
         sortPresets();
         presetBrowser.lightRefresh();

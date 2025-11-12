@@ -11,32 +11,37 @@ class PresetHelpers {
 }
 
 /** Manages preset links for models and LoRAs. */
-class ItemPresetLinkManager {
+class ModelPresetLinkManager {
     constructor() {
-        this.links = {}; // { 'model:name': 'preset_title', 'lora:name': 'preset_title', ... }
+        this.links = {}; // { 'Stable-Diffusion:name': 'preset_title', 'LoRA:name': 'preset_title', ... }
     }
 
-    getLink(itemType, itemName) {
-        let key = `${itemType}:${itemName}`;
+    getKey(subtype, modelName) {
+        return `${subtype}:${modelName}`;
+    }
+
+    getLink(subtype, modelName) {
+        let key = this.getKey(subtype, modelName);
         return this.links[key] || null;
     }
 
-    setLink(itemType, itemName, presetTitle) {
-        let key = `${itemType}:${itemName}`;
-        if (presetTitle && presetTitle.trim()) {
+    setLink(subtype, modelName, presetTitle) {
+        let key = this.getKey(subtype, modelName);
+        if (presetTitle?.trim()) {
             this.links[key] = presetTitle;
-        } else {
+        }
+        else {
             delete this.links[key];
         }
     }
 
-    clearLink(itemType, itemName) {
-        let key = `${itemType}:${itemName}`;
+    clearLink(subtype, modelName) {
+        let key = this.getKey(subtype, modelName);
         delete this.links[key];
     }
 
-    hasLink(itemType, itemName) {
-        return this.getLink(itemType, itemName) !== null;
+    hasLink(subtype, modelName) {
+        return !!this.getLink(subtype, modelName);
     }
 
     loadFromServer(data) {
@@ -46,8 +51,8 @@ class ItemPresetLinkManager {
     }
 }
 
-/** Instance of ItemPresetLinkManager for managing model and LoRA preset links */
-let itemPresetLinkManager = new ItemPresetLinkManager();
+/** Instance of ModelPresetLinkManager for managing model and LoRA preset links */
+let modelPresetLinkManager = new ModelPresetLinkManager();
 
 /** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
 let presetHelpers = new PresetHelpers();
@@ -335,7 +340,8 @@ function applyOnePreset(preset, isNestedPreset = false) {
                         if (idx >= 0) {
                             // LoRA already exists, update its weight
                             currentWeights[idx] = presetWeights[i] !== undefined ? presetWeights[i] : 0;
-                        } else {
+                        }
+                        else {
                             // New LoRA, add it
                             currentLoras.push(presetLoras[i]);
                             currentWeights.push(presetWeights[i] !== undefined ? presetWeights[i] : 0);
@@ -347,7 +353,8 @@ function applyOnePreset(preset, isNestedPreset = false) {
                         setDirectParamValue(weightsParam, currentWeights.join(','));
                     }
                     loraweightsHandled = true;
-                } else {
+                }
+                else {
                     // No existing LoRAs, just use the preset's LoRAs
                     val = preset.param_map.loras;
                 }
@@ -369,29 +376,6 @@ function applyOnePreset(preset, isNestedPreset = false) {
     // Handle LoRA preset selection/application (only if not already a nested preset to prevent recursion)
     if (!isNestedPreset && preset.param_map.loras) {
         selectOrApplyLoraPresetsFromList(preset.param_map.loras, preset.param_map.loraweights);
-    }
-}
-
-/**
- * Common helper to apply or select a preset with proper UI updates.
- * @param {string} source - Human-readable source for logging (e.g., 'LoRA', 'Model')
- * @param {string} itemName - Name of the item triggering the preset
- * @param {object} presetData - The preset data object
- * @param {boolean} isNested - Whether this is a nested call (prevent recursion)
- * @param {boolean} shouldUpdateUI - Whether to update UI after selection
- */
-function applyOrSelectPreset(source, itemName, presetData, isNested, shouldUpdateUI = false) {
-    let autoApply = getUserSetting('ui.autoapplymodelpresets', false);
-    if (autoApply) {
-        console.info(`[${source} Preset] Auto-applying preset ${presetData.title} for ${itemName}`);
-        applyOnePreset(presetData, isNested);
-    } else if (!currentPresets.some(p => p.title == presetData.title)) {
-        // Select the preset if it's not already selected
-        currentPresets.push(presetData);
-        if (shouldUpdateUI) {
-            updatePresetList();
-            presetBrowser?.rerender();
-        }
     }
 }
 
@@ -424,8 +408,7 @@ function selectOrApplyLoraPresetsFromList(lorasStr, weightsStr) {
             if (ignoreZeroWeightLoraPresets && weight == 0) {
                 continue;
             }
-            // Use the centralized function to get preset links (handles key extraction)
-            let presetTitle = getItemPresetLink('lora', loraName);
+            let presetTitle = getModelPresetLink('LoRA', loraName);
             if (!presetTitle) {
                 continue;
             }
@@ -437,7 +420,8 @@ function selectOrApplyLoraPresetsFromList(lorasStr, weightsStr) {
             if (autoApply) {
                 // Directly apply the LoRA preset (pass true for isNested to prevent recursion)
                 applyOnePreset(presetData, true);
-            } else {
+            }
+            else {
                 // In non-auto-apply mode, just select the preset
                 if (!currentPresets.some(p => p.title == presetData.title)) {
                     currentPresets.push(presetData);
@@ -456,16 +440,25 @@ function selectOrApplyLoraPresetsFromList(lorasStr, weightsStr) {
 
 /**
  * Handle LoRA preset selection/application when a LoRA is manually selected.
- * @param {string} loraName - The name of the LoRA being selected
+ * @param {string} modelName - The name of the LoRA being selected
  */
-function selectOrApplyLoraPresetOnSelection(loraName) {
+function selectOrApplyLoraPresetOnSelection(modelName) {
     try {
-        let presetTitle = getItemPresetLink('lora', loraName);
-        if (presetTitle) {
-            let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
-            if (presetData) {
-                applyOrSelectPreset('LoRA', loraName, presetData, true, true);
-            }
+        let presetTitle = getModelPresetLink('LoRA', modelName);
+        if (!presetTitle) {
+            return;
+        }
+        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+        if (!presetData) {
+            return;
+        }
+        if (getUserSetting('ui.autoapplymodelpresets', false)) {
+            applyOnePreset(presetData, true);
+        } else if (!currentPresets.some(p => p.title == presetData.title)) {
+            // Select the preset if it's not already selected
+            currentPresets.push(presetData);
+            updatePresetList();
+            presetBrowser?.rerender();
         }
     } catch (e) {
         console.warn('[LoRA Preset] Error handling LoRA preset on selection:', e.message);
@@ -600,8 +593,8 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
             // Load user's item preset links from server into the manager
-            if (data.item_preset_links && itemPresetLinkManager) {
-                itemPresetLinkManager.loadFromServer(data.item_preset_links);
+            if (data.model_preset_links && modelPresetLinkManager) {
+                modelPresetLinkManager.loadFromServer(data.model_preset_links);
             }
             proc();
         });
@@ -979,16 +972,15 @@ function closeImportPresetViewer() {
 }
 
 /**
- * Generic function to build a preset link selector for both models and LoRAs.
- * @param {string} itemType - 'model' or 'lora'
- * @param {string} itemName - The name of the model or LoRA
+ * Builds a preset link selector for models.
+ * @param {string} subtype - Model's sub-type: 'Stable-Diffusion' or 'LoRA'
+ * @param {string} modelName - Full filepath name of the model
  * @param {string} containerId - The ID of the container element to populate
  * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_override_preset_id')
  */
-function buildPresetLinkSelectorForItem(itemType, itemName, containerId, selectId) {
+function buildPresetLinkSelectorForModel(subtype, modelName, containerId, selectId) {
     let container = getRequiredElementById(containerId);
     container.innerHTML = '';
-    
     // Build list of all presets
     let compatiblePresets = [];
     if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
@@ -999,30 +991,24 @@ function buildPresetLinkSelectorForItem(itemType, itemName, containerId, selectI
             }
         }
     }
-    
     // Create select element that UIImprovementHandler will convert to a popover
     let select = document.createElement('select');
     select.id = selectId;
     select.className = 'modal_text_extra';
-    
     let option = document.createElement('option');
     option.value = '';
     option.innerText = '-- Select a Preset --';
     select.appendChild(option);
-    
     for (let preset of compatiblePresets) {
         option = document.createElement('option');
         option.value = preset.title;
         option.innerText = preset.title;
         select.appendChild(option);
     }
-    
-    // Set current value from itemPresetLinkManager using centralized key extraction
-    let currentLink = getItemPresetLink(itemType, itemName);
+    let currentLink = getModelPresetLink(subtype, modelName);
     if (currentLink) {
         select.value = currentLink;
     }
-    
     select.addEventListener('change', () => {
         // Update button state when selection changes
         updatePresetLinkButtonState(selectId);
@@ -1030,7 +1016,6 @@ function buildPresetLinkSelectorForItem(itemType, itemName, containerId, selectI
     select.addEventListener('input', () => {
         updatePresetLinkButtonState(selectId);
     });
-    
     container.appendChild(select);
     updatePresetLinkButtonState(selectId);
 }

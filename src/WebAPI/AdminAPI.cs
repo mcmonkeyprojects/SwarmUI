@@ -74,7 +74,7 @@ public static class AdminAPI
             {
                 continue;
             }
-			string[] vals = data.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Options ?? null;
+            string[] vals = data.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Options ?? null;
             string[] val_names = null;
             if (vals is not null)
             {
