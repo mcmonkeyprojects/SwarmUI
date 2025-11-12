@@ -428,8 +428,16 @@ class PromptPlusButton {
             + makeGenericPopover('text_prompt_segment_invert_mask', 'Prompt Syntax: Segment Invert Mask', 'Checkbox', 'Whether to invert the mask.\nIf checked, select everything except what was matched by the model.', '')
             + makeCheckboxInput(null, 'text_prompt_segment_invert_mask', '', 'Invert Mask', '', false, false, false, true)
             + makeGenericPopover('text_prompt_segment_gentext', 'Prompt Syntax: Segment Generation Prompt', 'text', 'The prompt to use when regenerating the matched area.\nShould be a full text on its own, can use a subset of general prompting syntax.', '')
-            + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
+            + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true)
+            + makeGenericPopover('text_prompt_segment_sampler', 'Segment Sampler', 'Sampler', 'Optional alternate sampler to use when regenerating the matched area.\nIf unset, the main sampler param will be used.', '')
+            + makeDropdownInput(null, 'text_prompt_segment_sampler', '', 'Sampler', '', [], '', true, true, [])
+            + makeGenericPopover('text_prompt_segment_scheduler', 'Segment Scheduler', 'Scheduler', 'Optional alternate scheduler to use when regenerating the matched area.\nIf unset, the main scheduler param will be used.', '')
+            + makeDropdownInput(null, 'text_prompt_segment_scheduler', '', 'Scheduler', '', [], '', true, true, []);
         this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
+        this.segmentModalSampler = getRequiredElementById('text_prompt_segment_sampler');
+        doToggleEnable('text_prompt_segment_sampler');
+        this.segmentModalScheduler = getRequiredElementById('text_prompt_segment_scheduler');
+        doToggleEnable('text_prompt_segment_scheduler');
         this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
         this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
         this.segmentModalClassIds = getRequiredElementById('text_prompt_segment_classids');
@@ -440,6 +448,8 @@ class PromptPlusButton {
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
+        this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
+        this.populateDropdownFromSource('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
         this.regionModalOther = getRequiredElementById('text_prompt_region_other_inputs');
         this.regionModalOther.innerHTML =
             makeGenericPopover('text_prompt_region_x', 'Prompt Syntax: Region Left X', 'Left X', "The left X coordinate of the region's box.", '')
@@ -544,12 +554,18 @@ class PromptPlusButton {
         this.segmentModalModelSelect.innerHTML = html;
         this.segmentModalModelSelect.value = 'CLIP-Seg';
         this.segmentModalMainText.value = '';
+        this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
+        this.populateDropdownFromSource('input_scheduler', this.segmentModalScheduler, 'text_prompt_segment_scheduler_toggle');
         this.segmentModalCreativity.value = 0.6;
         this.segmentModalThreshold.value = 0.5;
         this.segmentModalTextMatch.value = '';
         this.segmentModalYoloId.value = 0;
         this.segmentModalClassIds.value = '';
         this.segmentModalInvertMask.checked = false;
+        getRequiredElementById('text_prompt_segment_sampler_toggle').checked = false;
+        doToggleEnable('text_prompt_segment_sampler');
+        getRequiredElementById('text_prompt_segment_scheduler_toggle').checked = false;
+        doToggleEnable('text_prompt_segment_scheduler');
         triggerChangeFor(this.segmentModalCreativity);
         triggerChangeFor(this.segmentModalThreshold);
     }
@@ -585,7 +601,31 @@ class PromptPlusButton {
             }
         }
         $('#text_prompt_segment_modal').modal('hide');
-        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}> ${this.segmentModalMainText.value.trim()}`);
+        let append = '';
+        if (this.segmentModalSampler && !this.segmentModalSampler.classList.contains('disabled-input')) {
+            append += `<param[sampler]:${this.segmentModalSampler.value}>`;
+        }
+        if (this.segmentModalScheduler && !this.segmentModalScheduler.classList.contains('disabled-input')) {
+            append += `<param[scheduler]:${this.segmentModalScheduler.value}>`;
+        }
+        this.applyNewSyntax(`<segment:${modelText},${this.segmentModalCreativity.value},${this.segmentModalInvertMask.checked ? '-' : ''}${this.segmentModalThreshold.value}>${append} ${this.segmentModalMainText.value.trim()}`);
+    }
+
+    populateDropdownFromSource(sourceId, destSelect, targetId) {
+        let src = document.getElementById(sourceId);
+        if (!destSelect || !src || !src.options) {
+            return;
+        }
+        destSelect.innerHTML = '';
+        for (let srcOpt of src.options) {
+            let opt = document.createElement('option');
+            opt.value = srcOpt.value;
+            opt.textContent = srcOpt.textContent;
+            if (srcOpt.dataset.cleanname) {
+                opt.dataset.cleanname = srcOpt.dataset.cleanname;
+            }
+            destSelect.appendChild(opt);
+        }
     }
 
     regionModalClear() {
