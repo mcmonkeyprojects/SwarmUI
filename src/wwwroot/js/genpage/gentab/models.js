@@ -396,18 +396,6 @@ function save_edit_model() {
     complete();
 }
 
-function cleanModelName(name) {
-    let index = name.lastIndexOf('/');
-    if (index != -1) {
-        name = name.substring(index + 1);
-    }
-    index = name.lastIndexOf('.');
-    if (index != -1) {
-        name = name.substring(0, index);
-    }
-    return name;
-}
-
 function isModelArchCorrect(model) {
     if (model.compat_class && curModelCompatClass) {
         let slash = model.architecture.indexOf('/');
