@@ -415,10 +415,6 @@ class PromptPlusButton {
         this.segmentModalOther.innerHTML =
             makeGenericPopover('text_prompt_segment_model', 'Prompt Syntax: Segment Model', 'Model', "What model to find the segment with.\nBy default, CLIP-Seg is a special model that uses text prompt matching.\nYou may instead use a YOLOv8 model.", '')
             + makeDropdownInput(null, 'text_prompt_segment_model', '', 'Segment Model', '', ['CLIP-Seg'], 'CLIP-Seg', false, true, ['CLIP-Seg (Match by prompting)'])
-            + makeGenericPopover('text_prompt_segment_sampler', 'Segment Sampler', 'Sampler', "Sampler to use for the segment stage.", '')
-            + makeDropdownInput(null, 'text_prompt_segment_sampler', '', 'Sampler', '', [], '', true, true, [])
-            + makeGenericPopover('text_prompt_segment_scheduler', 'Segment Scheduler', 'Scheduler', "Scheduler to use for the segment stage.", '')
-            + makeDropdownInput(null, 'text_prompt_segment_scheduler', '', 'Scheduler', '', [], '', true, true, [])
             + makeGenericPopover('text_prompt_segment_textmatch', 'Prompt Syntax: Segment Text Match', 'Text', "The text to match against in the image.\nDoesn't apply when using a YOLO model.\nFor example, 'face' or 'the man's face'", '')
             + makeTextInput(null, 'text_prompt_segment_textmatch', '', 'Text Match', '', '', 'normal', '', false, false, true)
             + makeGenericPopover('text_prompt_segment_yoloid', 'Prompt Syntax: Segment YOLO ID', 'Number', 'The ID of the match within the YOLO result to use.\nDefault of 0 means all matches.\nIf you set to 1, it will use the first match it finds (eg the first face in a group of faces).', '')
@@ -432,7 +428,11 @@ class PromptPlusButton {
             + makeGenericPopover('text_prompt_segment_invert_mask', 'Prompt Syntax: Segment Invert Mask', 'Checkbox', 'Whether to invert the mask.\nIf checked, select everything except what was matched by the model.', '')
             + makeCheckboxInput(null, 'text_prompt_segment_invert_mask', '', 'Invert Mask', '', false, false, false, true)
             + makeGenericPopover('text_prompt_segment_gentext', 'Prompt Syntax: Segment Generation Prompt', 'text', 'The prompt to use when regenerating the matched area.\nShould be a full text on its own, can use a subset of general prompting syntax.', '')
-            + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true);
+            + makeTextInput(null, 'text_prompt_segment_gentext', '', 'Generation Prompt', '', '', 'prompt', 'Type your generation prompt here...', false, false, true)
+            + makeGenericPopover('text_prompt_segment_sampler', 'Segment Sampler', 'Sampler', 'Optional alternate sampler to use when regenerating the matched area.\nIf unset, the main sampler param will be used.', '')
+            + makeDropdownInput(null, 'text_prompt_segment_sampler', '', 'Sampler', '', [], '', true, true, [])
+            + makeGenericPopover('text_prompt_segment_scheduler', 'Segment Scheduler', 'Scheduler', 'Optional alternate scheduler to use when regenerating the matched area.\nIf unset, the main scheduler param will be used.', '')
+            + makeDropdownInput(null, 'text_prompt_segment_scheduler', '', 'Scheduler', '', [], '', true, true, []);
         this.segmentModalModelSelect = getRequiredElementById('text_prompt_segment_model');
         this.segmentModalSampler = getRequiredElementById('text_prompt_segment_sampler');
         doToggleEnable('text_prompt_segment_sampler');
