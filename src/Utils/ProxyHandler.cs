@@ -77,7 +77,7 @@ public class PublicProxyHandler
                 string line;
                 while ((line = sr.ReadLine()) is not null)
                 {
-                    if (Name == "Ngrok" && line.Contains("level=info msg=\"join connections\" obj=join id="))
+                    if (Name == "Ngrok" && line.Contains("lvl=info msg=\"join connections\" obj=join id="))
                     {
                         Logs.Verbose($"{Name} says: {line}");
                     }
