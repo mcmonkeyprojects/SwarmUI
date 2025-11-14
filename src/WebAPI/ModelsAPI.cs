@@ -29,6 +29,8 @@ public static class ModelsAPI
         API.RegisterAPICall(TestPromptFill, false, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(EditWildcard, true, Permissions.EditWildcards);
         API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
+        API.RegisterAPICall(SaveModelPresetLink, true, Permissions.ManagePresets);
+        API.RegisterAPICall(ClearModelPresetLink, true, Permissions.ManagePresets);
         API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
@@ -899,5 +901,59 @@ public static class ModelsAPI
         }
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
+    public static async Task<JObject> SaveModelPresetLink(Session session,
+        [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
+        [API.APIParameter("Full filepath name of the model.")] string modelName,
+        [API.APIParameter("The title of the preset to link, or empty string to clear the link.")] string presetTitle)
+    {
+        string key = $"{subtype}:{modelName}";
+        try
+        {
+            string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
+            JObject links = JObject.Parse(rawJson);
+            if (string.IsNullOrWhiteSpace(presetTitle))
+            {
+                links.Remove(key);
+            }
+            else
+            {
+                links[key] = presetTitle;
+            }
+            string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
+            session.User.SaveGenericData("modelpresetlinks", "data", newJson);
+            return new JObject() { ["success"] = true };
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Error saving preset link: {ex.ReadableString()}");
+            return new JObject() { ["success"] = false };
+        }
+    }
+
+    [API.APIDescription("Clears a reference to a preset for a model from the user's data.", "\"success\": \"true\"")]
+    public static async Task<JObject> ClearModelPresetLink(Session session,
+        [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
+        [API.APIParameter("Full filepath name of the model.")] string modelName)
+    {
+        string key = $"{subtype}:{modelName}";
+        try
+        {
+            string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
+            JObject links = JObject.Parse(rawJson);
+            if (links.Remove(key))
+            {
+                string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
+                session.User.SaveGenericData("modelpresetlinks", "data", newJson);
+            }
+            return new JObject() { ["success"] = true };
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Error clearing preset link: {ex.Message}");
+            return new JObject() { ["success"] = false };
+        }
     }
 }

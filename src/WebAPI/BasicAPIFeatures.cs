@@ -221,11 +221,29 @@ public static class BasicAPIFeatures
             "starred_models": {
                 "LoRA": ["one", "two"]
             },
-            "autocompletions": ["Word\nword\ntag\n3"]
+            "autocompletions": ["Word\nword\ntag\n3"],
+            "model_preset_links": {
+                "Stable-Diffusion:modelnamehere": "preset_title",
+                "LoRA:modelnamehere": "preset_title"
+            }
         """)]
     public static async Task<JObject> GetMyUserData(Session session)
     {
         Settings.User.AutoCompleteData settings = session.User.Settings.AutoComplete;
+        JObject modelPresetLinks = new JObject();
+        try
+        {
+            string rawJson = session.User.GetGenericData("modelpresetlinks", "data");
+            if (!string.IsNullOrWhiteSpace(rawJson))
+            {
+                modelPresetLinks = JObject.Parse(rawJson);
+            }
+        }
+        catch
+        {
+            // If JSON parsing fails, just return empty object
+            modelPresetLinks = new JObject();
+        }
         return new JObject()
         {
             ["user_name"] = session.User.UserID,
@@ -233,7 +251,8 @@ public static class BasicAPIFeatures
             ["language"] = session.User.Settings.Language,
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
-            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
+            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode)),
+            ["model_preset_links"] = modelPresetLinks
         };
     }
 

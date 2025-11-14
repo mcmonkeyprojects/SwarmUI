@@ -373,6 +373,10 @@ function loadUserData(callback) {
             language = data.language;
         }
         allPresetsUnsorted = data.presets;
+        // Load user's item preset links from server into the manager
+        if (data.model_preset_links && modelPresetLinkManager) {
+            modelPresetLinkManager.loadFromServer(data.model_preset_links);
+        }
         sortPresets();
         presetBrowser.lightRefresh();
         if (shouldApplyDefault) {

@@ -10,6 +10,50 @@ class PresetHelpers {
     }
 }
 
+/** Manages preset links for models and LoRAs. */
+class ModelPresetLinkManager {
+    constructor() {
+        this.links = {}; // { 'Stable-Diffusion:name': 'preset_title', 'LoRA:name': 'preset_title', ... }
+    }
+
+    getKey(subtype, modelName) {
+        return `${subtype}:${modelName}`;
+    }
+
+    getLink(subtype, modelName) {
+        let key = this.getKey(subtype, modelName);
+        return this.links[key] || null;
+    }
+
+    setLink(subtype, modelName, presetTitle) {
+        let key = this.getKey(subtype, modelName);
+        if (presetTitle?.trim()) {
+            this.links[key] = presetTitle;
+        }
+        else {
+            delete this.links[key];
+        }
+    }
+
+    clearLink(subtype, modelName) {
+        let key = this.getKey(subtype, modelName);
+        delete this.links[key];
+    }
+
+    hasLink(subtype, modelName) {
+        return !!this.getLink(subtype, modelName);
+    }
+
+    loadFromServer(data) {
+        if (data && typeof data === 'object') {
+            this.links = { ...data };
+        }
+    }
+}
+
+/** Instance of ModelPresetLinkManager for managing model and LoRA preset links */
+let modelPresetLinkManager = new ModelPresetLinkManager();
+
 /** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
 let presetHelpers = new PresetHelpers();
 
@@ -269,10 +313,10 @@ function applyOnePreset(preset) {
             }
             else if (key == 'loras' && rawVal) {
                 val = rawVal + "," + val;
-            }
+			}
             else if (key == 'loraweights' && rawVal) {
                 val = rawVal + "," + val;
-            }
+			}
             setDirectParamValue(param, val);
             if (param.group && param.group.toggles) {
                 let toggler = document.getElementById(`input_group_content_${param.group.id}_toggle`);
@@ -280,6 +324,31 @@ function applyOnePreset(preset) {
                 doToggleGroup(`input_group_content_${param.group.id}`);
             }
         }
+    }
+}
+
+/**
+ * Handle LoRA preset selection when a LoRA is manually selected.
+ * @param {string} modelName - The name of the LoRA being selected
+ */
+function selectLoraPresetOnSelection(modelName) {
+    try {
+        let presetTitle = getModelPresetLink('LoRA', modelName);
+        if (!presetTitle) {
+            return;
+        }
+        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+        if (!presetData) {
+            return;
+        }
+        if (!currentPresets.some(p => p.title == presetData.title)) {
+            // Select the preset if it's not already selected
+            currentPresets.push(presetData);
+            updatePresetList();
+            presetBrowser?.rerender();
+        }
+    } catch (e) {
+        console.warn('[LoRA Preset] Error handling LoRA preset on selection:', e.message);
     }
 }
 
@@ -410,6 +479,10 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
+            // Load user's item preset links from server into the manager
+            if (data.model_preset_links && modelPresetLinkManager) {
+                modelPresetLinkManager.loadFromServer(data.model_preset_links);
+            }
             proc();
         });
     }
@@ -434,7 +507,7 @@ function describePreset(preset) {
         } }
     ];
     let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
-    let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
+    let description = `${preset.data.title}:\n${preset.data.description ? preset.data.description + '\n' : ''}\n${paramText.join('\n')}`;
     let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
     let name = preset.data.title;
     let index = name.lastIndexOf('/');
@@ -783,4 +856,76 @@ function closeExportPresetViewer() {
 
 function closeImportPresetViewer() {
     $('#import_presets_modal').modal('hide');
+}
+
+/**
+ * Builds a preset link selector for models.
+ * @param {string} subtype - Model's sub-type: 'Stable-Diffusion' or 'LoRA'
+ * @param {string} modelName - Full filepath name of the model
+ * @param {string} containerId - The ID of the container element to populate
+ * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_preset_id')
+ */
+function buildPresetLinkSelectorForModel(subtype, modelName, containerId, selectId) {
+    let container = getRequiredElementById(containerId);
+    container.innerHTML = '';
+    // Build list of all presets
+    let compatiblePresets = [];
+    if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
+        for (let preset of allPresetsUnsorted) {
+            let presetData = preset.data || preset;
+            if (presetData && presetData.title) {
+                compatiblePresets.push(presetData);
+            }
+        }
+    }
+    // Create select element that UIImprovementHandler will convert to a popover
+    let select = document.createElement('select');
+    select.id = selectId;
+    select.className = 'modal_text_extra';
+    let option = document.createElement('option');
+    option.value = '';
+    option.innerText = '-- Select a Preset --';
+    select.appendChild(option);
+    for (let preset of compatiblePresets) {
+        option = document.createElement('option');
+        option.value = preset.title;
+        option.innerText = preset.title;
+        select.appendChild(option);
+    }
+    let currentLink = getModelPresetLink(subtype, modelName);
+    if (currentLink) {
+        select.value = currentLink;
+    }
+    select.addEventListener('change', () => {
+        // Update button state when selection changes
+        updatePresetLinkButtonState(selectId);
+    });
+    select.addEventListener('input', () => {
+        updatePresetLinkButtonState(selectId);
+    });
+    container.appendChild(select);
+    updatePresetLinkButtonState(selectId);
+}
+
+/**
+ * Update the enabled state of Set/Clear buttons based on preset selector state.
+ * @param {string} selectId - The ID of the select element
+ */
+function updatePresetLinkButtonState(selectId) {
+    let select = document.getElementById(selectId);
+    if (!select) return;
+    
+    // Determine button IDs based on select element ID
+    let baseId = select.id.replace('_id', '');
+    let clearBtn = document.getElementById(`${baseId}_clear_btn`);
+    let setBtn = document.getElementById(`${baseId}_set_btn`);
+    
+    if (clearBtn) {
+        clearBtn.classList.toggle('disabled-dim', select.value == '');
+    }
+    
+    if (setBtn) {
+        // Dim Set button if no presets are currently selected
+        setBtn.classList.toggle('disabled-dim', !currentPresets?.length);
+    }
 }
