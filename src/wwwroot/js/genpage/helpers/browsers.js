@@ -301,6 +301,7 @@ class GenPageBrowserClass {
         if (path == '') {
             let copy = Object.assign({}, this.tree.children);
             this.tree.children = {};
+            this.tree.childrenKeys = [];
             for (let folder of folders) {
                 this.tree.addChild(folder, copy[folder] || new BrowserTreePart(folder, isFile, false, isFile ? this.getFileFor(folder) : null, folder));
             }
