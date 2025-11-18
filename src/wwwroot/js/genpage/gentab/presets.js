@@ -13,31 +13,23 @@ class PresetHelpers {
 /** Manages preset links for models and LoRAs. */
 class ModelPresetLinkManager {
     constructor() {
-        this.links = {}; // { 'Stable-Diffusion:name': 'preset_title', 'LoRA:name': 'preset_title', ... }
-    }
-
-    getKey(subtype, modelName) {
-        return `${subtype}:${modelName}`;
+        this.links = {}; // { 'Stable-Diffusion:name': { 'model_name' : 'preset_title', ... }, LoRA: { 'model_name' : 'preset_title', ... } }
     }
 
     getLink(subtype, modelName) {
-        let key = this.getKey(subtype, modelName);
-        return this.links[key] || null;
+        return this.links[subtype]?.[modelName] || null;
     }
 
     setLink(subtype, modelName, presetTitle) {
-        let key = this.getKey(subtype, modelName);
         if (presetTitle?.trim()) {
-            this.links[key] = presetTitle;
+            this.clearLink(subtype, modelName);
+            return;
         }
-        else {
-            delete this.links[key];
-        }
+        (this.links[subtype] ??= {})[modelName] = presetTitle;
     }
 
     clearLink(subtype, modelName) {
-        let key = this.getKey(subtype, modelName);
-        delete this.links[key];
+        delete this.links[subtype]?.[modelName];
     }
 
     hasLink(subtype, modelName) {
@@ -861,7 +853,7 @@ function closeImportPresetViewer() {
 /**
  * Builds a preset link selector for models.
  * @param {string} subtype - Model's sub-type: 'Stable-Diffusion' or 'LoRA'
- * @param {string} modelName - Full filepath name of the model
+ * @param {string} modelName - Filename of the model
  * @param {string} containerId - The ID of the container element to populate
  * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_preset_id')
  */

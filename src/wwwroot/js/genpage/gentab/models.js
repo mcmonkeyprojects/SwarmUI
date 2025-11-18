@@ -1060,7 +1060,7 @@ function doModelInstallRequiredCheck() {
  * Removes preset links from other Stable Diffusion models when a model with its own preset is selected.
  * This enforces mutual exclusivity of model presets - only one model's preset should be active.
  * 
- * @param {string} modelName - The full path/name of the currently-selected model
+ * @param {string} modelName - The filename of the currently-selected model
  * @returns {array} Updated currentPresets array with other models' presets removed
  */
 function removeOtherModelPresets(modelName) {
@@ -1085,7 +1085,7 @@ function removeOtherModelPresets(modelName) {
  * Get a preset link for a model
  * 
  * @param {string} subtype - Either 'Stable-Diffusion' or 'LoRA'
- * @param {string} modelName - Full filepath name of the model
+ * @param {string} modelName - Filename name of the model
  * @returns {string|null} The linked preset title, or null if no link exists
  */
 function getModelPresetLink(subtype, modelName) {
@@ -1097,7 +1097,7 @@ function getModelPresetLink(subtype, modelName) {
  * This centralizes all preset link saving logic to ensure consistency.
  * 
  * @param {string} subtype - Either 'Stable-Diffusion' or 'LoRA'
- * @param {string} modelName - Full filepath name of the currently-selected model
+ * @param {string} modelName - Filename name of the currently-selected model
  * @param {string} presetTitle - The preset to link (or empty string to clear)
  */
 function saveModelPresetLink(subtype, modelName, presetTitle) {

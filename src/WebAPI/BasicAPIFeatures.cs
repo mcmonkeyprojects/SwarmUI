@@ -223,26 +223,26 @@ public static class BasicAPIFeatures
             },
             "autocompletions": ["Word\nword\ntag\n3"],
             "model_preset_links": {
-                "Stable-Diffusion:modelnamehere": "preset_title",
-                "LoRA:modelnamehere": "preset_title"
+                "Stable-Diffusion": {
+                    "modelnamehere": "preset_title"
+                },
+                "LoRA": {
+                    "modelnamehere": "preset_title"
+                }
             }
         """)]
     public static async Task<JObject> GetMyUserData(Session session)
     {
         Settings.User.AutoCompleteData settings = session.User.Settings.AutoComplete;
-        JObject modelPresetLinks = new JObject();
-        try
+        JObject modelPresetLinks = new();
+        string rawJson = session.User.GetGenericData("modelpresetlinks", "data");
+        if (!string.IsNullOrWhiteSpace(rawJson))
         {
-            string rawJson = session.User.GetGenericData("modelpresetlinks", "data");
-            if (!string.IsNullOrWhiteSpace(rawJson))
-            {
+            try {
                 modelPresetLinks = JObject.Parse(rawJson);
+            } catch {
+                // If JSON parsing fails, just return empty object
             }
-        }
-        catch
-        {
-            // If JSON parsing fails, just return empty object
-            modelPresetLinks = new JObject();
         }
         return new JObject()
         {

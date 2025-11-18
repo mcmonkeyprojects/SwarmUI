@@ -895,21 +895,28 @@ public static class ModelsAPI
     [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
     public static async Task<JObject> SaveModelPresetLink(Session session,
         [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
-        [API.APIParameter("Full filepath name of the model.")] string modelName,
+        [API.APIParameter("Filename of the model.")] string modelName,
         [API.APIParameter("The title of the preset to link, or empty string to clear the link.")] string presetTitle)
     {
-        string key = $"{subtype}:{modelName}";
         try
         {
             string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
             JObject links = JObject.Parse(rawJson);
-            if (string.IsNullOrWhiteSpace(presetTitle))
+            var subtypePresets = links[subtype]?.Value<JObject>();
+            if (subtypePresets is null)
             {
-                links.Remove(key);
+                if (!string.IsNullOrWhiteSpace(presetTitle))
+                {
+                    links[subtype] = new JObject() { [modelName] = presetTitle };
+                }
+            }
+            else if (string.IsNullOrWhiteSpace(presetTitle))
+            {
+                subtypePresets.Remove(modelName);
             }
             else
             {
-                links[key] = presetTitle;
+                subtypePresets[modelName] = presetTitle;
             }
             string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
             session.User.SaveGenericData("modelpresetlinks", "data", newJson);
@@ -925,14 +932,13 @@ public static class ModelsAPI
     [API.APIDescription("Clears a reference to a preset for a model from the user's data.", "\"success\": \"true\"")]
     public static async Task<JObject> ClearModelPresetLink(Session session,
         [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
-        [API.APIParameter("Full filepath name of the model.")] string modelName)
+        [API.APIParameter("Filename of the model.")] string modelName)
     {
-        string key = $"{subtype}:{modelName}";
         try
         {
             string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
             JObject links = JObject.Parse(rawJson);
-            if (links.Remove(key))
+            if (links[subtype]?.Value<JObject>()?.Remove(modelName) ?? false)
             {
                 string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
                 session.User.SaveGenericData("modelpresetlinks", "data", newJson);
