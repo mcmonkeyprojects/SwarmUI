@@ -313,10 +313,10 @@ function applyOnePreset(preset) {
             }
             else if (key == 'loras' && rawVal) {
                 val = rawVal + "," + val;
-			}
+            }
             else if (key == 'loraweights' && rawVal) {
                 val = rawVal + "," + val;
-			}
+            }
             setDirectParamValue(param, val);
             if (param.group && param.group.toggles) {
                 let toggler = document.getElementById(`input_group_content_${param.group.id}_toggle`);
