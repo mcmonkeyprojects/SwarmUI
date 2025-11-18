@@ -176,7 +176,7 @@ function editModel(model, browser) {
     getRequiredElementById('edit_model_lora_default_confinement').value = model.lora_default_confinement || '';
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     let run = () => {
-		buildPresetLinkSelectorForModel(model.subType, model.name, 'edit_model_preset', 'edit_model_preset_id');
+		buildPresetLinkSelectorForModel(curModelMenuBrowser.subType, model.name, 'edit_model_preset', 'edit_model_preset_id');
         updatePresetLinkButtonState('edit_model_preset_id');
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
@@ -887,10 +887,8 @@ function directSetModel(model) {
         return;
     }
     let modelName = null;
-	let modelSubtype = 'Stable-Diffusion';
     if (model.name) {
 		modelName = model.name;
-		modelSubtype = model.subType;
         let clean = cleanModelName(model.name);
         forceSetDropdownValue('input_model', clean);
         forceSetDropdownValue('current_model', clean);
@@ -914,7 +912,8 @@ function directSetModel(model) {
         modelName = name;
     }
     reviseBackendFeatureSet();
-    let presetTitle = getModelPresetLink(modelSubtype, modelName);
+    // Model's subtype is unknown here, check both possibilities
+    let presetTitle = getModelPresetLink("Stable-Diffusion", modelName) ?? getModelPresetLink("LoRA", modelName);
 	if (presetTitle) {
 		currentPresets = removeOtherModelPresets(modelName);
 		let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
