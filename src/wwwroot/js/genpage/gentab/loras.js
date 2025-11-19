@@ -115,7 +115,12 @@ class LoraHelper {
             else {
                 let div = createDiv(null, 'preset-in-list');
                 div.dataset.lora_name = lora.name;
-                div.innerText = cleanModelName(lora.name);
+
+                let nameSpan = document.createElement('span');
+                nameSpan.innerText = cleanModelName(lora.name);
+                nameSpan.className = 'lora-name';
+                div.appendChild(nameSpan);
+
                 let weightInput = document.createElement('input');
                 weightInput.className = 'lora-weight-input';
                 weightInput.type = 'number';
@@ -159,6 +164,78 @@ class LoraHelper {
                 removeButton.addEventListener('click', () => {
                     this.selectLora(lora);
                     sdLoraBrowser.rebuildSelectedClasses();
+                });
+                nameSpan.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    let existing = document.querySelector('.sui-popover-visible');
+                    if (existing && existing.dataset.loraName == lora.name) {
+                        return;
+                    }
+                    let popovers = document.getElementsByClassName('sui-popover-visible');
+                    for (let popover of Array.from(popovers)) {
+                        if (popover.closeSelf) {
+                            popover.closeSelf();
+                        }
+                        else {
+                            popover.remove();
+                        }
+                    }
+                    let model = sdLoraBrowser.models[lora.name]
+                        ?? sdLoraBrowser.models[lora.name + ".safetensors"]
+                        ?? Object.values(sdLoraBrowser.models).find(m => cleanModelName(m.name) == lora.name);
+
+                    if (!model) {
+                        return;
+                    }
+
+                    let rect = div.getBoundingClientRect();
+                    let desc = sdLoraBrowser.describeModel(model);
+
+                    let image = document.createElement('img');
+                    image.src = desc.image;
+                    image.className = 'model-preview-image';
+
+                    let descblock = createDiv(null, 'model-descblock');
+                    descblock.style.maxHeight = '15rem';
+                    descblock.style.overflowY = 'auto';
+                    descblock.style.scrollbarWidth = 'thin';
+                    descblock.innerHTML = desc.description;
+
+                    let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block');
+                    popup.dataset.loraName = lora.name;
+                    popup.style.position = 'fixed';
+                    popup.style.width = '480px';
+                    popup.style.top = 'auto';
+                    popup.style.zIndex = '9999';
+                    popup.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+                    popup.appendChild(image);
+                    popup.appendChild(descblock);
+                    document.body.appendChild(popup);
+                    let left = Math.min(rect.left, window.innerWidth - popup.offsetWidth - 10);
+                    popup.style.left = `${left}px`;
+                    popup.classList.add('sui-popover-visible');
+
+                    let closeKey = (e) => {
+                        if (e.key === 'Escape') {
+                            close(null);
+                        }
+                    };
+
+                    let close = (e) => {
+                        if (e && e.target && popup.contains(e.target)) {
+                            return;
+                        }
+                        popup.remove();
+                        document.removeEventListener('click', close);
+                        document.removeEventListener('contextmenu', close);
+                        document.removeEventListener('keydown', closeKey);
+                    };
+                    popup.closeSelf = () => close(null);
+                    setTimeout(() => {
+                        document.addEventListener('click', close);
+                        document.addEventListener('contextmenu', close);
+                        document.addEventListener('keydown', closeKey);
+                    }, 1);
                 });
                 div.appendChild(confinementInput);
                 div.appendChild(weightInput);
@@ -279,7 +356,7 @@ class LoraHelper {
         this.rebuildParams();
         this.rebuildUI();
     }
-    
+
 }
 
 loraHelper = new LoraHelper();
