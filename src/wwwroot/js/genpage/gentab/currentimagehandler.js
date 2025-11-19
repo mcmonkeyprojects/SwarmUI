@@ -214,7 +214,7 @@ class ImageFullViewHelper {
                 }
             }
             else {
-                quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), '', added.title);
+                quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
         this.modalJq.modal('show');
