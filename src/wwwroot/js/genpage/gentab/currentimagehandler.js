@@ -1094,9 +1094,9 @@ function gotImageResult(image, metadata, batchId) {
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
-        if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-            imageFullView.showImage(src, metadata, batchId);
-        }
+    }
+    if ((getUserSetting('AutoSwapImagesIncludesFullView') || imageFullView.currentBatchId == batchId) && imageFullView.isOpen()) {
+        imageFullView.showImage(src, metadata, batchId);
     }
     return batch_div;
 }
