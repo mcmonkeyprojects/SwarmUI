@@ -635,7 +635,9 @@ function toggleStar(path, rawSrc) {
         if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
             let oldMetadata = JSON.parse(imageFullView.currentMetadata);
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
+            let state = imageFullView.copyState();
             imageFullView.showImage(rawSrc, JSON.stringify(newMetadata), imageFullView.currentBatchId);
+            imageFullView.pasteState(state);
         }
     });
 }
