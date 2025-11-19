@@ -165,21 +165,15 @@ class LoraHelper {
                     this.selectLora(lora);
                     sdLoraBrowser.rebuildSelectedClasses();
                 });
-                nameSpan.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    let existing = document.querySelector('.sui-popover-visible');
-                    if (existing && existing.dataset.loraName == lora.name) {
-                        return;
-                    }
+                let doShowLoraPopup = (isClick) => {
                     let popovers = document.getElementsByClassName('sui-popover-visible');
                     for (let popover of Array.from(popovers)) {
-                        if (popover.closeSelf) {
-                            popover.closeSelf();
+                        if (popover.dataset.isClick == "true" && !isClick) {
+                            return;
                         }
-                        else {
-                            popover.remove();
-                        }
+                        popover.closeSelf();
                     }
+
                     let model = sdLoraBrowser.models[lora.name]
                         ?? sdLoraBrowser.models[lora.name + ".safetensors"]
                         ?? Object.values(sdLoraBrowser.models).find(m => cleanModelName(m.name) == lora.name);
@@ -203,6 +197,7 @@ class LoraHelper {
 
                     let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block');
                     popup.dataset.loraName = lora.name;
+                    popup.dataset.isClick = isClick;
                     popup.style.position = 'fixed';
                     popup.style.width = '480px';
                     popup.style.top = 'auto';
@@ -214,28 +209,73 @@ class LoraHelper {
                     let left = Math.min(rect.left, window.innerWidth - popup.offsetWidth - 10);
                     popup.style.left = `${left}px`;
                     popup.classList.add('sui-popover-visible');
+                    popup.closeSelf = () => close(null);
+
+                    if (!isClick) {
+                        popup.style.pointerEvents = 'none';
+                    }
+
+                    let close = (e) => {
+                        if (isClick && e && e.target && popup.contains(e.target)) {
+                            return;
+                        }
+
+                        popup.remove();
+
+                        if (isClick) {
+                            document.removeEventListener('click', close);
+                            document.removeEventListener('contextmenu', close);
+                            document.removeEventListener('keydown', closeKey);
+                        }
+                    };
 
                     let closeKey = (e) => {
-                        if (e.key === 'Escape') {
+                        if (e.key == 'Escape') {
                             close(null);
                         }
                     };
 
-                    let close = (e) => {
-                        if (e && e.target && popup.contains(e.target)) {
-                            return;
-                        }
-                        popup.remove();
-                        document.removeEventListener('click', close);
-                        document.removeEventListener('contextmenu', close);
-                        document.removeEventListener('keydown', closeKey);
-                    };
-                    popup.closeSelf = () => close(null);
-                    setTimeout(() => {
+                    if (isClick) {
                         document.addEventListener('click', close);
                         document.addEventListener('contextmenu', close);
                         document.addEventListener('keydown', closeKey);
-                    }, 1);
+                    }
+                };
+
+                let hoverTimer = null;
+                let leaveTimer = null;
+
+                let clearTimers = (hTimer, lTimer) => {
+                    if (hTimer) {
+                        clearTimeout(hTimer);
+                        hoverTimer = null;
+                    }
+                    if (lTimer) {
+                        clearTimeout(lTimer);
+                        leaveTimer = null;
+                    }
+                };
+
+                nameSpan.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearTimers(hoverTimer, leaveTimer);
+                    doShowLoraPopup(true);
+                });
+
+                nameSpan.addEventListener('mouseenter', (e) => {
+                    clearTimers(null, leaveTimer);
+                    hoverTimer = setTimeout(() => {
+                        doShowLoraPopup(false);
+                    }, 1000);
+                });
+
+                nameSpan.addEventListener('mouseleave', (e) => {
+                    clearTimers(hoverTimer, null);
+                    let popup = document.querySelector(`.sui-popover-visible[data-lora-name="${lora.name}"]`);
+                    if (popup && popup.dataset.isClick != "true") {
+                        popup.closeSelf();
+                    }
                 });
                 div.appendChild(confinementInput);
                 div.appendChild(weightInput);
