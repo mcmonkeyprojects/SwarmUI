@@ -115,12 +115,10 @@ class LoraHelper {
             else {
                 let div = createDiv(null, 'preset-in-list');
                 div.dataset.lora_name = lora.name;
-
                 let nameSpan = document.createElement('span');
                 nameSpan.innerText = cleanModelName(lora.name);
                 nameSpan.className = 'lora-name';
                 div.appendChild(nameSpan);
-
                 let weightInput = document.createElement('input');
                 weightInput.className = 'lora-weight-input';
                 weightInput.type = 'number';
@@ -173,29 +171,23 @@ class LoraHelper {
                         }
                         popover.closeSelf();
                     }
-
                     let model = sdLoraBrowser.models[lora.name]
                         ?? sdLoraBrowser.models[lora.name + ".safetensors"]
                         ?? Object.values(sdLoraBrowser.models).find(m => cleanModelName(m.name) == lora.name);
-
                     if (!model) {
                         return;
                     }
-
                     let rect = div.getBoundingClientRect();
                     let desc = sdLoraBrowser.describeModel(model);
-
                     let image = document.createElement('img');
+                    let descblock = createDiv(null, 'model-descblock');
+                    let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block');
                     image.src = desc.image;
                     image.className = 'model-preview-image';
-
-                    let descblock = createDiv(null, 'model-descblock');
                     descblock.style.maxHeight = '15rem';
                     descblock.style.overflowY = 'auto';
                     descblock.style.scrollbarWidth = 'thin';
                     descblock.innerHTML = desc.description;
-
-                    let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block');
                     popup.dataset.loraName = lora.name;
                     popup.dataset.isClick = isClick;
                     popup.style.position = 'fixed';
@@ -210,41 +202,33 @@ class LoraHelper {
                     popup.style.left = `${left}px`;
                     popup.classList.add('sui-popover-visible');
                     popup.closeSelf = () => close(null);
-
                     if (!isClick) {
                         popup.style.pointerEvents = 'none';
                     }
-
                     let close = (e) => {
                         if (isClick && e && e.target && popup.contains(e.target)) {
                             return;
                         }
-
                         popup.remove();
-
                         if (isClick) {
                             document.removeEventListener('click', close);
                             document.removeEventListener('contextmenu', close);
                             document.removeEventListener('keydown', closeKey);
                         }
                     };
-
                     let closeKey = (e) => {
                         if (e.key == 'Escape') {
                             close(null);
                         }
                     };
-
                     if (isClick) {
                         document.addEventListener('click', close);
                         document.addEventListener('contextmenu', close);
                         document.addEventListener('keydown', closeKey);
                     }
                 };
-
                 let hoverTimer = null;
                 let leaveTimer = null;
-
                 let clearTimers = (hTimer, lTimer) => {
                     if (hTimer) {
                         clearTimeout(hTimer);
@@ -255,21 +239,18 @@ class LoraHelper {
                         leaveTimer = null;
                     }
                 };
-
                 nameSpan.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     clearTimers(hoverTimer, leaveTimer);
                     doShowLoraPopup(true);
                 });
-
                 nameSpan.addEventListener('mouseenter', (e) => {
                     clearTimers(null, leaveTimer);
                     hoverTimer = setTimeout(() => {
                         doShowLoraPopup(false);
                     }, 1000);
                 });
-
                 nameSpan.addEventListener('mouseleave', (e) => {
                     clearTimers(hoverTimer, null);
                     let popup = document.querySelector(`.sui-popover-visible[data-lora-name="${lora.name}"]`);
