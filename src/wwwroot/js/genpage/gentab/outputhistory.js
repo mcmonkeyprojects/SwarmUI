@@ -60,6 +60,7 @@ function buttonsForImage(fullsrc, src, metadata) {
         buttons.push({
             label: (metadata && JSON.parse(metadata).is_starred) ? 'Unstar' : 'Star',
             title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
+            className: (metadata && JSON.parse(metadata).is_starred) ? ' star-button button-starred-image' : ' star-button',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
             }
