@@ -395,7 +395,11 @@ public class SessionHandler
             return Users.GetOrAdd(userId, _ => // Intentional GetOrAdd due to special locking requirements (DBLock)
             {
                 User.DatabaseEntry userData = UserDatabase.FindById(userId);
-                userData ??= new() { ID = userId, RawSettings = "\n" };
+                if (userData is null)
+                {
+                    userData = new() { ID = userId, RawSettings = "\n" };
+                    UserDatabase.Upsert(userData);
+                }
                 return new(this, userData);
             });
         }
