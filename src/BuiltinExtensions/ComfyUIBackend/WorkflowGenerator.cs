@@ -1483,7 +1483,7 @@ public partial class WorkflowGenerator
                 DefaultSampler = "euler";
                 DefaultScheduler = "simple";
             }
-            else if (VideoModel.ModelClass?.ID == "hunyuan-video-1_5-i2v")
+            else if (VideoModel.ModelClass?.ID == "hunyuan-video-1_5")
             {
                 VideoFPS ??= 24;
                 Frames ??= 73;

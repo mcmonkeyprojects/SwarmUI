@@ -599,13 +599,9 @@ public class T2IModelClassSorter
             return false;
         }});
         // ====================== Hunyuan Video 1.5 ======================
-        Register(new() { ID = "hunyuan-video-1_5-t2v", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 Text2Video", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "hunyuan-video-1_5", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isHyImg(h) && isHyVid15(h);
-        }});
-        Register(new() { ID = "hunyuan-video-1_5-i2v", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 Image2Video", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
-        {
-            return false; // TODO: ??
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
@@ -658,14 +654,14 @@ public class T2IModelClassSorter
         Remaps["stable-diffusion-3-3-5-medium"] = "stable-diffusion-v3.5-medium";
         Remaps["stable-diffusion-3-3-5-medium/lora"] = "stable-diffusion-v3.5-medium/lora";
         // ====================== Comfy model_type remaps ======================
-        Remaps["hunyuanvideo1.5_480p_t2v_distilled"] = "hunyuan-video-1_5-t2v";
-        Remaps["hunyuanvideo1.5_480p_i2v_distilled"] = "hunyuan-video-1_5-i2v";
-        Remaps["hunyuanvideo1.5_720p_t2v_distilled"] = "hunyuan-video-1_5-t2v";
-        Remaps["hunyuanvideo1.5_720p_i2v_distilled"] = "hunyuan-video-1_5-i2v";
-        Remaps["hunyuanvideo1.5_480p_t2v"] = "hunyuan-video-1_5-t2v";
-        Remaps["hunyuanvideo1.5_480p_i2v"] = "hunyuan-video-1_5-i2v";
-        Remaps["hunyuanvideo1.5_720p_t2v"] = "hunyuan-video-1_5-t2v";
-        Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5-i2v";
+        Remaps["hunyuanvideo1.5_480p_t2v_distilled"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_480p_i2v_distilled"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_720p_t2v_distilled"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_720p_i2v_distilled"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_480p_t2v"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_480p_i2v"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_720p_t2v"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5";
         // ====================== GGUF Remaps ======================
         Remaps["flux"] = "Flux.1-dev";
         Remaps["sd3"] = "stable-diffusion-v3-medium";

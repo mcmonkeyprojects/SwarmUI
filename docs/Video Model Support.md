@@ -173,6 +173,7 @@ There's a full step by step guide for video model usage here: <https://github.co
 - Downloads here <https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/tree/main/split_files/diffusion_models>
     - save to `diffusion_models` folder
     - There are variants for Text2Video vs Image2Video, and a dedicated superresolution v2v upscaler
+        - Despite the labeled difference, both variants can equally do both text2video and image2video.
     - There are 480p and 720p variants
         - Swarm will assume all models are 720p (`960x960`). For the 480p models, you may want to edit the model metadata and set the resolution to `640x640`.
     - There are CFG Distilled and non-distilled versions
@@ -181,7 +182,8 @@ There's a full step by step guide for video model usage here: <https://github.co
 - **Parameters**:
     - **CFG:** `1` for Distilled, otherwise normal high CFG values, eg `6`
     - **Steps:** Normal step counts (20+)
-    - **Frames:** Trained for `121` (5 seconds), shorter lengths may or may not work. When not specified, Swarm will default to `73` (3 seconds).
+    - **Frames:** Trained for `121` (5 seconds), shorter lengths work fine too, or longer up to 241 (10 seconds). When not specified, Swarm will default to `73` (3 seconds).
+        - You can do Frames=`1` for image generation.
     - **FPS:** The model is trained for `24` fps
     - **Resolution:** Aside from the trained resolution, the models seem happy with different smaller resolutions or different aspect ratios as well.
     - **Sigma Shift:** ?
