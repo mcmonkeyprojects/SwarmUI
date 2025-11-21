@@ -82,7 +82,7 @@ function create_new_preset_button() {
     clearPresetView();
     getRequiredElementById('new_preset_name').value = presetBrowser.folder;
     getRequiredElementById('new_preset_modal_title').innerText = createNewPresetTitle.get();
-    let curImg = document.getElementById('current_image_img');
+    let curImg = currentImageHelper.getCurrentImage();
     presetHelpers.enableImageElem.checked = false;
     let run = () => {
         triggerChangeFor(presetHelpers.enableImageElem);
@@ -314,7 +314,7 @@ function editPreset(preset) {
             doToggleEnable(presetElem.id);
         }
     }
-    let curImg = document.getElementById('current_image_img');
+    let curImg = currentImageHelper.getCurrentImage();
     let run = () => {
         triggerChangeFor(presetHelpers.enableImageElem);
         $('#add_preset_modal').modal('show');

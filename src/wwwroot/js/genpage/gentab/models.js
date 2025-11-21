@@ -286,7 +286,7 @@ function editModel(model, browser) {
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
     };
-    let curImg = document.getElementById('current_image_img');
+    let curImg = currentImageHelper.getCurrentImage();
     if (curImg && curImg.tagName == 'IMG') {
         setMediaFileDirect(modelsHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
             modelsHelpers.enableImageElem.checked = false;

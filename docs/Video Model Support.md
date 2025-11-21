@@ -186,7 +186,7 @@ There's a full step by step guide for video model usage here: <https://github.co
         - You can do Frames=`1` for image generation.
     - **FPS:** The model is trained for `24` fps
     - **Resolution:** Aside from the trained resolution, the models seem happy with different smaller resolutions or different aspect ratios as well.
-    - **Sigma Shift:** ?
+    - **Sigma Shift:** defaults to `7`
 
 ## Genmo Mochi 1 (Text2Video)
 

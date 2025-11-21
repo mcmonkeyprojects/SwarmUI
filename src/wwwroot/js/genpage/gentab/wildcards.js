@@ -155,7 +155,7 @@ class WildcardHelpers {
         this.curWildcardMenuWildcard = card;
         clearMediaFileInput(this.imageElem);
         this.enableImageElem.checked = false;
-        let curImg = document.getElementById('current_image_img');
+        let curImg = currentImageHelper.getCurrentImage();
         this.nameElem.value = card.name;
         setTextContent(this.contentsElem, card.raw);
         this.processContents();
