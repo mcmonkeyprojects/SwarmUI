@@ -677,12 +677,12 @@ public partial class WorkflowGenerator
                 ["samples"] = latent,
                 ["tile_size"] = UserInput.Get(T2IParamTypes.VAETileSize, 256),
                 ["overlap"] = UserInput.Get(T2IParamTypes.VAETileOverlap, 64),
-                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, IsAnyWanModel() ? 9999 : 32),
+                ["temporal_size"] = UserInput.Get(T2IParamTypes.VAETemporalTileSize, IsAnyWanModel() || IsHunyuanVideo15() ? 9999 : 32),
                 ["temporal_overlap"] = UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 4)
             }, id);
         }
         // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
-        else if ((IsHunyuanVideo()) && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
+        else if ((IsHunyuanVideo() || IsHunyuanVideo15()) && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
         {
             return CreateNode("VAEDecodeTiled", new JObject()
             {
@@ -690,7 +690,7 @@ public partial class WorkflowGenerator
                 ["samples"] = latent,
                 ["tile_size"] = 256,
                 ["overlap"] = 64,
-                ["temporal_size"] = 32,
+                ["temporal_size"] = IsHunyuanVideo15() ? 9999 : 32, // HyVid 1.5 dies on temporal tiling
                 ["temporal_overlap"] = 4
             }, id);
         }
