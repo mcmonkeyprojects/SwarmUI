@@ -169,7 +169,7 @@ class LoraHelper {
                         if (popover.dataset.isClick == "true" && !isClick) {
                             return;
                         }
-                        popover.closeSelf();
+                        popover.remove();
                     }
                     let model = sdLoraBrowser.models[lora.name] ?? sdLoraBrowser.models[lora.name + ".safetensors"];
                     if (!model) {
@@ -198,30 +198,11 @@ class LoraHelper {
                     let left = Math.min(rect.left, window.innerWidth - popup.offsetWidth - 10);
                     popup.style.left = `${left}px`;
                     popup.classList.add('sui-popover-visible');
-                    popup.closeSelf = () => close(null);
-                    if (!isClick) {
-                        popup.style.pointerEvents = 'none';
-                    }
-                    let close = (e) => {
-                        if (isClick && e && e.target && popup.contains(e.target)) {
-                            return;
-                        }
-                        popup.remove();
-                        if (isClick) {
-                            document.removeEventListener('click', close);
-                            document.removeEventListener('contextmenu', close);
-                            document.removeEventListener('keydown', closeKey);
-                        }
-                    };
-                    let closeKey = (e) => {
-                        if (e.key == 'Escape') {
-                            close(null);
-                        }
-                    };
                     if (isClick) {
-                        document.addEventListener('click', close);
-                        document.addEventListener('contextmenu', close);
-                        document.addEventListener('keydown', closeKey);
+                        uiImprover.sustainPopover = popup;
+                    }
+                    else {
+                        popup.style.pointerEvents = 'none';
                     }
                 };
                 let hoverTimer = null;
@@ -246,7 +227,7 @@ class LoraHelper {
                     clearTimer(hoverTimer);
                     let popup = document.querySelector(`.sui-popover-visible[data-lora-name="${lora.name}"]`);
                     if (popup && popup.dataset.isClick != "true") {
-                        popup.closeSelf();
+                        popup.remove();
                     }
                 });
                 div.appendChild(confinementInput);
@@ -368,7 +349,6 @@ class LoraHelper {
         this.rebuildParams();
         this.rebuildUI();
     }
-
 }
 
 loraHelper = new LoraHelper();

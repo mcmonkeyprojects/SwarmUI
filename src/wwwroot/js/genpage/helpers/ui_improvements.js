@@ -258,6 +258,25 @@ class UIImprovementHandler {
         this.timeOfLastTextboxSelectTrack = 0;
         this.lastTextboxCursorPos = -1;
         this.videoControlDragging = null;
+        this.sustainPopover = null;
+        document.addEventListener('click', e => {
+            if (this.sustainPopover && !this.sustainPopover.contains(e.target)) {
+                this.sustainPopover.remove();
+                this.sustainPopover = null;
+            }
+        });
+        document.addEventListener('contextmenu', e => {
+            if (this.sustainPopover && !this.sustainPopover.contains(e.target)) {
+                this.sustainPopover.remove();
+                this.sustainPopover = null;
+            }
+        });
+        document.addEventListener('keydown', e => {
+            if (this.sustainPopover && e.key == 'Escape') {
+                this.sustainPopover.remove();
+                this.sustainPopover = null;
+            }
+        });
         document.addEventListener('mousemove', (e) => {
             if (this.videoControlDragging) {
                 this.videoControlDragging.drag(e);
