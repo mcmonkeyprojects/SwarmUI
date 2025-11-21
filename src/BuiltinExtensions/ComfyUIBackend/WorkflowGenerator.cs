@@ -681,7 +681,8 @@ public partial class WorkflowGenerator
                 ["temporal_overlap"] = UserInput.Get(T2IParamTypes.VAETemporalTileOverlap, 4)
             }, id);
         }
-        else if (IsHunyuanVideo()) // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
+        // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
+        else if ((IsHunyuanVideo() || IsHunyuanVideo15()) && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
         {
             return CreateNode("VAEDecodeTiled", new JObject()
             {
@@ -1479,6 +1480,43 @@ public partial class WorkflowGenerator
                 PosCond = [i2vnode, 0];
                 DefaultCFG = 1;
                 Latent = [i2vnode, 1];
+                DefaultSampler = "euler";
+                DefaultScheduler = "simple";
+            }
+            else if (VideoModel.ModelClass?.ID == "hunyuan-video-1_5-i2v")
+            {
+                VideoFPS ??= 24;
+                Frames ??= 73;
+                string targetName = "sigclip_vision_patch14_384.safetensors";
+                targetName = g.RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/clip_vision/sigclip_vision_patch14_384.safetensors", "1fee501deabac72f0ed17610307d7131e3e9d1e838d0363aa3c2b97a6e03fb33", T2IParamTypes.ClipVisionModel);
+                string clipLoader = g.CreateNode("CLIPVisionLoader", new JObject()
+                {
+                    ["clip_name"] = targetName
+                });
+                JArray clipLoaderNode = [clipLoader, 0];
+                string encoded = g.CreateNode("CLIPVisionEncode", new JObject()
+                {
+                    ["clip_vision"] = clipLoaderNode,
+                    ["image"] = g.FinalImageOut,
+                    ["crop"] = "center"
+                });
+                JArray clipVis = [encoded, 0];
+                string i2vnode = g.CreateNode("HunyuanVideo15ImageToVideo", new JObject()
+                {
+                    ["positive"] = PosCond,
+                    ["negative"] = NegCond,
+                    ["vae"] = Vae,
+                    ["width"] = Width,
+                    ["height"] = Height,
+                    ["length"] = Frames,
+                    ["batch_size"] = 1,
+                    ["start_image"] = g.FinalImageOut,
+                    ["clip_vision_output"] = clipVis
+                });
+                PosCond = [i2vnode, 0];
+                NegCond = [i2vnode, 1];
+                DefaultCFG = 1;
+                Latent = [i2vnode, 2];
                 DefaultSampler = "euler";
                 DefaultScheduler = "simple";
             }

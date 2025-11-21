@@ -315,7 +315,7 @@ public partial class WorkflowGenerator
             return CreateNode("EmptyHunyuanVideo15Latent", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 121),
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 73),
                 ["height"] = height,
                 ["width"] = width
             }, id);
@@ -1066,8 +1066,8 @@ public partial class WorkflowGenerator
             }
             string dualClipLoader = CreateNode(loaderType, new JObject()
             {
-                ["clip_name1"] = helpers.GetByT5SmallGlyphxl_tenc(),
-                ["clip_name2"] = helpers.GetQwenImage25_7b_tenc(),
+                ["clip_name1"] = helpers.GetQwenImage25_7b_tenc(),
+                ["clip_name2"] = helpers.GetByT5SmallGlyphxl_tenc(),
                 ["type"] = "hunyuan_video_15"
             });
             LoadingClip = [dualClipLoader, 0];

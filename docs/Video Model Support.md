@@ -178,9 +178,11 @@ There's a full step by step guide for video model usage here: <https://github.co
 - Official documentation from tencent here <https://huggingface.co/tencent/HunyuanVideo-1.5>
 - The VAE is a 16x16 downsample (as opposed to most prior models using 8x8)
 - **Parameters**:
-    - **CFG:** `1` for Distilled, otherwise normal high CFG values (?)
+    - **CFG:** `1` for Distilled, otherwise normal high CFG values, eg `6`
     - **Steps:** Normal step counts (20+)
-    - **Frames:** Trained for 121
+    - **Frames:** Trained for `121` (5 seconds), shorter lengths may or may not work. When not specified, Swarm will default to `73` (3 seconds).
+    - **FPS:** The model is trained for `24` fps
+    - **Resolution:** Aside from the trained resolution, the models seem happy with different smaller resolutions or different aspect ratios as well.
     - **Sigma Shift:** ?
 
 ## Genmo Mochi 1 (Text2Video)
