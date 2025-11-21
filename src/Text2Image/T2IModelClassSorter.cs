@@ -65,6 +65,7 @@ public class T2IModelClassSorter
         CompatAuraFlow = RegisterCompat(new() { ID = "auraflow-v1", ShortCode = "Aura" }),
         CompatHunyuanImage2_1 = RegisterCompat(new() { ID = "hunyuan-image-2_1", ShortCode = "HyImg" }),
         CompatHunyuanImage2_1Refiner = RegisterCompat(new() { ID = "hunyuan-image-2_1-refiner", ShortCode = "HyImg" }),
+        CompatHunyuanVideo1_5 = RegisterCompat(new() { ID = "hunyuan-video-1_5", ShortCode = "HyVid" }),
         CompatSegmindStableDiffusion1b = RegisterCompat(new() { ID = "segmind-stable-diffusion-1b", ShortCode = "SSD1B" }),
         CompatPixartMsSigmaXl2 = RegisterCompat(new() { ID = "pixart-ms-sigma-xl-2", ShortCode = "Pix" });
 
@@ -165,6 +166,7 @@ public class T2IModelClassSorter
                                             || (h.ContainsKey("lora_unet_transformer_blocks_0_attn_add_k_proj.lora_down.weight") && h.ContainsKey("lora_unet_transformer_blocks_0_img_mlp_net_0_proj.lora_down.weight"));
         bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
         bool isHyImg(JObject h) => h.ContainsKey("byt5_in.fc1.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
+        bool isHyVid15(JObject h) => h.ContainsKey("vision_in.proj.0.bias");
         bool isHyImgRefiner(JObject h) => h.ContainsKey("double_blocks.0.img_attn_k_norm.weight") && h.TryGetValue("time_r_in.mlp.0.bias", out JToken timeTok) && timeTok["shape"].ToArray()[0].Value<long>() == 3328;
         bool isAuraFlow(JObject h) => h.ContainsKey("model.cond_seq_linear.weight") && h.ContainsKey("model.double_layers.0.attn.w1k.weight");
         // ====================== Stable Diffusion v1 ======================
@@ -574,7 +576,7 @@ public class T2IModelClassSorter
         // ====================== Hunyuan Image 2.1 ======================
         Register(new() { ID = "hunyuan-image-2_1", CompatClass = CompatHunyuanImage2_1, Name = "Hunyuan Image", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
-            return isHyImg(h) && !isHyImgRefiner(h);
+            return isHyImg(h) && !isHyImgRefiner(h) && !isHyVid15(h);
         }});
         Register(new() { ID = "hunyuan-image-2_1/lora", CompatClass = CompatHunyuanImage2_1, Name = "Hunyuan Image LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
@@ -586,7 +588,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "hunyuan-image-2_1-refiner", CompatClass = CompatHunyuanImage2_1Refiner, Name = "Hunyuan Image Refiner", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
-            return isHyImgRefiner(h);
+            return isHyImgRefiner(h) && !isHyVid15(h);
         }});
         Register(new() { ID = "hunyuan-image-2_1-refiner/lora", CompatClass = CompatHunyuanImage2_1Refiner, Name = "Hunyuan Image Refiner LoRA", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
@@ -595,6 +597,15 @@ public class T2IModelClassSorter
         Register(new() { ID = "hunyuan-image-2_1-refiner/vae", CompatClass = CompatHunyuanImage2_1Refiner, Name = "Hunyuan Image Refiner VAE", StandardWidth = 2048, StandardHeight = 2048, IsThisModelOfClass = (m, h) =>
         {
             return false;
+        }});
+        // ====================== Hunyuan Video 1.5 ======================
+        Register(new() { ID = "hunyuan-video-1_5-t2v", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 Text2Video", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isHyImg(h) && isHyVid15(h);
+        }});
+        Register(new() { ID = "hunyuan-video-1_5-i2v", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 Image2Video", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // TODO: ??
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
@@ -646,6 +657,15 @@ public class T2IModelClassSorter
         Remaps["stable-diffusion-v3.5-large-turbo"] = "stable-diffusion-v3.5-large";
         Remaps["stable-diffusion-3-3-5-medium"] = "stable-diffusion-v3.5-medium";
         Remaps["stable-diffusion-3-3-5-medium/lora"] = "stable-diffusion-v3.5-medium/lora";
+        // ====================== Comfy model_type remaps ======================
+        Remaps["hunyuanvideo1.5_480p_t2v_distilled"] = "hunyuan-video-1_5-t2v";
+        Remaps["hunyuanvideo1.5_480p_i2v_distilled"] = "hunyuan-video-1_5-i2v";
+        Remaps["hunyuanvideo1.5_720p_t2v_distilled"] = "hunyuan-video-1_5-t2v";
+        Remaps["hunyuanvideo1.5_720p_i2v_distilled"] = "hunyuan-video-1_5-i2v";
+        Remaps["hunyuanvideo1.5_480p_t2v"] = "hunyuan-video-1_5-t2v";
+        Remaps["hunyuanvideo1.5_480p_i2v"] = "hunyuan-video-1_5-i2v";
+        Remaps["hunyuanvideo1.5_720p_t2v"] = "hunyuan-video-1_5-t2v";
+        Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5-i2v";
         // ====================== GGUF Remaps ======================
         Remaps["flux"] = "Flux.1-dev";
         Remaps["sd3"] = "stable-diffusion-v3-medium";
@@ -666,7 +686,9 @@ public class T2IModelClassSorter
             ?? fix(header?["__metadata__"]?.Value<string>("general.architecture"))
             ?? fix(header.Value<string>("modelspec.architecture"))
             ?? fix(header.Value<string>("architecture"))
-            ?? fix(header.Value<string>("general.architecture"));
+            ?? fix(header.Value<string>("general.architecture"))
+            ?? fix(header?["__metadata__"]?.Value<string>("model_type"))
+            ?? fix(header.Value<string>("model_type"));
         if (arch is not null)
         {
             string res = fix(header["__metadata__"]?.Value<string>("modelspec.resolution"))
