@@ -8,12 +8,155 @@ class PresetHelpers {
         this.imageElem = getRequiredElementById('new_preset_image');
         this.enableImageElem = getRequiredElementById('new_preset_image_toggle');
     }
+
+    renderCurrentPresetUpdate() {
+        updatePresetList();
+        presetBrowser?.rerender();
+    }
+
+    removePresetByTitle(presetTitle) {
+        if (!presetTitle?.trim()) {
+            return;
+        }
+        let index = currentPresets.findIndex(p => p.title == presetTitle);
+        if (index >= 0) {
+            currentPresets.splice(index, 1);
+            this.renderCurrentPresetUpdate();
+        }
+    }
+
+    addPreset(presetData) {
+        if (!currentPresets.some(p => p.title == presetData.title)) {
+            currentPresets.push(presetData);
+            this.renderCurrentPresetUpdate();
+        }
+    }
+
+    addPresetByTitle(presetTitle) {
+        if (!presetTitle?.trim()) {
+            return;
+        }
+        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+        if (presetData) {
+            this.addPreset(presetData);
+        }
+        else {
+            console.log(`Preset ${presetTitle} not found, cannot add to current`);
+        }
+    }
 }
 
 /** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
 let presetHelpers = new PresetHelpers();
 
-//////////// TODO: Merge all the below into the class above
+/** Manages preset links for models and LoRAs. */
+class ModelPresetLinkManager {
+
+    constructor() {
+        this.links = {};
+    }
+
+    getLinks(subtype, modelName) {
+        return this.links[subtype]?.[cleanModelName(modelName)] || [];
+    }
+
+    setLink(subtype, modelName, presetTitle) {
+        // TODO: Static single set is silly. There should be a multi-select in the UI for this.
+        modelName = cleanModelName(modelName);
+        if (!presetTitle?.trim()) {
+            this.clearLinks(subtype, modelName);
+            return;
+        }
+        this.links[subtype] ??= {};
+        this.links[subtype][modelName] ??= [];
+        if (this.links[subtype][modelName].length != 1 || this.links[subtype][modelName][0] != presetTitle) {
+            this.links[subtype][modelName] = [presetTitle];
+            this.save();
+        }
+    }
+
+    addLink(subtype, modelName, presetTitle) {
+        modelName = cleanModelName(modelName);
+        if (!presetTitle?.trim()) {
+            return;
+        }
+        this.links[subtype] ??= {};
+        this.links[subtype][modelName] ??= [];
+        if (!this.links[subtype][modelName].includes(presetTitle)) {
+            this.links[subtype][modelName].push(presetTitle);
+            this.save();
+        }
+    }
+
+    clearLinks(subtype, modelName) {
+        modelName = cleanModelName(modelName);
+        if (this.links[subtype]?.[modelName]) {
+            delete this.links[subtype]?.[modelName];
+            this.save();
+        }
+    }
+
+    loadFromServer(data) {
+        this.links = data ?? {};
+    }
+
+    removePresetsFrom(subtype, modelName) {
+        for (let presetTitle of this.getLinks(subtype, modelName)) {
+            presetHelpers.removePresetByTitle(presetTitle);
+        }
+    }
+
+    /** Adds all presets for the given model. */
+    addPresetsFrom(subtype, modelName) {
+        for (let presetTitle of this.getLinks(subtype, modelName)) {
+            presetHelpers.addPresetByTitle(presetTitle);
+        }
+    }
+
+    /**
+     * Builds a preset link selector for models.
+     * @param {string} subtype Model sub-type: eg 'Stable-Diffusion' or 'LoRA'
+     * @param {string} modelName Name of the model
+     * @param {string} selectId The ID to assign to the select element (e.g., 'edit_model_preset_id')
+     */
+    buildPresetLinkSelectorForModel(subtype, modelName, selectId) {
+        let compatiblePresets = [];
+        if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
+            for (let preset of allPresetsUnsorted) {
+                let presetData = preset.data || preset;
+                if (presetData && presetData.title) {
+                    compatiblePresets.push(presetData);
+                }
+            }
+        }
+        let select = getRequiredElementById(selectId);
+        select.innerHTML = '';
+        let option = document.createElement('option');
+        option.value = '';
+        option.innerText = '(None)';
+        select.appendChild(option);
+        for (let preset of compatiblePresets) {
+            option = document.createElement('option');
+            option.value = preset.title;
+            option.innerText = preset.title;
+            select.appendChild(option);
+        }
+        let currentLinks = this.getLinks(subtype, modelName);
+        if (currentLinks.length > 0) {
+            select.value = currentLinks[0];
+        }
+    }
+
+    /** Saves all model preset links to the server. */
+    save() {
+        genericRequest('SetPresetLinks', this.links, data => {});
+    }
+}
+
+/** Instance of {@link ModelPresetLinkManager} for managing model and LoRA preset links. */
+let modelPresetLinkManager = new ModelPresetLinkManager();
+
+//////////// TODO: Merge all the below into the classes above
 
 let allPresets = [];
 let allPresetsUnsorted = [];
@@ -410,6 +553,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
+            modelPresetLinkManager.loadFromServer(data.model_preset_links);
             proc();
         });
     }
