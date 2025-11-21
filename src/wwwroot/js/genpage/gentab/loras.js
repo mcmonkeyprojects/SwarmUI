@@ -228,31 +228,25 @@ class LoraHelper {
                     }
                 };
                 let hoverTimer = null;
-                let leaveTimer = null;
-                let clearTimers = (hTimer, lTimer) => {
+                let clearTimer = (hTimer) => {
                     if (hTimer) {
                         clearTimeout(hTimer);
                         hoverTimer = null;
-                    }
-                    if (lTimer) {
-                        clearTimeout(lTimer);
-                        leaveTimer = null;
                     }
                 };
                 nameSpan.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    clearTimers(hoverTimer, leaveTimer);
+                    clearTimer(hoverTimer);
                     doShowLoraPopup(true);
                 });
                 nameSpan.addEventListener('mouseenter', (e) => {
-                    clearTimers(null, leaveTimer);
                     hoverTimer = setTimeout(() => {
                         doShowLoraPopup(false);
                     }, 300);
                 });
                 nameSpan.addEventListener('mouseleave', (e) => {
-                    clearTimers(hoverTimer, null);
+                    clearTimer(hoverTimer);
                     let popup = document.querySelector(`.sui-popover-visible[data-lora-name="${lora.name}"]`);
                     if (popup && popup.dataset.isClick != "true") {
                         popup.closeSelf();
