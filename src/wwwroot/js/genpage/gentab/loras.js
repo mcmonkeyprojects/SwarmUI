@@ -249,7 +249,7 @@ class LoraHelper {
                     clearTimers(null, leaveTimer);
                     hoverTimer = setTimeout(() => {
                         doShowLoraPopup(false);
-                    }, 1000);
+                    }, 300);
                 });
                 nameSpan.addEventListener('mouseleave', (e) => {
                     clearTimers(hoverTimer, null);
