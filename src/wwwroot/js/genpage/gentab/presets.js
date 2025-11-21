@@ -9,6 +9,11 @@ class PresetHelpers {
         this.enableImageElem = getRequiredElementById('new_preset_image_toggle');
     }
 
+    renderCurrentPresetUpdate() {
+        updatePresetList();
+        presetBrowser?.rerender();
+    }
+
     removePresetByTitle(presetTitle) {
         if (!presetTitle?.trim()) {
             return;
@@ -16,16 +21,14 @@ class PresetHelpers {
         let index = currentPresets.findIndex(p => p.title == presetTitle);
         if (index >= 0) {
             currentPresets.splice(index, 1);
-            updatePresetList();
-            presetBrowser?.rerender();
+            this.renderCurrentPresetUpdate();
         }
     }
 
     addPreset(presetData) {
         if (!currentPresets.some(p => p.title == presetData.title)) {
             currentPresets.push(presetData);
-            updatePresetList();
-            presetBrowser?.rerender();
+            this.renderCurrentPresetUpdate();
         }
     }
 
@@ -36,6 +39,9 @@ class PresetHelpers {
         let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
         if (presetData) {
             this.addPreset(presetData);
+        }
+        else {
+            console.log(`Preset ${presetTitle} not found, cannot add to current`);
         }
     }
 }
@@ -51,10 +57,11 @@ class ModelPresetLinkManager {
     }
 
     getLink(subtype, modelName) {
-        return this.links[subtype]?.[modelName] || null;
+        return this.links[subtype]?.[cleanModelName(modelName)] || null;
     }
 
     setLink(subtype, modelName, presetTitle) {
+        modelName = cleanModelName(modelName);
         if (!presetTitle?.trim()) {
             this.clearLink(subtype, modelName);
             return;
@@ -67,6 +74,7 @@ class ModelPresetLinkManager {
     }
 
     clearLink(subtype, modelName) {
+        modelName = cleanModelName(modelName);
         if (this.links[subtype]?.[modelName]) {
             delete this.links[subtype]?.[modelName];
             this.saveModelPresetLinks();
@@ -81,9 +89,9 @@ class ModelPresetLinkManager {
         presetHelpers.removePresetByTitle(this.getLink(subtype, modelName));
     }
 
-    /** Handle LoRA preset selection when a LoRA is manually selected. */
-    selectLoraPresetOnSelection(modelName) {
-        presetHelpers.addPresetByTitle(this.getLink('LoRA', modelName));
+    /** Adds all presets for the given model. */
+    addPresetsFrom(subtype, modelName) {
+        presetHelpers.addPresetByTitle(this.getLink(subtype, modelName));
     }
 
     /**

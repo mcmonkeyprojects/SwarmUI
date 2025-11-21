@@ -342,10 +342,11 @@ class LoraHelper {
         let selected = this.selected.find(l => l.name == name);
         if (selected) {
             this.selected = this.selected.filter(l => l.name != name);
+            modelPresetLinkManager.removePresetsFrom('LoRA', name);
         }
         else {
             this.selected.push(new SelectedLora(name, null, null, data));
-            modelPresetLinkManager.selectLoraPresetOnSelection(name);
+            modelPresetLinkManager.addPresetsFrom('LoRA', name);
         }
         this.rebuildParams();
         this.rebuildUI();
