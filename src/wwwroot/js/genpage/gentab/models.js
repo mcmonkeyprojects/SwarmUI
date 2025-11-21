@@ -377,7 +377,6 @@ function save_edit_model() {
         genericRequest('EditModelMetadata', data, data => {
             curModelMenuBrowser.browser.lightRefresh();
         });
-        // Separately, save or clear preset link
         let presetSelect = document.getElementById('edit_model_preset_id');
         let presetTitle = presetSelect?.value || '';
         modelPresetLinkManager.setLink(curModelMenuBrowser.subType, model.name, presetTitle);
@@ -745,12 +744,11 @@ class ModelBrowserWrapper {
                 interject += `${getOptLine("Default LoRA Weight", model.data.lora_default_weight)}${getOptLine("Default LoRA Confinement", confinementName)}`;
                 searchableAdded += `, Default LoRA Weight: ${model.data.lora_default_weight}, Default LoRA Confinement: ${confinementName}`;
             }
-            // Add linked preset info if available
             let presetLine = '';
             let linkedPreset = modelPresetLinkManager.getLink(this.subType, model.data.name);
             if (linkedPreset) {
-                presetLine = `<span class="model_preset">${getLine("Preset", linkedPreset)}</span>`;
-                searchableAdded += `, Preset: ${linkedPreset}`;
+                presetLine = `<span class="model_preset">${getLine("Linked Preset", linkedPreset)}</span>`;
+                searchableAdded += `, Linked Preset: ${linkedPreset}`;
             }
             description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${presetLine}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
             let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
@@ -1010,15 +1008,11 @@ function directSetModel(model) {
         modelName = name;
     }
     reviseBackendFeatureSet();
-    let presetTitle = modelPresetLinkManager.getLink("Stable-Diffusion", modelName);
+    let presetTitle = modelPresetLinkManager.getLink('Stable-Diffusion', modelName);
 	if (presetTitle) {
 		let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
 		if (presetData) {
-			if (!currentPresets.some(p => p.title == presetData.title)) {
-				currentPresets.push(presetData);
-                updatePresetList();
-                presetBrowser?.rerender();
-			}
+            presetHelpers.addPreset(presetData);
 		}
 	}
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));

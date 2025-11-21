@@ -8,6 +8,36 @@ class PresetHelpers {
         this.imageElem = getRequiredElementById('new_preset_image');
         this.enableImageElem = getRequiredElementById('new_preset_image_toggle');
     }
+
+    removePresetByTitle(presetTitle) {
+        if (!presetTitle?.trim()) {
+            return;
+        }
+        let index = currentPresets.findIndex(p => p.title == presetTitle);
+        if (index >= 0) {
+            currentPresets.splice(index, 1);
+            updatePresetList();
+            presetBrowser?.rerender();
+        }
+    }
+
+    addPreset(presetData) {
+        if (!currentPresets.some(p => p.title == presetData.title)) {
+            currentPresets.push(presetData);
+            updatePresetList();
+            presetBrowser?.rerender();
+        }
+    }
+
+    addPresetByTitle(presetTitle) {
+        if (!presetTitle?.trim()) {
+            return;
+        }
+        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+        if (presetData) {
+            this.addPreset(presetData);
+        }
+    }
 }
 
 /** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
@@ -43,39 +73,17 @@ class ModelPresetLinkManager {
         }
     }
 
-    hasLink(subtype, modelName) {
-        return !!this.getLink(subtype, modelName);
-    }
-
     loadFromServer(data) {
         this.links = data ?? {};
     }
 
     removePresetsFrom(subtype, modelName) {
-        let link = this.getLink(subtype, modelName);
-        if (!link) {
-            return;
-        }
-        if (currentPresets.some(p => p.title == link)) {
-            currentPresets = currentPresets.filter(p => p.title != link);
-            updatePresetList();
-            presetBrowser?.rerender();
-        }
+        presetHelpers.removePresetByTitle(this.getLink(subtype, modelName));
     }
 
     /** Handle LoRA preset selection when a LoRA is manually selected. */
     selectLoraPresetOnSelection(modelName) {
-        let presetTitle = this.getLink('LoRA', modelName);
-        if (!presetTitle) {
-            return;
-        }
-        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
-        if (!presetData) {
-            return;
-        }
-        if (!currentPresets.some(p => p.title == presetTitle)) {
-            selectPreset(presetData);
-        }
+        presetHelpers.addPresetByTitle(this.getLink('LoRA', modelName));
     }
 
     /**
