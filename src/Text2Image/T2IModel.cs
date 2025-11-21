@@ -243,7 +243,13 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                 }
                 specSetEmptyable("lora_default_weight", Metadata.LoraDefaultWeight);
                 specSetEmptyable("lora_default_confinement", Metadata.LoraDefaultConfinement);
-                json["__metadata__"] = metaHeader;
+                metaHeader["__spacer"] = "";
+                byte[] encode()
+                {
+                    json["__metadata__"] = metaHeader;
+                    return Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None));
+                }
+                byte[] headerBytes = encode();
                 void HandleResave(string path)
                 {
                     if (reader is null)
@@ -255,10 +261,25 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
                         reader.ReadExactly(headerLen, 0, 8);
                         len = BitConverter.ToInt64(headerLen, 0);
                     }
+                    Logs.Verbose($"Metadata resave: file at '{path}', header len is {len}, will save new header len {headerBytes.Length}");
+                    if (headerBytes.Length <= len)
                     {
-                        Logs.Verbose("Metadata resave: write .tmp file");
-                        using FileStream writer = File.OpenWrite(path + ".tmp");
-                        byte[] headerBytes = Encoding.UTF8.GetBytes(json.ToString(Newtonsoft.Json.Formatting.None));
+                        Logs.Verbose("Metadata resave: direct update header");
+                        metaHeader["__spacer"] = new string(' ', (int)(len - headerBytes.Length));
+                        headerBytes = encode();
+                        reader.Dispose();
+                        using FileStream writer = File.OpenWrite(path);
+                        writer.Seek(8, SeekOrigin.Begin);
+                        writer.Write(headerBytes);
+                        writer.Flush();
+                        Logs.Debug($"Completed metadata direct-update for {path}");
+                        return;
+                    }
+                    metaHeader["__spacer"] = new string(' ', Program.ServerSettings.Metadata.ModelMetadataSpacerKilobytes * 1024);
+                    headerBytes = encode();
+                    Logs.Verbose("Metadata resave: write .tmp file");
+                    using (FileStream writer = File.OpenWrite(path + ".tmp"))
+                    {
                         writer.Write(BitConverter.GetBytes(headerBytes.LongLength));
                         writer.Write(headerBytes);
                         reader.Seek(8 + len, SeekOrigin.Begin);
@@ -313,7 +334,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             [$"{prefix}loaded"] = AnyBackendsHaveLoaded,
             [$"{prefix}architecture"] = ModelClass?.ID,
             [$"{prefix}class"] = ModelClass?.Name,
-            [$"{prefix}compat_class"] = ModelClass?.CompatClass,
+            [$"{prefix}compat_class"] = ModelClass?.CompatClass?.ID,
             [$"{prefix}resolution"] = $"{StandardWidth}x{StandardHeight}",
             [$"{prefix}standard_width"] = StandardWidth <= 0 ? ModelClass?.StandardWidth ?? 0 : StandardWidth,
             [$"{prefix}standard_height"] = StandardHeight <= 0 ? ModelClass?.StandardHeight ?? 0 : StandardHeight,

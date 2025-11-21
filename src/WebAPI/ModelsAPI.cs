@@ -574,6 +574,16 @@ public static class ModelsAPI
             await ws.SendJson(new JObject() { ["error"] = "Invalid type." }, API.WebsocketTimeout);
             return null;
         }
+        string extension = "safetensors";
+        string folder = handler.DownloadFolderPath;
+        if (url.EndsWith(".gguf"))
+        {
+            extension = "gguf";
+            if (type == "Stable-Diffusion")
+            {
+                folder += "/../diffusion_models"; // Hacky but oughtta do, gguf in diffusion_models is a silly special case
+            }
+        }
         string originalUrl = url;
         url = url.Before('#');
         Dictionary<string, string> headers = [];
@@ -600,18 +610,19 @@ public static class ModelsAPI
         }
         try
         {
-            string outPath = $"{handler.DownloadFolderPath}/{name}.safetensors";
+            string outPath = $"{folder}/{name}.{extension}";
             if (File.Exists(outPath))
             {
                 await ws.SendJson(new JObject() { ["error"] = "Model at that save path already exists." }, API.WebsocketTimeout);
                 return null;
             }
-            string tempPath = $"{handler.DownloadFolderPath}/{name}.download.tmp";
+            string tempPath = $"{folder}/{name}.download.tmp";
             if (File.Exists(tempPath))
             {
                 File.Delete(tempPath);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(outPath));
+            Logs.Debug($"Will download model from '{url}' to '{Path.GetFullPath(outPath)}'");
             using CancellationTokenSource canceller = new();
             Task downloading = Utilities.DownloadFile(url, tempPath, (progress, total, perSec) =>
             {
@@ -654,14 +665,14 @@ public static class ModelsAPI
             File.Move(tempPath, outPath);
             if (!string.IsNullOrWhiteSpace(metadata))
             {
-                File.WriteAllText($"{handler.DownloadFolderPath}/{name}.swarm.json", metadata);
+                File.WriteAllText($"{folder}/{name}.swarm.json", metadata);
             }
-            if (Program.ServerSettings.Paths.DownloaderAlwaysResave)
+            using (ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite())
             {
-                using (ManyReadOneWriteLock.WriteClaim claim = Program.RefreshLock.LockWrite())
-                {
-                    handler.Refresh();
-                }
+                handler.Refresh();
+            }
+            if (Program.ServerSettings.Paths.DownloaderAlwaysResave && extension == "safetensors")
+            {
                 if (handler.Models.TryGetValue($"{name}.safetensors", out T2IModel model))
                 {
                     model.ResaveModel();

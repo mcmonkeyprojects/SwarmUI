@@ -627,7 +627,7 @@ public static class NetworkBackendUtils
                 }
                 else
                 {
-                    Logs.Info($"Self-Start {nameSimple} unexpectedly exited (if something failed, change setting `LogLevel` to `Debug` to see why!)");
+                    Logs.Info($"Self-Start {nameSimple} unexpectedly exited (ExitCode={(process.HasExited ? process.ExitCode : "unknown")}) (if something failed, change setting `LogLevel` to `Debug` to see why!)");
                     if (errorLog.Length > 0)
                     {
                         Logs.Info($"Self-Start {nameSimple} had errors before shutdown:\n{errorLog}");

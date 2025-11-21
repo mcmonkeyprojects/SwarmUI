@@ -115,7 +115,10 @@ class LoraHelper {
             else {
                 let div = createDiv(null, 'preset-in-list');
                 div.dataset.lora_name = lora.name;
-                div.innerText = cleanModelName(lora.name);
+                let nameSpan = document.createElement('span');
+                nameSpan.innerText = cleanModelName(lora.name);
+                nameSpan.className = 'lora-name';
+                div.appendChild(nameSpan);
                 let weightInput = document.createElement('input');
                 weightInput.className = 'lora-weight-input';
                 weightInput.type = 'number';
@@ -159,6 +162,73 @@ class LoraHelper {
                 removeButton.addEventListener('click', () => {
                     this.selectLora(lora);
                     sdLoraBrowser.rebuildSelectedClasses();
+                });
+                let doShowLoraPopup = (isClick) => {
+                    let popovers = document.getElementsByClassName('sui-popover-visible');
+                    for (let popover of Array.from(popovers)) {
+                        if (popover.dataset.isClick == "true" && !isClick) {
+                            return;
+                        }
+                        popover.remove();
+                    }
+                    let model = sdLoraBrowser.models[lora.name] ?? sdLoraBrowser.models[lora.name + ".safetensors"];
+                    if (!model) {
+                        return;
+                    }
+                    let rect = div.getBoundingClientRect();
+                    let desc = sdLoraBrowser.describeModel(model);
+                    let image = document.createElement('img');
+                    let descblock = createDiv(null, 'model-descblock');
+                    let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block model-block-big');
+                    image.src = desc.image;
+                    image.className = 'model-preview-image';
+                    descblock.style.maxHeight = '15rem';
+                    descblock.style.overflowY = isClick ? 'auto' : 'hidden';
+                    descblock.style.scrollbarWidth = 'thin';
+                    descblock.innerHTML = desc.description;
+                    popup.dataset.loraName = lora.name;
+                    popup.dataset.isClick = isClick;
+                    popup.style.position = 'fixed';
+                    popup.style.padding = '0';
+                    popup.style.top = 'auto';
+                    popup.style.bottom = `${window.innerHeight - rect.top + 10}px`;
+                    popup.appendChild(image);
+                    popup.appendChild(descblock);
+                    document.body.appendChild(popup);
+                    let left = Math.min(rect.left, window.innerWidth - popup.offsetWidth - 10);
+                    popup.style.left = `${left}px`;
+                    popup.classList.add('sui-popover-visible');
+                    if (isClick) {
+                        uiImprover.sustainPopover = popup;
+                    }
+                    else {
+                        popup.style.pointerEvents = 'none';
+                    }
+                };
+                let hoverTimer = null;
+                let clearTimer = (hTimer) => {
+                    if (hTimer) {
+                        clearTimeout(hTimer);
+                        hoverTimer = null;
+                    }
+                };
+                nameSpan.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    clearTimer(hoverTimer);
+                    doShowLoraPopup(true);
+                });
+                nameSpan.addEventListener('mouseenter', (e) => {
+                    hoverTimer = setTimeout(() => {
+                        doShowLoraPopup(false);
+                    }, 300);
+                });
+                nameSpan.addEventListener('mouseleave', (e) => {
+                    clearTimer(hoverTimer);
+                    let popup = document.querySelector(`.sui-popover-visible[data-lora-name="${lora.name}"]`);
+                    if (popup && popup.dataset.isClick != "true") {
+                        popup.remove();
+                    }
                 });
                 div.appendChild(confinementInput);
                 div.appendChild(weightInput);
@@ -281,7 +351,6 @@ class LoraHelper {
         this.rebuildParams();
         this.rebuildUI();
     }
-    
 }
 
 loraHelper = new LoraHelper();

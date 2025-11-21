@@ -11,7 +11,7 @@ class ImageFullViewHelper {
             if (e.target.tagName == 'BODY') {
                 return; // it's impossible on the genpage to actually click body, so this indicates a bugged click, so ignore it
             }
-            if (!this.noClose && this.modal.style.display == 'block' && !findParentOfClass(e.target, 'imageview_popup_modal_undertext') && !findParentOfClass(e.target, 'image_fullview_extra_buttons')) {
+            if (!this.noClose && this.modal.style.display == 'block' && !findParentOfClass(e.target, 'imageview_popup_modal_undertext') && !findParentOfClass(e.target, 'video-controls') && !findParentOfClass(e.target, 'image_fullview_extra_buttons')) {
                 this.close();
                 e.preventDefault();
                 e.stopPropagation();
@@ -31,20 +31,28 @@ class ImageFullViewHelper {
         this.lastClosed = 0;
     }
 
-    getImg() {
+    getImgOrContainer() {
         return getRequiredElementById('imageview_popup_modal_img');
     }
 
+    getImg() {
+        let container = this.getImgOrContainer();
+        if (container.classList.contains('video-container')) {
+            return container.querySelector('video');
+        }
+        return container;
+    }
+
     getHeightPercent() {
-        return parseFloat((this.getImg().style.height || '100%').replaceAll('%', ''));
+        return parseFloat((this.getImgOrContainer().style.height || '100%').replaceAll('%', ''));
     }
 
     getImgLeft() {
-        return parseFloat((this.getImg().style.left || '0').replaceAll('px', ''));
+        return parseFloat((this.getImgOrContainer().style.left || '0').replaceAll('px', ''));
     }
 
     getImgTop() {
-        return parseFloat((this.getImg().style.top || '0').replaceAll('px', ''));
+        return parseFloat((this.getImgOrContainer().style.top || '0').replaceAll('px', ''));
     }
 
     onMouseDown(e) {
@@ -54,13 +62,13 @@ class ImageFullViewHelper {
         if (e.button == 2) { // right-click
             return;
         }
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || findParentOfClass(e.target, 'video-controls') || e.ctrlKey || e.shiftKey) {
             return;
         }
         this.lastMouseX = e.clientX;
         this.lastMouseY = e.clientY;
         this.isDragging = true;
-        this.getImg().style.cursor = 'grabbing';
+        this.getImgOrContainer().style.cursor = 'grabbing';
         e.preventDefault();
         e.stopPropagation();
     }
@@ -69,14 +77,14 @@ class ImageFullViewHelper {
         if (!this.isDragging) {
             return;
         }
-        this.getImg().style.cursor = 'grab';
+        this.getImgOrContainer().style.cursor = 'grab';
         this.isDragging = false;
         this.noClose = this.didDrag;
         this.didDrag = false;
     }
 
     moveImg(xDiff, yDiff) {
-        let img = this.getImg();
+        let img = this.getImgOrContainer();
         let newLeft = this.getImgLeft() + xDiff;
         let newTop = this.getImgTop() + yDiff;
         let overWidth = img.parentElement.offsetWidth / 2;
@@ -105,7 +113,7 @@ class ImageFullViewHelper {
     detachImg() {
         let wrap = getRequiredElementById('imageview_modal_imagewrap');
         if (wrap.style.textAlign == 'center') {
-            let img = this.getImg();
+            let img = this.getImgOrContainer();
             wrap.style.textAlign = 'left';
             let width = img.naturalWidth ?? img.videoWidth;
             let height = img.naturalHeight ?? img.videoHeight;
@@ -128,7 +136,7 @@ class ImageFullViewHelper {
     }
 
     copyState() {
-        let img = this.getImg();
+        let img = this.getImgOrContainer();
         if (img.style.objectFit) {
             return {};
         }
@@ -143,7 +151,7 @@ class ImageFullViewHelper {
         if (!state || !state.left) {
             return;
         }
-        let img = this.getImg();
+        let img = this.getImgOrContainer();
         this.detachImg();
         img.style.left = `${state.left}px`;
         img.style.top = `${state.top}px`;
@@ -156,6 +164,7 @@ class ImageFullViewHelper {
         }
         this.detachImg();
         let img = this.getImg();
+        let container = this.getImgOrContainer();
         let origHeight = this.getHeightPercent();
         let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
         let width = img.naturalWidth ?? img.videoWidth;
@@ -168,13 +177,13 @@ class ImageFullViewHelper {
         else {
             img.style.imageRendering = '';
         }
-        img.style.cursor = 'grab';
+        container.style.cursor = 'grab';
         let [imgLeft, imgTop] = [this.getImgLeft(), this.getImgTop()];
-        let [mouseX, mouseY] = [e.clientX - img.offsetLeft, e.clientY - img.offsetTop];
+        let [mouseX, mouseY] = [e.clientX - container.offsetLeft, e.clientY - container.offsetTop];
         let [origX, origY] = [mouseX / origHeight - imgLeft, mouseY / origHeight - imgTop];
         let [newX, newY] = [mouseX / newHeight - imgLeft, mouseY / newHeight - imgTop];
         this.moveImg((newX - origX) * newHeight, (newY - origY) * newHeight);
-        img.style.height = `${newHeight}%`;
+        container.style.height = `${newHeight}%`;
     }
 
     showImage(src, metadata, batchId = null) {
@@ -187,7 +196,7 @@ class ImageFullViewHelper {
         let encodedSrc = escapeHtmlForUrl(src);
         let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
         if (isVideo) {
-            imgHtml = `<video class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop controls><source src="${encodedSrc}" type="${isVideo}"></video>`;
+            imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
         }
         else if (isAudio) {
             imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}"></audio>`;
@@ -214,12 +223,15 @@ class ImageFullViewHelper {
                 }
             }
             else {
-                quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), '', added.title);
+                quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
         this.modalJq.modal('show');
+        if (isVideo) {
+            new VideoControls(this.getImg());
+        }
         if (isVideo || isAudio) {
-            let curImgElem = document.getElementById('current_image_img');
+            let curImgElem = currentImageHelper.getCurrentImage();
             if (curImgElem) {
                 if (curImgElem.tagName == 'VIDEO' || curImgElem.tagName == 'AUDIO') {
                     curImgElem.pause();
@@ -264,6 +276,26 @@ class ImageFullViewHelper {
 }
 
 let imageFullView = new ImageFullViewHelper();
+
+class CurrentImageHelper {
+
+    getCurrentImage() {
+        return document.getElementById('current_image_img');
+    }
+
+    getCurrentImageContainer() {
+        let img = this.getCurrentImage();
+        if (!img) {
+            return null;
+        }
+        if (img.tagName == 'VIDEO' && img.parentElement.classList.contains('video-container')) {
+            return img.parentElement;
+        }
+        return img;
+    }
+}
+
+currentImageHelper = new CurrentImageHelper();
 
 /** Called when the user clicks the clear batch button. */
 function clearBatch() {
@@ -461,7 +493,7 @@ function copy_current_image_params() {
  * Returns true if the shift was successful, returns false if there was nothing to shift to.
  */
 function shiftToNextImagePreview(next = true, expand = false, isArrows = false) {
-    let curImgElem = document.getElementById('current_image_img');
+    let curImgElem = currentImageHelper.getCurrentImage();
     if (!curImgElem) {
         return false;
     }
@@ -564,10 +596,11 @@ window.addEventListener('keydown', function(kbevent) {
 
 function alignImageDataFormat() {
     let curImg = getRequiredElementById('current_image');
-    let img = document.getElementById('current_image_img');
+    let img = currentImageHelper.getCurrentImage();
     if (!img) {
         return;
     }
+    let curImgContainer = currentImageHelper.getCurrentImageContainer();
     let format = getUserSetting('ImageMetadataFormat', 'auto');
     let extrasWrapper = curImg.querySelector('.current-image-extras-wrapper');
     let scale = img.dataset.previewGrow == 'true' ? 8 : 1;
@@ -577,16 +610,16 @@ function alignImageDataFormat() {
     let height = Math.min(imgHeight, curImg.offsetHeight);
     let width = Math.min(imgWidth, height * ratio);
     let remainingWidth = curImg.clientWidth - width - 30;
-    img.style.maxWidth = `calc(min(100%, ${width}px))`;
+    curImgContainer.style.maxWidth = `calc(min(100%, ${width}px))`;
     if ((remainingWidth > 30 * 16 && format == 'auto') || format == 'side') {
         curImg.classList.remove('current_image_small');
         extrasWrapper.style.display = 'inline-block';
         extrasWrapper.classList.add('extras-wrapper-sideblock');
-        img.style.maxHeight = `calc(max(15rem, 100%))`;
+        curImgContainer.style.maxHeight = `calc(max(15rem, 100%))`;
         if (remainingWidth < 30 * 16) {
             extrasWrapper.style.width = `${30 * 16}px`;
             extrasWrapper.style.maxWidth = `${30 * 16}px`;
-            img.style.maxWidth = `calc(min(100%, ${curImg.clientWidth - 30 * 16 - 30}px))`;
+            curImgContainer.style.maxWidth = `calc(min(100%, ${curImg.clientWidth - 30 * 16 - 30}px))`;
         }
         else {
             extrasWrapper.style.width = `${remainingWidth}px`;
@@ -599,13 +632,13 @@ function alignImageDataFormat() {
         extrasWrapper.style.maxWidth = `100%`;
         extrasWrapper.style.display = 'block';
         extrasWrapper.classList.remove('extras-wrapper-sideblock');
-        img.style.maxHeight = `calc(max(15rem, 100% - 5.1rem))`;
+        curImgContainer.style.maxHeight = `calc(max(15rem, 100% - 5.1rem))`;
     }
 }
 
 function toggleStar(path, rawSrc) {
     genericRequest('ToggleImageStarred', {'path': path}, data => {
-        let curImgImg = document.getElementById('current_image_img');
+        let curImgImg = currentImageHelper.getCurrentImage();
         if (curImgImg && curImgImg.dataset.src == rawSrc) {
             let oldMetadata = JSON.parse(curImgImg.dataset.metadata);
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
@@ -635,7 +668,9 @@ function toggleStar(path, rawSrc) {
         if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
             let oldMetadata = JSON.parse(imageFullView.currentMetadata);
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
+            let state = imageFullView.copyState();
             imageFullView.showImage(rawSrc, JSON.stringify(newMetadata), imageFullView.currentBatchId);
+            imageFullView.pasteState(state);
         }
     });
 }
@@ -643,6 +678,9 @@ function toggleStar(path, rawSrc) {
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
 function getImageFullSrc(src) {
+    if (src == null) {
+        return null;
+    }
     let fullSrc = src;
     if (fullSrc.startsWith("http://") || fullSrc.startsWith("https://")) {
         fullSrc = fullSrc.substring(fullSrc.indexOf('/', fullSrc.indexOf('/') + 2));
@@ -669,6 +707,11 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         metadata = interpretMetadata(metadata);
     }
     currentMetadataVal = metadata;
+    if (src == null) {
+        highlightSelectedImage(src);
+        forceShowWelcomeMessage();
+        return;
+    }
     let isVideo = isVideoExt(src);
     let isAudio = isAudioExt(src);
     if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
@@ -693,28 +736,32 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     else {
         curImg.classList.remove('current_image_placeholder');
     }
+    let container;
     let img;
     let isReuse = false;
     let srcTarget;
     if (isVideo) {
+        container = createDiv(null, 'video-container current-image-img');
         curImg.innerHTML = '';
         img = document.createElement('video');
+        img.className = 'current-image-img';
         img.loop = true;
         img.autoplay = true;
-        img.controls = true;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
         sourceObj.type = isVideo;
         img.appendChild(sourceObj);
+        container.appendChild(img);
     }
     else if (isAudio) {
         curImg.innerHTML = '';
         img = document.createElement('audio');
         img.controls = true;
         srcTarget = img;
+        container = img;
     }
     else {
-        img = document.getElementById('current_image_img');
+        img = currentImageHelper.getCurrentImage();
         if (!img || img.tagName != 'IMG') {
             curImg.innerHTML = '';
             img = document.createElement('img');
@@ -726,6 +773,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             img.removeAttribute('height');
         }
         srcTarget = img;
+        container = img;
     }
     function naturalDim() {
         if (isVideo) {
@@ -755,7 +803,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }, false);
     }
     srcTarget.src = src;
-    img.className = 'current-image-img';
+    container.classList.add('current-image-img');
     img.id = 'current_image_img';
     img.dataset.src = src;
     img.dataset.metadata = metadata || '{}';
@@ -959,14 +1007,36 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     data.innerHTML = formatMetadata(metadata);
     extrasWrapper.appendChild(data);
     if (!isReuse) {
-        curImg.appendChild(img);
+        curImg.appendChild(container);
         curImg.appendChild(extrasWrapper);
+        if (isVideo) {
+            new VideoControls(img);
+        }
     }
+    highlightSelectedImage(src);
+}
+
+function highlightSelectedImage(src) {
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
         for (let i of batchContainer.getElementsByClassName('image-block')) {
             if (batchImg == i) {
+                i.classList.add('image-block-current');
+            }
+            else {
+                i.classList.remove('image-block-current');
+            }
+        }
+    }
+    let historyContainer = document.getElementById('imagehistorybrowser-content');
+    if (historyContainer) {
+        let normalizedSrc = getImageFullSrc(src);
+        for (let i of historyContainer.getElementsByClassName('image-block')) {
+            // History browser images may have data-src (if clicked) or just data-name (if not clicked yet)
+            let historyImgSrc = i.dataset.src || i.dataset.name;
+            let normalizedHistorySrc = historyImgSrc ? getImageFullSrc(historyImgSrc) : null;
+            if (normalizedHistorySrc && normalizedSrc == normalizedHistorySrc) {
                 i.classList.add('image-block-current');
             }
             else {
@@ -1065,11 +1135,11 @@ function gotImageResult(image, metadata, batchId) {
     let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch');
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
-    if (!document.getElementById('current_image_img') || autoLoadImagesElem.checked) {
+    if (!currentImageHelper.getCurrentImage() || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
-        if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-            imageFullView.showImage(src, metadata, batchId);
-        }
+    }
+    if ((getUserSetting('AutoSwapImagesIncludesFullView') || imageFullView.currentBatchId == batchId) && imageFullView.isOpen()) {
+        imageFullView.showImage(src, metadata, batchId);
     }
     return batch_div;
 }
@@ -1087,7 +1157,7 @@ function gotImagePreview(image, metadata, batchId) {
         batch_div.appendChild(spinnerDiv);
         uiImprover.runLoadSpinner(spinnerDiv);
     }
-    if ((!document.getElementById('current_image_img') || autoLoadPreviewsElem.checked) && !image.startsWith('DOPLACEHOLDER:')) {
+    if ((!currentImageHelper.getCurrentImage() || autoLoadPreviewsElem.checked) && !image.startsWith('DOPLACEHOLDER:')) {
         setCurrentImage(src, metadata, batchId, true);
     }
     return batch_div;

@@ -202,6 +202,7 @@ body {
     font-size: 80%;
 }
 .current-image-img {
+    display: inline-block;
     max-width: 100%;
     max-height: calc(max(15rem, 100% - 5rem));
     object-fit: contain;
@@ -1242,6 +1243,14 @@ body {
     border: 1px solid var(--light-border);
     height: 32px;
 }
+.image-editor-tool-block input[type="color"] {
+    height: 1.6rem;
+}
+.tool-block-nogrow {
+    flex-grow: 0;
+    padding-left: 5px;
+    padding-right: 5px;
+}
 .image_editor_canvaslist {
     display: block;
     margin: 0;
@@ -1339,6 +1348,9 @@ body {
     padding: 0.5rem;
     vertical-align: top;
     overflow-y: auto;
+}
+.manage-users-right {
+    padding-bottom: 5rem;
 }
 .manage-users-left {
     margin-left: 0.5rem;

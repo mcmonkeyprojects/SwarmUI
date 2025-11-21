@@ -147,9 +147,19 @@ function getHtmlForParam(param, prefix) {
                 }
                 return {html: makeTextInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.default, param.view_type, param.description, param.toggleable, false, !param.no_popover) + pop};
             case 'model':
-                let modelList = param.values && param.values.length > 0 ? param.values : coreModelMap[param.subtype || 'Stable-Diffusion'];
-                modelList = modelList.map(m => cleanModelName(m));
-                return {html: makeDropdownInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, modelList, param.default, param.toggleable, !param.no_popover) + pop,
+                let subType = param.subtype || 'Stable-Diffusion';
+                let modelList = param.values && param.values.length > 0 ? param.values : modelsHelpers.listModelNames(subType);
+                let modelAltNames = [];
+                for (let i = 0; i < modelList.length; i++) {
+                    let model = modelsHelpers.getDataFor(subType, modelList[i]);
+                    if (!model) {
+                        modelAltNames[i] = escapeHtml(modelList[i]);
+                        continue;
+                    }
+                    modelList[i] = model.cleanName;
+                    modelAltNames[i] = model.cleanDropdown();
+                }
+                return {html: makeDropdownInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, modelList, param.default, param.toggleable, !param.no_popover, modelAltNames, false) + pop,
                     runnable: () => autoSelectWidth(getRequiredElementById(`${prefix}${param.id}`))};
             case 'image':
                 return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
@@ -886,7 +896,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         if (parent && parent.dataset.disabled == 'true') {
             continue;
         }
-        let val = getInputVal(elem);
+        let val = getInputVal(elem, true);
         if (val != null) {
             input[type.id] = val;
         }
@@ -901,7 +911,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
                 addedImageArea.style.display = '';
                 let imgs = [...addedImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
                 if (imgs.length > 0) {
-                    input["promptimages"] = imgs.map(img => img.dataset.filedata).join('|');
+                    input["promptimages"] = imgs.map(img => img.dataset.filedata);
                 }
             }
         }
@@ -925,7 +935,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
     let revisionImageArea = getRequiredElementById('alt_prompt_image_area');
     let revisionImages = [...revisionImageArea.querySelectorAll('.alt-prompt-image')].filter(c => c.tagName == "IMG");
     if (revisionImages.length > 0) {
-        input["promptimages"] = revisionImages.map(img => img.dataset.filedata).join('|');
+        input["promptimages"] = revisionImages.map(img => img.dataset.filedata);
     }
     if (imageEditor.active) {
         extraMetadata["used_image_editor"] = "true";
@@ -1004,7 +1014,15 @@ function refreshParameterValues(strong = true, refreshType = null, callback = nu
                         let alt_name = alt_names && alt_names[i] ? alt_names[i] : value;
                         let selected = value == val ? ' selected="true"' : '';
                         let cleanName = htmlWithParen(alt_name);
-                        html += `<option data-cleanname="${cleanName}" value="${escapeHtmlNoBr(value)}"${selected}>${cleanName}</option>\n`;
+                        let simpleName = cleanName;
+                        if (param.type == "model") {
+                            let model = modelsHelpers.getDataFor(param.subtype, value);
+                            if (model) {
+                                cleanName = model.cleanDropdown();
+                                simpleName = escapeHtmlNoBr(model.cleanName);
+                            }
+                        }
+                        html += `<option data-cleanname="${escapeHtmlNoBr(cleanName)}" value="${escapeHtmlNoBr(value)}"${selected}>${simpleName}</option>\n`;
                     }
                     elem.innerHTML = html;
                     elem.value = val;
@@ -1139,6 +1157,7 @@ function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     if (aspect) { // Fix resolution trick incase the reset broke it
         triggerChangeFor(aspect);
     }
+    clearPromptImages();
     currentModelChanged();
     clearPresets();
     let defaultPreset = getPresetByTitle('default');
@@ -1206,7 +1225,7 @@ function hideUnsupportableParams() {
             param.feature_missing = !supported;
             let show = supported && param.visible;
             let paramToggler = document.getElementById(`input_${param.id}_toggle`);
-            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != param.default;
+            let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != `${param.default}`;
             let group = param.original_group || param.group;
             if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
                 isAltered = false;

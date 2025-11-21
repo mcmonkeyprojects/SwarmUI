@@ -60,6 +60,7 @@ function buttonsForImage(fullsrc, src, metadata) {
         buttons.push({
             label: (metadata && JSON.parse(metadata).is_starred) ? 'Unstar' : 'Star',
             title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
+            className: (metadata && JSON.parse(metadata).is_starred) ? ' star-button button-starred-image' : ' star-button',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
             }
@@ -116,9 +117,9 @@ function buttonsForImage(fullsrc, src, metadata) {
                     if (div) {
                         div.remove();
                     }
-                    let currentImage = document.getElementById('current_image_img');
+                    let currentImage = currentImageHelper.getCurrentImage();
                     if (currentImage && currentImage.dataset.src == src) {
-                        forceShowWelcomeMessage();
+                        setCurrentImage(null);
                     }
                     div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
                     if (div) {
@@ -169,7 +170,7 @@ function describeOutputFile(image) {
 function selectOutputInHistory(image, div) {
     lastHistoryImage = image.data.src;
     lastHistoryImageDiv = div;
-    let curImg = document.getElementById('current_image_img');
+    let curImg = currentImageHelper.getCurrentImage();
     if (curImg && curImg.dataset.src == image.data.src) {
         curImg.dataset.batch_id = 'history';
         curImg.click();

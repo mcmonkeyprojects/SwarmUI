@@ -811,6 +811,7 @@ public static class AdminAPI
     public static async Task<JObject> AdminListUsers(Session session)
     {
         List<string> users = [.. Program.Sessions.UserDatabase.FindAll().Select(u => u.ID)];
+        users.Remove("__shared");
         return new JObject() { ["users"] = JArray.FromObject(users) };
     }
 

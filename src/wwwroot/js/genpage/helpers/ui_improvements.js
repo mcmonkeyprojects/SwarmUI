@@ -257,6 +257,37 @@ class UIImprovementHandler {
         this.lastSelectedTextbox = null;
         this.timeOfLastTextboxSelectTrack = 0;
         this.lastTextboxCursorPos = -1;
+        this.videoControlDragging = null;
+        this.sustainPopover = null;
+        document.addEventListener('click', e => {
+            if (this.sustainPopover && !this.sustainPopover.contains(e.target)) {
+                this.sustainPopover.remove();
+                this.sustainPopover = null;
+            }
+        });
+        document.addEventListener('contextmenu', e => {
+            if (this.sustainPopover && !this.sustainPopover.contains(e.target)) {
+                this.sustainPopover.remove();
+                this.sustainPopover = null;
+            }
+        });
+        document.addEventListener('keydown', e => {
+            if (this.sustainPopover && e.key == 'Escape') {
+                this.sustainPopover.remove();
+                this.sustainPopover = null;
+            }
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (this.videoControlDragging) {
+                this.videoControlDragging.drag(e);
+            }
+        });
+        document.addEventListener('mouseup', () => {
+            if (this.videoControlDragging) {
+                this.videoControlDragging.isDragging = false;
+                this.videoControlDragging = null;
+            }
+        });
         document.addEventListener('focusout', (e) => {
             if (e.target.tagName == 'TEXTAREA') {
                 this.lastSelectedTextbox = e.target;
@@ -509,6 +540,148 @@ class UIImprovementHandler {
 }
 
 uiImprover = new UIImprovementHandler();
+
+/** Helper class to inject custom JS video controls to a 'video' element. */
+class VideoControls {
+
+    constructor(videoElement) {
+        this.video = videoElement;
+        this.isDragging = false;
+        this.createControls();
+    }
+
+    /** Creates the controls UI for the video. */
+    createControls() {
+        let container = this.video.parentElement;
+        let controls = createDiv(null, 'video-controls', `
+            <button data-action="play">▶</button>
+            <span class="video-time">0:00</span>
+            <div class="video-progress"><div class="video-progress-inner"><div></div></div></div>
+            <span class="video-time">0:00</span>
+            <button data-action="volume">🔊</button>
+            <div class="auto-slider-range-wrapper" style="${getRangeStyle(100, 0, 100)}; width: 80px;">
+                <input class="auto-slider-range" type="range" value="100" min="0" max="100" step="1" data-ispot="false" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+            </div>
+        `);
+        container.appendChild(controls);
+        this.controls = controls;
+        this.playBtn = controls.querySelector('[data-action="play"]');
+        this.volumeBtn = controls.querySelector('[data-action="volume"]');
+        this.currentTimeEl = controls.querySelectorAll('.video-time')[0];
+        this.durationEl = controls.querySelectorAll('.video-time')[1];
+        this.progressBar = controls.querySelector('.video-progress');
+        this.progressBarInner = this.progressBar.querySelector('.video-progress-inner');
+        this.progressFilled = this.progressBarInner.querySelector('div');
+        this.volumeSlider = controls.querySelector('input[type="range"]');
+        this.volumeSlider.dataset.lastRealVolume = "100";
+        this.playBtn.addEventListener('click', () => this.togglePlay());
+        this.video.addEventListener('timeupdate', () => this.updateProgress());
+        this.video.addEventListener('loadedmetadata', () => this.updateDuration());
+        this.video.addEventListener('play', () => this.updateIcons());
+        this.video.addEventListener('pause', () => this.updateIcons());
+        container.addEventListener('mouseenter', () => { controls.style.opacity = 1; });
+        container.addEventListener('mouseleave', () => { controls.style.opacity = 0; });
+        this.progressBar.addEventListener('click', (e) => this.seek(e));
+        this.progressBar.addEventListener('mousedown', () => { this.isDragging = true; uiImprover.videoControlDragging = this; });
+        this.volumeSlider.addEventListener('input', (e) => this.setVolume(e));
+        this.volumeBtn.addEventListener('click', () => this.toggleMute());
+        this.updateIcons();
+    }
+
+    /** Helper to format a time in seconds into a MM:SS string. */
+    formatTime(seconds) {
+        let mins = Math.floor(seconds / 60);
+        let secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /** Toggles the play/pause state of the video. */
+    togglePlay() {
+        if (this.video.paused) {
+            this.video.play();
+        }
+        else {
+            this.video.pause();
+        }
+        this.updateIcons();
+    }
+
+    /** Updates the progress bar to match the video. */
+    updateProgress() {
+        let percent = (this.video.currentTime / this.video.duration) * 100;
+        this.progressFilled.style.width = `${percent}%`;
+        this.currentTimeEl.textContent = this.formatTime(this.video.currentTime);
+    }
+
+    /** Updates the duration UI text to match the video. */
+    updateDuration() {
+        this.durationEl.textContent = this.formatTime(this.video.duration);
+    }
+
+    /** Seeks the video to a specific time based on a click event on the progress bar. */
+    seek(e) {
+        let rect = this.progressBar.getBoundingClientRect();
+        let percent = (e.clientX - rect.left) / rect.width;
+        this.video.currentTime = percent * this.video.duration;
+    }
+
+    /** Handles the dragging of the progress bar to seek the video. */
+    drag(e) {
+        if (!this.isDragging) {
+            return;
+        }
+        let rect = this.progressBar.getBoundingClientRect();
+        let percent = (e.clientX - rect.left) / rect.width;
+        percent = Math.max(0, Math.min(1, percent));
+        this.video.currentTime = percent * this.video.duration;
+    }
+
+    /** Sets the volume of the video explicitly based on a slider event. */
+    setVolume(e) {
+        let volume = e.target.value / 100;
+        e.target.dataset.lastRealVolume = `${e.target.value}`;
+        this.video.volume = volume;
+        this.video.muted = volume < 0.001;
+        this.updateIcons();
+    }
+
+    /** Toggles the mute state of the video. */
+    toggleMute() {
+        this.video.muted = !this.video.muted;
+        if (this.video.muted) {
+            this.volumeSlider.value = 0;
+        }
+        else if (this.volumeSlider.dataset.lastRealVolume) {
+            this.video.volume = parseFloat(this.volumeSlider.dataset.lastRealVolume) / 100;
+            if (this.video.volume < 0.01) {
+                this.video.volume = 0.5;
+            }
+        }
+        this.updateIcons();
+    }
+
+    /** Updates the icons for the play and volume buttons. */
+    updateIcons() {
+        let volume = this.video.muted ? 0 : this.video.volume;
+        this.volumeSlider.value = volume * 100;
+        updateRangeStyle(this.volumeSlider);
+        if (volume == 0) {
+            this.volumeBtn.textContent = '🔇';
+        }
+        else if (volume < 0.5) {
+            this.volumeBtn.textContent = '🔉';
+        }
+        else {
+            this.volumeBtn.textContent = '🔊';
+        }
+        if (this.video.paused) {
+            this.playBtn.textContent = '▶';
+        }
+        else {
+            this.playBtn.textContent = '⏸';
+        }
+    }
+}
 
 ///////////// Older-style popover code, to be cleaned
 
