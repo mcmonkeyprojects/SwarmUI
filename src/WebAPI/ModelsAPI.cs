@@ -29,8 +29,6 @@ public static class ModelsAPI
         API.RegisterAPICall(TestPromptFill, false, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(EditWildcard, true, Permissions.EditWildcards);
         API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
-        API.RegisterAPICall(SaveModelPresetLink, true, Permissions.ManagePresets);
-        API.RegisterAPICall(ClearModelPresetLink, true, Permissions.ManagePresets);
         API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
@@ -901,65 +899,5 @@ public static class ModelsAPI
         }
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
-    }
-
-    [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
-    public static async Task<JObject> SaveModelPresetLink(Session session,
-        [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
-        [API.APIParameter("Filename of the model.")] string modelName,
-        [API.APIParameter("The title of the preset to link, or empty string to clear the link.")] string presetTitle)
-    {
-        try
-        {
-            string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
-            JObject links = JObject.Parse(rawJson);
-            var subtypePresets = links[subtype]?.Value<JObject>();
-            if (subtypePresets is null)
-            {
-                if (!string.IsNullOrWhiteSpace(presetTitle))
-                {
-                    links[subtype] = new JObject() { [modelName] = presetTitle };
-                }
-            }
-            else if (string.IsNullOrWhiteSpace(presetTitle))
-            {
-                subtypePresets.Remove(modelName);
-            }
-            else
-            {
-                subtypePresets[modelName] = presetTitle;
-            }
-            string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
-            session.User.SaveGenericData("modelpresetlinks", "data", newJson);
-            return new JObject() { ["success"] = true };
-        }
-        catch (Exception ex)
-        {
-            Logs.Error($"Error saving preset link: {ex.ReadableString()}");
-            return new JObject() { ["success"] = false };
-        }
-    }
-
-    [API.APIDescription("Clears a reference to a preset for a model from the user's data.", "\"success\": \"true\"")]
-    public static async Task<JObject> ClearModelPresetLink(Session session,
-        [API.APIParameter("The model's sub-type, 'Stable-Diffusion' or 'LoRA'.")] string subtype,
-        [API.APIParameter("Filename of the model.")] string modelName)
-    {
-        try
-        {
-            string rawJson = session.User.GetGenericData("modelpresetlinks", "data") ?? "{}";
-            JObject links = JObject.Parse(rawJson);
-            if (links[subtype]?.Value<JObject>()?.Remove(modelName) ?? false)
-            {
-                string newJson = links.ToString(Newtonsoft.Json.Formatting.None);
-                session.User.SaveGenericData("modelpresetlinks", "data", newJson);
-            }
-            return new JObject() { ["success"] = true };
-        }
-        catch (Exception ex)
-        {
-            Logs.Error($"Error clearing preset link: {ex.Message}");
-            return new JObject() { ["success"] = false };
-        }
     }
 }

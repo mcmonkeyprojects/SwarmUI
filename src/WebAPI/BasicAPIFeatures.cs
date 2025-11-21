@@ -28,6 +28,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(SetStarredModels, true, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(SaveModelPresetLink, true, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(AddNewPreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DuplicatePreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DeletePreset, true, Permissions.ManagePresets);
@@ -220,8 +221,7 @@ public static class BasicAPIFeatures
             "permissions": ["permission1", "permission2"],
             "starred_models": {
                 "LoRA": ["one", "two"]
-            },
-            "autocompletions": ["Word\nword\ntag\n3"],
+            },,
             "model_preset_links": {
                 "Stable-Diffusion": {
                     "modelnamehere": "preset_title"
@@ -229,21 +229,12 @@ public static class BasicAPIFeatures
                 "LoRA": {
                     "modelnamehere": "preset_title"
                 }
+            "autocompletions": ["Word\nword\ntag\n3"]
             }
         """)]
     public static async Task<JObject> GetMyUserData(Session session)
     {
         Settings.User.AutoCompleteData settings = session.User.Settings.AutoComplete;
-        JObject modelPresetLinks = new();
-        string rawJson = session.User.GetGenericData("modelpresetlinks", "data");
-        if (!string.IsNullOrWhiteSpace(rawJson))
-        {
-            try {
-                modelPresetLinks = JObject.Parse(rawJson);
-            } catch {
-                // If JSON parsing fails, just return empty object
-            }
-        }
         return new JObject()
         {
             ["user_name"] = session.User.UserID,
@@ -251,8 +242,8 @@ public static class BasicAPIFeatures
             ["language"] = session.User.Settings.Language,
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
-            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode)),
-            ["model_preset_links"] = modelPresetLinks
+            ["model_preset_links"] = JObject.Parse(session.User.GetGenericData("modelpresetlinks", "full") ?? "{}"),
+            ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
         };
     }
 
@@ -265,6 +256,16 @@ public static class BasicAPIFeatures
     {
         raw.Remove("session_id");
         session.User.SaveGenericData("starred_models", "full", raw.ToString(Formatting.None));
+        session.User.Save();
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
+    public static async Task<JObject> SetPresetLinks(Session session,
+        [API.APIParameter("Send the raw data as eg 'LoRA': { 'Name': 'Preset' }, 'Stable-Diffusion': { ... }")] JObject raw)
+    {
+        raw.Remove("session_id");
+        session.User.SaveGenericData("modelpresetlinks", "full", raw.ToString(Formatting.None));
         session.User.Save();
         return new JObject() { ["success"] = true };
     }
