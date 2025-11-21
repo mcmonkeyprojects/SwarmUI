@@ -345,8 +345,7 @@ class LoraHelper {
         }
         else {
             this.selected.push(new SelectedLora(cleanName, null, null, data));
-			// If LoRA has a preset, select it too (path and filename, not cleaned name)
-            selectLoraPresetOnSelection(name);
+            modelPresetLinkManager.selectLoraPresetOnSelection(name);
         }
         this.rebuildParams();
         this.rebuildUI();

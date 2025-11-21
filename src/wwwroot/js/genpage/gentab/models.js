@@ -283,8 +283,7 @@ function editModel(model, browser) {
     getRequiredElementById('edit_model_lora_default_confinement').value = model.lora_default_confinement || '';
     getRequiredElementById('edit_model_lora_default_confinement_div').style.display = model.architecture && model.architecture.endsWith('/lora') ? 'block' : 'none';
     let run = () => {
-		buildPresetLinkSelectorForModel(curModelMenuBrowser.subType, model.name, 'edit_model_preset', 'edit_model_preset_id');
-        updatePresetLinkButtonState('edit_model_preset_id');
+		modelPresetLinkManager.buildPresetLinkSelectorForModel(curModelMenuBrowser.subType, model.name, 'edit_model_preset_id');
         triggerChangeFor(modelsHelpers.enableImageElem);
         $('#edit_model_modal').modal('show');
     };
@@ -381,7 +380,7 @@ function save_edit_model() {
         // Separately, save or clear preset link
         let presetSelect = document.getElementById('edit_model_preset_id');
         let presetTitle = presetSelect?.value || '';
-        saveModelPresetLink(curModelMenuBrowser.subType, model.name, presetTitle);
+        modelPresetLinkManager.setLink(curModelMenuBrowser.subType, model.name, presetTitle);
         $('#edit_model_modal').modal('hide');
     }
     if (modelsHelpers.enableImageElem.checked) {
@@ -748,7 +747,7 @@ class ModelBrowserWrapper {
             }
             // Add linked preset info if available
             let presetLine = '';
-            let linkedPreset = getModelPresetLink(this.subType, model.data.name);
+            let linkedPreset = modelPresetLinkManager.getLink(this.subType, model.data.name);
             if (linkedPreset) {
                 presetLine = `<span class="model_preset">${getLine("Preset", linkedPreset)}</span>`;
                 searchableAdded += `, Preset: ${linkedPreset}`;
@@ -981,6 +980,10 @@ function directSetModel(model) {
     if (!model) {
         return;
     }
+    let priorModel = getRequiredElementById('current_model').value;
+    if (priorModel) {
+        modelPresetLinkManager.removePresetsFrom('Stable-Diffusion', priorModel);
+    }
     let modelName = null;
     if (model.name) {
 		modelName = model.name;
@@ -1007,20 +1010,16 @@ function directSetModel(model) {
         modelName = name;
     }
     reviseBackendFeatureSet();
-    // Model's subtype is unknown here, check both possibilities
-    let presetTitle = getModelPresetLink("Stable-Diffusion", modelName) ?? getModelPresetLink("LoRA", modelName);
+    let presetTitle = modelPresetLinkManager.getLink("Stable-Diffusion", modelName);
 	if (presetTitle) {
-		currentPresets = removeOtherModelPresets(modelName);
 		let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
 		if (presetData) {
-			// Select the preset if it's not already selected
 			if (!currentPresets.some(p => p.title == presetData.title)) {
-				// Add it directly instead of using selectPreset (which toggles)
 				currentPresets.push(presetData);
+                updatePresetList();
+                presetBrowser?.rerender();
 			}
 		}
-		updatePresetList();
-		presetBrowser?.rerender();
 	}
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));
     let aspect = document.getElementById('input_aspectratio');
@@ -1148,87 +1147,6 @@ function doModelInstallRequiredCheck() {
         return true;
     }
     return false;
-}
-
-/**
- * Removes preset links from other Stable Diffusion models when a model with its own preset is selected.
- * This enforces mutual exclusivity of model presets - only one model's preset should be active.
- * 
- * @param {string} modelName - The filename of the currently-selected model
- * @returns {array} Updated currentPresets array with other models' presets removed
- */
-function removeOtherModelPresets(modelName) {
-    if (!sdModelBrowser?.models || !modelName) {
-        return currentPresets;
-    }
-    let otherModelPresets = new Set();
-    for (let otherModelName in sdModelBrowser.models) {
-        let otherPresetTitle = getModelPresetLink('Stable-Diffusion', otherModelName);
-        // Skip presets from the current model and models without presets
-        if (otherPresetTitle && otherModelName != modelName) {
-            otherModelPresets.add(otherPresetTitle);
-        }
-    }
-    // Return filtered presets if there are any to remove, otherwise return unchanged
-    return otherModelPresets.size > 0 
-        ? currentPresets.filter(p => !otherModelPresets.has(p.title))
-        : currentPresets;
-}
-
-/**
- * Get a preset link for a model
- * 
- * @param {string} subtype - Either 'Stable-Diffusion' or 'LoRA'
- * @param {string} modelName - Filename name of the model
- * @returns {string|null} The linked preset title, or null if no link exists
- */
-function getModelPresetLink(subtype, modelName) {
-    return subtype && modelName ? modelPresetLinkManager.getLink(subtype, modelName) : null;
-}
-
-/**
- * Save or clear a preset link for a model
- * This centralizes all preset link saving logic to ensure consistency.
- * 
- * @param {string} subtype - Either 'Stable-Diffusion' or 'LoRA'
- * @param {string} modelName - Filename name of the currently-selected model
- * @param {string} presetTitle - The preset to link (or empty string to clear)
- */
-function saveModelPresetLink(subtype, modelName, presetTitle) {
-    if (!subtype || !modelName) {
-        return;
-    }
-    if (presetTitle?.trim()) {
-        genericRequest('SaveModelPresetLink', { subtype, modelName, presetTitle }, data => {
-            modelPresetLinkManager.setLink(subtype, modelName, presetTitle);
-        });
-    }
-    else {
-        genericRequest('ClearModelPresetLink', { subtype, modelName }, data => {
-            modelPresetLinkManager.clearLink(subtype, modelName);
-        });
-    }
-}
-
-function setLinkedPreset() {
-    // Set the dropdown to the first currently-selected preset
-    if (currentPresets?.length) {
-        let presetSelect = document.getElementById('edit_model_preset_id');
-        if (presetSelect) {
-            presetSelect.value = currentPresets[0].title;
-            presetSelect.dispatchEvent(new Event('change'));
-        }
-    }
-    updatePresetLinkButtonState('edit_model_preset_id');
-}
-
-function clearLinkedPreset() {
-    let presetSelect = document.getElementById('edit_model_preset_id');
-    if (presetSelect) {
-        presetSelect.value = '';
-        presetSelect.dispatchEvent(new Event('change'));
-    }
-    updatePresetLinkButtonState('edit_model_preset_id');
 }
 
 getRequiredElementById('current_model').addEventListener('change', currentModelChanged);

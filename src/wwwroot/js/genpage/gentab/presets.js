@@ -10,10 +10,14 @@ class PresetHelpers {
     }
 }
 
+/** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
+let presetHelpers = new PresetHelpers();
+
 /** Manages preset links for models and LoRAs. */
 class ModelPresetLinkManager {
+
     constructor() {
-        this.links = {}; // { 'Stable-Diffusion:name': { 'model_name' : 'preset_title', ... }, LoRA: { 'model_name' : 'preset_title', ... } }
+        this.links = {};
     }
 
     getLink(subtype, modelName) {
@@ -21,15 +25,22 @@ class ModelPresetLinkManager {
     }
 
     setLink(subtype, modelName, presetTitle) {
-        if (presetTitle?.trim()) {
+        if (!presetTitle?.trim()) {
             this.clearLink(subtype, modelName);
             return;
         }
-        (this.links[subtype] ??= {})[modelName] = presetTitle;
+        this.links[subtype] ??= {};
+        if (this.links[subtype][modelName] != presetTitle) {
+            this.links[subtype][modelName] = presetTitle;
+            this.saveModelPresetLinks();
+        }
     }
 
     clearLink(subtype, modelName) {
-        delete this.links[subtype]?.[modelName];
+        if (this.links[subtype]?.[modelName]) {
+            delete this.links[subtype]?.[modelName];
+            this.saveModelPresetLinks();
+        }
     }
 
     hasLink(subtype, modelName) {
@@ -37,19 +48,80 @@ class ModelPresetLinkManager {
     }
 
     loadFromServer(data) {
-        if (data && typeof data === 'object') {
-            this.links = { ...data };
+        this.links = data ?? {};
+    }
+
+    removePresetsFrom(subtype, modelName) {
+        let link = this.getLink(subtype, modelName);
+        if (!link) {
+            return;
         }
+        if (currentPresets.some(p => p.title == link)) {
+            currentPresets = currentPresets.filter(p => p.title != link);
+            updatePresetList();
+            presetBrowser?.rerender();
+        }
+    }
+
+    /** Handle LoRA preset selection when a LoRA is manually selected. */
+    selectLoraPresetOnSelection(modelName) {
+        let presetTitle = this.getLink('LoRA', modelName);
+        if (!presetTitle) {
+            return;
+        }
+        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
+        if (!presetData) {
+            return;
+        }
+        if (!currentPresets.some(p => p.title == presetTitle)) {
+            selectPreset(presetData);
+        }
+    }
+
+    /**
+     * Builds a preset link selector for models.
+     * @param {string} subtype - Model sub-type: eg 'Stable-Diffusion' or 'LoRA'
+     * @param {string} modelName - Name of the model
+     * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_preset_id')
+     */
+    buildPresetLinkSelectorForModel(subtype, modelName, selectId) {
+        let compatiblePresets = [];
+        if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
+            for (let preset of allPresetsUnsorted) {
+                let presetData = preset.data || preset;
+                if (presetData && presetData.title) {
+                    compatiblePresets.push(presetData);
+                }
+            }
+        }
+        let select = getRequiredElementById(selectId);
+        select.innerHTML = '';
+        let option = document.createElement('option');
+        option.value = '';
+        option.innerText = '(None)';
+        select.appendChild(option);
+        for (let preset of compatiblePresets) {
+            option = document.createElement('option');
+            option.value = preset.title;
+            option.innerText = preset.title;
+            select.appendChild(option);
+        }
+        let currentLink = this.getLink(subtype, modelName);
+        if (currentLink) {
+            select.value = currentLink;
+        }
+    }
+
+    /** Saves all model preset links to the server. */
+    saveModelPresetLinks() {
+        genericRequest('SetPresetLinks', this.links, data => {});
     }
 }
 
-/** Instance of ModelPresetLinkManager for managing model and LoRA preset links */
+/** Instance of {@link ModelPresetLinkManager} for managing model and LoRA preset links. */
 let modelPresetLinkManager = new ModelPresetLinkManager();
 
-/** Collection of helper functions and data related to presets, just an instance of {@link PresetHelpers}. */
-let presetHelpers = new PresetHelpers();
-
-//////////// TODO: Merge all the below into the class above
+//////////// TODO: Merge all the below into the classes above
 
 let allPresets = [];
 let allPresetsUnsorted = [];
@@ -319,31 +391,6 @@ function applyOnePreset(preset) {
     }
 }
 
-/**
- * Handle LoRA preset selection when a LoRA is manually selected.
- * @param {string} modelName - The name of the LoRA being selected
- */
-function selectLoraPresetOnSelection(modelName) {
-    try {
-        let presetTitle = getModelPresetLink('LoRA', modelName);
-        if (!presetTitle) {
-            return;
-        }
-        let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
-        if (!presetData) {
-            return;
-        }
-        if (!currentPresets.some(p => p.title == presetData.title)) {
-            // Select the preset if it's not already selected
-            currentPresets.push(presetData);
-            updatePresetList();
-            presetBrowser?.rerender();
-        }
-    } catch (e) {
-        console.warn('[LoRA Preset] Error handling LoRA preset on selection:', e.message);
-    }
-}
-
 function apply_presets() {
     for (let preset of currentPresets) {
         applyOnePreset(preset);
@@ -471,10 +518,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
-            // Load user's item preset links from server into the manager
-            if (data.model_preset_links && modelPresetLinkManager) {
-                modelPresetLinkManager.loadFromServer(data.model_preset_links);
-            }
+            modelPresetLinkManager.loadFromServer(data.model_preset_links);
             proc();
         });
     }
@@ -499,7 +543,7 @@ function describePreset(preset) {
         } }
     ];
     let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
-    let description = `${preset.data.title}:\n${preset.data.description ? preset.data.description + '\n' : ''}\n${paramText.join('\n')}`;
+    let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
     let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
     let name = preset.data.title;
     let index = name.lastIndexOf('/');
@@ -848,76 +892,4 @@ function closeExportPresetViewer() {
 
 function closeImportPresetViewer() {
     $('#import_presets_modal').modal('hide');
-}
-
-/**
- * Builds a preset link selector for models.
- * @param {string} subtype - Model's sub-type: 'Stable-Diffusion' or 'LoRA'
- * @param {string} modelName - Filename of the model
- * @param {string} containerId - The ID of the container element to populate
- * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_preset_id')
- */
-function buildPresetLinkSelectorForModel(subtype, modelName, containerId, selectId) {
-    let container = getRequiredElementById(containerId);
-    container.innerHTML = '';
-    // Build list of all presets
-    let compatiblePresets = [];
-    if (allPresetsUnsorted && allPresetsUnsorted.length > 0) {
-        for (let preset of allPresetsUnsorted) {
-            let presetData = preset.data || preset;
-            if (presetData && presetData.title) {
-                compatiblePresets.push(presetData);
-            }
-        }
-    }
-    // Create select element that UIImprovementHandler will convert to a popover
-    let select = document.createElement('select');
-    select.id = selectId;
-    select.className = 'modal_text_extra';
-    let option = document.createElement('option');
-    option.value = '';
-    option.innerText = '-- Select a Preset --';
-    select.appendChild(option);
-    for (let preset of compatiblePresets) {
-        option = document.createElement('option');
-        option.value = preset.title;
-        option.innerText = preset.title;
-        select.appendChild(option);
-    }
-    let currentLink = getModelPresetLink(subtype, modelName);
-    if (currentLink) {
-        select.value = currentLink;
-    }
-    select.addEventListener('change', () => {
-        // Update button state when selection changes
-        updatePresetLinkButtonState(selectId);
-    });
-    select.addEventListener('input', () => {
-        updatePresetLinkButtonState(selectId);
-    });
-    container.appendChild(select);
-    updatePresetLinkButtonState(selectId);
-}
-
-/**
- * Update the enabled state of Set/Clear buttons based on preset selector state.
- * @param {string} selectId - The ID of the select element
- */
-function updatePresetLinkButtonState(selectId) {
-    let select = document.getElementById(selectId);
-    if (!select) return;
-    
-    // Determine button IDs based on select element ID
-    let baseId = select.id.replace('_id', '');
-    let clearBtn = document.getElementById(`${baseId}_clear_btn`);
-    let setBtn = document.getElementById(`${baseId}_set_btn`);
-    
-    if (clearBtn) {
-        clearBtn.classList.toggle('disabled-dim', select.value == '');
-    }
-    
-    if (setBtn) {
-        // Dim Set button if no presets are currently selected
-        setBtn.classList.toggle('disabled-dim', !currentPresets?.length);
-    }
 }

@@ -28,7 +28,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(SetStarredModels, true, Permissions.FundamentalModelAccess);
-        API.RegisterAPICall(SaveModelPresetLink, true, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(SetPresetLinks, true, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(AddNewPreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DuplicatePreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DeletePreset, true, Permissions.ManagePresets);
@@ -221,7 +221,7 @@ public static class BasicAPIFeatures
             "permissions": ["permission1", "permission2"],
             "starred_models": {
                 "LoRA": ["one", "two"]
-            },,
+            },
             "model_preset_links": {
                 "Stable-Diffusion": {
                     "modelnamehere": "preset_title"
@@ -229,8 +229,8 @@ public static class BasicAPIFeatures
                 "LoRA": {
                     "modelnamehere": "preset_title"
                 }
+            },
             "autocompletions": ["Word\nword\ntag\n3"]
-            }
         """)]
     public static async Task<JObject> GetMyUserData(Session session)
     {

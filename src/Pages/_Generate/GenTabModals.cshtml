@@ -155,20 +155,8 @@
             <option value="3">VideoSwap</option>
         </select></div>
         Description: <textarea class="auto-text auto-text-block translate" id="edit_model_description" rows="3" placeholder="Model description text..."></textarea>
+        <div>Linked Preset: <select id="edit_model_preset_id" class="modal_text_extra"></select></div>
         <div id="edit_model_image_block"></div>
-        <div id="edit_model_override_preset_block" class="input-group">
-            <div class="input-group-content flex-column">
-                <div>
-                    <div class="header-label translate">Linked Preset</div>
-                    @WebUtil.TextPopoverButton("linkedpreset", "If set, this preset will be selected when you choose this model.")
-                </div>
-                <div>
-                    <div id="edit_model_preset" class="position-relative d-block w-100"></div>
-                    <button type="button" class="btn btn-sm btn-secondary basic-button translate" onclick="setLinkedPreset()" id="edit_model_preset_set_btn" title="Set to currently-selected preset">Set</button>
-                    <button type="button" class="btn btn-sm basic-button translate disabled-dim" onclick="clearLinkedPreset()" id="edit_model_preset_clear_btn">Clear</button>
-                </div>
-            </div>
-        </div>
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-primary basic-button translate" onclick="save_edit_model()">Save</button>
