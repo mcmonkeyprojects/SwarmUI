@@ -744,11 +744,11 @@ class ModelBrowserWrapper {
                 interject += `${getOptLine("Default LoRA Weight", model.data.lora_default_weight)}${getOptLine("Default LoRA Confinement", confinementName)}`;
                 searchableAdded += `, Default LoRA Weight: ${model.data.lora_default_weight}, Default LoRA Confinement: ${confinementName}`;
             }
-            let linkedPreset = modelPresetLinkManager.getLink(this.subType, model.data.name);
-            if (linkedPreset) {
-                searchableAdded += `, Linked Preset: ${linkedPreset}`;
+            let linkedPresets = modelPresetLinkManager.getLinks(this.subType, model.data.name);
+            if (linkedPresets.length > 0) {
+                searchableAdded += `, Linked Presets: ${linkedPresets.join(', ')}`;
             }
-            description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine("Linked Preset", linkedPreset)}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
+            description = `<span class="model_filename">${isStarred ? 'Starred: ' : ''}${escapeHtml(display)}</span><br>${getLine("Title", model.data.title)}${getOptLine("Author", model.data.author)}${getLine("Type", model.data.class)}${interject}${getOptLine('Trigger Phrase', model.data.trigger_phrase)}${getOptLine("Linked Presets", linkedPresets.join(', '))}${getOptLine('Usage Hint', model.data.usage_hint)}${getLine("Description", model.data.description)}<br>`;
             let cleanForDetails = (val) => val == null ? '(Unset)' : safeHtmlOnly(val).replaceAll('<br>', '&emsp;');
             detail_list.push(cleanForDetails(model.data.title), cleanForDetails(model.data.class), cleanForDetails(model.data.usage_hint ?? model.data.trigger_phrase), cleanForDetails(model.data.description));
             if (model.data.local && permissions.hasPermission('edit_model_metadata')) {
@@ -1006,13 +1006,7 @@ function directSetModel(model) {
         modelName = name;
     }
     reviseBackendFeatureSet();
-    let presetTitle = modelPresetLinkManager.getLink('Stable-Diffusion', modelName);
-	if (presetTitle) {
-		let presetData = allPresetsUnsorted?.find(p => p.title == presetTitle);
-		if (presetData) {
-            presetHelpers.addPreset(presetData);
-		}
-	}
+    modelPresetLinkManager.addPresetsFrom('Stable-Diffusion', modelName);
     getRequiredElementById('input_model').dispatchEvent(new Event('change'));
     let aspect = document.getElementById('input_aspectratio');
     if (aspect) {

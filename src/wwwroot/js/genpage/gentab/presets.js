@@ -56,28 +56,43 @@ class ModelPresetLinkManager {
         this.links = {};
     }
 
-    getLink(subtype, modelName) {
-        return this.links[subtype]?.[cleanModelName(modelName)] || null;
+    getLinks(subtype, modelName) {
+        return this.links[subtype]?.[cleanModelName(modelName)] || [];
     }
 
     setLink(subtype, modelName, presetTitle) {
+        // TODO: Static single set is silly. There should be a multi-select in the UI for this.
         modelName = cleanModelName(modelName);
         if (!presetTitle?.trim()) {
-            this.clearLink(subtype, modelName);
+            this.clearLinks(subtype, modelName);
             return;
         }
         this.links[subtype] ??= {};
-        if (this.links[subtype][modelName] != presetTitle) {
-            this.links[subtype][modelName] = presetTitle;
-            this.saveModelPresetLinks();
+        this.links[subtype][modelName] ??= [];
+        if (this.links[subtype][modelName].length != 1 || this.links[subtype][modelName][0] != presetTitle) {
+            this.links[subtype][modelName] = [presetTitle];
+            this.save();
         }
     }
 
-    clearLink(subtype, modelName) {
+    addLink(subtype, modelName, presetTitle) {
+        modelName = cleanModelName(modelName);
+        if (!presetTitle?.trim()) {
+            return;
+        }
+        this.links[subtype] ??= {};
+        this.links[subtype][modelName] ??= [];
+        if (!this.links[subtype][modelName].includes(presetTitle)) {
+            this.links[subtype][modelName].push(presetTitle);
+            this.save();
+        }
+    }
+
+    clearLinks(subtype, modelName) {
         modelName = cleanModelName(modelName);
         if (this.links[subtype]?.[modelName]) {
             delete this.links[subtype]?.[modelName];
-            this.saveModelPresetLinks();
+            this.save();
         }
     }
 
@@ -86,19 +101,23 @@ class ModelPresetLinkManager {
     }
 
     removePresetsFrom(subtype, modelName) {
-        presetHelpers.removePresetByTitle(this.getLink(subtype, modelName));
+        for (let presetTitle of this.getLinks(subtype, modelName)) {
+            presetHelpers.removePresetByTitle(presetTitle);
+        }
     }
 
     /** Adds all presets for the given model. */
     addPresetsFrom(subtype, modelName) {
-        presetHelpers.addPresetByTitle(this.getLink(subtype, modelName));
+        for (let presetTitle of this.getLinks(subtype, modelName)) {
+            presetHelpers.addPresetByTitle(presetTitle);
+        }
     }
 
     /**
      * Builds a preset link selector for models.
-     * @param {string} subtype - Model sub-type: eg 'Stable-Diffusion' or 'LoRA'
-     * @param {string} modelName - Name of the model
-     * @param {string} selectId - The ID to assign to the select element (e.g., 'edit_model_preset_id')
+     * @param {string} subtype Model sub-type: eg 'Stable-Diffusion' or 'LoRA'
+     * @param {string} modelName Name of the model
+     * @param {string} selectId The ID to assign to the select element (e.g., 'edit_model_preset_id')
      */
     buildPresetLinkSelectorForModel(subtype, modelName, selectId) {
         let compatiblePresets = [];
@@ -122,14 +141,14 @@ class ModelPresetLinkManager {
             option.innerText = preset.title;
             select.appendChild(option);
         }
-        let currentLink = this.getLink(subtype, modelName);
-        if (currentLink) {
-            select.value = currentLink;
+        let currentLinks = this.getLinks(subtype, modelName);
+        if (currentLinks.length > 0) {
+            select.value = currentLinks[0];
         }
     }
 
     /** Saves all model preset links to the server. */
-    saveModelPresetLinks() {
+    save() {
         genericRequest('SetPresetLinks', this.links, data => {});
     }
 }

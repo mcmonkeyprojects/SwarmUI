@@ -224,10 +224,10 @@ public static class BasicAPIFeatures
             },
             "model_preset_links": {
                 "Stable-Diffusion": {
-                    "modelnamehere": "preset_title"
+                    "modelnamehere": ["preset_title"]
                 },
                 "LoRA": {
-                    "modelnamehere": "preset_title"
+                    "modelnamehere": ["preset_title"]
                 }
             },
             "autocompletions": ["Word\nword\ntag\n3"]
@@ -262,7 +262,7 @@ public static class BasicAPIFeatures
 
     [API.APIDescription("Saves a reference to a preset for a model or LoRA to the user's data.", "\"success\": \"true\"")]
     public static async Task<JObject> SetPresetLinks(Session session,
-        [API.APIParameter("Send the raw data as eg 'LoRA': { 'Name': 'Preset' }, 'Stable-Diffusion': { ... }")] JObject raw)
+        [API.APIParameter("Send the raw data as eg 'LoRA': { 'Name': ['Preset'] }, 'Stable-Diffusion': { ... }")] JObject raw)
     {
         raw.Remove("session_id");
         session.User.SaveGenericData("modelpresetlinks", "full", raw.ToString(Formatting.None));
