@@ -204,6 +204,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         Logs.Info($"ComfyUI backend {BackendData.ID} shutting down...");
         await ClearSockets();
         Idler.Stop();
+        TimesErrorIgnored = 0;
         Status = BackendStatus.DISABLED;
     }
 

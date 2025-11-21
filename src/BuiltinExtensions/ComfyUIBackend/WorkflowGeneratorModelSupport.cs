@@ -146,11 +146,18 @@ public partial class WorkflowGenerator
         return clazz is not null && clazz.StartsWith("qwen-image-edit-plus");
     }
 
-    /// <summary>Returns true if the current model is Hunyuan Video.</summary>
+    /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
     public bool IsHunyuanVideo()
     {
         string clazz = CurrentCompatClass();
         return clazz is not null && clazz == "hunyuan-video";
+    }
+
+    /// <summary>Returns true if the current model is Hunyuan Video 1.5.</summary>
+    public bool IsHunyuanVideo15()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == T2IModelClassSorter.CompatHunyuanVideo1_5.ID;
     }
 
     /// <summary>Returns true if the current model is Hunyuan Image 2.1 Base.</summary>
@@ -225,7 +232,7 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsNvidiaCosmos1() || IsAnyWanModel();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel();
     }
 
     /// <summary>Creates an Empty Latent Image node.</summary>
@@ -301,6 +308,16 @@ public partial class WorkflowGenerator
                 ["height"] = height,
                 ["width"] = width,
                 ["vae"] = FinalVae
+            }, id);
+        }
+        else if (IsHunyuanVideo15())
+        {
+            return CreateNode("EmptyHunyuanVideo15Latent", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 73),
+                ["height"] = height,
+                ["width"] = width
             }, id);
         }
         else if (IsHunyuanVideo() || IsWanVideo())
@@ -1040,6 +1057,22 @@ public partial class WorkflowGenerator
             LoadingClip = [dualClipLoader, 0];
             helpers.DoVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
         }
+        else if (IsHunyuanVideo15())
+        {
+            string loaderType = "DualCLIPLoader";
+            if (helpers.GetClipLModel().EndsWith(".gguf") || helpers.GetLlava3Model().EndsWith(".gguf"))
+            {
+                loaderType = "DualCLIPLoaderGGUF";
+            }
+            string dualClipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name1"] = helpers.GetQwenImage25_7b_tenc(),
+                ["clip_name2"] = helpers.GetByT5SmallGlyphxl_tenc(),
+                ["type"] = "hunyuan_video_15"
+            });
+            LoadingClip = [dualClipLoader, 0];
+            helpers.DoVaeLoader(null, T2IModelClassSorter.CompatHunyuanVideo1_5.ID, "hunyuan-video-1_5-vae");
+        }
         else if (IsNvidiaCosmos1())
         {
             string clipLoader = CreateNode("CLIPLoader", new JObject()
@@ -1147,7 +1180,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsHunyuanVideo() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream())
+            else if (IsHunyuanVideo() || IsHunyuanVideo15() || IsHunyuanImage() || IsWanVideo() || IsWanVideo22() || IsHiDream())
             {
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {

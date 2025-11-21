@@ -4,10 +4,11 @@
 | ----  | ---- | ---- | ---- | ---- | ---- | ---- |
 [Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
+[Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
-[Wan 2.1](#wan-21) | 2025 | Alibaba - Wan-AI | 1.3B and 14B | Text/Image 2Video | No | Modern, Incredible Quality |
+[Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above
 
@@ -73,6 +74,8 @@ There's a full step by step guide for video model usage here: <https://github.co
 ## Hunyuan Video
 
 ![hunyuan-video](https://github.com/user-attachments/assets/12d898c4-d9c8-447e-99b3-42ad0f0eb16d)
+
+**This section is for the original Hunyuan Video (v1), for later version see next major section below.**
 
 ### Hunyuan Video Basic Install
 
@@ -162,6 +165,28 @@ There's a full step by step guide for video model usage here: <https://github.co
 - The model seems to have visual quality artifacts
     - Set Video Steps higher, at least `30`, to reduce these
 - `Sigma Shift` default value is `7`, you do not need to edit it
+
+## Hunyuan Video 1.5
+
+- Hunyuan Video 1.5 support in SwarmUI is a Work-In-Progress.
+    - There appear to be quality issues not related to the Swarm impl, either in the model or in the upstream comfy impl.
+- Downloads here <https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/tree/main/split_files/diffusion_models>
+    - save to `diffusion_models` folder
+    - There are variants for Text2Video vs Image2Video, and a dedicated superresolution v2v upscaler
+        - Despite the labeled difference, both variants can equally do both text2video and image2video.
+    - There are 480p and 720p variants
+        - Swarm will assume all models are 720p (`960x960`). For the 480p models, you may want to edit the model metadata and set the resolution to `640x640`.
+    - There are CFG Distilled and non-distilled versions
+- Official documentation from tencent here <https://huggingface.co/tencent/HunyuanVideo-1.5>
+- The VAE is a 16x16 downsample (as opposed to most prior models using 8x8)
+- **Parameters**:
+    - **CFG:** `1` for Distilled, otherwise normal high CFG values, eg `6`
+    - **Steps:** Normal step counts (20+)
+    - **Frames:** Trained for `121` (5 seconds), shorter lengths work fine too, or longer up to 241 (10 seconds). When not specified, Swarm will default to `73` (3 seconds).
+        - You can do Frames=`1` for image generation.
+    - **FPS:** The model is trained for `24` fps
+    - **Resolution:** Aside from the trained resolution, the models seem happy with different smaller resolutions or different aspect ratios as well.
+    - **Sigma Shift:** defaults to `7`
 
 ## Genmo Mochi 1 (Text2Video)
 

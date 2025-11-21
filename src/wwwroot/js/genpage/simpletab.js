@@ -109,8 +109,9 @@ class SimpleTab {
                 this.imageElem.src = imgSrc;
             }
             else {
-                this.imageElemWrapper.innerHTML = `<video class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop controls><source src="${imgSrc}" id="simple_image_container_img" type="${isVideo}"></video>`;
+                this.imageElemWrapper.innerHTML = `<div class="video-container simple_image_container_img"><video class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop><source src="${imgSrc}" id="simple_image_container_img" type="${isVideo}"></video></div>`;
                 this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+                new VideoControls(this.imageElem);
             }
         }
         else if (isAudio) {
