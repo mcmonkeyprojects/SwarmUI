@@ -171,9 +171,7 @@ class LoraHelper {
                         }
                         popover.closeSelf();
                     }
-                    let model = sdLoraBrowser.models[lora.name]
-                        ?? sdLoraBrowser.models[lora.name + ".safetensors"]
-                        ?? Object.values(sdLoraBrowser.models).find(m => cleanModelName(m.name) == lora.name);
+                    let model = sdLoraBrowser.models[lora.name] ?? sdLoraBrowser.models[lora.name + ".safetensors"];
                     if (!model) {
                         return;
                     }
@@ -181,19 +179,18 @@ class LoraHelper {
                     let desc = sdLoraBrowser.describeModel(model);
                     let image = document.createElement('img');
                     let descblock = createDiv(null, 'model-descblock');
-                    let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block');
+                    let popup = createDiv('popover_lora_info', 'sui-popover model-block-hoverable model-block model-block-big');
                     image.src = desc.image;
                     image.className = 'model-preview-image';
                     descblock.style.maxHeight = '15rem';
-                    descblock.style.overflowY = 'auto';
+                    descblock.style.overflowY = isClick ? 'auto' : 'hidden';
                     descblock.style.scrollbarWidth = 'thin';
                     descblock.innerHTML = desc.description;
                     popup.dataset.loraName = lora.name;
                     popup.dataset.isClick = isClick;
                     popup.style.position = 'fixed';
-                    popup.style.width = '480px';
+                    popup.style.padding = '0';
                     popup.style.top = 'auto';
-                    popup.style.zIndex = '9999';
                     popup.style.bottom = `${window.innerHeight - rect.top + 10}px`;
                     popup.appendChild(image);
                     popup.appendChild(descblock);
