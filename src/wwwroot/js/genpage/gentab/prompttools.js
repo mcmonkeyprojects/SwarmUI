@@ -355,12 +355,12 @@ class PromptTabCompleteClass {
                     }
                     if (val.tag) {
                         className = `tag-text tag-type-${val.tag}`;
+                        index = wordIndex;
                     }
                     if (val.count_display) {
                         desc = `${desc} ${val.count_display}`.trim();
                     }
                     apply = name;
-                    index = wordIndex;
                 }
                 else {
                     [name, desc] = val;
