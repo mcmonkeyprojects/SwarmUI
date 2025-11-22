@@ -662,6 +662,8 @@ public class T2IModelClassSorter
         Remaps["hunyuanvideo1.5_480p_i2v"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_720p_t2v"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5";
         // ====================== GGUF Remaps ======================
         Remaps["flux"] = "Flux.1-dev";
         Remaps["sd3"] = "stable-diffusion-v3-medium";

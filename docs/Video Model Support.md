@@ -197,6 +197,14 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 ### Hunyuan Video 1.5 SuperResolution Model
 
+- The SuperResolution models function equivalent to basic models, and are meant to be used as a Refiner model.
+    - Save in the same folder as the rest. Probably edit model metadata to set the resolution to `1920x1080` (or approx 1:1 of `1456x1456`)
+    - The SR models have "distilled" in the filename but seem to respond better to CFG=6 and make a mess at CFG=1.
+- There are dedicated latent upscale models here <https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/tree/main/split_files/latent_upscale_models>
+    - Save to `(SwarmUI)/Models/latent_upscale_models` (create the folder if it doesn't already exist)
+    - Select the model as the *Refiner Upscale Method*
+    - If you have a 720p gen, and you are using the 1080p upscale, set Refiner Upscale to `1.5`.
+
 - Not yet supported, WIP.
 
 ## Genmo Mochi 1 (Text2Video)
