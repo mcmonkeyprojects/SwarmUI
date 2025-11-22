@@ -160,6 +160,13 @@ public partial class WorkflowGenerator
         return clazz is not null && clazz == T2IModelClassSorter.CompatHunyuanVideo1_5.ID;
     }
 
+    /// <summary>Returns true if the current model is Hunyuan Video 1.5 SuperResolution.</summary>
+    public bool IsHunyuanVideo15SR()
+    {
+        string clazz = CurrentModelClass()?.ID;
+        return clazz is not null && clazz.StartsWith("hunyuan-video-1_5-sr");
+    }
+
     /// <summary>Returns true if the current model is Hunyuan Image 2.1 Base.</summary>
     public bool IsHunyuanImage()
     {

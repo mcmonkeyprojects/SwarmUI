@@ -193,12 +193,15 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - You can do Frames=`1` for image generation.
     - **FPS:** The model is trained for `24` fps
     - **Resolution:** Aside from the trained resolution, the models seem happy with different smaller resolutions or different aspect ratios as well.
-    - **Sigma Shift:** defaults to `7`
+    - **Sigma Shift:** defaults to `7`. They recommend lowering to `5` for 480p and raising to `9` on specifically `720p T2V`.
+        - SuperResolution uses `2`
 
 ### Hunyuan Video 1.5 SuperResolution Model
 
 - The SuperResolution models function equivalent to basic models, and are meant to be used as a Refiner model.
-    - Save in the same folder as the rest. Probably edit model metadata to set the resolution to `1920x1080` (or approx 1:1 of `1456x1456`)
+    - Save in the same folder as the rest.
+    - You may need to manually edit the model metadata to architecture `Hunyuan Video 1.5 SuperResolution`
+    - Probably edit model metadata to set the resolution to `1920x1080` (or approx 1:1 of `1456x1456`)
     - The SR models have "distilled" in the filename but seem to respond better to CFG=6 and make a mess at CFG=1.
 - There are dedicated latent upscale models here <https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/tree/main/split_files/latent_upscale_models>
     - Save to `(SwarmUI)/Models/latent_upscale_models` (create the folder if it doesn't already exist)

@@ -765,6 +765,23 @@ public partial class WorkflowGenerator
             }
             defscheduler ??= "simple";
         }
+        else if (IsHunyuanVideo15SR())
+        {
+            if (!hadSpecialCond)
+            {
+                string srCond = CreateNode("HunyuanVideo15SuperResolution", new JObject()
+                {
+                    ["positive"] = pos,
+                    ["negative"] = neg,
+                    ["vae"] = FinalVae,
+                    ["latent"] = latent,
+                    ["noise_augmentation"] = 0.7 // TODO: User input?
+                });
+                pos = [srCond, 0];
+                neg = [srCond, 1];
+                latent = [srCond, 2];
+            }
+        }
         else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage())
         {
             defscheduler ??= "simple";

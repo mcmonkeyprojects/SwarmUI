@@ -603,6 +603,10 @@ public class T2IModelClassSorter
         {
             return isHyImg(h) && isHyVid15(h);
         }});
+        Register(new() { ID = "hunyuan-video-1_5-sr", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 SuperResolution", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // TODO: Possible to detect?
+        }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
         Register(new() { ID = "stable-diffusion-v1/vae", CompatClass = CompatSdv1, Name = "Stable Diffusion v1 VAE", StandardWidth = 512, StandardHeight = 512, IsThisModelOfClass = (m, h) => { return false; } });
@@ -662,8 +666,8 @@ public class T2IModelClassSorter
         Remaps["hunyuanvideo1.5_480p_i2v"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_720p_t2v"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5";
-        Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5";
-        Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5";
+        Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5-sr";
+        Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5-sr";
         // ====================== GGUF Remaps ======================
         Remaps["flux"] = "Flux.1-dev";
         Remaps["sd3"] = "stable-diffusion-v3-medium";
