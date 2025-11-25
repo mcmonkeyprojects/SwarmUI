@@ -167,6 +167,7 @@ public class T2IModelClassSorter
         bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
         bool isHyImg(JObject h) => h.ContainsKey("byt5_in.fc1.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
         bool isHyVid15(JObject h) => h.ContainsKey("vision_in.proj.0.bias");
+        bool isHyVid15Lora(JObject h) => h.ContainsKey("diffusion_model.cond_type_embedding.lora_down.weight") && h.ContainsKey("diffusion_model.byt5_in.fc1.lora_down.weight") && h.ContainsKey("diffusion_model.vision_in.proj.1.lora_down.weight");
         bool isHyImgRefiner(JObject h) => h.ContainsKey("double_blocks.0.img_attn_k_norm.weight") && h.TryGetValue("time_r_in.mlp.0.bias", out JToken timeTok) && timeTok["shape"].ToArray()[0].Value<long>() == 3328;
         bool isAuraFlow(JObject h) => h.ContainsKey("model.cond_seq_linear.weight") && h.ContainsKey("model.double_layers.0.attn.w1k.weight");
         // ====================== Stable Diffusion v1 ======================
@@ -353,7 +354,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = CompatFlux, Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isFluxLora(h);
+            return isFluxLora(h) && !isHyVid15Lora(h);
         }});
         Register(new() { ID = "Flux.1-dev/depth", CompatClass = CompatFlux, Name = "Flux.1 Depth", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -602,6 +603,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "hunyuan-video-1_5", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isHyImg(h) && isHyVid15(h);
+        }});
+        Register(new() { ID = "hunyuan-video-1_5/lora", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 LoRA", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isHyVid15Lora(h);
         }});
         Register(new() { ID = "hunyuan-video-1_5-sr", CompatClass = CompatHunyuanVideo1_5, Name = "Hunyuan Video 1.5 SuperResolution", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
