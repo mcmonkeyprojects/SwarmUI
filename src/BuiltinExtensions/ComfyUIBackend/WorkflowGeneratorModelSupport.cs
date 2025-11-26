@@ -994,7 +994,7 @@ public partial class WorkflowGenerator
             string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 6)
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
             });
             LoadingModel = [samplingNode, 0];
             if (LoadingClip is null)
