@@ -63,6 +63,13 @@ public partial class WorkflowGenerator
         return clazz is not null && clazz == "flux-1";
     }
 
+    /// <summary>Returns true if the current model is Black Forest Labs' Flux.2.</summary>
+    public bool IsFlux2()
+    {
+        string clazz = CurrentCompatClass();
+        return clazz is not null && clazz == "flux-2";
+    }
+
     /// <summary>Returns true if the current model is AuraFlow.</summary>
     public bool IsAuraFlow()
     {
@@ -101,7 +108,7 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
-        return (IsFlux() && CurrentModelClass()?.ID != "Flux.1-schnell") || IsHunyuanVideo();
+        return (IsFlux() && CurrentModelClass()?.ID != "Flux.1-schnell") || IsFlux2() || IsHunyuanVideo();
     }
 
     /// <summary>Returns true if the current model is NVIDIA Sana.</summary>
@@ -255,6 +262,15 @@ public partial class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["compression"] = UserInput.Get(T2IParamTypes.CascadeLatentCompression, 32),
+                ["height"] = height,
+                ["width"] = width
+            }, id);
+        }
+        else if (IsFlux2())
+        {
+            return CreateNode("EmptyFlux2LatentImage", new JObject()
+            {
+                ["batch_size"] = batchSize,
                 ["height"] = height,
                 ["width"] = width
             }, id);
@@ -498,6 +514,11 @@ public partial class WorkflowGenerator
         public string GetQwenImage25_7b_tenc()
         {
             return RequireClipModel("qwen_2.5_vl_7b_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4", T2IParamTypes.QwenModel);
+        }
+
+        public string GetMistralFlux2Model()
+        {
+            return RequireClipModel("mistral_3_small_flux2_fp8.safetensors", "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/text_encoders/mistral_3_small_flux2_fp8.safetensors", "e3467b7d912a234fb929cdf215dc08efdb011810b44bc21081c4234cc75b370e", null);
         }
 
         public string GetClipLModel()
@@ -779,7 +800,7 @@ public partial class WorkflowGenerator
             LoadingModel = [modelNode, 0];
             LoadingClip = [modelNode, 1];
             LoadingVAE = [modelNode, 2];
-            if (IsFlux() && (model.Metadata?.TextEncoders ?? "") == "")
+            if ((IsFlux() || IsFlux2()) && (model.Metadata?.TextEncoders ?? "") == "")
             {
                 LoadingClip = null;
                 LoadingVAE = null;
@@ -859,6 +880,21 @@ public partial class WorkflowGenerator
             {
                 helpers.DoVaeLoader( UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
             }
+        }
+        else if (IsFlux2())
+        {
+            string loaderType = "CLIPLoader";
+            if (helpers.GetMistralFlux2Model().EndsWith(".gguf"))
+            {
+                loaderType = "CLIPLoaderGGUF";
+            }
+            string clipLoader = CreateNode(loaderType, new JObject()
+            {
+                ["clip_name"] = helpers.GetMistralFlux2Model(),
+                ["type"] = "flux2"
+            });
+            LoadingClip = [clipLoader, 0];
+            helpers.DoVaeLoader(null, "flux-2", "flux2-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
@@ -1175,7 +1211,7 @@ public partial class WorkflowGenerator
         }
         if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
         {
-            if (IsFlux())
+            if (IsFlux() || IsFlux2())
             {
                 string samplingNode = CreateNode("ModelSamplingFlux", new JObject()
                 {
