@@ -11,7 +11,7 @@ let comfyHasTriedToLoad = false;
 
 let comfyAltSaveNodes = ['ADE_AnimateDiffCombine', 'VHS_VideoCombine', 'SaveAnimatedWEBP', 'SaveAnimatedPNG', 'SwarmSaveAnimatedWebpWS', 'SwarmSaveAnimationWS'];
 
-let swarmComfyInjectedHeaderSpacer = null;
+let swarmComfyInjectedHeaderSpacer = null, swarmComfySideToolbar = null, swarmComfySidePanel = null, swarmComfyBreadcrumbs = null;
 
 /** Tries to load the ComfyUI workflow frame. */
 function comfyTryToLoad() {
@@ -72,6 +72,7 @@ function comfyFixMenuLocation() {
     let swarmComfyMenu = getRequiredElementById('comfy_workflow_buttons_actual');
     let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top');
     let bodyTopMenu = bodyTop ? bodyTop.querySelector('.comfyui-menu') : null;
+    let tabsContainer = frame.contentWindow.document.querySelector('.workflow-tabs-container');
     if (bodyTopMenu) {
         let logo = bodyTopMenu.querySelector('.comfyui-logo-wrapper') || bodyTopMenu.querySelector('.comfyui-logo');
         if (logo && !logo.parentElement.querySelector('.swarm-injected-header-spacer')) {
@@ -91,6 +92,27 @@ function comfyFixMenuLocation() {
         swarmComfyMenu.style.top = `${logo.offsetTop}px`;
         swarmComfyMenu.style.left = `${logo.offsetLeft + logo.offsetWidth}px`;
     }
+    else if (tabsContainer) {
+        let child = tabsContainer.querySelector('.flex');
+        console.log(tabsContainer, child);
+        if (child && !child.querySelector('.swarm-injected-header-spacer')) {
+            let space = document.createElement('span');
+            space.className = 'swarm-injected-header-spacer';
+            let offsetTarget = (swarmComfyMenu.offsetWidth < 5 ? 296 : swarmComfyMenu.offsetWidth);
+            space.style.width = `${offsetTarget}px`;
+            space.style.marginRight = '15px';
+            space.dataset.offsetTarget = offsetTarget;
+            child.prepend(space);
+            if (!swarmComfyInjectedHeaderSpacer && localStorage.getItem('comfy_buttons_closed')) {
+                setTimeout(() => {
+                    comfyToggleButtonsVisible();
+                }, 100);
+            }
+            swarmComfyInjectedHeaderSpacer = space;
+        }
+        swarmComfyMenu.style.top = `${tabsContainer.offsetTop}px`;
+        swarmComfyMenu.style.left = `${tabsContainer.offsetLeft + 5}px`;
+    }
     else {
         swarmComfyMenu.style.left = undefined;
         swarmComfyMenu.style.top = '1rem';
@@ -103,9 +125,17 @@ function comfyFixMenuLocation() {
             }
         }
     }
-    let sidePanelContainer = frame.contentWindow.document.querySelector('.side-bar-panel');
-    if (sidePanelContainer) {
-        sidePanelContainer.style.paddingTop = '60px';
+    swarmComfySidePanel = frame.contentWindow.document.querySelector('.side-bar-panel');
+    if (swarmComfySidePanel) {
+        swarmComfySidePanel.style.paddingTop = '60px';
+    }
+    swarmComfySideToolbar = frame.contentWindow.document.querySelector('.side-toolbar-container')?.querySelector('.side-tool-bar-container');
+    if (swarmComfySideToolbar) {
+        swarmComfySideToolbar.style.paddingTop = '60px';
+    }
+    swarmComfyBreadcrumbs = frame.contentWindow.document.querySelector('.p-breadcrumb-list');
+    if (swarmComfyBreadcrumbs) {
+        swarmComfyBreadcrumbs.style.paddingLeft = '250px';
     }
     // Comfy frontend added an aggro warning if frontend isn't fully up to date, but Swarm keeps it behind because it so often breaks on latest
     // so let's de-aggro the message a bit.
@@ -1208,6 +1238,15 @@ function comfyToggleButtonsVisible() {
         if (swarmComfyInjectedHeaderSpacer) {
             swarmComfyInjectedHeaderSpacer.style.width = `${swarmComfyInjectedHeaderSpacer.dataset.offsetTarget}px`;
         }
+        if (swarmComfySidePanel) {
+            swarmComfySidePanel.style.paddingTop = '60px';
+        }
+        if (swarmComfySideToolbar) {
+            swarmComfySideToolbar.style.paddingTop = '60px';
+        }
+        if (swarmComfyBreadcrumbs) {
+            swarmComfyBreadcrumbs.style.paddingLeft = '250px';
+        }
         localStorage.removeItem('comfy_buttons_closed');
     }
     else {
@@ -1216,6 +1255,15 @@ function comfyToggleButtonsVisible() {
         area.parentElement.classList.add('comfy_buttons_closeable_area_closed');
         if (swarmComfyInjectedHeaderSpacer) {
             swarmComfyInjectedHeaderSpacer.style.width = `30px`;
+        }
+        if (swarmComfySidePanel) {
+            swarmComfySidePanel.style.paddingTop = '0';
+        }
+        if (swarmComfySideToolbar) {
+            swarmComfySideToolbar.style.paddingTop = '0';
+        }
+        if (swarmComfyBreadcrumbs) {
+            swarmComfyBreadcrumbs.style.paddingLeft = '0';
         }
         localStorage.setItem('comfy_buttons_closed', 'true');
     }
