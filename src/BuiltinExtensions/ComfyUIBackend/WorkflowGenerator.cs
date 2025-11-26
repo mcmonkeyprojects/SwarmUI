@@ -879,12 +879,12 @@ public partial class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        else if (IsKontext() || IsOmniGen() || IsQwenImage())
+        else if (IsKontext() || IsOmniGen() || IsQwenImage() || IsFlux2())
         {
             JArray img = null;
             JArray imgNeg = null;
             bool doLatentChain = !IsKontext(); // Arguably even kontext should just do this?
-            bool onlyExplicit = IsQwenImage() && !IsQwenImageEdit();
+            bool onlyExplicit = (IsQwenImage() && !IsQwenImageEdit()) || IsFlux2();
             if (IsOmniGen() || IsQwenImageEditPlus())
             {
                 imgNeg = neg;
