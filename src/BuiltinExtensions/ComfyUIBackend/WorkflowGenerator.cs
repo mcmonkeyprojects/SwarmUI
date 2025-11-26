@@ -782,7 +782,7 @@ public partial class WorkflowGenerator
                 latent = [srCond, 2];
             }
         }
-        else if (IsFlux() || IsFlux2() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage())
         {
             defscheduler ??= "simple";
         }
@@ -790,7 +790,11 @@ public partial class WorkflowGenerator
         {
             defscheduler ??= "beta";
         }
-            bool willCascadeFix = false;
+        else if (IsFlux2())
+        {
+            defscheduler ??= "flux2";
+        }
+        bool willCascadeFix = false;
         JArray cascadeModel = null;
         if (!rawSampler && IsCascade() && FinalLoadedModel.Name.Contains("stage_c") && Program.MainSDModels.Models.TryGetValue(FinalLoadedModel.Name.Replace("stage_c", "stage_b"), out T2IModel bModel))
         {
