@@ -9,6 +9,7 @@
 [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Recent, Good Quality |
 [AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Recent, High Quality |
+[Flux.2](#flux-2) | MMDiT | 2025 | Black Forest Labs | 32B | ? | Recent, Incredible Quality |
 [Chroma](#chroma) | MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Decent Quality |
 [Chroma Radiance](#chroma-radiance) | Pixel MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Bad Quality (WIP) |
 [Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Passable Quality |
@@ -315,6 +316,24 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - Change your `Resolution` parameters to have double the `Width` (eg 1024 input, double to 2048)
     - Add a Mask, draw a dot anywhere in the empty area (this is just a trick to tell the editor to automask all the empty area to the side, you don't need to mask it manually)
     - Type your prompt, hit generate
+
+# Flux 2
+
+- Black Forest Labs' [Flux.2 Models](https://bfl.ai/blog/flux-2) are supported in SwarmUI
+- Download the standard model here <https://huggingface.co/Comfy-Org/flux2-dev/blob/main/split_files/diffusion_models/flux2_dev_fp8mixed.safetensors>
+    - Or GGUF version here <https://huggingface.co/orabazes/FLUX.2-dev-GGUF/tree/main>
+    - Goes in `diffusion_models` folder
+- The VAE is a 16x16 downsample VAE
+- **Parameters:**
+    - **Prompt:** Prompting guide from the model creators here <https://docs.bfl.ai/guides/prompting_guide_flux2>
+        - Notably, they trained heavily on complex JSON structured prompts to allow for very complex scene control
+        - They used a powerful LLM for inputs, allow for multiple languages and a variety of ways of phrasing/formatting text to work out
+    - **CFG Scale:** `1`
+    - **Steps:** They recommend 50, 20 still works but may have some quality reduction
+    - **Sigma Shift:** Defaults to `2.02`
+    - **Flux Guidance Scale:** Defaults to `3.5`
+    - **Sampler:** Defaults to regular `Euler`
+    - **Scheduler:** Defaults to `Flux2`, a new specialty scheduler added for Flux.2 to use, but it makes very little difference
 
 # Chroma
 
