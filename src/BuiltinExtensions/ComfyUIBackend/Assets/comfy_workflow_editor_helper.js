@@ -120,13 +120,12 @@ function comfyFixMenuLocation() {
         swarmComfyMenu.style.left = `${tabsContainer.offsetLeft + 5}px`;
     }
     else {
-        swarmComfyMenu.style.left = undefined;
-        swarmComfyMenu.style.top = '1rem';
+        swarmComfyMenu.style.left = '5px';
+        swarmComfyMenu.style.top = '0';
         let menu = frame.contentWindow.document.querySelector('.comfy-menu');
         if (menu) {
             let rect = menu.getBoundingClientRect();
             if (rect.x < 300 && rect.y < 120) {
-                console.log(`Comfy menu was behind the Swarm menu at ${rect.x} x ${rect.y}, fixing with a downward offset...`);
                 menu.style.top = '150px';
             }
         }
