@@ -272,8 +272,8 @@ public class Settings : AutoConfiguration
         [ConfigComment("The ControlNets model folder to use within 'ModelRoot'.\nDefaults to 'controlnet'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
         public string SDControlNetsFolder = "controlnet";
 
-        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'clip'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
-        public string SDClipFolder = "clip";
+        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'text_encoders;clip'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
+        public string SDClipFolder = "text_encoders;clip";
 
         [ConfigComment("The CLIP Vision model folder to use within 'ModelRoot'.\nDefaults to 'clip_vision'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
         public string SDClipVisionFolder = "clip_vision";
