@@ -518,7 +518,7 @@ public partial class WorkflowGenerator
 
         public string GetMistralFlux2Model()
         {
-            return RequireClipModel("mistral_3_small_flux2_fp8.safetensors", "https://huggingface.co/black-forest-labs/FLUX.2-dev-ComfyUI/resolve/main/text_encoders/mistral_3_small_flux2_fp8.safetensors", "b19ca97d4c4c799ab6f463f2c3a65ae071a08de82e79fd5e069f2e53a4a1db71", T2IParamTypes.T5XXLModel);
+            return RequireClipModel("mistral_3_small_flux2_fp8.safetensors", "https://huggingface.co/black-forest-labs/FLUX.2-dev-ComfyUI/resolve/main/text_encoders/mistral_3_small_flux2_fp8.safetensors", "b19ca97d4c4c799ab6f463f2c3a65ae071a08de82e79fd5e069f2e53a4a1db71", null);
         }
 
         public string GetClipLModel()
@@ -881,7 +881,7 @@ public partial class WorkflowGenerator
                 helpers.DoVaeLoader( UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
             }
         }
-        else if (IsFlux2() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null))
+        else if (IsFlux2())
         {
             string loaderType = "CLIPLoader";
             if (helpers.GetMistralFlux2Model().EndsWith(".gguf"))
@@ -894,7 +894,7 @@ public partial class WorkflowGenerator
                 ["type"] = "flux2"
             });
             LoadingClip = [clipLoader, 0];
-            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-ae");
+            helpers.DoVaeLoader(null, "flux-2", "flux2-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
