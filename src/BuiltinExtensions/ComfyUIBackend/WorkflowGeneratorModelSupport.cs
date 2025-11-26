@@ -83,6 +83,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Alpha-VLLM's Lumina 2.</summary>
     public bool IsLumina() => IsModelCompatClass(T2IModelClassSorter.CompatLumina2);
 
+    /// <summary>Returns true if the current model is a Z-Image model.</summary>
+    public bool IsZImage() => IsModelCompatClass(T2IModelClassSorter.CompatZImage);
+
     /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
     {
@@ -509,6 +512,11 @@ public partial class WorkflowGenerator
         {
             // TODO: Selector param?
             return RequireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd", null);
+        }
+
+        public string GetQwen34bModel()
+        {
+            return RequireClipModel("qwen_3_4b.safetensors", "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors", "d5222e379796796c3451e0892095f9921430939502758172c91629864275215d", null);
         }
 
         public void LoadClip(string type, string model)
@@ -980,6 +988,23 @@ public partial class WorkflowGenerator
                 ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.73)
             });
             LoadingModel = [auraNode, 0];
+        }
+        else if (IsZImage())
+        {
+            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+            {
+                ["model"] = LoadingModel,
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 6)
+            });
+            LoadingModel = [samplingNode, 0];
+            if (LoadingClip is null)
+            {
+                helpers.LoadClip("lumina2", helpers.GetQwen34bModel());
+            }
+            if (LoadingVAE is null)
+            {
+                helpers.DoVaeLoader(null, "z-image", "z-image-vae");
+            }
         }
         else if (IsLumina())
         {

@@ -2066,7 +2066,12 @@ public partial class WorkflowGenerator
         {
             defaultGuidance = 1;
         }
-        bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels());
+        double guidance = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance);
+        if (IsZImage())
+        {
+            guidance = 0;
+        }
+        bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels() || IsZImage());
         JArray qwenImage;
         if (IsSana())
         {
@@ -2109,7 +2114,7 @@ public partial class WorkflowGenerator
                     ["height"] = height,
                     ["target_width"] = width,
                     ["target_height"] = height,
-                    ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
+                    ["guidance"] = guidance,
                     ["images"] = qwenImage,
                     ["llama_template"] = "qwen_image_edit_plus"
                 }, id);
@@ -2164,7 +2169,7 @@ public partial class WorkflowGenerator
                     ["height"] = height,
                     ["target_width"] = width,
                     ["target_height"] = height,
-                    ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
+                    ["guidance"] = guidance,
                     ["clip_vision_output"] = new JArray() { encoded, 0 },
                     ["llama_template"] = "hunyuan_image"
                 }, id);
@@ -2191,7 +2196,7 @@ public partial class WorkflowGenerator
                 ["height"] = enhance ? (int)Utilities.RoundToPrecision(height * mult, 64) : height,
                 ["target_width"] = width,
                 ["target_height"] = height,
-                ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance)
+                ["guidance"] = guidance
             }, id);
         }
         else if (model is not null && model.ModelClass is not null && model.ModelClass.ID == "stable-diffusion-xl-v1-base")
