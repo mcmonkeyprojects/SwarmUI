@@ -679,10 +679,6 @@ public class T2IModelClassSorter
         Remaps["hunyuanvideo1.5_720p_i2v"] = "hunyuan-video-1_5";
         Remaps["hunyuanvideo1.5_1080p_sr_distilled"] = "hunyuan-video-1_5-sr";
         Remaps["hunyuanvideo1.5_720p_sr_distilled"] = "hunyuan-video-1_5-sr";
-        // ====================== GGUF Remaps ======================
-        Remaps["flux"] = "Flux.1-dev";
-        Remaps["sd3"] = "stable-diffusion-v3-medium";
-        Remaps["hyvid"] = "hunyuan-video";
     }
 
     /// <summary>Returns the model class that matches this model, or null if none.</summary>
