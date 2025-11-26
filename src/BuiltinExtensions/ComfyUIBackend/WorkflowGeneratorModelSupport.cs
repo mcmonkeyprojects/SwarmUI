@@ -20,12 +20,14 @@ public partial class WorkflowGenerator
     /// </summary>
     public static Dictionary<string, Func<int, int, int, string, string>> EmptyImageCreators = [];
 
-    /// <summary>Returns true if the current model is Stable Cascade.</summary>
-    public bool IsCascade()
+    public bool IsModelCompatClass(T2IModelCompatClass targetClazz)
     {
         string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "stable-cascade-v1";
+        return clazz is not null && clazz == targetClazz.ID;
     }
+
+    /// <summary>Returns true if the current model is Stable Cascade.</summary>
+    public bool IsCascade() => IsModelCompatClass(T2IModelClassSorter.CompatCascade);
 
     /// <summary>Returns true if the current model is Stable Diffusion 3.</summary>
     public bool IsSD3()
@@ -39,43 +41,19 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Returns true if the current model is Mochi Text2Video.</summary>
-    public bool IsMochi()
-    {
-        string clazz = CurrentCompatClass();
-        if (clazz is null)
-        {
-            return false;
-        }
-        return clazz is not null && clazz == "genmo-mochi-1";
-    }
+    public bool IsMochi() => IsModelCompatClass(T2IModelClassSorter.CompatGenmoMochi);
 
     /// <summary>Returns true if the current model is Lightricks LTX Video.</summary>
-    public bool IsLTXV()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "lightricks-ltx-video";
-    }
+    public bool IsLTXV() => IsModelCompatClass(T2IModelClassSorter.CompatLtxv);
 
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
-    public bool IsFlux()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "flux-1";
-    }
+    public bool IsFlux() => IsModelCompatClass(T2IModelClassSorter.CompatFlux);
 
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.2.</summary>
-    public bool IsFlux2()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "flux-2";
-    }
+    public bool IsFlux2() => IsModelCompatClass(T2IModelClassSorter.CompatFlux2);
 
     /// <summary>Returns true if the current model is AuraFlow.</summary>
-    public bool IsAuraFlow()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "auraflow-v1";
-    }
+    public bool IsAuraFlow() => IsModelCompatClass(T2IModelClassSorter.CompatAuraFlow);
 
     /// <summary>Returns true if the current model is a Kontext model (eg Flux.1 Kontext Dev).</summary>
     public bool IsKontext()
@@ -85,25 +63,13 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Returns true if the current model is Chroma.</summary>
-    public bool IsChroma()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "chroma";
-    }
+    public bool IsChroma() => IsModelCompatClass(T2IModelClassSorter.CompatChroma);
 
     /// <summary>Returns true if the current model is Chroma Radiance.</summary>
-    public bool IsChromaRadiance()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "chroma-radiance";
-    }
+    public bool IsChromaRadiance() => IsModelCompatClass(T2IModelClassSorter.CompatChromaRadiance);
 
     /// <summary>Returns true if the current model is HiDream-i1.</summary>
-    public bool IsHiDream()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "hidream-i1";
-    }
+    public bool IsHiDream() => IsModelCompatClass(T2IModelClassSorter.CompatHiDreamI1);
 
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
@@ -112,18 +78,10 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Returns true if the current model is NVIDIA Sana.</summary>
-    public bool IsSana()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "nvidia-sana-1600";
-    }
+    public bool IsSana() => IsModelCompatClass(T2IModelClassSorter.CompatSana);
 
     /// <summary>Returns true if the current model is Alpha-VLLM's Lumina 2.</summary>
-    public bool IsLumina()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "lumina-2";
-    }
+    public bool IsLumina() => IsModelCompatClass(T2IModelClassSorter.CompatLumina2);
 
     /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
@@ -154,18 +112,10 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Returns true if the current model is Hunyuan Video (original / v1).</summary>
-    public bool IsHunyuanVideo()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "hunyuan-video";
-    }
+    public bool IsHunyuanVideo() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo);
 
     /// <summary>Returns true if the current model is Hunyuan Video 1.5.</summary>
-    public bool IsHunyuanVideo15()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == T2IModelClassSorter.CompatHunyuanVideo1_5.ID;
-    }
+    public bool IsHunyuanVideo15() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanVideo1_5);
 
     /// <summary>Returns true if the current model is Hunyuan Video 1.5 SuperResolution.</summary>
     public bool IsHunyuanVideo15SR()
@@ -175,18 +125,10 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Returns true if the current model is Hunyuan Image 2.1 Base.</summary>
-    public bool IsHunyuanImage()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "hunyuan-image-2_1";
-    }
+    public bool IsHunyuanImage() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanImage2_1);
 
     /// <summary>Returns true if the current model is Hunyuan Image 2.1 Refiner.</summary>
-    public bool IsHunyuanImageRefiner()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "hunyuan-image-2_1-refiner";
-    }
+    public bool IsHunyuanImageRefiner() => IsModelCompatClass(T2IModelClassSorter.CompatHunyuanImage2_1Refiner);
 
     /// <summary>Returns true if the current model is Hunyuan Video Image2Video.</summary>
     public bool IsHunyuanVideoI2V()
@@ -203,11 +145,7 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Returns true if the current model is Nvidia Cosmos v1.</summary>
-    public bool IsNvidiaCosmos1()
-    {
-        string clazz = CurrentCompatClass();
-        return clazz is not null && clazz == "nvidia-cosmos-1";
-    }
+    public bool IsNvidiaCosmos1() => IsModelCompatClass(T2IModelClassSorter.CompatCosmos);
 
     /// <summary>Returns true if the current model is Nvidia Cosmos v2.</summary>
     public bool IsNvidiaCosmos2()
