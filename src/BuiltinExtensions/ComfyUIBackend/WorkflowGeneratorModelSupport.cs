@@ -1003,7 +1003,7 @@ public partial class WorkflowGenerator
             }
             if (LoadingVAE is null)
             {
-                helpers.DoVaeLoader(null, "z-image", "z-image-vae");
+                helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
             }
         }
         else if (IsLumina())
