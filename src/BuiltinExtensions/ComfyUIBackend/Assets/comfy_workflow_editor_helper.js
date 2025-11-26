@@ -13,6 +13,8 @@ let comfyAltSaveNodes = ['ADE_AnimateDiffCombine', 'VHS_VideoCombine', 'SaveAnim
 
 let swarmComfyInjectedHeaderSpacer = null, swarmComfySideToolbar = null, swarmComfySidePanel = null, swarmComfyBreadcrumbs = null;
 
+let swarmComfyHasPinia = false;
+
 /** Tries to load the ComfyUI workflow frame. */
 function comfyTryToLoad() {
     if (hasComfyLoaded) {
@@ -37,6 +39,11 @@ function comfyFrame() {
 /** Returns the ComfyUI Vue app object wrapper. */
 function comfyVueApp() {
     return comfyFrame()?.contentWindow?.document?.querySelector('[data-v-app]')?.__vue_app__;
+}
+
+/** Returns the ComfyUI Vue app Pinia object. */
+function comfyVuePinia() {
+    return comfyVueApp()?.config?.globalProperties?.$pinia;
 }
 
 /** Returns the ComfyUI Vue app i18n object. */
@@ -94,7 +101,6 @@ function comfyFixMenuLocation() {
     }
     else if (tabsContainer) {
         let child = tabsContainer.querySelector('.flex');
-        console.log(tabsContainer, child);
         if (child && !child.querySelector('.swarm-injected-header-spacer')) {
             let space = document.createElement('span');
             space.className = 'swarm-injected-header-spacer';
@@ -148,6 +154,18 @@ function comfyFixMenuLocation() {
             }
         }
     }, 100);
+    if (!swarmComfyHasPinia) {
+        let pinia = comfyVuePinia();
+        if (pinia) {
+            let store = pinia._s.get('workspace');
+            store.$subscribe((mutation, state) => {
+                setTimeout(() => {
+                    comfyFixMenuLocation();
+                }, 100);
+            });
+            swarmComfyHasPinia = true;
+        }
+    }
 }
 
 setTimeout(comfyFixMenuLocation, 10 * 1000);
