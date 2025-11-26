@@ -518,7 +518,7 @@ public partial class WorkflowGenerator
 
         public string GetMistralFlux2Model()
         {
-            return RequireClipModel("mistral_3_small_flux2_fp8.safetensors", "https://huggingface.co/black-forest-labs/FLUX.2-dev-ComfyUI/resolve/main/text_encoders/mistral_3_small_flux2_fp8.safetensors", "b19ca97d4c4c799ab6f463f2c3a65ae071a08de82e79fd5e069f2e53a4a1db71", null);
+            return RequireClipModel("mistral_3_small_flux2_fp8.safetensors", "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/text_encoders/mistral_3_small_flux2_fp8.safetensors", "e3467b7d912a234fb929cdf215dc08efdb011810b44bc21081c4234cc75b370e", null);
         }
 
         public string GetClipLModel()
