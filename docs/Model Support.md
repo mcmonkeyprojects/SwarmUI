@@ -578,16 +578,20 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - [Z-Image](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) is supported in SwarmUI!
     - It is a 6B scaled model designed to run extremely fast while competing at the top level of image models
 - Only the "Turbo" model is currently released, download here <https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>
+    - Or FP8 version here (for lower VRAM) <https://huggingface.co/T5B/Z-Image-Turbo-FP8/blob/main/z-image-turbo-fp8-e4m3fn.safetensors>
+        - That's a direct fp8 with some quality loss, proper scaled/mixed fp8 version pending (?)
     - Save in `diffusion_models`
     - "Base" and "Edit" variants are expected to release in the future
 - Uses the Flux.1 VAE
 - **Parameters:**
     - **Prompt:** ? Seems to support general prompts file
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
     - **CFG Scale:** For Turbo, `1`
     - **Steps:** For Turbo, small numbers are fine. `5` will work, `9` is better (they recommend 1 more than an otherwise normal count due to scheduler oddities, so eg `5` instead of `4`).
         - For particularly difficult prompts, raising Steps up to `20` may help get the full detail.
-    - **Resolution:** 1024x1024 is the standard, 1536x1536 works great too. `512` noticeably loses some quality.
-    - **Sigma Shift:** Default is `3`.
+    - **Resolution:** Side length `1024` is the standard, but anywhere up to `2048` is good. `512` noticeably loses some quality, above `2048` corrupts the image.
+    - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
 
 # Video Models
 
