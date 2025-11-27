@@ -16,6 +16,7 @@
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality |
 [Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | Minimal | Modern, Great Quality, very memory intense |
 [Hunyuan Image 2.1](#hunyuan-image-21) | MMDiT | 2025 | Tencent | 17B | No | Modern, Great Quality, very memory intense |
+[Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
 
 Old or bad options also tracked listed:
 
@@ -567,6 +568,24 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
         - 2048 on this model is the same latent size as 512 on other models.
     - **Sigma Shift:** Default is `5`. Refine defaults to `4`.
     - TBD: Info specific to Distilled variant usage (doesn't seem to work well with their documented settings, testing TBD or comfy fix), and dedicated Refiner model
+
+# Z-Image
+
+![img](/docs/images/models/zimage.jpg)
+
+*(Steps=9)*
+
+- [Z-Image](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) is supported in SwarmUI!
+    - It is a 6B scaled model designed to run extremely fast while competing at the top level of image models
+- Only the "Turbo" model is currently released, download here <https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>
+    - Save in `diffusion_models`
+    - "Base" and "Edit" variants are expected to release in the future
+- **Parameters:**
+    - **Prompt:** ? Seems to support general prompts file
+    - **CFG Scale:** For Turbo, `1`
+    - **Steps:** For Turbo, small numbers are fine. `5` will work, `9` is better (they recommend 1 more than an otherwise normal count due to scheduler oddities, so eg `5` instead of `4`).
+    - **Resolution:** 1024x1024 is the standard, but it works at other scales. eg `1536` works well, `512` noticeably loses some quality.
+    - **Sigma Shift:** Default is `3`.
 
 # Video Models
 
