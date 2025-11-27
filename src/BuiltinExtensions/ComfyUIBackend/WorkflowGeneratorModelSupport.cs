@@ -83,6 +83,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Alpha-VLLM's Lumina 2.</summary>
     public bool IsLumina() => IsModelCompatClass(T2IModelClassSorter.CompatLumina2);
 
+    /// <summary>Returns true if the current model is a Z-Image model.</summary>
+    public bool IsZImage() => IsModelCompatClass(T2IModelClassSorter.CompatZImage);
+
     /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
     {
@@ -452,6 +455,11 @@ public partial class WorkflowGenerator
         public string GetQwenImage25_7b_tenc()
         {
             return RequireClipModel("qwen_2.5_vl_7b_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwen3_4bModel()
+        {
+            return RequireClipModel("qwen_3_4b.safetensors", "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors", "6c671498573ac2f7a5501502ccce8d2b08ea6ca2f661c458e708f36b36edfc5a", T2IParamTypes.QwenModel);
         }
 
         public string GetMistralFlux2Model()
@@ -981,6 +989,11 @@ public partial class WorkflowGenerator
             });
             LoadingModel = [auraNode, 0];
         }
+        else if (IsZImage())
+        {
+            helpers.LoadClip("lumina2", helpers.GetQwen3_4bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
         else if (IsLumina())
         {
             string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
@@ -1031,6 +1044,15 @@ public partial class WorkflowGenerator
                     ["height"] = UserInput.GetImageHeight(),
                     ["max_shift"] = shiftVal,
                     ["base_shift"] = 0.5 // TODO: Does this need an input?
+                });
+                LoadingModel = [samplingNode, 0];
+            }
+            else if (IsZImage())
+            {
+                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shiftVal
                 });
                 LoadingModel = [samplingNode, 0];
             }
