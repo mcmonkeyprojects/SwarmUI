@@ -596,10 +596,16 @@ function comfyBuildParams(requireSave, callback) {
                                 let data = comfyObjectData[remoteNode.class_type];
                                 if (data) {
                                     if (remoteInput in data.input.required) {
-                                        values = data.input.required[remoteInput][0];
+                                        values = data.input.required[remoteInput];
                                     }
                                     else if (remoteInput in data.input.optional) {
-                                        values = data.input.optional[remoteInput][0];
+                                        values = data.input.optional[remoteInput];
+                                    }
+                                    if (values && values.length > 1 && values[0] == 'COMBO' && 'options' in values[1]) {
+                                        values = values[1].options;
+                                    }
+                                    else {
+                                        values = values[0];
                                     }
                                 }
                             }
