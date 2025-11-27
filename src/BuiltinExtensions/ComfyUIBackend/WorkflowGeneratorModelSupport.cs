@@ -991,12 +991,6 @@ public partial class WorkflowGenerator
         }
         else if (IsZImage())
         {
-            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
-            {
-                ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
-            });
-            LoadingModel = [samplingNode, 0];
             helpers.LoadClip("lumina2", helpers.GetQwen3_4bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
@@ -1050,6 +1044,15 @@ public partial class WorkflowGenerator
                     ["height"] = UserInput.GetImageHeight(),
                     ["max_shift"] = shiftVal,
                     ["base_shift"] = 0.5 // TODO: Does this need an input?
+                });
+                LoadingModel = [samplingNode, 0];
+            }
+            else if (IsZImage())
+            {
+                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shiftVal
                 });
                 LoadingModel = [samplingNode, 0];
             }
