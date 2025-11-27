@@ -216,7 +216,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {
@@ -724,7 +724,11 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance())
+                    else if (IsNvidiaCosmos2() || IsOmniGen() || IsChroma() || IsChromaRadiance()) // Obligatory due to model issues
+                    {
+                        dtype = "default";
+                    }
+                    else if (IsZImage()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
