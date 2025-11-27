@@ -580,11 +580,13 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - Only the "Turbo" model is currently released, download here <https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>
     - Save in `diffusion_models`
     - "Base" and "Edit" variants are expected to release in the future
+- Uses the Flux.1 VAE
 - **Parameters:**
     - **Prompt:** ? Seems to support general prompts file
     - **CFG Scale:** For Turbo, `1`
     - **Steps:** For Turbo, small numbers are fine. `5` will work, `9` is better (they recommend 1 more than an otherwise normal count due to scheduler oddities, so eg `5` instead of `4`).
-    - **Resolution:** 1024x1024 is the standard, but it works at other scales. eg `1536` works well, `512` noticeably loses some quality.
+        - For particularly difficult prompts, raising Steps up to `20` may help get the full detail.
+    - **Resolution:** 1024x1024 is the standard, 1536x1536 works great too. `512` noticeably loses some quality.
     - **Sigma Shift:** Default is `3`.
 
 # Video Models
