@@ -662,7 +662,7 @@ public class ComfyUIRedirectHelper
         }
         //Logs.Verbose($"Comfy Redir status code {code} from {context.Response.StatusCode} and type {response.Content.Headers.ContentType} for {context.Request.Method} '{path}'");
         context.Response.StatusCode = code;
-        if (response.Content is not null)
+        if (response.Content is not null && code != 204)
         {
             if (response.Content.Headers.ContentType is not null)
             {
