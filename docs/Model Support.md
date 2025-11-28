@@ -587,11 +587,12 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - "Base" and "Edit" variants are expected to release in the future
 - Uses the Flux.1 VAE
 - **Parameters:**
-    - **Prompt:** ? Seems to support general prompts file
-    - **Sampler:** Default is fine. Some users find `Euler Ancestral` can be better on photorealism detail.
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply, understands other languages decently well too.
+    - **Sampler:** Default is fine. Some users find `Euler Ancestral` can be better on photorealism detail. Comfy examples suggests `Res MultiStep`.
     - **Scheduler:** Default is fine. Some users find `Beta` can be very slightly better.
     - **CFG Scale:** For Turbo, `1`
-    - **Steps:** For Turbo, small numbers are fine. `5` will work, `9` is better (they recommend 1 more than an otherwise normal count due to scheduler oddities, so eg `5` instead of `4`).
+    - **Steps:** For Turbo, small numbers are fine. `4` will work, `8` is better
+        - Original repo suggests 5/9, but this appears redundant in Swarm.
         - For particularly difficult prompts, raising Steps up to `20` may help get the full detail.
     - **Resolution:** Side length `1024` is the standard, but anywhere up to `2048` is good. `512` noticeably loses some quality, above `2048` corrupts the image.
     - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
