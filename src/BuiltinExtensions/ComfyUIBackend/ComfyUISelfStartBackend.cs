@@ -331,7 +331,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             AddLoadStatus($"Will add args: {addedArgs}");
         }
         Settings.StartScript = Settings.StartScript.Trim(' ', '"', '\'', '\n', '\r', '\t');
-        if (!Settings.StartScript.EndsWith("main.py") && !string.IsNullOrWhiteSpace(Settings.StartScript))
+        if (string.IsNullOrWhiteSpace(Settings.StartScript))
+        {
+            AddLoadStatus($"Start script is empty, cannot load.");
+            Status = BackendStatus.DISABLED;
+            return;
+        }
+        if (!Settings.StartScript.EndsWith("main.py"))
         {
             AddLoadStatus($"Start script '{Settings.StartScript}' looks wrong");
             Logs.Warning($"ComfyUI start script is '{Settings.StartScript}', which looks wrong - did you forget to append 'main.py' on the end?");
@@ -352,13 +358,13 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         Directory.CreateDirectory(Path.GetFullPath(ComfyUIBackendExtension.Folder + "/DLNodes"));
         string autoUpdNodes = Settings.UpdateManagedNodes.ToLowerFast();
         List<Task> tasks = [];
-        if ((autoUpdNodes == "true" || autoUpdNodes == "aggressive") && !string.IsNullOrWhiteSpace(Settings.StartScript))
+        if ((autoUpdNodes == "true" || autoUpdNodes == "aggressive"))
         {
             AddLoadStatus("Will track node repo load task...");
             tasks.Add(Task.Run(EnsureNodeRepos));
         }
         string autoUpd = Settings.AutoUpdate.ToLowerFast();
-        if ((autoUpd == "true" || autoUpd == "aggressive") && !string.IsNullOrWhiteSpace(Settings.StartScript))
+        if ((autoUpd == "true" || autoUpd == "aggressive"))
         {
             AddLoadStatus("Will track comfy git pull auto-update task...");
             tasks.Add(Task.Run(async () =>
