@@ -46,7 +46,7 @@ class SwarmJustLoadTheModelPlease:
         if model is None:
             raise ValueError("The model failed to load")
         if clip is None:
-            raise ValueError("The text encoders (CLIP) failed to load")
+            raise ValueError("The text encoders (CLIP) failed to load. This often means the model architecture is selected wrong in the models tab, or that you saved the model to the wrong folder.")
         if vae is None:
             raise ValueError("The VAE failed to load")
         return {}
