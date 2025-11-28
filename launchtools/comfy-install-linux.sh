@@ -36,22 +36,22 @@ if [ "$python" == "" ]; then
     exit 1
 fi
 
-# Validate venv
-venv=`$python -m venv 2>&1`
-case $venv in
-    *usage*)
-        :
-    ;;
-    *)
-        >&2 echo "ERROR: python venv is not installed"
-        >&2 echo "Please follow the install instructions in the readme!"
-        >&2 echo "If on Ubuntu/Debian, you may need: sudo apt install python3-venv"
-        exit 1
-    ;;
-esac
-
 # Make and activate the venv. "python3" in the venv is now the python executable.
 if [ -z "${SWARM_NO_VENV}" ]; then
+    # Validate venv
+    venv=`$python -m venv 2>&1`
+    case $venv in
+        *usage*)
+            :
+        ;;
+        *)
+            >&2 echo "ERROR: python venv is not installed"
+            >&2 echo "Please follow the install instructions in the readme!"
+            >&2 echo "If on Ubuntu/Debian, you may need: sudo apt install python3-venv"
+            exit 1
+        ;;
+    esac
+
     echo "Making venv..."
     $python -s -m venv venv
     source venv/bin/activate
