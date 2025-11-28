@@ -417,7 +417,7 @@ public partial class WorkflowGenerator
                 ClipModelsValid.TryAdd(name, name);
                 return name;
             }
-            string filePath = Utilities.CombinePathWithAbsolute(Program.ServerSettings.Paths.ActualModelRoot, Program.ServerSettings.Paths.SDClipFolder.Split(';')[0], name);
+            string filePath = $"{Program.T2IModelSets["Clip"].DownloadFolderPath}/{name}";
             g.DownloadModel(name, filePath, url, hash);
             ClipModelsValid.TryAdd(name, name);
             return name;
