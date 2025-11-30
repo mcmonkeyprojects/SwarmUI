@@ -627,10 +627,10 @@ function clearPresets() {
 
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
     `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Path</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
-    <button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
-    <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>
-    <button id="preset_list_export_button translate" class="refresh-button" onclick="exportPresetsButton()">Export All Presets</button>
-    <button id="preset_list_apply_button translate" class="refresh-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply Presets</button>`);
+    <button id="preset_list_create_new_button translate" class="basic-button" onclick="create_new_preset_button()">Create New</button>
+    <button id="preset_list_import_button translate" class="basic-button" onclick="importPresetsButton()">Import</button>
+    <button id="preset_list_export_button translate" class="basic-button" onclick="exportPresetsButton()">Export All</button>
+    <button id="preset_list_apply_button translate" class="basic-button" onclick="apply_presets()" title="Apply all current presets directly to your parameter list.">Apply</button>`);
 
 function importPresetsButton() {
     getRequiredElementById('import_presets_textarea').value = '';
