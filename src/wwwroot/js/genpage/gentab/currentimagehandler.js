@@ -29,6 +29,29 @@ class ImageFullViewHelper {
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
         this.fixButtonDelay = null;
         this.lastClosed = 0;
+        this.metadataMode = null;
+    }
+
+    updateMetadataMode(isMinimized) {
+        this.metadataMode = isMinimized;
+        let undertext = this.content.querySelector('.imageview_popup_modal_undertext');
+        let imagewrap = this.content.querySelector('.imageview_modal_imagewrap');
+        let toggleBtn = this.content.querySelector('.metadata-toggle-btn');
+        if (isMinimized) {
+            undertext.classList.add('minimized-mode');
+            imagewrap.classList.add('expanded-mode');
+            toggleBtn.innerText = '⇑';
+            toggleBtn.title = 'Expand Metadata';
+        }
+        else {
+            undertext.classList.remove('minimized-mode');
+            imagewrap.classList.remove('expanded-mode');
+            toggleBtn.innerText = '⇓';
+            toggleBtn.title = 'Minimize Metadata';
+        }
+        if (this.isOpen()) {
+            this.detachImg();
+        }
     }
 
     getImgOrContainer() {
@@ -226,6 +249,9 @@ class ImageFullViewHelper {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
+        quickAppendButton(subDiv, '⇓', () => this.updateMetadataMode(!this.metadataMode), ' metadata-toggle-btn', 'Minimize Metadata');
+        let initialMode = this.metadataMode ?? (getUserSetting('ui.showmetadatainfullscreen') == 'false');
+        this.updateMetadataMode(initialMode);
         this.modalJq.modal('show');
         if (isVideo) {
             new VideoControls(this.getImg());
