@@ -596,6 +596,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
         - For particularly difficult prompts, raising Steps up to `20` may help get the full detail.
     - **Resolution:** Side length `1024` is the standard, but anywhere up to `2048` is good. `512` noticeably loses some quality, above `2048` corrupts the image.
     - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
+    - Here's a big ol' grid of Z-Image Turbo params: [Z-Image MegaGrid](<https://sd.mcmonkey.org/zimagegrid/#auto-loc,true,true,false,true,false,cfgscale,steps,none,none,extremecloseupt,4,1,3,1024x1024,1,euler,simple>)
 
 # Video Models
 
