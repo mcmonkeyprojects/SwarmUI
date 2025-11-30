@@ -101,7 +101,6 @@ public class T2IModelClassSorter
         bool isCascadeC(JObject h) => (h.ContainsKey("model.diffusion_model.clf.1.weight") && h.ContainsKey("model.diffusion_model.clip_txt_mapper.weight")) || (h.ContainsKey("clf.1.weight") && h.ContainsKey("clip_txt_mapper.weight"));
         bool isFluxSchnell(JObject h) => (h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("guidance_in.in_layer.bias")) // 'diffusion_models'
                 || (h.ContainsKey("model.diffusion_model.double_blocks.0.img_attn.norm.key_norm.scale") && !h.ContainsKey("model.diffusion_model.guidance_in.in_layer.bias")); // 'checkpoints'
-        bool isFlux2Dev(JObject h) => h.ContainsKey("double_stream_modulation_img.lin.weight") || h.ContainsKey("model.diffusion_model.double_stream_modulation_img.lin.weight");
         bool isFluxDev(JObject h) => (h.ContainsKey("double_blocks.0.img_attn.norm.key_norm.scale") && h.ContainsKey("guidance_in.in_layer.bias")) // 'diffusion_models'
                 || (h.ContainsKey("time_text_embed.guidance_embedder.linear_1.weight") && h.ContainsKey("single_transformer_blocks.0.attn.norm_k.weight") && h.ContainsKey("transformer_blocks.0.attn.add_k_proj.weight") && h.ContainsKey("single_transformer_blocks.0.proj_mlp.weight")) // tencent funky models
                 || (h.ContainsKey("single_transformer_blocks.0.norm.linear.qweight") && h.ContainsKey("transformer_blocks.0.mlp_context_fc1.bias") && (h.ContainsKey("transformer_blocks.0.mlp_context_fc1.wscales") || h.ContainsKey("transformer_blocks.0.mlp_context_fc1.wtscale")) // Nunchaku
@@ -125,6 +124,8 @@ public class T2IModelClassSorter
             }
             return false;
         }
+        bool isFlux2Dev(JObject h) => h.ContainsKey("double_stream_modulation_img.lin.weight") || h.ContainsKey("model.diffusion_model.double_stream_modulation_img.lin.weight");
+        bool isFlux2DevLora(JObject h) => h.ContainsKey("diffusion_model.single_blocks.47.linear2.lora_A.weight");
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && !isFluxLora(h);
         bool isMochi(JObject h) => h.ContainsKey("model.diffusion_model.blocks.0.attn.k_norm_x.weight") || h.ContainsKey("diffusion_model.blocks.0.attn.k_norm_x.weight") || h.ContainsKey("blocks.0.attn.k_norm_x.weight");
         bool isMochiVae(JObject h) => h.ContainsKey("encoder.layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("layers.4.layers.1.attn_block.attn.qkv.weight") || h.ContainsKey("blocks.2.blocks.3.stack.5.weight") || h.ContainsKey("decoder.blocks.2.blocks.3.stack.5.weight");
@@ -400,7 +401,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.2-dev/lora", CompatClass = CompatFlux2, Name = "Flux.2 Dev LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return false; // TODO
+            return isFlux2DevLora(h);
         }});
         // ====================== Wan Video ======================
         Register(new() { ID = "wan-2_1-text2video/vae", CompatClass = CompatWan21, Name = "Wan 2.1 VAE", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) => { return false; }});
