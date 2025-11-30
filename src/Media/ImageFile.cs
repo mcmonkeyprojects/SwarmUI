@@ -54,8 +54,18 @@ public class ImageFile : MediaFile
         return stream.ToArray();
     }
 
+    /// <summary>Internal cache of <see cref="ToIS"/> to avoid reprocessing.</summary>
+    public ISImage _CacheISImg;
+
     /// <summary>Gets an ImageSharp <see cref="ISImage"/> for this image.</summary>
-    public ISImage ToIS => ISImage.Load(RawData);
+    public ISImage ToIS
+    {
+        get
+        {
+            _CacheISImg ??= ISImage.Load(RawData);
+            return _CacheISImg;
+        }
+    }
 
     /// <summary>Returns the (width, height) of the image.</summary>
     public (int, int) GetResolution()
