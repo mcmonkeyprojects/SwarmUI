@@ -247,7 +247,14 @@ public class Session : IEquatable<Session>
                     File.WriteAllBytes(fullPath, actualFile.RawData);
                     if ((User.Settings.FileFormat.SaveTextFileMetadata || !OutputMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
-                        File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
+                        if (extension == "webp" && actualFile is ImageFile imageFile && imageFile.ToIS.Frames.Count == 1)
+                        {
+                            // no .json write for still-image webps
+                        }
+                        else
+                        {
+                            File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
+                        }
                     }
                     OutputMetadataTracker.GetOrCreatePreviewFor(fullPath.Replace('\\', '/'));
                     Logs.Debug($"Saved an output file as '{fullPath}'");

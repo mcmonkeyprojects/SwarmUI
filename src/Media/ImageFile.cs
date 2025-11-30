@@ -62,7 +62,13 @@ public class ImageFile : MediaFile
     {
         get
         {
-            _CacheISImg ??= ISImage.Load(RawData);
+            if (_CacheISImg is null)
+            {
+                lock (this)
+                {
+                    _CacheISImg ??= ISImage.Load(RawData);
+                }
+            }
             return _CacheISImg;
         }
     }

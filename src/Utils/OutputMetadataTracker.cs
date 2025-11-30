@@ -224,7 +224,7 @@ public static class OutputMetadataTracker
                     altExists = File.Exists(altPreview);
                 }
             }
-            if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
+            if ((ExtensionsForFfmpegables.Contains(ext) || ExtensionsForAnimatedImages.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
                 altPreview = animPreview;
                 if (ExtensionsForAnimatedImages.Contains(ext))
