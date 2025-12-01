@@ -1732,10 +1732,7 @@ public class WorkflowGeneratorSteps
                 g.CreateImageToVideo(genInfo);
                 videoFps = genInfo.VideoFPS;
                 bool willHaveFollowupVideo = g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
-                if (!willHaveFollowupVideo
-                    && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
-                    && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult)
-                    && mult > 1)
+                if (!willHaveFollowupVideo && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
@@ -1883,7 +1880,18 @@ public class WorkflowGeneratorSteps
                 g.FinalImageOut = conjoinedLast;
                 if (g.GetCurrentVideoFrameInterpolationMethod(out string method) && g.GetCurrentVideoFrameInterpolationMultiplier(out int mult) && mult > 1)
                 {
-                    // Do we need an intermediate save here, or are the saves at each extend enough?
+                    if (saveIntermediate)
+                    {
+                        g.CreateNode("SwarmSaveAnimationWS", new JObject()
+                        {
+                            ["images"] = g.FinalImageOut,
+                            ["fps"] = videoFps,
+                            ["lossless"] = false,
+                            ["quality"] = 95,
+                            ["method"] = "default",
+                            ["format"] = format
+                        }, g.GetStableDynamicID(50000, 0));
+                    }
                     g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
                     videoFps *= mult;
                 }
