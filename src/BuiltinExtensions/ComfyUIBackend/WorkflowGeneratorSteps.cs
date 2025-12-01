@@ -1864,7 +1864,7 @@ public class WorkflowGeneratorSteps
                     {
                         ["image"] = g.FinalImageOut,
                         ["batch_index"] = frameExtendOverlap,
-                        ["length"] = frameCount
+                        ["length"] = frames.Value - frameExtendOverlap
                     });
                     JArray cut = [cutNode, 0];
                     g.FinalImageOut = cut;
