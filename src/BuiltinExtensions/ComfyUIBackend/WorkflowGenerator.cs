@@ -1371,6 +1371,33 @@ public partial class WorkflowGenerator
         return imageIn;
     }
 
+    /// <summary>Get the T2V or I2V frame interpolation method as appropriate.</summary>
+    public bool GetCurrentVideoFrameInterpolationMethod(out string method)
+    {
+        if (UserInput.TryGet(T2IParamTypes.VideoModel, out _))
+        {
+            return UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out method);
+        }
+        else
+        {
+            return UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMethod, out method);
+        }
+    }
+
+    /// <summary>Get the T2V or I2V frame interpolation multiplier as appropriate.</summary>
+    public bool GetCurrentVideoFrameInterpolationMultiplier(out int mult)
+    {
+        if (UserInput.TryGet(T2IParamTypes.VideoModel, out _))
+        {
+            return UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out mult);
+        }
+        else
+        {
+            return UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMultiplier, out mult);
+        }
+    }
+
+
     public static List<Action<ImageToVideoGenInfo>> AltImageToVideoPreHandlers = [], AltImageToVideoPostHandlers = [];
 
     public class ImageToVideoGenInfo

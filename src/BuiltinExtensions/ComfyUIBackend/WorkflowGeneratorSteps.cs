@@ -1731,7 +1731,11 @@ public class WorkflowGeneratorSteps
                 };
                 g.CreateImageToVideo(genInfo);
                 videoFps = genInfo.VideoFPS;
-                if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
+                bool willHaveFollowupVideo = g.UserInput.Get(T2IParamTypes.Prompt, "").Contains("<extend:");
+                if (!willHaveFollowupVideo
+                    && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
+                    && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult)
+                    && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
@@ -1877,6 +1881,12 @@ public class WorkflowGeneratorSteps
                     conjoinedLast = [batchedNode, 0];
                 }
                 g.FinalImageOut = conjoinedLast;
+                if (g.GetCurrentVideoFrameInterpolationMethod(out string method) && g.GetCurrentVideoFrameInterpolationMultiplier(out int mult) && mult > 1)
+                {
+                    // Do we need an intermediate save here, or are the saves at each extend enough?
+                    g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
+                    videoFps *= mult;
+                }
                 g.CreateNode("SwarmSaveAnimationWS", new JObject()
                 {
                     ["images"] = g.FinalImageOut,
