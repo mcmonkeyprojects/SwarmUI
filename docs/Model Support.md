@@ -30,6 +30,7 @@ Old or bad options also tracked listed:
 [Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Just Bad |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Just Bad |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
+[Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -597,6 +598,21 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Resolution:** Side length `1024` is the standard, but anywhere up to `2048` is good. `512` noticeably loses some quality, above `2048` corrupts the image.
     - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
     - Here's a big ol' grid of Z-Image Turbo params: [Z-Image MegaGrid](<https://sd.mcmonkey.org/zimagegrid/#auto-loc,true,true,false,true,false,cfgscale,steps,none,none,extremecloseupt,4,1,3,1024x1024,1,euler,simple>)
+
+# Ovis
+
+- [Ovis](https://huggingface.co/AIDC-AI/Ovis-Image-7B) is supported in SwarmUI.
+    - It is a 7B-scale MMDiT image model from Alibaba's AIDC-AI, with image quality roughly a bit above base SDXL and a focus on strong text understanding.
+- Download the model from <https://huggingface.co/Comfy-Org/Ovis-Image/blob/main/split_files/diffusion_models/ovis_image_bf16.safetensors>
+    - Save in `diffusion_models`
+- Uses the Flux.1 VAE
+- **Parameters:**
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese.
+    - **Sampler:** Default is fine (`Euler`)
+    - **Scheduler:** Default works, but `Beta` may be better
+    - **CFG Scale:** Normal CFG ranges, `5` is the official recommendation
+    - **Steps:** Normal step counts (eg `20`), but they recommend `50`
+    - **Resolution:** Side length `1024`. Quickly breaks above that.
 
 # Video Models
 
