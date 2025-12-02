@@ -30,7 +30,7 @@ Old or bad options also tracked listed:
 [Nvidia Sana](#nvidia-sana) | DiT | 2024 | NVIDIA | 1.6B | No | Just Bad |
 [Nvidia Cosmos Predict2](#cosmos-predict2) | DiT | 2025 | NVIDIA | 2B/14B | Partial | Just Bad |
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
-[Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Image quality at slightly more than base SDXL levels, supposedly good (?) at text |
+[Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -608,10 +608,10 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - Uses the Flux.1 VAE
 - **Parameters:**
     - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese.
-    - **Sampler:** `Euler`
-    - **Scheduler:** `Beta`
-    - **CFG Scale:** `5`
-    - **Steps:** Recommended `50`, seems "fine" at `25`
+    - **Sampler:** Default is fine (`Euler`)
+    - **Scheduler:** Default works, but `Beta` may be better
+    - **CFG Scale:** Normal CFG ranges, `5` is the official recommendation
+    - **Steps:** Normal step counts (eg `20`), but they recommend `50`
     - **Resolution:** Side length `1024`. Quickly breaks above that.
 
 # Video Models
