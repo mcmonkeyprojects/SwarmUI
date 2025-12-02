@@ -86,6 +86,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is a Z-Image model.</summary>
     public bool IsZImage() => IsModelCompatClass(T2IModelClassSorter.CompatZImage);
 
+    /// <summary>Returns true if the current model is an Ovis model.</summary>
+    public bool IsOvis() => IsModelCompatClass(T2IModelClassSorter.CompatOvis);
+
     /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
     {
@@ -216,7 +219,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {
@@ -460,6 +463,11 @@ public partial class WorkflowGenerator
         public string GetQwen3_4bModel()
         {
             return RequireClipModel("qwen_3_4b.safetensors", "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors", "6c671498573ac2f7a5501502ccce8d2b08ea6ca2f661c458e708f36b36edfc5a", T2IParamTypes.QwenModel);
+        }
+
+        public string GetOvisQwenModel()
+        {
+            return RequireClipModel("ovis_2.5.safetensors", "https://huggingface.co/Comfy-Org/Ovis-Image/blob/main/split_files/text_encoders/ovis_2.5.safetensors", "f453ee5e7a25cb23cf2adf7aae3e5b405f22097cb67f2cfcca029688cb3f740d", T2IParamTypes.QwenModel);
         }
 
         public string GetMistralFlux2Model()
@@ -996,6 +1004,11 @@ public partial class WorkflowGenerator
         else if (IsZImage())
         {
             helpers.LoadClip("lumina2", helpers.GetQwen3_4bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsOvis())
+        {
+            helpers.LoadClip("lumina2", helpers.GetOvisQwenModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
         else if (IsLumina())
