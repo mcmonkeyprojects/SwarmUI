@@ -1008,7 +1008,7 @@ public partial class WorkflowGenerator
         }
         else if (IsOvis())
         {
-            helpers.LoadClip("lumina2", helpers.GetOvisQwenModel());
+            helpers.LoadClip("ovis", helpers.GetOvisQwenModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
         else if (IsLumina())

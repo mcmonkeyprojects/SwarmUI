@@ -143,8 +143,8 @@ public class T2IModelClassSorter
         bool isCosmosPredict2_2B(JObject h) => h.ContainsKey("norm_out.linear_1.weight") && h.ContainsKey("time_embed.t_embedder.linear_1.weight");
         bool isCosmosPredict2_14B(JObject h) => h.ContainsKey("net.blocks.0.adaln_modulation_cross_attn.1.weight");
         bool isLumina2(JObject h) => hasKey(h, "cap_embedder.0.weight");
-        bool isZImage(JObject h) => hasKey(h, "context_refiner.0.attention.k_norm.weight");
-        bool isOvis(JObject h) => hasKey(h, "double_blocks.0.img_mlp.gate_proj.weight") && hasKey(h, "txt_norm.scale");
+        bool isZImage(JObject h) => hasKey(h, "layers.0.adaLN_modulation.0.bias");
+        bool isOvis(JObject h) => hasKey(h, "double_blocks.0.img_mlp.down_proj.weight");
         bool isZImageLora(JObject h) => hasKey(h, "layers.0.adaLN_modulation.0.lora_A.weight") && hasKey(h, "layers.9.feed_forward.w3.lora_B.weight");
         bool isZImageControlNet(JObject h) => h.ContainsKey("control_layers.0.adaLN_modulation.0.weight") && h.ContainsKey("control_noise_refiner.0.adaLN_modulation.0.weight") && h.ContainsKey("control_layers.0.feed_forward.w3.weight");
         bool tryGetWanTok(JObject h, out JToken tok) => h.TryGetValue("model.diffusion_model.blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("lora_unet_blocks_0_cross_attn_k.lora_down.weight", out tok);
@@ -358,7 +358,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.1-dev", CompatClass = CompatFlux, Name = "Flux.1 Dev", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isFluxDev(h) && !isFlux2Dev(h);
+            return isFluxDev(h) && !isFlux2Dev(h) && !isOvis(h);
         }});
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = CompatFlux, Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -517,7 +517,7 @@ public class T2IModelClassSorter
         // ====================== Z-Image ======================
         Register(new() { ID = "z-image", CompatClass = CompatZImage, Name = "Z-Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLumina2(h) && isZImage(h) && !isOvis(h);
+            return isLumina2(h) && isZImage(h);
         }});
         Register(new() { ID = "z-image/lora", CompatClass = CompatZImage, Name = "Z-Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -645,7 +645,7 @@ public class T2IModelClassSorter
         // ====================== Ovis ======================
         Register(new() { ID = "ovis", CompatClass = CompatOvis, Name = "Ovis", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLumina2(h) && isOvis(h);
+            return isOvis(h);
         }});
         // ====================== Everything below this point does not autodetect, it must match through ModelSpec or be manually set ======================
         // General Stable Diffusion variants
