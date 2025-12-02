@@ -90,7 +90,7 @@ public class ImageFile : MediaFile
         }
         ISImage img = ToIS;
         float factor = 256f / Math.Min(img.Width, img.Height);
-        img.Mutate(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
+        img.Clone(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
         if (!string.IsNullOrWhiteSpace(metadataText))
         {
             img.Metadata.XmpProfile = null;
@@ -176,7 +176,7 @@ public class ImageFile : MediaFile
         {
             return this;
         }
-        img.Mutate(i => i.Resize(width, height));
+        img = img.Clone(i => i.Resize(width, height));
         return new Image(ISImgToPngBytes(img), Type);
     }
 
