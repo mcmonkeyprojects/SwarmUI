@@ -621,6 +621,7 @@ function genInputs(delay_final = false) {
         let inputInterpolator1 = document.getElementById('input_videoframeinterpolationmethod');
         if (inputInterpolator1) {
             inputInterpolator1.addEventListener('change', () => {
+                console.log(inputInterpolator1.value, currentBackendFeatureSet);
                 if (inputInterpolator1.value == 'GIMM-VFI' && !currentBackendFeatureSet.includes('frameinterps_gimmvfi')) {
                     installFeatureById('gimm_vfi', null);
                 }
