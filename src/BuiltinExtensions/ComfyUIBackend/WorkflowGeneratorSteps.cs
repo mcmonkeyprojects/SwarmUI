@@ -1731,8 +1731,8 @@ public class WorkflowGeneratorSteps
                 };
                 g.CreateImageToVideo(genInfo);
                 videoFps = genInfo.VideoFPS;
-                bool willHaveFollowupVideo = prompt.Contains("<extend:");
-                if (!willHaveFollowupVideo && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
+                bool hasExtend = prompt.Contains("<extend:");
+                if (!hasExtend && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
@@ -1758,7 +1758,7 @@ public class WorkflowGeneratorSteps
                     g.FinalImageOut = [bounced, 0];
                 }
                 string nodeId = "9";
-                if (prompt.Contains("<extend:"))
+                if (hasExtend)
                 {
                     nodeId = $"{g.GetStableDynamicID(50000, 0)}";
                 }
