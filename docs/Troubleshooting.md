@@ -122,6 +122,14 @@ Most importantly after reinstalling:
 - Do not repeat whatever actions led to things breaking so bad you needed the reinstall in the first place!
 - The most common reason for a total reinstall is overusage of Comfy Manager leading to a corrupted comfy backend installation. If this is the case for you, either avoid Manager, or just be much more cautious about when to use it in the future.
 
+## Model Issues
+
+### Newly Supported Model Isn't Working
+
+If you're trying a new model class that Swarm supports, but it's not working, the most common cause is: you forgot to update first! So, update SwarmUI via the Server Info tab.
+- If you have updated already SwarmUI, but you downloaded the model before that update, you can hit Utilities -> Reset All Metadata, which will cause Swarm to re-scan the model and re-detect what architecture it uses.
+- If that doesn't fix it, look in the Models tab of the Generate tab. Is the `Type:` listed correct? If not, hit the `☰` hamburger menu then `Edit Metadata`, then change the Architecture to the correct value for the model.
+
 ## Other
 
 If you have some other troubleshooting issue you think should be listed here, let me know on [the SwarmUI Discord](https://discord.gg/q2y38cqjNw).

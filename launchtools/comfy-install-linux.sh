@@ -67,7 +67,7 @@ if [ "$GPU_TYPE" == "nv" ]; then
     $python -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu129
 elif [ "$GPU_TYPE" == "amd" ]; then
     echo "install amd torch..."
-    $python -s -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.4
+    $python -s -m pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm7.1
 fi
 
 echo "install general requirements..."
