@@ -1601,8 +1601,8 @@ public class WorkflowGeneratorSteps
                         });
                         g.FinalImageOut = [trimNode, 0];
                     }
-                    if (g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMethod, out string method)
-                        && g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMultiplier, out int mult) && mult > 1
+                    if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
+                        && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1
                         && g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 99) > 1)
                     {
                         if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
@@ -1878,7 +1878,7 @@ public class WorkflowGeneratorSteps
                     conjoinedLast = [batchedNode, 0];
                 }
                 g.FinalImageOut = conjoinedLast;
-                if (g.GetCurrentVideoFrameInterpolationMethod(out string method) && g.GetCurrentVideoFrameInterpolationMultiplier(out int mult) && mult > 1)
+                if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (saveIntermediate)
                     {
