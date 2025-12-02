@@ -1607,15 +1607,7 @@ public class WorkflowGeneratorSteps
                     {
                         if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                         {
-                            g.CreateNode("SwarmSaveAnimationWS", new JObject()
-                            {
-                                ["images"] = g.FinalImageOut,
-                                ["fps"] = g.Text2VideoFPS(),
-                                ["lossless"] = false,
-                                ["quality"] = 95,
-                                ["method"] = "default",
-                                ["format"] = g.UserInput.Get(T2IParamTypes.Text2VideoFormat, "webp")
-                            }, g.GetStableDynamicID(50000, 0));
+                            g.CreateAnimationSaveNode(g.FinalImageOut, g.Text2VideoFPS(), g.UserInput.Get(T2IParamTypes.Text2VideoFormat, "mp4"), g.GetStableDynamicID(50000, 0));
                         }
                         g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
                         int fps = g.Text2VideoFPS();
@@ -1736,15 +1728,7 @@ public class WorkflowGeneratorSteps
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
-                        g.CreateNode("SwarmSaveAnimationWS", new JObject()
-                        {
-                            ["images"] = g.FinalImageOut,
-                            ["fps"] = videoFps,
-                            ["lossless"] = false,
-                            ["quality"] = 95,
-                            ["method"] = "default",
-                            ["format"] = format
-                        }, g.GetStableDynamicID(50000, 0));
+                        g.CreateAnimationSaveNode(g.FinalImageOut, videoFps.Value, format, g.GetStableDynamicID(50000, 0));
                     }
                     g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
                     videoFps *= mult;
@@ -1762,15 +1746,7 @@ public class WorkflowGeneratorSteps
                 {
                     nodeId = $"{g.GetStableDynamicID(50000, 0)}";
                 }
-                g.CreateNode("SwarmSaveAnimationWS", new JObject()
-                {
-                    ["images"] = g.FinalImageOut,
-                    ["fps"] = videoFps,
-                    ["lossless"] = false,
-                    ["quality"] = 95,
-                    ["method"] = "default",
-                    ["format"] = format
-                }, nodeId);
+                g.CreateAnimationSaveNode(g.FinalImageOut, videoFps.Value, format, nodeId);
             }
         }, 11);
         #endregion
@@ -1783,7 +1759,7 @@ public class WorkflowGeneratorSteps
                 string negPrompt = g.UserInput.Get(T2IParamTypes.NegativePrompt, "");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 600;
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
-                string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "webp").ToLowerFast();
+                string format = g.UserInput.Get(T2IParamTypes.VideoExtendFormat, "mp4").ToLowerFast();
                 int frameExtendOverlap = g.UserInput.Get(T2IParamTypes.VideoExtendFrameOverlap, 9);
                 bool saveIntermediate = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
                 T2IModel extendModel = g.UserInput.Get(T2IParamTypes.VideoExtendModel, null) ?? throw new SwarmUserErrorException("You have an '<extend:' block in your prompt, but you don't have a 'Video Extend Model' selected.");
@@ -1851,15 +1827,7 @@ public class WorkflowGeneratorSteps
                     videoFps = genInfo.VideoFPS;
                     if (saveIntermediate)
                     {
-                        g.CreateNode("SwarmSaveAnimationWS", new JObject()
-                        {
-                            ["images"] = g.FinalImageOut,
-                            ["fps"] = genInfo.VideoFPS,
-                            ["lossless"] = false,
-                            ["quality"] = 95,
-                            ["method"] = "default",
-                            ["format"] = format
-                        }, $"{g.GetStableDynamicID(50000, 0)}");
+                        g.CreateAnimationSaveNode(g.FinalImageOut, videoFps.Value, format, g.GetStableDynamicID(50000, 0));
                     }
                     string cutNode = g.CreateNode("ImageFromBatch", new JObject()
                     {
@@ -1882,28 +1850,12 @@ public class WorkflowGeneratorSteps
                 {
                     if (saveIntermediate)
                     {
-                        g.CreateNode("SwarmSaveAnimationWS", new JObject()
-                        {
-                            ["images"] = g.FinalImageOut,
-                            ["fps"] = videoFps,
-                            ["lossless"] = false,
-                            ["quality"] = 95,
-                            ["method"] = "default",
-                            ["format"] = format
-                        }, g.GetStableDynamicID(50000, 0));
+                        g.CreateAnimationSaveNode(g.FinalImageOut, videoFps.Value, format, g.GetStableDynamicID(50000, 0));
                     }
                     g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
                     videoFps *= mult;
                 }
-                g.CreateNode("SwarmSaveAnimationWS", new JObject()
-                {
-                    ["images"] = g.FinalImageOut,
-                    ["fps"] = videoFps,
-                    ["lossless"] = false,
-                    ["quality"] = 95,
-                    ["method"] = "default",
-                    ["format"] = format
-                }, "9");
+                g.CreateAnimationSaveNode(g.FinalImageOut, videoFps.Value, format, "9");
             }
         }, 12);
         #endregion

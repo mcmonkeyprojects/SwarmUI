@@ -637,6 +637,20 @@ public partial class WorkflowGenerator
         }
     }
 
+    /// <summary>Creates a node to save an animation output.</summary>
+    public string CreateAnimationSaveNode(JArray anim, int fps, string format, string id = null)
+    {
+        return CreateNode("SwarmSaveAnimationWS", new JObject()
+        {
+            ["images"] = anim,
+            ["fps"] = fps,
+            ["lossless"] = false,
+            ["quality"] = 95,
+            ["method"] = "default",
+            ["format"] = format
+        }, id);
+    }
+
     /// <summary>Creates a VAELoader node and returns its node ID. Avoids duplication.</summary>
     public JArray CreateVAELoader(string vae, string id = null)
     {
