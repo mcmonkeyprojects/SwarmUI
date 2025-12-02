@@ -609,7 +609,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - **Parameters:**
     - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese.
     - **Sampler:** `Euler`
-    - **Scheduler:** `Beta`.
+    - **Scheduler:** `Beta`
     - **CFG Scale:** `5`
     - **Steps:** Recommended `50`, seems "fine" at `25`
     - **Resolution:** Side length `1024`. Quickly breaks above that.
