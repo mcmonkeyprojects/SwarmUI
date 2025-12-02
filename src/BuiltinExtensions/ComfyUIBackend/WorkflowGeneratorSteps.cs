@@ -1601,8 +1601,8 @@ public class WorkflowGeneratorSteps
                         });
                         g.FinalImageOut = [trimNode, 0];
                     }
-                    if (g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMethod, out string method)
-                        && g.UserInput.TryGet(ComfyUIBackendExtension.Text2VideoFrameInterpolationMultiplier, out int mult) && mult > 1
+                    if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method)
+                        && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1
                         && g.UserInput.Get(T2IParamTypes.Text2VideoFrames, 99) > 1)
                     {
                         if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
@@ -1731,7 +1731,8 @@ public class WorkflowGeneratorSteps
                 };
                 g.CreateImageToVideo(genInfo);
                 videoFps = genInfo.VideoFPS;
-                if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
+                bool hasExtend = prompt.Contains("<extend:");
+                if (!hasExtend && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
                 {
                     if (g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false))
                     {
@@ -1757,7 +1758,7 @@ public class WorkflowGeneratorSteps
                     g.FinalImageOut = [bounced, 0];
                 }
                 string nodeId = "9";
-                if (prompt.Contains("<extend:"))
+                if (hasExtend)
                 {
                     nodeId = $"{g.GetStableDynamicID(50000, 0)}";
                 }
@@ -1877,6 +1878,23 @@ public class WorkflowGeneratorSteps
                     conjoinedLast = [batchedNode, 0];
                 }
                 g.FinalImageOut = conjoinedLast;
+                if (g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMethod, out string method) && g.UserInput.TryGet(ComfyUIBackendExtension.VideoFrameInterpolationMultiplier, out int mult) && mult > 1)
+                {
+                    if (saveIntermediate)
+                    {
+                        g.CreateNode("SwarmSaveAnimationWS", new JObject()
+                        {
+                            ["images"] = g.FinalImageOut,
+                            ["fps"] = videoFps,
+                            ["lossless"] = false,
+                            ["quality"] = 95,
+                            ["method"] = "default",
+                            ["format"] = format
+                        }, g.GetStableDynamicID(50000, 0));
+                    }
+                    g.FinalImageOut = g.DoInterpolation(g.FinalImageOut, method, mult);
+                    videoFps *= mult;
+                }
                 g.CreateNode("SwarmSaveAnimationWS", new JObject()
                 {
                     ["images"] = g.FinalImageOut,

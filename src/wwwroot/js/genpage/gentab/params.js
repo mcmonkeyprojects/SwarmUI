@@ -618,19 +618,11 @@ function genInputs(delay_final = false) {
             inputBatchSize.value = 1;
             triggerChangeFor(inputBatchSize);
         }
-        let inputInterpolator1 = document.getElementById('input_textvideoframeinterpolationmethod');
+        let inputInterpolator1 = document.getElementById('input_videoframeinterpolationmethod');
         if (inputInterpolator1) {
             inputInterpolator1.addEventListener('change', () => {
                 console.log(inputInterpolator1.value, currentBackendFeatureSet);
                 if (inputInterpolator1.value == 'GIMM-VFI' && !currentBackendFeatureSet.includes('frameinterps_gimmvfi')) {
-                    installFeatureById('gimm_vfi', null);
-                }
-            });
-        }
-        let inputInterpolator2 = document.getElementById('input_videoframeinterpolationmethod');
-        if (inputInterpolator2) {
-            inputInterpolator2.addEventListener('change', () => {
-                if (inputInterpolator2.value == 'GIMM-VFI' && !currentBackendFeatureSet.includes('frameinterps_gimmvfi')) {
                     installFeatureById('gimm_vfi', null);
                 }
             });
@@ -831,9 +823,9 @@ function genInputs(delay_final = false) {
         if (revisionGroup && !currentBackendFeatureSet.includes('ipadapter')) {
             revisionGroup.append(createDiv(`revision_install_ipadapter`, null, `<button class="basic-button" onclick="installFeatureById('ipadapter', 'revision_install_ipadapter')">Install IP Adapter</button>`));
         }
-        let videoGroup = document.getElementById('input_group_content_imagetovideo');
-        if (videoGroup && !currentBackendFeatureSet.includes('frameinterps')) {
-            videoGroup.append(createDiv(`video_install_frameinterps`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('frame_interpolation', 'video_install_frameinterps')">Install Frame Interpolation</button>`));
+        let advancedVideoGroup = document.getElementById('input_group_content_advancedvideo');
+        if (advancedVideoGroup && !currentBackendFeatureSet.includes('frameinterps')) {
+            advancedVideoGroup.append(createDiv(`video_install_frameinterps`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('frame_interpolation', 'video_install_frameinterps')">Install Frame Interpolation</button>`));
         }
         for (let runnable of postParamBuildSteps) {
             runnable();
