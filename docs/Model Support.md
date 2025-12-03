@@ -599,6 +599,15 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
     - Here's a big ol' grid of Z-Image Turbo params: [Z-Image MegaGrid](<https://sd.mcmonkey.org/zimagegrid/#auto-loc,true,true,false,true,false,cfgscale,steps,none,none,extremecloseupt,4,1,3,1024x1024,1,euler,simple>)
 
+### Controlnets
+
+- There's a "DiffSynth Model Patch" controlnet-union available here <https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors>
+    - This is meant to be stored to `model_patches`, but it will work fine in your regular ControlNet models folder.
+    - Proper Architecture ID is `Z-Image ControlNet (DiffPatch)`
+    - Works like any other controlnet. Select as controlnet model, give it an image, select a preprocessor. Fiddle the strength to taste.
+    - Despite being a Union controlnet, the Union Type parameter is not used.
+    - Because it is "Model Patch" based, the Start and End parameters also do not work.
+
 # Ovis
 
 - [Ovis](https://huggingface.co/AIDC-AI/Ovis-Image-7B) is supported in SwarmUI.
@@ -613,15 +622,6 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **CFG Scale:** Normal CFG ranges, `5` is the official recommendation
     - **Steps:** Normal step counts (eg `20`), but they recommend `50`
     - **Resolution:** Side length `1024`. Quickly breaks above that.
-
-### Controlnets
-
-- There's a "DiffSynth Model Patch" controlnet-union available here <https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors>
-    - This is meant to be stored to `model_patches`, but it will work fine in your regular ControlNet models folder.
-    - Proper Architecture ID is `Z-Image ControlNet (DiffPatch)`
-    - Works like any other controlnet. Select as controlnet model, give it an image, select a preprocessor. Fiddle the strength to taste.
-    - Despite being a Union controlnet, the Union Type parameter is not used.
-    - Because it is "Model Patch" based, the Start and End parameters also do not work.
 
 # Video Models
 
