@@ -1048,6 +1048,10 @@ public class WorkflowGeneratorSteps
                     {
                         throw new SwarmUserErrorException("Cannot use ControlNet without a model selected.");
                     }
+                    if (TryApplyZImageDiffsynthControlnet(g, controlModel, imageNodeActual, controlStrength))
+                    {
+                        continue;
+                    }
                     string controlModelNode = g.CreateNode("ControlNetLoader", new JObject()
                     {
                         ["control_net_name"] = controlModel.ToString(g.ModelFolderFormat)
@@ -1896,5 +1900,29 @@ public class WorkflowGeneratorSteps
             g.RemoveClassIfUnused("SwarmClipTextEncodeAdvanced");
         }, 200);
         #endregion
+    }
+
+    /// <summary>Applies the Z-Image DiffSynth ControlNet patch</summary>
+    private static bool TryApplyZImageDiffsynthControlnet(WorkflowGenerator g, T2IModel controlModel, JArray imageNodeActual, double controlStrength)
+    {
+        if (!g.IsZImage() || controlModel?.ModelClass?.ID != "z-image/controlnet")
+        {
+            return false;
+        }
+        string patchName = Path.GetFileName(controlModel.RawFilePath);
+        string modelPatchLoader = g.CreateNode("ModelPatchLoader", new JObject()
+        {
+            ["name"] = patchName
+        });
+        string diffsynthNode = g.CreateNode("QwenImageDiffsynthControlnet", new JObject()
+        {
+            ["model"] = g.FinalModel,
+            ["model_patch"] = new JArray() { modelPatchLoader, 0 },
+            ["vae"] = g.FinalVae,
+            ["image"] = imageNodeActual,
+            ["strength"] = controlStrength
+        });
+        g.FinalModel = [diffsynthNode, 0];
+        return true;
     }
 }
