@@ -245,6 +245,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     embeddings: {buildSection(rootFixed, Program.ServerSettings.Paths.SDEmbeddingFolder + ";embeddings")}
                     hypernetworks: {buildSection(rootFixed, "hypernetworks")}
                     controlnet: {buildSection(rootFixed, Program.ServerSettings.Paths.SDControlNetsFolder + ";ControlNet")}
+                    model_patches: {buildSection(rootFixed, Program.ServerSettings.Paths.SDControlNetsFolder + ";ControlNet;model_patches")}
                     clip: {buildSection(rootFixed, Program.ServerSettings.Paths.SDClipFolder + ";clip;CLIP")}
                     clip_vision: {buildSection(rootFixed, Program.ServerSettings.Paths.SDClipVisionFolder + ";clip_vision")}
 

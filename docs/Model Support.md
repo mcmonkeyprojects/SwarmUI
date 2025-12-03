@@ -614,6 +614,12 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Steps:** Normal step counts (eg `20`), but they recommend `50`
     - **Resolution:** Side length `1024`. Quickly breaks above that.
 
+### Controlnets
+
+- There's a "Model Patch" controlnet-union available here <https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors>
+    - save in `model_patches`
+    - works like any other controlnet. Select as controlnet model, give it an image, select a preprocessor. Probably lower the strength a bit.
+
 # Video Models
 
 - Video models are documented in [Video Model Support](/docs/Video%20Model%20Support.md).
