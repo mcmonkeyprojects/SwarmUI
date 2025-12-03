@@ -270,7 +270,7 @@ public class Settings : AutoConfiguration
         public string SDEmbeddingFolder = "Embeddings";
 
         [ConfigComment("The ControlNets model folder to use within 'ModelRoot'.\nDefaults to 'controlnet'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
-        public string SDControlNetsFolder = "controlnet";
+        public string SDControlNetsFolder = "controlnet;model_patches";
 
         [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'text_encoders;clip'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
         public string SDClipFolder = "text_encoders;clip";

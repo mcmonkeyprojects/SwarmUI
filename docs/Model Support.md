@@ -602,7 +602,8 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 ### Z-Image Controlnets
 
 - There's a "DiffSynth Model Patch" controlnet-union available here <https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors>
-    - This is meant to be stored to `model_patches`, but it will work fine in your regular ControlNet models folder.
+    - This goes in your regular ControlNets folder
+        - Comfy treats this as separate "model_patches", to use Comfy folder format, add `;model_patches` to the end of Server Config->Paths->SDControlNetsFolder
     - Proper Architecture ID is `Z-Image ControlNet (DiffPatch)`
     - Works like any other controlnet. Select as controlnet model, give it an image, select a preprocessor. Fiddle the strength to taste.
     - Despite being a Union controlnet, the Union Type parameter is not used.
