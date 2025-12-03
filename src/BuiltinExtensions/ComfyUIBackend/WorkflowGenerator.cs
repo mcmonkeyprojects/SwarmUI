@@ -67,6 +67,12 @@ public partial class WorkflowGenerator
     /// <summary>Lock for when ensuring the backend has valid models.</summary>
     public static MultiLockSet<string> ModelDownloaderLocks = new(32);
 
+    /// <summary>Helper to create a NodePath: [nodeId, outputIndex].</summary>
+    public static JArray NodePath(string node, int index)
+    {
+        return [node, index];
+    }
+
     /// <summary>The raw user input data.</summary>
     public T2IParamInput UserInput;
 
@@ -401,7 +407,7 @@ public partial class WorkflowGenerator
                 {
                     result = CreateNode("ImageScale", new JObject()
                     {
-                        ["image"] = new JArray() { result, 0 },
+                        ["image"] = NodePath(result, 0),
                         ["width"] = UserInput.GetImageWidth(),
                         ["height"] = UserInput.GetImageHeight(),
                         ["upscale_method"] = "lanczos",
@@ -460,22 +466,22 @@ public partial class WorkflowGenerator
         string croppedImage = CreateNode("SwarmImageCrop", new JObject()
         {
             ["image"] = image,
-            ["x"] = new JArray() { boundsNode, 0 },
-            ["y"] = new JArray() { boundsNode, 1 },
-            ["width"] = new JArray() { boundsNode, 2 },
-            ["height"] = new JArray() { boundsNode, 3 }
+            ["x"] = NodePath(boundsNode, 0),
+            ["y"] = NodePath(boundsNode, 1),
+            ["width"] = NodePath(boundsNode, 2),
+            ["height"] = NodePath(boundsNode, 3)
         });
         string croppedMask = CreateNode("CropMask", new JObject()
         {
             ["mask"] = mask,
-            ["x"] = new JArray() { boundsNode, 0 },
-            ["y"] = new JArray() { boundsNode, 1 },
-            ["width"] = new JArray() { boundsNode, 2 },
-            ["height"] = new JArray() { boundsNode, 3 }
+            ["x"] = NodePath(boundsNode, 0),
+            ["y"] = NodePath(boundsNode, 1),
+            ["width"] = NodePath(boundsNode, 2),
+            ["height"] = NodePath(boundsNode, 3)
         });
         string scaledImage = CreateNode("SwarmImageScaleForMP", new JObject()
         {
-            ["image"] = new JArray() { croppedImage, 0 },
+            ["image"] = NodePath(croppedImage, 0),
             ["width"] = isCustomRes ? targetX : model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth,
             ["height"] = isCustomRes ? targetY : model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
             ["can_shrink"] = true
@@ -520,8 +526,8 @@ public partial class WorkflowGenerator
         string scaledBack = CreateNode("ImageScale", new JObject()
         {
             ["image"] = newImage,
-            ["width"] = new JArray() { boundsNode, 2 },
-            ["height"] = new JArray() { boundsNode, 3 },
+            ["width"] = NodePath(boundsNode, 2),
+            ["height"] = NodePath(boundsNode, 3),
             ["upscale_method"] = "lanczos",
             ["crop"] = "disabled"
         });
@@ -542,10 +548,10 @@ public partial class WorkflowGenerator
         string composited = CreateNode(nodeClass, new JObject()
         {
             ["destination"] = firstImage,
-            ["source"] = new JArray() { scaledBack, 0 },
+            ["source"] = NodePath(scaledBack, 0),
             ["mask"] = croppedMask,
-            ["x"] = new JArray() { boundsNode, 0 },
-            ["y"] = new JArray() { boundsNode, 1 },
+            ["x"] = NodePath(boundsNode, 0),
+            ["y"] = NodePath(boundsNode, 1),
             ["resize_source"] = false,
             ["correction_method"] = UserInput.Get(T2IParamTypes.ColorCorrectionBehavior, "None")
         });
@@ -909,7 +915,7 @@ public partial class WorkflowGenerator
                 string refLatentNode = CreateNode("ReferenceLatent", new JObject()
                 {
                     ["conditioning"] = pos,
-                    ["latent"] = new JArray() { vaeEncode, 0 }
+                    ["latent"] = NodePath(vaeEncode, 0)
                 });
                 pos = [refLatentNode, 0];
                 if (imgNeg is not null)
@@ -917,7 +923,7 @@ public partial class WorkflowGenerator
                     string refLatentNodeNeg = CreateNode("ReferenceLatent", new JObject()
                     {
                         ["conditioning"] = imgNeg,
-                        ["latent"] = new JArray() { vaeEncode, 0 }
+                        ["latent"] = NodePath(vaeEncode, 0)
                     });
                     imgNeg = [refLatentNodeNeg, 0];
                 }
@@ -1005,7 +1011,7 @@ public partial class WorkflowGenerator
                     string batched = CreateNode("ImageBatch", new JObject()
                     {
                         ["image1"] = img,
-                        ["image2"] = new JArray() { img2, 0 }
+                        ["image2"] = NodePath(img2, 0)
                     });
                     img = [batched, 0];
                 }
@@ -1033,8 +1039,8 @@ public partial class WorkflowGenerator
                 });
                 string negCombine = CreateNode("ConditioningCombine", new JObject()
                 {
-                    ["conditioning_1"] = new JArray() { phantomNode, 1 },
-                    ["conditioning_2"] = new JArray() { phantomNode, 2 }
+                    ["conditioning_1"] = NodePath(phantomNode, 1),
+                    ["conditioning_2"] = NodePath(phantomNode, 2)
                 });
                 pos = [phantomNode, 0];
                 neg = [negCombine, 0];
@@ -1107,11 +1113,11 @@ public partial class WorkflowGenerator
             // TODO: VarSeed, batching, etc. seed logic
             string finalSampler = CreateNode("SamplerCustomAdvanced", new JObject()
             {
-                ["sampler"] = new JArray() { samplerNode, 0 },
+                ["sampler"] = NodePath(samplerNode, 0),
                 ["guider"] = guider,
                 ["sigmas"] = schedulerNode,
                 ["latent_image"] = latentImage,
-                ["noise"] = new JArray() { noiseNode, 0 }
+                ["noise"] = NodePath(noiseNode, 0)
             }, id);
             return finalSampler;
         }
@@ -1133,8 +1139,8 @@ public partial class WorkflowGenerator
             string cfgGuiderNode = CreateNode("DualCFGGuider", new JObject()
             {
                 ["model"] = model,
-                ["cond1"] = new JArray() { ip2p2condNode, 0 },
-                ["cond2"] = new JArray() { ip2p2condNode, 1 },
+                ["cond1"] = NodePath(ip2p2condNode, 0),
+                ["cond2"] = NodePath(ip2p2condNode, 1),
                 ["negative"] = neg,
                 ["cfg_conds"] = cfg,
                 ["cfg_cond2_negative"] = UserInput.Get(T2IParamTypes.IP2PCFG2, 1.5)
@@ -1183,7 +1189,7 @@ public partial class WorkflowGenerator
         {
             string stageBCond = CreateNode("StableCascade_StageB_Conditioning", new JObject()
             {
-                ["stage_c"] = new JArray() { created, 0 },
+                ["stage_c"] = NodePath(created, 0),
                 ["conditioning"] = pos
             });
             created = CreateKSampler(cascadeModel, [stageBCond, 0], neg, [latent[0], 1], 1.1, steps, startStep, endStep, seed + 27, returnWithLeftoverNoise, addNoise, sigmin, sigmax, previews ?? previews, defsampler, defscheduler, id, true);
@@ -1258,7 +1264,7 @@ public partial class WorkflowGenerator
         string encoded = CreateVAEEncode(vae, image, id, mask: mask);
         string appliedNode = CreateNode("SetLatentNoiseMask", new JObject()
         {
-            ["samples"] = new JArray() { encoded, 0 },
+            ["samples"] = NodePath(encoded, 0),
             ["mask"] = mask
         });
         return [appliedNode, 0];
@@ -1373,7 +1379,7 @@ public partial class WorkflowGenerator
             });
             string gimm = CreateNode("GIMMVFI_interpolate", new JObject()
             {
-                ["gimmvfi_model"] = new JArray() { modelLoader, 0 },
+                ["gimmvfi_model"] = NodePath(modelLoader, 0),
                 ["images"] = imageIn,
                 ["ds_factor"] = 0.5, // TODO: They recommend this as a factor relative to size. 0.5 for 2k, 0.25 for 4k. This is a major performance alteration.
                 ["interpolation_factor"] = mult,
@@ -1714,9 +1720,9 @@ public partial class WorkflowGenerator
                         ["negative"] = NegCond,
                         ["vae"] = Vae,
                         ["start_image"] = imageIn,
-                        ["clip_vision_start_image"] = new JArray() { encoded, 0 },
+                        ["clip_vision_start_image"] = NodePath(encoded, 0),
                         ["end_image"] = endFrameNode,
-                        ["clip_vision_end_image"] = new JArray() { encodedEnd, 0 },
+                        ["clip_vision_end_image"] = NodePath(encodedEnd, 0),
                         ["batch_size"] = 1
                     });
                     PosCond = [img2vidNode, 0];
@@ -1734,7 +1740,7 @@ public partial class WorkflowGenerator
                         ["negative"] = NegCond,
                         ["vae"] = Vae,
                         ["start_image"] = imageIn,
-                        ["clip_vision_output"] = new JArray() { encoded, 0 },
+                        ["clip_vision_output"] = NodePath(encoded, 0),
                         ["batch_size"] = 1
                     });
                     PosCond = [img2vidNode, 0];
@@ -2163,8 +2169,8 @@ public partial class WorkflowGenerator
             });
             string encoded = CreateNode("CLIPVisionEncode", new JObject()
             {
-                ["clip_vision"] = new JArray() { clipLoader, 0 },
-                ["image"] = new JArray() { imgNodeId, int.Parse(imgNodePart) },
+                ["clip_vision"] = NodePath(clipLoader, 0),
+                ["image"] = NodePath(imgNodeId, int.Parse(imgNodePart)),
                 ["crop"] = "center"
             });
             if (wantsSwarmCustom)
@@ -2179,7 +2185,7 @@ public partial class WorkflowGenerator
                     ["target_width"] = width,
                     ["target_height"] = height,
                     ["guidance"] = UserInput.Get(T2IParamTypes.FluxGuidanceScale, defaultGuidance),
-                    ["clip_vision_output"] = new JArray() { encoded, 0 },
+                    ["clip_vision_output"] = NodePath(encoded, 0),
                     ["llama_template"] = "hunyuan_image"
                 }, id);
             }
@@ -2188,7 +2194,7 @@ public partial class WorkflowGenerator
                 node = CreateNode("TextEncodeHunyuanVideo_ImageToVideo", new JObject()
                 {
                     ["clip"] = clip,
-                    ["clip_vision_output"] = new JArray() { encoded, 0 },
+                    ["clip_vision_output"] = NodePath(encoded, 0),
                     ["prompt"] = content,
                     ["image_interleave"] = CurrentModelClass()?.ID == "hunyuan-video-i2v-v2" ? 4 : 2
                 }, id);
@@ -2316,7 +2322,7 @@ public partial class WorkflowGenerator
             {
                 string applied = CreateNode("GLIGENTextBoxApply", new JObject()
                 {
-                    ["gligen_textbox_model"] = new JArray() { gligenLoader, 0 },
+                    ["gligen_textbox_model"] = NodePath(gligenLoader, 0),
                     ["clip"] = clip,
                     ["conditioning_to"] = lastCond,
                     ["text"] = part.Prompt,
@@ -2348,7 +2354,7 @@ public partial class WorkflowGenerator
             {
                 regionNode = CreateNode("InvertMask", new JObject()
                 {
-                    ["mask"] = new JArray() { regionNode, 0 }
+                    ["mask"] = NodePath(regionNode, 0)
                 });
             }
             RegionHelper region = new(partCond, [regionNode, 0]);
@@ -2377,7 +2383,7 @@ public partial class WorkflowGenerator
         });
         string maskBackground = CreateNode("SwarmExcludeFromMask", new JObject()
         {
-            ["main_mask"] = new JArray() { globalMask, 0 },
+            ["main_mask"] = NodePath(globalMask, 0),
             ["exclude_mask"] = lastMergedMask
         });
         string backgroundPrompt = string.IsNullOrWhiteSpace(regionalizer.BackgroundPrompt) ? regionalizer.GlobalPrompt : regionalizer.BackgroundPrompt;
@@ -2385,7 +2391,7 @@ public partial class WorkflowGenerator
         string mainConditioning = CreateNode("ConditioningSetMask", new JObject()
         {
             ["conditioning"] = backgroundCond,
-            ["mask"] = new JArray() { maskBackground, 0 },
+            ["mask"] = NodePath(maskBackground, 0),
             ["strength"] = 1 - globalStrength,
             ["set_cond_area"] = "default"
         });
@@ -2413,27 +2419,27 @@ public partial class WorkflowGenerator
             string regionCond = CreateNode("ConditioningSetMask", new JObject()
             {
                 ["conditioning"] = region.PartCond,
-                ["mask"] = new JArray() { overlapped, 0 },
+                ["mask"] = NodePath(overlapped, 0),
                 ["strength"] = 1 - globalStrength,
                 ["set_cond_area"] = "default"
             });
             mainConditioning = CreateNode("ConditioningCombine", new JObject()
             {
-                ["conditioning_1"] = new JArray() { mainConditioning, 0 },
-                ["conditioning_2"] = new JArray() { regionCond, 0 }
+                ["conditioning_1"] = NodePath(mainConditioning, 0),
+                ["conditioning_2"] = NodePath(regionCond, 0)
             });
         }
         string globalCondApplied = CreateNode("ConditioningSetMask", new JObject()
         {
             ["conditioning"] = globalCond,
-            ["mask"] = new JArray() { globalMask, 0 },
+            ["mask"] = NodePath(globalMask, 0),
             ["strength"] = globalStrength,
             ["set_cond_area"] = "default"
         });
         string finalCond = CreateNode("ConditioningCombine", new JObject()
         {
-            ["conditioning_1"] = new JArray() { mainConditioning, 0 },
-            ["conditioning_2"] = new JArray() { globalCondApplied, 0 }
+            ["conditioning_1"] = NodePath(mainConditioning, 0),
+            ["conditioning_2"] = NodePath(globalCondApplied, 0)
         });
         return new(finalCond, 0);
     }
