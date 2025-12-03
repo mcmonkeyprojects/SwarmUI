@@ -309,6 +309,10 @@ public class T2IModelClassSorter
         {
             return isCascadeC(h);
         }});
+        Register(new() { ID = "stable-cascade-v1-stage-c/controlnet", CompatClass = CompatCascade, Name = "Stable Cascade v1 (Stage C ControlNet)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         // ====================== Stable Diffusion v3 ======================
         Register(new() { ID = "stable-diffusion-v3-medium", CompatClass = CompatSd3Medium, Name = "Stable Diffusion 3 Medium", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {

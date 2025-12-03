@@ -1073,7 +1073,7 @@ public class WorkflowGeneratorSteps
                     {
                         controlModelNode = g.CreateNode("SetUnionControlNetType", new JObject()
                         {
-                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["control_net"] = new JArray() { controlModelNode, 0 },
                             ["type"] = unionType
                         });
                     }
@@ -1088,7 +1088,7 @@ public class WorkflowGeneratorSteps
                         {
                             ["positive"] = g.FinalPrompt,
                             ["negative"] = g.FinalNegativePrompt,
-                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["control_net"] = new JArray() { controlModelNode, 0 },
                             ["vae"] = g.FinalVae,
                             ["image"] = imageNodeActual,
                             ["mask"] = g.FinalMask,
@@ -1103,7 +1103,7 @@ public class WorkflowGeneratorSteps
                         {
                             ["positive"] = g.FinalPrompt,
                             ["negative"] = g.FinalNegativePrompt,
-                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["control_net"] = new JArray() { controlModelNode, 0 },
                             ["vae"] = g.FinalVae,
                             ["image"] = imageNodeActual,
                             ["strength"] = controlStrength,
@@ -1117,7 +1117,7 @@ public class WorkflowGeneratorSteps
                         {
                             ["positive"] = g.FinalPrompt,
                             ["negative"] = g.FinalNegativePrompt,
-                            ["control_net"] = new JArray() { $"{controlModelNode}", 0 },
+                            ["control_net"] = new JArray() { controlModelNode, 0 },
                             ["image"] = imageNodeActual,
                             ["strength"] = controlStrength,
                             ["start_percent"] = g.UserInput.Get(controlnetParams.Start, 0),
