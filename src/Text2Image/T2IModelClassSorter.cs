@@ -146,7 +146,7 @@ public class T2IModelClassSorter
         bool isZImage(JObject h) => hasKey(h, "context_refiner.0.attention.k_norm.weight") && hasKey(h, "layers.0.adaLN_modulation.0.bias");
         bool isOvis(JObject h) => hasKey(h, "double_blocks.0.img_mlp.down_proj.weight");
         bool isZImageLora(JObject h) => hasKey(h, "layers.0.adaLN_modulation.0.lora_A.weight") && hasKey(h, "layers.9.feed_forward.w3.lora_B.weight");
-        bool isZImageControlNet(JObject h) => h.ContainsKey("control_layers.0.adaLN_modulation.0.weight") && h.ContainsKey("control_noise_refiner.0.adaLN_modulation.0.weight") && h.ContainsKey("control_layers.0.feed_forward.w3.weight");
+        bool isZImageControlNetDiffPatch(JObject h) => h.ContainsKey("control_layers.0.adaLN_modulation.0.weight") && h.ContainsKey("control_noise_refiner.0.adaLN_modulation.0.weight") && h.ContainsKey("control_layers.0.feed_forward.w3.weight");
         bool tryGetWanTok(JObject h, out JToken tok) => h.TryGetValue("model.diffusion_model.blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("blocks.0.cross_attn.k.bias", out tok) || h.TryGetValue("lora_unet_blocks_0_cross_attn_k.lora_down.weight", out tok);
         bool tryGetPatchEmbedTok(JObject h, out JToken tok) => h.TryGetValue("patch_embedding.weight", out tok) || h.TryGetValue("model.diffusion_model.patch_embedding.weight", out tok);
         bool isWan21_1_3b(JObject h) => tryGetWanTok(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 1536;
@@ -523,9 +523,9 @@ public class T2IModelClassSorter
         {
             return isZImageLora(h);
         }});
-        Register(new() { ID = "z-image/controlnet", CompatClass = CompatZImage, Name = "Z-Image ControlNet", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "z-image/control-diffpatch", CompatClass = CompatZImage, Name = "Z-Image ControlNet (DiffPatch)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isZImageControlNet(h);
+            return isZImageControlNetDiffPatch(h);
         }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
