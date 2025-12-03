@@ -599,7 +599,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
     - Here's a big ol' grid of Z-Image Turbo params: [Z-Image MegaGrid](<https://sd.mcmonkey.org/zimagegrid/#auto-loc,true,true,false,true,false,cfgscale,steps,none,none,extremecloseupt,4,1,3,1024x1024,1,euler,simple>)
 
-### Controlnets
+### Z-Image Controlnets
 
 - There's a "DiffSynth Model Patch" controlnet-union available here <https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union/blob/main/Z-Image-Turbo-Fun-Controlnet-Union.safetensors>
     - This is meant to be stored to `model_patches`, but it will work fine in your regular ControlNet models folder.
