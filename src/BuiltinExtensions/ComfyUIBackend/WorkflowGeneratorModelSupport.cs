@@ -894,12 +894,16 @@ public partial class WorkflowGenerator
                 ["min_length"] = 0
             });
             LoadingClip = [t5Patch, 0];
-            string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 1);
+            if (shift > 0)
             {
-                ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1)
-            });
-            LoadingModel = [samplingNode, 0];
+                string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
+                {
+                    ["model"] = LoadingModel,
+                    ["shift"] = shift
+                });
+                LoadingModel = [samplingNode, 0];
+            }
             if (IsChromaRadiance())
             {
                 LoadingVAE = CreateVAELoader("pixel_space");

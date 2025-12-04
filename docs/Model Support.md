@@ -381,7 +381,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Sampler:** Defaults to regular `Euler`
     - **Scheduler:** Defaults to `Beta`
     - **Steps:** Normal step counts work, higher is recommended to reduce quality issues
-    - **Sigma Shift:** Defaults to `1`
+    - **Sigma Shift:** Defaults to `1`. Set to `0` to explicitly remove shift and use the underlying comfy default behavior.
     - **Prompt:** Long and detailed prompts are recommended.
     - **Negative Prompt:** Due to the model's experimental early train status, a good negative prompt is essential.
         - Official example: `This low quality greyscale unfinished sketch is inaccurate and flawed. The image is very blurred and lacks detail with excessive chromatic aberrations and artifacts. The image is overly saturated with excessive bloom. It has a toony aesthetic with bold outlines and flat colors.`
