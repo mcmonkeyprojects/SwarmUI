@@ -69,7 +69,7 @@ class ParamConfigurationClass {
         this.edited_groups = {};
         this.edited_params = {};
         this.extra_count = 0;
-        this.param_edits = {};
+        this.param_edits = { groups: {}, params: {} };
         this.saved_edits = {};
         this.container = getRequiredElementById('user_param_config_container');
         this.confirmer = getRequiredElementById('user_param_config_confirmer');
@@ -233,6 +233,12 @@ class ParamConfigurationClass {
         rawGenParamTypesFromServer = JSON.parse(JSON.stringify(this.original_param_types));
         if (doReplace) {
             gen_param_types = rawGenParamTypesFromServer;
+        }
+        if (!('groups' in edits)) {
+            edits.groups = {};
+        }
+        if (!('params' in edits)) {
+            edits.params = {};
         }
         this.param_edits = edits;
         this.saved_edits = JSON.parse(JSON.stringify(edits));
