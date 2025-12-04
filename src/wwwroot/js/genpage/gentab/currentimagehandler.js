@@ -144,7 +144,8 @@ class ImageFullViewHelper {
         return {
             left: this.getImgLeft(),
             top: this.getImgTop(),
-            height: this.getHeightPercent()
+            height: this.getHeightPercent(),
+            showMetadata: this.showMetadata
         };
     }
 
@@ -157,11 +158,11 @@ class ImageFullViewHelper {
         img.style.left = `${state.left}px`;
         img.style.top = `${state.top}px`;
         img.style.height = `${state.height}%`;
-        this.onWheel(null);
+        this.toggleMetadataVisibility(state.showMetadata);
     }
 
     onWheel(e) {
-        if (e && (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey)) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
             return;
         }
         this.detachImg();
@@ -179,12 +180,10 @@ class ImageFullViewHelper {
         else {
             img.style.imageRendering = '';
         }
-        let isZoomingIn = (origHeight <= 100 && newHeight > 100) && (newHeight > origHeight);
-        let isZoomingOut = (origHeight >= 100 && newHeight < 100) && (newHeight < origHeight);
-        if (isZoomingIn) {
+        if (newHeight > 100) {
             this.toggleMetadataVisibility(false);
         }
-        else if (isZoomingOut) {
+        else if (newHeight < 99) {
             this.toggleMetadataVisibility(true);
         }
         container.style.cursor = 'grab';
@@ -215,7 +214,6 @@ class ImageFullViewHelper {
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
         let wasAlreadyOpen = this.isOpen();
-        this.showMetadata = true;
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
@@ -251,7 +249,7 @@ class ImageFullViewHelper {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
-        this.toggleMetadataVisibility(this.showMetadata);
+        this.toggleMetadataVisibility(true);
         this.modalJq.modal('show');
         if (isVideo) {
             new VideoControls(this.getImg());
