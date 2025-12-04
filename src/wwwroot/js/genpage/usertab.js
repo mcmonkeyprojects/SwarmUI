@@ -234,6 +234,9 @@ class ParamConfigurationClass {
         if (doReplace) {
             gen_param_types = rawGenParamTypesFromServer;
         }
+        if (!edits) {
+            return;
+        }
         if (!('groups' in edits)) {
             edits.groups = {};
         }
@@ -242,9 +245,6 @@ class ParamConfigurationClass {
         }
         this.param_edits = edits;
         this.saved_edits = JSON.parse(JSON.stringify(edits));
-        if (!edits) {
-            return;
-        }
         for (let param of rawGenParamTypesFromServer) {
             let group = param.original_group || param.group;
             if (group) {
