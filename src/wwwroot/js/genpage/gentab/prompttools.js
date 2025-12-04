@@ -353,7 +353,7 @@ class PromptTabCompleteClass {
                     if (val.clean) {
                         clean_name = escapeHtml(val.clean);
                     }
-                    if (val.tag) {
+                    if ('tag' in val) {
                         className = `tag-text tag-type-${val.tag}`;
                         index = wordIndex;
                     }

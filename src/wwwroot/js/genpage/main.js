@@ -335,7 +335,7 @@ function loadUserData(callback) {
             for (let val of data.autocompletions) {
                 let split = val.split('\n');
                 let datalist = autoCompletionsList[val[0]];
-                let entry = { name: split[0], low: split[1].replaceAll(' ', '_').toLowerCase(), clean: split[1], raw: val, count: 0 };
+                let entry = { name: split[0], low: split[1].replaceAll(' ', '_').toLowerCase(), clean: split[1], raw: val, count: 0, tag: 0 };
                 if (split.length > 2) {
                     entry.tag = split[2];
                 }
