@@ -1414,6 +1414,7 @@ public partial class WorkflowGenerator
         public double DefaultCFG = 7;
         public bool HadSpecialCond = false;
         public int ContextID = T2IParamInput.SectionID_Video;
+        public Image VideoEndFrame = null;
 
         public void PrepModelAndCond(WorkflowGenerator g)
         {
@@ -1434,7 +1435,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 97;
-                if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
+                if (VideoEndFrame is not null)
                 {
                     throw new SwarmReadableErrorException("LTX-V end-frame is TODO");
                 }
@@ -1474,7 +1475,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 121;
-                if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
+                if (VideoEndFrame is not null)
                 {
                     throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
                 }
@@ -1601,9 +1602,9 @@ public partial class WorkflowGenerator
                     });
                     imageIn = [fromBatch, 0];
                 }
-                if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
+                if (VideoEndFrame is not null)
                 {
-                    string endFrame = g.CreateLoadImageNode(videoEndFrame, "${videoendframe}", false);
+                    string endFrame = g.CreateLoadImageNode(VideoEndFrame, "${videoendframe}", false);
                     JArray endFrameNode = [endFrame, 0];
                     string scaled = g.CreateNode("ImageScale", new JObject()
                     {
@@ -1692,9 +1693,9 @@ public partial class WorkflowGenerator
                     ["image"] = encodeIn,
                     ["crop"] = "center"
                 });
-                if (g.UserInput.TryGet(T2IParamTypes.VideoEndFrame, out Image videoEndFrame))
+                if (VideoEndFrame is not null)
                 {
-                    string endFrame = g.CreateLoadImageNode(videoEndFrame, "${videoendframe}", false);
+                    string endFrame = g.CreateLoadImageNode(VideoEndFrame, "${videoendframe}", false);
                     JArray endFrameNode = [endFrame, 0];
                     string scaled = g.CreateNode("ImageScale", new JObject()
                     {
