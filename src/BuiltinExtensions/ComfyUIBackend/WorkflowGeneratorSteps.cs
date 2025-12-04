@@ -1738,7 +1738,8 @@ public class WorkflowGeneratorSteps
                     AltLatent = altLatent,
                     BatchIndex = batchInd,
                     BatchLen = batchLen,
-                    ContextID = T2IParamInput.SectionID_Video
+                    ContextID = T2IParamInput.SectionID_Video,
+                    VideoEndFrame = g.UserInput.Get(T2IParamTypes.VideoEndFrame, null)
                 };
                 g.CreateImageToVideo(genInfo);
                 videoFps = genInfo.VideoFPS;
