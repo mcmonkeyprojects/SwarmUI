@@ -29,6 +29,7 @@ class ImageFullViewHelper {
         document.addEventListener('mousemove', this.onGlobalMouseMove.bind(this));
         this.fixButtonDelay = null;
         this.lastClosed = 0;
+        this.showMetadata = true;
     }
 
     getImgOrContainer() {
@@ -143,7 +144,8 @@ class ImageFullViewHelper {
         return {
             left: this.getImgLeft(),
             top: this.getImgTop(),
-            height: this.getHeightPercent()
+            height: this.getHeightPercent(),
+            showMetadata: this.showMetadata
         };
     }
 
@@ -156,6 +158,7 @@ class ImageFullViewHelper {
         img.style.left = `${state.left}px`;
         img.style.top = `${state.top}px`;
         img.style.height = `${state.height}%`;
+        this.toggleMetadataVisibility(state.showMetadata);
     }
 
     onWheel(e) {
@@ -177,6 +180,12 @@ class ImageFullViewHelper {
         else {
             img.style.imageRendering = '';
         }
+        if (newHeight > 101) {
+            this.toggleMetadataVisibility(false);
+        }
+        else if (newHeight < 101) {
+            this.toggleMetadataVisibility(true);
+        }
         container.style.cursor = 'grab';
         let [imgLeft, imgTop] = [this.getImgLeft(), this.getImgTop()];
         let [mouseX, mouseY] = [e.clientX - container.offsetLeft, e.clientY - container.offsetTop];
@@ -184,6 +193,20 @@ class ImageFullViewHelper {
         let [newX, newY] = [mouseX / newHeight - imgLeft, mouseY / newHeight - imgTop];
         this.moveImg((newX - origX) * newHeight, (newY - origY) * newHeight);
         container.style.height = `${newHeight}%`;
+    }
+
+    toggleMetadataVisibility(showMetadata) {
+        this.showMetadata = showMetadata;
+        let undertext = this.content.querySelector('.imageview_popup_modal_undertext');
+        let imagewrap = this.content.querySelector('.imageview_modal_imagewrap');
+        if (showMetadata) {
+            undertext.classList.remove('minimized-mode');
+            imagewrap.classList.remove('expanded-mode');
+        }
+        else {
+            undertext.classList.add('minimized-mode');
+            imagewrap.classList.add('expanded-mode');
+        }
     }
 
     showImage(src, metadata, batchId = null) {
@@ -209,7 +232,7 @@ class ImageFullViewHelper {
             </div>
             <div class="imageview_popup_modal_undertext">
                 <div class="image_fullview_extra_buttons"></div>
-                ${formatMetadata(metadata)}
+                <div class="image_fullview_metadata">${formatMetadata(metadata)}</div>
             </div>
         </div>`;
         let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
@@ -226,6 +249,7 @@ class ImageFullViewHelper {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
+        this.toggleMetadataVisibility(true);
         this.modalJq.modal('show');
         if (isVideo) {
             new VideoControls(this.getImg());
