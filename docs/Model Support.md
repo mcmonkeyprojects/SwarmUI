@@ -605,7 +605,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 ### Z-Image Turbo Seed Variety Trick
 
 - There's a trick to get better seed variety in Z-Image:
-    - Add an init image. Any image, doesn't matter.
+    - Add an init image (Any image, doesn't matter much - the broad color bias of the image may be used, but that's about it).
     - Set Steps higher than normal (say 8 instead of 4)
     - Set Init Image Creativity to a relatively high value (eg 0.7)
     - Set Advanced Sampling -> Sigma Shift to a very high value like `22`
