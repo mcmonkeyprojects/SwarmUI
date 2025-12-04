@@ -896,6 +896,15 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
             extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
             extraMetadata[`${type.id}_resolution`] = elem.dataset.resolution;
         }
+        else if (type.type == 'video') {
+            extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
+            extraMetadata[`${type.id}_resolution`] = elem.dataset.resolution;
+            extraMetadata[`${type.id}_duration`] = elem.dataset.duration;
+        }
+        else if (type.type == 'audio') {
+            extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
+            extraMetadata[`${type.id}_duration`] = elem.dataset.duration;
+        }
         if (type.id == 'prompt') {
             let container = findParentOfClass(elem, 'auto-input');
             let addedImageArea = container.querySelector('.added-image-area');
