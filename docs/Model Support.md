@@ -516,7 +516,9 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
         - Compatible with lightning loras.
         - If not using Lightning, probably raise your CFG a bit to ensure your prompt is stronger than the controlnet.
     - "Model Patch"
-        - Support pending
+        - Download here <https://huggingface.co/Comfy-Org/Qwen-Image-DiffSynth-ControlNets/tree/main/split_files/model_patches>
+        - Save to ControlNets folder
+        - Work the same as any other controlnets for basic usage, but advanced controls (eg start/stop steps) don't quite work
     - LoRA form
         - Download here <https://huggingface.co/Comfy-Org/Qwen-Image-DiffSynth-ControlNets/tree/main/split_files/loras>
         - Save to loras folder
@@ -524,6 +526,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
         - Upload a prompt image of controlnet input (depth or canny)
             - You can create this from an existing image by using the Controlnet Parameter group, select the preprocessor (Canny, or MiDAS Depth), and hit "Preview"
         - You cannot use the controlnet parameters directly for actual generation due to the weird lora-hack this uses
+- Note that Qwen Image controlnets do not work the best on the Qwen Image Edit model.
 
 ### Qwen Image Edit
 

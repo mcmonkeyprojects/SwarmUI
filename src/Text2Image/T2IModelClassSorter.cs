@@ -172,6 +172,7 @@ public class T2IModelClassSorter
                                             || (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.lora_A.default.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.net.2.lora_A.default.weight"))
                                             || (h.ContainsKey("diffusion_model.transformer_blocks.0.attn.add_k_proj.lora_A.weight") && h.ContainsKey("diffusion_model.transformer_blocks.0.img_mlp.net.2.lora_A.weight"))
                                             || (h.ContainsKey("lora_unet_transformer_blocks_0_attn_add_k_proj.lora_down.weight") && h.ContainsKey("lora_unet_transformer_blocks_0_img_mlp_net_0_proj.lora_down.weight"));
+        bool isQwenImageControlnet(JObject h) => h.ContainsKey("controlnet_blocks.0.input_proj.weight") && h.ContainsKey("controlnet_blocks.0.x_rms.weight") && h.ContainsKey("controlnet_blocks.59.input_proj.bias") && h.ContainsKey("img_in.weight");
         bool isControlnetX(JObject h) => h.ContainsKey("controlnet_x_embedder.weight");
         bool isHyImg(JObject h) => h.ContainsKey("byt5_in.fc1.bias") && h.ContainsKey("double_blocks.0.img_attn_k_norm.weight");
         bool isHyVid15(JObject h) => h.ContainsKey("vision_in.proj.0.bias");
@@ -531,6 +532,35 @@ public class T2IModelClassSorter
         {
             return isZImageControlNetDiffPatch(h);
         }});
+        // ====================== Qwen Image ======================
+        Register(new() { ID = "qwen-image", CompatClass = CompatQwenImage, Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h);
+        }});
+        Register(new() { ID = "qwen-image-edit", CompatClass = CompatQwenImage, Name = "Qwen Image Edit", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
+        Register(new() { ID = "qwen-image-edit-plus", CompatClass = CompatQwenImage, Name = "Qwen Image Edit Plus", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
+        Register(new() { ID = "qwen-image/controlnet", CompatClass = CompatQwenImage, Name = "Qwen Image ControlNet", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return isQwenImage(h) && isControlnetX(h) &&!isFluxControlnet(h);
+        }});
+        Register(new() { ID = "qwen-image/control-diffpatch", CompatClass = CompatQwenImage, Name = "Qwen Image ControlNet (DiffPatch)", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return isQwenImageControlnet(h);
+        }});
+        Register(new() { ID = "qwen-image/vae", CompatClass = CompatQwenImage, Name = "Qwen Image VAE", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return false; // TODO?
+        }});
+        Register(new() { ID = "qwen-image/lora", CompatClass = CompatQwenImage, Name = "Qwen Image LoRA", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
+        {
+            return isQwenImageLora(h);
+        }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -579,30 +609,6 @@ public class T2IModelClassSorter
         Register(new() { ID = "omnigen-2", CompatClass = CompatOmniGen2, Name = "OmniGen 2", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isOmniGen(h);
-        }});
-        Register(new() { ID = "qwen-image", CompatClass = CompatQwenImage, Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
-        {
-            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h);
-        }});
-        Register(new() { ID = "qwen-image-edit", CompatClass = CompatQwenImage, Name = "Qwen Image Edit", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
-        {
-            return false;
-        }});
-        Register(new() { ID = "qwen-image-edit-plus", CompatClass = CompatQwenImage, Name = "Qwen Image Edit Plus", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
-        {
-            return false;
-        }});
-        Register(new() { ID = "qwen-image/controlnet", CompatClass = CompatQwenImage, Name = "Qwen Image Controlnet", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
-        {
-            return isQwenImage(h) && isControlnetX(h) &&!isFluxControlnet(h);
-        }});
-        Register(new() { ID = "qwen-image/vae", CompatClass = CompatQwenImage, Name = "Qwen Image VAE", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
-        {
-            return false; // TODO?
-        }});
-        Register(new() { ID = "qwen-image/lora", CompatClass = CompatQwenImage, Name = "Qwen Image LoRA", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
-        {
-            return isQwenImageLora(h);
         }});
         Register(new() { ID = "auraflow-v1", CompatClass = CompatAuraFlow, Name = "AuraFlow", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
