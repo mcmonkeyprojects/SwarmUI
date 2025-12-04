@@ -157,10 +157,11 @@ class ImageFullViewHelper {
         img.style.left = `${state.left}px`;
         img.style.top = `${state.top}px`;
         img.style.height = `${state.height}%`;
+        this.onWheel(null);
     }
 
     onWheel(e) {
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
+        if (e && (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey)) {
             return;
         }
         this.detachImg();
@@ -178,15 +179,13 @@ class ImageFullViewHelper {
         else {
             img.style.imageRendering = '';
         }
-        if (Boolean(getUserSetting('ui.hidemetadataonzoomfullscreen', true))) {
-            let isZoomingIn = (origHeight <= 100 && newHeight > 100) && (newHeight > origHeight);
-            let isZoomingOut = (origHeight >= 100 && newHeight < 100) && (newHeight < origHeight);
-            if (isZoomingIn) {
-                this.toggleMetadataVisibility(false);
-            }
-            else if (isZoomingOut) {
-                this.toggleMetadataVisibility(true);
-            }
+        let isZoomingIn = (origHeight <= 100 && newHeight > 100) && (newHeight > origHeight);
+        let isZoomingOut = (origHeight >= 100 && newHeight < 100) && (newHeight < origHeight);
+        if (isZoomingIn) {
+            this.toggleMetadataVisibility(false);
+        }
+        else if (isZoomingOut) {
+            this.toggleMetadataVisibility(true);
         }
         container.style.cursor = 'grab';
         let [imgLeft, imgTop] = [this.getImgLeft(), this.getImgTop()];
@@ -201,18 +200,13 @@ class ImageFullViewHelper {
         this.showMetadata = showMetadata;
         let undertext = this.content.querySelector('.imageview_popup_modal_undertext');
         let imagewrap = this.content.querySelector('.imageview_modal_imagewrap');
-        let toggleBtn = this.content.querySelector('.metadata-toggle-btn');
         if (showMetadata) {
             undertext.classList.remove('minimized-mode');
             imagewrap.classList.remove('expanded-mode');
-            toggleBtn.innerText = '⇓';
-            toggleBtn.title = 'Minimize Metadata';
         }
         else {
             undertext.classList.add('minimized-mode');
             imagewrap.classList.add('expanded-mode');
-            toggleBtn.innerText = '⇑';
-            toggleBtn.title = 'Expand Metadata';
         }
     }
 
@@ -221,6 +215,7 @@ class ImageFullViewHelper {
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
         let wasAlreadyOpen = this.isOpen();
+        this.showMetadata = true;
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
@@ -256,7 +251,6 @@ class ImageFullViewHelper {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
-        quickAppendButton(subDiv, '⇓', () => this.toggleMetadataVisibility(!this.showMetadata), ' metadata-toggle-btn', 'Minimize Metadata');
         this.toggleMetadataVisibility(this.showMetadata);
         this.modalJq.modal('show');
         if (isVideo) {
