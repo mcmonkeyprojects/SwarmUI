@@ -385,7 +385,7 @@ public static class T2IAPI
                 }
             }
             int numCalls = 0;
-            tasks.Add(Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes,
+            tasks.Add(Task.Run(() => T2IEngine.CreateImageTask(thisParams, $"{imageIndex}", claim, output, setError, isWS,
                 (image, metadata) =>
                 {
                     int actualIndex = imageIndex + numCalls;

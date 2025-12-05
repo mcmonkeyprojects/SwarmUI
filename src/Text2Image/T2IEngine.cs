@@ -161,9 +161,9 @@ namespace SwarmUI.Text2Image
         }
 
         /// <summary>Internal handler route to create an image based on a user request.</summary>
-        public static async Task CreateImageTask(T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, float backendTimeoutMin, Action<ImageOutput, string> saveImages)
+        public static async Task CreateImageTask(T2IParamInput user_input, string batchId, Session.GenClaim claim, Action<JObject> output, Action<string> setError, bool isWS, Action<ImageOutput, string> saveImages)
         {
-            await CreateImageTask(user_input, batchId, claim, output, setError, isWS, backendTimeoutMin, saveImages, true);
+            await CreateImageTask(user_input, batchId, claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, saveImages, true);
         }
 
         /// <summary>Internal handler route to create an image based on a user request.</summary>
