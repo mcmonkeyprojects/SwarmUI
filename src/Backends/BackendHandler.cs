@@ -860,6 +860,9 @@ public class BackendHandler
     /// <summary>Helper just for debug IDs for backend requests coming in.</summary>
     public static long BackendRequestsCounter = 0;
 
+    /// <summary>List of functions that check a backend request, return true if TryFind may run, or false if this request must wait.</summary>
+    public static List<Func<T2IBackendRequest, bool>> CanTryFindNow = [];
+
     /// <summary>Internal tracker of data related to a pending T2I Backend request.</summary>
     public class T2IBackendRequest
     {
@@ -923,6 +926,13 @@ public class BackendHandler
             if (WaitingOnScalingAttempt is not null && !WaitingOnScalingAttempt.IsCompleted)
             {
                 return;
+            }
+            foreach (Func<T2IBackendRequest, bool> func in CanTryFindNow)
+            {
+                if (!func(this))
+                {
+                    return;
+                }
             }
             List<T2IBackendData> currentBackends = [.. Handler.T2IBackends.Values];
             List<T2IBackendData> possible = [.. currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.MaxUsages > 0 && b.Backend.Status == BackendStatus.RUNNING)];
