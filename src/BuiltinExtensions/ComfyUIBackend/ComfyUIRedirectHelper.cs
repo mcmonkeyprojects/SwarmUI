@@ -106,8 +106,9 @@ public class ComfyUIRedirectHelper
         {
             doMultiStr = "false";
         }
+        bool wantsMulti = doMultiStr == "true" || doMultiStr == "queue";
         bool shouldReserve = doMultiStr == "reserve";
-        if (!shouldReserve && (doMultiStr != "true"))
+        if (!shouldReserve && !wantsMulti)
         {
             allBackends = [new(webClient, apiAddress, webAddress, backend)];
         }
@@ -126,7 +127,7 @@ public class ComfyUIRedirectHelper
             Logs.Debug($"Comfy backend direct websocket request to {path}, have {allBackends.Count} backends available");
             WebSocket socket = await context.WebSockets.AcceptWebSocketAsync();
             List<Task> tasks = [];
-            ComfyUser user = new() { Socket = socket, SwarmUser = swarmUser, WantsAllBackends = doMultiStr == "true", WantsQueuing = doMultiStr == "queue", WantsReserve = doMultiStr == "reserve" };
+            ComfyUser user = new() { Socket = socket, SwarmUser = swarmUser, WantsAllBackends = wantsMulti, WantsQueuing = doMultiStr == "queue", WantsReserve = doMultiStr == "reserve" };
             user.RunSendTask();
             user.RunClientReceiveTask();
             NewUserEvent?.Invoke(user);
