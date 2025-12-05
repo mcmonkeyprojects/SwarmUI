@@ -283,6 +283,23 @@ public class User
     /// <summary>Incrementing counter of request IDs.</summary>
     public long RequestIdCounter = 1000;
 
+    /// <summary>Cache for a generic non-persistent internal session.</summary>
+    public Session GenericSession;
+
+    /// <summary>Get a generic internal use session instance for this user.</summary>
+    public Session GetGenericSession()
+    {
+        if (GenericSession is not null)
+        {
+            return GenericSession;
+        }
+        lock (UserLock)
+        {
+            GenericSession ??= SessionHandlerSource.CreateSession("generic_internal", UserID, false);
+            return GenericSession;
+        }
+    }
+
     /// <summary>Gets the next request ID for this user, incrementing the counter.</summary>
     public long GetNextRequestId()
     {

@@ -313,7 +313,7 @@ public class SessionHandler
         }
     }
 
-    public Session CreateSession(string source, string userId = null)
+    public Session CreateSession(string source, string userId = null, bool persist = true)
     {
         if (HasShutdown)
         {
@@ -337,7 +337,7 @@ public class SessionHandler
             if (Sessions.TryAdd(sess.ID, sess))
             {
                 sess.User.CurrentSessions[sess.ID] = sess;
-                if (!Program.NoPersist)
+                if (!Program.NoPersist && persist)
                 {
                     lock (DBLock)
                     {
@@ -443,7 +443,7 @@ public class SessionHandler
                 if (Sessions.TryAdd(session.ID, session))
                 {
                     session.User.CurrentSessions[session.ID] = session;
-                    if (!Program.NoPersist)
+                    if (!Program.NoPersist && session.Persist)
                     {
                         SessionDatabase.Upsert(session.MakeDBEntry());
                     }
