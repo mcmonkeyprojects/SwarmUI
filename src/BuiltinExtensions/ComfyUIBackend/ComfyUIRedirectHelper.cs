@@ -19,102 +19,6 @@ namespace SwarmUI.Builtin_ComfyUIBackend;
 /// <summary>Helper class for network redirections for the '/ComfyBackendDirect' url path.</summary>
 public class ComfyUIRedirectHelper
 {
-    // TODO: Should have an identity attached in a cookie so we can backtrack to the original user.
-    /// <summary>A known ComfyUI page viewer. Uniquely identified by temporary SIDs, not actual underlying user.</summary>
-    public class ComfyUser
-    {
-        public ConcurrentDictionary<ComfyClientData, ComfyClientData> Clients = new();
-
-        public string MasterSID;
-
-        public int TotalQueue => Clients.Values.Sum(c => c.QueueRemaining);
-
-        public SemaphoreSlim Lock = new(1, 1);
-
-        public volatile JObject LastExecuting, LastProgress;
-
-        public int BackendOffset = 0;
-
-        public ComfyClientData Reserved;
-
-        /// <summary>The user data socket.</summary>
-        public WebSocket Socket;
-
-        public void Unreserve()
-        {
-            if (Reserved is not null)
-            {
-                Interlocked.Decrement(ref Reserved.Backend.Reservations);
-                Reserved = null;
-            }
-        }
-
-        /// <summary>Fully close this user instance and all connections.</summary>
-        public async Task Close()
-        {
-            Users.TryRemove(MasterSID, out _);
-            Unreserve();
-            Socket.Dispose();
-            await Utilities.RunCheckedTask(async () => await Task.WhenAll(Clients.Values.Select(async c =>
-            {
-                if (!c.Socket.CloseStatus.HasValue)
-                {
-                    await c.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, Program.GlobalProgramCancel);
-                }
-                c.Socket.Dispose();
-            })));
-        }
-    }
-
-    /// <summary>Data about a specific connection from a ComfyUI user to a backend. This class is focused on the backend side, for the user side see <see cref="ComfyUser"/>.</summary>
-    public class ComfyClientData
-    {
-        public ClientWebSocket Socket;
-
-        public string SID;
-
-        public volatile int QueueRemaining;
-
-        public string LastNode;
-
-        public volatile JObject LastExecuting, LastProgress;
-
-        public string Address;
-
-        public AbstractT2IBackend Backend;
-
-        public static HashSet<string> ModelNameInputNames = ["ckpt_name", "vae_name", "lora_name", "clip_name", "control_net_name", "style_model_name", "model_path", "lora_names"];
-
-        /// <summary>Auto-fixer for some workflow features, notably Windows vs Linux instances need different file path formats (backslash vs forward slash).</summary>
-        public void FixUpPrompt(JObject prompt)
-        {
-            bool isBackSlash = Backend.SupportedFeatures.Contains("folderbackslash");
-            foreach (JProperty node in prompt.Properties())
-            {
-                JObject inputs = node.Value["inputs"] as JObject;
-                if (inputs is not null)
-                {
-                    foreach (JProperty input in inputs.Properties())
-                    {
-                        if (ModelNameInputNames.Contains(input.Name) && input.Value.Type == JTokenType.String)
-                        {
-                            string val = input.Value.ToString();
-                            if (isBackSlash)
-                            {
-                                val = val.Replace("/", "\\");
-                            }
-                            else
-                            {
-                                val = val.Replace("\\", "/");
-                            }
-                            input.Value = val;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /// <summary>Map of all currently connected users.</summary>
     public static ConcurrentDictionary<string, ComfyUser> Users = new();
 
@@ -216,7 +120,9 @@ public class ComfyUIRedirectHelper
             Logs.Debug($"Comfy backend direct websocket request to {path}, have {allBackends.Count} backends available");
             WebSocket socket = await context.WebSockets.AcceptWebSocketAsync();
             List<Task> tasks = [];
-            ComfyUser user = new() { Socket = socket };
+            ComfyUser user = new() { Socket = socket, SwarmUser = swarmUser, WantsAllBackends = doMultiStr == "true" };
+            user.RunSendTask();
+            user.RunClientReceiveTask();
             // Order all evens then all odds - eg 0, 2, 4, 6, 1, 3, 5, 7 (to reduce chance of overlap when sharing)
             int[] vals = [.. Enumerable.Range(0, allBackends.Count)];
             vals = [.. vals.Where(v => v % 2 == 0), .. vals.Where(v => v % 2 == 1)];
@@ -331,15 +237,15 @@ public class ComfyUIRedirectHelper
                                         if (client.LastExecuting is not null && (client.LastExecuting != user.LastExecuting || client.LastProgress != user.LastProgress))
                                         {
                                             user.LastExecuting = client.LastExecuting;
-                                            await socket.SendAsync(StringConversionHelper.UTF8Encoding.GetBytes(client.LastExecuting.ToString()), WebSocketMessageType.Text, true, Program.GlobalProgramCancel);
+                                            user.NewMessageToClient(StringConversionHelper.UTF8Encoding.GetBytes(client.LastExecuting.ToString()), WebSocketMessageType.Text, true);
                                         }
                                         if (client.LastProgress is not null && (client.LastExecuting != user.LastExecuting || client.LastProgress != user.LastProgress))
                                         {
                                             user.LastProgress = client.LastProgress;
-                                            await socket.SendAsync(StringConversionHelper.UTF8Encoding.GetBytes(client.LastProgress.ToString()), WebSocketMessageType.Text, true, Program.GlobalProgramCancel);
+                                            user.NewMessageToClient(StringConversionHelper.UTF8Encoding.GetBytes(client.LastProgress.ToString()), WebSocketMessageType.Text, true);
                                         }
                                     }
-                                    await socket.SendAsync(toSend, received.MessageType, received.EndOfMessage, Program.GlobalProgramCancel);
+                                    user.NewMessageToClient(toSend, received.MessageType, received.EndOfMessage);
                                 }
                                 finally
                                 {
@@ -383,42 +289,6 @@ public class ComfyUIRedirectHelper
                     }
                 }));
             }
-            tasks.Add(Task.Run(async () =>
-            {
-                try
-                {
-                    byte[] recvBuf = new byte[20 * 1024 * 1024];
-                    while (true)
-                    {
-                        // TODO: Should this input be allowed to remain open forever? Need a timeout, but the ComfyUI websocket doesn't seem to keepalive properly.
-                        WebSocketReceiveResult received = await socket.ReceiveAsync(recvBuf, Program.GlobalProgramCancel);
-                        foreach (ComfyClientData client in user.Clients.Values)
-                        {
-                            if (received.MessageType != WebSocketMessageType.Close)
-                            {
-                                await client.Socket.SendAsync(recvBuf.AsMemory(0, received.Count), received.MessageType, received.EndOfMessage, Program.GlobalProgramCancel);
-                            }
-                            if (socket.CloseStatus.HasValue)
-                            {
-                                await client.Socket.CloseAsync(socket.CloseStatus.Value, socket.CloseStatusDescription, Program.GlobalProgramCancel);
-                                return;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (ex is OperationCanceledException)
-                    {
-                        return;
-                    }
-                    Logs.Debug($"ComfyUI redirection failed (in-socket, user {swarmUser.UserID} with {user.Clients.Count} active sockets): {ex.ReadableString()}");
-                }
-                finally
-                {
-                    await user.Close();
-                }
-            }));
             await Task.WhenAll(tasks);
             return;
         }
