@@ -68,6 +68,9 @@ namespace SwarmUI.Text2Image
             public Action RefuseImage;
         }
 
+        /// <summary>List of functions that take a pair of userinput and backend, and returns true if they can fit together, or false if the pair is not valid (add to user_input.RefusalReasons if so).</summary>
+        public static List<Func<T2IParamInput, BackendHandler.T2IBackendData, bool>> AltBackendValidators = [];
+
         /// <summary>Helper to create a function to match a backend to a user input request.</summary>
         public static Func<BackendHandler.T2IBackendData, bool> BackendMatcherFor(T2IParamInput user_input)
         {
@@ -156,7 +159,18 @@ namespace SwarmUI.Text2Image
                         }
                     }
                 }
-                return backend.Backend.IsValidForThisBackend(user_input);
+                if (!backend.Backend.IsValidForThisBackend(user_input))
+                {
+                    return false;
+                }
+                foreach (Func<T2IParamInput, BackendHandler.T2IBackendData, bool> validator in AltBackendValidators)
+                {
+                    if (!validator(user_input, backend))
+                    {
+                        return false;
+                    }
+                }
+                return true;
             };
         }
 
