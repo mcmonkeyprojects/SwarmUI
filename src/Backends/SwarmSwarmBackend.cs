@@ -457,6 +457,11 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         {
             return false;
         }
+        if (input is not null && input.Get(T2IParamTypes.NoLoadModels, false))
+        {
+            CurrentModelName = model.Name;
+            return true;
+        }
         bool success = false;
         await RunWithSession(async () =>
         {

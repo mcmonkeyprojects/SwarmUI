@@ -1016,6 +1016,11 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         input.Set(T2IParamTypes.Seed, 1);
         if (upstreamInput is not null)
         {
+            if (upstreamInput.Get(T2IParamTypes.NoLoadModels, false))
+            {
+                CurrentModelName = model.Name;
+                return true;
+            }
             void copyParam<T>(T2IRegisteredParam<T> param)
             {
                 if (upstreamInput.TryGet(param, out T val))
