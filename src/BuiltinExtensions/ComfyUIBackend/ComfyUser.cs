@@ -12,6 +12,7 @@ using SwarmUI.Utils;
 using SwarmUI.WebAPI;
 using SwarmUI.Accounts;
 using SwarmUI.Builtin_ComfyUIBackend;
+using SwarmUI.Text2Image;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -37,6 +38,12 @@ public class ComfyUser
 
     /// <summary>If true, this user wants an open connection to all comfy backends.</summary>
     public bool WantsAllBackends = false;
+
+    /// <summary>If true, this user wants gen requests to hit the Swarm queue.</summary>
+    public bool WantsQueuing = false;
+
+    /// <summary>If true, this user wants an exclusive backend reservation.</summary>
+    public bool WantsReserve = false;
 
     /// <summary>The user data socket.</summary>
     public WebSocket Socket;
@@ -98,7 +105,14 @@ public class ComfyUser
                 {
                     // TODO: Should this input be allowed to remain open forever? Need a timeout, but the ComfyUI websocket doesn't seem to keepalive properly.
                     WebSocketReceiveResult received = await Socket.ReceiveAsync(recvBuf, Program.GlobalProgramCancel);
-                    NewMessageToServers(recvBuf.AsMemory(0, received.Count), received.MessageType, received.EndOfMessage);
+                    if (received.CloseStatus.HasValue || ClientIsClosed.IsCancellationRequested || Program.GlobalProgramCancel.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    if (received.MessageType == WebSocketMessageType.Binary || received.MessageType == WebSocketMessageType.Text)
+                    {
+                        NewMessageToServers(recvBuf.AsMemory(0, received.Count), received.MessageType, received.EndOfMessage);
+                    }
                 }
             }
             catch (Exception ex)
@@ -116,6 +130,98 @@ public class ComfyUser
         });
     }
 
+    /// <summary>Send a prompt to the general swarm queue.</summary>
+    public Task SendPromptQueue(JObject prompt)
+    {
+        T2IParamInput input = new(SwarmUser.GetGenericSession());
+        input.Set(ComfyUIBackendExtension.FakeRawInputType, prompt.ToString(Newtonsoft.Json.Formatting.None));
+        input.Set(T2IParamTypes.NoLoadModels, true);
+        input.Set(T2IParamTypes.DoNotSave, true);
+        input.ReceiveRawBackendData = (type, data) =>
+        {
+            if (type != "comfy_websocket")
+            {
+                return;
+            }
+            // TODO: This is hacky message type detection. Maybe backend should actually pay attention to this properly?
+            NewMessageToClient(data.AsMemory(0, data.Length), Encoding.ASCII.GetString(data, 0, 8) == "{\"type\":" ? WebSocketMessageType.Text : WebSocketMessageType.Binary, true);
+        };
+        using Session.GenClaim claim = input.SourceSession.Claim(gens: 1);
+        // TODO: Handle errors?
+        return T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { });
+    }
+
+    /// <summary>Helper to send a comfy prompt to the backend, the regular (direct) way.</summary>
+    public async Task<ComfyClientData> SendPromptRegular(JObject prompt, Action<string> giveError)
+    {
+        int preferredBackendIndex = prompt["swarm_prefer"]?.Value<int>() ?? -1;
+        ComfyClientData[] available = Clients.Values.Where(c => c.Backend.MaxUsages > 0).ToArray().Shift(BackendOffset);
+        if (available.Length == 0)
+        {
+            if (await Program.Backends.TryToScaleANewBackend(true))
+            {
+                Logs.Info("Comfy backend direct prompt request failed due to no available backends for user, causing new backends to load...");
+                // TODO: Wait for the backend then re-prompt.
+                // As a placeholder, we kill the websocket so the user knows they'll need to retry.
+                giveError("[SwarmUI] No backend available, but auto-scaling was triggered, and a new backend is loading. Please wait a moment, then retry.");
+            }
+            else
+            {
+                giveError("[SwarmUI] No functional comfy backend available to run this request.");
+            }
+            await Socket.CloseAsync(WebSocketCloseStatus.InternalServerError, null, Program.GlobalProgramCancel);
+            await Close();
+            return null;
+        }
+        ComfyClientData client = available.MinBy(c => c.QueueRemaining);
+        if (available.All(c => c.QueueRemaining > 0))
+        {
+            _ = Utilities.RunCheckedTask(async () => await Program.Backends.TryToScaleANewBackend(true));
+        }
+        if (preferredBackendIndex >= 0)
+        {
+            client = available[preferredBackendIndex % available.Length];
+        }
+        else if (available.Length > 1)
+        {
+            string[] classTypes = [.. prompt.Properties().Select(p => p.Value is JObject jobj ? (string)jobj["class_type"] : null).Where(ct => ct is not null)];
+            ComfyClientData[] validClients = [.. available.Where(c =>
+            {
+                HashSet<string> nodes = c.Backend is SwarmSwarmBackend swarmBack ? ((HashSet<string>)swarmBack.ExtensionData.GetValueOrDefault("ComfyNodeTypes", new HashSet<string>())) : (c.Backend as ComfyUIAPIAbstractBackend).NodeTypes;
+                return classTypes.All(ct => nodes.Contains(ct));
+            })];
+            if (validClients.Length == 0)
+            {
+                Logs.Debug("It looks like no available backends support all relevant comfy node class types?!");
+                Logs.Verbose($"Expected class types: [{classTypes.JoinString(", ")}]");
+            }
+            else if (validClients.Length != available.Length)
+            {
+                Logs.Debug($"Required {classTypes.Length} class types, and {validClients.Length} out of {available.Length} backends support them.");
+                client = validClients.MinBy(c => c.QueueRemaining);
+            }
+        }
+        if (WantsReserve)
+        {
+            if (Reserved is not null)
+            {
+                client = Reserved;
+            }
+            else
+            {
+                Reserved = available.FirstOrDefault(c => c.Backend.Reservations == 0) ?? available.FirstOrDefault();
+                if (Reserved is not null)
+                {
+                    client = Reserved;
+                    Interlocked.Increment(ref client.Backend.Reservations);
+                    client.Backend.BackendData.UpdateLastReleaseTime();
+                }
+            }
+        }
+        return client;
+    }
+
+    /// <summary>If the user reserved a private backend, release it.</summary>
     public void Unreserve()
     {
         if (Reserved is not null)

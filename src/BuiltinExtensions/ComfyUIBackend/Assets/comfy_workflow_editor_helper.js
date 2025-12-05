@@ -1236,6 +1236,9 @@ function comfyMultiGPUSelectChanged() {
     else if (multiGpuSelector.value == 'reserve') {
         setCookie('comfy_domulti', 'reserve', 365);
     }
+    else if (multiGpuSelector.value == 'queue') {
+        setCookie('comfy_domulti', 'queue', 365);
+    }
     else if (multiGpuSelector.value == 'none') {
         deleteCookie('comfy_domulti');
     }

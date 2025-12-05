@@ -31,6 +31,9 @@ public class ComfyUIRedirectHelper
     /// <summary>Backup for <see cref="ObjectInfoReadCacher"/>.</summary>
     public static volatile JObject LastObjectInfo;
 
+    /// <summary>Event-action fired when a new comfy user is connected.</summary>
+    public static Action<ComfyUser> NewUserEvent;
+
     /// <summary>Cache handler to prevent "object_info" reads from spamming and killing the comfy backend (which handles them sequentially, and rather slowly per call).</summary>
     public static SingleValueExpiringCacheAsync<JObject> ObjectInfoReadCacher = new(() =>
     {
@@ -99,9 +102,12 @@ public class ComfyUIRedirectHelper
             await context.Response.CompleteAsync();
             return;
         }
-        bool hasMulti = context.Request.Cookies.TryGetValue("comfy_domulti", out string doMultiStr);
-        bool shouldReserve = hasMulti && doMultiStr == "reserve";
-        if (!shouldReserve && (!hasMulti || doMultiStr != "true"))
+        if (!context.Request.Cookies.TryGetValue("comfy_domulti", out string doMultiStr))
+        {
+            doMultiStr = "false";
+        }
+        bool shouldReserve = doMultiStr == "reserve";
+        if (!shouldReserve && (doMultiStr != "true"))
         {
             allBackends = [new(webClient, apiAddress, webAddress, backend)];
         }
@@ -120,9 +126,10 @@ public class ComfyUIRedirectHelper
             Logs.Debug($"Comfy backend direct websocket request to {path}, have {allBackends.Count} backends available");
             WebSocket socket = await context.WebSockets.AcceptWebSocketAsync();
             List<Task> tasks = [];
-            ComfyUser user = new() { Socket = socket, SwarmUser = swarmUser, WantsAllBackends = doMultiStr == "true" };
+            ComfyUser user = new() { Socket = socket, SwarmUser = swarmUser, WantsAllBackends = doMultiStr == "true", WantsQueuing = doMultiStr == "queue", WantsReserve = doMultiStr == "reserve" };
             user.RunSendTask();
             user.RunClientReceiveTask();
+            NewUserEvent?.Invoke(user);
             // Order all evens then all odds - eg 0, 2, 4, 6, 1, 3, 5, 7 (to reduce chance of overlap when sharing)
             int[] vals = [.. Enumerable.Range(0, allBackends.Count)];
             vals = [.. vals.Where(v => v % 2 == 0), .. vals.Where(v => v % 2 == 1)];
@@ -289,7 +296,12 @@ public class ComfyUIRedirectHelper
                     }
                 }));
             }
-            await Task.WhenAll(tasks);
+            tasks.Add(Task.WhenAny(Task.Delay(Timeout.Infinite, Program.GlobalProgramCancel), Task.Delay(Timeout.Infinite, user.ClientIsClosed.Token)));
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            catch (OperationCanceledException) { }
             return;
         }
         HttpResponseMessage response = null;
@@ -330,83 +342,28 @@ public class ComfyUIRedirectHelper
                             try
                             {
                                 JObject prompt = parsed["prompt"] as JObject;
-                                int preferredBackendIndex = prompt["swarm_prefer"]?.Value<int>() ?? -1;
                                 prompt.Remove("swarm_prefer");
-                                ComfyClientData[] available = user.Clients.Values.Where(c => c.Backend.MaxUsages > 0).ToArray().Shift(user.BackendOffset);
-                                if (available.Length == 0)
+                                if (user.WantsQueuing)
                                 {
-                                    if (await Program.Backends.TryToScaleANewBackend(true))
-                                    {
-                                        Logs.Info("Comfy backend direct prompt request failed due to no available backends for user, causing new backends to load...");
-                                        // TODO: Wait for the backend then re-prompt.
-                                        // As a placeholder, we kill the websocket so the user knows they'll need to retry.
-                                        givePostError("[SwarmUI] No backend available, but auto-scaling was triggered, and a new backend is loading. Please wait a moment, then retry.");
-                                    }
-                                    else
-                                    {
-                                        givePostError("[SwarmUI] No functional comfy backend available to run this request.");
-                                    }
-                                    await user.Socket.CloseAsync(WebSocketCloseStatus.InternalServerError, null, Program.GlobalProgramCancel);
-                                    await user.Close();
-                                    return;
-                                }
-                                ComfyClientData client = available.MinBy(c => c.QueueRemaining);
-                                if (available.All(c => c.QueueRemaining > 0))
-                                {
-                                    _ = Utilities.RunCheckedTask(async () => await Program.Backends.TryToScaleANewBackend(true));
-                                }
-                                if (preferredBackendIndex >= 0)
-                                {
-                                    client = available[preferredBackendIndex % available.Length];
-                                }
-                                else if (available.Length > 1)
-                                {
-                                    string[] classTypes = [.. prompt.Properties().Select(p => p.Value is JObject jobj ? (string)jobj["class_type"] : null).Where(ct => ct is not null)];
-                                    ComfyClientData[] validClients = [.. available.Where(c =>
-                                    {
-                                        HashSet<string> nodes = c.Backend is SwarmSwarmBackend swarmBack ? ((HashSet<string>)swarmBack.ExtensionData.GetValueOrDefault("ComfyNodeTypes", new HashSet<string>())) : (c.Backend as ComfyUIAPIAbstractBackend).NodeTypes;
-                                        return classTypes.All(ct => nodes.Contains(ct));
-                                    })];
-                                    if (validClients.Length == 0)
-                                    {
-                                        Logs.Debug("It looks like no available backends support all relevant comfy node class types?!");
-                                        Logs.Verbose($"Expected class types: [{classTypes.JoinString(", ")}]");
-                                    }
-                                    else if (validClients.Length != available.Length)
-                                    {
-                                        Logs.Debug($"Required {classTypes.Length} class types, and {validClients.Length} out of {available.Length} backends support them.");
-                                        client = validClients.MinBy(c => c.QueueRemaining);
-                                    }
-                                }
-                                if (shouldReserve)
-                                {
-                                    if (user.Reserved is not null)
-                                    {
-                                        client = user.Reserved;
-                                    }
-                                    else
-                                    {
-                                        user.Reserved = available.FirstOrDefault(c => c.Backend.Reservations == 0) ?? available.FirstOrDefault();
-                                        if (user.Reserved is not null)
-                                        {
-                                            client = user.Reserved;
-                                            Interlocked.Increment(ref client.Backend.Reservations);
-                                            client.Backend.BackendData.UpdateLastReleaseTime();
-                                        }
-                                    }
-                                }
-                                if (client?.SID is not null)
-                                {
-                                    client.QueueRemaining++;
-                                    webAddress = client.Address;
-                                    backend = client.Backend;
-                                    parsed["client_id"] = client.SID;
-                                    client.FixUpPrompt(parsed["prompt"] as JObject);
-                                    string userText = $" (from user {swarmUser.UserID})";
-                                    swarmUser.UpdateLastUsedTime();
-                                    Logs.Info($"Sent Comfy backend direct prompt requested to backend #{backend.BackendData.ID}{userText}");
-                                    backend.BackendData.UpdateLastReleaseTime();
+                                    _ = user.SendPromptQueue(prompt);
                                     redirected = true;
+                                    Logs.Info($"Sent Comfy backend direct prompt requested to general queue (from user {swarmUser.UserID})");
+                                }
+                                else
+                                {
+                                    ComfyClientData client = await user.SendPromptRegular(prompt, givePostError);
+                                    if (client?.SID is not null)
+                                    {
+                                        client.QueueRemaining++;
+                                        webAddress = client.Address;
+                                        backend = client.Backend;
+                                        parsed["client_id"] = client.SID;
+                                        client.FixUpPrompt(prompt);
+                                        swarmUser.UpdateLastUsedTime();
+                                        Logs.Info($"Sent Comfy backend direct prompt requested to backend #{backend.BackendData.ID} (from user {swarmUser.UserID})");
+                                        backend.BackendData.UpdateLastReleaseTime();
+                                        redirected = true;
+                                    }
                                 }
                             }
                             finally
