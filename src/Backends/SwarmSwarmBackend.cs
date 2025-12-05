@@ -521,6 +521,10 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         {
             req[T2IParamTypes.ExactBackendID.Type.ID] = LinkedRemoteBackendID;
         }
+        if (user_input.ReceiveRawBackendData is not null)
+        {
+            req[T2IParamTypes.ForwardRawBackendData.Type.ID] = true;
+        }
         return req;
     }
 
@@ -603,6 +607,13 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     {
                         Logs.Verbose($"[{HandlerTypeData.Name}] Got image from websocket");
                         takeOutput(ImageFile.FromDataString(val.ToString()));
+                    }
+                    else if (response.TryGetValue("raw_backend_data", out JToken rawData))
+                    {
+                        string type = rawData["type"].ToString();
+                        string datab64 = rawData["data"].ToString();
+                        byte[] data = Convert.FromBase64String(datab64);
+                        user_input.ReceiveRawBackendData?.Invoke(type, data);
                     }
                     else
                     {

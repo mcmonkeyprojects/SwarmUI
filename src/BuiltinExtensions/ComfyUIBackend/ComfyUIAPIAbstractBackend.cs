@@ -358,6 +358,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 byte[] output = await getData;
                 if (output is not null)
                 {
+                    user_input.ReceiveRawBackendData?.Invoke("comfy_websocket", output);
                     if (Encoding.ASCII.GetString(output, 0, 8) == "{\"type\":")
                     {
                         JObject json = Utilities.ParseToJson(Encoding.UTF8.GetString(output));

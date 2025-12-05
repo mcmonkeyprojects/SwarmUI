@@ -134,6 +134,9 @@ public class T2IParamInput
     /// <summary>A list of any user requested presets not yet applied.</summary>
     public List<T2IPreset> PendingPresets = [];
 
+    /// <summary>Optional action, if present, takes raw backend data, as a pair of data-type and raw binary data.</summary>
+    public Action<string, byte[]> ReceiveRawBackendData = null;
+
     /// <summary>The session this input came from.</summary>
     public Session SourceSession;
 
