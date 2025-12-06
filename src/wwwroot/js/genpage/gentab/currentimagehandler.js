@@ -180,10 +180,10 @@ class ImageFullViewHelper {
         else {
             img.style.imageRendering = '';
         }
-        if (newHeight > 101 && this.showMetadata) {
+        if (newHeight > 100.1) {
             this.toggleMetadataVisibility(false);
         }
-        else if (newHeight < 101 && !this.showMetadata && zoom < 1) {
+        else if (newHeight < 100.1) {
             this.toggleMetadataVisibility(true);
         }
         container.style.cursor = 'grab';
@@ -249,7 +249,13 @@ class ImageFullViewHelper {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
-        this.toggleMetadataVisibility(!getUserSetting('ui.defaulthidemetadatainfullview'));
+        if (getUserSetting('ui.defaulthidemetadatainfullview')) {
+            this.getImgOrContainer().style.height = '100.2%';
+            this.toggleMetadataVisibility(false);
+        }
+        else {
+            this.toggleMetadataVisibility(true);
+        }
         this.modalJq.modal('show');
         if (isVideo) {
             new VideoControls(this.getImg());
