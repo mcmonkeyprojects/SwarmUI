@@ -282,7 +282,6 @@ public class ImageFile : MediaFile
             string actualStealthMode = stealthMetadata.ToLowerInvariant();
             ISImage32 rgbaImage = img.CloneAs<Rgba32>();
             MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode, format);
-            img.Dispose();
             img = rgbaImage;
         }
         img.Metadata.XmpProfile = null;

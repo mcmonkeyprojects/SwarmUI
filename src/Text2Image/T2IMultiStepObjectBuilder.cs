@@ -60,7 +60,7 @@ public class T2IMultiStepObjectBuilder
             return null;
         }
         //user_input.Set(T2IParamTypes.EndStepsEarly, 0.6); // TODO: Configurable
-        using ISImage liveImg = img.ToIS.Clone(_ => { });
+        ISImage liveImg = img.ToIS.Clone(_ => { });
         float overBound = 0.1f;
         foreach (PromptRegion.Part part in objects)
         {
