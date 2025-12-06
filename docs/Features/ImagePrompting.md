@@ -1,7 +1,13 @@
-# SwarmUI Image Prompting - IP-Adapter, Revision, Etc.
+# SwarmUI Image Prompting - Edit Models, IP-Adapter, Revision, Etc.
 
-- To use image-prompting features in Swarm, simply drag an image into the prompt box, or copy an image and while in the prompt box press CTRL+V to paste.
-- When you do this, the Image Prompting control panel will open on the left at the top of the parameters listing.
+- To use image-prompting features in Swarm, simply drag an image into the prompt box, or copy an image and while in the prompt box press `CTRL+V` to paste.
+- When you do this, the **Image Prompting** control panel will open on the left at the top of the parameters listing.
+
+## Edit Models
+
+- When using edit models (**Flux Kontext**, **Flux.2**, **Qwen Image Edit**, ...), there's no magic needed. Simply put images in the prompt box and go.
+- For these model, don't enable anything in the **Image Prompting** parameter group.
+- See the model-specific info in the [Model Support](/docs/Model%20Support.md) doc for details.
 
 ## ReVision
 
@@ -29,5 +35,5 @@
 
 # Style Models
 
-- Style models, such as Flux Redux, can be used through the same interface.
+- Style models, such as **Flux Redux**, can be used through the same interface.
     - See [the model support doc for Flux Redux specifics](/docs/Model%20Support.md#flux1-tools)
