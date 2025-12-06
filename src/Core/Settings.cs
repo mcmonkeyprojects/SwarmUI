@@ -404,8 +404,8 @@ public class Settings : AutoConfiguration
             [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
             public string ImageShiftingCycles = "true";
 
-            [ConfigComment("If enabled, metadata will be hidden in the full screen image viewer by default.\nIf disabled, metadata will be shown by default.\nZooming in or out will toggle the visibility of the metadata when image is zoomed in or out enough.")]
-            public bool DefaultHideMetadataInFullscreen = false;
+            [ConfigComment("If enabled, metadata will be hidden in the image Full View by default.\nIf disabled, metadata will be shown by default.\nYou zoom still zoom in or out to show or hide the metadata at any time as usual.")]
+            public bool DefaultHideMetadataInFullview = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
