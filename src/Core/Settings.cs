@@ -403,6 +403,9 @@ public class Settings : AutoConfiguration
             [ConfigComment("If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf disabled, shifting will simply stop at the ends.\nIf 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).")]
             [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
             public string ImageShiftingCycles = "true";
+
+            [ConfigComment("If enabled, metadata will be hidden in the full screen image viewer by default.\nIf disabled, metadata will be shown by default.")]
+            public bool HideMetadataInFullscreen = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
