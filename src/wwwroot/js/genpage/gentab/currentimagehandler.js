@@ -180,10 +180,10 @@ class ImageFullViewHelper {
         else {
             img.style.imageRendering = '';
         }
-        if (newHeight > 101) {
+        if (newHeight > 101 && this.showMetadata) {
             this.toggleMetadataVisibility(false);
         }
-        else if (newHeight < 101) {
+        else if (newHeight < 101 && !this.showMetadata && zoom < 1) {
             this.toggleMetadataVisibility(true);
         }
         container.style.cursor = 'grab';
