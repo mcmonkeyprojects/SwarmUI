@@ -249,7 +249,7 @@ class ImageFullViewHelper {
                 quickAppendButton(subDiv, added.label, (e, button) => added.onclick(button), added.className || '', added.title);
             }
         }
-        this.toggleMetadataVisibility(!getUserSetting('ui.hidemetadatainfullscreen'));
+        this.toggleMetadataVisibility(!getUserSetting('ui.defaulthidemetadatainfullscreen'));
         this.modalJq.modal('show');
         if (isVideo) {
             new VideoControls(this.getImg());

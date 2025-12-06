@@ -405,7 +405,7 @@ public class Settings : AutoConfiguration
             public string ImageShiftingCycles = "true";
 
             [ConfigComment("If enabled, metadata will be hidden in the full screen image viewer by default.\nIf disabled, metadata will be shown by default.")]
-            public bool HideMetadataInFullscreen = false;
+            public bool DefaultHideMetadataInFullscreen = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
