@@ -702,7 +702,7 @@ public partial class WorkflowGenerator
             }, id);
         }
         // The VAE requirements for hunyuan are basically unobtainable, so force tiling as stupidproofing
-        else if ((IsHunyuanVideo() || IsHunyuanVideo15()) && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
+        else if ((IsHunyuanVideo() || IsHunyuanVideo15() || IsKandinsky5VidLite() || IsKandinsky5VidPro()) && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
         {
             return CreateNode("VAEDecodeTiled", new JObject()
             {

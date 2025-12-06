@@ -17,6 +17,7 @@
 [Qwen Image](#qwen-image) | MMDiT | 2025 | Alibaba-Qwen | 20B | Minimal | Modern, Great Quality, very memory intense |
 [Hunyuan Image 2.1](#hunyuan-image-21) | MMDiT | 2025 | Tencent | 17B | No | Modern, Great Quality, very memory intense |
 [Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
+[Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
 
 Old or bad options also tracked listed:
 
@@ -636,6 +637,16 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **CFG Scale:** Normal CFG ranges, `5` is the official recommendation
     - **Steps:** Normal step counts (eg `20`), but they recommend `50`
     - **Resolution:** Side length `1024`. Quickly breaks above that.
+
+# Kandinsky 5
+
+- Kandinsky 5 Image Lite is supported in SwarmUI
+    - Also the video models, docs [in the video model support doc](/docs/Video%20Model%20Support.md#kandinsky-5)
+- There are multiple variants, pick one to download from here: <https://huggingface.co/collections/kandinskylab/kandinsky-50-image-lite>
+- **Parameters:**
+    - **CFG Scale:** regular CFG such as `5` works.
+    - **Steps:** Regular 20+ steps.
+    - **Resolution:** Side length 1024.
 
 # Video Models
 

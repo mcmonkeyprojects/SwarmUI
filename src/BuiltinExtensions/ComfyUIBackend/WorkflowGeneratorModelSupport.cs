@@ -299,7 +299,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsHunyuanVideo() || IsWanVideo())
+        else if (IsHunyuanVideo() || IsWanVideo() || IsKandinsky5VidLite() || IsKandinsky5VidPro() || IsKandinsky5ImgLite())
         {
             int frames = 73;
             if (IsWanVideo())
@@ -309,7 +309,7 @@ public partial class WorkflowGenerator
             return CreateNode("EmptyHunyuanLatentVideo", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, frames),
+                ["length"] = IsKandinsky5ImgLite() ? 1 : UserInput.Get(T2IParamTypes.Text2VideoFrames, frames),
                 ["height"] = height,
                 ["width"] = width
             }, id);
@@ -465,6 +465,11 @@ public partial class WorkflowGenerator
         public string GetOmniQwenModel()
         {
             return RequireClipModel("qwen_2.5_vl_fp16.safetensors", "https://huggingface.co/Comfy-Org/Omnigen2_ComfyUI_repackaged/resolve/main/split_files/text_encoders/qwen_2.5_vl_fp16.safetensors", "ba05dd266ad6a6aa90f7b2936e4e775d801fb233540585b43933647f8bc4fbc3", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwenImage25_7b_tenc_nofp8() // Kandinsky5: requires this model, but dies on fp8 for some reason? probably temporary bug.
+        {
+            return RequireClipModel("qwen_2.5_vl_7b.safetensors", "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b.safetensors", "cfafd739459bc86257397259f612a9aee88e5b98e85b5c0d0d1717e898b3463a", T2IParamTypes.QwenModel);
         }
 
         public string GetQwenImage25_7b_tenc()
@@ -1046,13 +1051,13 @@ public partial class WorkflowGenerator
         }
         else if (IsKandinsky5ImgLite())
         {
-            helpers.LoadClip2("kandinsky5_image", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
-            helpers.DoVaeLoader("Kandinsky5/kvae_2d_1.safetensors", T2IModelClassSorter.CompatKandinsky5ImgLite.ID, "kandinsky-5-kvae2d-1");
+            helpers.LoadClip2("kandinsky5_image", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc_nofp8());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
         else if (IsKandinsky5VidLite() || IsKandinsky5VidPro())
         {
-            helpers.LoadClip2("kandinsky5", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
-            helpers.DoVaeLoader("kandinsky5/kvae_3d_1.safetensors", T2IModelClassSorter.CompatKandinsky5ImgLite.ID, "kandinsky-5-kvae3d-1");
+            helpers.LoadClip2("kandinsky5", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc_nofp8());
+            helpers.DoVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
         }
         else if (!string.IsNullOrWhiteSpace(predType) && LoadingModel is not null)
         {

@@ -9,6 +9,7 @@
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
 [Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
 [Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
+[Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above
 
@@ -480,3 +481,22 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
             - For I2V, this seems to "just work"
             - For T2V, this has some visual oddities but does still mostly work
         - Wan 2.2 has an official prompting guide book: <https://alidocs.dingtalk.com/i/nodes/EpGBa2Lm8aZxe5myC99MelA2WgN7R35y>
+
+## Kandinsky 5
+
+- Kandinsky 5 Video Lite and Video Pro are supported in SwarmUI!
+    - Also the image models, docs [in the image model support doc](/docs/Model%20Support.md#kandinsky-5)
+- They come in a variety of variants, you will have to pick what you want, or experimental with several.
+    - Do you want "Lite" or "Pro"?
+        - Lite is a 2B (very small) video model with a variety of distilled and other variants. Its quality is not quite on par with competitors like Wan 14B, but its small size makes it easier to run.
+            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-lite>
+                - NoCFG or Distilled16Steps are the fastest variants, SFT is supposedly the best quality.
+        - Pro is a 19B (very large) video model with only different quality tune variants.
+            - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-pro>
+                - You probably want the SFT 10s version.
+- At time of writing, the current implementation has bugs, and some hacks are used to workaround them. Including for example a non-fp8 version of the textenc is required due to a comfy code bug.
+- **Parameters:**
+    - These vary heavily based on model you choose.
+    - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
+    - **Steps:** For regular, 20 or higher is used. For Step Distill, 16 is the target. Going lower will work but with a severe quality hit.
+    - **Resolution:** All video models primarily target a side length of 640. Higher resolutions can work, Pro handles 960x960 fine.
