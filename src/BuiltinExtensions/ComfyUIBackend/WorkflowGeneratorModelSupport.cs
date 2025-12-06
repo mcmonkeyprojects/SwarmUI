@@ -160,6 +160,18 @@ public partial class WorkflowGenerator
         return clazz is not null && clazz.StartsWith("nvidia-cosmos-predict2");
     }
 
+    /// <summary>Returns true if the current model is Kandinsky 5 Image Lite.</summary>
+    public bool IsKandinsky5ImgLite() => IsModelCompatClass(T2IModelClassSorter.CompatKandinsky5ImgLite);
+
+    /// <summary>Returns true if the current model is Kandinsky 5 Video Lite.</summary>
+    public bool IsKandinsky5VidLite() => IsModelCompatClass(T2IModelClassSorter.CompatKandinsky5VidLite);
+
+    /// <summary>Returns true if the current model is Kandinsky 5 Video Pro.</summary>
+    public bool IsKandinsky5VidPro() => IsModelCompatClass(T2IModelClassSorter.CompatKandinsky5VidPro);
+
+    /// <summary>Returns true if the current model is any Kandinsky 5 variant.</summary>
+    public bool IsKandinsky5() => IsKandinsky5ImgLite() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
+
     /// <summary>Returns true if the current model is any Wan-2.1 variant.</summary>
     public bool IsWanVideo()
     {
@@ -190,7 +202,7 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel();
+        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
     }
 
     /// <summary>Creates an Empty Latent Image node.</summary>
@@ -1031,6 +1043,16 @@ public partial class WorkflowGenerator
             {
                 helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
             }
+        }
+        else if (IsKandinsky5ImgLite())
+        {
+            helpers.LoadClip2("kandinsky5_image", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
+            helpers.DoVaeLoader("Kandinsky5/kvae_2d_1.safetensors", T2IModelClassSorter.CompatKandinsky5ImgLite.ID, "kandinsky-5-kvae2d-1");
+        }
+        else if (IsKandinsky5VidLite() || IsKandinsky5VidPro())
+        {
+            helpers.LoadClip2("kandinsky5", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
+            helpers.DoVaeLoader("kandinsky5/kvae_3d_1.safetensors", T2IModelClassSorter.CompatKandinsky5ImgLite.ID, "kandinsky-5-kvae3d-1");
         }
         else if (!string.IsNullOrWhiteSpace(predType) && LoadingModel is not null)
         {

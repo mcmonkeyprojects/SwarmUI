@@ -70,7 +70,10 @@ public class T2IModelClassSorter
         CompatSegmindStableDiffusion1b = RegisterCompat(new() { ID = "segmind-stable-diffusion-1b", ShortCode = "SSD1B" }),
         CompatPixartMsSigmaXl2 = RegisterCompat(new() { ID = "pixart-ms-sigma-xl-2", ShortCode = "Pix" }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false }),
-        CompatOvis = RegisterCompat(new() { ID = "ovis", ShortCode = "Ovis", LorasTargetTextEnc = false });
+        CompatOvis = RegisterCompat(new() { ID = "ovis", ShortCode = "Ovis", LorasTargetTextEnc = false }),
+        CompatKandinsky5ImgLite = RegisterCompat(new() { ID = "kandinsky5-imglite", ShortCode = "Kan5IL", LorasTargetTextEnc = false }),
+        CompatKandinsky5VidLite = RegisterCompat(new() { ID = "kandinsky5-vidlite", ShortCode = "Kan5VL", LorasTargetTextEnc = false }),
+        CompatKandinsky5VidPro = RegisterCompat(new() { ID = "kandinsky5-vidpro", ShortCode = "Kan5VP", LorasTargetTextEnc = false });
 
     /// <summary>Initialize the class sorter.</summary>
     public static void Init()
@@ -567,27 +570,27 @@ public class T2IModelClassSorter
             return isQwenImageLora(h);
         }});
         // ====================== Kandinsky5 ======================
-        Register(new() { ID = "kandinsky5-image-lite", CompatClass = CompatQwenImage, Name = "Kandinsky5 Image Lite", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "kandinsky5-image-lite", CompatClass = CompatKandinsky5ImgLite, Name = "Kandinsky5 Image Lite", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isKandinsky5(h) && isKan5ImgLite(h);
         }});
-        Register(new() { ID = "kandinsky5-image-lite/lora", CompatClass = CompatQwenImage, Name = "Kandinsky5 Image Lite LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "kandinsky5-image-lite/lora", CompatClass = CompatKandinsky5ImgLite, Name = "Kandinsky5 Image Lite LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO?
         }});
-        Register(new() { ID = "kandinsky5-video-lite", CompatClass = CompatQwenImage, Name = "Kandinsky5 Video Lite", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "kandinsky5-video-lite", CompatClass = CompatKandinsky5VidLite, Name = "Kandinsky5 Video Lite", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return isKandinsky5(h) && isKan5VidLite(h);
         }});
-        Register(new() { ID = "kandinsky5-video-lite/lora", CompatClass = CompatQwenImage, Name = "Kandinsky5 Video Lite LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "kandinsky5-video-lite/lora", CompatClass = CompatKandinsky5VidLite, Name = "Kandinsky5 Video Lite LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO?
         }});
-        Register(new() { ID = "kandinsky5-video-pro", CompatClass = CompatQwenImage, Name = "Kandinsky5 Video Pro", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "kandinsky5-video-pro", CompatClass = CompatKandinsky5VidPro, Name = "Kandinsky5 Video Pro", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return isKandinsky5(h) && isKan5VidPro(h);
         }});
-        Register(new() { ID = "kandinsky5-video-pro/lora", CompatClass = CompatQwenImage, Name = "Kandinsky5 Video Pro LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "kandinsky5-video-pro/lora", CompatClass = CompatKandinsky5VidPro, Name = "Kandinsky5 Video Pro LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return false; // TODO?
         }});
