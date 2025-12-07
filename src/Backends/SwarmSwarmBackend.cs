@@ -101,6 +101,9 @@ public class SwarmSwarmBackend : AbstractT2IBackend
     /// <summary>Event fired when a backend is revising its remote data.</summary>
     public static Action<SwarmSwarmBackend> ReviseRemotesEvent;
 
+    /// <summary>The parent backend, if any.</summary>
+    public SwarmSwarmBackend Parent;
+
     /// <summary>Gets a request adapter appropriate to this Swarm backend, including eg auth headers.</summary>
     public Action<HttpRequestMessage> RequestAdapter()
     {
@@ -264,6 +267,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                             newSwarm.LinkedRemoteBackendType = type;
                             newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] {title}";
                             newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
+                            newSwarm.Parent = this;
                             OnSwarmBackendAdded?.Invoke(newSwarm);
                             ControlledNonrealBackends.TryAdd(id, newData);
                         });
