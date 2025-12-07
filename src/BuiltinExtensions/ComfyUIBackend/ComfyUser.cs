@@ -180,9 +180,12 @@ public class ComfyUser
                 NewMessageToClient(data.AsMemory(0, data.Length), WebSocketMessageType.Binary, true);
             }
         };
-        using Session.GenClaim claim = input.SourceSession.Claim(gens: 1);
-        // TODO: Handle errors?
-        return (T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { }), response);
+        return (Utilities.RunCheckedTask(async () =>
+        {
+            using Session.GenClaim claim = input.SourceSession.Claim(gens: 1);
+            // TODO: Handle errors?
+            await T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { });
+        }), response);
     }
 
     /// <summary>Helper to send a comfy prompt to the backend, the regular (direct) way.</summary>
