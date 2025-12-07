@@ -577,6 +577,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                 }
             });
             await websocket.SendJson(BuildRequest(user_input), API.WebsocketTimeout);
+            Logs.Debug($"[{HandlerTypeData.Name}] WebSocket connected, remote backend {LinkedRemoteBackendID} should begin generating...");
             while (true)
             {
                 if (user_input.InterruptToken.IsCancellationRequested)
