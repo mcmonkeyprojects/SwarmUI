@@ -215,12 +215,12 @@ public class AutoScalingBackend : AbstractT2IBackend
     }
 
     /// <summary>Async task to launch a new backend. Only returns when a backend has launched, or failed. Throws an exception if a backend cannot be launched currently.</summary>
-    public async Task LaunchOne()
+    public async Task LaunchOne(bool validate = true, string[] args = null, Action<BackendHandler.T2IBackendData> configure = null)
     {
         long id;
         lock (ScaleBehaviorLock)
         {
-            if (CountActiveBackends >= Settings.MaxBackends)
+            if (validate && CountActiveBackends >= Settings.MaxBackends)
             {
                 throw new Exception("Tried to launch more backends, but already at max.");
             }
@@ -243,6 +243,13 @@ public class AutoScalingBackend : AbstractT2IBackend
                 RedirectStandardError = true,
                 WorkingDirectory = Path.GetDirectoryName(Settings.StartScript)
             };
+            if (args is not null)
+            {
+                foreach (string arg in args)
+                {
+                    psi.ArgumentList.Add(arg);
+                }
+            }
             Process process = Process.Start(psi) ?? throw new Exception("Failed to start backend launch process, fundamental failure. Is the start script valid?");
             StreamReader fixedReader = new(process.StandardOutput.BaseStream, Encoding.UTF8); // Force UTF-8, always
             string line;
@@ -269,7 +276,7 @@ public class AutoScalingBackend : AbstractT2IBackend
                             OtherHeaders = Settings.OtherHeaders,
                             ConnectionAttemptTimeoutSeconds = Settings.ConnectionAttemptTimeoutSeconds
                         };
-                        Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
+                        BackendHandler.T2IBackendData newBackend = Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
                         {
                             Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {newData.ID}: Master Control");
                             SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
@@ -282,6 +289,7 @@ public class AutoScalingBackend : AbstractT2IBackend
                             ControlledNonrealBackends.TryAdd(newData.ID, newData);
                         });
                         MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
+                        configure?.Invoke(newBackend);
                         launched = true;
                         break;
                     }
