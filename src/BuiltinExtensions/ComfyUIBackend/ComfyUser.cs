@@ -131,12 +131,20 @@ public class ComfyUser
     }
 
     /// <summary>Send a prompt to the general swarm queue.</summary>
-    public Task SendPromptQueue(JObject prompt)
+    public (Task, JObject) SendPromptQueue(JObject prompt)
     {
         T2IParamInput input = new(SwarmUser.GetGenericSession());
         input.Set(ComfyUIBackendExtension.FakeRawInputType, prompt.ToString(Newtonsoft.Json.Formatting.None));
         input.Set(T2IParamTypes.NoLoadModels, true);
         input.Set(T2IParamTypes.DoNotSave, true);
+        Guid promptId = Guid.NewGuid();
+        JObject response = new()
+        {
+            ["prompt_id"] = $"{promptId}",
+            ["number"] = 1,
+            ["node_errors"] = new JObject()
+        };
+        string recvId = null;
         input.ReceiveRawBackendData = (type, data) =>
         {
             if (type != "comfy_websocket")
@@ -144,11 +152,37 @@ public class ComfyUser
                 return;
             }
             // TODO: This is hacky message type detection. Maybe backend should actually pay attention to this properly?
-            NewMessageToClient(data.AsMemory(0, data.Length), Encoding.ASCII.GetString(data, 0, 8) == "{\"type\":" ? WebSocketMessageType.Text : WebSocketMessageType.Binary, true);
+            if (Encoding.ASCII.GetString(data, 0, 8) == "{\"type\":")
+            {
+                JObject jmessage = StringConversionHelper.UTF8Encoding.GetString(data).ParseToJson();
+                string jtype = $"{jmessage["type"]}";
+                if (jmessage.TryGetValue("data", out JToken dataTok) && dataTok is JObject dataObj)
+                {
+                    if (dataObj.TryGetValue("prompt_id", out JToken promptIdTok))
+                    {
+                        recvId ??= $"{promptIdTok}";
+                        if ($"{promptIdTok}" != recvId) // Shouldn't happen but check and skip to be safe
+                        {
+                            return;
+                        }
+                        jmessage["data"]["prompt_id"] = $"{promptId}";
+                    }
+                    if (dataObj.TryGetValue("sid", out JToken sidTok))
+                    {
+                        MasterSID ??= $"{sidTok}";
+                        jmessage["data"]["sid"] = MasterSID;
+                    }
+                }
+                NewMessageToClient(jmessage.ToString(Newtonsoft.Json.Formatting.None).EncodeUTF8(), WebSocketMessageType.Text, true);
+            }
+            else
+            {
+                NewMessageToClient(data.AsMemory(0, data.Length), WebSocketMessageType.Binary, true);
+            }
         };
         using Session.GenClaim claim = input.SourceSession.Claim(gens: 1);
         // TODO: Handle errors?
-        return T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { });
+        return (T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { }), response);
     }
 
     /// <summary>Helper to send a comfy prompt to the backend, the regular (direct) way.</summary>

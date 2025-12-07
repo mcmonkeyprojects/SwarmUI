@@ -218,8 +218,7 @@ public class ComfyUIRedirectHelper
                                                     }
                                                     else
                                                     {
-                                                        parsed["data"]["sid"] = user.MasterSID;
-                                                        toSend = Encoding.UTF8.GetBytes(parsed.ToString());
+                                                        dataObj["sid"] = user.MasterSID;
                                                     }
                                                 }
                                                 if (dataObj.TryGetValue("node", out JToken nodeTok))
@@ -233,6 +232,7 @@ public class ComfyUIRedirectHelper
                                                     client.QueueRemaining = queueRemTok.Value<int>();
                                                     dataObj["status"]["exec_info"]["queue_remaining"] = user.TotalQueue;
                                                 }
+                                                toSend = Encoding.UTF8.GetBytes(parsed.ToString());
                                             }
                                         }
                                         catch (Exception ex)
@@ -240,7 +240,7 @@ public class ComfyUIRedirectHelper
                                             Logs.Error($"Failed to parse ComfyUI message \"{rawText.Replace('\n', ' ')}\": {ex.ReadableString()}");
                                         }
                                     }
-                                    if (!isJson)
+                                    else
                                     {
                                         if (client.LastExecuting is not null && (client.LastExecuting != user.LastExecuting || client.LastProgress != user.LastProgress))
                                         {
@@ -346,7 +346,8 @@ public class ComfyUIRedirectHelper
                                 prompt.Remove("swarm_prefer");
                                 if (user.WantsQueuing)
                                 {
-                                    _ = user.SendPromptQueue(prompt);
+                                    (_, JObject responseJson) = user.SendPromptQueue(prompt);
+                                    response = new HttpResponseMessage(HttpStatusCode.OK) { Content = Utilities.JSONContent(responseJson) };
                                     redirected = true;
                                     Logs.Info($"Sent Comfy backend direct prompt requested to general queue (from user {swarmUser.UserID})");
                                 }
@@ -372,6 +373,11 @@ public class ComfyUIRedirectHelper
                                 user.Lock.Release();
                             }
                         }
+                        else if (doMultiStr == "queue")
+                        {
+                            givePostError("[SwarmUI] SwarmQueue requested, but Client ID got mixed up. Refresh the page to fix this.");
+                            return;
+                        }
                     }
                     if (!redirected)
                     {
@@ -388,6 +394,7 @@ public class ComfyUIRedirectHelper
                             return;
                         }
                         Logs.Debug($"Was not able to redirect Comfy backend direct prompt request");
+                        Logs.Verbose($"Above is for prompt: {parsed.ToDenseDebugString()}");
                         backend.BackendData.UpdateLastReleaseTime();
                         Logs.Info($"Sent Comfy backend improper API call direct prompt requested to backend #{backend.BackendData.ID}");
                     }
