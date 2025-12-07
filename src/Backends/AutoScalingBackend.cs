@@ -192,7 +192,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         {
             result = BackendHandler.ScaleResult.FreshLaunch;
         }
-        await Utilities.RunCheckedTask(LaunchOne, "AutoScalingBackend Launch New Backend");
+        await Utilities.RunCheckedTask(() => LaunchOne(), "AutoScalingBackend Launch New Backend");
         return result;
     }
 
