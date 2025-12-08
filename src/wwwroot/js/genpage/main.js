@@ -29,7 +29,7 @@ let autoCompletionsOptimize = false;
 
 let mainGenHandler = new GenerateHandler();
 
-let pageTitleSuffix = document.title.split(' - ')[1];
+let pageTitleSuffix = document.title.split(' - ').slice(1).join(' - ');
 let curAutoTitle = "Page is loading...";
 
 let featureSetChangedCallbacks = [];
