@@ -1425,6 +1425,12 @@ body {
     min-height: 8em;
     width: fit-content;
 }
+.password-change-warn {
+    font-weight: bold;
+    color: var(--red);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
 .button-starred-image {
     background-color: var(--star);
     color: black !important;
