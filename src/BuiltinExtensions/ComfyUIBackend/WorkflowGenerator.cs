@@ -1415,6 +1415,7 @@ public partial class WorkflowGenerator
         public bool HadSpecialCond = false;
         public int ContextID = T2IParamInput.SectionID_Video;
         public Image VideoEndFrame = null;
+        public JArray DoFirstFrameLatentSwap = null;
 
         public void PrepModelAndCond(WorkflowGenerator g)
         {
@@ -1524,6 +1525,29 @@ public partial class WorkflowGenerator
                 Latent = [i2vnode, 1];
                 DefaultSampler = "euler";
                 DefaultScheduler = "simple";
+            }
+            else if (VideoModel.ModelClass?.ID == "kandinsky5-video-pro" || VideoModel.ModelClass?.ID == "kandinsky5-video-lite")
+            {
+                VideoFPS ??= 24;
+                Frames ??= 49;
+                string i2vnode = g.CreateNode("Kandinsky5ImageToVideo", new JObject()
+                {
+                    ["positive"] = PosCond,
+                    ["negative"] = NegCond,
+                    ["vae"] = Vae,
+                    ["width"] = Width,
+                    ["height"] = Height,
+                    ["length"] = Frames,
+                    ["batch_size"] = 1,
+                    ["start_image"] = g.FinalImageOut
+                });
+                PosCond = [i2vnode, 0];
+                NegCond = [i2vnode, 1];
+                DefaultCFG = 1;
+                Latent = [i2vnode, 2];
+                DefaultSampler = "euler";
+                DefaultScheduler = "simple";
+                DoFirstFrameLatentSwap = [i2vnode, 3];
             }
             else if (VideoModel.ModelClass?.ID == "hunyuan-video-1_5")
             {
@@ -1915,6 +1939,24 @@ public partial class WorkflowGenerator
             samplered = CreateKSampler(swapVideoModel, genInfo.PosCond, genInfo.NegCond, FinalLatentImage, cfg, steps, endStep, 10000, genInfo.Seed + 1, false, false, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler, hadSpecialCond: genInfo.HadSpecialCond, explicitSampler: explicitSampler, explicitScheduler: explicitScheduler);
             FinalLatentImage = [samplered, 0];
             IsImageToVideoSwap = false;
+        }
+        if (genInfo.DoFirstFrameLatentSwap is not null) // This is some weird jank hack that kan5 i2v needs
+        {
+            string replaceNode = CreateNode("ReplaceVideoLatentFrames", new JObject()
+            {
+                ["destination"] = FinalLatentImage,
+                ["source"] = genInfo.DoFirstFrameLatentSwap,
+                ["index"] = 0
+            });
+            FinalLatentImage = [replaceNode, 0];
+            string normalized = CreateNode("NormalizeVideoLatentStart", new JObject()
+            {
+                ["latent"] = FinalLatentImage,
+                ["start_frame_count"] = 4,
+                ["reference_frame_count"] = 5
+            });
+            FinalLatentImage = [normalized, 0];
+            genInfo.DoFirstFrameLatentSwap = null;
         }
         string decoded = CreateVAEDecode(genInfo.Vae, FinalLatentImage);
         FinalImageOut = [decoded, 0];
