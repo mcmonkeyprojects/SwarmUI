@@ -157,6 +157,7 @@ class UserAdminManager {
         this.rightBox.innerHTML = `<div class="admin-user-right-titlebar">User: <span class="admin-user-right-titlebar-name">${escapeHtml(name)}</span></div>`
             + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser(unescapeHtml('${escapeHtml(name)}'))">Delete User</button>`)
             + `<br><br><button type="button" class="basic-button translate" onclick="userAdminManager.editUserPw(unescapeHtml('${escapeHtml(name)}'))">Change User Password</button>`
+            + `&emsp;<span class="translate">Password was set by: </span><b class="translate password-set-by-field"></b>`
             + `<br><br><div class="admin_edit_user_settings_container" id="admin_edit_user_settings_container"></div>
             <div class="settings_submit_confirmer" id="${prefix}confirmer">
                 <span class="settings_submit_confirmer_text">Save <span id="${prefix}edit_count">0</span> edited setting(s)?</span>
@@ -168,6 +169,7 @@ class UserAdminManager {
             if (this.displayedUser != name) {
                 return;
             }
+            this.rightBox.querySelector('.password-set-by-field').innerText = data.password_set_by_admin ? 'Admin' : 'User';
             buildSettingsMenu(userSettingsContainer, data.settings, prefix, this.curUserSettingsEditTracker);
         });
     }
