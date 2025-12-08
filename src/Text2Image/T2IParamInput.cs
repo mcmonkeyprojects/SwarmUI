@@ -500,24 +500,23 @@ public class T2IParamInput
         long rawVal = -1;
         if (TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
         {
-            wildcardSeed += WCSeedOffset;
             rawVal = wildcardSeed;
         }
         else
         {
-            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + WCSeedOffset;
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0);
         }
         if (wildcardSeed > int.MaxValue)
         {
             wildcardSeed %= int.MaxValue;
         }
-        if (wildcardSeed - WCSeedOffset < 0)
+        if (wildcardSeed < 0)
         {
             wildcardSeed = Random.Shared.Next(int.MaxValue);
         }
         if (wildcardSeed != rawVal)
         {
-            Set(T2IParamTypes.WildcardSeed, wildcardSeed - WCSeedOffset);
+            Set(T2IParamTypes.WildcardSeed, wildcardSeed);
         }
         return (int)wildcardSeed;
     }
@@ -529,7 +528,7 @@ public class T2IParamInput
         {
             return WildcardRandom;
         }
-        WildcardRandom = new(GetWildcardSeed());
+        WildcardRandom = new(GetWildcardSeed() + WCSeedOffset);
         return WildcardRandom;
     }
 
