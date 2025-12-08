@@ -494,7 +494,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - Pro is a 19B (very large) video model with only different quality tune variants.
             - Files are here <https://huggingface.co/collections/kandinskylab/kandinsky-50-video-pro>
                 - You probably want the SFT 10s version.
-- At time of writing, the current implementation has bugs, and some hacks are used to workaround them. Including for example a non-fp8 version of the textenc is required due to a comfy code bug.
+- At time of writing, the current implementation has bugs, and some hacks are used to workaround them. Not all features work.
 - **Parameters:**
     - These vary heavily based on model you choose.
     - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
