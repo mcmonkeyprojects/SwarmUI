@@ -142,6 +142,9 @@ class SwarmClipTextEncodeAdvanced:
                     elif char == "|" and count == 0 and len(colon_indices) == 0:
                         pipe_indices.append(i)
 
+                if count != 0 or (end == -1 and len(chunks) == 0):
+                    append_chunk(remaining, [i for i in range(steps)], False, limit_to)
+                    break
                 if end == -1:
                     chunks[-1].text += remaining
                     break
