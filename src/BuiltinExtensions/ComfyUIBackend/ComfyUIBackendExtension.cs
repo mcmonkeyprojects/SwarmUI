@@ -68,7 +68,8 @@ public class ComfyUIBackendExtension : Extension
         ["TeaCache"] = "teacache",
         ["TeaCacheForVidGen"] = "teacache",
         ["TeaCacheForImgGen"] = "teacache_oldvers",
-        ["OverrideCLIPDevice"] = "set_clip_device"
+        ["OverrideCLIPDevice"] = "set_clip_device",
+        ["SeedVarianceEnhancer"] = "seed_variance_enhancer"
     };
 
     /// <inheritdoc/>
@@ -616,7 +617,9 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG;
 
-    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG;
+    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG, SeedVarianceStrength, SeedVarianceRandomize, SeedVarianceSwitchover;
+
+    public static T2IRegisteredParam<long> SeedVarianceSeed;
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
@@ -790,6 +793,18 @@ public class ComfyUIBackendExtension : Extension
             ));
         NunchakuCacheThreshold = T2IParamTypes.Register<double>(new("Nunchaku Cache Threshold", "What threshold to use with Nunchaku block caching.\nThis makes Nunchaku gens faster at the cost of quality.\nOnly applicable to Nunchaku models.\nGenerally 0 to 0.2 is the reasonable range, above that you can start noticing quality drop.",
             "0", IgnoreIf: "0", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "nunchaku", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 16
+            ));
+        SeedVarianceStrength = T2IParamTypes.Register<double>(new("Seed Variance Strength", "Adds noise to conditioning embeddings to improve seed variance on models with low natural variance (like Z-Image Turbo).\nHigher values = more variance. Recommended range: 15-30.",
+            "20", Min: 0, Max: 100, Step: 1, ViewMax: 50, Toggleable: true, FeatureFlag: "seed_variance_enhancer", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 17
+            ));
+        SeedVarianceRandomize = T2IParamTypes.Register<double>(new("Seed Variance Randomize %", "Percentage of embedding values to add noise to.\nLower values preserve more of the original embedding, which can help maintain anatomy.\nRecommended: 20-30% if experiencing anatomy issues.",
+            "50", IgnoreIf: "50", Min: 0, Max: 100, Step: 5, FeatureFlag: "seed_variance_enhancer", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 17.2, DependNonDefault: SeedVarianceStrength.Type.ID
+            ));
+        SeedVarianceSwitchover = T2IParamTypes.Register<double>(new("Seed Variance Switchover %", "At what percentage of steps to switch from noisy to original embeddings.\nLower values mean noise only affects early composition steps.\nRecommended: 10-15% if experiencing anatomy issues.",
+            "20", IgnoreIf: "20", Min: 0, Max: 100, Step: 5, FeatureFlag: "seed_variance_enhancer", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 17.4, DependNonDefault: SeedVarianceStrength.Type.ID
+            ));
+        SeedVarianceSeed = T2IParamTypes.Register<long>(new("Seed Variance Seed", "Seed for the variance noise generation. Set to -1 to randomize.",
+            "-1", Min: -1, Max: long.MaxValue, ViewType: ParamViewType.SEED, FeatureFlag: "seed_variance_enhancer", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, OrderPriority: 17.6, DependNonDefault: SeedVarianceStrength.Type.ID
             ));
         SetClipDevice = T2IParamTypes.Register<string>(new("Set CLIP Device", "Override the hardware device that text encoders run on.",
             "cpu", FeatureFlag: "set_clip_device", Group: T2IParamTypes.GroupAdvancedModelAddons, IsAdvanced: true, Toggleable: true, GetValues: (_) => SetClipDevices, OrderPriority: 70

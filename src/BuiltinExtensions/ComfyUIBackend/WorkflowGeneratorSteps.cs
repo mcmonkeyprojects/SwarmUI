@@ -1151,6 +1151,34 @@ public class WorkflowGeneratorSteps
             }
         }, -6);
         #endregion
+        #region Seed Variance Enhancer
+        AddStep(g =>
+        {
+            if (g.Features.Contains("seed_variance_enhancer") && g.UserInput.TryGet(ComfyUIBackendExtension.SeedVarianceStrength, out double strength))
+            {
+                long seed = g.UserInput.Get(ComfyUIBackendExtension.SeedVarianceSeed, -1L);
+                if (seed == -1)
+                {
+                    seed = Random.Shared.NextInt64(0, long.MaxValue);
+                }
+                double randomizePercent = g.UserInput.Get(ComfyUIBackendExtension.SeedVarianceRandomize, 50.0);
+                double switchoverPercent = g.UserInput.Get(ComfyUIBackendExtension.SeedVarianceSwitchover, 20.0);
+                string sveNode = g.CreateNode("SeedVarianceEnhancer", new JObject()
+                {
+                    ["conditioning"] = g.FinalPrompt,
+                    ["randomize_percent"] = randomizePercent,
+                    ["strength"] = strength,
+                    ["noise_insert"] = "noise on beginning steps",
+                    ["steps_switchover_percent"] = switchoverPercent,
+                    ["seed"] = seed,
+                    ["mask_starts_at"] = "beginning",
+                    ["mask_percent"] = 0.0,
+                    ["log_to_console"] = false
+                });
+                g.FinalPrompt = [sveNode, 0];
+            }
+        }, -5);
+        #endregion
         #region Sampler
         AddStep(g =>
         {
