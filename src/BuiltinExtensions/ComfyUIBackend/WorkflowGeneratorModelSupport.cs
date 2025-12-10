@@ -591,7 +591,7 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates a model loader and adapts it with any registered model adapters, and returns (Model, Clip, VAE).</summary>
-    public (T2IModel, JArray, JArray, JArray) CreateStandardModelLoader(T2IModel model, string type, string id = null, bool noCascadeFix = false)
+    public (T2IModel, JArray, JArray, JArray) CreateStandardModelLoader(T2IModel model, string type, string id = null, bool noCascadeFix = false, int sectionId = 0)
     {
         ModelLoadHelpers helpers = new(this);
         string helper = $"modelloader_{model.Name}_{type}";
@@ -689,7 +689,7 @@ public partial class WorkflowGenerator
                     string modelNode = CreateNode("NunchakuFluxDiTLoader", new JObject()
                     {
                         ["model_path"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
-                        ["cache_threshold"] = UserInput.Get(ComfyUIBackendExtension.NunchakuCacheThreshold, 0),
+                        ["cache_threshold"] = UserInput.Get(ComfyUIBackendExtension.NunchakuCacheThreshold, 0, sectionId: sectionId),
                         ["attention"] = "nunchaku-fp16",
                         ["cpu_offload"] = "auto",
                         ["device_id"] = 0,
@@ -733,7 +733,7 @@ public partial class WorkflowGenerator
                 {
                     Logs.Error($"Model '{model.Name}' likely has corrupt/invalid metadata, and needs to be reset.");
                 }
-                string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic");
+                string dtype = UserInput.Get(ComfyUIBackendExtension.PreferredDType, "automatic", sectionId: sectionId);
                 if (dtype == "automatic")
                 {
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) // TODO: Or AMD?
@@ -826,17 +826,17 @@ public partial class WorkflowGenerator
                 LoadingVAE = null;
             }
         }
-        string predType = UserInput.Get(T2IParamTypes.OverridePredictionType, model.Metadata?.PredictionType);
+        string predType = UserInput.Get(T2IParamTypes.OverridePredictionType, model.Metadata?.PredictionType, sectionId: sectionId);
         if (IsSD3())
         {
             string sd3Node = CreateNode("ModelSamplingSD3", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3, sectionId: sectionId)
             });
             LoadingModel = [sd3Node, 0];
             string tencs = model.Metadata?.TextEncoders ?? "";
-            if (!UserInput.TryGet(T2IParamTypes.SD3TextEncs, out string mode))
+            if (!UserInput.TryGet(T2IParamTypes.SD3TextEncs, out string mode, sectionId: sectionId))
             {
                 if (tencs == "")
                 {
@@ -906,7 +906,7 @@ public partial class WorkflowGenerator
                 ["min_length"] = 0
             });
             LoadingClip = [t5Patch, 0];
-            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 1);
+            double shift = UserInput.Get(T2IParamTypes.SigmaShift, 1, sectionId: sectionId);
             if (shift > 0)
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
@@ -954,7 +954,7 @@ public partial class WorkflowGenerator
             string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3, sectionId: sectionId)
             });
             LoadingModel = [samplingNode, 0];
         }
@@ -1013,7 +1013,7 @@ public partial class WorkflowGenerator
             string auraNode = CreateNode("ModelSamplingAuraFlow", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.73)
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 1.73, sectionId: sectionId)
             });
             LoadingModel = [auraNode, 0];
         }
@@ -1032,7 +1032,7 @@ public partial class WorkflowGenerator
             string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
             {
                 ["model"] = LoadingModel,
-                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 6)
+                ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 6, sectionId: sectionId)
             });
             LoadingModel = [samplingNode, 0];
             if (LoadingClip is null)
@@ -1061,7 +1061,7 @@ public partial class WorkflowGenerator
                 string samplingNode = CreateNode("ModelSamplingSD3", new JObject()
                 {
                     ["model"] = LoadingModel,
-                    ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3)
+                    ["shift"] = UserInput.Get(T2IParamTypes.SigmaShift, 3, sectionId: sectionId)
                 });
                 LoadingModel = [samplingNode, 0];
             }
@@ -1076,7 +1076,7 @@ public partial class WorkflowGenerator
                 LoadingModel = [discreteNode, 0];
             }
         }
-        if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal))
+        if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal, sectionId: sectionId))
         {
             if (IsFlux() || IsFlux2())
             {
