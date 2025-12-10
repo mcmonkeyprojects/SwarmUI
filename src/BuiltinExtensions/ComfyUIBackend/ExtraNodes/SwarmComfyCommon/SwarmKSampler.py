@@ -292,7 +292,7 @@ class SwarmKSampler:
             sigmas = torch.cat([sigmas, sigmas.new_zeros([1])])
         elif scheduler == "ltx" or scheduler == "ltxv-image":
             from comfy_extras.nodes_lt import LTXVScheduler
-            sigmas = LTXVScheduler().get_sigmas(steps, 2.05, 0.95, True, 0.1, latent_image if scheduler == "ltxv-image" else None)[0]
+            sigmas = LTXVScheduler.execute(steps, 2.05, 0.95, True, 0.1, latent_image if scheduler == "ltxv-image" else None).result[0]
         elif scheduler == "flux2":
             width = latent_image["samples"].shape[-1]
             height = latent_image["samples"].shape[-2]
