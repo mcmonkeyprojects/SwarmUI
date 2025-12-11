@@ -5,6 +5,7 @@ using FreneticUtilities.FreneticToolkit;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
 using SwarmUI.Core;
+using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using System.Diagnostics;
 using System.IO;
@@ -709,16 +710,19 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
     public string ComfyPathBase => (SettingsRaw as ComfyUISelfStartSettings).StartScript.Replace('\\', '/').BeforeLast('/');
 
-    public override void PostResultCallback(string filename)
+    public override void PostResultCallback(string filename, T2IParamInput input)
     {
         string path = $"{ComfyPathBase}/output/{filename}";
-        Task.Run(() =>
+        if (!input.Get(T2IParamTypes.NoInternalSpecialHandling, false))
         {
-            if (File.Exists(path))
+            Task.Run(() =>
             {
-                File.Delete(path);
-            }
-        });
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            });
+        }
     }
 
     public override bool RemoveInputFile(string filename)

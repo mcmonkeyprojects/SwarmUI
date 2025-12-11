@@ -208,7 +208,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         Status = BackendStatus.DISABLED;
     }
 
-    public virtual void PostResultCallback(string filename)
+    public virtual void PostResultCallback(string filename, T2IParamInput input)
     {
     }
 
@@ -510,7 +510,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             JObject historyOut = await SendGet<JObject>($"history/{promptId}");
             if (!historyOut.Properties().IsEmpty())
             {
-                foreach (MediaFile file in await GetAllImagesForHistory(historyOut[promptId], interrupt))
+                foreach (MediaFile file in await GetAllImagesForHistory(historyOut[promptId], interrupt, user_input))
                 {
                     if (Program.ServerSettings.AddDebugData)
                     {
@@ -606,7 +606,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
     }
 
-    private async Task<MediaFile[]> GetAllImagesForHistory(JToken output, CancellationToken interrupt)
+    private async Task<MediaFile[]> GetAllImagesForHistory(JToken output, CancellationToken interrupt, T2IParamInput userInput)
     {
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
         {
@@ -673,7 +673,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     return;
                 }
                 outputs.Add(new Image(image, type));
-                PostResultCallback(fname);
+                PostResultCallback(fname, userInput);
             }
             if (outData["images"] is not null)
             {

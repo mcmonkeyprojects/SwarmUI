@@ -137,6 +137,7 @@ public class ComfyUser
         input.Set(ComfyUIBackendExtension.FakeRawInputType, prompt.ToString(Newtonsoft.Json.Formatting.None));
         input.Set(T2IParamTypes.NoLoadModels, true);
         input.Set(T2IParamTypes.DoNotSave, true);
+        input.Set(T2IParamTypes.NoInternalSpecialHandling, true);
         Guid promptId = Guid.NewGuid();
         JObject response = new()
         {
