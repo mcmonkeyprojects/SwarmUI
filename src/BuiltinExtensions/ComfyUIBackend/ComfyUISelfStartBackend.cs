@@ -285,7 +285,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         return Process.Start(start);
     }
 
-    public static string SwarmValidatedFrontendVersion = "1.34.5";
+    public static string SwarmValidatedFrontendVersion = "1.34.8";
 
     public override async Task Init()
     {
