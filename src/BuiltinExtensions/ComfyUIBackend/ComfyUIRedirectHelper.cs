@@ -438,7 +438,7 @@ public class ComfyUIRedirectHelper
         }
         else
         {
-            if (path.StartsWith("view?filename=") || path.StartsWith("api/view?filename="))
+            if (path.StartsWith("view?filename=") || path.StartsWith("api/view?filename=") || path.StartsWith("api/vhs/queryvideo?filename="))
             {
                 List<Task<HttpResponseMessage>> requests = [];
                 foreach (ComfyUIBackendExtension.ComfyBackendData localBack in allBackends)
@@ -457,7 +457,7 @@ public class ComfyUIRedirectHelper
                 }
                 response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(data.ToString(), Encoding.UTF8, "application/json") };
             }
-            else if (path == "user.css" || path == "api/user.css")
+            else if (path == "user.css" || path == "api/userdata/user.css" || path == "api/user.css")
             {
                 HttpResponseMessage rawResponse = await webClient.GetAsync($"{webAddress}/{path}");
                 string remoteUserThemeText = rawResponse.StatusCode == HttpStatusCode.OK ? await rawResponse.Content.ReadAsStringAsync() : "";
