@@ -510,7 +510,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             JObject historyOut = await SendGet<JObject>($"history/{promptId}");
             if (!historyOut.Properties().IsEmpty())
             {
-                foreach (MediaFile file in await GetAllImagesForHistory(historyOut[promptId], interrupt, user_input))
+                foreach (MediaFile file in await GetAllImagesForHistory(historyOut[promptId], user_input, interrupt))
                 {
                     if (Program.ServerSettings.AddDebugData)
                     {
@@ -526,7 +526,10 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     takeOutput(new T2IEngine.ImageOutput() { File = file, IsReal = true, GenTimeMS = firstStep == 0 ? -1 : (Environment.TickCount64 - firstStep) });
                 }
             }
-            await HttpClient.PostAsync($"{APIAddress}/history", new StringContent(new JObject() { ["delete"] = new JArray() { promptId } }.ToString()), Program.GlobalProgramCancel);
+            if (!user_input.Get(T2IParamTypes.NoInternalSpecialHandling, false))
+            {
+                await HttpClient.PostAsync($"{APIAddress}/history", new StringContent(new JObject() { ["delete"] = new JArray() { promptId } }.ToString()), Program.GlobalProgramCancel);
+            }
         }
         catch (Exception)
         {
@@ -606,7 +609,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         }
     }
 
-    private async Task<MediaFile[]> GetAllImagesForHistory(JToken output, CancellationToken interrupt, T2IParamInput userInput)
+    private async Task<MediaFile[]> GetAllImagesForHistory(JToken output, T2IParamInput userInput, CancellationToken interrupt)
     {
         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
         {
