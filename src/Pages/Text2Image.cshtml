@@ -42,17 +42,17 @@
 </script>
 
 <ul class="nav nav-tabs" role="tablist" id="toptablist">
-    <li class="nav-item" role="presentation" data-requiredpermission="comfy_dynamic_custom_workflows">
+    <li class="nav-item" role="presentation" data-requiredpermission="comfy_dynamic_custom_workflows,simple_tab">
         <a class="nav-link translate" data-bs-toggle="tab" href="#Simple" id="simpletabbutton" aria-selected="false" tabindex="-1" role="tab">Simple</a>
     </li>
     <li class="nav-item" role="presentation">
         <a class="nav-link active translate" data-bs-toggle="tab" href="#Text2Image" id="text2imagetabbutton" aria-selected="true" role="tab">Generate</a>
     </li>
     @WebServer.T2ITabHeader
-    <li class="nav-item" role="presentation">
+    <li class="nav-item" role="presentation" data-requiredpermission="utilities_tab">
         <a class="nav-link translate" data-bs-toggle="tab" href="#utilities_tab" id="utilitiestabbutton" aria-selected="false" tabindex="-1" role="tab">Utilities</a>
     </li>
-    <li class="nav-item" role="presentation">
+    <li class="nav-item" role="presentation" data-requiredpermission="user_tab">
         <a class="nav-link translate" data-bs-toggle="tab" href="#user_tab" id="usersettingstabbutton" aria-selected="false" tabindex="-1" role="tab">User</a>
     </li>
     <li class="nav-item" role="presentation" data-requiredpermission="view_server_tab">
