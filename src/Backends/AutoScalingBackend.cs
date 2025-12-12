@@ -34,7 +34,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         public double MinIdleTime = 10;
 
         [ConfigComment("Minimum number of waiting generations before a new backend can be started.\nSelect this high enough to not be wasteful of resources, but low enough to not cause generation requests to be pending for too long.\nMust be set to at least 1, should ideally be set higher.")]
-        public int MinQueuedBeforeExpand = 10; // TODO: Impl me
+        public int MinQueuedBeforeExpand = 10;
 
         [ConfigComment($"File path to a shell script (normally a '.sh') that will cause a new backend to be started.\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/AutoScalingBackend.md\">docs Features/AutoScalingBackend</a> for info on how to build this script.")]
         public string StartScript = "";
@@ -105,7 +105,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         await FillToMin(100, true);
         Program.TickEvent += Tick;
         Program.PreShutdownEvent += PreShutdown;
-        Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, SignalWantsOne);
+        Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, () => SignalWantsOne());
         Status = BackendStatus.RUNNING;
     }
 
@@ -126,7 +126,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             mustAdd = Math.Min(mustAdd, limit);
             for (int i = 0; i < mustAdd; i++)
             {
-                await (hardLaunch ? LaunchOne() : SignalWantsOne());
+                await (hardLaunch ? LaunchOne() : SignalWantsOne(false));
             }
         }
     }
@@ -167,7 +167,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     }
 
     /// <summary>Signal that a new backend is wanted. Only does anything if the system is currently ready to expand.</summary>
-    public async Task<BackendHandler.ScaleResult> SignalWantsOne()
+    public async Task<BackendHandler.ScaleResult> SignalWantsOne(bool checkQueueReq = true)
     {
         lock (ScaleBehaviorLock)
         {
@@ -183,6 +183,11 @@ public class AutoScalingBackend : AbstractT2IBackend
             if (CountActiveBackends >= Settings.MaxBackends)
             {
                 Logs.Verbose("Scale request ignored due to max backends count reached.");
+                return BackendHandler.ScaleResult.NoLaunch;
+            }
+            if (checkQueueReq && Program.Backends.QueuedRequests < Settings.MinQueuedBeforeExpand)
+            {
+                Logs.Verbose("Scale request ignored due to insufficient queued requests.");
                 return BackendHandler.ScaleResult.NoLaunch;
             }
             MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
