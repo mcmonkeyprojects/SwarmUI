@@ -91,6 +91,10 @@ class PromptTabCompleteClass {
             if (matches) {
                 for (let match of matches) {
                     let varName = match.substring('<setvar['.length, match.length - ']:'.length);
+                    let commaIndex = varName.indexOf(',');
+                    if (commaIndex != -1) {
+                        varName = varName.substring(0, commaIndex);
+                    }
                     if (varName.toLowerCase().includes(prefixLow)) {
                         possible.push(varName);
                     }
