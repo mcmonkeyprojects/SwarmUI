@@ -37,7 +37,7 @@
                     <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div>
                 </div>
                 <div id="extra_welcome_message">
-                    @if (Program.ServerSettings.UserAuthorization.AuthorizationRequired && Model.User is not null && Model.User.Data.IsPasswordSetByAdmin && Model.User.UserID != SessionHandler.LocalUserID)
+                    @if (Program.ServerSettings.UserAuthorization.AuthorizationRequired && Model.User is not null && Model.User.Data.IsPasswordSetByAdmin && Model.User.UserID != SessionHandler.LocalUserID && !Model.User.HasPermission(Permissions.Admin))
                     {
                         <div class="translate password-change-warn">You haven't yet changed your password! Please go to the User Tab, then click "Change Password".</div>
                     }

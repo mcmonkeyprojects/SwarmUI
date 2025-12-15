@@ -585,8 +585,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - [Z-Image](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) is supported in SwarmUI!
     - It is a 6B scaled model designed to run extremely fast while competing at the top level of image models
 - Only the "Turbo" model is currently released, download here <https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>
-    - Or FP8 version here (for lower VRAM) <https://huggingface.co/T5B/Z-Image-Turbo-FP8/blob/main/z-image-turbo-fp8-e4m3fn.safetensors>
-        - That's a direct fp8 with some quality loss, proper scaled/mixed fp8 version pending (?)
+    - Or FP8 version here (for lower VRAM): <https://huggingface.co/silveroxides/Z-Image-Turbo-quants-plus/blob/main/Z-Image-Turbo-Plateau-fp8mixed.safetensors>
     - Or GGUF version here <https://huggingface.co/jayn7/Z-Image-Turbo-GGUF/tree/main>
     - Save in `diffusion_models`
     - "Base" and "Edit" variants are expected to release in the future
