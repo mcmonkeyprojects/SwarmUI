@@ -327,7 +327,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - Black Forest Labs' [Flux.2 Models](https://bfl.ai/blog/flux-2) are supported in SwarmUI
 - It is an extremely massive model (32B diffusion model, 24B text encoder) that will demand significant RAM availability on your PC.
     - This can easily fill up 128 gigs of system RAM in usage, but does still work on 64 gig systems. Lower than 64 may not be possible, or may require heavily using swapfile.
-- Download the standard model here <https://huggingface.co/Comfy-Org/flux2-dev/blob/main/split_files/diffusion_models/flux2_dev_fp8mixed.safetensors>
+- Download the standard FP8 model here <https://huggingface.co/silveroxides/FLUX.2-dev-fp8_scaled/blob/main/flux2-dev-fp8mixedfromscaled.safetensors>
     - Or GGUF version here <https://huggingface.co/orabazes/FLUX.2-dev-GGUF/tree/main>
     - Goes in `diffusion_models` folder
 - The VAE is a brand new 16x16 downsample VAE with 128 channels. It will be autodownloaded.

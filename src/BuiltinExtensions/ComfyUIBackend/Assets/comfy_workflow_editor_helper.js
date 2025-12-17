@@ -1394,7 +1394,7 @@ function comfyBrowseWorkflowsNow() {
 let comfyTabBody = getRequiredElementById('comfyworkflow');
 let wasComfyTabActive = comfyTabBody.classList.contains('show');
 
-/** Hack-around for firefox bug: block the internal comfy canvas from rendering when the tab is inactive. */
+/** Workaround browser-specific comfy canvas bugs. */
 function comfyDoCanvasFreeze() {
     if (!hasComfyLoaded) {
         return;
@@ -1405,10 +1405,10 @@ function comfyDoCanvasFreeze() {
         return;
     }
     if (comfyTabBody.classList.contains('show')) {
-        canvas.startRendering();
+        comfyTabBody.classList.remove('comfy_tab_hackhide');
     }
     else {
-        canvas.stopRendering();
+        comfyTabBody.classList.add('comfy_tab_hackhide');
     }
 }
 
