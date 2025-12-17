@@ -1187,7 +1187,7 @@ function hideUnalteredParameters() {
 let hideParamCallbacks = [];
 
 function hideUnsupportableParams() {
-    if (!gen_param_types) {
+    if (typeof gen_param_types == 'undefined' || !gen_param_types) {
         return;
     }
     let ipadapterInstallButton = document.getElementById('revision_install_ipadapter');
