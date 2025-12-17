@@ -167,8 +167,11 @@
         - For example, `<segment:face|hair>` will find all the faces and hair in the image and refine them as a single group.
         - This works with YOLOv8 models as well.
             - `<segment:yolo-face_yolov8m-seg_60.pt | yolo-hair_yolov8m-seg_60.pt | fingers>` will refine the group of faces and hair (found by YOLO) and fingers (found by CLIPSeg) as a single group.
-    - There's an advanced parameter under `Segment Refining` named `Segment Model` to customize the base model used for segment processing.
-    - There's also a parameter named `Save Segment Mask` to save a preview copy of the generated mask.
+    - There's an advanced parameter group named `Segment Refining` which can configure additional options for this
+        - `Segment Model` to customize the base model used for segment processing.
+        - `Save Segment Mask` to save a preview copy of the generated mask.
+        - `Segment Target Resolution` to control what resolution the segment is generated at. Users have noted that for some models (such as SDXL), `1248x1824` is a very good target resolution for face fixes.
+        - Other parameters too, see the `?` button in-UI next to each option.
 
 ## Clear (Transparency)
 

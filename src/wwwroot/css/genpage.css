@@ -1322,7 +1322,7 @@ body {
 }
 .server_logs_container {
     display: block;
-    width: 80vw;
+    width: 95vw;
     height: calc(90vh - 10rem);
     border: 1px solid var(--light-border);
     border-radius: 1rem;
