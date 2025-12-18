@@ -363,6 +363,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             {
                 try
                 {
+                    Logs.Verbose($"Explicit shutdown, trace: {Environment.StackTrace}");
                     await swarmBackend.TriggerRemoteShutdown();
                 }
                 catch (Exception ex)
