@@ -359,7 +359,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 if (output is not null)
                 {
                     user_input.ReceiveRawBackendData?.Invoke("comfy_websocket", output);
-                    if (Encoding.ASCII.GetString(output, 0, 8) == "{\"type\":")
+                    string firstChunk = Encoding.ASCII.GetString(output, 0, 8);
+                    if (firstChunk == "{\"type\":" || firstChunk == "{ \"type\"")
                     {
                         JObject json = Utilities.ParseToJson(Encoding.UTF8.GetString(output));
                         if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)

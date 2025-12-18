@@ -153,7 +153,8 @@ public class ComfyUser
                 return;
             }
             // TODO: This is hacky message type detection. Maybe backend should actually pay attention to this properly?
-            if (Encoding.ASCII.GetString(data, 0, 8) == "{\"type\":")
+            string firstChunk = Encoding.ASCII.GetString(data, 0, 8);
+            if (firstChunk == "{\"type\":" || firstChunk == "{ \"type\"")
             {
                 JObject jmessage = StringConversionHelper.UTF8Encoding.GetString(data).ParseToJson();
                 string jtype = $"{jmessage["type"]}";
