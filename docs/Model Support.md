@@ -331,6 +331,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - Or GGUF version here <https://huggingface.co/orabazes/FLUX.2-dev-GGUF/tree/main>
     - Goes in `diffusion_models` folder
 - The VAE is a brand new 16x16 downsample VAE with 128 channels. It will be autodownloaded.
+    - You can swap it for this one <https://huggingface.co/CabalResearch/Flux2VAE-Anime-Decoder-Tune/blob/main/Flux2Anime%20VAE%20DecB1.safetensors> which is a finetune to reduce detail artifacting.
 - The Text Encoder is 24B Mistral Small 3.2 (2506). It will be autodownloaded.
     - This would make sense to replace with a GGUF. (Pending gguf download link)
 - **Parameters:**
