@@ -446,8 +446,8 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 # Obscure Model Redirection
 
-## Stable Video Diffusion
-# Genmo Mochi 1 (Text2Video)
-# NVIDIA Cosmos
+### Stable Video Diffusion
+### Genmo Mochi 1 (Text2Video)
+### NVIDIA Cosmos
 
 These obscure/old/bad/unpopular/etc. models have been moved to [Obscure Model Support](/docs/Obscure%20Model%20Support.md#video-models)
