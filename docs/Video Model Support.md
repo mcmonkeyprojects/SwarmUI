@@ -2,26 +2,28 @@
 
 | Model | Year | Author | Scale | Type | Censored? | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- | ---- |
-[Stable Video Diffusion](#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
-[Genmo Mochi 1](#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
-[Nvidia Cosmos](#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
 [Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
 [Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
 Support for image models and technical formats is documented in [the Model Support doc](/docs/Model%20Support.md), as well as explanation of the table columns above
 
-**Unsupported:**
-- Below are some video models that are not natively supported in SwarmUI's `Generate` tab, but are available to use via the `Comfy Workflow` and `Simple` tabs:
-    - [CogVideoX](https://github.com/THUDM/CogVideo) (Tsinghua University, 2024, 2B & 5B DiT, Text/Image 2Video) is a decent video model, but unfortunately ComfyUI support is limited to [very hacky comfy nodes based on diffusers](https://github.com/kijai/ComfyUI-CogVideoXWrapper) which can not be easily integrated in SwarmUI's workflow generator.
+Old or bad options also tracked listed:
+
+| Model | Year | Author | Scale | Type | Censored? | Quality/Status |
+| ----  | ---- | ---- | ---- | ---- | ---- | ---- |
+[Stable Video Diffusion](/docs/Obscure%20Model%20Support.md#stable-video-diffusion) | 2023 | Stability AI | 1B Unet | Image2Video | Yes | Outdated |
+[Genmo Mochi 1](/docs/Obscure%20Model%20Support.md#genmo-mochi-1-text2video) | 2024 | Genmo | 10B DiT | Text2Video | ? | Outdated |
+[Nvidia Cosmos](/docs/Obscure%20Model%20Support.md#nvidia-cosmos) | 2025 | NVIDIA | Various | Text/Image/Video 2Video | ? | Modern, very slow, poor quality |
 
 ## Current Recommendations
 
-Video model(s) most worth using, as of April 2025:
+Video model(s) most worth using, as of December 2025:
 
-- Wan 2.1 - It's just leaps above the rest, no competition currently worth using.
+- Wan 2.2 or 2.1, in 14B either way. It's the best you can get locally currently.
+- Kandinsky 19B looks interesting, but is new and struggling to reach its potential. Could be worth playing with.
 
 ## Demo Gifs
 
@@ -59,18 +61,6 @@ There's a full step by step guide for video model usage here: <https://github.co
     - You can use the `Res` button next to your image to copy the resolution in (otherwise your image may be stretched or squished)
 
 # Video Models
-
-## Stable Video Diffusion
-
-![svd11_out](https://github.com/user-attachments/assets/ebeb3419-2c96-4746-863c-85ae4bc250d6)
-
-*(SVD XT 1.1, Generated using SDXL 1.0 Base as the Text2Image model)*
-
-- SVD models are supported via the `Image To Video` parameter group. Like XL, video by default uses enhanced inference settings (better sampler and larger sigma value).
-- The model has no native text2video, so do not select it as your main model.
-- You can do image2video by using an Init Image and setting Creativity to 0.
-- You can replicate text2video by just using a normal image model (eg SDXL) as the first-frame generator.
-- This model was released after SDXL, but was built based on SDv2.
 
 ## Hunyuan Video
 
@@ -211,25 +201,6 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 - Not yet supported, WIP.
 
-## Genmo Mochi 1 (Text2Video)
-
-![mochi](https://github.com/user-attachments/assets/4d64443e-c46f-415d-8203-17f6aa0f4cc5)
-
-- Genmo Mochi 1 is supported natively in SwarmUI as a Text-To-Video model.
-- You can get either the all-in-one checkpoint <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/all_in_one>
-    - save to `Stable-Diffusion` folder
-- Or get the DiT only variant <https://huggingface.co/Comfy-Org/mochi_preview_repackaged/tree/main/split_files/diffusion_models> (FP8 Scaled option recommended)
-    - save to `diffusion_models` folder
-- The text encoder (T5-XXL) and VAE will be automatically downloaded
-    - You can also set these manually if preferred
-- When selected, the `Text To Video` parameter group will become visible
-- Mochi is very GPU and memory intensive, especially the VAE
-- Standard CFG values, eg `7`.
-- The model is trained for 24 fps, and frame counts dynamic anywhere up to 200. Multiples of 6 plus 1 (7, 13, 19, 25, ...) are required due to the 6x temporal compression in the Mochi VAE. The input parameter will automatically round if you enter an invalid value.
-- The VAE has a harsh memory requirement that may limit you from high duration videos.
-    - To reduce VRAM impact and fit on most normal GPUs, set `VAE Tile Size` to `160` or `128`, and `VAE Tile Overlap` to `64` or `96`. There will be a slightly noticeable tiling pattern on the output, but not too bad at 160 and 96.
-    - If you have a lot of VRAM (eg 4090) and want to max quality but can't quite fit the VAE without tiling, Tile Size 480 Overlap 32 will tile the VAE in just two chunks to cut the VAE VRAM usage significantly while retaining near perfect quality.
-
 ## Lightricks LTX Video
 
 ![ltxv](https://github.com/user-attachments/assets/23e51754-79c6-47cd-9840-e65ec24fac1f)
@@ -277,35 +248,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 - LTXV has the best performance of any video model supported in Swarm. It is wildly fast. This comes at the cost of quality.
 
-## NVIDIA Cosmos
-
-![cosmos-7b](https://github.com/user-attachments/assets/d4e4047e-1706-4f61-b560-3fe6f70783c6)
-
-*(Cosmos 7B Text2World)*
-
-### Nvidia Cosmos Basic Install
-
-- NVIDIA Cosmos Text2World and Video2World (image2video) has initial support in SwarmUI.
-- Cosmos Autoregressive is not yet supported.
-- You can download the models from here: <https://huggingface.co/mcmonkey/cosmos-1.0/tree/main>
-    - pick 7B (small) or 14B (large) - 7B needs less memory/time, but has worse quality. 14B needs more but has better quality. Both will be very slow even on a 4090.
-    - Text2World takes a prompt and generates a video (as a base model in Swarm), Video2World takes text+an image and generates a video (via the Image To Video param group in Swarm).
-    - Save to `diffusion_models`
-- The text encoder is old T5-XXL v1, not the same T5-XXL used by other models.
-    - It will be automatically downloaded.
-- The VAE will be automatically downloaded.
-
-### Nvidia Cosmos Parameters
-
-- **Prompt:** Cosmos responds poorly to standard prompts, as it was trained for very long LLM-generated prompts.
-- **FPS:** The model is trained for 24 FPS, but supports any value in a range from 12 to 40.
-- **Resolution:** The model is trained for 1280x704 but works at other resolutions, including 960x960 as base square res.
-    - Cannot go below 704x704.
-- **Frame Count:** The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss, but generally you're stuck at exactly 121.
-- **CFG and Steps:** Nvidia default recommends CFG=7 and Steps=35
-- **Performance:** The models are extremely slow. Expect over 10 minutes for a single video even on a 4090.
-
-## Wan 2.1
+# Wan 2.1
 
 ![wan21_14b](https://github.com/user-attachments/assets/17ace901-bc5f-48d0-ab01-ed8984a1b1dc)
 
@@ -482,7 +425,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
             - For T2V, this has some visual oddities but does still mostly work
         - Wan 2.2 has an official prompting guide book: <https://alidocs.dingtalk.com/i/nodes/EpGBa2Lm8aZxe5myC99MelA2WgN7R35y>
 
-## Kandinsky 5
+# Kandinsky 5
 
 - Kandinsky 5 Video Lite and Video Pro are supported in SwarmUI!
     - Also the image models, docs [in the image model support doc](/docs/Model%20Support.md#kandinsky-5)
@@ -500,3 +443,11 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - **CFG Scale:** for regular models, regular CFG such as `5` works. For CFG-distill and step distill, use CFG of `1`.
     - **Steps:** For regular, 20 or higher is used. For Step Distill, 16 is the target. Going lower will work but with a severe quality hit.
     - **Resolution:** All video models primarily target a side length of 640. Higher resolutions can work, Pro handles 960x960 fine.
+
+# Obscure Model Redirection
+
+## Stable Video Diffusion
+# Genmo Mochi 1 (Text2Video)
+# NVIDIA Cosmos
+
+These obscure/old/bad/unpopular/etc. models have been moved to [Obscure Model Support](/docs/Obscure%20Model%20Support.md#video-models)
