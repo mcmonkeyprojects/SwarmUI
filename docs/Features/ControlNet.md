@@ -7,7 +7,7 @@
     - ControlNets were originally developed by [Lvmin Zhang](https://arxiv.org/abs/2302.05543), and have since been adopted by and used throughout the Stable Diffusion community.
     - ControlNet support in Swarm is provided natively by the ComfyUI backend, with help from [ControlNet Auxiliary Preprocessors developed by Fannovel16](https://github.com/Fannovel16/comfyui_controlnet_aux).
 - ControlNets can be used through the "ControlNet" parameter grouping.
-    - To get started, you'll need a model. There are official SDXL ControlNet LoRAs from Stability AI [here](https://huggingface.co/stabilityai/control-lora), and there's a general collection of community ControlNet models [here](https://huggingface.co/lllyasviel/sd_control_collection/tree/main) that you can use.
+    - To get started, you'll need a model, find your model class in the [Model Support doc](/docs/Model%20Support.md), there's usually controlnets linked for popular model classes.
         - Unfortunately there's a bit too much variety of choice here so it can't be automated away. If you're unsure, the Stability AI official SDXL Canny and Depth models are a good starting set.
         - Save the models you want into `(Swarm)/Models/controlnet`
         - Afterwards, go to the "ControlNets" list on the bottom of the Generate tab and click the lil spinny icon (Refresh, not your browser refresh, the one on the model list).

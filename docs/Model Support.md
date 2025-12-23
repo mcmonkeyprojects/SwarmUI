@@ -93,6 +93,11 @@ SDXL models work as normal, with the bonus that by default enhanced inference se
 
 Additional, SDXL-Refiner architecture models can be inferenced, both as refiner or even as a base (you must manually set res to 512x512 and it will generate weird results).
 
+### SDXL Controlnets
+
+- There are official SDXL ControlNet LoRAs from Stability AI [here](https://huggingface.co/stabilityai/control-lora)
+- and there's a general collection of community ControlNet models [here](https://huggingface.co/lllyasviel/sd_control_collection/tree/main) that you can use.
+
 # SD1 and SDXL Turbo Variants
 
 Turbo, LCM (Latent Consistency Models), Lightning, etc. models work the same as regular models, just set `CFG Scale` to `1` and:
