@@ -215,7 +215,16 @@ public class T2IModelHandler
         }
     }
 
+    public HashSet<string> AllModelNames => [.. Models.Keys, .. ModelsAPI.InternalExtraModels(ModelType).Keys];
+
     public List<T2IModel> ListModelsFor(Session session)
+    {
+        Dictionary<string, JObject> extra = ModelsAPI.InternalExtraModels(ModelType);
+        List<string> names = ListModelNamesFor(session);
+        return [.. names.Where(n => n != "(None)").Select(m => GetModel(m, extra))];
+    }
+
+    public List<string> ListModelNamesFor(Session session)
     {
         if (IsShutdown)
         {
@@ -223,27 +232,18 @@ public class T2IModelHandler
         }
         if (session is null || session.User.IsAllowedAllModels)
         {
-            return [.. Models.Values];
+            return ["(None)", .. AllModelNames];
         }
-        return [.. Models.Values.Where(m => session.User.IsAllowedModel(m.Name))];
+        return ["(None)", .. AllModelNames.Where(session.User.IsAllowedModel)];
     }
 
-    public List<string> ListModelNamesFor(Session session)
-    {
-        HashSet<string> list = [.. ListModelsFor(session).Select(m => m.Name)];
-        list.UnionWith(ModelsAPI.InternalExtraModels(ModelType).Keys);
-        List<string> result = new(list.Count + 2) { "(None)" };
-        result.AddRange(list);
-        return result;
-    }
-
-    public T2IModel GetModel(string name)
+    public T2IModel GetModel(string name, Dictionary<string, JObject> extra = null)
     {
         if (Models.TryGetValue(name, out T2IModel model) || Models.TryGetValue(name + ".safetensors", out model))
         {
             return model;
         }
-        Dictionary<string, JObject> extra = ModelsAPI.InternalExtraModels(ModelType);
+        extra ??= ModelsAPI.InternalExtraModels(ModelType);
         if (extra.TryGetValue(name, out JObject extraModelData) || extra.TryGetValue(name + ".safetensors", out extraModelData))
         {
             return T2IModel.FromNetObject(extraModelData);
