@@ -971,7 +971,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             if (currentMetadataVal) {
                 let readable = interpretMetadata(currentMetadataVal);
                 let metadata = readable ? JSON.parse(readable).sui_image_params : {};
-                if ('seed' in metadata) {
+                if ('seed' in metadata && !('refinercontrolpercentage' in metadata)) { // (Special case to not seed-burn on double-refine)
                     input_overrides['seed'] = metadata.seed;
                 }
             }
