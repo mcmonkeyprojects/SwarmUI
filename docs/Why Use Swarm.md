@@ -32,9 +32,15 @@ Swarm is a wrapper around Comfy - it contains Comfy, in full, node graph and all
 - **assorted other features:** Want to convert your old `.ckpt` files to `.safetensors`? Want to extract a LoRA from your fat checkpoint models? Want to check how the CLIP tokenization of your prompt works out? Swarm has a bunch of tack-on handy dandy utilities like those.
 - **And more!** Frankly at this point this section is getting too long and I'm probably forgetting things anyway. Just give Swarm a try, you have nothing to lose, and I'm pretty sure once you see it in action, you'll stick with it forever!
 
-### I am an Auto WebUI or other local SD UI user
+### I am an Auto WebUI, Forge, or other local SD UI user
 
-(TODO) basically Swarm is a very good UI that covers about everything other UIs do, and has a lot of power features that they don't, and a very very strong core (Comfy) that outpaces most others in performance.
+- Swarm is a very powerful AI media generation UI, it covers just about everything the others do, and likely has an interface that's not too dissimilar to your personal favorite.
+- Swarm has a lot of power features that other UIs don't. From the infinite-dimensional grid generator, to the ability to customize internal workflows, to Text2Image2Video chain generation, to the properly featured image editor, ...
+- Swarm's engine is a very strong well-written C# backing. Whereas most other UIs are slapped together with simple python scripts and gradio, Swarm takes pride in doing things cleanly, efficiently, and properly.
+    - We have users with tens of thousands of models, and Swarm's model browser sorts and renders this cleanly and near-instantly. Swarm's image history lets you scroll throusands of images or videos fluidly. It took real work to make the experience so smooth, quick simple scripts just can't keep up.
+- Swarm has a lot of UI intelligent behavior. You have a model that uses 1024x1024, and you swap to one that targets 640x640? Swarm knows this and updates parameters accordingly. There are tons of little features like this to max the experience as best it can be.
+- Swarm is backed by the ComfyUI Core Backend, which is the modern best in AI media generation. It uses the most of your system resources, and adapts automatically to what you have available. Meaning for example that Swarm can run AI models larger than your GPU can fit, and near-full speeds. And you don't even need to configure anything to get this, it works out of the box.
+- This is just a short-list. There's so much more to it. Swarm is free, open souce, and self-contained to its own folder - so just give it a try, you have nothing to lose, and I'm pretty sure once you see it in action, you'll stick with it forever!
 
 ### I use online AI generation services
 
@@ -60,3 +66,5 @@ So you're using one of those big well-known name brand AI image/video/whatever g
 ### I'm Lost, Where Am I? What's AI?
 
 You should use Swarm cause it's really cool. AI is really cool, and Swarm is a great way to try it out!
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

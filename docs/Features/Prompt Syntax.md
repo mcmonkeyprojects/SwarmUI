@@ -265,3 +265,5 @@ a video of a cat standing in a forest
 
 - When using the Refine/Upscale param group, you can add to your prompt `<refiner> some prompt here` to have that section of prompt only be used for the refiner stage.
     - This includes `<lora:...>` syntax to attach a lora to the refiner.
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

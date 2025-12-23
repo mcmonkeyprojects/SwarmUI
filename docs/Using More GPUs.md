@@ -169,3 +169,5 @@ Before we begin, let's plan how we're going to set things up.
     - This means for example, if you have `LoadCheckpoint` -> `KSampler` -> then 5 output nodes, you will generate the same image 5 times and get 5 outputs, redundantly.
         - However if you have 1 `LoadCheckpoint` -> then 5 KSamplers each with their own output, the LoadCheckpoint will duplicate on all machines but the KSamplers will be separated, and each GPU will only run 1 KSampler. This is ideal.
 - As of Jan 2025, the current comfy frontend seems to ignore status updates after any one backend finishes (ie it got the end of execution message), but will still output results properly.
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

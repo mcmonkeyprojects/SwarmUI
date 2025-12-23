@@ -79,3 +79,5 @@ Currently, SwarmUI is only validated to be safely usable by **Friends and Family
 You can hook up someone else's shared SwarmUI instance as a backend in your own Swarm!
 
 (TODO: Explain how to. Need easy way to gen and apply account auth stuff.)
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

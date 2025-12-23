@@ -238,3 +238,5 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 - **Frame Count:** The model is trained only for 121 frames. Some of the model variants work at lower frame counts with quality loss, but generally you're stuck at exactly 121.
 - **CFG and Steps:** Nvidia default recommends CFG=7 and Steps=35
 - **Performance:** The models are extremely slow. Expect over 10 minutes for a single video even on a 4090.
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

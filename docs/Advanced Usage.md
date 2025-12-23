@@ -98,3 +98,5 @@ Triton is a Linux-only AI acceleration library that you can hack into working on
     - Set the other paths to sub-folder names. For example, `SDModelFolder` can be `checkpoints` for comfy-style folders, or `Stable-Diffusion;checkpoints` to allow both Auto1111 and ComfyUI style paths.
         - The first one in this list is favored for both loading and downloading.
         - Note, do not set full system paths in most case. This is just the sub-folder name.
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

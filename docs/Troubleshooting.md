@@ -133,3 +133,5 @@ If you're trying a new model class that Swarm supports, but it's not working, th
 ## Other
 
 If you have some other troubleshooting issue you think should be listed here, let me know on [the SwarmUI Discord](https://discord.gg/q2y38cqjNw).
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>

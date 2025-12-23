@@ -125,3 +125,5 @@ If you're not an active "docker compose" fan that needs it for some reason, I do
 - If you have an AMD or Intel GPU... uh, there's probably appropriate tooling for that. No idea what it is, good luck. (If you have such a GPU and find the answers to that, please PR docs about it!)
 - The "Standard" container runs as your own current user inside the container. Historically it originally ran as root, so you can run the script with `fixch` as the only arg to have it run as root and chown everything over.
     - For the "Open" dockerfile, if needed, just `sudo chown -R $UID:$UID ./` inside the SwarmUI folder, since permissions are just a raw passthrough anyway.
+
+<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
