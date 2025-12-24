@@ -170,6 +170,7 @@ public class T2IModelClassSorter
         bool isOmniGen(JObject h) => h.ContainsKey("time_caption_embed.timestep_embedder.linear_2.weight") && h.ContainsKey("context_refiner.0.attn.norm_k.weight");
         bool isQwenImage(JObject h) => (h.ContainsKey("time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("img_in.bias") && (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("transformer_blocks.0.attn.add_qkv_proj.bias")))
             || (h.ContainsKey("model.diffusion_model.time_text_embed.timestep_embedder.linear_1.bias") && h.ContainsKey("model.diffusion_model.img_in.bias") && (h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_k_proj.bias") || h.ContainsKey("model.diffusion_model.transformer_blocks.0.attn.add_qkv_proj.bias")));
+        bool isQwenImageEdit2511(JObject h) => h.ContainsKey("__index_timestep_zero__");
         bool isQwenImageLora(JObject h) => (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.lora_down.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.net.0.proj.lora_down.weight"))
                                             || (h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora.down.weight") && h.ContainsKey("transformer.transformer_blocks.0.attn.to_out.0.lora.down.weight"))
                                             || (h.ContainsKey("transformer_blocks.0.attn.add_k_proj.lora_A.default.weight") && h.ContainsKey("transformer_blocks.0.img_mlp.net.2.lora_A.default.weight"))
@@ -543,7 +544,7 @@ public class T2IModelClassSorter
         // ====================== Qwen Image ======================
         Register(new() { ID = "qwen-image", CompatClass = CompatQwenImage, Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
-            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h);
+            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && !isQwenImageEdit2511(h);
         }});
         Register(new() { ID = "qwen-image-edit", CompatClass = CompatQwenImage, Name = "Qwen Image Edit", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
@@ -551,7 +552,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "qwen-image-edit-plus", CompatClass = CompatQwenImage, Name = "Qwen Image Edit Plus", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
-            return false;
+            return isQwenImage(h) && !isControlnetX(h) && !isSD3Controlnet(h) && isQwenImageEdit2511(h);
         }});
         Register(new() { ID = "qwen-image/controlnet", CompatClass = CompatQwenImage, Name = "Qwen Image ControlNet", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {

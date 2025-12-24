@@ -405,9 +405,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 ### Qwen Image Edit
 
 - The Qwen Image **Edit** model can be downloaded here: [Comfy-Org/Qwen-Image-Edit_ComfyUI](<https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/tree/main/split_files/diffusion_models>)
-    - Or GGUF version here: [QuantStack/Qwen-Image-Edit-2509-GGUF](<https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF/tree/main>) (or old version [QuantStack/Qwen-Image-Edit-GGUF](<https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>))
+    - `qwen_image_edit_2511_fp8mixed` recommended currently
+    - Or GGUF version here: [unsloth/Qwen-Image-Edit-2511-GGUF](<https://huggingface.co/unsloth/Qwen-Image-Edit-2511-GGUF/blob/main/qwen-image-edit-2511-Q4_K_M.gguf>) or old 2509 [QuantStack/Qwen-Image-Edit-2509-GGUF](<https://huggingface.co/QuantStack/Qwen-Image-Edit-2509-GGUF/tree/main>) (or old version [QuantStack/Qwen-Image-Edit-GGUF](<https://huggingface.co/QuantStack/Qwen-Image-Edit-GGUF/tree/main>))
     - Or nunchaku version here: [nunchaku-qwen-image-edit-2509](<https://huggingface.co/nunchaku-tech/nunchaku-qwen-image-edit-2509/tree/main>) (or old version [nunchaku-qwen-image-edit](<https://huggingface.co/nunchaku-tech/nunchaku-qwen-image-edit/tree/main>))
-    - The architecture cannot be autodetected and must be set manually.
+    - For original Edit or v2509, the architecture cannot be autodetected and must be set manually. 2511 can autodetect.
         - Click the `☰` hamburger menu on a model, then `Edit Metadata`, then change `Architecture` to `Qwen Image Edit Plus` and hit `Save`
             - For the original model (prior to 2509), use `Qwen Image Edit`
     - Most params are broadly the same as regular Qwen Image
@@ -418,7 +419,9 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - Qwen Image Edit Plus works with up to 3 images well
         - Use phrasing like `The person in Picture 1` to refer to the content of specific input images in the prompt
         - There are a few samples of how to prompt here <https://www.alibabacloud.com/help/en/model-studio/qwen-image-edit-api>
-    - There are a couple dedicated Qwen Image Edit Lightning Loras [lightx2v/Qwen-Image-Lightning](<https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>)
+        - `Smart Image Prompt Resizing` parameter (top-left, under Image Prompting) will resize your input images automatically. Turn this off if you've carefully sized your images in advance.
+            - Some versions of Qwen Edit require strict sizing to work well. 2511 reportedly works fine within a range of options.
+    - There are a couple dedicated Qwen Image Edit Lightning Loras [lightx2v/Qwen-Image-Edit-2511-Lightning](<https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning/tree/main>) or for older copies [lightx2v/Qwen-Image-Lightning](<https://huggingface.co/lightx2v/Qwen-Image-Lightning/tree/main>)
         - Take care to separate the Edit lora vs the base Qwen Image lora.
 
 ### Hunyuan Image 2.1
