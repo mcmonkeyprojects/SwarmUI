@@ -492,6 +492,9 @@ body {
 .model-starred img {
     box-shadow: 0 0 3px 1px color-mix(in srgb, var(--star) 50%, transparent);
 }
+.preset-block-starred img {
+    box-shadow: 0 0 3px 1px color-mix(in srgb, var(--star) 50%, transparent);
+}
 .sui_popover_model {
     white-space: normal;
 }

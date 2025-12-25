@@ -328,6 +328,7 @@ function loadUserData(callback) {
     genericRequest('GetMyUserData', {}, data => {
         permissions.updateFrom(data.permissions);
         starredModels = data.starred_models;
+        starredPresets = Array.isArray(data.starred_presets) ? data.starred_presets : [];
         autoCompletionsList = {};
         if (data.autocompletions) {
             let allSet = [];

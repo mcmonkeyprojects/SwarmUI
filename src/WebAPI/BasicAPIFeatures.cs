@@ -28,6 +28,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
         API.RegisterAPICall(SetStarredModels, true, Permissions.FundamentalModelAccess);
+        API.RegisterAPICall(SetStarredPresets, true, Permissions.ManagePresets);
         API.RegisterAPICall(SetPresetLinks, true, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(AddNewPreset, true, Permissions.ManagePresets);
         API.RegisterAPICall(DuplicatePreset, true, Permissions.ManagePresets);
@@ -222,6 +223,7 @@ public static class BasicAPIFeatures
             "starred_models": {
                 "LoRA": ["one", "two"]
             },
+            "starred_presets": ["one", "two"],
             "model_preset_links": {
                 "Stable-Diffusion": {
                     "modelnamehere": ["preset_title"]
@@ -242,6 +244,7 @@ public static class BasicAPIFeatures
             ["language"] = session.User.Settings.Language,
             ["permissions"] = JArray.FromObject(session.User.GetPermissions()),
             ["starred_models"] = JObject.Parse(session.User.GetGenericData("starred_models", "full") ?? "{}"),
+            ["starred_presets"] = GetStarredPresets(session.User),
             ["model_preset_links"] = JObject.Parse(session.User.GetGenericData("modelpresetlinks", "full") ?? "{}"),
             ["autocompletions"] = string.IsNullOrWhiteSpace(settings.Source) ? null : new JArray(AutoCompleteListHelper.GetData(settings.Source, settings.EscapeParens, settings.Suffix, settings.SpacingMode))
         };
@@ -257,6 +260,18 @@ public static class BasicAPIFeatures
         raw.Remove("session_id");
         session.User.SaveGenericData("starred_models", "full", raw.ToString(Formatting.None));
         session.User.Save();
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("User route to update the user's starred presets list.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> SetStarredPresets(Session session,
+        [API.APIParameter("Send data as { presets: ['one', 'two'] }")] JObject raw)
+    {
+        raw.Remove("session_id");
+        SaveStarredPresets(session.User, raw["presets"] as JArray ?? []);
         return new JObject() { ["success"] = true };
     }
 
@@ -319,6 +334,10 @@ public static class BasicAPIFeatures
             session.User.DeletePreset(editing);
         }
         session.User.SavePreset(preset);
+        if (is_edit && !string.Equals(editing, title, StringComparison.Ordinal))
+        {
+            RenameStarredPreset(session.User, editing, title);
+        }
         return new JObject() { ["success"] = true };
     }
 
@@ -358,7 +377,80 @@ public static class BasicAPIFeatures
     public static async Task<JObject> DeletePreset(Session session,
         [API.APIParameter("Name of the preset to delete.")] string preset)
     {
-        return new JObject() { ["success"] = session.User.DeletePreset(preset) };
+        bool removed = session.User.DeletePreset(preset);
+        if (removed)
+        {
+            RemoveStarredPreset(session.User, preset);
+        }
+        return new JObject() { ["success"] = removed };
+    }
+
+    private static JArray GetStarredPresets(User user)
+    {
+        string raw = user.GetGenericData("starred_presets", "full");
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return [];
+        }
+        try
+        {
+            return JArray.Parse(raw);
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Failed to parse starred presets for user {user.UserID}: {ex.ReadableString()}");
+            return [];
+        }
+    }
+
+    private static void SaveStarredPresets(User user, JArray starredPresets)
+    {
+        user.SaveGenericData("starred_presets", "full", starredPresets.ToString(Formatting.None));
+        user.Save();
+    }
+
+    private static void RenameStarredPreset(User user, string oldTitle, string newTitle)
+    {
+        if (string.IsNullOrWhiteSpace(oldTitle) || string.IsNullOrWhiteSpace(newTitle))
+        {
+            return;
+        }
+        JArray starredPresets = GetStarredPresets(user);
+        bool updated = false;
+        for (int i = 0; i < starredPresets.Count; i++)
+        {
+            if (starredPresets[i]?.ToString() == oldTitle)
+            {
+                starredPresets[i] = newTitle;
+                updated = true;
+            }
+        }
+        if (updated)
+        {
+            SaveStarredPresets(user, starredPresets);
+        }
+    }
+
+    private static void RemoveStarredPreset(User user, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return;
+        }
+        JArray starredPresets = GetStarredPresets(user);
+        int removed = 0;
+        for (int i = starredPresets.Count - 1; i >= 0; i--)
+        {
+            if (starredPresets[i]?.ToString() == title)
+            {
+                starredPresets.RemoveAt(i);
+                removed++;
+            }
+        }
+        if (removed > 0)
+        {
+            SaveStarredPresets(user, starredPresets);
+        }
     }
 
     /// <summary>Gets current session status. Not an API call.</summary>

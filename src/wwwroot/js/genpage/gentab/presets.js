@@ -161,6 +161,7 @@ let modelPresetLinkManager = new ModelPresetLinkManager();
 let allPresets = [];
 let allPresetsUnsorted = [];
 let currentPresets = [];
+let starredPresets = [];
 
 let preset_to_edit = null;
 
@@ -173,6 +174,29 @@ function fixPresetParamClickables() {
 function getPresetByTitle(title) {
     title = title.toLowerCase();
     return allPresets.find(p => p.title.toLowerCase() == title);
+}
+
+function isPresetStarred(presetTitle) {
+    return presetTitle && starredPresets.includes(presetTitle);
+}
+
+function setStarredPresets(nextStarred) {
+    starredPresets = nextStarred;
+    genericRequest('SetStarredPresets', { presets: starredPresets }, data => { });
+}
+
+function togglePresetStar(presetTitle) {
+    if (!presetTitle?.trim()) {
+        return;
+    }
+    if (isPresetStarred(presetTitle)) {
+        setStarredPresets(starredPresets.filter(title => title != presetTitle));
+    }
+    else {
+        setStarredPresets([...starredPresets, presetTitle]);
+    }
+    sortPresets();
+    presetBrowser.rerender();
 }
 
 function getPresetTypes(prefix) {
@@ -496,7 +520,22 @@ function sortPresets() {
     let preList = allPresetsUnsorted.filter(p => p.title.toLowerCase() == "default" || p.title.toLowerCase() == "preview");
     let mainList = allPresetsUnsorted.filter(p => p.title.toLowerCase() != "default" && p.title.toLowerCase() != "preview");
     if (sortBy != 'Default') {
-        mainList.sort((a, b) => presetSortCompare(sortBy, a, b));
+        mainList.sort((a, b) => {
+            let aStarred = isPresetStarred(a.title);
+            let bStarred = isPresetStarred(b.title);
+            if (aStarred && !bStarred) {
+                return -1;
+            }
+            if (!aStarred && bStarred) {
+                return 1;
+            }
+            return presetSortCompare(sortBy, a, b);
+        });
+    }
+    else {
+        let starred = mainList.filter(p => isPresetStarred(p.title));
+        let unstarred = mainList.filter(p => !isPresetStarred(p.title));
+        mainList = starred.concat(unstarred);
     }
     if (reverse) {
         mainList.reverse();
@@ -553,6 +592,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
     if (isRefresh) {
         genericRequest('GetMyUserData', {}, data => {
             allPresetsUnsorted = data.presets;
+            starredPresets = Array.isArray(data.starred_presets) ? data.starred_presets : [];
             modelPresetLinkManager.loadFromServer(data.model_preset_links);
             proc();
         });
@@ -563,6 +603,7 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
 }
 
 function describePreset(preset) {
+    let isStarred = isPresetStarred(preset.data.title);
     let buttons = [
         { label: 'Toggle', onclick: () => selectPreset(preset) },
         { label: 'Direct Apply', onclick: () => applyOnePreset(preset.data) },
@@ -577,15 +618,19 @@ function describePreset(preset) {
             }
         } }
     ];
+    buttons.splice(1, 0, { label: isStarred ? 'Unstar' : 'Star', onclick: () => togglePresetStar(preset.data.title) });
     let paramText = Object.keys(preset.data.param_map).map(key => `${key}: ${preset.data.param_map[key]}`);
-    let description = `${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
+    let description = `${isStarred ? 'Starred: ' : ''}${preset.data.title}:\n${preset.data.description}\n\n${paramText.join('\n')}`;
     let className = currentPresets.some(p => p.title == preset.data.title) ? 'preset-block-selected preset-block' : 'preset-block';
+    if (isStarred) {
+        className += ' preset-block-starred';
+    }
     let name = preset.data.title;
     let index = name.lastIndexOf('/');
     if (index != -1) {
         name = name.substring(index + 1);
     }
-    let searchable = description;
+    let searchable = `${description}\n${isStarred ? 'starred' : 'unstarred'}`;
     let displayFields = new Set((getUserSetting('ui.presetlistdetailsfields', '') || 'path,description,params').split(',').map(s => cleanParamName(s)));
     let displayParams = Array.from(displayFields).map(field => {
         if (field == 'path') {
