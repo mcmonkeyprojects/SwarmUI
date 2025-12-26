@@ -466,20 +466,27 @@ public static class Utilities
 
     public static async Task YieldJsonOutput(this HttpContext context, WebSocket socket, int status, JObject obj)
     {
-        if (socket != null)
+        try
         {
-            await socket.SendJson(obj, TimeSpan.FromMinutes(1));
-            using CancellationTokenSource cancel = TimedCancel(TimeSpan.FromMinutes(1));
-            await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
-            return;
+            if (socket is not null)
+            {
+                await socket.SendJson(obj, TimeSpan.FromMinutes(1));
+                using CancellationTokenSource cancel = TimedCancel(TimeSpan.FromMinutes(1));
+                await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
+                return;
+            }
+            byte[] resp = JsonToByteArray(obj);
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = status;
+            context.Response.ContentLength = resp.Length;
+            context.Response.Headers.CacheControl = "no-store";
+            await context.Response.BodyWriter.WriteAsync(resp, Program.GlobalProgramCancel);
+            await context.Response.CompleteAsync();
         }
-        byte[] resp = JsonToByteArray(obj);
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = status;
-        context.Response.ContentLength = resp.Length;
-        context.Response.Headers.CacheControl = "no-store";
-        await context.Response.BodyWriter.WriteAsync(resp, Program.GlobalProgramCancel);
-        await context.Response.CompleteAsync();
+        catch (Exception ex)
+        {
+            Logs.Error($"Failing while yielding JSON output: {ex.ReadableString()}");
+        }
     }
 
     public static JObject ErrorObj(string message, string error_id)
