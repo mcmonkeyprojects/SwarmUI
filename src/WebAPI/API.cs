@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
@@ -89,11 +90,18 @@ public class API
             {
                 if (!input.TryGetValue("session_id", out JToken session_id))
                 {
-                    Error("Request input lacks required session id");
-                    context.Response.Redirect("/Error/BasicAPI");
-                    return;
+                    if (context.Request.Headers.TryGetValue("X-Session-ID", out StringValues headerVals) && headerVals.Count >= 1)
+                    {
+                        session_id = headerVals[0];
+                    }
+                    else
+                    {
+                        Error("Request input lacks required session id");
+                        context.Response.Redirect("/Error/BasicAPI");
+                        return;
+                    }
                 }
-                if (!Program.Sessions.TryGetSession(session_id.ToString(), out session))
+                if (!Program.Sessions.TryGetSession($"{session_id}", out session))
                 {
                     Error("Request input has unknown session id (if you're not writing API code you can ignore this message)");
                     await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("Invalid session ID. You may need to refresh the page.", "invalid_session_id"));
