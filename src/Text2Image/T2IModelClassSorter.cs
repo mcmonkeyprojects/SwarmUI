@@ -146,7 +146,7 @@ public class T2IModelClassSorter
         bool isCosmosPredict2_2B(JObject h) => h.ContainsKey("norm_out.linear_1.weight") && h.ContainsKey("time_embed.t_embedder.linear_1.weight");
         bool isCosmosPredict2_14B(JObject h) => h.ContainsKey("net.blocks.0.adaln_modulation_cross_attn.1.weight");
         bool isLumina2(JObject h) => hasKey(h, "cap_embedder.0.weight");
-        bool isZImage(JObject h) => hasKey(h, "context_refiner.0.attention.k_norm.weight") && hasKey(h, "layers.0.adaLN_modulation.0.bias");
+        bool isZImage(JObject h) => (hasKey(h, "context_refiner.0.attention.k_norm.weight") || hasKey(h, "context_refiner.0.attention.norm_k.weight")) && hasKey(h, "layers.0.adaLN_modulation.0.bias");
         bool isOvis(JObject h) => hasKey(h, "double_blocks.0.img_mlp.down_proj.weight");
         bool isZImageLora(JObject h) => hasKey(h, "layers.0.adaLN_modulation.0.lora_A.weight") && hasKey(h, "layers.9.feed_forward.w3.lora_B.weight");
         bool isZImageControlNetDiffPatch(JObject h) => h.ContainsKey("control_layers.0.adaLN_modulation.0.weight") && h.ContainsKey("control_noise_refiner.0.adaLN_modulation.0.weight") && h.ContainsKey("control_layers.0.feed_forward.w3.weight");

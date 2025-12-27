@@ -110,6 +110,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
     /// <summary>List of required python packages that need a specific version, in structure (string libFolder, string pipName, string rel, string version).</summary>
     public static List<(string, string, string, string)> RequiredVersionPythonPackages =
     [
+        ("diffusers", "diffusers", ">=", "0.36.0"),
         ("aiohttp", "aiohttp", ">=", "3.11.8"),
         ("yarl", "yarl", ">=", "1.18.0"),
         ("av", "av", ">=", "14.2.0"),
