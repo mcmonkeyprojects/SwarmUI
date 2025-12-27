@@ -713,7 +713,7 @@ public partial class WorkflowGenerator
                 {
                     string modelNode = CreateNode("NunchakuZImageDiTLoader", new JObject()
                     {
-                        ["model_name"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
+                        ["model_name"] = model.ToString(ModelFolderFormat),
                     }, id, false);
                     LoadingModel = [modelNode, 0];
                 }
