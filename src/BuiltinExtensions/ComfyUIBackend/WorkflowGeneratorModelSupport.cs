@@ -709,6 +709,14 @@ public partial class WorkflowGenerator
                     }, id, false);
                     LoadingModel = [modelNode, 0];
                 }
+                else if (IsZImage())
+                {
+                    string modelNode = CreateNode("NunchakuZImageDiTLoader", new JObject()
+                    {
+                        ["model_name"] = model.Name.EndsWith("/transformer_blocks.safetensors") ? model.Name.BeforeLast('/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}") : model.ToString(ModelFolderFormat),
+                    }, id, false);
+                    LoadingModel = [modelNode, 0];
+                }
                 else
                 {
                     throw new SwarmUserErrorException($"Cannot load nunchaku for model architecture '{model.ModelClass?.ID}'. If other model architectures are supported in the Nunchaku source, please report this on the SwarmUI GitHub or Discord.");
