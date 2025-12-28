@@ -168,7 +168,7 @@ function reviseStatusBar() {
 
 /** Array of functions called on key events (eg model selection change) to update displayed features.
  * Return format [array addMe, array removeMe]. For example `[[], ['sd3']]` indicates that the 'sd3' feature flag is not currently supported (eg by current model).
- * Can use 'curModelCompatClass', 'curModelArch' to check the current model architecture. Note these values may be null.
+ * Can use 'currentModelHelper.curCompatClass', 'currentModelHelper.curArch' to check the current model architecture. Note these values may be null.
  * */
 let featureSetChangers = [];
 
@@ -176,7 +176,7 @@ function reviseBackendFeatureSet() {
     currentBackendFeatureSet = Array.from(currentBackendFeatureSet);
     let addMe = [], removeMe = [];
     function doCompatFeature(compatClass, featureFlag) {
-        if (curModelCompatClass && curModelCompatClass.startsWith(compatClass)) {
+        if (currentModelHelper.curCompatClass && currentModelHelper.curCompatClass.startsWith(compatClass)) {
             addMe.push(featureFlag);
         }
         else {
@@ -185,7 +185,7 @@ function reviseBackendFeatureSet() {
     }
     function doAnyCompatFeature(compatClasses, featureFlag) {
         for (let compatClass of compatClasses) {
-            if (curModelCompatClass && curModelCompatClass.startsWith(compatClass)) {
+            if (currentModelHelper.curCompatClass && currentModelHelper.curCompatClass.startsWith(compatClass)) {
                 addMe.push(featureFlag);
                 return;
             }
@@ -194,7 +194,7 @@ function reviseBackendFeatureSet() {
     }
     function doAnyArchFeature(archIds, featureFlag) {
         for (let archId of archIds) {
-            if (curModelArch && curModelArch.startsWith(archId)) {
+            if (currentModelHelper.curArch && currentModelHelper.curArch.startsWith(archId)) {
                 addMe.push(featureFlag);
                 return;
             }
@@ -761,7 +761,7 @@ function genpageLoad() {
             reviseStatusBar();
             getRequiredElementById('advanced_options_checkbox').checked = localStorage.getItem('display_advanced') == 'true';
             toggle_advanced();
-            setCurrentModel();
+            currentModelHelper.ensureCurrentModel();
             loadUserData(() => {
                 if (permissions.hasPermission('view_backends_list')) {
                     loadBackendTypesMenu();

@@ -416,7 +416,7 @@ class GridGenClass {
     }
 
     doGenWrapper() {
-        setCurrentModel(() => {
+        currentModelHelper.ensureCurrentModel(() => {
             if (document.getElementById('current_model').value == '') {
                 showError("Cannot generate, no model selected.");
                 return;

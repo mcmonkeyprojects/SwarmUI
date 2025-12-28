@@ -123,11 +123,6 @@ let modelsHelpers = new ModelsHelpers();
 //////////// TODO: Merge all the below into the class above (or multiple separate classes)
 
 let models = {};
-let cur_model = null;
-let curModelWidth = 0, curModelHeight = 0;
-let curModelArch = '';
-let curModelCompatClass = '';
-let curModelSpecialFormat = '';
 let curModelMenuModel = null;
 let curModelMenuBrowser = null;
 let nativelySupportedModelExtensions = ["safetensors", "sft", "engine", "gguf"];
@@ -401,20 +396,21 @@ function save_edit_model() {
 }
 
 function isModelArchCorrect(model) {
-    if (model.compat_class && curModelCompatClass) {
+    let curCompat = currentModelHelper.curCompatClass;
+    if (model.compat_class && curCompat) {
         let slash = model.architecture.indexOf('/');
         if (slash != -1) { // Base models are excluded
             // VAEs have more mixed intercompat
-            if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('stable-diffusion-v3') && curModelCompatClass.startsWith('stable-diffusion-v3')) {
+            if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('stable-diffusion-v3') && curCompat.startsWith('stable-diffusion-v3')) {
                 return true;
             }
-            if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('flux-1') && curModelCompatClass.startsWith('hidream-i1')) {
+            if (model.architecture.endsWith('/vae') && model.compat_class.startsWith('flux-1') && curCompat.startsWith('hidream-i1')) {
                 return true;
             }
-            if (model.architecture.endsWith('/lora') && model.compat_class.startsWith('flux-1') && curModelCompatClass.startsWith('chroma')) {
+            if (model.architecture.endsWith('/lora') && model.compat_class.startsWith('flux-1') && curCompat.startsWith('chroma')) {
                 return true;
             }
-            return model.compat_class == curModelCompatClass;
+            return model.compat_class == curCompat;
         }
     }
     return true;
@@ -614,8 +610,8 @@ class ModelBrowserWrapper {
         }
         if (this.subType == 'Stable-Diffusion' && model.data.local) {
             let buttonLoad = () => {
-                directSetModel(model.data);
-                if (doModelInstallRequiredCheck()) {
+                currentModelHelper.directSetModel(model.data);
+                if (currentModelHelper.doModelInstallRequiredCheck()) {
                     return;
                 }
                 makeWSRequestT2I('SelectModelWS', {'model': model.data.name}, data => {
@@ -880,7 +876,7 @@ class ModelBrowserWrapper {
     }
 }
 
-let sdModelBrowser = new ModelBrowserWrapper('Stable-Diffusion', ['', 'inpaint', 'tensorrt', 'depth', 'canny', 'kontext'], 'model_list', 'modelbrowser', (model) => { directSetModel(model.data); });
+let sdModelBrowser = new ModelBrowserWrapper('Stable-Diffusion', ['', 'inpaint', 'tensorrt', 'depth', 'canny', 'kontext'], 'model_list', 'modelbrowser', (model) => { currentModelHelper.directSetModel(model.data); });
 let sdVAEBrowser = new ModelBrowserWrapper('VAE', ['vae'], 'vae_list', 'sdvaebrowser', (vae) => { directSetVae(vae.data); });
 let sdLoraBrowser = new ModelBrowserWrapper('LoRA', ['lora', 'lora-depth', 'lora-canny'], 'lora_list', 'sdlorabrowser', (lora) => { loraHelper.selectLora(lora.data); });
 let sdEmbedBrowser = new ModelBrowserWrapper('Embedding', ['embedding', 'textual-inversion'], 'embedding_list', 'sdembedbrowser', (embed) => { selectEmbedding(embed.data); });
@@ -972,71 +968,6 @@ function directSetVae(vae) {
     doToggleEnable('input_vae');
 }
 
-function directSetModel(model) {
-    if (!model) {
-        return;
-    }
-    let priorModel = getRequiredElementById('current_model').value;
-    if (priorModel) {
-        modelPresetLinkManager.removePresetsFrom('Stable-Diffusion', priorModel);
-    }
-    let modelName = null;
-    if (model.name) {
-		modelName = model.name;
-        let clean = cleanModelName(model.name);
-        forceSetDropdownValue('input_model', clean);
-        forceSetDropdownValue('current_model', clean);
-        setCookie('selected_model', `${clean},${model.standard_width},${model.standard_height},${model.architecture},${model.compat_class},${model.special_format}`, 90);
-        curModelWidth = model.standard_width;
-        curModelHeight = model.standard_height;
-        curModelArch = model.architecture;
-        curModelCompatClass = model.compat_class;
-        curModelSpecialFormat = model.special_format;
-    }
-    else if (model.includes(',')) {
-        let [name, width, height, arch, compatClass, specialFormat] = model.split(',');
-        forceSetDropdownValue('input_model', name);
-        forceSetDropdownValue('current_model', name);
-        setCookie('selected_model', `${name},${width},${height},${arch},${compatClass},${specialFormat}`, 90);
-        curModelWidth = parseInt(width);
-        curModelHeight = parseInt(height);
-        curModelArch = arch;
-        curModelCompatClass = compatClass;
-        curModelSpecialFormat = specialFormat;
-        modelName = name;
-    }
-    reviseBackendFeatureSet();
-    modelPresetLinkManager.addPresetsFrom('Stable-Diffusion', modelName);
-    getRequiredElementById('input_model').dispatchEvent(new Event('change'));
-    let aspect = document.getElementById('input_aspectratio');
-    if (aspect) {
-        aspect.dispatchEvent(new Event('change'));
-    }
-    sdModelBrowser.rebuildSelectedClasses();
-    for (let browser of subModelBrowsers) {
-        browser.browser.update();
-    }
-}
-
-function setCurrentModel(callback) {
-    let currentModel = getRequiredElementById('current_model');
-    if (currentModel.value == '') {
-        genericRequest('ListLoadedModels', {}, data => {
-            if (data.models.length > 0) {
-                directSetModel(data.models[0]);
-            }
-            if (callback) {
-                callback();
-            }
-        });
-    }
-    else {
-        if (callback) {
-            callback();
-        }
-    }
-}
-
 function showTrtMenu(model) {
     if (!currentBackendFeatureSet.includes('tensorrt')) {
         getRequiredElementById('tensorrt_mustinstall').style.display = '';
@@ -1091,48 +1022,146 @@ function trt_modal_create() {
     });
 }
 
-let noModelChangeDup = false;
+/** Helper class that manages the state of the currently selected model. */
+class CurrentModelHelper {
+    constructor() {
+        this.antiDup = false;
+        this.modelSelector = getRequiredElementById('current_model');
+        this.curModel = null;
+        this.curArch = null;
+        this.curCompatClass = null;
+        this.curSpecialFormat = null;
+        this.curWidth = null;
+        this.curHeight = null;
+        this.desiredModel = null;
+        this.modelSelector.addEventListener('change', () => this.currentModelChanged());
+    }
 
-function currentModelChanged() {
-    if (noModelChangeDup) {
-        return;
+    ensureCurrentModel(callback) {
+        if (this.modelSelector.value != '') {
+            callback?.();
+            return;
+        }
+        genericRequest('ListLoadedModels', {}, data => {
+            if (data.models.length > 0) {
+                this.directSetModel(data.models[0]);
+            }
+            callback?.();
+        });
     }
-    let name = getRequiredElementById('current_model').value;
-    if (name == '') {
-        return;
+
+    directSetModel(model) {
+        if (!model) {
+            return;
+        }
+        this.antiDup = true;
+        let priorModel = this.curModel;
+        if (priorModel) {
+            modelPresetLinkManager.removePresetsFrom('Stable-Diffusion', priorModel);
+        }
+        if (model.name) {
+            this.curModel = model.name;
+            let clean = cleanModelName(model.name);
+            forceSetDropdownValue('input_model', clean);
+            forceSetDropdownValue('current_model', clean);
+            setCookie('selected_model', `${clean},${model.standard_width},${model.standard_height},${model.architecture},${model.compat_class},${model.special_format}`, 90);
+            this.curWidth = model.standard_width;
+            this.curHeight = model.standard_height;
+            this.curArch = model.architecture;
+            this.curCompatClass = model.compat_class;
+            this.curSpecialFormat = model.special_format;
+        }
+        else if (model.includes(',')) {
+            let [name, width, height, arch, compatClass, specialFormat] = model.split(',');
+            forceSetDropdownValue('input_model', name);
+            forceSetDropdownValue('current_model', name);
+            setCookie('selected_model', `${name},${width},${height},${arch},${compatClass},${specialFormat}`, 90);
+            this.curWidth = parseInt(width);
+            this.curHeight = parseInt(height);
+            this.curArch = arch;
+            this.curCompatClass = compatClass;
+            this.curSpecialFormat = specialFormat;
+            this.curModel = name;
+        }
+        reviseBackendFeatureSet();
+        modelPresetLinkManager.addPresetsFrom('Stable-Diffusion', this.curModel);
+        this.getModelParam().dispatchEvent(new Event('change'));
+        let aspect = document.getElementById('input_aspectratio');
+        if (aspect) {
+            aspect.dispatchEvent(new Event('change'));
+        }
+        sdModelBrowser.rebuildSelectedClasses();
+        for (let browser of subModelBrowsers) {
+            if (browser.subType != 'Stable-Diffusion') {
+                browser.browser.lightRefresh();
+            }
+        }
+        this.antiDup = false;
     }
-    genericRequest('DescribeModel', {'modelName': name}, data => {
-        noModelChangeDup = true;
-        directSetModel(data.model);
-        noModelChangeDup = false;
-    });
+
+    updateDesiredModel(callback) {
+        if (!this.desiredModel || this.desiredModel == this.curModel) {
+            callback?.();
+            return;
+        }
+        let name = this.desiredModel;
+        genericRequest('DescribeModel', {'modelName': this.desiredModel}, data => {
+            if (name != this.desiredModel) {
+                callback?.();
+                return;
+            }
+            this.directSetModel(data.model);
+            callback?.();
+        }, 0, err => {
+            this.antiDup = false;
+            console.error('updateDesiredModel', name, err);
+            callback?.();
+        });
+    }
+
+    getModelParam() {
+        return document.getElementById('input_model');
+    }
+
+    currentModelChanged() {
+        if (this.antiDup) {
+            return;
+        }
+        let name = this.modelSelector.value;
+        if (name == '') {
+            return;
+        }
+        this.desiredModel = name;
+        this.updateDesiredModel();
+    }
+
+    doModelInstallRequiredCheck() {
+        if ((this.curSpecialFormat == 'bnb_nf4' || this.curSpecialFormat == 'bnb_fp4') && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
+            $('#bnb_nf4_installer').modal('show');
+            return true;
+        }
+        if ((this.curSpecialFormat == 'nunchaku' || this.curSpecialFormat == 'nunchaku-fp4') && !currentBackendFeatureSet.includes('nunchaku') && !localStorage.getItem('hide_nunchaku_check')) {
+            $('#nunchaku_installer').modal('show');
+            return true;
+        }
+        let imageVidToggler = document.getElementById('input_group_content_imagetovideo_toggle');
+        let isImageVidToggled = imageVidToggler && imageVidToggler.checked;
+        let videoModel = isImageVidToggled ? document.getElementById('input_videomodel')?.value : '';
+        if ((this.curSpecialFormat == 'gguf' || videoModel.endsWith('.gguf')) && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
+            $('#gguf_installer').modal('show');
+            return true;
+        }
+        if (this.curCompatClass == 'pixart-ms-sigma-xl-2' && !currentBackendFeatureSet.includes('extramodelspixart') && !localStorage.getItem('hide_extramodels_check')) {
+            $('#extramodels_installer').modal('show');
+            return true;
+        }
+        if (this.curCompatClass == 'nvidia-sana-1600' && !currentBackendFeatureSet.includes('extramodelssana') && !localStorage.getItem('hide_extramodels_check')) {
+            $('#extramodels_installer').modal('show');
+            return true;
+        }
+        return false;
+    }
 }
 
-function doModelInstallRequiredCheck() {
-    if ((curModelSpecialFormat == 'bnb_nf4' || curModelSpecialFormat == 'bnb_fp4') && !currentBackendFeatureSet.includes('bnb_nf4') && !localStorage.getItem('hide_bnb_nf4_check')) {
-        $('#bnb_nf4_installer').modal('show');
-        return true;
-    }
-    if ((curModelSpecialFormat == 'nunchaku' || curModelSpecialFormat == 'nunchaku-fp4') && !currentBackendFeatureSet.includes('nunchaku') && !localStorage.getItem('hide_nunchaku_check')) {
-        $('#nunchaku_installer').modal('show');
-        return true;
-    }
-    let imageVidToggler = document.getElementById('input_group_content_imagetovideo_toggle');
-    let isImageVidToggled = imageVidToggler && imageVidToggler.checked;
-    let videoModel = isImageVidToggled ? document.getElementById('input_videomodel')?.value : '';
-    if ((curModelSpecialFormat == 'gguf' || videoModel.endsWith('.gguf')) && !currentBackendFeatureSet.includes('gguf') && !localStorage.getItem('hide_gguf_check')) {
-        $('#gguf_installer').modal('show');
-        return true;
-    }
-    if (curModelCompatClass == 'pixart-ms-sigma-xl-2' && !currentBackendFeatureSet.includes('extramodelspixart') && !localStorage.getItem('hide_extramodels_check')) {
-        $('#extramodels_installer').modal('show');
-        return true;
-    }
-    if (curModelCompatClass == 'nvidia-sana-1600' && !currentBackendFeatureSet.includes('extramodelssana') && !localStorage.getItem('hide_extramodels_check')) {
-        $('#extramodels_installer').modal('show');
-        return true;
-    }
-    return false;
-}
-
-getRequiredElementById('current_model').addEventListener('change', currentModelChanged);
+/** Helper instance that manages the state of the currently selected model. */
+let currentModelHelper = new CurrentModelHelper();

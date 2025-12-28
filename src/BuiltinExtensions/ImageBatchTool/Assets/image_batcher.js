@@ -24,7 +24,7 @@ class ImageBatcherClass {
 
     register() {
         let doGenWrapper = () => {
-            setCurrentModel(() => {
+            currentModelHelper.ensureCurrentModel(() => {
                 if (document.getElementById('current_model').value == '') {
                     showError("Cannot run generate batch, no model selected.");
                     return;

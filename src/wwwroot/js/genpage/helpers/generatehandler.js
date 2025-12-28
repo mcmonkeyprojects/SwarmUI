@@ -335,8 +335,8 @@ class GenerateHandler {
                 this.hadError("Cannot generate, no model selected.");
                 return;
             }
-            setCurrentModel(() => {
-                if (doModelInstallRequiredCheck()) {
+            currentModelHelper.ensureCurrentModel(() => {
+                if (currentModelHelper.doModelInstallRequiredCheck()) {
                     return;
                 }
                 run();

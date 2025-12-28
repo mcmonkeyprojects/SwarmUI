@@ -515,8 +515,8 @@ function genInputs(delay_final = false) {
             inputAspectRatio.addEventListener('change', () => {
                 if (inputAspectRatio.value != "Custom") {
                     let aspectRatio = inputAspectRatio.value;
-                    let targetWidth = curModelWidth;
-                    let targetHeight = curModelHeight;
+                    let targetWidth = currentModelHelper.curWidth;
+                    let targetHeight = currentModelHelper.curHeight;
                     let doAltLogic = true;
                     if (inputSideLength.value && inputSideLengthToggle.checked) {
                         targetWidth = inputSideLength.value;
@@ -621,7 +621,6 @@ function genInputs(delay_final = false) {
         let inputInterpolator1 = document.getElementById('input_videoframeinterpolationmethod');
         if (inputInterpolator1) {
             inputInterpolator1.addEventListener('change', () => {
-                console.log(inputInterpolator1.value, currentBackendFeatureSet);
                 if (inputInterpolator1.value == 'GIMM-VFI' && !currentBackendFeatureSet.includes('frameinterps_gimmvfi')) {
                     installFeatureById('gimm_vfi', null);
                 }
@@ -671,8 +670,8 @@ function genInputs(delay_final = false) {
                                 let ratio = imageWidth / imageHeight;
                                 let width = Math.round(Math.sqrt(512 * 512 * ratio));
                                 let height = Math.round(512 * 512 / width);
-                                inputWidth.value = roundTo(width * (curModelWidth == 0 ? 512 : curModelWidth) / 512, 32);
-                                inputHeight.value = roundTo(height * (curModelHeight == 0 ? 512 : curModelHeight) / 512, 32);
+                                inputWidth.value = roundTo(width * (currentModelHelper.curWidth == 0 ? 512 : currentModelHelper.curWidth) / 512, 32);
+                                inputHeight.value = roundTo(height * (currentModelHelper.curHeight == 0 ? 512 : currentModelHelper.curHeight) / 512, 32);
                                 triggerChangeFor(inputWidth);
                                 triggerChangeFor(inputHeight);
                             }
@@ -796,7 +795,7 @@ function genInputs(delay_final = false) {
         }
         let modelCookie = getCookie('selected_model');
         if (modelCookie) {
-            directSetModel(modelCookie);
+            currentModelHelper.directSetModel(modelCookie);
         }
         let modelInput = getRequiredElementById('input_model');
         modelInput.addEventListener('change', () => {
@@ -1159,7 +1158,7 @@ function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
         triggerChangeFor(aspect);
     }
     clearPromptImages();
-    currentModelChanged();
+    currentModelHelper.currentModelChanged();
     clearPresets();
     let defaultPreset = getPresetByTitle('default');
     if (defaultPreset && doDefaultPreset) {
@@ -1417,7 +1416,7 @@ function controlnetShowPreview() {
         toggler.checked = true;
         doToggleGroup('input_group_content_controlnet');
     }
-    setCurrentModel(() => {
+    currentModelHelper.ensureCurrentModel(() => {
         if (getRequiredElementById('current_model').value == '') {
             showError("Cannot generate, no model selected.");
             return;
