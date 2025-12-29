@@ -935,7 +935,6 @@ body {
     border-radius: 0.2rem;
     width: 100%;
     resize: none;
-    margin-left: 1rem;
 }
 #alt_negativeprompt_textbox {
     margin-top: 6px;
@@ -948,8 +947,7 @@ body {
     color: color-mix(in srgb, var(--text) 50%, var(--background));
 }
 .alt_prompt_textboxes {
-    margin-left: 1rem;
-    margin-right: 1rem;
+    margin-left: 2rem;
     display: inline-block;
     flex-grow: 10;
 }
@@ -976,15 +974,12 @@ body {
     position: relative;
     align-items: center;
     justify-content: center;
-    vertical-align: central;
-    transform: translateY(-1px);
-    top: 0;
-    width: 32px;
-    height: 35px;
-    left: -6px;
+    top: 2px;
+    width: 29px;
+    height: 29px;
+    left: -5px;
     padding: 0 !important;
-    border-radius: 0.75rem !important;
-    text-align: center;
+    border-radius: 1rem !important;
 }
 .small-window .alt-text-add-button {
     top: -45px;
