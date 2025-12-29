@@ -203,5 +203,5 @@ SeedVR2Upscaler:
     url: https://github.com/rlerdorf/SwarmUI-SeedVR2Upscaler
     license: MIT
     tags:
-      - parameters
-      - nodes
+    - parameters
+    - nodes
