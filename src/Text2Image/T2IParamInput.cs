@@ -670,15 +670,15 @@ public class T2IParamInput
     }
     
     /// <summary>Removes a param.</summary>
-    public void Remove<T>(T2IRegisteredParam<T> param)
+    public void Remove<T>(T2IRegisteredParam<T> param, int sectionId = 0)
     {
-        InternalSet.Remove(param);
+        GetSectionParamOverrides(sectionId).Remove(param);
     }
 
     /// <summary>Removes a param.</summary>
-    public void Remove(T2IParamType param)
+    public void Remove(T2IParamType param, int sectionId = 0)
     {
-        InternalSet.Remove(param);
+        GetSectionParamOverrides(sectionId).Remove(param);
     }
 
     /// <summary>Makes sure the input has valid seed inputs and other special parameter handlers.</summary>
