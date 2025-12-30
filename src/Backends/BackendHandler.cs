@@ -41,7 +41,7 @@ public class BackendHandler
     public string SaveFilePath = "Data/Backends.fds";
 
     /// <summary>Queue of backends to initialize.</summary>
-    public ConcurrentQueue<T2IBackendData> BackendsToInit = new();
+    public ConcurrentQueue<AbstractBackendData> BackendsToInit = new();
 
     /// <summary>Signal for when a new backend is added to <see cref="BackendsToInit"/>.</summary>
     public AsyncAutoResetEvent NewBackendInitSignal = new(false);
@@ -272,22 +272,22 @@ public class BackendHandler
     }
 
     /// <summary>Special live data about a registered backend.</summary>
-    public class T2IBackendData
+    public abstract class AbstractBackendData
     {
-        public AbstractT2IBackend Backend;
+        public AbstractBackend AbstractBackend;
 
         /// <summary>If the backend is non-real, this is the parent backend.</summary>
-        public T2IBackendData Parent;
+        public AbstractBackendData AbstractParent;
 
         public volatile bool ReserveModelLoad = false;
 
         public volatile int Usages = 0;
 
-        public bool CheckIsInUseAtAll => (ReserveModelLoad || Usages > 0) && Backend.Status == BackendStatus.RUNNING;
+        public bool CheckIsInUseAtAll => (ReserveModelLoad || Usages > 0) && AbstractBackend.Status == BackendStatus.RUNNING;
 
-        public bool CheckIsInUse => (ReserveModelLoad || Usages >= Backend.MaxUsages) && Backend.Status == BackendStatus.RUNNING;
+        public bool CheckIsInUse => (ReserveModelLoad || Usages >= AbstractBackend.MaxUsages) && AbstractBackend.Status == BackendStatus.RUNNING;
 
-        public bool CheckIsInUseNoModelReserve => Usages >= Backend.MaxUsages && Backend.Status == BackendStatus.RUNNING;
+        public bool CheckIsInUseNoModelReserve => Usages >= AbstractBackend.MaxUsages && AbstractBackend.Status == BackendStatus.RUNNING;
 
         public LockObject AccessLock = new();
 
@@ -304,13 +304,30 @@ public class BackendHandler
         public void UpdateLastReleaseTime()
         {
             TimeLastRelease = Environment.TickCount64;
-            Parent?.UpdateLastReleaseTime();
+            AbstractParent?.UpdateLastReleaseTime();
         }
 
         public void Claim()
         {
             Interlocked.Increment(ref Usages);
             UpdateLastReleaseTime();
+        }
+    }
+
+    /// <summary>Special live data about a registered text-to-image backend.</summary>
+    public class T2IBackendData : AbstractBackendData
+    {
+        public AbstractT2IBackend Backend
+        {
+            get => AbstractBackend as AbstractT2IBackend;
+            set => AbstractBackend = value;
+        }
+
+        /// <summary>If the backend is non-real, this is the parent backend.</summary>
+        public T2IBackendData Parent
+        {
+            get => AbstractParent as T2IBackendData;
+            set => AbstractParent = value;
         }
     }
 
@@ -337,12 +354,12 @@ public class BackendHandler
     }
 
     /// <summary>Adds a new backend that is not a 'real' backend (it will not save nor show in the UI, but is available for generation calls).</summary>
-    public T2IBackendData AddNewNonrealBackend(BackendType type, T2IBackendData parent, AutoConfiguration config = null, Action<T2IBackendData> preModify = null)
+    public T2IBackendData AddNewNonrealBackend(BackendType type, AbstractBackendData parent, AutoConfiguration config = null, Action<T2IBackendData> preModify = null)
     {
         T2IBackendData data = new()
         {
-            Backend = Activator.CreateInstance(type.BackendClass) as AbstractT2IBackend,
-            Parent = parent,
+            AbstractBackend = Activator.CreateInstance(type.BackendClass) as AbstractBackend,
+            AbstractParent = parent,
             BackType = type
         };
         data.Backend.BackendData = data;
@@ -361,12 +378,12 @@ public class BackendHandler
     }
 
     /// <summary>Shuts down the given backend properly and cleanly, in a way that avoids interrupting usage of the backend.</summary>
-    public async Task ShutdownBackendCleanly(T2IBackendData data)
+    public async Task ShutdownBackendCleanly(AbstractBackendData data)
     {
-        data.Backend.ShutDownReserve = true;
+        data.AbstractBackend.ShutDownReserve = true;
         try
         {
-            while (data.CheckIsInUse && data.Backend.MaxUsages > 0)
+            while (data.CheckIsInUse && data.AbstractBackend.MaxUsages > 0)
             {
                 if (Program.GlobalProgramCancel.IsCancellationRequested)
                 {
@@ -374,11 +391,11 @@ public class BackendHandler
                 }
                 await Task.Delay(TimeSpan.FromSeconds(0.5));
             }
-            await data.Backend.DoShutdownNow();
+            await data.AbstractBackend.DoShutdownNow();
         }
         finally
         {
-            data.Backend.ShutDownReserve = false;
+            data.AbstractBackend.ShutDownReserve = false;
         }
     }
 
@@ -426,7 +443,7 @@ public class BackendHandler
     }
 
     /// <summary>Gets a set of all currently running backends of the given type.</summary>
-    public IEnumerable<T> RunningBackendsOfType<T>() where T : AbstractT2IBackend
+    public IEnumerable<T> RunningBackendsOfType<T>() where T : AbstractBackend
     {
         return T2IBackends.Values.Select(b => b.Backend as T).Where(b => b is not null && !b.ShutDownReserve && b.Status == BackendStatus.RUNNING);
     }
@@ -441,7 +458,7 @@ public class BackendHandler
     }
 
     /// <summary>Causes a single backend to restart.</summary>
-    public async Task ReloadBackend(T2IBackendData data)
+    public async Task ReloadBackend(AbstractBackendData data)
     {
         await ShutdownBackendCleanly(data);
         DoInitBackend(data);
@@ -520,11 +537,11 @@ public class BackendHandler
     public static long CountBackendsFastLoaded = 0;
 
     /// <summary>Cause a backend to run its initializer, either immediately or in the next available slot.</summary>
-    public void DoInitBackend(T2IBackendData data)
+    public void DoInitBackend(AbstractBackendData data)
     {
-        data.Backend.LoadStatusReport ??= [];
-        data.Backend.Status = BackendStatus.WAITING;
-        data.Backend.AddLoadStatus("Waiting to load...");
+        data.AbstractBackend.LoadStatusReport ??= [];
+        data.AbstractBackend.Status = BackendStatus.WAITING;
+        data.AbstractBackend.AddLoadStatus("Waiting to load...");
         if (data.BackType.CanLoadFast || Program.ServerSettings.Backends.AllBackendsLoadFast)
         {
             long count = Interlocked.Increment(ref CountBackendsFastLoaded);
@@ -546,43 +563,43 @@ public class BackendHandler
     }
 
     /// <summary>Internal direct immediate backend load call.</summary>
-    public async Task<bool> LoadBackendDirect(T2IBackendData data)
+    public async Task<bool> LoadBackendDirect(AbstractBackendData data)
     {
-        if (!data.Backend.IsEnabled)
+        if (!data.AbstractBackend.IsEnabled)
         {
-            data.Backend.Status = BackendStatus.DISABLED;
-            data.Backend.LoadStatusReport = null;
+            data.AbstractBackend.Status = BackendStatus.DISABLED;
+            data.AbstractBackend.LoadStatusReport = null;
             return false;
         }
         try
         {
-            data.Backend.AddLoadStatus("Will now load...");
-            if (data.Backend.IsReal)
+            data.AbstractBackend.AddLoadStatus("Will now load...");
+            if (data.AbstractBackend.IsReal)
             {
-                Logs.Init($"Initializing backend #{data.ID} - {data.Backend.HandlerTypeData.Name}...");
+                Logs.Init($"Initializing backend #{data.ID} - {data.AbstractBackend.HandlerTypeData.Name}...");
             }
             else
             {
-                Logs.Verbose($"Initializing non-real backend #{data.ID} - {data.Backend.HandlerTypeData.Name}...");
+                Logs.Verbose($"Initializing non-real backend #{data.ID} - {data.AbstractBackend.HandlerTypeData.Name}...");
             }
             data.InitAttempts++;
-            await data.Backend.Init().WaitAsync(Program.GlobalProgramCancel);
+            await data.AbstractBackend.Init().WaitAsync(Program.GlobalProgramCancel);
             return true;
         }
         catch (Exception ex)
         {
             if (data.InitAttempts <= Program.ServerSettings.Backends.MaxBackendInitAttempts)
             {
-                data.Backend.AddLoadStatus("Load failed, will retry...");
-                data.Backend.Status = BackendStatus.WAITING;
-                Logs.Error($"Error #{data.InitAttempts} while initializing backend #{data.ID} - {data.Backend.HandlerTypeData.Name} - will retry");
+                data.AbstractBackend.AddLoadStatus("Load failed, will retry...");
+                data.AbstractBackend.Status = BackendStatus.WAITING;
+                Logs.Error($"Error #{data.InitAttempts} while initializing backend #{data.ID} - {data.AbstractBackend.HandlerTypeData.Name} - will retry");
                 await Task.Delay(TimeSpan.FromSeconds(1)); // Intentionally pause a second to give a chance for external issue to self-resolve.
                 BackendsToInit.Enqueue(data);
             }
             else
             {
-                data.Backend.Status = BackendStatus.ERRORED;
-                data.Backend.LoadStatusReport = null;
+                data.AbstractBackend.Status = BackendStatus.ERRORED;
+                data.AbstractBackend.LoadStatusReport = null;
                 if (ex is AggregateException aex)
                 {
                     ex = aex.InnerException;
@@ -592,7 +609,7 @@ public class BackendHandler
                 {
                     errorMessage = $"Connection refused - is the backend running, or is the address correct? (HttpRequestException: {ex.Message})";
                 }
-                Logs.Error($"Final error ({data.InitAttempts}) while initializing backend #{data.ID} - {data.Backend.HandlerTypeData.Name}, giving up: {errorMessage}");
+                Logs.Error($"Final error ({data.InitAttempts}) while initializing backend #{data.ID} - {data.AbstractBackend.HandlerTypeData.Name}, giving up: {errorMessage}");
             }
             return false;
         }
@@ -606,7 +623,7 @@ public class BackendHandler
             try
             {
                 bool any = false;
-                while (BackendsToInit.TryDequeue(out T2IBackendData data) && !HasShutdown)
+                while (BackendsToInit.TryDequeue(out AbstractBackendData data) && !HasShutdown)
                 {
                     bool loaded = LoadBackendDirect(data).Result;
                     any = any || loaded;

@@ -11,6 +11,14 @@ public abstract class AbstractBackend
     /// <summary>Shut down this backend and clear any memory/resources/etc. Do not return until fully cleared. Call <see cref="DoShutdownNow"/> to trigger this correctly.</summary>
     public abstract Task Shutdown();
 
+    /// <summary>Shuts down this backend and clears any memory/resources/etc. Does not return until fully cleared.</summary>
+    public virtual async Task DoShutdownNow()
+    {
+        OnShutdown?.Invoke();
+        OnShutdown = null;
+        await Shutdown();
+    }
+
     /// <summary>Event fired when this backend is about to shutdown.</summary>
     public Action OnShutdown;
 
@@ -36,8 +44,31 @@ public abstract class AbstractBackend
         public int TrackerIndex = 0;
     }
 
+    /// <summary>The maximum number of simultaneous requests this backend should take.</summary>
+    public int MaxUsages = 1;
+
     /// <summary>Any/all current load-status messages.</summary>
     public List<LoadStatus> LoadStatusReport = [];
+
+    /// <summary>Backend type data for the internal handler.</summary>
+    public BackendHandler.BackendType HandlerTypeData => AbstractBackendData.BackType;
+
+    /// <summary>Handler-internal data for this backend.</summary>
+    public BackendHandler.AbstractBackendData AbstractBackendData;
+
+    /// <summary>Add a load status message.</summary>
+    public void AddLoadStatus(string message)
+    {
+        Logs.Debug($"[Load {AbstractBackendData.BackType.Name} #{AbstractBackendData.ID}] {message}");
+        if (LoadStatusReport is null)
+        {
+            return;
+        }
+        lock (LoadStatusReport)
+        {
+            LoadStatusReport.Add(new LoadStatus() { Message = message, Time = Environment.TickCount64 });
+        }
+    }
 
     /// <summary>The backing <see cref="BackendHandler"/> instance.</summary>
     public BackendHandler Handler;
