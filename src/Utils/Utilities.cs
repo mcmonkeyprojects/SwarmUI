@@ -96,7 +96,7 @@ public static class Utilities
                 return;
             }
         }
-        if (Program.Backends.T2IBackendRequests.Any() || Program.Backends.QueuedRequests > 0 || Program.Backends.T2IBackends.Values.Any(b => b.CheckIsInUseAtAll))
+        if (Program.Backends.T2IBackendRequests.Any() || Program.Backends.QueuedRequests > 0 || Program.Backends.AllBackends.Values.Any(b => b.CheckIsInUseAtAll))
         {
             return;
         }

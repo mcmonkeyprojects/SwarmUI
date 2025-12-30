@@ -16,8 +16,14 @@ namespace SwarmUI.Backends;
 /// <summary>Central manager for available backends.</summary>
 public class BackendHandler
 {
+    public ConcurrentDictionary<int, AbstractBackendData> AllBackends = new();
+
     /// <summary>Currently loaded backends. Might not all be valid.</summary>
-    public ConcurrentDictionary<int, T2IBackendData> T2IBackends = new();
+    [Obsolete("Use AllBackends or EnumerateT2IBackends")]
+    public Dictionary<int, T2IBackendData> T2IBackends => AllBackends.Select(pair => new KeyValuePair<int, T2IBackendData>(pair.Key, pair.Value as T2IBackendData)).Where(p => p.Value is not null).PairsToDictionary();
+
+    /// <summary>Returns a simple enumeration of current t2i backends.</summary>
+    public IEnumerable<T2IBackendData> EnumerateT2IBackends => AllBackends.Values.Select(b => b as T2IBackendData).Where(b => b is not null);
 
     /// <summary>Signal when any backends are available, or other reason to check backends (eg new requests came in).</summary>
     public AsyncAutoResetEvent CheckBackendsSignal = new(false);
@@ -50,7 +56,7 @@ public class BackendHandler
     public LockObject SaveLock = new();
 
     /// <summary>The number of currently loaded backends.</summary>
-    public int Count => T2IBackends.Count;
+    public int Count => AllBackends.Count;
 
     /// <summary>Possible outcomes of requesting a backend scale.</summary>
     public enum ScaleResult
@@ -98,7 +104,7 @@ public class BackendHandler
     /// <summary>Gets a hashset of all supported features across all backends.</summary>
     public HashSet<string> GetAllSupportedFeatures()
     {
-        return [.. T2IBackends.Values.Where(b => b is not null && b.Backend.IsEnabled && b.Backend.Status != BackendStatus.IDLE).SelectMany(b => b.Backend.SupportedFeatures)];
+        return [.. AllBackends.Values.Where(b => b is not null && b.AbstractBackend.IsEnabled && b.AbstractBackend.Status != BackendStatus.IDLE).SelectMany(b => b.AbstractBackend.SupportedFeatures)];
     }
 
     /// <summary>Registered core backend types.</summary>
@@ -119,7 +125,7 @@ public class BackendHandler
         };
         CurrentBackendStatus = new(() =>
         {
-            T2IBackendData[] backends = [.. T2IBackends.Values];
+            T2IBackendData[] backends = [.. EnumerateT2IBackends];
             if (backends.Length == 0)
             {
                 return new()
@@ -331,22 +337,35 @@ public class BackendHandler
         }
     }
 
+    public AbstractBackendData RawInstantiate(BackendType type)
+    {
+        object inst = Activator.CreateInstance(type.BackendClass);
+        if (inst is AbstractT2IBackend t2i)
+        {
+            return new T2IBackendData()
+            {
+                Backend = t2i,
+                BackType = type
+            };
+        }
+        else
+        {
+            throw new Exception($"Backend type {type.Name} is not any known backend subclass type!");
+        }
+    }
+
     /// <summary>Adds a new backend of the given type, and returns its data. Note that the backend will not be initialized at first.</summary>
-    public T2IBackendData AddNewOfType(BackendType type, AutoConfiguration config = null)
+    public AbstractBackendData AddNewOfType(BackendType type, AutoConfiguration config = null)
     {
         BackendsEdited = true;
-        T2IBackendData data = new()
-        {
-            Backend = Activator.CreateInstance(type.BackendClass) as AbstractT2IBackend,
-            BackType = type
-        };
-        data.Backend.BackendData = data;
-        data.Backend.SettingsRaw = config ?? (Activator.CreateInstance(type.SettingsClass) as AutoConfiguration);
-        data.Backend.Handler = this;
+        AbstractBackendData data = RawInstantiate(type);
+        data.AbstractBackend.AbstractBackendData = data;
+        data.AbstractBackend.SettingsRaw = config ?? (Activator.CreateInstance(type.SettingsClass) as AutoConfiguration);
+        data.AbstractBackend.Handler = this;
         lock (CentralLock)
         {
             data.ID = LastBackendID++;
-            T2IBackends.TryAdd(data.ID, data);
+            AllBackends.TryAdd(data.ID, data);
         }
         DoInitBackend(data);
         NewBackendInitSignal.Set();
@@ -354,22 +373,17 @@ public class BackendHandler
     }
 
     /// <summary>Adds a new backend that is not a 'real' backend (it will not save nor show in the UI, but is available for generation calls).</summary>
-    public T2IBackendData AddNewNonrealBackend(BackendType type, AbstractBackendData parent, AutoConfiguration config = null, Action<T2IBackendData> preModify = null)
+    public AbstractBackendData AddNewNonrealBackend(BackendType type, AbstractBackendData parent, AutoConfiguration config = null, Action<AbstractBackendData> preModify = null)
     {
-        T2IBackendData data = new()
-        {
-            AbstractBackend = Activator.CreateInstance(type.BackendClass) as AbstractBackend,
-            AbstractParent = parent,
-            BackType = type
-        };
-        data.Backend.BackendData = data;
-        data.Backend.SettingsRaw = config ?? (Activator.CreateInstance(type.SettingsClass) as AutoConfiguration);
-        data.Backend.Handler = this;
-        data.Backend.IsReal = false;
+        AbstractBackendData data = RawInstantiate(type);
+        data.AbstractBackend.AbstractBackendData = data;
+        data.AbstractBackend.SettingsRaw = config ?? (Activator.CreateInstance(type.SettingsClass) as AutoConfiguration);
+        data.AbstractBackend.Handler = this;
+        data.AbstractBackend.IsReal = false;
         lock (CentralLock)
         {
             data.ID = LastNonrealBackendID--;
-            T2IBackends.TryAdd(data.ID, data);
+            AllBackends.TryAdd(data.ID, data);
         }
         preModify?.Invoke(data);
         DoInitBackend(data);
@@ -403,7 +417,7 @@ public class BackendHandler
     public async Task<bool> DeleteById(int id)
     {
         BackendsEdited = true;
-        if (!T2IBackends.TryRemove(id, out T2IBackendData data))
+        if (!AllBackends.TryRemove(id, out AbstractBackendData data))
         {
             return false;
         }
@@ -413,28 +427,28 @@ public class BackendHandler
     }
 
     /// <summary>Replace the settings of a given backend. Shuts it down immediately and queues a reload.</summary>
-    public async Task<T2IBackendData> EditById(int id, FDSSection newSettings, string title, int new_id = -1)
+    public async Task<AbstractBackendData> EditById(int id, FDSSection newSettings, string title, int new_id = -1)
     {
-        if (!T2IBackends.TryGetValue(id, out T2IBackendData data))
+        if (!AllBackends.TryGetValue(id, out AbstractBackendData data))
         {
             return null;
         }
         await ShutdownBackendCleanly(data);
         if (new_id >= 0)
         {
-            if (!T2IBackends.TryAdd(new_id, data))
+            if (!AllBackends.TryAdd(new_id, data))
             {
                 throw new SwarmReadableErrorException($"Backend new ID {new_id} is already in use!");
             }
             data.ID = new_id;
-            T2IBackends.TryRemove(id, out _);
+            AllBackends.TryRemove(id, out _);
         }
-        newSettings = data.Backend.SettingsRaw.ExcludeSecretValuesThatMatch(newSettings, "\t<secret>");
-        data.Backend.SettingsRaw.Load(newSettings);
-        Logs.Verbose($"Settings applied, now: {data.Backend.SettingsRaw.Save(true)}");
+        newSettings = data.AbstractBackend.SettingsRaw.ExcludeSecretValuesThatMatch(newSettings, "\t<secret>");
+        data.AbstractBackend.SettingsRaw.Load(newSettings);
+        Logs.Verbose($"Settings applied, now: {data.AbstractBackend.SettingsRaw.Save(true)}");
         if (title is not null)
         {
-            data.Backend.Title = title;
+            data.AbstractBackend.Title = title;
         }
         BackendsEdited = true;
         data.ModCount++;
@@ -445,13 +459,13 @@ public class BackendHandler
     /// <summary>Gets a set of all currently running backends of the given type.</summary>
     public IEnumerable<T> RunningBackendsOfType<T>() where T : AbstractBackend
     {
-        return T2IBackends.Values.Select(b => b.Backend as T).Where(b => b is not null && !b.ShutDownReserve && b.Status == BackendStatus.RUNNING);
+        return AllBackends.Values.Select(b => b.AbstractBackend as T).Where(b => b is not null && !b.ShutDownReserve && b.Status == BackendStatus.RUNNING);
     }
 
     /// <summary>Causes all backends to restart.</summary>
     public async Task ReloadAllBackends()
     {
-        foreach (T2IBackendData data in T2IBackends.Values.ToArray())
+        foreach (AbstractBackendData data in AllBackends.Values.ToArray())
         {
             await ReloadBackend(data);
         }
@@ -467,7 +481,7 @@ public class BackendHandler
     /// <summary>Loads the backends list from a file.</summary>
     public void Load()
     {
-        if (T2IBackends.Any()) // Backup to prevent duplicate calls
+        if (AllBackends.Any()) // Backup to prevent duplicate calls
         {
             return;
         }
@@ -511,23 +525,19 @@ public class BackendHandler
                 Logs.Error($"Unknown backend type '{section.GetString("type")}' in save file, skipping backend #{idstr}.");
                 continue;
             }
-            T2IBackendData data = new()
-            {
-                Backend = Activator.CreateInstance(type.BackendClass) as AbstractT2IBackend,
-                BackType = type,
-                ID = int.Parse(idstr)
-            };
-            data.Backend.BackendData = data;
+            AbstractBackendData data = RawInstantiate(type);
+            data.ID = int.Parse(idstr);
+            data.AbstractBackend.AbstractBackendData = data;
             LastBackendID = Math.Max(LastBackendID, data.ID + 1);
-            data.Backend.SettingsRaw = Activator.CreateInstance(type.SettingsClass) as AutoConfiguration;
-            data.Backend.SettingsRaw.Load(section.GetSection("settings"));
-            data.Backend.IsEnabled = section.GetBool("enabled", true).Value;
-            data.Backend.Title = section.GetString("title", "");
-            data.Backend.Handler = this;
+            data.AbstractBackend.SettingsRaw = Activator.CreateInstance(type.SettingsClass) as AutoConfiguration;
+            data.AbstractBackend.SettingsRaw.Load(section.GetSection("settings"));
+            data.AbstractBackend.IsEnabled = section.GetBool("enabled", true).Value;
+            data.AbstractBackend.Title = section.GetString("title", "");
+            data.AbstractBackend.Handler = this;
             DoInitBackend(data);
             lock (CentralLock)
             {
-                T2IBackends.TryAdd(data.ID, data);
+                AllBackends.TryAdd(data.ID, data);
             }
         }
         IsLoading = false;
@@ -639,43 +649,43 @@ public class BackendHandler
                         Logs.Error($"Error while reassigning loaded models list: {ex.ReadableString()}");
                     }
                 }
-                T2IBackendData[] loading = [.. T2IBackends.Values.Where(b => b.Backend.LoadStatusReport is not null && b.Backend.LoadStatusReport.Count > 1)];
+                AbstractBackendData[] loading = [.. AllBackends.Values.Where(b => b.AbstractBackend.LoadStatusReport is not null && b.AbstractBackend.LoadStatusReport.Count > 1)];
                 if (loading.Any())
                 {
                     long now = Environment.TickCount64;
-                    foreach (T2IBackendData backend in loading)
+                    foreach (AbstractBackendData backend in loading)
                     {
-                        AbstractT2IBackend.LoadStatus firstStatus = backend.Backend.LoadStatusReport[0];
-                        AbstractT2IBackend.LoadStatus lastStatus = backend.Backend.LoadStatusReport[^1];
+                        AbstractBackend.LoadStatus firstStatus = backend.AbstractBackend.LoadStatusReport[0];
+                        AbstractBackend.LoadStatus lastStatus = backend.AbstractBackend.LoadStatusReport[^1];
                         TimeSpan loadingFor = TimeSpan.FromMilliseconds(now - firstStatus.Time);
                         if (loadingFor > TimeSpan.FromMinutes(1 + firstStatus.TrackerIndex * 2))
                         {
                             firstStatus.TrackerIndex++;
-                            if (backend.Backend.Status != BackendStatus.LOADING && backend.Backend.Status != BackendStatus.WAITING)
+                            if (backend.AbstractBackend.Status != BackendStatus.LOADING && backend.AbstractBackend.Status != BackendStatus.WAITING)
                             {
-                                backend.Backend.LoadStatusReport = null;
+                                backend.AbstractBackend.LoadStatusReport = null;
                                 continue;
                             }
                             TimeSpan lastWaiting = TimeSpan.FromMilliseconds(now - lastStatus.Time);
                             if (lastWaiting > TimeSpan.FromMinutes(1))
                             {
-                                Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} has been stuck on load-status='{lastStatus.Message}' for {lastWaiting.TotalMinutes:0.0} minutes...");
+                                Logs.Init($"Backend #{backend.ID} - {backend.AbstractBackend.HandlerTypeData.Name} has been stuck on load-status='{lastStatus.Message}' for {lastWaiting.TotalMinutes:0.0} minutes...");
                                 if (lastWaiting > TimeSpan.FromMinutes(10))
                                 {
-                                    Logs.Error($"Something has most likely wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details. You may need to restart the backend, or Swarm itself.");
+                                    Logs.Error($"Something has most likely wrong while loading backend #{backend.ID} - {backend.AbstractBackend.HandlerTypeData.Name} - check logs for details. You may need to restart the backend, or Swarm itself.");
                                 }
                                 else if (lastWaiting > TimeSpan.FromMinutes(5))
                                 {
-                                    Logs.Warning($"Something may have gone wrong while loading backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} - check logs for details.");
+                                    Logs.Warning($"Something may have gone wrong while loading backend #{backend.ID} - {backend.AbstractBackend.HandlerTypeData.Name} - check logs for details.");
                                 }
                             }
                             else if (loadingFor > TimeSpan.FromMinutes(15))
                             {
-                                Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading after {loadingFor.TotalMinutes:0.00} minutes. It may be fine, or it may have gotten stuck. Check logs for details.");
+                                Logs.Init($"Backend #{backend.ID} - {backend.AbstractBackend.HandlerTypeData.Name} is still loading after {loadingFor.TotalMinutes:0.00} minutes. It may be fine, or it may have gotten stuck. Check logs for details.");
                             }
                             else
                             {
-                                Logs.Init($"Backend #{backend.ID} - {backend.Backend.HandlerTypeData.Name} is still loading, and is probably fine...");
+                                Logs.Init($"Backend #{backend.ID} - {backend.AbstractBackend.HandlerTypeData.Name} is still loading, and is probably fine...");
                             }
                         }
                     }
@@ -696,7 +706,7 @@ public class BackendHandler
         {
             model.AnyBackendsHaveLoaded = false;
         }
-        foreach (T2IBackendData backend in T2IBackends.Values)
+        foreach (T2IBackendData backend in EnumerateT2IBackends)
         {
             if (backend.Backend is not null && backend.Backend.CurrentModelName is not null && Program.MainSDModels.Models.TryGetValue(backend.Backend.CurrentModelName, out T2IModel model))
             {
@@ -712,24 +722,24 @@ public class BackendHandler
         {
             Logs.Info("Saving backends...");
             FDSSection saveFile = new();
-            foreach (T2IBackendData data in T2IBackends.Values)
+            foreach (AbstractBackendData data in AllBackends.Values)
             {
-                if (!data.Backend.IsReal)
+                if (!data.AbstractBackend.IsReal)
                 {
                     continue;
                 }
                 FDSSection data_section = new();
-                data_section.Set("type", data.Backend.HandlerTypeData.ID);
-                data_section.Set("title", data.Backend.Title);
-                data_section.Set("enabled", data.Backend.IsEnabled);
-                data_section.Set("settings", data.Backend.SettingsRaw.Save(true));
+                data_section.Set("type", data.AbstractBackend.HandlerTypeData.ID);
+                data_section.Set("title", data.AbstractBackend.Title);
+                data_section.Set("enabled", data.AbstractBackend.IsEnabled);
+                data_section.Set("settings", data.AbstractBackend.SettingsRaw.Save(true));
                 saveFile.Set(data.ID.ToString(), data_section);
             }
             FDSUtility.SaveToFile(saveFile, SaveFilePath);
         }
     }
 
-    /// <summary>Tells all backends to load a given model. Returns true if any backends have loaded it, or false if not.</summary>
+    /// <summary>Tells all backends to load a given T2I model. Returns true if any backends have loaded it, or false if not.</summary>
     public async Task<bool> LoadModelOnAll(T2IModel model, Func<T2IBackendData, bool> filter = null)
     {
         if (model.Name.ToLowerFast() == "(none)")
@@ -738,7 +748,7 @@ public class BackendHandler
         }
         Logs.Verbose($"Got request to load model on all: {model.Name}");
         bool any = false;
-        T2IBackendData[] filtered = [.. T2IBackends.Values.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.MaxUsages > 0 && b.Backend.CanLoadModels)];
+        T2IBackendData[] filtered = [.. EnumerateT2IBackends.Where(b => b.Backend.Status == BackendStatus.RUNNING && b.Backend.MaxUsages > 0 && b.Backend.CanLoadModels)];
         if (!filtered.Any())
         {
             Logs.Warning($"Cannot load model as no backends are available.");
@@ -795,22 +805,22 @@ public class BackendHandler
         HasShutdown = true;
         NewBackendInitSignal.Set();
         CheckBackendsSignal.Set();
-        List<(T2IBackendData, Task)> tasks = [];
-        foreach (T2IBackendData backend in T2IBackends.Values)
+        List<(AbstractBackendData, Task)> tasks = [];
+        foreach (AbstractBackendData backend in AllBackends.Values)
         {
             tasks.Add((backend, Task.Run(async () =>
             {
                 int backTicks = 0;
-                while (backend.CheckIsInUse && backend.Backend.MaxUsages > 0)
+                while (backend.CheckIsInUse && backend.AbstractBackend.MaxUsages > 0)
                 {
                     if (backTicks++ > 50)
                     {
-                        Logs.Info($"Backend {backend.ID} ({backend.Backend.HandlerTypeData.Name}) has been locked in use for at least 5 seconds after shutdown, giving up and killing anyway.");
+                        Logs.Info($"Backend {backend.ID} ({backend.AbstractBackend.HandlerTypeData.Name}) has been locked in use for at least 5 seconds after shutdown, giving up and killing anyway.");
                         break;
                     }
                     Thread.Sleep(100);
                 }
-                tasks.Add((backend, backend.Backend.DoShutdownNow()));
+                tasks.Add((backend, backend.AbstractBackend.DoShutdownNow()));
             })));
         }
         int ticks = 0;
@@ -819,7 +829,7 @@ public class BackendHandler
             if (ticks++ > 20)
             {
                 ticks = 0;
-                Logs.Info($"Still waiting for {tasks.Count} backends to shut down ({string.Join(", ", tasks.Select(p => p.Item1).Select(b => $"{b.ID}: {b.Backend.HandlerTypeData.Name}"))})...");
+                Logs.Info($"Still waiting for {tasks.Count} backends to shut down ({string.Join(", ", tasks.Select(p => p.Item1).Select(b => $"{b.ID}: {b.AbstractBackend.HandlerTypeData.Name}"))})...");
             }
             Task.Delay(TimeSpan.FromMilliseconds(100)).Wait();
             tasks = [.. tasks.Where(t => !t.Item2.IsCompleted)];
@@ -951,7 +961,7 @@ public class BackendHandler
                     return;
                 }
             }
-            List<T2IBackendData> currentBackends = [.. Handler.T2IBackends.Values];
+            List<T2IBackendData> currentBackends = [.. Handler.EnumerateT2IBackends];
             List<T2IBackendData> possible = [.. currentBackends.Where(b => b.Backend.IsEnabled && !b.Backend.ShutDownReserve && b.Backend.Reservations == 0 && b.Backend.MaxUsages > 0 && b.Backend.Status == BackendStatus.RUNNING)];
             Logs.Verbose($"[BackendHandler] Backend request #{ID} searching for backend... have {possible.Count}/{currentBackends.Count} possible");
             if (!possible.Any())
@@ -1096,7 +1106,7 @@ public class BackendHandler
             {
                 return null;
             }
-            string modelData = model is null ? "No model requested." : $"Requested model {model.Name}, which is loaded on {T2IBackends.Values.Count(b => b.Backend.CurrentModelName == model.Name)} backends.";
+            string modelData = model is null ? "No model requested." : $"Requested model {model.Name}, which is loaded on {EnumerateT2IBackends.Count(b => b.Backend.CurrentModelName == model.Name)} backends.";
             Logs.Info($"[BackendHandler] Backend usage timeout, all backends occupied, giving up after {request.Waited.TotalSeconds} seconds ({modelData}).");
             throw new TimeoutException();
         }
@@ -1195,7 +1205,7 @@ public class BackendHandler
                     }
                 }
                 mark("PostComplete");
-                if (empty && !T2IBackends.Any(b => b.Value.CheckIsInUseAtAll))
+                if (empty && !AllBackends.Any(b => b.Value.CheckIsInUseAtAll))
                 {
                     wasNone = true;
                     Program.TickNoGenerationsEvent?.Invoke();

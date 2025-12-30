@@ -259,9 +259,10 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                     if (IsAControlInstance && !ids.Remove(id) && (Settings.AllowForwarding || type != "swarmswarmbackend"))
                     {
                         Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {id} ({type}) '{title}'");
+                        // TODO: support remote non-T2I Backends
                         Handler.AddNewNonrealBackend(HandlerTypeData, BackendData, SettingsRaw, (newData) =>
                         {
-                            SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
+                            SwarmSwarmBackend newSwarm = newData.AbstractBackend as SwarmSwarmBackend;
                             newSwarm.LinkedRemoteBackendID = id;
                             newSwarm.Models = Models;
                             newSwarm.LinkedRemoteBackendType = type;
@@ -269,7 +270,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                             newSwarm.CanLoadModels = backend["can_load_models"].Value<bool>();
                             newSwarm.Parent = this;
                             OnSwarmBackendAdded?.Invoke(newSwarm);
-                            ControlledNonrealBackends.TryAdd(id, newData);
+                            ControlledNonrealBackends.TryAdd(id, newData as BackendHandler.T2IBackendData);
                         });
                     }
                     if (ControlledNonrealBackends.TryGetValue(id, out BackendHandler.T2IBackendData data))

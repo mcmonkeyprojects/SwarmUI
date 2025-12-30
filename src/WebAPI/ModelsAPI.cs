@@ -372,7 +372,7 @@ public static class ModelsAPI
             output(new JObject() { ["error"] = "Model not found." });
             return;
         }
-        using Session.GenClaim claim = session.Claim(0, Program.Backends.T2IBackends.Count, 0, 0);
+        using Session.GenClaim claim = session.Claim(0, Program.Backends.EnumerateT2IBackends.Count(), 0, 0);
         if (isWS)
         {
             output(BasicAPIFeatures.GetCurrentStatusRaw(session));

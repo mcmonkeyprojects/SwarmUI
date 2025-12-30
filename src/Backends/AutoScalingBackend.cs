@@ -281,20 +281,21 @@ public class AutoScalingBackend : AbstractT2IBackend
                             OtherHeaders = Settings.OtherHeaders,
                             ConnectionAttemptTimeoutSeconds = Settings.ConnectionAttemptTimeoutSeconds
                         };
-                        BackendHandler.T2IBackendData newBackend = Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
+                        // TODO: support remote non-T2I Backends
+                        BackendHandler.AbstractBackendData newBackend = Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
                         {
                             Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {newData.ID}: Master Control");
-                            SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
+                            SwarmSwarmBackend newSwarm = newData.AbstractBackend as SwarmSwarmBackend;
                             newSwarm.IsSpecialControlled = true;
                             newSwarm.Models = Models;
                             newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] Master Control Swarm Instance";
                             newSwarm.CanLoadModels = false;
                             newSwarm.FirstLoadRetries = retries;
                             newData.UpdateLastReleaseTime();
-                            ControlledNonrealBackends.TryAdd(newData.ID, newData);
+                            ControlledNonrealBackends.TryAdd(newData.ID, newData as BackendHandler.T2IBackendData);
                         });
                         MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
-                        configure?.Invoke(newBackend);
+                        configure?.Invoke(newBackend as BackendHandler.T2IBackendData);
                         launched = true;
                         break;
                     }
