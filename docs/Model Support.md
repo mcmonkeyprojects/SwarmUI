@@ -267,12 +267,12 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - It is an extremely massive model (32B diffusion model, 24B text encoder) that will demand significant RAM availability on your PC.
     - This can easily fill up 128 gigs of system RAM in usage, but does still work on 64 gig systems. Lower than 64 may not be possible, or may require heavily using swapfile.
 - Download the standard FP8 model here [silveroxides/FLUX.2-dev-fp8_scaled](<https://huggingface.co/silveroxides/FLUX.2-dev-fp8_scaled/blob/main/flux2-dev-fp8mixedfromscaled.safetensors>)
-    - Or GGUF version here [orabazes/FLUX.2-dev-GGUF](<https://huggingface.co/orabazes/FLUX.2-dev-GGUF/tree/main>)
+    - Or GGUF version here [city96/FLUX.2-dev-GGUF](<https://huggingface.co/city96/FLUX.2-dev-gguf/tree/main>)
     - Goes in `diffusion_models` folder
 - The VAE is a brand new 16x16 downsample VAE with 128 channels. It will be autodownloaded.
     - You can swap it for this one [CabalResearch/Flux2VAE-Anime-Decoder-Tune](<https://huggingface.co/CabalResearch/Flux2VAE-Anime-Decoder-Tune/blob/main/Flux2Anime%20VAE%20DecB1.safetensors>) which is a finetune to reduce detail artifacting.
 - The Text Encoder is 24B Mistral Small 3.2 (2506). It will be autodownloaded.
-    - This would make sense to replace with a GGUF. (Pending gguf download link)
+    - There's a GGUF about half the size here [mcmonkey/flux2MistralGGUF](<https://huggingface.co/mcmonkey/Flux2MistralGGUF/blob/main/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M-flux2fixed.gguf>)
 - **Parameters:**
     - **Prompt:** Prompting guide from the model creators here <https://docs.bfl.ai/guides/prompting_guide_flux2>
         - Notably, they trained heavily on complex JSON structured prompts to allow for very complex scene control, though this is not required

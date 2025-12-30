@@ -1701,7 +1701,7 @@ public class WorkflowGeneratorSteps
                         height = (int)Math.Round(height * scale);
                     }
                 }
-                void altLatent(WorkflowGenerator.ImageToVideoGenInfo genInfo)
+                void altLatent(ImageToVideoGenInfo genInfo)
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
                     {
@@ -1720,7 +1720,7 @@ public class WorkflowGeneratorSteps
                         genInfo.Latent = [reEncode, 0];
                     }
                 }
-                WorkflowGenerator.ImageToVideoGenInfo genInfo = new()
+                ImageToVideoGenInfo genInfo = new()
                 {
                     Generator = g,
                     VideoModel = vidModel,
