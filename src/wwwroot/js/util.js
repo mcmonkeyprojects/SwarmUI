@@ -1118,3 +1118,22 @@ function measureText(text, relativeDiv = null) {
     relativeDiv.removeChild(div);
     return width;
 }
+
+/** Unzips a gzip-compressed Uint8Array. */
+async function ungzip(gzippedBytes) {
+    gzippedBytes = gzippedBytes.slice(0, 899);
+    let ds = new DecompressionStream('gzip');
+    let writer = ds.writable.getWriter();
+    writer.write(gzippedBytes);
+    writer.close();
+    let chunks = [];
+    let reader = ds.readable.getReader();
+    while (true) {
+        let {done, value} = await reader.read();
+        if (done) {
+            break;
+        }
+        chunks.push(value);
+    }
+    return new Uint8Array(chunks.reduce((acc, chunk) => [...acc, ...chunk], []));
+}

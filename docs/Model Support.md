@@ -269,6 +269,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - Download the standard FP8 model here [silveroxides/FLUX.2-dev-fp8_scaled](<https://huggingface.co/silveroxides/FLUX.2-dev-fp8_scaled/blob/main/flux2-dev-fp8mixedfromscaled.safetensors>)
     - Or GGUF version here [city96/FLUX.2-dev-GGUF](<https://huggingface.co/city96/FLUX.2-dev-gguf/tree/main>)
     - Goes in `diffusion_models` folder
+    - There's also a turbo model here [silveroxides/flux2-dev-turbo-fp8mixed.safetensors](<https://huggingface.co/silveroxides/FLUX.2-dev-fp8_scaled/blob/main/flux2-dev-turbo-fp8mixed.safetensors>)
+         - or as a lora [fal/Flux_2-Turbo-LoRA_comfyui.safetensors](<https://huggingface.co/fal/FLUX.2-dev-Turbo/blob/main/comfy/Flux_2-Turbo-LoRA_comfyui.safetensors>)
 - The VAE is a brand new 16x16 downsample VAE with 128 channels. It will be autodownloaded.
     - You can swap it for this one [CabalResearch/Flux2VAE-Anime-Decoder-Tune](<https://huggingface.co/CabalResearch/Flux2VAE-Anime-Decoder-Tune/blob/main/Flux2Anime%20VAE%20DecB1.safetensors>) which is a finetune to reduce detail artifacting.
 - The Text Encoder is 24B Mistral Small 3.2 (2506). It will be autodownloaded.
