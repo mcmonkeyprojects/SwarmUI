@@ -16,7 +16,7 @@ namespace SwarmUI.Backends;
 /// <summary>Central manager for available backends.</summary>
 public class BackendHandler
 {
-    public ConcurrentDictionary<int, AbstractBackendData> AllBackends = new();
+    public ConcurrentDictionary<int, BackendData> AllBackends = new();
 
     /// <summary>Currently loaded backends. Might not all be valid.</summary>
     [Obsolete("Use AllBackends or EnumerateT2IBackends")]
@@ -47,7 +47,7 @@ public class BackendHandler
     public string SaveFilePath = "Data/Backends.fds";
 
     /// <summary>Queue of backends to initialize.</summary>
-    public ConcurrentQueue<AbstractBackendData> BackendsToInit = new();
+    public ConcurrentQueue<BackendData> BackendsToInit = new();
 
     /// <summary>Signal for when a new backend is added to <see cref="BackendsToInit"/>.</summary>
     public AsyncAutoResetEvent NewBackendInitSignal = new(false);
@@ -278,12 +278,12 @@ public class BackendHandler
     }
 
     /// <summary>Special live data about a registered backend.</summary>
-    public abstract class AbstractBackendData
+    public class BackendData
     {
         public AbstractBackend AbstractBackend;
 
         /// <summary>If the backend is non-real, this is the parent backend.</summary>
-        public AbstractBackendData AbstractParent;
+        public BackendData AbstractParent;
 
         public volatile bool ReserveModelLoad = false;
 
@@ -321,7 +321,7 @@ public class BackendHandler
     }
 
     /// <summary>Special live data about a registered text-to-image backend.</summary>
-    public class T2IBackendData : AbstractBackendData
+    public class T2IBackendData : BackendData
     {
         public AbstractT2IBackend Backend
         {
@@ -337,7 +337,7 @@ public class BackendHandler
         }
     }
 
-    public AbstractBackendData RawInstantiate(BackendType type)
+    public BackendData RawInstantiate(BackendType type)
     {
         object inst = Activator.CreateInstance(type.BackendClass);
         if (inst is AbstractT2IBackend t2i)
@@ -348,6 +348,14 @@ public class BackendHandler
                 BackType = type
             };
         }
+        else if (inst is AbstractBackend abst)
+        {
+            return new BackendData()
+            {
+                AbstractBackend = abst,
+                BackType = type
+            };
+        }
         else
         {
             throw new Exception($"Backend type {type.Name} is not any known backend subclass type!");
@@ -355,10 +363,10 @@ public class BackendHandler
     }
 
     /// <summary>Adds a new backend of the given type, and returns its data. Note that the backend will not be initialized at first.</summary>
-    public AbstractBackendData AddNewOfType(BackendType type, AutoConfiguration config = null)
+    public BackendData AddNewOfType(BackendType type, AutoConfiguration config = null)
     {
         BackendsEdited = true;
-        AbstractBackendData data = RawInstantiate(type);
+        BackendData data = RawInstantiate(type);
         data.AbstractBackend.AbstractBackendData = data;
         data.AbstractBackend.SettingsRaw = config ?? (Activator.CreateInstance(type.SettingsClass) as AutoConfiguration);
         data.AbstractBackend.Handler = this;
@@ -373,9 +381,9 @@ public class BackendHandler
     }
 
     /// <summary>Adds a new backend that is not a 'real' backend (it will not save nor show in the UI, but is available for generation calls).</summary>
-    public AbstractBackendData AddNewNonrealBackend(BackendType type, AbstractBackendData parent, AutoConfiguration config = null, Action<AbstractBackendData> preModify = null)
+    public BackendData AddNewNonrealBackend(BackendType type, BackendData parent, AutoConfiguration config = null, Action<BackendData> preModify = null)
     {
-        AbstractBackendData data = RawInstantiate(type);
+        BackendData data = RawInstantiate(type);
         data.AbstractBackend.AbstractBackendData = data;
         data.AbstractBackend.SettingsRaw = config ?? (Activator.CreateInstance(type.SettingsClass) as AutoConfiguration);
         data.AbstractBackend.Handler = this;
@@ -392,7 +400,7 @@ public class BackendHandler
     }
 
     /// <summary>Shuts down the given backend properly and cleanly, in a way that avoids interrupting usage of the backend.</summary>
-    public async Task ShutdownBackendCleanly(AbstractBackendData data)
+    public async Task ShutdownBackendCleanly(BackendData data)
     {
         data.AbstractBackend.ShutDownReserve = true;
         try
@@ -417,7 +425,7 @@ public class BackendHandler
     public async Task<bool> DeleteById(int id)
     {
         BackendsEdited = true;
-        if (!AllBackends.TryRemove(id, out AbstractBackendData data))
+        if (!AllBackends.TryRemove(id, out BackendData data))
         {
             return false;
         }
@@ -427,9 +435,9 @@ public class BackendHandler
     }
 
     /// <summary>Replace the settings of a given backend. Shuts it down immediately and queues a reload.</summary>
-    public async Task<AbstractBackendData> EditById(int id, FDSSection newSettings, string title, int new_id = -1)
+    public async Task<BackendData> EditById(int id, FDSSection newSettings, string title, int new_id = -1)
     {
-        if (!AllBackends.TryGetValue(id, out AbstractBackendData data))
+        if (!AllBackends.TryGetValue(id, out BackendData data))
         {
             return null;
         }
@@ -465,14 +473,14 @@ public class BackendHandler
     /// <summary>Causes all backends to restart.</summary>
     public async Task ReloadAllBackends()
     {
-        foreach (AbstractBackendData data in AllBackends.Values.ToArray())
+        foreach (BackendData data in AllBackends.Values.ToArray())
         {
             await ReloadBackend(data);
         }
     }
 
     /// <summary>Causes a single backend to restart.</summary>
-    public async Task ReloadBackend(AbstractBackendData data)
+    public async Task ReloadBackend(BackendData data)
     {
         await ShutdownBackendCleanly(data);
         DoInitBackend(data);
@@ -525,7 +533,7 @@ public class BackendHandler
                 Logs.Error($"Unknown backend type '{section.GetString("type")}' in save file, skipping backend #{idstr}.");
                 continue;
             }
-            AbstractBackendData data = RawInstantiate(type);
+            BackendData data = RawInstantiate(type);
             data.ID = int.Parse(idstr);
             data.AbstractBackend.AbstractBackendData = data;
             LastBackendID = Math.Max(LastBackendID, data.ID + 1);
@@ -547,7 +555,7 @@ public class BackendHandler
     public static long CountBackendsFastLoaded = 0;
 
     /// <summary>Cause a backend to run its initializer, either immediately or in the next available slot.</summary>
-    public void DoInitBackend(AbstractBackendData data)
+    public void DoInitBackend(BackendData data)
     {
         data.AbstractBackend.LoadStatusReport ??= [];
         data.AbstractBackend.Status = BackendStatus.WAITING;
@@ -573,7 +581,7 @@ public class BackendHandler
     }
 
     /// <summary>Internal direct immediate backend load call.</summary>
-    public async Task<bool> LoadBackendDirect(AbstractBackendData data)
+    public async Task<bool> LoadBackendDirect(BackendData data)
     {
         if (!data.AbstractBackend.IsEnabled)
         {
@@ -633,7 +641,7 @@ public class BackendHandler
             try
             {
                 bool any = false;
-                while (BackendsToInit.TryDequeue(out AbstractBackendData data) && !HasShutdown)
+                while (BackendsToInit.TryDequeue(out BackendData data) && !HasShutdown)
                 {
                     bool loaded = LoadBackendDirect(data).Result;
                     any = any || loaded;
@@ -649,11 +657,11 @@ public class BackendHandler
                         Logs.Error($"Error while reassigning loaded models list: {ex.ReadableString()}");
                     }
                 }
-                AbstractBackendData[] loading = [.. AllBackends.Values.Where(b => b.AbstractBackend.LoadStatusReport is not null && b.AbstractBackend.LoadStatusReport.Count > 1)];
+                BackendData[] loading = [.. AllBackends.Values.Where(b => b.AbstractBackend.LoadStatusReport is not null && b.AbstractBackend.LoadStatusReport.Count > 1)];
                 if (loading.Any())
                 {
                     long now = Environment.TickCount64;
-                    foreach (AbstractBackendData backend in loading)
+                    foreach (BackendData backend in loading)
                     {
                         AbstractBackend.LoadStatus firstStatus = backend.AbstractBackend.LoadStatusReport[0];
                         AbstractBackend.LoadStatus lastStatus = backend.AbstractBackend.LoadStatusReport[^1];
@@ -722,7 +730,7 @@ public class BackendHandler
         {
             Logs.Info("Saving backends...");
             FDSSection saveFile = new();
-            foreach (AbstractBackendData data in AllBackends.Values)
+            foreach (BackendData data in AllBackends.Values)
             {
                 if (!data.AbstractBackend.IsReal)
                 {
@@ -805,8 +813,8 @@ public class BackendHandler
         HasShutdown = true;
         NewBackendInitSignal.Set();
         CheckBackendsSignal.Set();
-        List<(AbstractBackendData, Task)> tasks = [];
-        foreach (AbstractBackendData backend in AllBackends.Values)
+        List<(BackendData, Task)> tasks = [];
+        foreach (BackendData backend in AllBackends.Values)
         {
             tasks.Add((backend, Task.Run(async () =>
             {

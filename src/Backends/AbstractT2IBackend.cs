@@ -33,21 +33,8 @@ public abstract class AbstractT2IBackend : AbstractBackend
     /// <summary>Currently loaded model, or null if none.</summary>
     public volatile string CurrentModelName;
 
-    /// <summary>Deprecated, use <see cref="LoadModel(T2IModel, T2IParamInput)"/>.</summary>
-    [Obsolete("Use the T2IParamInput version")]
-    public virtual Task<bool> LoadModel(T2IModel model)
-    {
-        return LoadModel(model, null);
-    }
-
     /// <summary>Tell the backend to load a specific model. Return true if loaded, false if failed. Contains a copy of the first input seen, which may contain alternate side-models the user prefers. Input may be null.</summary>
-    public virtual Task<bool> LoadModel(T2IModel model, T2IParamInput input)
-    {
-        Logs.Warning($"Backend {BackendData.BackType.Name} is outdated, please update it");
-#pragma warning disable CS0618 // Type or member is obsolete
-        return LoadModel(model);
-#pragma warning restore CS0618 // Type or member is obsolete
-    }
+    public abstract Task<bool> LoadModel(T2IModel model, T2IParamInput input);
 
     /// <summary>Handler-internal data for this backend.</summary>
     public BackendHandler.T2IBackendData BackendData
@@ -55,9 +42,6 @@ public abstract class AbstractT2IBackend : AbstractBackend
         get => AbstractBackendData as BackendHandler.T2IBackendData;
         set => AbstractBackendData = value;
     }
-
-    /// <summary>Whether this backend has the capability to load a model. Marking this false indicates a "not for generation usage" backend, such as an API handler that emits temporary (IsReal=false) backends to do the actual generations.</summary>
-    public bool CanLoadModels = true;
 
     /// <summary>The list of all model names this server has (key=model subtype, value=list of filenames), or null if untracked.</summary>
     public ConcurrentDictionary<string, List<string>> Models = null;

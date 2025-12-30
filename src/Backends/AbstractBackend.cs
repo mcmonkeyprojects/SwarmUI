@@ -54,7 +54,7 @@ public abstract class AbstractBackend
     public BackendHandler.BackendType HandlerTypeData => AbstractBackendData.BackType;
 
     /// <summary>Handler-internal data for this backend.</summary>
-    public BackendHandler.AbstractBackendData AbstractBackendData;
+    public BackendHandler.BackendData AbstractBackendData;
 
     /// <summary>Add a load status message.</summary>
     public void AddLoadStatus(string message)
@@ -102,6 +102,9 @@ public abstract class AbstractBackend
     {
         return false;
     }
+
+    /// <summary>Whether this backend has the capability to load a model. Marking this false indicates a "not for generation usage" backend, such as an API handler that emits temporary (IsReal=false) backends to do the actual generations.</summary>
+    public bool CanLoadModels = true;
 
     /// <summary>Exception can be thrown to indicate the backend cannot fulfill the request, but for temporary reasons, and another backend should be used instead.</summary>
     public class PleaseRedirectException : Exception

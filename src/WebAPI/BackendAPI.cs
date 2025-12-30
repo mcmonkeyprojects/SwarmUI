@@ -50,7 +50,7 @@ public class BackendAPI
     }
 
     /// <summary>Create a network object to represent a backend cleanly.</summary>
-    public static JObject BackendToNet(BackendHandler.AbstractBackendData backend, bool full = false)
+    public static JObject BackendToNet(BackendHandler.BackendData backend, bool full = false)
     {
         long timeLastRelease = backend.TimeLastRelease;
         long timeSinceUsed = timeLastRelease == 0 ? 0 : (Environment.TickCount64 - timeLastRelease) / 1000;
@@ -115,7 +115,7 @@ public class BackendAPI
         {
             return new() { ["error"] = "Settings are locked." };
         }
-        if (!Program.Backends.AllBackends.TryGetValue(backend_id, out BackendHandler.AbstractBackendData backend))
+        if (!Program.Backends.AllBackends.TryGetValue(backend_id, out BackendHandler.BackendData backend))
         {
             return new() { ["error"] = $"Invalid backend ID {backend_id}" };
         }
@@ -188,7 +188,7 @@ public class BackendAPI
         }
         FDSSection parsed = FDSSection.FromSimple(settings.ToBasicObject());
         Logs.Verbose($"New settings to apply: {parsed}");
-        BackendHandler.AbstractBackendData result = await Program.Backends.EditById(backend_id, parsed, title, new_id);
+        BackendHandler.BackendData result = await Program.Backends.EditById(backend_id, parsed, title, new_id);
         if (result is null)
         {
             return new() { ["error"] = $"Invalid backend ID {backend_id}" };
@@ -221,7 +221,7 @@ public class BackendAPI
         [API.APIParameter("If true, include nonessential data about backends (eg what model is currently loaded).")] bool full_data = false)
     {
         JObject toRet = [];
-        foreach (BackendHandler.AbstractBackendData data in Program.Backends.AllBackends.Values.OrderBy(d => d.ID))
+        foreach (BackendHandler.BackendData data in Program.Backends.AllBackends.Values.OrderBy(d => d.ID))
         {
             if (!data.AbstractBackend.IsReal && !nonreal)
             {
@@ -260,7 +260,7 @@ public class BackendAPI
         {
             return new() { ["error"] = $"Invalid backend type: {type_id}" };
         }
-        BackendHandler.AbstractBackendData data = Program.Backends.AddNewOfType(type);
+        BackendHandler.BackendData data = Program.Backends.AddNewOfType(type);
         return BackendToNet(data);
     }
 
@@ -278,7 +278,7 @@ public class BackendAPI
             return new() { ["error"] = "Settings are locked." };
         }
         int count = 0;
-        foreach (BackendHandler.AbstractBackendData data in Program.Backends.AllBackends.Values)
+        foreach (BackendHandler.BackendData data in Program.Backends.AllBackends.Values)
         {
             if (backend != "all" && backend != $"{data.ID}")
             {

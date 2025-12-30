@@ -152,8 +152,8 @@ public static class UtilAPI
     [API.APIDescription("Trigger a mass metadata reset.", "\"success\": true")]
     public static async Task<JObject> WipeMetadata()
     {
-        BackendHandler.AbstractBackendData[] backends = [.. Program.Backends.AllBackends.Values];
-        foreach (BackendHandler.AbstractBackendData backend in backends)
+        BackendHandler.BackendData[] backends = [.. Program.Backends.AllBackends.Values];
+        foreach (BackendHandler.BackendData backend in backends)
         {
             Interlocked.Add(ref backend.Usages, backend.AbstractBackend.MaxUsages);
         }
@@ -180,7 +180,7 @@ public static class UtilAPI
         }
         finally
         {
-            foreach (BackendHandler.AbstractBackendData backend in backends)
+            foreach (BackendHandler.BackendData backend in backends)
             {
                 Interlocked.Add(ref backend.Usages, -backend.AbstractBackend.MaxUsages);
             }

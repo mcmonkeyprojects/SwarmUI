@@ -282,7 +282,7 @@ public class AutoScalingBackend : AbstractT2IBackend
                             ConnectionAttemptTimeoutSeconds = Settings.ConnectionAttemptTimeoutSeconds
                         };
                         // TODO: support remote non-T2I Backends
-                        BackendHandler.AbstractBackendData newBackend = Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
+                        BackendHandler.BackendData newBackend = Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
                         {
                             Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {newData.ID}: Master Control");
                             SwarmSwarmBackend newSwarm = newData.AbstractBackend as SwarmSwarmBackend;
@@ -427,4 +427,10 @@ public class AutoScalingBackend : AbstractT2IBackend
 
     /// <inheritdoc/>
     public override IEnumerable<string> SupportedFeatures => [];
+
+    /// <inheritdoc/>
+    public override Task<bool> LoadModel(T2IModel model, T2IParamInput input)
+    {
+        throw new NotImplementedException("Auto-Scaling Backend cannot load models.");
+    }
 }
