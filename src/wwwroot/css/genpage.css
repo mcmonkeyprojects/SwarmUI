@@ -970,15 +970,13 @@ body {
     top: 0;
 }
 .alt-text-add-button {
-    display: inline-flex;
     position: relative;
-    align-items: center;
-    justify-content: center;
     top: 2px;
     width: 29px;
     height: 29px;
     left: -5px;
-    padding: 0 !important;
+    padding-top: 2px;
+    padding-left: 9px !important;
     border-radius: 1rem !important;
 }
 .small-window .alt-text-add-button {
