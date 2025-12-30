@@ -307,7 +307,7 @@ public class BackendAPI
         {
             Session.RecentlyBlockedFilenames.Clear();
         }
-        List<Task> tasks = [];
+        List<Task<bool>> tasks = [];
         foreach (AbstractBackend target in Program.Backends.RunningBackendsOfType<AbstractBackend>())
         {
             if (backend != "all" && backend != $"{target.AbstractBackendData.ID}")
@@ -322,6 +322,6 @@ public class BackendAPI
         }
         await Task.WhenAll(tasks);
         Utilities.CleanRAM();
-        return new JObject() { ["result"] = true, ["count"] = tasks.Count };
+        return new JObject() { ["result"] = true, ["count"] = tasks.Where(t => t.Result).Count() };
     }
 }

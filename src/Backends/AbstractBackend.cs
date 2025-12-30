@@ -3,6 +3,7 @@ using SwarmUI.Utils;
 
 namespace SwarmUI.Backends;
 
+/// <summary>Represents a basic abstracted generation backend provider.</summary>
 public abstract class AbstractBackend
 {
     /// <summary>Load this backend and get it ready for usage. Do not return until ready. Throw an exception if not possible.</summary>

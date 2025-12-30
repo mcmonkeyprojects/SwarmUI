@@ -89,6 +89,7 @@ public static class Permissions
     public static PermInfoGroup GroupUser = new("User", "Permissions related to basic user access.");
 
     public static PermInfo BasicImageGeneration = Register(new("basic_image_generation", "Basic Image Generation", "Allows this user to generate images.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
+    public static PermInfo BasicTextGeneration = Register(new("basic_text_generation", "Basic Text Generation", "Allows this user to generate text (LLMs).", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo ViewImageHistory = Register(new("view_image_history", "View Image History", "Allows this user to view their own image history.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo UserDeleteImage = Register(new("user_delete_image", "User Delete Image", "Allows this user to delete images they generated.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo UserStarImages = Register(new("user_star_images", "User Star Images", "Allows this user to star or unstar images they generated.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));

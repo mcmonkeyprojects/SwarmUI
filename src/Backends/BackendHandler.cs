@@ -108,12 +108,14 @@ public class BackendHandler
     }
 
     /// <summary>Registered core backend types.</summary>
-    public BackendType SwarmBackendType, AutoScalingBackendType;
+    public BackendType SwarmBackendType, AutoScalingBackendType, LlamaSharpBackendType, SimpleRemoteLLMBackendType;
 
     public BackendHandler()
     {
         SwarmBackendType = RegisterBackendType<SwarmSwarmBackend>("swarmswarmbackend", "Swarm-API-Backend", "Connect SwarmUI to another instance of SwarmUI as a backend.", true, true);
         AutoScalingBackendType = RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
+        LlamaSharpBackendType = RegisterBackendType<LlamaSharpLLMBackend>("localllama", "Local LLaMA.cpp GGUF Backend", "(EXPERIMENTAL) Same-process local LLaMA GGUF LLM support.", true, false);
+        SimpleRemoteLLMBackendType = RegisterBackendType<SimpleRemoteLLMBackend>("simpleremotellm", "Remote LLM (OpenAI API)", "(EXPERIMENTAL) Support for any OpenAI API compatible LLM provider.", true, false);
         Program.ModelRefreshEvent += () =>
         {
             List<Task> waitFor = [];
@@ -272,7 +274,7 @@ public class BackendHandler
     }
 
     /// <summary>Register a new backend-type by type ref.</summary>
-    public BackendType RegisterBackendType<T>(string id, string name, string description, bool CanLoadFast = false, bool isStandard = false) where T : AbstractT2IBackend
+    public BackendType RegisterBackendType<T>(string id, string name, string description, bool CanLoadFast = false, bool isStandard = false) where T : AbstractBackend
     {
         return RegisterBackendType(typeof(T), id, name, description, CanLoadFast, isStandard);
     }
