@@ -273,6 +273,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - You can swap it for this one [CabalResearch/Flux2VAE-Anime-Decoder-Tune](<https://huggingface.co/CabalResearch/Flux2VAE-Anime-Decoder-Tune/blob/main/Flux2Anime%20VAE%20DecB1.safetensors>) which is a finetune to reduce detail artifacting.
 - The Text Encoder is 24B Mistral Small 3.2 (2506). It will be autodownloaded.
     - There's a GGUF about half the size here [mcmonkey/flux2MistralGGUF](<https://huggingface.co/mcmonkey/Flux2MistralGGUF/blob/main/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M-flux2fixed.gguf>)
+        - Select via the advanced `Mistral Model` parameter
 - **Parameters:**
     - **Prompt:** Prompting guide from the model creators here <https://docs.bfl.ai/guides/prompting_guide_flux2>
         - Notably, they trained heavily on complex JSON structured prompts to allow for very complex scene control, though this is not required
