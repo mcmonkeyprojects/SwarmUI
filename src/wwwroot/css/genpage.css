@@ -975,8 +975,11 @@ body {
     width: 29px;
     height: 29px;
     left: -5px;
-    padding-top: 2px;
-    padding-left: 9px !important;
+    font-size: 32px;
+    line-height: 0.6;
+    padding-top: 0px;
+    font-weight: 700 !important;
+    padding-left: 2px !important;
     border-radius: 1rem !important;
 }
 .small-window .alt-text-add-button {
