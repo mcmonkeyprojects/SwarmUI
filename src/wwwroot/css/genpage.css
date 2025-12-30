@@ -947,7 +947,7 @@ body {
     color: color-mix(in srgb, var(--text) 50%, var(--background));
 }
 .alt_prompt_textboxes {
-    margin-left: 1rem;
+    margin-left: 2rem;
     display: inline-block;
     flex-grow: 10;
 }
@@ -971,9 +971,12 @@ body {
 }
 .alt-text-add-button {
     position: relative;
-    top: 0;
-    left: -8px;
-    padding: 0px 4px !important;
+    top: 2px;
+    width: 29px;
+    height: 29px;
+    left: -5px;
+    padding-top: 2px;
+    padding-left: 9px !important;
     border-radius: 1rem !important;
 }
 .small-window .alt-text-add-button {
