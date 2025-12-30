@@ -1049,9 +1049,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
 function highlightSelectedImage(src) {
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
-        let batchImg = batchContainer.querySelector(`[data-src="${src}"]`);
         for (let i of batchContainer.getElementsByClassName('image-block')) {
-            if (batchImg == i) {
+            if (i.dataset.src == src) {
                 i.classList.add('image-block-current');
             }
             else {
