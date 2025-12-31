@@ -322,7 +322,32 @@ function formatMetadata(metadata) {
         delete data.sui_image_params['lorasectionconfinement'];
         data.sui_image_params['loras'] = simpleLoras;
     }
-    appendObject(data.sui_image_params);
+    if ('width' in data.sui_image_params && 'height' in data.sui_image_params) {
+        let res = `${data.sui_image_params.width}x${data.sui_image_params.height}`;
+        if ('aspectratio' in data.sui_image_params && 'sidelength' in data.sui_image_params) {
+            res += ` (${data.sui_image_params.aspectratio} @ ${data.sui_image_params.sidelength})`;
+        }
+        else if ('aspectratio' in data.sui_image_params) {
+            res += ` (${data.sui_image_params.aspectratio})`;
+        }
+        delete data.sui_image_params.width;
+        delete data.sui_image_params.height;
+        delete data.sui_image_params.aspectratio;
+        delete data.sui_image_params.sidelength;
+        data.sui_image_params['Resolution'] = res;
+    }
+    let explicitTopKeys = ['prompt', 'negativeprompt', 'model', 'images', 'Resolution'];
+    let paramMap = {};
+    for (let key of explicitTopKeys) {
+        if (key in data.sui_image_params) {
+            paramMap[key] = data.sui_image_params[key];
+            delete data.sui_image_params[key];
+        }
+    }
+    for (let key of Object.keys(data.sui_image_params)) {
+        paramMap[key] = data.sui_image_params[key];
+    }
+    appendObject(paramMap);
     result += '\n<br>';
     if ('sui_extra_data' in data) {
         appendObject(data.sui_extra_data);
