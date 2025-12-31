@@ -350,6 +350,11 @@ function formatMetadata(metadata) {
     appendObject(paramMap);
     result += '\n<br>';
     if ('sui_extra_data' in data) {
+        if ('prep_time' in data.sui_extra_data && 'generation_time' in data.sui_extra_data) {
+            data.sui_extra_data['Generation Time'] = `${data.sui_extra_data.prep_time} prep, ${data.sui_extra_data.generation_time} gen`;
+            delete data.sui_extra_data.prep_time;
+            delete data.sui_extra_data.generation_time;
+        }
         appendObject(data.sui_extra_data);
     }
     return result;
