@@ -502,7 +502,7 @@ public static class ModelsAPI
             actualModel.Description = description;
             if (!string.IsNullOrWhiteSpace(type))
             {
-                actualModel.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(type);
+                actualModel.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(type.ToLowerFast());
             }
             if (standard_width > 0)
             {

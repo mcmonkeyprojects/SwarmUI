@@ -732,7 +732,7 @@ public class T2IModelHandler
         {
             model.Title = metadata.Title;
             model.Description = metadata.Description;
-            model.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault(metadata.ModelClassType ?? "");
+            model.ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault((metadata.ModelClassType ?? "").ToLowerFast());
             model.PreviewImage = string.IsNullOrWhiteSpace(metadata.PreviewImage) ? "imgs/model_placeholder.jpg" : metadata.PreviewImage;
             model.StandardWidth = metadata.StandardWidth;
             model.StandardHeight = metadata.StandardHeight;

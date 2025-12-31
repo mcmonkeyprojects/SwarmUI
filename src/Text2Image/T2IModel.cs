@@ -366,7 +366,7 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
             Description = $"{data["description"]}",
             PreviewImage = $"{data["preview_image"]}",
             AnyBackendsHaveLoaded = (bool)data["loaded"],
-            ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault($"{data["architecture"]}") ?? null,
+            ModelClass = T2IModelClassSorter.ModelClasses.GetValueOrDefault($"{data["architecture"]}".ToLowerFast()) ?? null,
             StandardWidth = (int)data["standard_width"],
             StandardHeight = (int)data["standard_height"],
             IsSupportedModelType = (bool)(data?["is_supported_model_format"] ?? false)

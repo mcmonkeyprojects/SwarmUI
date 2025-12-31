@@ -20,14 +20,14 @@ public class T2IModelClassSorter
     /// <summary>Register a new model class to the sorter.</summary>
     public static T2IModelClass Register(T2IModelClass clazz)
     {
-        ModelClasses.Add(clazz.ID, clazz);
+        ModelClasses.Add(clazz.ID.ToLowerFast(), clazz);
         return clazz;
     }
 
     /// <summary>Register a new model compat class to the sorter.</summary>
     public static T2IModelCompatClass RegisterCompat(T2IModelCompatClass clazz)
     {
-        CompatClasses.Add(clazz.ID, clazz);
+        CompatClasses.Add(clazz.ID.ToLowerFast(), clazz);
         return clazz;
     }
 
@@ -773,6 +773,7 @@ public class T2IModelClassSorter
             ?? fix(header.Value<string>("model_type"));
         if (arch is not null)
         {
+            arch = arch.ToLowerFast();
             string res = fix(header["__metadata__"]?.Value<string>("modelspec.resolution"))
                 ?? fix(header["__metadata__"]?.Value<string>("resolution"))
                 ?? fix(header.Value<string>("modelspec.resolution"))
@@ -782,7 +783,7 @@ public class T2IModelClassSorter
             int height = string.IsNullOrWhiteSpace(h) ? 0 : int.Parse(h);
             if (Remaps.TryGetValue(arch, out string remapTo))
             {
-                arch = remapTo;
+                arch = remapTo.ToLowerFast();
             }
             if (ModelClasses.TryGetValue(arch, out T2IModelClass clazz))
             {
