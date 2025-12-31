@@ -253,6 +253,9 @@ function formatMetadata(metadata) {
                     if (key.includes('prompt')) {
                         extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="copyText('${escapeHtmlNoBr(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
                     }
+                    if (key == 'unused_parameters' && Array.isArray(val)) {
+                        val = val.join(', ');
+                    }
                     let param = getParamById(key);
                     if (param) {
                         key = param.name;
