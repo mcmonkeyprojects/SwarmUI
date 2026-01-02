@@ -170,6 +170,7 @@ class ImageFullViewHelper {
         let container = this.getImgOrContainer();
         let origHeight = this.getHeightPercent();
         let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
+        let isZoomingOut = zoom < 1;
         let width = img.naturalWidth ?? img.videoWidth;
         let height = img.naturalHeight ?? img.videoHeight;
         let maxHeight = Math.sqrt(width * height) * 2;
@@ -183,7 +184,7 @@ class ImageFullViewHelper {
         if (newHeight > 100.1) {
             this.toggleMetadataVisibility(false);
         }
-        else if (newHeight < 100.1) {
+        else if (isZoomingOut) {
             this.toggleMetadataVisibility(true);
         }
         container.style.cursor = 'grab';
