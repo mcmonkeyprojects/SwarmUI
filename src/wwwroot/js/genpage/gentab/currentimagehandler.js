@@ -209,6 +209,23 @@ class ImageFullViewHelper {
         }
     }
 
+    /** Format fixes that need to run after the image content has loaded. */
+    onImgLoad() {
+        if (getUserSetting('ui.defaulthidemetadatainfullview')) {
+            let img = this.getImg();
+            let width = img.naturalWidth ?? img.videoWidth;
+            let height = img.naturalHeight ?? img.videoHeight;
+            let aspectRatio = width / height;
+            let screenAspectRatio = (window.innerWidth * 0.95) / window.innerHeight;
+            if (aspectRatio <= screenAspectRatio) {
+                this.toggleMetadataVisibility(false);
+            }
+            else {
+                this.toggleMetadataVisibility(true);
+            }
+        }
+    }
+
     showImage(src, metadata, batchId = null) {
         this.currentSrc = src;
         this.currentMetadata = metadata;
@@ -217,12 +234,12 @@ class ImageFullViewHelper {
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
         let encodedSrc = escapeHtmlForUrl(src);
-        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}">`;
+        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}" onload="imageFullView.onImgLoad()">`;
         if (isVideo) {
-            imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
+            imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop onload="imageFullView.onImgLoad()"><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
         }
         else if (isAudio) {
-            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}"></audio>`;
+            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}" onload="imageFullView.onImgLoad()"></audio>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
