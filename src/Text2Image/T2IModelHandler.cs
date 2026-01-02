@@ -264,13 +264,14 @@ public class T2IModelHandler
             {
                 Directory.CreateDirectory(path);
             }
-            lock (ModificationLock)
-            {
-                Models.Clear();
-            }
+            ConcurrentDictionary<string, T2IModel> newModels = new();
             foreach (string path in FolderPaths)
             {
-                AddAllFromFolder(path, "");
+                AddAllFromFolder(path, "", newModels);
+            }
+            lock (ModificationLock)
+            {
+                Models = newModels;
             }
             Logs.Debug($"Have {Models.Count} {ModelType} models.");
             T2IModel[] dupped = [.. Models.Values.Where(m => m.OtherPaths.Count > 0)];
@@ -741,7 +742,7 @@ public class T2IModelHandler
     }
 
     /// <summary>Internal model adder route. Do not call.</summary>
-    public void AddAllFromFolder(string pathBase, string folder)
+    public void AddAllFromFolder(string pathBase, string folder, ConcurrentDictionary<string, T2IModel> dict)
     {
         if (IsShutdown)
         {
@@ -771,7 +772,7 @@ public class T2IModelHandler
             }
             try
             {
-                AddAllFromFolder(pathBase, path);
+                AddAllFromFolder(pathBase, path, dict);
             }
             catch (UnauthorizedAccessException)
             {
@@ -792,7 +793,7 @@ public class T2IModelHandler
                 return;
             }
             string fullFilename = $"{prefix}{fn}";
-            if (Models.TryGetValue(fullFilename, out T2IModel existingModel))
+            if (dict.TryGetValue(fullFilename, out T2IModel existingModel))
             {
                 lock (existingModel.OtherPaths)
                 {
@@ -811,7 +812,7 @@ public class T2IModelHandler
                     Description = "(Metadata not yet loaded.)",
                     PreviewImage = "imgs/model_placeholder.jpg",
                 };
-                Models[fullFilename] = model;
+                dict[fullFilename] = model;
                 try
                 {
                     LoadMetadata(model);
@@ -838,7 +839,7 @@ public class T2IModelHandler
                     PreviewImage = "imgs/legacy_ckpt.jpg",
                 };
                 model.PreviewImage = GetAutoFormatImage(model) ?? model.PreviewImage;
-                Models[fullFilename] = model;
+                dict[fullFilename] = model;
                 model.AutoWarn();
             }
         });
