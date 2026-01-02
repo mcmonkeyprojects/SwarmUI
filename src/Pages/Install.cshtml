@@ -91,9 +91,9 @@
     {
         <div id="installer_section_amd" style="display: none;">
             <div class="install_q_head">You don't seem to have an nvidia GPU. Do you want to install an AMD compatible version?</div>
-            <div class="install_hint">Installation works differently if you an AMD GPU instead. This will use DirectML on Windows, or ROCm on Linux.
+            <div class="install_hint">Installation works differently if you an AMD GPU instead. This will use a ROCm version, which only works on some (modern) AMD GPUs.
                 <br>If you do not have an AMD Radeon GPU, select 'No'.
-                <br><b>WARNING: This is untested and probably doesn't work due to painfully strict versioning requirements. DirectML is particularly unreliable.</b>
+                <br>Be aware that only recent Mac, Nvidia, and AMD Radeon GPUs are fully supported in SwarmUI, others may require custom installation steps to work.
             </div>
             <br>
             <fieldset class="form-group" id="amd_selection_field">
