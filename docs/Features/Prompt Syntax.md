@@ -7,7 +7,9 @@
 - Prompt weighting, eg `an (orange) cat` or `an (orange:1.5) cat`. Anything in `(parens)` has its weighting modified - meaning, the model will pay more attention to that part of the prompt. Values above `1` are more important, values below `1` (eg `0.5`) are less important.
     - You can also hold Control and press the up/down arrow keys to change the weight of selected text.
     - Note: this presumes a default Comfy backend.
-    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, but T5 based models (eg Flux) do not.
+    - This varies based on models - CLIP-based models (eg Stable Diffusion) work well with this, but newer models based on T5 or an LLM TextEnc do not.
+        - Basically, SDXL and SD3 are the last models this was properly relevant to.
+        - For other models, the syntax is non-present. Parentheses will not be parsed at all, and instead simply forwarded directly to the model.
 
 ## Alternating
 
@@ -36,6 +38,7 @@
         - If your randoms won't change but your seed is changing, check if you've accidentally enabled the `Wildcard Seed` parameter. Some users have done this by accident.
     - You can use `,` to separate the entries, or `|`, or `||`. Whichever is most unique gets used - so if you want random options with `,` in them, just use `|` as a separator, and `,` will be ignored (eg `<random:red|blue|purple>`).
     - An entry can contain the syntax of eg `1-5` to automatically select a number from 1 to 5. For example, `<random:1-3, blue>` will give back any of: `1`, `2`, `3`, or `blue`.
+        - Or eg `<random:0.8-1.2>` to get any of `0.8`, `0.9`, `1.0`, `1.1`, `1.2` (the number of places after the decimal will be equivalent to the amount used in the inputs)
     - You can repeat random choices via `<random[1-3]:red, blue, purple>` which might return for example `red blue` or `red blue purple` or `blue`.
         - You can use a comma at the end like `random[1-3,]` to specify the output should have a comma eg `red, blue`.
         - This will avoid repetition, unless you have a large count than number of options.

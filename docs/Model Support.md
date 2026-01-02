@@ -368,6 +368,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 - [Qwen Image](https://huggingface.co/Qwen/Qwen-Image) is natively supported in SwarmUI.
     - Download the model here [Comfy-Org/Qwen-Image_ComfyUI](<https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/tree/main/split_files/diffusion_models>)
         - There's an fp8 and a bf16 variant available. The fp8 model is highly recommended.
+        - There's the 2512 version and the original available. 2512 is newer and better.
         - Or, for nunchaku accelerated version that uses a bit less VRAM and runs faster, [nunchaku-tech/nunchaku-qwen-image](<https://huggingface.co/nunchaku-tech/nunchaku-qwen-image/tree/main>)
         - Or, other option for limited memory space, GGUF versions [city96/Qwen-Image-gguf](<https://huggingface.co/city96/Qwen-Image-gguf/tree/main>)
         - Or a distilled version here [qwen_image_distill_full_fp8_e4m3fn](<https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/blob/main/non_official/diffusion_models/qwen_image_distill_full_fp8_e4m3fn.safetensors>)
