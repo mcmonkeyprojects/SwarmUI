@@ -23,7 +23,7 @@ git clone https://github.com/comfyanonymous/ComfyUI
 cd ComfyUI
 
 # Try to find a good python executable, and dodge unsupported python versions
-for pyvers in python3.11 python3.10 python3.12 python3 python
+for pyvers in python3.11 python3.12 python3.10 python3 python
 do
     python=`which $pyvers`
     if [ "$python" != "" ]; then
@@ -67,7 +67,7 @@ if [ "$GPU_TYPE" == "nv" ]; then
     $python -s -m pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu129
 elif [ "$GPU_TYPE" == "amd" ]; then
     echo "install amd torch..."
-    $python -s -m pip install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/rocm7.1
+    $python -s -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm7.1
 fi
 
 echo "install general requirements..."
