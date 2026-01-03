@@ -117,6 +117,10 @@ class LoraHelper {
                 div.dataset.lora_name = lora.name;
                 let nameSpan = document.createElement('span');
                 nameSpan.innerText = cleanModelName(lora.name);
+                let lashSlash = nameSpan.innerText.lastIndexOf('/');
+                if (lashSlash != -1) {
+                    nameSpan.innerText = nameSpan.innerText.substring(lashSlash + 1);
+                }
                 nameSpan.className = 'lora-name';
                 div.appendChild(nameSpan);
                 let weightInput = document.createElement('input');
