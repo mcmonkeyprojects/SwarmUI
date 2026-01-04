@@ -22,6 +22,9 @@ public class T2IPreset
     /// <summary>Preview image URL for the preset, as a local path, usually within "Output".</summary>
     public string PreviewImage { get; set; }
 
+    /// <summary>Whether this preset is starred by the user.</summary>
+    public bool IsStarred { get; set; }
+
     /// <summary>Mapping of parameters to values.</summary>
     public Dictionary<string, string> ParamMap { get; set; } = [];
 
@@ -34,6 +37,7 @@ public class T2IPreset
             ["title"] = Title,
             ["description"] = Description,
             ["preview_image"] = PreviewImage,
+            ["is_starred"] = IsStarred,
             ["param_map"] = JObject.FromObject(ParamMap)
         };
     }
