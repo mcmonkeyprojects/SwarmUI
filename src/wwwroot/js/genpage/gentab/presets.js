@@ -299,6 +299,7 @@ function save_new_preset() {
         toSend['preview_image'] = preset_to_edit.preview_image;
         toSend['is_edit'] = true;
         toSend['editing'] = preset_to_edit.title;
+        toSend['is_starred'] = preset_to_edit.is_starred;
     }
     let complete = () => {
         genericRequest('AddNewPreset', toSend, data => {
