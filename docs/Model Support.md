@@ -465,8 +465,8 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 - [Z-Image](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) is supported in SwarmUI!
     - It is a 6B scaled model designed to run extremely fast while competing at the top level of image models
-- Only the "Turbo" model is currently released, download here [Comfy-Org/z_image_turbo](<https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>)
-    - Or FP8 version here (for lower VRAM): [silveroxides/Z-Image-Turbo-quants-plus](<https://huggingface.co/silveroxides/Z-Image-Turbo-quants-plus/blob/main/Z-Image-Turbo-Plateau-fp8mixed.safetensors>)
+- Only the "Turbo" model is currently released, download here [Z-Image-FP8Mixed](<https://huggingface.co/mcmonkey/swarm-models/blob/main/SwarmUI_Z-Image-Turbo-FP8Mix.safetensors>)
+    - Or the original BF16 fat version [Comfy-Org/z_image_turbo](<https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>)
     - Or GGUF version here [jayn7/Z-Image-Turbo-GGUF](<https://huggingface.co/jayn7/Z-Image-Turbo-GGUF/tree/main>)
     - Save in `diffusion_models`
     - "Base" and "Edit" variants are expected to release in the future
