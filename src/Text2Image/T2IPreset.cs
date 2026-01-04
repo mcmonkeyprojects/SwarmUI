@@ -23,7 +23,7 @@ public class T2IPreset
     public string PreviewImage { get; set; }
 
     /// <summary>Whether this preset is starred by the user.</summary>
-    public bool IsStarred { get; set; } = false;
+    public bool IsStarred { get; set; }
 
     /// <summary>Mapping of parameters to values.</summary>
     public Dictionary<string, string> ParamMap { get; set; } = [];
