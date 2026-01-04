@@ -619,6 +619,9 @@ body {
     border: 1px solid var(--box-selected-border);
     background-color: var(--box-selected-background);
 }
+.preset-starred img {
+    box-shadow: 0 0 1px 1px var(--star);
+}
 .preset-descblock {
     width: 20rem;
     word-wrap: normal;

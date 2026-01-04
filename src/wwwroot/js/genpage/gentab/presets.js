@@ -21,6 +21,28 @@ let currentPresets = [];
 
 let preset_to_edit = null;
 
+function isPresetStarred(preset) {
+    return preset && preset.data && preset.data.is_starred;
+}
+
+function togglePresetStar(preset) {
+    let newStarred = !isPresetStarred(preset);
+    genericRequest('AddNewPreset', {
+        title: preset.data.title,
+        description: preset.data.description,
+        param_map: preset.data.param_map,
+        preview_image: preset.data.preview_image,
+        is_edit: true,
+        editing: preset.data.title,
+        is_starred: newStarred
+    }, data => {
+        if (data.success) {
+            preset.data.is_starred = newStarred;
+            presetBrowser.rerender();
+        }
+    });
+}
+
 function fixPresetParamClickables() {
     for (let param of gen_param_types) {
         doToggleEnable(`preset_input_${param.id}`);
@@ -335,6 +357,7 @@ function getPresetSortValue(sortBy, preset) {
     switch (sortBy) {
         case 'Name': return preset.title.substring(preset.title.lastIndexOf('/') + 1);
         case 'Path': return preset.title;
+        case 'Starred': return preset.is_starred ? 'A' + preset.title : 'Z' + preset.title;
         default: return preset.title;
     }
 }
@@ -419,7 +442,10 @@ function listPresetFolderAndFiles(path, isRefresh, callback, depth) {
 }
 
 function describePreset(preset) {
+    let isStarred = isPresetStarred(preset)
+    let starLabel = isStarred ? 'Unstar' : 'Star';
     let buttons = [
+        { label: starLabel, onclick: () => togglePresetStar(preset) },
         { label: 'Toggle', onclick: () => selectPreset(preset) },
         { label: 'Direct Apply', onclick: () => applyOnePreset(preset.data) },
         { label: 'Edit Preset', onclick: () => editPreset(preset.data) },
@@ -440,6 +466,9 @@ function describePreset(preset) {
     let index = name.lastIndexOf('/');
     if (index != -1) {
         name = name.substring(index + 1);
+    }
+    if (isStarred) {
+        className += ' preset-starred';
     }
     let searchable = description;
     let displayFields = new Set((getUserSetting('ui.presetlistdetailsfields', '') || 'path,description,params').split(',').map(s => cleanParamName(s)));
@@ -482,7 +511,7 @@ function clearPresets() {
 }
 
 let presetBrowser = new GenPageBrowserClass('preset_list', listPresetFolderAndFiles, 'presetbrowser', 'Cards', describePreset, selectPreset,
-    `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Path</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
+    `<label for="preset_list_sort_by">Sort:</label> <select id="preset_list_sort_by"><option>Default</option><option>Name</option><option>Path</option><option>Starred</option></select> <input type="checkbox" id="preset_list_sort_reverse"> <label for="preset_list_sort_reverse">Reverse</label>
     <button id="preset_list_create_new_button translate" class="refresh-button" onclick="create_new_preset_button()">Create New Preset</button>
     <button id="preset_list_import_button translate" class="refresh-button" onclick="importPresetsButton()">Import Presets</button>
     <button id="preset_list_export_button translate" class="refresh-button" onclick="exportPresetsButton()">Export All Presets</button>
