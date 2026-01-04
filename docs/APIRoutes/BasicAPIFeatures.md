@@ -46,6 +46,7 @@ User route to add a new parameter preset.
 | preview_image | String | Optional preview image data base64 string. | (null) |
 | is_edit | Boolean | If true, edit an existing preset. If false, do not override pre-existing presets of the same name. | `False` |
 | editing | String | If is_edit is set, include the original preset name here. | (null) |
+| is_starred | Boolean | Whether the preset is starred. | `False` |
 
 #### Return Format
 
@@ -142,6 +143,7 @@ User route to duplicate an existing preset.
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
 | preset | String | Name of the preset to duplicate. | **(REQUIRED)** |
+| is_starred | Boolean | Whether the duplicated preset should be starred. | `False` |
 
 #### Return Format
 
