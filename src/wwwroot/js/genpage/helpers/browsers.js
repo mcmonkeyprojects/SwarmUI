@@ -48,14 +48,22 @@ class BrowserCallHelper {
  * Part of a browser tree.
  */
 class BrowserTreePart {
-    constructor(name, children, hasOpened, isOpen, fileData = null, fullPath = '') {
+    constructor(name, hasOpened, isOpen, fileData = null, fullPath = '') {
         this.name = name;
-        this.children = children;
+        this.children = {};
+        this.childrenKeys = [];
         this.hasOpened = hasOpened;
         this.isOpen = isOpen;
         this.fileData = fileData;
         this.fullPath = fullPath.startsWith('/') ? fullPath.substring(1) : fullPath;
         this.clickme = null;
+    }
+
+    addChild(name, part) {
+        if (!(name in this.children)) {
+            this.childrenKeys.push(name);
+        }
+        this.children[name] = part;
     }
 }
 
@@ -75,7 +83,7 @@ class GenPageBrowserClass {
         this.selected = null;
         this.extraHeader = extraHeader;
         this.navCaller = this.navigate.bind(this);
-        this.tree = new BrowserTreePart('', {}, false, true, null, '');
+        this.tree = new BrowserTreePart('', false, true, null, '');
         this.depth = localStorage.getItem(`browser_${id}_depth`) || defaultDepth;
         this.filter = localStorage.getItem(`browser_${id}_filter`) || '';
         this.folderTreeVerticalSpacing = '0';
@@ -214,7 +222,7 @@ class GenPageBrowserClass {
         }
         this.updatePendingSince = new Date().getTime();
         if (isRefresh) {
-            this.tree = new BrowserTreePart('', {}, false, null, null, '');
+            this.tree = new BrowserTreePart('', false, null, null, '');
             this.contentDiv.scrollTop = 0;
         }
         let folder = this.folder;
@@ -293,8 +301,9 @@ class GenPageBrowserClass {
         if (path == '') {
             let copy = Object.assign({}, this.tree.children);
             this.tree.children = {};
+            this.tree.childrenKeys = [];
             for (let folder of folders) {
-                this.tree.children[folder] = copy[folder] || new BrowserTreePart(folder, {}, isFile, false, isFile ? this.getFileFor(folder) : null, folder);
+                this.tree.addChild(folder, copy[folder] || new BrowserTreePart(folder, isFile, false, isFile ? this.getFileFor(folder) : null, folder));
             }
             this.tree.hasOpened = true;
             return;
@@ -304,16 +313,16 @@ class GenPageBrowserClass {
         for (let part of parts) {
             parent = tree;
             if (!(part in parent.children)) {
-                parent.children[part] = new BrowserTreePart(part, {}, false, false, null, parent.fullPath + '/' + part);
+                parent.addChild(part, new BrowserTreePart(part, false, false, null, parent.fullPath + '/' + part));
             }
             tree = parent.children[part];
         }
         let lastName = parts[parts.length - 1];
         let copy = Object.assign({}, tree.children);
-        tree = new BrowserTreePart(lastName, {}, true, tree.isOpen, null, tree.fullPath);
-        parent.children[lastName] = tree;
+        tree = new BrowserTreePart(lastName, true, tree.isOpen, null, tree.fullPath);
+        parent.addChild(lastName, tree);
         for (let folder of folders) {
-            tree.children[folder] = copy[folder] || new BrowserTreePart(folder, {}, isFile, false, isFile ? this.getFileFor(tree.fullPath + '/' + folder) : null, tree.fullPath + '/' + folder);
+            tree.addChild(folder, copy[folder] || new BrowserTreePart(folder, isFile, false, isFile ? this.getFileFor(tree.fullPath + '/' + folder) : null, tree.fullPath + '/' + folder));
         }
     }
 
@@ -341,8 +350,9 @@ class GenPageBrowserClass {
         else if (tree.isOpen) {
             span.classList.add('browser-folder-tree-part-open');
             let subContainer = createDiv(`${this.id}-foldertree-${tree.name}-container`, 'browser-folder-tree-part-container');
-            for (let subTree of Object.values(tree.children)) {
-                this.buildTreeElements(subContainer, `${path}${subTree.name}/`, subTree, offset + 16, false);
+            for (let name of tree.childrenKeys) {
+                let subTree = tree.children[name];
+                this.buildTreeElements(subContainer, `${path}${name}/`, subTree, offset + 16, false);
             }
             container.appendChild(subContainer);
         }

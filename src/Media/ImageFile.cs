@@ -54,8 +54,24 @@ public class ImageFile : MediaFile
         return stream.ToArray();
     }
 
+    /// <summary>Internal cache of <see cref="ToIS"/> to avoid reprocessing.</summary>
+    public ISImage _CacheISImg;
+
     /// <summary>Gets an ImageSharp <see cref="ISImage"/> for this image.</summary>
-    public ISImage ToIS => ISImage.Load(RawData);
+    public ISImage ToIS
+    {
+        get
+        {
+            if (_CacheISImg is null)
+            {
+                lock (this)
+                {
+                    _CacheISImg ??= ISImage.Load(RawData);
+                }
+            }
+            return _CacheISImg;
+        }
+    }
 
     /// <summary>Returns the (width, height) of the image.</summary>
     public (int, int) GetResolution()
@@ -74,7 +90,7 @@ public class ImageFile : MediaFile
         }
         ISImage img = ToIS;
         float factor = 256f / Math.Min(img.Width, img.Height);
-        img.Mutate(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
+        img.Clone(i => i.Resize((int)(img.Width * factor), (int)(img.Height * factor)));
         if (!string.IsNullOrWhiteSpace(metadataText))
         {
             img.Metadata.XmpProfile = null;
@@ -160,7 +176,7 @@ public class ImageFile : MediaFile
         {
             return this;
         }
-        img.Mutate(i => i.Resize(width, height));
+        img = img.Clone(i => i.Resize(width, height));
         return new Image(ISImgToPngBytes(img), Type);
     }
 
@@ -266,7 +282,6 @@ public class ImageFile : MediaFile
             string actualStealthMode = stealthMetadata.ToLowerInvariant();
             ISImage32 rgbaImage = img.CloneAs<Rgba32>();
             MetadataHelper.EncodeStealthMetadata(rgbaImage, metadata, actualStealthMode, format);
-            img.Dispose();
             img = rgbaImage;
         }
         img.Metadata.XmpProfile = null;

@@ -24,161 +24,42 @@
 }
 .form-check {
     margin-bottom: 0.5rem;
+    cursor: pointer;
+}
+.theme_preview {
+    max-height: 44rem;
+    overflow-y: auto;
 }
 .theme_preview .form-check {
     display: inline-block;
-    width: 30%;
-    height: 10rem;
+    width: 49%;
+    height: 22rem;
     border: 1px solid var(--light-border);
     border-radius: 0.5rem;
+    padding-left: 0;
+    position: relative;
 }
-.theme_preview .form-check .button_example {
-    display: block;
-    height: 2rem;
-    font-weight: bold;
-    border-radius: 0.5rem;
-    text-align: center;
-    width: fit-content;
-    padding-left: 0.2rem;
-    padding-right: 0.2rem;
-    margin-top: 2rem;
-    margin-left: auto;
-    margin-right: auto;
-    padding-top: 3px;
+.theme_preview .form-check:has(.form-check-input:checked) {
+    border: 1px solid var(--emphasis);
 }
-.theme_preview_modern_dark {
-    background-color: #202020;
-    color: #E4E4E4;
+.theme_preview label {
+    margin-top: 0.125rem;
+    margin-left: 0.5rem;
+    cursor: pointer;
 }
-.theme_preview_modern_dark .button_example {
-    border: 1px solid #3f3f46;
-    background-color: #4b4b4b;
-    color: #ffffff;
+.theme_preview .form-check-input {
+    margin-left: 0.5rem;
+    margin-top: 0.5rem;
 }
-.theme_preview_modern_light {
-    background-color: #D9D9D9;
-    color: #101010;
-}
-.theme_preview_modern_light .button_example {
-    border: 1px solid #3f3f46;
-    background-color: #a1a1a1;
-    color: #101010;
-}
-.theme_preview_dark_dreams {
-    background-color: #18181b;
-    color: #eeeeee;
-}
-.theme_preview_dark_dreams .button_example {
-    border: 1px solid #3f3f46;
-    background-color: #7855e1;
-    color: #ffffff;
-}
-.theme_preview_cyber_swarm {
-    background-color: #18181b;
-    color: #eeeeee;
-}
-.theme_preview_cyber_swarm .button_example {
-    border: 1px solid #3f3f46;
-    background-color: #00bc8c;
-    color: #ffffff;
-    border-radius: 1rem;
-    padding-top: 0.1em;
-    padding-left: 0.3em;
-    padding-right: 0.3em;
-}
-.theme_preview_gravity_blue {
-    background-color: #0b0f20;
-    color: #eeeeee;
-}
-.theme_preview_gravity_blue .button_example {
-    border: 1px solid #3f3f46;
-    background-color: orange;
-    color: #101010;
-}
-.theme_preview_eyesear_white {
-    background-color: #f0f0f0;
-    color: #101010;
-}
-.theme_preview_eyesear_white .button_example {
-    border: 1px solid #3f3f46;
-    background-color: #a1a1a1;
-    color: #101010;
-}
-.theme_preview_punked {
-    background-color: #0a0a0a;
-    color: #eeeeee;
-}
-.theme_preview_punked .button_example {
-    border: 1px solid #00fff7;
-    background-color: #0a0a0a;
-    color: #ffffff;
-    border-radius: 1rem;
-    padding-top: 0.1em;
-    padding-left: 0.3em;
-    padding-right: 0.3em;
-}
-.theme_preview_solarized {
-    background-color: #d3cdc0;
-    color: #101010;
-}
-.theme_preview_solarized .button_example {
-    border: 1px solid #3f3f46;
-    background-color: #a1a1a1;
-    color: #101010;
-}
-.theme_preview_swarmpunk {
-    background-color: #0a0a1f;
-    color: #00ff9d;
-}
-.theme_preview_swarmpunk .button_example {
-    border: 1px solid #00ff9d40;
-    background-color: #12122a;
-    color: #00ff9d;
-}
-.theme_preview_beweish {
-    background-color: #0e0e2c;
-    color: #ffffff;
-}
-.theme_preview_beweish .button_example {
-    border: 1px solid #2a4170;
-    background-color: #0f3460;
-    color: #ffffff;
-}
-.theme_preview_ctp_mocha {
-    background-color: #11111b;
-    color: #cdd6f4;
-}
-.theme_preview_ctp_mocha .button_example {
-    border: 1px solid #313244;
-    background-color: #585b70;
-    color: #cdd6f4;
-}
-.theme_preview_ctp_macchiato {
-    background-color: #181926;
-    color: #cad3f5;
-}
-.theme_preview_ctp_macchiato .button_example {
-    border: 1px solid #363a4f;
-    background-color: #5b6078;
-    color: #cad3f5;
-}
-.theme_preview_ctp_frappe {
-    background-color: #232634;
-    color: #c6d0f5;
-}
-.theme_preview_ctp_frappe .button_example {
-    border: 1px solid #414559;
-    background-color: #626880;
-    color: #c6d0f5;
-}
-.theme_preview_ctp_latte {
-    background-color: #dce0e8;
-    color: #4c4f69;
-}
-.theme_preview_ctp_latte .button_example {
-    border: 1px solid #ccd0da;
-    background-color: #acb0be;
-    color: #4c4f69;
+.form-check .form-check-iframe {
+    width: 100%;
+    height: calc(100% - 2rem);
+    border-bottom-left-radius: calc(0.5rem - 1px);
+    border-bottom-right-radius: calc(0.5rem - 1px);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
 }
 label {
     font-size: 120%;

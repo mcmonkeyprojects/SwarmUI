@@ -4,7 +4,7 @@
 
 *Formerly known as StableSwarmUI.*
 
-A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Stable Diffusion, Flux, Qwen Image, etc.*), and AI video models (*Wan, Hunyuan Video, etc.*), with plans to support eg audio and more in the future.
+A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Stable Diffusion, Z-Image, Flux, Qwen Image, etc.*), and AI video models (*Wan, Hunyuan Video, etc.*), with plans to support eg audio and more in the future.
 
 ![ui-screenshot](.github/images/swarmui.jpg)
 
@@ -28,6 +28,10 @@ Key feature targets not yet implemented:
 - full detail "Current Model" display in UI, separate from the model selector (probably as a tab within the batch sidebar?)
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
 - convenient direct-distribution of Swarm as a program ([Tauri](https://tauri.app/), [Blazor Desktop](https://learn.microsoft.com/en-us/training/modules/build-blazor-hybrid/), or an Electron app?)
+
+# Donate
+
+SwarmUI is 100% free and open source forever. If you want to help make sure it keeps pace with the best despite my refusal to paywall access or shove ads down your throat, [donate to SwarmUI](https://patreon.com/swarmui)!
 
 # Try It On Google Colab
 
@@ -77,7 +81,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Install `git` and `python3` via your OS package manager if they are not already installed (make sure to include `pip` and `venv` on distros that do not include them in python directly)
     - For example, on some Ubuntu (desktop) versions, `sudo apt install git python3-pip python3-venv`, or you may need <https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa>
     - For Debian or Ubuntu Server, `sudo apt install git python3-full`
-    - You'll want Python 3.11. Things should also work fine with 3.10 or 3.12. Do not use 3.13.
+    - You'll want Python 3.11 or 3.12. Things should also work fine with 3.10. Do not use 3.13.
     - Make sure `python3.11 -m pip --version` returns a valid package
 
 ### Linux Easy Install
@@ -117,7 +121,7 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 - Verify your `brew` installation with `brew doctor`. You should not see any error in the command output.
 - Install .NET for macOS: `brew install dotnet`.
 - If you don't have Python, install it: `brew install python@3.11` and `brew install virtualenv`
-    - Python 3.11, 3.10, 3.12 are all fine. 3.13 is not, do not use 3.13.
+    - Python 3.11, 3.12, 3.10 are all fine. 3.13 is not, do not use 3.13.
 - Change the directory (`cd`) to the folder where you want to install SwarmUI.
 - Clone the SwarmUI GitHub repository: `git clone https://github.com/mcmonkeyprojects/SwarmUI`.
 - `cd SwarmUI` and run the installation script: `./launch-macos.sh`.

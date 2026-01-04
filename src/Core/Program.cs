@@ -423,6 +423,11 @@ public class Program
             Logs.Error($"Failed to create directories for models. You may need to check your ModelRoot or SDModelFolder settings. {ex.Message}");
         }
         string[] roots = [.. ServerSettings.Paths.ModelRoot.Split(';').Where(p => !string.IsNullOrWhiteSpace(p))];
+        if (roots.Length == 0)
+        {
+            Logs.Error("No ModelRoot paths defined! You must set at least one model root path. Presuming default value. Please correct your settings.");
+            roots = ["Models"];
+        }
         int downloadRootId = Math.Abs(ServerSettings.Paths.DownloadToRootID) % roots.Length;
         void buildPathList(string folder, T2IModelHandler handler)
         {

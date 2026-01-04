@@ -134,6 +134,9 @@ public class T2IParamInput
     /// <summary>A list of any user requested presets not yet applied.</summary>
     public List<T2IPreset> PendingPresets = [];
 
+    /// <summary>Optional action, if present, takes raw backend data, as a pair of data-type and raw binary data.</summary>
+    public Action<string, byte[]> ReceiveRawBackendData = null;
+
     /// <summary>The session this input came from.</summary>
     public Session SourceSession;
 
@@ -169,6 +172,9 @@ public class T2IParamInput
 
     /// <summary>Parameter overrides applied onto to specific sections.</summary>
     public Dictionary<int, T2IParamSet> SectionParamOverrides = [];
+
+    /// <summary>Set of parameter IDs that have been queried (used to detect parameter inputs that went unused).</summary>
+    public HashSet<string> ParamsQueried = [];
 
     /// <summary>Gets the parameter overrides for a given section. Returns the main <see cref="InternalSet"/> if not in a sub-section currently.</summary>
     /// <param name="section">The section ID.</param>
@@ -257,6 +263,12 @@ public class T2IParamInput
         toret.ExtraMeta = new Dictionary<string, object>(ExtraMeta);
         toret.RequiredFlags = [.. RequiredFlags];
         toret.PendingPresets = [.. PendingPresets];
+        toret.ParamsQueried = [.. ParamsQueried];
+        toret.SectionParamOverrides = [];
+        foreach ((int key, T2IParamSet val) in SectionParamOverrides)
+        {
+            toret.SectionParamOverrides[key] = val.Clone();
+        }
         return toret;
     }
 
@@ -365,7 +377,6 @@ public class T2IParamInput
     {
         JObject paramData = GenParameterMetadata();
         paramData["swarm_version"] = Utilities.Version;
-        JObject final = new() { ["sui_image_params"] = paramData };
         JObject extraData = [];
         foreach ((string key, object val) in ExtraMeta)
         {
@@ -375,6 +386,20 @@ public class T2IParamInput
                 extraData[key] = token;
             }
         }
+        JArray unused = [];
+        foreach (string key in InternalSet.ValuesInput.Keys)
+        {
+            if (!ParamsQueried.Contains(key) && (!T2IParamTypes.TryGetType(key, out T2IParamType type, this) || !type.IntentionalUnused))
+            {
+                unused.Add(key);
+                paramData.Remove(key);
+            }
+        }
+        if (unused.Count > 0)
+        {
+            extraData["unused_parameters"] = unused;
+        }
+        JObject final = new() { ["sui_image_params"] = paramData };
         if (extraData.Count > 0)
         {
             final["sui_extra_data"] = extraData;
@@ -497,24 +522,23 @@ public class T2IParamInput
         long rawVal = -1;
         if (TryGet(T2IParamTypes.WildcardSeed, out long wildcardSeed))
         {
-            wildcardSeed += WCSeedOffset;
             rawVal = wildcardSeed;
         }
         else
         {
-            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0) + WCSeedOffset;
+            wildcardSeed = Get(T2IParamTypes.Seed) + Get(T2IParamTypes.VariationSeed, 0);
         }
         if (wildcardSeed > int.MaxValue)
         {
             wildcardSeed %= int.MaxValue;
         }
-        if (wildcardSeed - WCSeedOffset < 0)
+        if (wildcardSeed < 0)
         {
             wildcardSeed = Random.Shared.Next(int.MaxValue);
         }
         if (wildcardSeed != rawVal)
         {
-            Set(T2IParamTypes.WildcardSeed, wildcardSeed - WCSeedOffset);
+            Set(T2IParamTypes.WildcardSeed, wildcardSeed);
         }
         return (int)wildcardSeed;
     }
@@ -526,7 +550,7 @@ public class T2IParamInput
         {
             return WildcardRandom;
         }
-        WildcardRandom = new(GetWildcardSeed());
+        WildcardRandom = new(GetWildcardSeed() + WCSeedOffset);
         return WildcardRandom;
     }
 
@@ -549,14 +573,23 @@ public class T2IParamInput
     }
 
     /// <summary>Gets the raw value of the parameter, if it is present, or null if not.</summary>
-    public object GetRaw(T2IParamType param) => InternalSet.GetRaw(param);
+    public object GetRaw(T2IParamType param)
+    {
+        ParamsQueried.Add(param.ID);
+        return InternalSet.GetRaw(param);
+    }
 
     /// <summary>Gets the value of the parameter, if it is present, or default if not.</summary>
-    public T Get<T>(T2IRegisteredParam<T> param) => InternalSet.Get(param);
+    public T Get<T>(T2IRegisteredParam<T> param)
+    {
+        ParamsQueried.Add(param.Type.ID);
+        return InternalSet.Get(param);
+    }
 
     /// <summary>Gets the value of the parameter, if it is present, or default if not.</summary>
     public T? GetNullable<T>(T2IRegisteredParam<T> param, int sectionId = 0, bool includeBase = true) where T : unmanaged
     {
+        ParamsQueried.Add(param.Type.ID);
         if (sectionId > 0 && SectionParamOverrides.TryGetValue(sectionId, out T2IParamSet subSet) && subSet.TryGet(param, out T subVal))
         {
             return subVal;
@@ -575,6 +608,7 @@ public class T2IParamInput
     /// <summary>Gets the value of the parameter, if it is present, or default if not.</summary>
     public T Get<T>(T2IRegisteredParam<T> param, T defVal, bool autoFixDefault = false, int sectionId = 0, bool includeBase = true)
     {
+        ParamsQueried.Add(param.Type.ID);
         if (sectionId > 0 && SectionParamOverrides.TryGetValue(sectionId, out T2IParamSet subSet) && subSet.TryGet(param, out T subVal))
         {
             return subVal;
@@ -587,11 +621,16 @@ public class T2IParamInput
     }
 
     /// <summary>Gets the value of the parameter as a string, if it is present, or null if not.</summary>
-    public string GetString<T>(T2IRegisteredParam<T> param) => InternalSet.GetString(param);
+    public string GetString<T>(T2IRegisteredParam<T> param)
+    {
+        ParamsQueried.Add(param.Type.ID);
+        return InternalSet.GetString(param);
+    }
 
     /// <summary>Tries to get the value of the parameter. If it is present, returns true and outputs the value. If it is not present, returns false.</summary>
     public bool TryGet<T>(T2IRegisteredParam<T> param, out T val, int sectionId = 0, bool includeBase = true)
     {
+        ParamsQueried.Add(param.Type.ID);
         if (sectionId > 0 && SectionParamOverrides.TryGetValue(sectionId, out T2IParamSet subSet) && subSet.TryGet(param, out val))
         {
             return true;
@@ -605,7 +644,11 @@ public class T2IParamInput
     }
 
     /// <summary>Tries to get the value of the parameter. If it is present, returns true and outputs the value. If it is not present, returns false.</summary>
-    public bool TryGetRaw(T2IParamType param, out object val) => InternalSet.TryGetRaw(param, out val);
+    public bool TryGetRaw(T2IParamType param, out object val)
+    {
+        ParamsQueried.Add(param.ID);
+        return InternalSet.TryGetRaw(param, out val);
+    }
 
     /// <summary>Sets the value of an input parameter to a given plaintext input. Will run the 'Clean' call if needed.</summary>
     public void Set(T2IParamType param, string val, int sectionId = 0)
@@ -628,15 +671,15 @@ public class T2IParamInput
     }
     
     /// <summary>Removes a param.</summary>
-    public void Remove<T>(T2IRegisteredParam<T> param)
+    public void Remove<T>(T2IRegisteredParam<T> param, int sectionId = 0)
     {
-        InternalSet.Remove(param);
+        GetSectionParamOverrides(sectionId).Remove(param);
     }
 
     /// <summary>Removes a param.</summary>
-    public void Remove(T2IParamType param)
+    public void Remove(T2IParamType param, int sectionId = 0)
     {
-        InternalSet.Remove(param);
+        GetSectionParamOverrides(sectionId).Remove(param);
     }
 
     /// <summary>Makes sure the input has valid seed inputs and other special parameter handlers.</summary>

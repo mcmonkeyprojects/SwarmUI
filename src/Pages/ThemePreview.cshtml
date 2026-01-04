@@ -1,0 +1,51 @@
+@page
+@{
+    var themeOverride = Request.Query["theme"].ToString();
+    ViewData["theme_override"] = themeOverride;
+}
+@section Header {
+    <link rel="stylesheet" href="css/genpage.css?vary=@Utilities.VaryID" />
+    <link rel="stylesheet" href="css/themepreview.css?vary=@Utilities.VaryID" />
+}
+<script>
+function reuseLastParamVal() {
+    return null; // Prevent error in browser console
+}
+
+function generateInputs() {
+    const container = getRequiredElementById('input_group_content_coreparameters');
+    container.innerHTML = 
+        makeNumberInput(null, 'input_images', 'images', 'Images', '', 1, 1, 10000, 1, 'big', false, true)
+        + makeNumberInput(null, 'input_seed', 'seed', 'Seed', '', -1, -1, 9223372036854776000, 1, 'seed', false, true)
+        + makeSliderInput(null, 'input_steps', 'steps', 'Steps', '', 20, 0, 500, 0, 100, 1, false, false, true)
+        + makeSliderInput(null, 'input_cfgscale', 'cfgscale', 'CFG Scale', '', 7, 0, 100, 0, 20, 0.5, false, false, true);
+    autoNumberWidth(document.getElementById('input_images'));
+    enableSliderAbove(document.getElementById('input_steps'));
+    enableSliderAbove(document.getElementById('input_cfgscale'));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    generateInputs();
+});
+</script>
+<div class="theme_preview-content">
+    <div class="theme_preview-item noise-image-bg" id="theme_preview_coreparameters">
+        <div class="input-group input-group-open" id="auto-group-coreparameters">
+            <div class="input-group-content" id="input_group_content_coreparameters"></div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="theme_preview-item">
+        <div class="alt-prompt-buttons-wrapper">
+            <button class="alt-prompt-buttons alt-prompt-generate-button basic-button translate" id="alt_generate_button">Generate</button>
+            <button class="alt-prompt-buttons alt-prompt-center-button basic-button" id="alt_center_button">&#x2B9F;</button>
+            <button class="alt-prompt-buttons interrupt-button interrupt-button-none alt-interrupt" id="alt_interrupt_button">&times;</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="js/genpage/helpers/ui_improvements.js?vary=@Utilities.VaryID"></script>
+}

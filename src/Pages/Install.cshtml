@@ -72,6 +72,18 @@
                 </div>
                 <br><br>
             }
+            if (WebUtil.NeedWindowsAdminWarn())
+            {
+                <br><br><br>
+                <div class="alert alert-warning">
+                    <h4 class="alert-heading">Don't Run As Admin</h4>
+                    <p class="mb-0">You seem to be running this installer as administrator.
+                        <br>This is not necessary and will cause issues.
+                        <br>Please close this installer, and run it as a regular user.
+                    </p>
+                </div>
+                <br><br>
+            }
         }
     </div>
 
@@ -79,9 +91,11 @@
     {
         <div id="installer_section_amd" style="display: none;">
             <div class="install_q_head">You don't seem to have an nvidia GPU. Do you want to install an AMD compatible version?</div>
-            <div class="install_hint">Installation works differently if you an AMD GPU instead. This will use DirectML on Windows, or ROCm on Linux.
+            <div class="install_hint">Installation works differently if you an AMD GPU instead. This will use a ROCm version, which only works on some (modern) AMD GPUs.
                 <br>If you do not have an AMD Radeon GPU, select 'No'.
-                <br><b>WARNING: This is untested and probably doesn't work due to painfully strict versioning requirements. DirectML is particularly unreliable.</b>
+                <br>Be aware that only recent Mac, Nvidia, and AMD Radeon GPUs are fully supported in SwarmUI, others may require custom installation steps to work.
+                <br>
+                <br>Make sure you have AMD GPU drivers installed before installing Swarm.
             </div>
             <br>
             <fieldset class="form-group" id="amd_selection_field">
@@ -143,76 +157,17 @@
         <div class="install_hint">You can always change this later in the User Settings page.</div>
         <br>
         <fieldset class="form-group theme_preview" id="theme_selection_field">
-            <div class="form-check theme_preview_modern_dark" id="theme_input_modern_dark">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_moderndark" value="modern_dark" checked="">
-                <label class="form-check-label" for="theme_moderndark">Modern Dark</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_modern_light" id="theme_input_modern_light">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_modernlight" value="modern_light">
-                <label class="form-check-label" for="theme_modernlight">Modern Light</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_solarized" id="theme_input_solarized">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_solarized" value="solarized">
-                <label class="form-check-label" for="theme_solarized">Solarized Light</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_dark_dreams" id="theme_input_dark_dreams">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_darkdreams" value="dark_dreams">
-                <label class="form-check-label" for="theme_darkdreams">Dark Dreams</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_gravity_blue" id="theme_input_gravity_blue">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_gravityblue" value="gravity_blue">
-                <label class="form-check-label" for="theme_gravityblue">Gravity Blue</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_cyber_swarm" id="theme_input_cyber_swarm">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_cyberswarm" value="cyber_swarm">
-                <label class="form-check-label" for="theme_cyberswarm">Cyber Swarm</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_punked" id="theme_input_punked">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_punked" value="punked">
-                <label class="form-check-label" for="theme_punked">Punked</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_eyesear_white" id="theme_input_eyesear_white">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_eyesearwhite" value="eyesear_white">
-                <label class="form-check-label" for="theme_eyesearwhite">Eyesear White</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_swarmpunk" id="theme_input_swarmpunk">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_swarmpunk" value="swarmpunk">
-                <label class="form-check-label" for="theme_swarmpunk">Swarm Punk</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_beweish" id="theme_input_beweish">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_beweish" value="beweish">
-                <label class="form-check-label" for="theme_beweish">Beweish</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_ctp_mocha" id="theme_input_ctp_mocha">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_ctpmocha" value="ctp_mocha">
-                <label class="form-check-label" for="theme_ctpmocha">Catppuccin Mocha</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_ctp_macchiato" id="theme_input_ctp_macchiato">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_ctpmacchiato" value="ctp_macchiato">
-                <label class="form-check-label" for="theme_ctpmacchiato">Catppuccin Macchiato</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_ctp_frappe" id="theme_input_ctp_frappe">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_ctpfrappe" value="ctp_frappe">
-                <label class="form-check-label" for="theme_ctpfrappe">Catppuccin Frappé</label>
-                <span class="button_example">Example</span>
-            </div>
-            <div class="form-check theme_preview_ctp_latte" id="theme_input_ctp_latte">
-                <input class="form-check-input" type="radio" name="theme_radio" id="theme_ctplatte" value="ctp_latte">
-                <label class="form-check-label" for="theme_ctplatte">Catppuccin Latte</label>
-                <span class="button_example">Example</span>
-            </div>
+            @foreach (var theme in Program.Web.RegisteredThemes.Values)
+            {
+                string themeName = $"{theme.Name.Replace(" (Legacy)","")}";
+                string themeId = $"{theme.ID}";
+                string themeIdNoUnderscore = $"{theme.ID.Replace("_", "")}";
+                <div class="form-check theme_preview_@themeId" id="theme_input_@themeId">
+                    <input class="form-check-input" type="radio" name="theme_radio" id="theme_@themeIdNoUnderscore" value="@themeId" @(themeId == "modern_dark" ? "checked" : "")>
+                    <label class="form-check-label" for="theme_@themeIdNoUnderscore">@themeName</label>
+                    <iframe class="form-check-iframe" src="ThemePreview?theme=@themeId"></iframe>
+                </div>
+            }
         </fieldset>
     </div>
 
@@ -293,19 +248,19 @@
         <br>
         <fieldset class="form-group" id="models_fieldset">
             <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="downloadmodel_zimage" checked="">
+                <label class="form-check-label" for="downloadmodel_zimage">Z-Image Turbo</label>
+                <div class="install_hint">Z-Image Turbo is the best-of-the-best model you can use as of late 2025/early 2026. It requires more memory than SDXL, but less than most other large models.</div>
+            </div>
+            <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="downloadmodel_sdxl1" checked="">
                 <label class="form-check-label" for="downloadmodel_sdxl1">Stable Diffusion XL 1.0 (Base)</label>
-                <div class="install_hint">SDXL is a very popular core Stable Diffusion version (from July 2023), requiring 6.5 GiB of drive space and a decent GPU, able to generate at 1024x1024, with noticably much higher quality results than past versions, but no longer standing up to the latest DiT models.</div>
+                <div class="install_hint">SDXL is a very popular core Stable Diffusion version (from July 2023), requiring 6.5 GiB of drive space and a decent GPU, it was amazing for its time but is now largely a legacy model. It still frequently used as a base for other model finetunes.</div>
             </div>
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="downloadmodel_fluxdev">
                 <label class="form-check-label" for="downloadmodel_fluxdev">Flux.1 Dev</label>
                 <div class="install_hint">Flux.1 from Black Forest Labs (the new company of the research team that originally built Stable Diffusion) is a very large model (12B DiT with 5B textenc) requiring a powerful GPU, but creates the highest quality results in the world (as of July 2024). Flux supports almost any resolution or aspect ratio (at least from 256x256 to 1536x1536). The 'Dev' variant specifically is a Steps=20 CFG=1 'guidance distilled' version that takes longer to run but yields even higher quality.</div>
-            </div>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="downloadmodel_fluxschnell">
-                <label class="form-check-label" for="downloadmodel_fluxschnell">Flux.1 Schnell</label>
-                <div class="install_hint">Like Flux.1 Dev above, the 'Schnell' variant, specifically is a Steps=4 CFG=1 'Turbo' variant designed to run much faster at the cost of some result quality. On an RTX 4090, this runs as fast as SDXL does.</div>
             </div>
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" id="downloadmodel_sd35large">

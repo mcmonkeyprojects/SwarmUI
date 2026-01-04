@@ -1,11 +1,14 @@
-﻿using FreneticUtilities.FreneticExtensions;
-using FreneticUtilities.FreneticToolkit;
-using Newtonsoft.Json.Linq;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Media;
 using SwarmUI.Utils;
-using System.IO;
+using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticToolkit;
+using Newtonsoft.Json.Linq;
 
 namespace SwarmUI.Text2Image;
 
@@ -95,6 +98,7 @@ public enum ParamViewType
 /// <param name="DoNotPreview">If this is true, the parameter is unfit for previewing (eg long generation addons or unnecessary refinements).</param>
 /// <param name="Nonreusable">If this is true, the parameter can never be 'reused'.</param>
 /// <param name="DependNonDefault">If non-null, the name of another parameter. This parameter is only visible if that other parameter is enabled and non-default value.</param>
+/// <param name="IntentionalUnused">If true, this parameter is intentional marked as unused and should not be reported to the user.</param>
 /// <param name="Subtype">The sub-type of the type - for models, this might be eg "Stable-Diffusion".</param>
 /// <param name="ID">The raw ID of this parameter (will be set when registering).</param>
 /// <param name="SharpType">The C# datatype.</param>
@@ -102,7 +106,7 @@ public record class T2IParamType(string Name, string Description, string Default
     Func<string, string, string> Clean = null, Func<Session, List<string>> GetValues = null, string[] Examples = null, Func<List<string>, List<string>> ParseList = null, bool ValidateValues = true,
     bool VisibleNormally = true, bool IsAdvanced = false, string FeatureFlag = null, PermInfo Permission = null, bool Toggleable = false, double OrderPriority = 10, T2IParamGroup Group = null, string IgnoreIf = null,
     ParamViewType ViewType = ParamViewType.SMALL, bool HideFromMetadata = false, Func<string, string> MetadataFormat = null, bool AlwaysRetain = false, double ChangeWeight = 0, bool ExtraHidden = false, bool CanSectionalize = false,
-    T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false, string DependNonDefault = null,
+    T2IParamDataType Type = T2IParamDataType.UNSET, bool DoNotSave = false, bool ImageShouldResize = true, bool ImageAlwaysB64 = false, bool DoNotPreview = false, bool Nonreusable = false, string DependNonDefault = null, bool IntentionalUnused = false,
     string Subtype = null, string ID = null, Type SharpType = null)
 {
     public JObject ToNet(Session session)
@@ -315,10 +319,10 @@ public class T2IParamTypes
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale;
     public static T2IRegisteredParam<Image> InitImage, MaskImage, VideoEndFrame;
-    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, VideoExtendModel, VideoExtendSwapModel;
+    public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, VideoExtendModel, VideoExtendSwapModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
-    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang, FluxDisableGuidance, SmartImagePromptResizing,
+    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData,
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
@@ -384,7 +388,7 @@ public class T2IParamTypes
         Seed = Register<long>(new("Seed", "Image seed.\n-1 = random.\nDifferent seeds produce different results for the same prompt.",
             "-1", Min: -1, Max: long.MaxValue, Step: 1, Examples: ["1", "2", "...", "10"], OrderPriority: -30, ViewType: ParamViewType.SEED, Group: GroupCore, ChangeWeight: -5
             ));
-        Steps = Register<int>(new("Steps", "Diffusion works by running a model repeatedly to slowly build and then refine an image.\nThis parameter is how many times to run the model.\nMore steps = better quality, but more time.\n20 is a good baseline for speed, 40 is good for maximizing quality.\nSome models, such as Turbo models, are intended for low step counts like 4 or 8.\nYou can go much higher, but it quickly becomes pointless above 70 or so.\nNote that steps is a core parameter used for defining diffusion schedules and other advanced internals,\nand merely running the model over top of an existing image is not the same as increasing the steps.\nNote that the number of steps actually ran can be influenced by other parameters such as Init Image Creativity when applied.",
+        Steps = Register<int>(new("Steps", "Diffusion works by running a model repeatedly to slowly build and then refine an image.\nThis parameter is how many times to run the model.\nMore steps = better quality, but more time.\n20 is a good baseline for speed, 40 is good for maximizing quality.\nSome models, such as Turbo models, are intended for low step counts like 4 or 8.\nYou can go much higher, but it quickly becomes pointless above 70 or so.\nNote that steps is a core parameter used for defining diffusion schedules and other advanced internals, and merely running the model over top of an existing image is not the same as increasing the steps.\nNote that the number of steps actually ran can be influenced by other parameters such as Init Image Creativity when applied.",
             "20", Min: 0, Max: 500, ViewMax: 100, Step: 1, Examples: ["10", "15", "20", "30", "40"], OrderPriority: -20, Group: GroupCore, ViewType: ParamViewType.SLIDER, CanSectionalize: true
             ));
         CFGScale = Register<double>(new("CFG Scale", "How strongly to scale prompt input.\nHigher CFG scales tend to produce more contrast, and lower CFG scales produce less contrast.\n"
@@ -403,8 +407,8 @@ public class T2IParamTypes
             "false", IgnoreIf: "false", OrderPriority: 20, Group: GroupText2Video, IsAdvanced: true, FeatureFlag: "text2video"
             ));
         List<string> videoFormats = ["webp", "gif", "gif-hd", "webm", "h264-mp4", "h265-mp4", "prores"];
-        Text2VideoFormat = Register<string>(new("Text2Video Format", "What format to save videos in.\nWebp video is ideal, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
-            "webp", GetValues: _ => videoFormats, OrderPriority: 21, Group: GroupText2Video, FeatureFlag: "text2video"
+        Text2VideoFormat = Register<string>(new("Text2Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
+            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 21, Group: GroupText2Video, FeatureFlag: "text2video"
             ));
         // ================================================ Variation Seed ================================================
         GroupVariation = new("Variation Seed", Toggles: true, Open: false, OrderPriority: -17, Description: "Variation Seeds let you reuse a single seed, but slightly vary it according to a second seed and a weight value.\nThis technique results in creating images that are almost the same, but with small variations.\nUsing two static seeds and adjusting the strength can produce a smooth transition between two seeds.");
@@ -417,16 +421,16 @@ public class T2IParamTypes
         // ================================================ Resolution ================================================
         GroupResolution = new("Resolution", Toggles: false, Open: false, OrderPriority: -11);
         AspectRatio = Register<string>(new("Aspect Ratio", "Image aspect ratio - that is, the shape of the image (wide vs square vs tall).\nSet to 'Custom' to define a manual width/height instead.\nSome models can stretch better than others.\nNotably Flux models support almost any resolution you feel like trying.",
-            "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Old PC)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution
+            "1:1", GetValues: (_) => ["1:1///1:1 (Square)", "4:3///4:3 (Old PC)", "3:2///3:2 (Semi-wide)", "8:5///8:5", "16:9///16:9 (Standard Widescreen)", "21:9///21:9 (Ultra-Widescreen)", "3:4///3:4", "2:3///2:3 (Semi-tall)", "5:8///5:8", "9:16///9:16 (Tall)", "9:21///9:21 (Ultra-Tall)", "Custom"], OrderPriority: -11, Group: GroupResolution, IntentionalUnused: true
             ));
         Width = Register<int>(new("Width", "Image width, in pixels.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
-            "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -10, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution
+            "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -10, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution, IntentionalUnused: true
             ));
         Height = Register<int>(new("Height", "Image height, in pixels.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
-            "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -9, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution
+            "512", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 2048, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -9, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution, IntentionalUnused: true
             ));
         SideLength = Register<int>(new("Side Length", "Image Side Length, in pixels.\nThis value is only used with Aspect Ratio not set to 'Custom'.\nIf unchecked, the model native size is used.\nSDv1 uses 512, SDv2 uses 768, SDXL prefers 1024.\nSome models allow variation within a range (eg 512 to 768) but almost always want a multiple of 64.\nFlux is very open to differing values.",
-            "1024", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 4096, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -8, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution, Toggleable: true
+            "1024", Min: 64, ViewMin: 256, Max: 16384, ViewMax: 4096, Step: 32, Examples: ["512", "768", "1024"], OrderPriority: -8, ViewType: ParamViewType.POT_SLIDER, Group: GroupResolution, Toggleable: true, IntentionalUnused: true
             ));
         // ================================================ Sampling ================================================
         GroupSampling = new("Sampling", Toggles: false, Open: false, OrderPriority: -8);
@@ -553,7 +557,7 @@ public class T2IParamTypes
             ));
         // ================================================ Image To Video ================================================
         GroupVideo = new("Image To Video", Open: false, OrderPriority: 0, Toggles: true, Description: $"Generate videos using models that take an image as their primary input.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Video%20Model%20Support.md\">See more docs here.</a>");
-        static bool isVideoClass(string id) => id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v") || id.Contains("-ti2v") || id.Contains("-flf2v") || id.Contains("-image2video");
+        static bool isVideoClass(string id) => id.Contains("stable-video-diffusion") || id.Contains("lightricks-ltx-video") || id.Contains("-video2world") || id.Contains("-i2v") || id.Contains("-ti2v") || id.Contains("-flf2v") || id.Contains("-image2video") || id.Contains("hunyuan-video-1_5") || id.Contains("kandinsky5-video");
         VideoModel = Register<T2IModel>(new("Video Model", "The model to use for video generation.\nSelect an image-to-video conversion model, note that text-to-video models do not work.",
             "", GetValues: s => CleanModelList(Program.MainSDModels.ListModelsFor(s).Where(m => m.ModelClass is not null && isVideoClass(m.ModelClass.ID)).Select(m => m.Name)),
             OrderPriority: 1, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Subtype: "Stable-Diffusion", ChangeWeight: 9, DoNotPreview: true
@@ -583,8 +587,8 @@ public class T2IParamTypes
         Video2VideoCreativity = Register<double>(new("Video2Video Creativity", "Optional advanced method to start the video diffusion late.\nThis is equivalent to Init Image Creativity.\nSet below 1 to skip some fraction of steps.\nThis only makes sense if the base input is a video.\n'Video Frame's param must have same frame length as the input video.\nIf set to 1, video2video logic is not applied, and the input is treated as a single image.",
             "1", IgnoreIf: "1", Min: 0, Max: 1, Step: 0.05, OrderPriority: 19.5, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
             ));
-        VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is ideal, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
-            "webp", GetValues: _ => videoFormats, OrderPriority: 20, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1
+        VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
+            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 20, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1
             ));
         VideoEndFrame = Register<Image>(new("Video End Image", "An image to use as the 'end frame' of a video.\nOnly some models support end frames (Wan FLF2V, LTX-V), most don't.",
             null, OrderPriority: 30, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: 2, IsAdvanced: true
@@ -619,8 +623,8 @@ public class T2IParamTypes
         VideoExtendSwapPercent = Register<double>(new("Video Extend Swap Percent", "If using a video model pair (eg Wan 2.2), For Image-To-Video, this is the percentage of steps given to the Swap model.\nFor example, at Steps=20 Swap=0.75, the base will run 5 steps then the swap model will run 15.\nWan 2.2 generally uses 50% or higher.",
             "0.5", Min: 0, Max: 1, Step: 0.05, OrderPriority: 1.7, ViewType: ParamViewType.SLIDER, Group: GroupVideoExtend, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true, DependNonDefault: VideoExtendSwapModel.Type.ID
             ));
-        VideoExtendFormat = Register<string>(new("Video Extend Format", "What format to save extended videos in.\nWebp video is ideal, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
-            "webp", GetValues: _ => videoFormats, OrderPriority: 20, Group: GroupVideoExtend, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
+        VideoExtendFormat = Register<string>(new("Video Extend Format", "What format to save extended videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
+            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 20, Group: GroupVideoExtend, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true
             ));
         // ================================================ Advanced Model Addons ================================================
         GroupAdvancedModelAddons = new("Advanced Model Addons", Open: false, OrderPriority: 8, IsAdvanced: true);
@@ -666,6 +670,9 @@ public class T2IParamTypes
         QwenModel = Register<T2IModel>(new("Qwen Model", "Which Qwen LLM to use as a text encoder, for OmniGen/QwenImage-style 'diffusion_models' folder models.",
             "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 20, ChangeWeight: 7
             ));
+        MistralModel = Register<T2IModel>(new("Mistral Model", "Which Mistral LLM to use as a text encoder, for Flux.2-style 'diffusion_models' folder models.",
+            "", IgnoreIf: "", Group: GroupAdvancedModelAddons, Subtype: "Clip", Permission: Permissions.ModelParams, Toggleable: true, IsAdvanced: true, OrderPriority: 20, ChangeWeight: 7
+            ));
         TorchCompile = Register<string>(new("Torch Compile", "Torch.Compile is a way to dynamically accelerate AI models.\nIt wastes a bit of time (around a minute) on the first call compiling a graph of the generation, and then all subsequent generations run faster thanks to the compiled graph.\nTorch.Compile depends on Triton, which is difficult to install on Windows, easier on Linux.",
             "Disabled", IgnoreIf: "Disabled", GetValues: _ => ["Disabled", "inductor", "cudagraphs"], OrderPriority: 40, Group: GroupAdvancedModelAddons
             ));
@@ -705,6 +712,15 @@ public class T2IParamTypes
         NoPreviews = Register<bool>(new("No Previews", "If checked, tells the server that previews are not desired.\nMay make generations slightly faster in some cases.",
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -14
             ));
+        NoLoadModels = Register<bool>(new("No Load Models", "If checked, tells the server that if this request would cause a backend to load a model, to just skip doing that.\nThe backend will be marked as if the model is loaded, instantly without processing.",
+            "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -13
+            ));
+        NoInternalSpecialHandling = Register<bool>(new("No Internal Special Handling", "If checked, tells the server that it should not do any internal special handling in this request.\nA key example is in ComfyUI usage, inputs and outputs stored to comfy dirs will not be removed.",
+            "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -13, VisibleNormally: false
+            ));
+        ForwardRawBackendData = Register<bool>(new("Forward Raw Backend Data", "If checked, tells the server to forward any raw backend data (eg comfy websocket data) to the caller.\nThis is for advanced usage (eg API calls), not normal users.",
+            "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, HideFromMetadata: true, VisibleNormally: false
+            ));
         Webhooks = Register<string>(new("Webhooks", "What webhooks are enabled for this generation job.",
             "Normal", IgnoreIf: "Normal", GetValues: (_) => ["None", "Normal///Normal (fire 'Every Gen')", "Manual///Manual (fire 'Every Gen' and 'Manual' for each image)", "Manual At End///Manual At End (fire 'Every Gen', then one 'Manual' for the full set of queued gens)"], IsAdvanced: true, AlwaysRetain: true, Group: GroupSwarmInternal, OrderPriority: -12
             ));
@@ -713,7 +729,7 @@ public class T2IParamTypes
             IsAdvanced: true, Permission: Permissions.ParamBackendType, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -10
             ));
         ExactBackendID = Register<string>(new("Exact Backend ID", "Manually force a specific exact backend (by ID #) to be used for this generation.",
-            "0", GetValues: _ => [.. Program.Backends.T2IBackends.Values.OrderBy(v => v.ID >= 0 ? v.ID : v.ID + 999999).Select(v => $"{v.ID}///{v.ID}: {v.Backend.Title}")], Toggleable: true, IsAdvanced: true, ViewType: ParamViewType.BIG, Permission: Permissions.ParamBackendID, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -9
+            "0", GetValues: _ => [.. Program.Backends.EnumerateT2IBackends.OrderBy(v => v.ID >= 0 ? v.ID : v.ID + 999999).Select(v => $"{v.ID}///{v.ID}: {v.Backend.Title}")], Toggleable: true, IsAdvanced: true, ViewType: ParamViewType.BIG, Permission: Permissions.ParamBackendID, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -9
             ));
         WildcardSeed = Register<long>(new("Wildcard Seed", "Wildcard selection seed.\nIf enabled, this seed will be used for selecting entries from wildcards.\nIf disabled, the image seed will be used.\n-1 = random.",
             "-1", Min: -1, Max: uint.MaxValue, Step: 1, Toggleable: true, Examples: ["1", "2", "...", "10"], ViewType: ParamViewType.SEED, Group: GroupSwarmInternal, AlwaysRetain: true, ChangeWeight: -4, OrderPriority: -5
@@ -725,7 +741,7 @@ public class T2IParamTypes
             "false", IgnoreIf: "false", IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, OrderPriority: -4
             ));
         PersonalNote = Register<string>(new("Personal Note", "Optional field to type in any personal text note you want.\nThis will be stored in the image metadata.",
-            "", IgnoreIf: "", IsAdvanced: true, Clean: ApplyStringEdit, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0
+            "", IgnoreIf: "", IsAdvanced: true, Clean: ApplyStringEdit, Group: GroupSwarmInternal, ViewType: ParamViewType.BIG, AlwaysRetain: true, OrderPriority: 0, IntentionalUnused: true
             ));
         ImageFormat = Register<string>(new("Image Format", "Optional override for the final image file format.",
             "PNG", GetValues: (_) => [.. Enum.GetNames(typeof(ImageFile.ImageFormat))], IsAdvanced: true, Group: GroupSwarmInternal, AlwaysRetain: true, Toggleable: true, OrderPriority: 1
@@ -736,7 +752,7 @@ public class T2IParamTypes
         OverrideOutpathFormat = Register<string>(new("Override Outpath Format", $"Override the Outpath-Format user setting.\nFull details in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}User%20Settings.md#path-format\">the docs here</a>.",
             "raw/[year]-[month]-[day]/[hour][minute][request_time_inc]-[prompt]-[model]", Toggleable: true, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3
             ));
-        ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nIf unchecked, will prefer more 'raw' behavior.",
+        ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nAlso, some video models will automatically use tiled VAE when this is enabled, even if you didn't manually enable tiled VAE.\nIf unchecked, will prefer more 'raw' behavior.",
             "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 5
             ));
         // ================================================ FreeU (TODO: remove/extensionize?) ================================================
@@ -816,7 +832,7 @@ public class T2IParamTypes
             "10", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -22
             ));
         SigmaShift = Register<double>(new("Sigma Shift", "Sigma shift is used for modern rectified flow models (like SD3) specifically.\nThis shifts the balance of steps between low-frequency steps (structural/compositional steps), and high-frequency steps (detail steps).\nThis value only works within ranges a model was trained for, so for most models you should leave this param disabled to use the default, but fiddling it can sometimes work to adjust results.\nFor SD3, this value is recommended to be in the range of 1.5 to 3, normally 3.\nFor AuraFlow, 1.73 (square root of 3) is recommended.\nFor Flux, Schnell uses 0, 1.15 may be good for Dev.\nHiDream uses 3, but HiDream Dev also likes 6.",
-            "3", Min: 0, Max: 100, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -21
+            "3", Min: 0, Max: 100, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -21, CanSectionalize: true
             ));
         SamplerRho = Register<double>(new("Sampler Rho", "Rho value for the sampler.\nOnly applies to Karras/Exponential schedulers.",
             "7", Min: 0, Max: 1000, Step: 0.01, Toggleable: true, IsAdvanced: true, Group: GroupAdvancedSampling, OrderPriority: -20
@@ -970,7 +986,12 @@ public class T2IParamTypes
                 }
                 return val;
             case T2IParamDataType.LIST:
-                string[] vals = val.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                string splitter =  val.Contains("\n|||\n") ? "\n|||\n" : ",";
+                string[] vals = val.Split(splitter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (vals.Length == 0)
+                {
+                    return "";
+                }
                 if (type.GetValues is not null && type.ValidateValues)
                 {
                     string[] possible = [.. type.GetValues(session).Select(v => v.Before("///"))];
@@ -994,7 +1015,7 @@ public class T2IParamTypes
                             }
                         }
                     }
-                    return vals.JoinString(",");
+                    return vals.JoinString("\n|||\n");
                 }
                 return val;
             case T2IParamDataType.IMAGE:
@@ -1015,7 +1036,7 @@ public class T2IParamTypes
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:
-                foreach (string part in val.Split('|'))
+                foreach (string part in val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|"))
                 {
                     string partVal = part.Trim();
                     if (partVal.StartsWith("data:"))
@@ -1057,6 +1078,7 @@ public class T2IParamTypes
         }
         if (value == type.IgnoreIf)
         {
+            data.Remove(type, sectionId);
             return;
         }
         if (type.Permission is not null)
@@ -1139,7 +1161,7 @@ public class T2IParamTypes
         List<string> result = [.. mainList];
         foreach (string str in addIn)
         {
-            if (!existing.Contains(str.Before("///")))
+            if (existing.Add(str.Before("///")))
             {
                 result.Add(str);
             }

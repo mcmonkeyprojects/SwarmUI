@@ -1,6 +1,7 @@
 ﻿using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
@@ -36,14 +37,26 @@ public class API
     /// <summary>Web access call route, triggered from <see cref="WebServer"/>.</summary>
     public static async Task HandleAsyncRequest(HttpContext context)
     {
-        // TODO: Validate that 'async' is truly async here. If needed, spin up our own threads.
         Session session = null;
-        void Error(string message)
+        WebSocket socket = null;
+        async Task Error(string message, string jsonErrorId = null, string jsonErrorMessage = null)
         {
             string forUser = session is null ? "" : $" for user '{session.User.UserID}'";
             Logs.Error($"[WebAPI] Error handling API request '{context.Request.Path}'{forUser}: {message}");
+            if (jsonErrorId is not null || jsonErrorMessage is not null)
+            {
+                JObject errResponse = [];
+                if (jsonErrorId is not null)
+                {
+                    errResponse["error_id"] = jsonErrorId;
+                }
+                if (jsonErrorMessage is not null)
+                {
+                    errResponse["error"] = jsonErrorMessage;
+                }
+                await context.YieldJsonOutput(socket, 400, errResponse);
+            }
         }
-        WebSocket socket = null;
         try
         {
             JObject input;
@@ -57,15 +70,13 @@ public class API
             {
                 if (!context.Request.HasJsonContentType())
                 {
-                    Error($"Request has wrong content-type: {context.Request.ContentType}");
-                    context.Response.Redirect("/Error/BasicAPI");
+                    await Error($"Request has wrong content-type: {context.Request.ContentType}", "basic_api", "Wrong content type");
                     return;
                 }
                 // Note: int32 size limit due to array allocation. Can't singular read direct more than 2 gig.
                 if (!context.Request.ContentLength.HasValue || context.Request.ContentLength <= 0 || context.Request.ContentLength >= Program.ServerSettings.Network.MaxReceiveBytes || context.Request.ContentLength >= int.MaxValue)
                 {
-                    Error($"Request has invalid content length: {context.Request.ContentLength}");
-                    context.Response.Redirect("/Error/BasicAPI");
+                    await Error($"Request has invalid content length: {context.Request.ContentLength}", "basic_api", "bad content length");
                     return;
                 }
                 byte[] rawData = new byte[(int)context.Request.ContentLength.Value];
@@ -74,14 +85,13 @@ public class API
             }
             else
             {
-                Error($"Invalid request method: {context.Request.Method}");
+                await Error($"Invalid request method: {context.Request.Method}");
                 context.Response.Redirect("/Error/NoGetAPI");
                 return;
             }
             if (input is null)
             {
-                Error("Request input parsed to null");
-                context.Response.Redirect("/Error/BasicAPI");
+                await Error("Request input parsed to null", "basic_api", "null input");
                 return;
             }
             string path = context.Request.Path.ToString().ToLowerFast().After("/api/");
@@ -89,41 +99,45 @@ public class API
             {
                 if (!input.TryGetValue("session_id", out JToken session_id))
                 {
-                    Error("Request input lacks required session id");
-                    context.Response.Redirect("/Error/BasicAPI");
-                    return;
+                    if (context.Request.Headers.TryGetValue("X-Session-ID", out StringValues headerVals) && headerVals.Count >= 1)
+                    {
+                        session_id = headerVals[0];
+                    }
+                    else
+                    {
+                        await Error("Request input lacks required session id", "basic_api", "missing session id");
+                        return;
+                    }
                 }
-                if (!Program.Sessions.TryGetSession(session_id.ToString(), out session))
+                if (!Program.Sessions.TryGetSession($"{session_id}", out session))
                 {
-                    Error("Request input has unknown session id (if you're not writing API code you can ignore this message)");
+                    await Error("Request input has unknown session id (if you're not writing API code you can ignore this message)");
                     await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("Invalid session ID. You may need to refresh the page.", "invalid_session_id"));
                     return;
                 }
             }
             if (!APIHandlers.TryGetValue(path, out APICall handler))
             {
-                Error("Unknown API route");
                 if (socket is not null)
                 {
+                    await Error("Unknown API route");
                     await context.YieldJsonOutput(socket, 404, Utilities.ErrorObj("Unknown API route.", "bad_route"));
                 }
                 else
                 {
-                    context.Response.Redirect("/Error/404");
+                    await Error("Unknown API route", "bad_route", "Unknown API route");
                 }
                 return;
             }
-            // TODO: Authorization check
             if (handler.IsWebSocket && socket is null)
             {
-                Error("API route is a websocket but request is not");
+                await Error("API route is a websocket but request is not", "bad_request_method", "API route needs websocket, request is HTTP");
                 context.Response.Redirect("/Error/BasicAPI");
                 return;
             }
             if (!handler.IsWebSocket && socket is not null)
             {
-                Error("API route is not a websocket but request is");
-                await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("Route is HTTP, not websocket.", "bad_request_method"));
+                await Error("API route is not a websocket but request is", "bad_request_method", "API route needs HTTP, request is websocket");
                 return;
             }
             if (session is not null)
@@ -135,14 +149,14 @@ public class API
                 }
                 if (handler.Permission is not null && !session.User.HasPermission(handler.Permission))
                 {
-                    Error($"User lacks required permission '{handler.Permission.ID}' ('{handler.Permission.DisplayName}' in group '{handler.Permission.Group.DisplayName}')");
+                    await Error($"User lacks required permission '{handler.Permission.ID}' ('{handler.Permission.DisplayName}' in group '{handler.Permission.Group.DisplayName}')");
                     if (socket is not null)
                     {
                         await context.YieldJsonOutput(socket, 401, Utilities.ErrorObj("You lack permissions for this route.", "bad_permissions"));
                     }
                     else
                     {
-                        context.Response.Redirect("/Error/Permissions");
+                        await Error("User lacks required permissions", "bad_permissions", "You lack permissions for this route.");
                     }
                     return;
                 }
@@ -150,7 +164,7 @@ public class API
             JObject output = await handler.Call(context, session, socket, input);
             if (output is not null && output.TryGetValue("error", out JToken errorTok))
             {
-                Error($"{errorTok}");
+                await Error($"{errorTok}");
             }
             if (socket is not null)
             {
@@ -164,8 +178,7 @@ public class API
             }
             if (output is null)
             {
-                Error("API handler returned null");
-                context.Response.Redirect("/Error/BasicAPI");
+                await Error("API handler returned null", "no_result", "API call did not return any output");
                 return;
             }
             await context.YieldJsonOutput(socket, 200, output);
@@ -174,25 +187,10 @@ public class API
         {
             if (ex is WebSocketException wserr && wserr.WebSocketErrorCode == WebSocketError.ConnectionClosedPrematurely)
             {
-                Error($"Remote WebSocket disconnected unexpectedly (ConnectionClosedPrematurely). Did your browser crash while generating?");
+                await Error($"Remote WebSocket disconnected unexpectedly (ConnectionClosedPrematurely). Did your browser crash while generating?");
                 return;
             }
-            Error($"Internal exception: {ex.ReadableString()}");
-            if (socket is null)
-            {
-                context.Response.Redirect("/Error/Internal");
-                return;
-            }
-            try
-            {
-                using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromMinutes(1));
-                await socket.CloseAsync(WebSocketCloseStatus.InternalServerError, null, cancel.Token);
-                return;
-            }
-            catch (Exception ex2)
-            {
-                Error($"Internal exception while handling prior exception closure: {ex2}");
-            }
+            await Error($"Internal exception: {ex.ReadableString()}", "internal_error", "An internal error occurred");
         }
     }
 

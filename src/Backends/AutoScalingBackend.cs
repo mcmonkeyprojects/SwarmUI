@@ -34,7 +34,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         public double MinIdleTime = 10;
 
         [ConfigComment("Minimum number of waiting generations before a new backend can be started.\nSelect this high enough to not be wasteful of resources, but low enough to not cause generation requests to be pending for too long.\nMust be set to at least 1, should ideally be set higher.")]
-        public int MinQueuedBeforeExpand = 10; // TODO: Impl me
+        public int MinQueuedBeforeExpand = 10;
 
         [ConfigComment($"File path to a shell script (normally a '.sh') that will cause a new backend to be started.\nSee <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}Features/AutoScalingBackend.md\">docs Features/AutoScalingBackend</a> for info on how to build this script.")]
         public string StartScript = "";
@@ -105,7 +105,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         await FillToMin(100, true);
         Program.TickEvent += Tick;
         Program.PreShutdownEvent += PreShutdown;
-        Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, SignalWantsOne);
+        Program.Backends.NewBackendNeededEvent.TryAdd(BackendData.ID, () => SignalWantsOne());
         Status = BackendStatus.RUNNING;
     }
 
@@ -126,7 +126,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             mustAdd = Math.Min(mustAdd, limit);
             for (int i = 0; i < mustAdd; i++)
             {
-                await (hardLaunch ? LaunchOne() : SignalWantsOne());
+                await (hardLaunch ? LaunchOne() : SignalWantsOne(false));
             }
         }
     }
@@ -167,7 +167,7 @@ public class AutoScalingBackend : AbstractT2IBackend
     }
 
     /// <summary>Signal that a new backend is wanted. Only does anything if the system is currently ready to expand.</summary>
-    public async Task<BackendHandler.ScaleResult> SignalWantsOne()
+    public async Task<BackendHandler.ScaleResult> SignalWantsOne(bool checkQueueReq = true)
     {
         lock (ScaleBehaviorLock)
         {
@@ -185,6 +185,11 @@ public class AutoScalingBackend : AbstractT2IBackend
                 Logs.Verbose("Scale request ignored due to max backends count reached.");
                 return BackendHandler.ScaleResult.NoLaunch;
             }
+            if (checkQueueReq && Program.Backends.QueuedRequests < Settings.MinQueuedBeforeExpand)
+            {
+                Logs.Verbose("Scale request ignored due to insufficient queued requests.");
+                return BackendHandler.ScaleResult.NoLaunch;
+            }
             MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
         }
         BackendHandler.ScaleResult result = BackendHandler.ScaleResult.AddedLaunch;
@@ -192,7 +197,7 @@ public class AutoScalingBackend : AbstractT2IBackend
         {
             result = BackendHandler.ScaleResult.FreshLaunch;
         }
-        await Utilities.RunCheckedTask(LaunchOne, "AutoScalingBackend Launch New Backend");
+        await Utilities.RunCheckedTask(() => LaunchOne(), "AutoScalingBackend Launch New Backend");
         return result;
     }
 
@@ -215,12 +220,12 @@ public class AutoScalingBackend : AbstractT2IBackend
     }
 
     /// <summary>Async task to launch a new backend. Only returns when a backend has launched, or failed. Throws an exception if a backend cannot be launched currently.</summary>
-    public async Task LaunchOne()
+    public async Task LaunchOne(bool validate = true, string[] args = null, Action<BackendHandler.T2IBackendData> configure = null)
     {
         long id;
         lock (ScaleBehaviorLock)
         {
-            if (CountActiveBackends >= Settings.MaxBackends)
+            if (validate && CountActiveBackends >= Settings.MaxBackends)
             {
                 throw new Exception("Tried to launch more backends, but already at max.");
             }
@@ -243,6 +248,13 @@ public class AutoScalingBackend : AbstractT2IBackend
                 RedirectStandardError = true,
                 WorkingDirectory = Path.GetDirectoryName(Settings.StartScript)
             };
+            if (args is not null)
+            {
+                foreach (string arg in args)
+                {
+                    psi.ArgumentList.Add(arg);
+                }
+            }
             Process process = Process.Start(psi) ?? throw new Exception("Failed to start backend launch process, fundamental failure. Is the start script valid?");
             StreamReader fixedReader = new(process.StandardOutput.BaseStream, Encoding.UTF8); // Force UTF-8, always
             string line;
@@ -269,19 +281,21 @@ public class AutoScalingBackend : AbstractT2IBackend
                             OtherHeaders = Settings.OtherHeaders,
                             ConnectionAttemptTimeoutSeconds = Settings.ConnectionAttemptTimeoutSeconds
                         };
-                        Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
+                        // TODO: support remote non-T2I Backends
+                        BackendHandler.BackendData newBackend = Handler.AddNewNonrealBackend(Handler.SwarmBackendType, BackendData, settings, (newData) =>
                         {
                             Logs.Verbose($"{HandlerTypeData.Name} {BackendData.ID} adding remote backend {newData.ID}: Master Control");
-                            SwarmSwarmBackend newSwarm = newData.Backend as SwarmSwarmBackend;
+                            SwarmSwarmBackend newSwarm = newData.AbstractBackend as SwarmSwarmBackend;
                             newSwarm.IsSpecialControlled = true;
                             newSwarm.Models = Models;
                             newSwarm.Title = $"[Remote from {BackendData.ID}: {Title}] Master Control Swarm Instance";
                             newSwarm.CanLoadModels = false;
                             newSwarm.FirstLoadRetries = retries;
                             newData.UpdateLastReleaseTime();
-                            ControlledNonrealBackends.TryAdd(newData.ID, newData);
+                            ControlledNonrealBackends.TryAdd(newData.ID, newData as BackendHandler.T2IBackendData);
                         });
                         MustWaitMinutesBeforeStart(Settings.MinWaitBetweenStart);
+                        configure?.Invoke(newBackend as BackendHandler.T2IBackendData);
                         launched = true;
                         break;
                     }
@@ -350,6 +364,7 @@ public class AutoScalingBackend : AbstractT2IBackend
             {
                 try
                 {
+                    Logs.Verbose($"Explicit shutdown, trace: {Environment.StackTrace}");
                     await swarmBackend.TriggerRemoteShutdown();
                 }
                 catch (Exception ex)
@@ -412,4 +427,10 @@ public class AutoScalingBackend : AbstractT2IBackend
 
     /// <inheritdoc/>
     public override IEnumerable<string> SupportedFeatures => [];
+
+    /// <inheritdoc/>
+    public override Task<bool> LoadModel(T2IModel model, T2IParamInput input)
+    {
+        throw new NotImplementedException("Auto-Scaling Backend cannot load models.");
+    }
 }

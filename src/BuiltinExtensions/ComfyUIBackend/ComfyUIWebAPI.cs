@@ -163,7 +163,7 @@ public static class ComfyUIWebAPI
     /// <summary>API route to read the node types for a specific backend.</summary>
     public static async Task<JObject> ComfyGetNodeTypesForBackend(Session session, int backend)
     {
-        if (Program.Backends.T2IBackends.TryGetValue(backend, out BackendHandler.T2IBackendData data) && data.Backend is ComfyUIAPIAbstractBackend comfyBack)
+        if (Program.Backends.AllBackends.TryGetValue(backend, out BackendHandler.BackendData data) && data.AbstractBackend is ComfyUIAPIAbstractBackend comfyBack)
         {
             return new JObject() { ["node_types"] = JArray.FromObject(comfyBack.NodeTypes.ToList()) };
         }

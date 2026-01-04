@@ -123,12 +123,19 @@ public class ExtensionsManager
             }
         }
         RunOnAllExtensions(e => e.OnFirstInit());
-        FDSSection extensionsOutThere = FDSUtility.ReadFile("./launchtools/extension_list.fds");
-        foreach (string name in extensionsOutThere.GetRootKeys())
+        try
         {
-            FDSSection section = extensionsOutThere.GetSection(name);
-            string url = section.GetString("url");
-            KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
+            FDSSection extensionsOutThere = FDSUtility.ReadFile("./launchtools/extension_list.fds");
+            foreach (string name in extensionsOutThere.GetRootKeys())
+            {
+                FDSSection section = extensionsOutThere.GetSection(name);
+                string url = section.GetString("url");
+                KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Failed to read known extensions list: {ex.ReadableString()}");
         }
         RunOnAllExtensions(e => e.PopulateMetadata());
     }

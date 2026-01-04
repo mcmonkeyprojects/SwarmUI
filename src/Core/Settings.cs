@@ -90,6 +90,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("Number of minutes to silently wait for git operations to run.\nIf this duration is reached, a warning is logged and 1 more minute is allowed.\nAfter that final minute runs out, the git process is backgrounded and ignored (it may still be running, but Swarm will stop waiting for it).\nSetting this timeout too low may cause still-running slow processes to glitch or conflict.\nSetting this timeout too high may cause Swarm to freeze up any time git doesn't properly shut down.\nFor most users, the default (1 minute before warn, 1 minute extra) is more than enough, as git extremely rarely needs more than a minute to run.")]
         public int GitTimeoutMinutes = 1;
+
+        [ConfigComment("How many weekly backups of the user database to keep.\nDefault is 3.\nSet to 0 to disable backups.\nBackups are created weekly, in '(Data)/UsersBackups' named as (Year)_(Week).")]
+        public int UserDBBackups = 3;
     }
 
     /// <summary>Settings related to authorization.</summary>
@@ -234,7 +237,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("How many entries in an X-Forwarded-For header to trust.\nDefaults to 3.\nSet to 0 to not trust any forwarded-for.")]
         public int MaxXForwardedFor = 3;
 
-        [ConfigComment("Maximum megabytes that can be sent as a single message from a client to the Swarm server.\nSet this lower to limit above, set this higher to allow very large file uploads.")]
+        [ConfigComment("Maximum megabytes that can be sent as a single message from a client to the Swarm server.\nSet this lower to limit above, set this higher to allow very large file uploads.\nServer needs a restart for this to fully apply.")]
         public int MaxNetworkRequestMegabytes = 200;
 
         /// <summary>Converts <see cref="MaxNetworkRequestMegabytes"/> to bytes as a long.</summary>
@@ -267,10 +270,10 @@ public class Settings : AutoConfiguration
         public string SDEmbeddingFolder = "Embeddings";
 
         [ConfigComment("The ControlNets model folder to use within 'ModelRoot'.\nDefaults to 'controlnet'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
-        public string SDControlNetsFolder = "controlnet";
+        public string SDControlNetsFolder = "controlnet;model_patches";
 
-        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'clip'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
-        public string SDClipFolder = "clip";
+        [ConfigComment("The CLIP (Text Encoder) model folder to use within 'ModelRoot'.\nDefaults to 'text_encoders;clip'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
+        public string SDClipFolder = "text_encoders;clip";
 
         [ConfigComment("The CLIP Vision model folder to use within 'ModelRoot'.\nDefaults to 'clip_vision'.\nAbsolute paths work too (usually do not use an absolute path, use just a folder name).\nUse a semicolon ';' to split multiple paths.")]
         public string SDClipVisionFolder = "clip_vision";
@@ -320,6 +323,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, image metadata will include a list of models with their hashes.\nThis is useful for services like civitai to automatically link models.\nThis will cause extra time to be taken when new hashes need to be loaded.")]
         public bool ImageMetadataIncludeModelHash = true;
+
+        [ConfigComment("How many kilobytes of blank spacer to include in model headers.\nThis allows for future expansion of metadata without rewriting the entire model file.\nDefaults to 64 KiB.\nThe average header length of a standard model is already between several hundred kilobytes to a few megabytes,\nso 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.")]
+        public int ModelMetadataSpacerKilobytes = 64;
     }
 
     /// <summary>Settings per-user.</summary>
@@ -397,6 +403,9 @@ public class Settings : AutoConfiguration
             [ConfigComment("If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,\ncycles at the ends (jumps from the start to the end or vice versa).\nIf disabled, shifting will simply stop at the ends.\nIf 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).")]
             [ManualSettingsOptions(Vals = ["true", "false", "only_arrows"], ManualNames = ["Enabled", "Disabled", "Only Arrow Keys"])]
             public string ImageShiftingCycles = "true";
+
+            [ConfigComment("If enabled, metadata will be hidden in the image Full View by default.\nIf disabled, metadata will be shown by default.\nYou zoom still zoom in or out to show or hide the metadata at any time as usual.")]
+            public bool DefaultHideMetadataInFullview = false;
         }
 
         [ConfigComment("Settings related to the user interface, entirely contained to the frontend.")]
@@ -482,6 +491,10 @@ public class Settings : AutoConfiguration
             [ConfigComment("What VAE to use with Flux models by default.")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]
             public string DefaultFluxVAE = "None";
+
+            [ConfigComment("What VAE to use with Flux2 models by default.")]
+            [ManualSettingsOptions(Impl = null, Vals = ["None"])]
+            public string DefaultFlux2VAE = "None";
 
             [ConfigComment("What VAE to use with SD3 models by default.")]
             [ManualSettingsOptions(Impl = null, Vals = ["None"])]

@@ -7,6 +7,7 @@ using FreneticUtilities.FreneticToolkit;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticDataSyntax;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
+using System.IO;
 
 namespace SwarmUI.Accounts;
 
@@ -176,7 +177,39 @@ public class SessionHandler
 
     public SessionHandler()
     {
-        Database = new LiteDatabase($"{Program.DataDir}/Users.ldb");
+        string userDbFile = $"{Program.DataDir}/Users.ldb";
+        int backupCount = Program.ServerSettings.Maintenance.UserDBBackups;
+        if (backupCount > 0 && File.Exists(userDbFile))
+        {
+            DateTimeOffset dateNow = DateTimeOffset.UtcNow;
+            string backupDateStr = $"{dateNow.Year}_{dateNow.DayOfYear / 7}";
+            string folder = $"{Program.DataDir}/UsersBackups";
+            Directory.CreateDirectory(folder);
+            string backupFile = $"{folder}/UsersBackup_{backupDateStr}.ldb";
+            if (!File.Exists(backupFile))
+            {
+                Logs.Init($"Will backup user database to '{backupFile}'");
+                List<string> backups = [.. Directory.EnumerateFiles(folder, "UsersBackup_*.ldb")];
+                backupCount--;
+                if (backups.Count > backupCount)
+                {
+                    backups.Sort();
+                    for (int i = 0; i <= backups.Count - backupCount; i++)
+                    {
+                        try
+                        {
+                            File.Delete(backups[i]);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logs.Error($"Failed to delete old user database backup '{backups[i]}': {ex.ReadableString()}");
+                        }
+                    }
+                }
+                File.Copy(userDbFile, backupFile);
+            }
+        }
+        Database = new LiteDatabase(userDbFile);
         UserDatabase = Database.GetCollection<User.DatabaseEntry>("users");
         SessionDatabase = Database.GetCollection<Session.DatabaseEntry>("sessions");
         T2IPresets = Database.GetCollection<T2IPreset>("t2i_presets");
@@ -280,7 +313,7 @@ public class SessionHandler
         }
     }
 
-    public Session CreateSession(string source, string userId = null)
+    public Session CreateSession(string source, string userId = null, bool persist = true)
     {
         if (HasShutdown)
         {
@@ -304,7 +337,7 @@ public class SessionHandler
             if (Sessions.TryAdd(sess.ID, sess))
             {
                 sess.User.CurrentSessions[sess.ID] = sess;
-                if (!Program.NoPersist)
+                if (!Program.NoPersist && persist)
                 {
                     lock (DBLock)
                     {
@@ -362,7 +395,11 @@ public class SessionHandler
             return Users.GetOrAdd(userId, _ => // Intentional GetOrAdd due to special locking requirements (DBLock)
             {
                 User.DatabaseEntry userData = UserDatabase.FindById(userId);
-                userData ??= new() { ID = userId, RawSettings = "\n" };
+                if (userData is null)
+                {
+                    userData = new() { ID = userId, RawSettings = "\n" };
+                    UserDatabase.Upsert(userData);
+                }
                 return new(this, userData);
             });
         }
@@ -406,7 +443,7 @@ public class SessionHandler
                 if (Sessions.TryAdd(session.ID, session))
                 {
                     session.User.CurrentSessions[session.ID] = session;
-                    if (!Program.NoPersist)
+                    if (!Program.NoPersist && session.Persist)
                     {
                         SessionDatabase.Upsert(session.MakeDBEntry());
                     }

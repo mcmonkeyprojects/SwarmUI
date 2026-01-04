@@ -36,7 +36,13 @@
                 <div class="tab-pane show active genpage-bottom-tab" style="overflow:hidden" id="Image-Result-Tab" role="tabpanel">
                     <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div>
                 </div>
-                <div id="extra_welcome_message">@(new HtmlString(Program.ServerSettings.UI.ExtraWelcomeInfo))</div>
+                <div id="extra_welcome_message">
+                    @if (Program.ServerSettings.UserAuthorization.AuthorizationRequired && Model.User is not null && Model.User.Data.IsPasswordSetByAdmin && Model.User.UserID != SessionHandler.LocalUserID && !Model.User.HasPermission(Permissions.ManageUsers))
+                    {
+                        <div class="translate password-change-warn">Your password was set by an admin, and you haven't yet changed it! Please go to the User Tab, then click "Change Password".</div>
+                    }
+                    @(new HtmlString(Program.ServerSettings.UI.ExtraWelcomeInfo))
+                </div>
             </div></div><div class="t2i-top-split-bar splitter-bar" id="t2i-top-2nd-split-bar"></div><div class="current_image_batch" id="current_image_batch_wrapper">
                 <ul class="nav nav-tabs swarm-gen-tab-subnav" data-title="Right Sidebar" data-content="rightsidebarcontent" role="tablist" id="rightsidebarcollection">
                     <li class="nav-item" role="presentation">

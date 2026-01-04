@@ -202,6 +202,7 @@ body {
     font-size: 80%;
 }
 .current-image-img {
+    display: inline-block;
     max-width: 100%;
     max-height: calc(max(15rem, 100% - 5rem));
     object-fit: contain;
@@ -741,7 +742,7 @@ body {
     background-color: rgb(50, 50, 50, 0.7);
 }
 .imageview_modal_imagewrap {
-    height: calc(min(100vw, 100vh - 7rem));
+    height: calc(100vh - 7rem);
     max-width: 95vw;
     overflow: hidden;
 }
@@ -756,6 +757,19 @@ body {
     height: 7rem;
     overflow-y: auto;
     text-align: center;
+}
+.imageview_popup_modal_undertext.minimized-mode {
+    height: 2em !important;
+    overflow: hidden;
+}
+.imageview_popup_modal_undertext.minimized-mode .image_fullview_metadata {
+    visibility: hidden;
+}
+.imageview_modal_imagewrap.expanded-mode {
+    height: calc(min(100vw, 100vh - 2em)) !important;
+}
+.imageview_popup_modal_undertext.expanded-mode .image_fullview_metadata {
+    visibility: visible;
 }
 .imageview_modal_inner_div {
     max-width: 95vw;
@@ -936,7 +950,7 @@ body {
     color: color-mix(in srgb, var(--text) 50%, var(--background));
 }
 .alt_prompt_textboxes {
-    margin-left: 1rem;
+    margin-left: 2rem;
     display: inline-block;
     flex-grow: 10;
 }
@@ -960,9 +974,14 @@ body {
 }
 .alt-text-add-button {
     position: relative;
-    top: 0;
-    left: -8px;
-    padding: 0px 4px !important;
+    top: 2px;
+    width: 29px;
+    height: 29px;
+    left: -5px;
+    font-size: 32px;
+    line-height: 0.6;
+    padding-top: 0px;
+    padding-left: 2px !important;
     border-radius: 1rem !important;
 }
 .small-window .alt-text-add-button {
@@ -1242,6 +1261,14 @@ body {
     border: 1px solid var(--light-border);
     height: 32px;
 }
+.image-editor-tool-block input[type="color"] {
+    height: 1.6rem;
+}
+.tool-block-nogrow {
+    flex-grow: 0;
+    padding-left: 5px;
+    padding-right: 5px;
+}
 .image_editor_canvaslist {
     display: block;
     margin: 0;
@@ -1303,7 +1330,7 @@ body {
 }
 .server_logs_container {
     display: block;
-    width: 80vw;
+    width: 95vw;
     height: calc(90vh - 10rem);
     border: 1px solid var(--light-border);
     border-radius: 1rem;
@@ -1339,6 +1366,9 @@ body {
     padding: 0.5rem;
     vertical-align: top;
     overflow-y: auto;
+}
+.manage-users-right {
+    padding-bottom: 5rem;
 }
 .manage-users-left {
     margin-left: 0.5rem;
@@ -1402,6 +1432,12 @@ body {
 .welcome-message-wrapper {
     min-height: 8em;
     width: fit-content;
+}
+.password-change-warn {
+    font-weight: bold;
+    color: var(--red);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 .button-starred-image {
     background-color: var(--star);

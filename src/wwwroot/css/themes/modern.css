@@ -46,6 +46,10 @@
     box-shadow: var(--button-shadow);
     transition: background .2s;
 }
+.alt-text-add-button {
+    padding-left: 2.5px !important;
+    font-weight: 700 !important;
+}
 
 .nav-tabs, #currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar, .browser-folder-tree-container, .browser-fullcontent-container {
     background-color: var(--background-panel);

@@ -11,7 +11,9 @@ let comfyHasTriedToLoad = false;
 
 let comfyAltSaveNodes = ['ADE_AnimateDiffCombine', 'VHS_VideoCombine', 'SaveAnimatedWEBP', 'SaveAnimatedPNG', 'SwarmSaveAnimatedWebpWS', 'SwarmSaveAnimationWS'];
 
-let swarmComfyInjectedHeaderSpacer = null;
+let swarmComfyInjectedHeaderSpacer = null, swarmComfySideToolbar = null, swarmComfySidePanel = null, swarmComfyBreadcrumbs = null;
+
+let swarmComfyHasPinia = false;
 
 /** Tries to load the ComfyUI workflow frame. */
 function comfyTryToLoad() {
@@ -37,6 +39,11 @@ function comfyFrame() {
 /** Returns the ComfyUI Vue app object wrapper. */
 function comfyVueApp() {
     return comfyFrame()?.contentWindow?.document?.querySelector('[data-v-app]')?.__vue_app__;
+}
+
+/** Returns the ComfyUI Vue app Pinia object. */
+function comfyVuePinia() {
+    return comfyVueApp()?.config?.globalProperties?.$pinia;
 }
 
 /** Returns the ComfyUI Vue app i18n object. */
@@ -72,6 +79,7 @@ function comfyFixMenuLocation() {
     let swarmComfyMenu = getRequiredElementById('comfy_workflow_buttons_actual');
     let bodyTop = frame.contentWindow.document.querySelector('.comfyui-body-top');
     let bodyTopMenu = bodyTop ? bodyTop.querySelector('.comfyui-menu') : null;
+    let tabsContainer = frame.contentWindow.document.querySelector('.workflow-tabs-container');
     if (bodyTopMenu) {
         let logo = bodyTopMenu.querySelector('.comfyui-logo-wrapper') || bodyTopMenu.querySelector('.comfyui-logo');
         if (logo && !logo.parentElement.querySelector('.swarm-injected-header-spacer')) {
@@ -91,21 +99,48 @@ function comfyFixMenuLocation() {
         swarmComfyMenu.style.top = `${logo.offsetTop}px`;
         swarmComfyMenu.style.left = `${logo.offsetLeft + logo.offsetWidth}px`;
     }
+    else if (tabsContainer) {
+        let child = tabsContainer.querySelector('.flex');
+        if (child && !child.querySelector('.swarm-injected-header-spacer')) {
+            let space = document.createElement('span');
+            space.className = 'swarm-injected-header-spacer';
+            let offsetTarget = (swarmComfyMenu.offsetWidth < 5 ? 296 : swarmComfyMenu.offsetWidth);
+            space.style.width = `${offsetTarget}px`;
+            space.style.marginRight = '15px';
+            space.dataset.offsetTarget = offsetTarget;
+            child.prepend(space);
+            if (!swarmComfyInjectedHeaderSpacer && localStorage.getItem('comfy_buttons_closed')) {
+                setTimeout(() => {
+                    comfyToggleButtonsVisible();
+                }, 100);
+            }
+            swarmComfyInjectedHeaderSpacer = space;
+        }
+        swarmComfyMenu.style.top = `${tabsContainer.offsetTop}px`;
+        swarmComfyMenu.style.left = `${tabsContainer.offsetLeft + 5}px`;
+    }
     else {
-        swarmComfyMenu.style.left = undefined;
-        swarmComfyMenu.style.top = '1rem';
+        swarmComfyMenu.style.left = '5px';
+        swarmComfyMenu.style.top = '0';
         let menu = frame.contentWindow.document.querySelector('.comfy-menu');
         if (menu) {
             let rect = menu.getBoundingClientRect();
             if (rect.x < 300 && rect.y < 120) {
-                console.log(`Comfy menu was behind the Swarm menu at ${rect.x} x ${rect.y}, fixing with a downward offset...`);
                 menu.style.top = '150px';
             }
         }
     }
-    let sidePanelContainer = frame.contentWindow.document.querySelector('.side-bar-panel');
-    if (sidePanelContainer) {
-        sidePanelContainer.style.paddingTop = '60px';
+    swarmComfySidePanel = frame.contentWindow.document.querySelector('.side-bar-panel');
+    if (swarmComfySidePanel) {
+        swarmComfySidePanel.style.paddingTop = '60px';
+    }
+    swarmComfySideToolbar = frame.contentWindow.document.querySelector('.side-toolbar-container')?.querySelector('.side-tool-bar-container');
+    if (swarmComfySideToolbar) {
+        swarmComfySideToolbar.style.paddingTop = '60px';
+    }
+    swarmComfyBreadcrumbs = frame.contentWindow.document.querySelector('.p-breadcrumb-list');
+    if (swarmComfyBreadcrumbs) {
+        swarmComfyBreadcrumbs.style.paddingLeft = '250px';
     }
     // Comfy frontend added an aggro warning if frontend isn't fully up to date, but Swarm keeps it behind because it so often breaks on latest
     // so let's de-aggro the message a bit.
@@ -118,6 +153,18 @@ function comfyFixMenuLocation() {
             }
         }
     }, 100);
+    if (!swarmComfyHasPinia) {
+        let pinia = comfyVuePinia();
+        if (pinia) {
+            let store = pinia._s.get('workspace');
+            store.$subscribe((mutation, state) => {
+                setTimeout(() => {
+                    comfyFixMenuLocation();
+                }, 100);
+            });
+            swarmComfyHasPinia = true;
+        }
+    }
 }
 
 setTimeout(comfyFixMenuLocation, 10 * 1000);
@@ -549,10 +596,16 @@ function comfyBuildParams(requireSave, callback) {
                                 let data = comfyObjectData[remoteNode.class_type];
                                 if (data) {
                                     if (remoteInput in data.input.required) {
-                                        values = data.input.required[remoteInput][0];
+                                        values = data.input.required[remoteInput];
                                     }
                                     else if (remoteInput in data.input.optional) {
-                                        values = data.input.optional[remoteInput][0];
+                                        values = data.input.optional[remoteInput];
+                                    }
+                                    if (values && values.length > 1 && values[0] == 'COMBO' && 'options' in values[1]) {
+                                        values = values[1].options;
+                                    }
+                                    else {
+                                        values = values[0];
                                     }
                                 }
                             }
@@ -1183,6 +1236,9 @@ function comfyMultiGPUSelectChanged() {
     else if (multiGpuSelector.value == 'reserve') {
         setCookie('comfy_domulti', 'reserve', 365);
     }
+    else if (multiGpuSelector.value == 'queue') {
+        setCookie('comfy_domulti', 'queue', 365);
+    }
     else if (multiGpuSelector.value == 'none') {
         deleteCookie('comfy_domulti');
     }
@@ -1208,6 +1264,15 @@ function comfyToggleButtonsVisible() {
         if (swarmComfyInjectedHeaderSpacer) {
             swarmComfyInjectedHeaderSpacer.style.width = `${swarmComfyInjectedHeaderSpacer.dataset.offsetTarget}px`;
         }
+        if (swarmComfySidePanel) {
+            swarmComfySidePanel.style.paddingTop = '60px';
+        }
+        if (swarmComfySideToolbar) {
+            swarmComfySideToolbar.style.paddingTop = '60px';
+        }
+        if (swarmComfyBreadcrumbs) {
+            swarmComfyBreadcrumbs.style.paddingLeft = '250px';
+        }
         localStorage.removeItem('comfy_buttons_closed');
     }
     else {
@@ -1216,6 +1281,15 @@ function comfyToggleButtonsVisible() {
         area.parentElement.classList.add('comfy_buttons_closeable_area_closed');
         if (swarmComfyInjectedHeaderSpacer) {
             swarmComfyInjectedHeaderSpacer.style.width = `30px`;
+        }
+        if (swarmComfySidePanel) {
+            swarmComfySidePanel.style.paddingTop = '0';
+        }
+        if (swarmComfySideToolbar) {
+            swarmComfySideToolbar.style.paddingTop = '0';
+        }
+        if (swarmComfyBreadcrumbs) {
+            swarmComfyBreadcrumbs.style.paddingLeft = '0';
         }
         localStorage.setItem('comfy_buttons_closed', 'true');
     }
@@ -1320,7 +1394,7 @@ function comfyBrowseWorkflowsNow() {
 let comfyTabBody = getRequiredElementById('comfyworkflow');
 let wasComfyTabActive = comfyTabBody.classList.contains('show');
 
-/** Hack-around for firefox bug: block the internal comfy canvas from rendering when the tab is inactive. */
+/** Workaround browser-specific comfy canvas bugs. */
 function comfyDoCanvasFreeze() {
     if (!hasComfyLoaded) {
         return;
@@ -1331,10 +1405,10 @@ function comfyDoCanvasFreeze() {
         return;
     }
     if (comfyTabBody.classList.contains('show')) {
-        canvas.startRendering();
+        comfyTabBody.classList.remove('comfy_tab_hackhide');
     }
     else {
-        canvas.stopRendering();
+        comfyTabBody.classList.add('comfy_tab_hackhide');
     }
 }
 

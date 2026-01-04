@@ -185,7 +185,7 @@ public class ImageBatchToolExtension : Extension
             }
             param.ApplySpecialLogic();
             int genId = 0;
-            tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, Program.ServerSettings.Backends.PerRequestTimeoutMinutes, (image, metadata) =>
+            tasks.Add(T2IEngine.CreateImageTask(param, $"{imageIndex}", claim, output, setError, isWS, (image, metadata) =>
             {
                 (string preExt, string ext) = fname.BeforeAndAfterLast('.');
                 MediaFile finalFileOutput = image.ActualFileTask.Result;

@@ -33,9 +33,9 @@ class GenerateHandler {
         let curImgElem = document.getElementById(this.imageId);
         if (!curImgElem || autoLoadImagesElem.checked || curImgElem.dataset.batch_id == batchId) {
             this.setCurrentImage(image, metadata, batchId, false, true);
-            if (getUserSetting('AutoSwapImagesIncludesFullView') && imageFullView.isOpen()) {
-                imageFullView.showImage(image, metadata, batchId);
-            }
+        }
+        if ((getUserSetting('AutoSwapImagesIncludesFullView') || imageFullView.currentBatchId == batchId) && imageFullView.isOpen()) {
+            imageFullView.showImage(image, metadata, batchId);
         }
     }
 
@@ -140,7 +140,7 @@ class GenerateHandler {
         }
         return null;
     }
-    
+
     internalHandleData(data, images, discardable, timeLastGenHit, actualInput, socketId, socket, isPreview, batch_id) {
         if ('socket_intention' in data && data.socket_intention == 'close' && socket) {
             if (this.sockets[socketId] == socket) {
@@ -335,8 +335,8 @@ class GenerateHandler {
                 this.hadError("Cannot generate, no model selected.");
                 return;
             }
-            setCurrentModel(() => {
-                if (doModelInstallRequiredCheck()) {
+            currentModelHelper.ensureCurrentModel(() => {
+                if (currentModelHelper.doModelInstallRequiredCheck()) {
                     return;
                 }
                 run();

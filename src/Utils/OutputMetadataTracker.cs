@@ -224,30 +224,36 @@ public static class OutputMetadataTracker
                     altExists = File.Exists(altPreview);
                 }
             }
-            if ((ExtensionsForFfmpegables.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
+            if ((ExtensionsForFfmpegables.Contains(ext) || ExtensionsForAnimatedImages.Contains(ext) || !ExtensionsWithMetadata.Contains(ext)) && !altExists)
             {
                 altPreview = animPreview;
                 if (ExtensionsForAnimatedImages.Contains(ext))
                 {
                     byte[] data = File.ReadAllBytes(file);
-                    ImageFile img = new Image(data, MediaType.GetByExtension(ext));
                     fileData = data;
-                    ImageFile simplified = new Image(data, img.Type);
-                    simplifiedData = simplified.ToMetadataJpg().RawData;
-                    File.WriteAllBytes(jpegPreview, simplifiedData);
-                    ImageFile webpAnim = img.ToWebpPreviewAnim();
-                    if (webpAnim is null)
+                    ImageFile img = new Image(data, MediaType.GetByExtension(ext));
+                    if (ext == "webp" && img.ToIS.Frames.Count == 1)
                     {
-                        fileData = simplifiedData;
-                        simplifiedData = null;
-                        altPreview = jpegPreview;
-                        altExists = true;
+                        fileData = img.ToMetadataJpg()?.RawData;
                     }
                     else
                     {
-                        fileData = webpAnim.RawData;
-                        File.WriteAllBytes(animPreview, fileData);
-                        altExists = true;
+                        simplifiedData = img.ToMetadataJpg().RawData;
+                        File.WriteAllBytes(jpegPreview, simplifiedData);
+                        ImageFile webpAnim = img.ToWebpPreviewAnim();
+                        if (webpAnim is null)
+                        {
+                            fileData = simplifiedData;
+                            simplifiedData = null;
+                            altPreview = jpegPreview;
+                            altExists = true;
+                        }
+                        else
+                        {
+                            fileData = webpAnim.RawData;
+                            File.WriteAllBytes(animPreview, fileData);
+                            altExists = true;
+                        }
                     }
                 }
                 else if (ExtensionsForFfmpegables.Contains(ext))

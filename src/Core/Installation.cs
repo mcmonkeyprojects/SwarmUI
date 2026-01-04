@@ -83,14 +83,10 @@ public class Installation
     {
         try
         {
-            if (install_amd) // TODO: Once ROCm torch is available on Windows, this will be a lot less hacky. They're working on it!
+            if (install_amd)
             {
-                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_cu118_or_cpu_22_05_2023.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
+                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_amd.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
             }
-            /*else if (Utilities.PresumeNVidia50xx)
-            {
-                await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/download/latest/ComfyUI_windows_portable_nvidia_or_cpu_nightly_pytorch.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
-            }*/
             else
             {
                 //await Utilities.DownloadFile("https://github.com/comfyanonymous/ComfyUI/releases/latest/download/ComfyUI_windows_portable_nvidia.7z", "dlbackend/comfyui_dl.7z", UpdateProgress);
@@ -153,12 +149,6 @@ public class Installation
         }
         string path = "dlbackend/comfy/ComfyUI/main.py";
         string comfyFolderPath = Path.GetFullPath("dlbackend/comfy");
-        if (install_amd)
-        {
-            await Output("Fixing Comfy install for AMD...");
-            // Note: the old Python 3.10 comfy file is needed for AMD, and it has a cursed git config (mandatory auth header? argh) so this is a hack-fix for that
-            File.WriteAllBytes("dlbackend/comfy/ComfyUI/.git/config", "[core]\n\trepositoryformatversion = 0\n\tfilemode = false\n\tbare = false\n\tlogallrefupdates = true\n\tignorecase = true\n[remote \"origin\"]\n\turl = https://github.com/comfyanonymous/ComfyUI\n\tfetch = +refs/heads/*:refs/remotes/origin/*\n[gc]\n\tauto = 0\n[branch \"master\"]\n\tremote = origin\n\tmerge = refs/heads/master\n[lfs]\n\trepositoryformatversion = 0\n[remote \"upstream\"]\n\turl = https://github.com/comfyanonymous/ComfyUI.git\n\tfetch = +refs/heads/*:refs/remotes/upstream/*\n".EncodeUTF8());
-        }
         await Output("Prepping ComfyUI's git repo...");
         string fetchResp = await Utilities.RunGitProcess($"fetch", $"{comfyFolderPath}/ComfyUI");
         Logs.Debug($"ComfyUI Install git fetch response: {fetchResp}");
@@ -173,13 +163,6 @@ public class Installation
         await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", $"-s -m pip install{(install_amd ? " -U " : "")} {requirements.JoinString(" ")}") { WorkingDirectory = comfyFolderPath }, "ComfyUI Install (python requirements)", "comfyinstall");
         string extraArgs = "";
         bool enablePreviews = true;
-        if (install_amd)
-        {
-            enablePreviews = false;
-            await Output("Installing AMD compatible Torch-DirectML...");
-            await NetworkBackendUtils.RunProcessWithMonitoring(new ProcessStartInfo($"{comfyFolderPath}/python_embeded/python.exe", "-s -m pip install torch-directml") { UseShellExecute = false, WorkingDirectory = comfyFolderPath }, "ComfyUI Install (directml)", "comfyinstall");
-            extraArgs += "--directml ";
-        }
         return (path, extraArgs, enablePreviews);
     }
 

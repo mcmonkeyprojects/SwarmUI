@@ -58,8 +58,8 @@ public static class MetadataHelper
         byte[] paramBytes = Encoding.UTF8.GetBytes(metadata);
         if (compressed)
         {
-            using var ms = new MemoryStream();
-            using (var gzip = new GZipStream(ms, CompressionLevel.Optimal, true))
+            using MemoryStream ms = new();
+            using (GZipStream gzip = new(ms, CompressionLevel.Optimal, true))
             {
                 gzip.Write(paramBytes, 0, paramBytes.Length);
             }

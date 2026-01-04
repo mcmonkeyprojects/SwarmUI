@@ -127,6 +127,7 @@ public class ComfyUIBackendExtension : Extension
             FeaturesDiscardIfNotFound.UnionWith(["teacache"]);
         }
         T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, InternalListModelsFor("upscale_models", true).Select(u => $"model-{u}///Model: {u}"));
+        T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, InternalListModelsFor("latent_upscale_models", true).Select(u => $"latentmodel-{u}///Latent Model: {u}"));
         T2IParamTypes.ConcatDropdownValsClean(ref YoloModels, InternalListModelsFor("yolov8", false));
         T2IParamTypes.ConcatDropdownValsClean(ref GligenModels, InternalListModelsFor("gligen", false));
         T2IParamTypes.ConcatDropdownValsClean(ref StyleModels, InternalListModelsFor("style_models", true));
@@ -475,6 +476,10 @@ public class ComfyUIBackendExtension : Extension
             {
                 T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, upscaleModels.Select(u => $"model-{u}///Model: {u}"));
             }
+            if (TryGetRequiredInputs(rawObjectInfo, "LatentUpscaleModelLoader", "model_name", out JToken latentUpscaleModels))
+            {
+                T2IParamTypes.ConcatDropdownValsClean(ref UpscalerModels, latentUpscaleModels.Select(u => $"latentmodel-{u}///Latent Model: {u}"));
+            }
             if (TryGetRequiredInputs(rawObjectInfo, "SwarmKSampler", "sampler_name", out JToken swarmksamplerNames))
             {
                 string[] dropped = [.. Samplers.Select(s => s.Before("///")).Except([.. swarmksamplerNames.Select(u => $"{u}")])];
@@ -607,13 +612,13 @@ public class ComfyUIBackendExtension : Extension
         }
     }
 
-    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, Text2VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
+    public static T2IRegisteredParam<string> CustomWorkflowParam, SamplerParam, SchedulerParam, RefinerSamplerParam, RefinerSchedulerParam, RefinerUpscaleMethod, UseIPAdapterForRevision, IPAdapterWeightType, VideoPreviewType, VideoFrameInterpolationMethod, GligenModel, YoloModelInternal, PreferredDType, UseStyleModel, TeaCacheMode, EasyCacheMode, SetClipDevice;
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG;
 
     public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG;
 
-    public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier, Text2VideoFrameInterpolationMultiplier;
+    public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
     public static T2IRegisteredParam<string>[] ControlNetPreprocessorParams = new T2IRegisteredParam<string>[3], ControlNetUnionTypeParams = new T2IRegisteredParam<string>[3];
 
@@ -630,10 +635,11 @@ public class ComfyUIBackendExtension : Extension
              "lcm///LCM (for LCM models)", "uni_pc///UniPC (Unified Predictor-Corrector)", "uni_pc_bh2///UniPC BH2", "res_multistep///Res MultiStep (for Cosmos)", "res_multistep_ancestral///Res MultiStep Ancestral (randomizing, for Cosmos)",
             "ipndm///iPNDM (Improved Pseudo-Numerical methods for Diffusion Models)", "ipndm_v///iPNDM-V (Variable-Step)", "deis///DEIS (Diffusion Exponential Integrator Sampler)", "gradient_estimation///Gradient Estimation (Improving from Optimization Perspective)",
             "er_sde///ER-SDE-Solver (used with AlignYourSteps schedule)", "seeds_2///SEEDS 2 (Exponential SDE Solvers, variant of DPM++ SDE)", "seeds_3///SEEDS 3", "sa_solver///SA-Solver (Stochastic Adams)", "sa_solver_pece///SA-Solver PECE",
+            "exp_heun_2_x0///EXP Heun 2 x0", "exp_heun_2_x0_sde///EXP Heun 2 x0 SDE", "dpmpp_2m_sde_heun///DPM++ 2M SDE Heun", "dpmpp_2m_sde_heun_gpu///DPM++ 2M SDE Heun, GPU Seeded",
             // CFG++ variants
             "euler_cfg_pp///Euler CFG++ (Manifold-constrained CFG)", "euler_ancestral_cfg_pp///Euler Ancestral CFG++", "dpmpp_2m_cfg_pp///DPM++ 2M CFG++", "dpmpp_2s_ancestral_cfg_pp///DPM++ 2S Ancestral CFG++ (2x Slow)", "res_multistep_cfg_pp///Res MultiStep CFG++", "res_multistep_ancestral_cfg_pp///Res MultiStep Ancestral CFG++", "gradient_estimation_cfg_pp///Gradient Estimation CFG++"
         ],
-        Schedulers = ["normal///Normal", "karras///Karras", "exponential///Exponential", "simple///Simple", "ddim_uniform///DDIM Uniform", "sgm_uniform///SGM Uniform", "turbo///Turbo (for turbo models, max 10 steps)", "align_your_steps///Align Your Steps (NVIDIA, rec. 10 steps)", "beta///Beta", "linear_quadratic///Linear Quadratic (Mochi)", "ltxv///LTX-Video", "ltxv-image///LTXV-Image", "kl_optimal///KL Optimal (Nvidia AYS)"];
+        Schedulers = ["normal///Normal", "karras///Karras", "exponential///Exponential", "simple///Simple", "ddim_uniform///DDIM Uniform", "sgm_uniform///SGM Uniform", "turbo///Turbo (for turbo models, max 10 steps)", "align_your_steps///Align Your Steps (Model-specific behavior)", "beta///Beta", "linear_quadratic///Linear Quadratic (Mochi)", "ltxv///LTX-Video", "ltxv-image///LTXV-Image", "kl_optimal///KL Optimal (Nvidia AYS)", "flux2///Flux.2"];
 
     public static List<string> IPAdapterModels = ["None"], IPAdapterWeightTypes = ["standard", "prompt is more important", "style transfer"];
 
@@ -648,7 +654,7 @@ public class ComfyUIBackendExtension : Extension
     /// <inheritdoc/>
     public override void OnInit()
     {
-        UseIPAdapterForRevision = T2IParamTypes.Register<string>(new("Use IP-Adapter", $"Select an IP-Adapter model to use IP-Adapter for image-prompt input handling.\nModels will automatically be downloaded when you first use them.\nNote if you use a custom model, you must also set your ReVision Model under Advanced Model Addons, otherwise CLIP Vision G will be presumed.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>",
+        UseIPAdapterForRevision = T2IParamTypes.Register<string>(new("Use IP-Adapter", $"Select an IP-Adapter model to use IP-Adapter for image-prompt input handling.\nModels will automatically be downloaded when you first use them.\nNote if you use a custom model, you must also set your CLIP-Vision Model under Advanced Model Addons, otherwise CLIP Vision G will be presumed.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>",
             "None", IgnoreIf: "None", FeatureFlag: "ipadapter", GetValues: _ => IPAdapterModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 15, ChangeWeight: 1
             ));
         IPAdapterWeight = T2IParamTypes.Register<double>(new("IP-Adapter Weight", "Weight to use with IP-Adapter (if enabled).",
@@ -744,20 +750,14 @@ public class ComfyUIBackendExtension : Extension
             "256", Min: 64, Max: 2048, Step: 32, Toggleable: true, IsAdvanced: true, FeatureFlag: "comfyui", ViewType: ParamViewType.POT_SLIDER, Group: T2IParamTypes.GroupAdvancedSampling, OrderPriority: 20
             ));
         List<string> interpolators = ["RIFE", "FILM", "GIMM-VFI"];
-        Text2VideoFrameInterpolationMultiplier = T2IParamTypes.Register<int>(new("Text2Video Frame Interpolation Multiplier", "How many frames to interpolate between each frame in the video.\nHigher values are smoother, but make take significant time to save the output, and may have quality artifacts.",
-            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps,text2video", Group: T2IParamTypes.GroupText2Video, Permission: Permissions.ParamVideo, OrderPriority: 32, IsAdvanced: true
-            ));
-        Text2VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Text2Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
-            "RIFE", FeatureFlag: "frameinterps,text2video", Group: T2IParamTypes.GroupText2Video, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 33, DependNonDefault: Text2VideoFrameInterpolationMultiplier.Type.ID, IsAdvanced: true
-            ));
         VideoPreviewType = T2IParamTypes.Register<string>(new("Video Preview Type", "How to display previews for generating videos.\n'Animate' shows a low-res animated video preview.\n'iterate' shows one frame at a time while it goes.\n'one' displays just the first frame.\n'none' disables previews.",
             "animate", IgnoreIf: "animate", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, GetValues: (_) => ["animate", "iterate", "one", "none"]
             ));
         VideoFrameInterpolationMultiplier = T2IParamTypes.Register<int>(new("Video Frame Interpolation Multiplier", "How many frames to interpolate between each frame in the video.\nHigher values are smoother, but make take significant time to save the output, and may have quality artifacts.",
-            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, OrderPriority: 32, IsAdvanced: true
+            "1", IgnoreIf: "1", Min: 1, Max: 10, Step: 1, FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupAdvancedVideo, Permission: Permissions.ParamVideo, OrderPriority: 32, IsAdvanced: true
             ));
         VideoFrameInterpolationMethod = T2IParamTypes.Register<string>(new("Video Frame Interpolation Method", "How to interpolate frames in the video.\n'RIFE' or 'FILM' are two different decent interpolation model options.",
-            "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupVideo, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 33, DependNonDefault: VideoFrameInterpolationMultiplier.Type.ID, IsAdvanced: true
+            "RIFE", FeatureFlag: "frameinterps", Group: T2IParamTypes.GroupAdvancedVideo, Permission: Permissions.ParamVideo, GetValues: (_) => interpolators, OrderPriority: 33, DependNonDefault: VideoFrameInterpolationMultiplier.Type.ID, IsAdvanced: true
             ));
         GligenModel = T2IParamTypes.Register<string>(new("GLIGEN Model", "Optionally use a GLIGEN model.\nGLIGEN is only compatible with SDv1 at time of writing.",
             "None", IgnoreIf: "None", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupRegionalPrompting, GetValues: (_) => GligenModels, IsAdvanced: true

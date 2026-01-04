@@ -196,3 +196,12 @@ PromptBuilder:
     tags:
     - ui
     - tools
+
+SeedVR2Upscaler:
+    author: Rasmus
+    description: Adds SeedVR2 AI upscaler with auto VRAM detection, quality presets, and 2-step upscaling for reduced artifacts.
+    url: https://github.com/rlerdorf/SwarmUI-SeedVR2Upscaler
+    license: MIT
+    tags:
+    - parameters
+    - nodes

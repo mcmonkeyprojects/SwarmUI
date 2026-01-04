@@ -107,3 +107,10 @@
     height: 20rem;
     border-bottom: 7px solid var(--background);
 }
+.comfy_tab_hackhide {
+    display: block !important;
+    position: fixed;
+    top: 100vh;
+    width: 100vw;
+    height: 100vh;
+}

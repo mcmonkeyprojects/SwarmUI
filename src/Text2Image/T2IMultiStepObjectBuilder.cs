@@ -60,7 +60,7 @@ public class T2IMultiStepObjectBuilder
             return null;
         }
         //user_input.Set(T2IParamTypes.EndStepsEarly, 0.6); // TODO: Configurable
-        using ISImage liveImg = img.ToIS;
+        ISImage liveImg = img.ToIS.Clone(_ => { });
         float overBound = 0.1f;
         foreach (PromptRegion.Part part in objects)
         {
@@ -107,8 +107,8 @@ public class T2IMultiStepObjectBuilder
             {
                 return null;
             }
-            using ISImage objISImg = objImg.ToIS;
-            objISImg.Mutate(i => i.Resize(extraWidth, extraHeight));
+            ISImage objISImg = objImg.ToIS;
+            objISImg = objISImg.Clone(i => i.Resize(extraWidth, extraHeight));
             liveImg.Mutate(i => i.DrawImage(objISImg, new Point(extraX, extraY), 1));
             if (user_input.Get(T2IParamTypes.OutputIntermediateImages, false))
             {

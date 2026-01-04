@@ -42,6 +42,9 @@ public class Session : IEquatable<Session>
     /// <summary>If authorization is enabled, this is the token ID that created this session.</summary>
     public string OriginToken;
 
+    /// <summary>If true, this session persists across restarts. If false, it sits only in memory.</summary>
+    public bool Persist = true;
+
     /// <summary>The current database entry for this <see cref="Session"/>.</summary>
     public DatabaseEntry MakeDBEntry()
     {
@@ -247,7 +250,14 @@ public class Session : IEquatable<Session>
                     File.WriteAllBytes(fullPath, actualFile.RawData);
                     if ((User.Settings.FileFormat.SaveTextFileMetadata || !OutputMetadataTracker.ExtensionsWithMetadata.Contains(extension)) && !string.IsNullOrWhiteSpace(metadata))
                     {
-                        File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
+                        if (extension == "webp" && actualFile is ImageFile imageFile && imageFile.ToIS.Frames.Count == 1)
+                        {
+                            // no .json write for still-image webps
+                        }
+                        else
+                        {
+                            File.WriteAllBytes(fullPathNoExt + ".swarm.json", metadata.EncodeUTF8());
+                        }
                     }
                     OutputMetadataTracker.GetOrCreatePreviewFor(fullPath.Replace('\\', '/'));
                     Logs.Debug($"Saved an output file as '{fullPath}'");

@@ -89,6 +89,7 @@ public static class Permissions
     public static PermInfoGroup GroupUser = new("User", "Permissions related to basic user access.");
 
     public static PermInfo BasicImageGeneration = Register(new("basic_image_generation", "Basic Image Generation", "Allows this user to generate images.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
+    public static PermInfo BasicTextGeneration = Register(new("basic_text_generation", "Basic Text Generation", "Allows this user to generate text (LLMs).", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo ViewImageHistory = Register(new("view_image_history", "View Image History", "Allows this user to view their own image history.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo UserDeleteImage = Register(new("user_delete_image", "User Delete Image", "Allows this user to delete images they generated.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo UserStarImages = Register(new("user_star_images", "User Star Images", "Allows this user to star or unstar images they generated.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
@@ -99,6 +100,9 @@ public static class Permissions
     public static PermInfo EditUserSettings = Register(new("edit_user_settings", "Edit User Settings", "Allows this user to edit their own settings.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo EditParams = Register(new("edit_params", "Edit Params", "Allows this user to edit params (in a way that only affects themself, not other users).", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo ManagePresets = Register(new("manage_presets", "Manage Presets", "Allows this user to manage (add, edit, delete) their own presets.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
+    public static PermInfo UtilitiesTab = Register(new("utilities_tab", "Utilities Tab", "Allows this user to view the Utilities tab.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
+    public static PermInfo SimpleTab = Register(new("simple_tab", "Simple Tab", "Allows this user to view the Simple tab.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
+    public static PermInfo UserTab = Register(new("user_tab", "User Tab", "Allows this user to view the User tab.", PermissionDefault.USER, GroupUser, PermSafetyLevel.SAFE));
     public static PermInfo Fundamental = Register(new("fundamental", "Fundamental", "Most basic possible permission for core functions.", PermissionDefault.GUEST, GroupUser, PermSafetyLevel.SAFE));
 
     public static PermInfoGroup GroupExtensionTabs = new("Extension Tabs", "Permissions related to extension tabs.");

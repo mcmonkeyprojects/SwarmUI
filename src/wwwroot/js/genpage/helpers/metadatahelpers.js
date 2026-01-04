@@ -127,10 +127,72 @@ function interpretMetadata(metadata) {
     return metadata;
 }
 
+function canvasReadBinaryAlpha(canvas, ctx, length) {
+    let data = '';
+    for (let x = 0; x < canvas.width; x++) {
+        for (let y = 0; y < canvas.height; y++) {
+            let pixel = ctx.getImageData(x, y, 1, 1).data;
+            data += (pixel[3] & 0x01) == 0 ? '0' : '1';
+            if (data.length >= length * 8) {
+                return data;
+            }
+        }
+    }
+    return null;
+}
+
+function binaryStringToBytes(binaryString) {
+    let bytes = [];
+    for (let i = 0; i < binaryString.length; i += 8) {
+        bytes.push(parseInt(binaryString.slice(i, i + 8), 2));
+    }
+    return bytes;
+}
+
+function bytesToInt32(bytes) {
+    return bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3];
+}
+
 function parseMetadata(data, callback) {
     if (data instanceof Image) {
         data = data.src;
     }
+    let backupPlan = () => {
+        let img = new Image();
+        img.src = data;
+        img.onload = () => {
+            let canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            let alphaData = canvasReadBinaryAlpha(canvas, ctx, "stealth_pnginfo".length + 4);
+            let headerBytes = binaryStringToBytes(alphaData);
+            let headerType = new TextDecoder().decode(new Uint8Array(headerBytes.slice(0, "stealth_pnginfo".length)));
+            if (headerType == "stealth_pnginfo" || headerType == "stealth_pngcomp") {
+                let dataLengthBytes = headerBytes.slice("stealth_pnginfo".length);
+                let dataLength = bytesToInt32(dataLengthBytes) / 8;
+                let alphaContent = canvasReadBinaryAlpha(canvas, ctx, dataLength + "stealth_pnginfo".length + 4);
+                let metadataBytes = new Uint8Array(binaryStringToBytes(alphaContent).slice("stealth_pnginfo".length + 4));
+                if (headerType == "stealth_pngcomp") {
+                    ungzip(metadataBytes).then(decompressed => {
+                        let metadata = new TextDecoder().decode(decompressed);
+                        metadata = interpretMetadata(metadata);
+                        callback(data, metadata);
+                    });
+                }
+                else {
+                    let metadata = new TextDecoder().decode(metadataBytes);
+                    metadata = interpretMetadata(metadata);
+                    callback(data, metadata);
+                }
+            }
+            else {
+                callback(data, null);
+            }
+        };
+        img.src = data;
+    };
     fetch(data).then(r => r.blob()).then(b => b.arrayBuffer()).then(buffer => ExifReader.load(buffer, {async: true})).then(parsed => {
         let metadata = null;
         if (parsed) {
@@ -141,10 +203,14 @@ function parseMetadata(data, callback) {
                 }
             }
         }
+        if (metadata == null) {
+            backupPlan();
+            return;
+        }
         metadata = interpretMetadata(metadata);
         callback(data, metadata);
     }).catch(err => {
-        callback(data, null);
+        backupPlan();
     });
 }
 
@@ -186,6 +252,9 @@ function formatMetadata(metadata) {
                     }
                     if (key.includes('prompt')) {
                         extras = `<button title="Click to copy" class="basic-button prompt-copy-button" onclick="copyText('${escapeHtmlNoBr(escapeJsString(`${val}`))}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
+                    }
+                    if (key == 'unused_parameters' && Array.isArray(val)) {
+                        val = val.join(', ');
                     }
                     let param = getParamById(key);
                     if (param) {
@@ -236,20 +305,56 @@ function formatMetadata(metadata) {
     if ('loras' in data.sui_image_params && 'loraweights' in data.sui_image_params) {
         let loras = data.sui_image_params.loras;
         let loraWeights = data.sui_image_params.loraweights;
+        let loraSectionConfinement = data.sui_image_params['lorasectionconfinement'];
         let simpleLoras = [];
         // TODO: Maybe look up some metadata on the models here?
         for (let i = 0; i < loras.length; i++) {
             let lora = loras[i];
-            let weight = loraWeights[i];
+            let weight = `${loraWeights[i]}`;
+            if (loraSectionConfinement && loraSectionConfinement[i] != 0) {
+                let name = loraHelper.confinementNames[loraSectionConfinement[i]] || loraSectionConfinement[i];
+                weight = `${weight} (${name})`;
+            }
             simpleLoras.push(`${lora} : ${weight}`);
         }
         delete data.sui_image_params.loras;
         delete data.sui_image_params.loraweights;
+        delete data.sui_image_params['lorasectionconfinement'];
         data.sui_image_params['loras'] = simpleLoras;
     }
-    appendObject(data.sui_image_params);
+    if ('width' in data.sui_image_params && 'height' in data.sui_image_params) {
+        let res = `${data.sui_image_params.width}x${data.sui_image_params.height}`;
+        if ('aspectratio' in data.sui_image_params && 'sidelength' in data.sui_image_params) {
+            res += ` (${data.sui_image_params.aspectratio} @ ${data.sui_image_params.sidelength})`;
+        }
+        else if ('aspectratio' in data.sui_image_params) {
+            res += ` (${data.sui_image_params.aspectratio})`;
+        }
+        delete data.sui_image_params.width;
+        delete data.sui_image_params.height;
+        delete data.sui_image_params.aspectratio;
+        delete data.sui_image_params.sidelength;
+        data.sui_image_params['Resolution'] = res;
+    }
+    let explicitTopKeys = ['prompt', 'negativeprompt', 'model', 'images', 'Resolution'];
+    let paramMap = {};
+    for (let key of explicitTopKeys) {
+        if (key in data.sui_image_params) {
+            paramMap[key] = data.sui_image_params[key];
+            delete data.sui_image_params[key];
+        }
+    }
+    for (let key of Object.keys(data.sui_image_params)) {
+        paramMap[key] = data.sui_image_params[key];
+    }
+    appendObject(paramMap);
     result += '\n<br>';
     if ('sui_extra_data' in data) {
+        if ('prep_time' in data.sui_extra_data && 'generation_time' in data.sui_extra_data) {
+            data.sui_extra_data['Generation Time'] = `${data.sui_extra_data.prep_time} prep, ${data.sui_extra_data.generation_time} gen`;
+            delete data.sui_extra_data.prep_time;
+            delete data.sui_extra_data.generation_time;
+        }
         appendObject(data.sui_extra_data);
     }
     return result;

@@ -7,6 +7,7 @@ using SwarmUI.Accounts;
 using SwarmUI.Core;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace SwarmUI.Utils;
 
@@ -156,10 +157,10 @@ public static class WebUtil
                 return null;
             }
         }
-        string pythonVersionRaw = (await tryPyVer("python3.11")) ?? (await tryPyVer("python3.10")) ?? (await tryPyVer("python3.12")) ?? (await tryPyVer("python3")) ?? (await tryPyVer("python"));
+        string pythonVersionRaw = (await tryPyVer("python3.11")) ?? (await tryPyVer("python3.12")) ?? (await tryPyVer("python3.10")) ?? (await tryPyVer("python3")) ?? (await tryPyVer("python"));
         if (string.IsNullOrWhiteSpace(pythonVersionRaw))
         {
-            return "Failure to check python version. You must install Python 3.11 before installing SwarmUI.";
+            return "Failure to check python version. You must install Python 3.11 or 3.12 before installing SwarmUI.";
         }
         string[] bits = pythonVersionRaw.SplitFast('\n');
         string pythonExe = bits[0], pythonVersion = bits[1], venvInfo = bits[2];
@@ -168,9 +169,9 @@ public static class WebUtil
             if (pythonVersion.StartsWith("Python 3."))
             {
                 Logs.Warning($"Found python version '{pythonVersion}', which is not in the acceptable range from 3.10 to 3.12.");
-                return "You have a python version installed, but it is not 3.11. Please install Python 3.11 before installing SwarmUI. 3.10 and 3.12 are relatively stable as well. Older versions will not work, and newer versions will have compatibility issues.";
+                return "You have a python version installed, but it is not 3.11 or 3.12. Please install Python 3.11 or 3.12 before installing SwarmUI. 3.10 is relatively stable as well. Older versions will not work, and newer versions will have compatibility issues.";
             }
-            return "Python does not appear to be installed on your system. You must install Python 3.11 before installing SwarmUI.";
+            return "Python does not appear to be installed on your system. You must install Python 3.11 or 3.12 before installing SwarmUI.";
         }
         if (!venvInfo.StartsWith("usage: venv"))
         {
@@ -200,6 +201,24 @@ public static class WebUtil
             return true;
         }
         return false;
+    }
+
+    /// <summary>Returns true if the user is trying to run as admin.</summary>
+    public static bool NeedWindowsAdminWarn()
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) // not `IsWindows` because C# compiler will complain
+        {
+            return false;
+        }
+        try
+        {
+            return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"Failed to check Windows admin status: {ex}");
+            return true;
+        }
     }
 
     /// <summary>Returns true if the program is running in Windows.</summary>
