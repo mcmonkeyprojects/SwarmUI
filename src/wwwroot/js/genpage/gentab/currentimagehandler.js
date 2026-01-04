@@ -115,7 +115,6 @@ class ImageFullViewHelper {
         let wrap = getRequiredElementById('imageview_modal_imagewrap');
         if (wrap.style.textAlign == 'center') {
             let img = this.getImgOrContainer();
-            wrap.style.textAlign = 'left';
             let width = img.naturalWidth ?? img.videoWidth;
             let height = img.naturalHeight ?? img.videoHeight;
             let imgAspectRatio = width / height;
@@ -133,6 +132,7 @@ class ImageFullViewHelper {
             }
             img.style.objectFit = '';
             img.style.maxWidth = '';
+            wrap.style.textAlign = 'left';
         }
     }
 
