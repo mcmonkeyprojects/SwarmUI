@@ -216,7 +216,7 @@ class ImageFullViewHelper {
             let width = img.naturalWidth ?? img.videoWidth;
             let height = img.naturalHeight ?? img.videoHeight;
             let aspectRatio = width / height;
-            let screenAspectRatio = (window.innerWidth * 0.95) / window.innerHeight;
+            let screenAspectRatio = window.innerWidth / window.innerHeight;
             if (aspectRatio <= screenAspectRatio) {
                 this.toggleMetadataVisibility(false);
             }
