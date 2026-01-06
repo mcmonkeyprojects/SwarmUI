@@ -46,6 +46,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Lightricks LTX Video.</summary>
     public bool IsLTXV() => IsModelCompatClass(T2IModelClassSorter.CompatLtxv);
 
+    /// <summary>Returns true if the current model is Lightricks LTX Video 2.</summary>
+    public bool IsLTXV2() => IsModelCompatClass(T2IModelClassSorter.CompatLtxv2);
+
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
     public bool IsFlux() => IsModelCompatClass(T2IModelClassSorter.CompatFlux);
 
@@ -202,7 +205,7 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current main text input model model is a Video model (as opposed to image).</summary>
     public bool IsVideoModel()
     {
-        return IsLTXV() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
+        return IsLTXV() || IsLTXV2() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
     }
 
     /// <summary>Creates an Empty Latent Image node.</summary>
@@ -268,7 +271,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsLTXV())
+        else if (IsLTXV() || IsLTXV2())
         {
             return CreateNode("EmptyLTXVLatentVideo", new JObject()
             {
@@ -985,6 +988,10 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("ltxv", helpers.GetT5XXLModel());
             helpers.DoVaeLoader(null, "lightricks-ltx-video", "ltxv-vae");
+        }
+        else if (IsLTXV2())
+        {
+            // TODO: ?
         }
         else if (IsHunyuanVideo())
         {
