@@ -294,7 +294,8 @@ public partial class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["frame_number"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
-                ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24)
+                ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24),
+                ["audio_vae"] = FinalAudioVae
             });
             return CreateNode("LTXVConcatAVLatent", new JObject()
             {
