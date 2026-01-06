@@ -85,11 +85,14 @@ public partial class WorkflowGenerator
         FinalInputImage = null,
         FinalMask = null,
         FinalVae = ["4", 2],
+        FinalAudioVae = null,
         FinalLatentImage = ["5", 0],
+        FinalLatentAudio = null,
         FinalPrompt = ["6", 0],
         FinalNegativePrompt = ["7", 0],
         FinalSamples = ["10", 0],
         FinalImageOut = null,
+        FinalAudioOut = null,
         FinalTrimLatent = null,
         LoadingModel = null, LoadingClip = null, LoadingVAE = null;
 
@@ -687,8 +690,23 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates a VAEDecode node and returns its node ID.</summary>
-    public string CreateVAEDecode(JArray vae, JArray latent, string id = null)
+    public string CreateVAEDecode(JArray vae, JArray latent, string id = null, bool canAudioDecode = true)
     {
+        if (IsLTXV2() && FinalAudioVae is not null && canAudioDecode)
+        {
+            string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
+            {
+                ["av_latent"] = latent
+            });
+            FinalLatentAudio = [separated, 1];
+            string audioDecoded = CreateNode("LTXVAudioVAEDecode", new JObject()
+            {
+                ["audio_vae"] = FinalAudioVae,
+                ["samples"] = FinalLatentAudio
+            });
+            FinalAudioOut = [audioDecoded, 0];
+            return CreateVAEDecode(vae, [separated, 0], id, false);
+        }
         if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
         {
             return CreateNode("VAEDecodeTiled", new JObject()

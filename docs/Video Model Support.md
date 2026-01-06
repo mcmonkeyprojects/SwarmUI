@@ -5,6 +5,7 @@
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
+[Lightricks LTX Video 2](#lightricks-ltx-video-2) | 2026 | Lightricks | 19B DiT | Text/Image 2Video+Audio | ? | ? |
 [Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
 [Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
@@ -247,6 +248,13 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 ### LTXV Performance
 
 - LTXV has the best performance of any video model supported in Swarm. It is wildly fast. This comes at the cost of quality.
+
+## Lightricks LTX Video 2
+
+- SwarmUI support for LTXV-2 is in-progress.
+    - Download the model from [Lightricks](<https://huggingface.co/Lightricks/LTX-2/tree/main>)
+    - Save in `Stable-Diffusion` models folder
+    - Details TBD
 
 # Wan 2.1
 
