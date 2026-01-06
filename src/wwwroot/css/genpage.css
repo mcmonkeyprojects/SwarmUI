@@ -738,6 +738,19 @@ body {
     font-family: var(--font-monospace);
     background-color: rgb(50, 50, 50, 0.7);
 }
+#image_fullview_modal_close {
+    position: fixed;
+    top: 1rem;
+    right: 10%;
+    width: 0;
+    height: 0;
+    white-space:nowrap;
+}
+#image_fullview_modal_counter {
+    background-color: color-mix(in srgb, var(--button-background) 50%, transparent);
+    color: var(--text);
+    cursor: default;
+}
 .imageview_modal_imagewrap {
     height: calc(100vh - 7rem);
     max-width: 95vw;

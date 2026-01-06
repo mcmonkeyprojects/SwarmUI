@@ -230,6 +230,7 @@ class ImageFullViewHelper {
         this.currentSrc = src;
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
+        this.updateCounter();
         let wasAlreadyOpen = this.isOpen();
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
@@ -319,6 +320,29 @@ class ImageFullViewHelper {
 
     isOpen() {
         return this.modalJq.is(':visible');
+    }
+
+    updateCounter() {
+        let counterElem = getRequiredElementById('image_fullview_modal_counter');
+        if (!this.currentSrc) {
+            counterElem.textContent = `1/${items.length} `;
+            return;
+        }
+        let items = [];
+        let index = -1;
+        if (this.currentBatchId == 'history' && lastHistoryImageDiv && lastHistoryImageDiv.parentElement) {
+            items = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
+            index = items.findIndex(div => div == lastHistoryImageDiv);
+        } else {
+            let currentImageBatchDiv = getRequiredElementById('current_image_batch');
+            items = [...currentImageBatchDiv.getElementsByClassName('image-block')].filter(block => !block.classList.contains('image-block-placeholder'));
+            index = items.findIndex(block => block.dataset.src == this.currentSrc);
+        }
+        if (index != -1 && items.length > 0) {
+            counterElem.textContent = `${index + 1}/${items.length} `;
+        } else {
+            counterElem.textContent = `1/${items.length} `;
+        }
     }
 }
 
