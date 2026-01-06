@@ -1659,7 +1659,7 @@ public class WorkflowGeneratorSteps
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 double? videoCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_Video, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, T2IParamInput.SectionID_Video);
                 int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_Video, false) ?? g.UserInput.Get(T2IParamTypes.VideoSteps, 20, sectionId: T2IParamInput.SectionID_Video);
-                string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLowerFast();
+                string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "h264-mp4").ToLowerFast();
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 42;
                 string prompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
@@ -1895,9 +1895,25 @@ public class WorkflowGeneratorSteps
                 JArray source = data["inputs"]["samples"] as JArray;
                 string sourceNode = $"{source[0]}";
                 JObject actualNode = g.Workflow[sourceNode] as JObject;
-                if ($"{actualNode["class_type"]}" == "VAEEncode")
+                JArray myVae = data["inputs"]["vae"] as JArray;
+                if ($"{actualNode["class_type"]}" == "LTXVSeparateAVLatent")
                 {
-                    JArray myVae = data["inputs"]["vae"] as JArray;
+                    JArray subSource = actualNode["inputs"]["av_latent"] as JArray;
+                    string subSourceNode = $"{subSource[0]}";
+                    JObject actualSubNode = g.Workflow[subSourceNode] as JObject;
+                    if ($"{actualSubNode["class_type"]}" == "VAEEncode")
+                    {
+                        JArray srcVae = actualSubNode["inputs"]["vae"] as JArray;
+                        if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
+                        {
+                            JArray srcImage = actualSubNode["inputs"]["pixels"] as JArray;
+                            g.ReplaceNodeConnection([id, 0], srcImage);
+                            g.Workflow.Remove(id);
+                        }
+                    }
+                }
+                else if ($"{actualNode["class_type"]}" == "VAEEncode")
+                {
                     JArray srcVae = actualNode["inputs"]["vae"] as JArray;
                     if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
                     {
@@ -1909,6 +1925,8 @@ public class WorkflowGeneratorSteps
             }
             g.RunOnNodesOfClass("VAEDecode", fixDecode);
             g.RunOnNodesOfClass("VAEDecodeTiled", fixDecode);
+            g.RemoveClassIfUnused("LTXVAudioVAEDecode");
+            g.RemoveClassIfUnused("LTXVSeparateAVLatent");
             g.RemoveClassIfUnused("VAEEncode");
             g.RemoveClassIfUnused("LTXVConditioning");
             g.RemoveClassIfUnused("CLIPTextEncode");

@@ -3,7 +3,7 @@ from io import BytesIO
 import latent_preview, comfy
 from server import PromptServer
 from comfy.model_base import SDXL, SVD_img2vid, Flux, Flux2, WAN21, Chroma
-from comfy import samplers
+from comfy import samplers, nested_tensor
 import numpy as np
 from math import ceil
 from latent_preview import TAESDPreviewerImpl
@@ -21,11 +21,13 @@ def slerp(val, low, high):
     res = (torch.sin((1.0 - val) * omega) / so).unsqueeze(1) * low + (torch.sin(val * omega) / so).unsqueeze(1) * high
     return res
 
+
 def swarm_partial_noise(seed, latent_image):
     generator = torch.manual_seed(seed)
     return torch.randn(latent_image.size(), dtype=latent_image.dtype, layout=latent_image.layout, generator=generator, device="cpu")
 
-def swarm_fixed_noise(seed, latent_image, var_seed, var_seed_strength):
+
+def swarm_fixed_noise_inner(seed, latent_image, var_seed, var_seed_strength):
     noises = []
     for i in range(latent_image.size()[0]):
         if var_seed_strength > 0:
@@ -41,6 +43,18 @@ def swarm_fixed_noise(seed, latent_image, var_seed, var_seed_strength):
         noises.append(noise)
     return torch.stack(noises, dim=0)
 
+
+def swarm_fixed_noise(seed, latent_image, var_seed, var_seed_strength):
+    if latent_image.is_nested:
+        tensors = latent_image.unbind()
+        noises = []
+        for t in tensors:
+            noises.append(swarm_fixed_noise_inner(seed, t, var_seed, var_seed_strength))
+        return nested_tensor.NestedTensor(noises)
+    else:
+        return swarm_fixed_noise_inner(seed, latent_image, var_seed, var_seed_strength)
+
+
 def get_preview_metadata():
     executing_context = get_executing_context()
     prompt_id = None
@@ -53,6 +67,7 @@ def get_preview_metadata():
     if node_id is None:
         node_id = PromptServer.instance.last_node_id
     return {"node_id": node_id, "prompt_id": prompt_id, "display_node_id": node_id, "parent_node_id": node_id, "real_node_id": node_id} # display_node_id, parent_node_id, real_node_id? comfy_execution/progress.py has this.
+
 
 def swarm_send_extra_preview(id, image):
     server = PromptServer.instance
@@ -68,6 +83,7 @@ def swarm_send_extra_preview(id, image):
     combined_data.extend(metadata_json)
     combined_data.extend(image_bytes)
     server.send_sync(9999123, combined_data, sid=server.client_id)
+
 
 def swarm_send_animated_preview(id, images):
     server = PromptServer.instance
@@ -85,6 +101,7 @@ def swarm_send_animated_preview(id, images):
     combined_data.extend(image_bytes)
     server.send_sync(9999123, combined_data, sid=server.client_id)
 
+
 def calculate_sigmas_scheduler(model, scheduler_name, steps, sigma_min, sigma_max, rho):
     model_sampling = model.get_model_object("model_sampling")
     if scheduler_name == "karras":
@@ -93,6 +110,7 @@ def calculate_sigmas_scheduler(model, scheduler_name, steps, sigma_min, sigma_ma
         return comfy.k_diffusion.sampling.get_sigmas_exponential(n=steps, sigma_min=sigma_min if sigma_min >= 0 else float(model_sampling.sigma_min), sigma_max=sigma_max if sigma_max >= 0 else float(model_sampling.sigma_max))
     else:
         return None
+
 
 def make_swarm_sampler_callback(steps, device, model, previews):
     previewer = latent_preview.get_previewer(device, model.model.latent_format) if previews != "none" else None
@@ -144,6 +162,7 @@ def loglinear_interp(t_steps, num_steps):
     interped_ys = np.exp(new_ys)[::-1].copy()
     return interped_ys
 
+
 AYS_NOISE_LEVELS = {
     "SD1": [14.6146412293, 6.4745760956,  3.8636745985,  2.6946151520, 1.8841921177,  1.3943805092,  0.9642583904,  0.6523686016, 0.3977456272,  0.1515232662,  0.0291671582],
     "SDXL":[14.6146412293, 6.3184485287,  3.7681790315,  2.1811480769, 1.3405244945,  0.8620721141,  0.5550693289,  0.3798540708, 0.2332364134,  0.1114188177,  0.0291671582],
@@ -155,6 +174,7 @@ AYS_NOISE_LEVELS = {
     # https://github.com/comfyanonymous/ComfyUI/commit/08ff5fa08a92e0b3f23b9abec979a830a6cffb03#diff-3e4e70e402dcd9e1070ad71ef9292277f10d9faccf36a1c405c0c717a7ee6485R23
     "Chroma": [0.992, 0.99, 0.988, 0.985, 0.982, 0.978, 0.973, 0.968, 0.961, 0.953, 0.943, 0.931, 0.917, 0.9, 0.881, 0.858, 0.832, 0.802, 0.769, 0.731, 0.69, 0.646, 0.599, 0.55, 0.501, 0.451, 0.402, 0.355, 0.311, 0.27, 0.232, 0.199, 0.169, 0.143, 0.12, 0.101, 0.084, 0.07, 0.058, 0.048, 0.001]
 }
+
 
 def split_latent_tensor(latent_tensor, tile_size=1024, scale_factor=8):
     """Generate tiles for a given latent tensor, considering the scaling factor."""
@@ -198,6 +218,7 @@ def split_latent_tensor(latent_tensor, tile_size=1024, scale_factor=8):
 
     return tiles
 
+
 def stitch_latent_tensors(original_size, tiles, scale_factor=8):
     """Stitch tiles together to create the final upscaled latent tensor with overlaps."""
     result = torch.zeros(original_size)
@@ -236,6 +257,7 @@ def stitch_latent_tensors(original_size, tiles, scale_factor=8):
         result[..., upper:lower, left:right] = combined_area
 
     return result
+
 
 class SwarmKSampler:
     @classmethod
@@ -358,6 +380,7 @@ class SwarmKSampler:
             return self.tiled_sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews, tile_size)
         else:
             return self.sample(model, noise_seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, var_seed, var_seed_strength, sigma_max, sigma_min, rho, add_noise, return_with_leftover_noise, previews)
+
 
 NODE_CLASS_MAPPINGS = {
     "SwarmKSampler": SwarmKSampler,
