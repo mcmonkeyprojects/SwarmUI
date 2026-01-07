@@ -520,7 +520,7 @@ public static class NetworkBackendUtils
         signalShutdownExpected = () => Volatile.Write(ref isShuttingDown, true);
         bool shouldContinueErrorLine(string str)
         {
-            return str.StartsWith("Traceback (") || str.Contains("Error: ") || str.StartsWith("  ");
+            return str.StartsWith("Traceback (") || (str.Contains("Error: ") && !str.StartsWith("Found comfy_kitchen backend")) || str.StartsWith("  ");
         }
         void MonitorLoop()
         {
