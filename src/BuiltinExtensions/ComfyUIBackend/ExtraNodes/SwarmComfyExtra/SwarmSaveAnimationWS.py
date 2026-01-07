@@ -8,6 +8,17 @@ SPECIAL_ID = 12345
 VIDEO_ID = 12346
 FFMPEG_PATH = get_ffmpeg_exe()
 
+def send_image_to_server_raw(type_num: int, save_me: callable, id: int, event_type: int = BinaryEventTypes.PREVIEW_IMAGE):
+    out = io.BytesIO()
+    header = struct.pack(">I", type_num)
+    out.write(header)
+    save_me(out)
+    out.seek(0)
+    preview_bytes = out.getvalue()
+    server = PromptServer.instance
+    server.send_sync("progress", {"value": id, "max": id}, sid=server.client_id)
+    server.send_sync(event_type, preview_bytes, sid=server.client_id)
+
 
 class SwarmSaveAnimationWS:
     methods = {"default": 4, "fastest": 0, "slowest": 6}
@@ -41,7 +52,10 @@ class SwarmSaveAnimationWS:
             pbar = comfy.utils.ProgressBar(SPECIAL_ID)
             i = 255.0 * images[0].cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-            pbar.update_absolute(0, SPECIAL_ID, ("PNG", img, None))
+            def do_save(out):
+                img.save(out, format='PNG')
+            send_image_to_server_raw(2, do_save, SPECIAL_ID)
+            #pbar.update_absolute(0, SPECIAL_ID, ("PNG", img, None))
             return { }
 
         out_img = io.BytesIO()
