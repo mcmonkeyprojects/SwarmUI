@@ -1196,8 +1196,7 @@ public partial class WorkflowGenerator
             inputs["sigma_min"] = UserInput.Get(T2IParamTypes.SamplerSigmaMin, sigmin);
             inputs["sigma_max"] = UserInput.Get(T2IParamTypes.SamplerSigmaMax, sigmax);
             inputs["rho"] = UserInput.Get(T2IParamTypes.SamplerRho, 7);
-            // TODO: TEMP: LTXV2 crashes on previews
-            inputs["previews"] = UserInput.Get(T2IParamTypes.NoPreviews) || IsLTXV2() ? "none" : previews ?? DefaultPreviews;
+            inputs["previews"] = UserInput.Get(T2IParamTypes.NoPreviews) ? "none" : previews ?? DefaultPreviews;
             inputs["tile_sample"] = doTiled;
             inputs["tile_size"] = FinalLoadedModel.StandardWidth <= 0 ? 768 : FinalLoadedModel.StandardWidth;
             created = CreateNode("SwarmKSampler", inputs, firstId);

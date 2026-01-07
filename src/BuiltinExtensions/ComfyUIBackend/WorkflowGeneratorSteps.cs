@@ -1345,16 +1345,51 @@ public class WorkflowGeneratorSteps
                     {
                         ["model_name"] = upscaleMethod.After("latentmodel-")
                     }, "27");
-                    g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
+                    if (g.IsHunyuanVideo15())
                     {
-                        ["model"] = NodePath("27", 0),
-                        ["samples"] = g.FinalSamples,
-                        ["upscale_method"] = "bilinear",
-                        ["width"] = width,
-                        ["height"] = height,
-                        ["crop"] = "disabled"
-                    }, "26");
-                    g.FinalSamples = ["26", 0];
+                        g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
+                        {
+                            ["model"] = NodePath("27", 0),
+                            ["samples"] = g.FinalSamples,
+                            ["upscale_method"] = "bilinear",
+                            ["width"] = width,
+                            ["height"] = height,
+                            ["crop"] = "disabled"
+                        }, "26");
+                        g.FinalSamples = ["26", 0];
+                    }
+                    else if (g.IsLTXV2())
+                    {
+                        string separated = g.CreateNode("LTXVSeparateAVLatent", new JObject()
+                        {
+                            ["av_latent"] = g.FinalSamples
+                        });
+                        g.FinalLatentAudio = [separated, 1];
+                        string cropGuides = g.CreateNode("LTXVCropGuides", new JObject()
+                        {
+                            ["positive"] = prompt,
+                            ["negative"] = negPrompt,
+                            ["latent"] = NodePath(separated, 0)
+                        });
+                        prompt = [cropGuides, 0];
+                        negPrompt = [cropGuides, 1];
+                        g.CreateNode("LTXVLatentUpsampler", new JObject()
+                        {
+                            ["vae"] = g.FinalVae,
+                            ["samples"] = NodePath(cropGuides, 2),
+                            ["upscale_model"] = NodePath("27", 0)
+                        }, "26");
+                        string reconcat = g.CreateNode("LTXVConcatAVLatent", new JObject()
+                        {
+                            ["video_latent"] = NodePath("26", 0),
+                            ["audio_latent"] = g.FinalLatentAudio
+                        });
+                        g.FinalSamples = [reconcat, 0];
+                    }
+                    else
+                    {
+                        throw new SwarmUserErrorException($"Cannot latent-upscale for {g.CurrentCompatClass()}");
+                    }
                 }
                 JArray model = g.FinalModel;
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.RefinerHyperTile, out int tileSize))

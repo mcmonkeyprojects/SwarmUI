@@ -251,10 +251,25 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 ## Lightricks LTX Video 2
 
-- SwarmUI support for LTXV-2 is in-progress.
+- LTXV-2 is the first proper Audio+Video combo model available as open source
+- SwarmUI has basic support for LTXV-2 (however the model is new and has very different tech than usual, so some edge cases are weird)
     - Download the model from [Lightricks](<https://huggingface.co/Lightricks/LTX-2/tree/main>)
     - Save in `Stable-Diffusion` models folder
     - Details TBD
+- LTXV-2 has a dedicated latent spatial upscler model
+    - If you want to use it, download [ltx-2-spatial-upscaler-x2-1.0.safetensors](<https://huggingface.co/Lightricks/LTX-2/blob/main/ltx-2-spatial-upscaler-x2-1.0.safetensors>)
+    - save it to `(SwarmUI)/Models/latent_upscale_models`
+    - Set `Refiner Upscale` to 2, select the model as the `Refiner Upscale Method` parameter, and set `Refiner Control Percentage` to 0.5. Set your base resolution to half of your target (eg 320 instead of 640).
+        - The upscaler is hardlocked at 2x and will not work at any other upscale amount.
+- Parameters:
+    - **Prompt:** LTXV really needs long prompts to accomplish anything.
+    - **CFG Scale:** The regular model uses normal CFG values such as ~4, the distilled model uses `1`.
+    - **Steps:** The regular model uses normal step values, 20+. The distilled model uses `8` but works at `4`.
+    - **Negative Prompt:** Reference workflow suggests using this giant negative:
+        <details>
+            <summary>Giant negative</summary>
+            `blurry, out of focus, overexposed, underexposed, low contrast, washed out colors, excessive noise, grainy texture, poor lighting, flickering, motion blur, distorted proportions, unnatural skin tones, deformed facial features, asymmetrical face, missing facial features, extra limbs, disfigured hands, wrong hand count, artifacts around text, unreadable text on shirt or hat, incorrect lettering on cap (“PNTR”), incorrect t-shirt slogan (“JUST DO IT”), missing microphone, misplaced microphone, inconsistent perspective, camera shake, incorrect depth of field, background too sharp, background clutter, distracting reflections, harsh shadows, inconsistent lighting direction, color banding, cartoonish rendering, 3D CGI look, unrealistic materials, uncanny valley effect, incorrect ethnicity, wrong gender, exaggerated expressions, smiling, laughing, exaggerated sadness, wrong gaze direction, eyes looking at camera, mismatched lip sync, silent or muted audio, distorted voice, robotic voice, echo, background noise, off-sync audio, missing sniff sounds, incorrect dialogue, added dialogue, repetitive speech, jittery movement, awkward pauses, incorrect timing, unnatural transitions, inconsistent framing, tilted camera, missing door or shelves, missing shallow depth of field, flat lighting, inconsistent tone, cinematic oversaturation, stylized filters, or AI artifacts.`
+        </details>
 
 # Wan 2.1
 
