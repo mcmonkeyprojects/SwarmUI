@@ -403,7 +403,7 @@ public static class Utilities
         return JObject.FromObject(obj.Properties().OrderBy(p => sort(p.Name)).ToDictionary(p => p.Name, p => p.Value));
     }
 
-    /// <summary>(Experimental) aggressively simply low-mem ToString for JSON data. Dense, spaceless, unformatted.</summary>
+    /// <summary>Aggressively simple low-mem ToString for JSON data. Dense, spaceless, unformatted.</summary>
     public static void ToStringFast(this JToken jval, StringBuilder builder)
     {
         if (jval is JObject jobj)

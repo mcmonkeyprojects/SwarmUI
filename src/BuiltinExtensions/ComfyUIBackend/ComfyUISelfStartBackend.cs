@@ -82,7 +82,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
-    public static string SwarmValidatedFrontendVersion = "1.34.9";
+    public static string SwarmValidatedFrontendVersion = "1.35.9";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
@@ -96,7 +96,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("pydantic_settings", "pydantic-settings"),
         ("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}"),
         ("alembic", "alembic"),
-        ("comfy-kitchen", "comfy-kitchen"),
+        ("comfy_kitchen", "comfy-kitchen"),
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
