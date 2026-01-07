@@ -573,7 +573,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             string metadata = StringConversionHelper.UTF8Encoding.GetString(output, 8, metaLength);
             JObject jmeta = Utilities.ParseToJson(metadata);
             MediaType type = MediaType.ImageJpg;
-            if (jmeta.TryGetValue("mime_type", out JToken mimeType))
+            if (jmeta.TryGetValue("mime_type", out JToken mimeType) || jmeta.TryGetValue("image_type", out mimeType))
             {
                 type = MediaType.TypesByMimeType.GetValueOrDefault($"{mimeType}", MediaType.ImageJpg);
             }

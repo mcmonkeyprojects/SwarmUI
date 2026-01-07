@@ -54,7 +54,10 @@ class SwarmSaveImageWS:
             else:
                 i = 255.0 * image.cpu().numpy()
                 img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-                pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
+                def do_save(out):
+                    img.save(out, format='PNG')
+                send_image_to_server_raw(2, do_save, SPECIAL_ID)
+                #pbar.update_absolute(step, SPECIAL_ID, ("PNG", img, None))
             step += 1
 
         return {}
