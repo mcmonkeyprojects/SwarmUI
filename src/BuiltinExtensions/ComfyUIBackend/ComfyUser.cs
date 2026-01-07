@@ -45,6 +45,8 @@ public class ComfyUser
     /// <summary>If true, this user wants an exclusive backend reservation.</summary>
     public bool WantsReserve = false;
 
+    public JObject FeatureFlagReport = null;
+
     /// <summary>The user data socket.</summary>
     public WebSocket Socket;
 
@@ -55,6 +57,15 @@ public class ComfyUser
     public ConcurrentQueue<(Memory<byte>, WebSocketMessageType, bool)> SendToServersQueue = [];
 
     public AsyncAutoResetEvent NewClientDataEvent = new(false);
+
+    public async Task AddClient(ComfyClientData client)
+    {
+        Clients.TryAdd(client, client);
+        if (FeatureFlagReport is not null)
+        {
+            await client.Socket.SendAsync(FeatureFlagReport.ToString(Newtonsoft.Json.Formatting.None).EncodeUTF8(), WebSocketMessageType.Text, true, Program.GlobalProgramCancel);
+        }
+    }
 
     public void NewMessageToClient(Memory<byte> data, WebSocketMessageType type, bool endOfMessage)
     {
@@ -108,6 +119,23 @@ public class ComfyUser
                     if (received.CloseStatus.HasValue || ClientIsClosed.IsCancellationRequested || Program.GlobalProgramCancel.IsCancellationRequested)
                     {
                         return;
+                    }
+                    if (received.MessageType == WebSocketMessageType.Text && received.EndOfMessage && received.Count < 8192 * 10 && recvBuf[0] == '{')
+                    {
+                        string rawText = "";
+                        try
+                        {
+                            rawText = StringConversionHelper.UTF8Encoding.GetString(recvBuf[0..received.Count]);
+                            JObject parsed = rawText.ParseToJson();
+                            if (parsed.TryGetValue("type", out JToken typeTok) && $"{typeTok}" == "feature_flags")
+                            {
+                                FeatureFlagReport = parsed;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logs.Error($"Failed to parse ComfyUI user message \"{rawText.Replace('\n', ' ')}\": {ex.ReadableString()}");
+                        }
                     }
                     if (received.MessageType == WebSocketMessageType.Binary || received.MessageType == WebSocketMessageType.Text)
                     {

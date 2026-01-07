@@ -15,6 +15,7 @@ using System.Web;
 using Newtonsoft.Json;
 using System.Buffers.Binary;
 using SwarmUI.Media;
+using SwarmUI.WebAPI;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -257,6 +258,15 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 Logs.Verbose("Need to connect a websocket...");
                 id = Guid.NewGuid().ToString();
                 socket = await NetworkBackendUtils.ConnectWebsocket(APIAddress, $"ws?clientId={id}");
+                await socket.SendJson(new JObject()
+                {
+                    ["type"] = "feature_flags",
+                    ["data"] = new JObject()
+                    {
+                        ["supports_preview_metadata"] = true
+                        // supports_manager_v4_ui
+                    }
+                }, API.WebsocketTimeout);
                 Logs.Verbose("Connected.");
             }
         }
