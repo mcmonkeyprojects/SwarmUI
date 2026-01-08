@@ -530,6 +530,7 @@ public class SwarmSwarmBackend : AbstractT2IBackend
         {
             req[T2IParamTypes.ForwardRawBackendData.Type.ID] = true;
         }
+        req[T2IParamTypes.ForwardSwarmData.Type.ID] = true;
         return req;
     }
 
@@ -620,6 +621,20 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                         string datab64 = rawData["data"].ToString();
                         byte[] data = Convert.FromBase64String(datab64);
                         user_input.ReceiveRawBackendData?.Invoke(type, data);
+                    }
+                    else if (response.TryGetValue("raw_swarm_info", out JToken rawSwarmInfoTok) && rawSwarmInfoTok is JObject rawSwarmInfo)
+                    {
+                        if (rawSwarmInfo.TryGetValue("params_used", out JToken paramsUsed))
+                        {
+                            foreach (JToken paramUsed in paramsUsed)
+                            {
+                                user_input.ParamsQueried.Add($"{paramsUsed}");
+                            }
+                        }
+                        if (user_input.Get(T2IParamTypes.ForwardSwarmData, false))
+                        {
+                            takeOutput(response);
+                        }
                     }
                     else
                     {
