@@ -287,13 +287,13 @@ public partial class WorkflowGenerator
             {
                 ["batch_size"] = batchSize,
                 ["length"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
-                ["height"] = height / 2, // TODO: These divides by two are wonk
-                ["width"] = width / 2
+                ["height"] = height,
+                ["width"] = width
             });
             string emptyAudio = CreateNode("LTXVEmptyLatentAudio", new JObject()
             {
                 ["batch_size"] = batchSize,
-                ["frame_number"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
+                ["frames_number"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
                 ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24),
                 ["audio_vae"] = FinalAudioVae
             });
@@ -576,7 +576,7 @@ public partial class WorkflowGenerator
         public string GetGemma3_12bModel()
         {
             // TODO: Selector param?
-            return RequireClipModel("gemma_3_12B_it.safetensors", "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it.safetensors", "56eaa964a0d9325d2dc9ecaf7759bfaf0fac78ae36c789bed6e03e275a3729ec", null);
+            return RequireClipModel("gemma_3_12B_it_fp8_e4m3fn.safetensors", "https://huggingface.co/GitMylo/LTX-2-comfy_gemma_fp8_e4m3fn/resolve/main/gemma_3_12B_it_fp8_e4m3fn.safetensors", "38c8ca98d01afc93a04f9fb18255755884b9eb52b7b40080076e9c892609751b", null);
         }
 
         public void LoadClip(string type, string model)

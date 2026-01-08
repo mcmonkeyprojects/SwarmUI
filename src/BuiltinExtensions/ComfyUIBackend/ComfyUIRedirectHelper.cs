@@ -163,7 +163,7 @@ public class ComfyUIRedirectHelper
                 outSocket.Options.KeepAliveInterval = TimeSpan.FromSeconds(30);
                 await outSocket.ConnectAsync(new Uri($"{scheme}://{addr}/{path}"), Program.GlobalProgramCancel);
                 ComfyClientData client = new() { Address = localback.WebAddress, Backend = localback.Backend, Socket = outSocket };
-                user.Clients.TryAdd(client, client);
+                await user.AddClient(client);
                 tasks.Add(Task.Run(async () =>
                 {
                     try

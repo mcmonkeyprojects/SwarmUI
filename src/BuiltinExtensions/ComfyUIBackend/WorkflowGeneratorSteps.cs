@@ -1345,16 +1345,51 @@ public class WorkflowGeneratorSteps
                     {
                         ["model_name"] = upscaleMethod.After("latentmodel-")
                     }, "27");
-                    g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
+                    if (g.IsHunyuanVideo15())
                     {
-                        ["model"] = NodePath("27", 0),
-                        ["samples"] = g.FinalSamples,
-                        ["upscale_method"] = "bilinear",
-                        ["width"] = width,
-                        ["height"] = height,
-                        ["crop"] = "disabled"
-                    }, "26");
-                    g.FinalSamples = ["26", 0];
+                        g.CreateNode("HunyuanVideo15LatentUpscaleWithModel", new JObject()
+                        {
+                            ["model"] = NodePath("27", 0),
+                            ["samples"] = g.FinalSamples,
+                            ["upscale_method"] = "bilinear",
+                            ["width"] = width,
+                            ["height"] = height,
+                            ["crop"] = "disabled"
+                        }, "26");
+                        g.FinalSamples = ["26", 0];
+                    }
+                    else if (g.IsLTXV2())
+                    {
+                        string separated = g.CreateNode("LTXVSeparateAVLatent", new JObject()
+                        {
+                            ["av_latent"] = g.FinalSamples
+                        });
+                        g.FinalLatentAudio = [separated, 1];
+                        string cropGuides = g.CreateNode("LTXVCropGuides", new JObject()
+                        {
+                            ["positive"] = prompt,
+                            ["negative"] = negPrompt,
+                            ["latent"] = NodePath(separated, 0)
+                        });
+                        prompt = [cropGuides, 0];
+                        negPrompt = [cropGuides, 1];
+                        g.CreateNode("LTXVLatentUpsampler", new JObject()
+                        {
+                            ["vae"] = g.FinalVae,
+                            ["samples"] = NodePath(cropGuides, 2),
+                            ["upscale_model"] = NodePath("27", 0)
+                        }, "26");
+                        string reconcat = g.CreateNode("LTXVConcatAVLatent", new JObject()
+                        {
+                            ["video_latent"] = NodePath("26", 0),
+                            ["audio_latent"] = g.FinalLatentAudio
+                        });
+                        g.FinalSamples = [reconcat, 0];
+                    }
+                    else
+                    {
+                        throw new SwarmUserErrorException($"Cannot latent-upscale for {g.CurrentCompatClass()}");
+                    }
                 }
                 JArray model = g.FinalModel;
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.RefinerHyperTile, out int tileSize))
@@ -1659,7 +1694,7 @@ public class WorkflowGeneratorSteps
                 int? videoFps = g.UserInput.TryGet(T2IParamTypes.VideoFPS, out int fpsRaw) ? fpsRaw : null;
                 double? videoCfg = g.UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_Video, false) ?? g.UserInput.GetNullable(T2IParamTypes.VideoCFG, T2IParamInput.SectionID_Video);
                 int steps = g.UserInput.GetNullable(T2IParamTypes.Steps, T2IParamInput.SectionID_Video, false) ?? g.UserInput.Get(T2IParamTypes.VideoSteps, 20, sectionId: T2IParamInput.SectionID_Video);
-                string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "webp").ToLowerFast();
+                string format = g.UserInput.Get(T2IParamTypes.VideoFormat, "h264-mp4").ToLowerFast();
                 string resFormat = g.UserInput.Get(T2IParamTypes.VideoResolution, "Model Preferred");
                 long seed = g.UserInput.Get(T2IParamTypes.Seed) + 42;
                 string prompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
@@ -1895,9 +1930,25 @@ public class WorkflowGeneratorSteps
                 JArray source = data["inputs"]["samples"] as JArray;
                 string sourceNode = $"{source[0]}";
                 JObject actualNode = g.Workflow[sourceNode] as JObject;
-                if ($"{actualNode["class_type"]}" == "VAEEncode")
+                JArray myVae = data["inputs"]["vae"] as JArray;
+                if ($"{actualNode["class_type"]}" == "LTXVSeparateAVLatent")
                 {
-                    JArray myVae = data["inputs"]["vae"] as JArray;
+                    JArray subSource = actualNode["inputs"]["av_latent"] as JArray;
+                    string subSourceNode = $"{subSource[0]}";
+                    JObject actualSubNode = g.Workflow[subSourceNode] as JObject;
+                    if ($"{actualSubNode["class_type"]}" == "VAEEncode")
+                    {
+                        JArray srcVae = actualSubNode["inputs"]["vae"] as JArray;
+                        if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
+                        {
+                            JArray srcImage = actualSubNode["inputs"]["pixels"] as JArray;
+                            g.ReplaceNodeConnection([id, 0], srcImage);
+                            g.Workflow.Remove(id);
+                        }
+                    }
+                }
+                else if ($"{actualNode["class_type"]}" == "VAEEncode")
+                {
                     JArray srcVae = actualNode["inputs"]["vae"] as JArray;
                     if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
                     {
@@ -1909,6 +1960,8 @@ public class WorkflowGeneratorSteps
             }
             g.RunOnNodesOfClass("VAEDecode", fixDecode);
             g.RunOnNodesOfClass("VAEDecodeTiled", fixDecode);
+            g.RemoveClassIfUnused("LTXVAudioVAEDecode");
+            g.RemoveClassIfUnused("LTXVSeparateAVLatent");
             g.RemoveClassIfUnused("VAEEncode");
             g.RemoveClassIfUnused("LTXVConditioning");
             g.RemoveClassIfUnused("CLIPTextEncode");

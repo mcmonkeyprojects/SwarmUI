@@ -15,6 +15,7 @@ using System.Web;
 using Newtonsoft.Json;
 using System.Buffers.Binary;
 using SwarmUI.Media;
+using SwarmUI.WebAPI;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -257,6 +258,15 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 Logs.Verbose("Need to connect a websocket...");
                 id = Guid.NewGuid().ToString();
                 socket = await NetworkBackendUtils.ConnectWebsocket(APIAddress, $"ws?clientId={id}");
+                await socket.SendJson(new JObject()
+                {
+                    ["type"] = "feature_flags",
+                    ["data"] = new JObject()
+                    {
+                        ["supports_preview_metadata"] = true
+                        // supports_manager_v4_ui
+                    }
+                }, API.WebsocketTimeout);
                 Logs.Verbose("Connected.");
             }
         }
@@ -563,7 +573,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             string metadata = StringConversionHelper.UTF8Encoding.GetString(output, 8, metaLength);
             JObject jmeta = Utilities.ParseToJson(metadata);
             MediaType type = MediaType.ImageJpg;
-            if (jmeta.TryGetValue("mime_type", out JToken mimeType))
+            if (jmeta.TryGetValue("mime_type", out JToken mimeType) || jmeta.TryGetValue("image_type", out mimeType))
             {
                 type = MediaType.TypesByMimeType.GetValueOrDefault($"{mimeType}", MediaType.ImageJpg);
             }
