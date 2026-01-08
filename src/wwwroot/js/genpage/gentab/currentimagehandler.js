@@ -30,6 +30,7 @@ class ImageFullViewHelper {
         this.fixButtonDelay = null;
         this.lastClosed = 0;
         this.showMetadata = true;
+        this.didPasteState = false;
     }
 
     getImgOrContainer() {
@@ -159,6 +160,7 @@ class ImageFullViewHelper {
         img.style.top = `${state.top}px`;
         img.style.height = `${state.height}%`;
         this.toggleMetadataVisibility(state.showMetadata);
+        this.didPasteState = true;
     }
 
     onWheel(e) {
@@ -211,6 +213,9 @@ class ImageFullViewHelper {
 
     /** Format fixes that need to run after the image content has loaded. */
     onImgLoad() {
+        if (this.didPasteState) {
+            return;
+        }
         if (getUserSetting('ui.defaulthidemetadatainfullview')) {
             let img = this.getImg();
             let width = img.naturalWidth ?? img.videoWidth;
@@ -227,6 +232,7 @@ class ImageFullViewHelper {
     }
 
     showImage(src, metadata, batchId = null) {
+        this.didPasteState = false;
         this.currentSrc = src;
         this.currentMetadata = metadata;
         this.currentBatchId = batchId;
