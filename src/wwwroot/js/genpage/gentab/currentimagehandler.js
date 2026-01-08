@@ -325,7 +325,7 @@ class ImageFullViewHelper {
     updateCounter() {
         let counterElem = getRequiredElementById('image_fullview_modal_counter');
         if (!this.currentSrc) {
-            counterElem.textContent = `1/${items.length} `;
+            counterElem.textContent = ``;
             return;
         }
         let items = [];
@@ -333,14 +333,16 @@ class ImageFullViewHelper {
         if (this.currentBatchId == 'history' && lastHistoryImageDiv && lastHistoryImageDiv.parentElement) {
             items = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
             index = items.findIndex(div => div == lastHistoryImageDiv);
-        } else {
+        }
+        else {
             let currentImageBatchDiv = getRequiredElementById('current_image_batch');
             items = [...currentImageBatchDiv.getElementsByClassName('image-block')].filter(block => !block.classList.contains('image-block-placeholder'));
             index = items.findIndex(block => block.dataset.src == this.currentSrc);
         }
         if (index != -1 && items.length > 0) {
             counterElem.textContent = `${index + 1}/${items.length} `;
-        } else {
+        }
+        else {
             counterElem.textContent = `1/${items.length} `;
         }
     }
