@@ -699,7 +699,7 @@ public class T2IModelHandler
                 Date = limitLength(pickBest(metaHeader?.Value<string>("modelspec.date"), metaHeader?.Value<string>("date")), basicLimit),
                 Preprocessor = limitLength(pickBest(metaHeader?.Value<string>("modelspec.preprocessor"), metaHeader?.Value<string>("preprocessor")), basicLimit),
                 Tags = limitSize(tags, 128),
-                IsNegativeEmbedding = (pickBest(metaHeader?.Value<string>("modelspec.is_negative_embedding"), metaHeader?.Value<string>("is_negative_embedding")) ?? "false") == "true",
+                IsNegativeEmbedding = (pickBest(metaHeader?.Value<string>("modelspec.is_negative_embedding"), metaHeader?.Value<string>("is_negative_embedding")) ?? "false").ToLowerFast() == "true",
                 LoraDefaultWeight = limitLength(pickBest(metaHeader?.Value<string>("modelspec.lora_default_weight"), metaHeader?.Value<string>("lora_default_weight")), basicLimit),
                 LoraDefaultConfinement = limitLength(pickBest(metaHeader?.Value<string>("modelspec.lora_default_confinement"), metaHeader?.Value<string>("lora_default_confinement")), basicLimit),
                 PredictionType = limitLength(pickBest(metaHeader?.Value<string>("modelspec.prediction_type"), metaHeader?.Value<string>("prediction_type")), basicLimit),

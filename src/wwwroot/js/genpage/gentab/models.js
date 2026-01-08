@@ -37,7 +37,7 @@ class Model {
 
     /** Returns the 'data-cleanname' for use in a dropdown. */
     cleanDropdown() {
-        return `${escapeHtmlNoBr(this.cleanName)} <span class="model-short-code">${this.modelClass?.compatClass?.shortCode}</span>`;
+        return `${escapeHtmlNoBr(this.cleanName)} <span class="model-short-code">${this.modelClass?.compatClass?.shortCode ?? ''}</span>`;
     }
 }
 
