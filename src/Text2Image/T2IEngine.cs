@@ -349,7 +349,7 @@ namespace SwarmUI.Text2Image
                         ex = e2;
                     }
                 }
-                if (ex is AbstractT2IBackend.PleaseRedirectException)
+                if (ex is AbstractBackend.PleaseRedirectException)
                 {
                     claim.Extend(gens: 1);
                     await CreateImageTask(user_input, batchId, claim, output, setError, isWS, backendTimeoutMin, saveImages, false);

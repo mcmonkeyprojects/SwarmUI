@@ -622,13 +622,14 @@ public class SwarmSwarmBackend : AbstractT2IBackend
                         byte[] data = Convert.FromBase64String(datab64);
                         user_input.ReceiveRawBackendData?.Invoke(type, data);
                     }
-                    else if (response.TryGetValue("raw_swarm_info", out JToken rawSwarmInfoTok) && rawSwarmInfoTok is JObject rawSwarmInfo)
+                    else if (response.TryGetValue("raw_swarm_data", out JToken rawSwarmDataTok) && rawSwarmDataTok is JObject rawSwarmData)
                     {
-                        if (rawSwarmInfo.TryGetValue("params_used", out JToken paramsUsed))
+                        Logs.Verbose($"Got raw spawn data from websocket: {rawSwarmData.ToDenseDebugString(true)}");
+                        if (rawSwarmData.TryGetValue("params_used", out JToken paramsUsed))
                         {
                             foreach (JToken paramUsed in paramsUsed)
                             {
-                                user_input.ParamsQueried.Add($"{paramsUsed}");
+                                user_input.ParamsQueried.Add($"{paramUsed}");
                             }
                         }
                         if (user_input.Get(T2IParamTypes.ForwardSwarmData, false))
