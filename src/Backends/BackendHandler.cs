@@ -1205,13 +1205,31 @@ public class BackendHandler
                 }
                 else if (Environment.TickCount64 - lastUpdate > Program.ServerSettings.Backends.MaxTimeoutMinutes * 60 * 1000)
                 {
+                    Logs.Error($"[BackendHandler] {T2IBackendRequests.Count} requests stuck waiting due to backend timeout failure. Server backends are failing to respond. Will aggressively force restart.");
                     lastUpdate = Environment.TickCount64;
-                    Logs.Error($"[BackendHandler] {T2IBackendRequests.Count} requests denied due to backend timeout failure. Server backends are failing to respond.");
-                    foreach (T2IBackendRequest request in T2IBackendRequests.Values.ToArray())
+                    if (Program.ServerSettings.Backends.ForceRestartOnTimeout)
                     {
-                        request.Failure = new TimeoutException($"No backend has responded in {Program.ServerSettings.Backends.MaxTimeoutMinutes} minutes.");
-                        anyMoved = true;
-                        request.CompletedEvent.Set();
+                        List<T2IBackendData> backends = [.. EnumerateT2IBackends];
+                        List<Task> tasks = [];
+                        foreach (T2IBackendData backend in backends)
+                        {
+                            tasks.Add(backend.Backend.DoShutdownNow());
+                        }
+                        Task.WhenAll(tasks).Wait(Program.GlobalProgramCancel);
+                        foreach (T2IBackendData backend in backends)
+                        {
+                            DoInitBackend(backend);
+                        }
+                    }
+                    else
+                    {
+                        Logs.Error($"[BackendHandler] {T2IBackendRequests.Count} requests denied due to backend timeout failure. Server backends are failing to respond.");
+                        foreach (T2IBackendRequest request in T2IBackendRequests.Values.ToArray())
+                        {
+                            request.Failure = new TimeoutException($"No backend has responded in {Program.ServerSettings.Backends.MaxTimeoutMinutes} minutes.");
+                            anyMoved = true;
+                            request.CompletedEvent.Set();
+                        }
                     }
                 }
                 mark("PostComplete");
