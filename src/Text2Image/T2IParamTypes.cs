@@ -635,7 +635,7 @@ public class T2IParamTypes
             "None", IgnoreIf: "None", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, GetValues: listVaes, Subtype: "VAE", Group: GroupAdvancedModelAddons, ChangeWeight: 7
             ));
         AutomaticVAE = Register<bool>(new("Automatic VAE", "Whether to automatically select the VAE based on the main model and your user settings.\nOnly applied if a VAE is not specified.",
-            "false", IgnoreIf: "false", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, VisibleNormally: false, Group: GroupAdvancedModelAddons, ChangeWeight: 7
+            "false", IgnoreIf: "false", Permission: Permissions.ModelParams, IsAdvanced: true, Toggleable: true, VisibleNormally: false, Group: GroupAdvancedModelAddons, ChangeWeight: 7, Nonreusable: true
             ));
         Loras = Register<List<string>>(new("LoRAs", "LoRAs (Low-Rank-Adaptation Models) are a way to customize the content of a model without totally replacing it.\nYou can enable one or several LoRAs over top of one model.",
             "", IgnoreIf: "", IsAdvanced: true, Clean: (_, s) => CleanModelNameList(s), GetValues: (session) => CleanModelList(Program.T2IModelSets["LoRA"].ListModelNamesFor(session)), Group: GroupAdvancedModelAddons, VisibleNormally: false, ChangeWeight: 8, Subtype: "LoRA"
