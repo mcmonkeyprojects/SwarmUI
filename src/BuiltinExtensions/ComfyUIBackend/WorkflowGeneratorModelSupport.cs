@@ -569,14 +569,12 @@ public partial class WorkflowGenerator
 
         public string GetGemma2Model()
         {
-            // TODO: Selector param?
-            return RequireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd", null);
+            return RequireClipModel("gemma_2_2b_fp16.safetensors", "https://huggingface.co/Comfy-Org/Lumina_Image_2.0_Repackaged/resolve/main/split_files/text_encoders/gemma_2_2b_fp16.safetensors", "29761442862f8d064d3f854bb6fabf4379dcff511a7f6ba9405a00bd0f7e2dbd", T2IParamTypes.GemmaModel);
         }
 
         public string GetGemma3_12bModel()
         {
-            // TODO: Selector param?
-            return RequireClipModel("gemma_3_12B_it_fp8_e4m3fn.safetensors", "https://huggingface.co/GitMylo/LTX-2-comfy_gemma_fp8_e4m3fn/resolve/main/gemma_3_12B_it_fp8_e4m3fn.safetensors", "38c8ca98d01afc93a04f9fb18255755884b9eb52b7b40080076e9c892609751b", null);
+            return RequireClipModel("gemma_3_12B_it_fp8_e4m3fn.safetensors", "https://huggingface.co/GitMylo/LTX-2-comfy_gemma_fp8_e4m3fn/resolve/main/gemma_3_12B_it_fp8_e4m3fn.safetensors", "38c8ca98d01afc93a04f9fb18255755884b9eb52b7b40080076e9c892609751b", T2IParamTypes.GemmaModel);
         }
 
         public void LoadClip(string type, string model)
