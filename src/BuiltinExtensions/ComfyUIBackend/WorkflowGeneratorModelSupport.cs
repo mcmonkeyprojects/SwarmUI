@@ -574,7 +574,7 @@ public partial class WorkflowGenerator
 
         public string GetGemma3_12bModel()
         {
-            return RequireClipModel("gemma_3_12B_it_fp8_e4m3fn.safetensors", "https://huggingface.co/GitMylo/LTX-2-comfy_gemma_fp8_e4m3fn/resolve/main/gemma_3_12B_it_fp8_e4m3fn.safetensors", "38c8ca98d01afc93a04f9fb18255755884b9eb52b7b40080076e9c892609751b", T2IParamTypes.GemmaModel);
+            return RequireClipModel("gemma_3_12B_it.safetensors", "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors", "aaca463d11e6d8d2a4bdb0d6299214c15ef78a3f73e0ef8113d5a9d0219b3f6d", T2IParamTypes.GemmaModel);
         }
 
         public void LoadClip(string type, string model)
