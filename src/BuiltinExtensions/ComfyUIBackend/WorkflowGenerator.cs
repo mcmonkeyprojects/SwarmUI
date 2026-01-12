@@ -345,7 +345,7 @@ public partial class WorkflowGenerator
             float tencWeight = tencWeights is null || i >= tencWeights.Count ? weight : float.Parse(tencWeights[i]);
             string id = GetStableDynamicID(2000, i);
             string specialFormat = FinalLoadedModel?.Metadata?.SpecialFormat;
-            if (specialFormat == "nunchaku" || specialFormat == "nunchaku-fp4")
+            if (IsFlux() && (specialFormat == "nunchaku" || specialFormat == "nunchaku-fp4"))
             {
                 // This is dirty to use this alt node, but it seems required for Nunchaku.
                 string newId = CreateNode("NunchakuFluxLoraLoader", new JObject()
