@@ -580,7 +580,7 @@ public static class NetworkBackendUtils
                 while ((line = fixedReader.ReadLine()) != null)
                 {
                     string lineLow = line.ToLowerFast();
-                    if (lineLow.StartsWith("traceback (") || lineLow.Contains("error: "))
+                    if (lineLow.StartsWith("traceback (") || (lineLow.Contains("error: ") && !lineLow.Contains("found comfy_kitchen backend")))
                     {
                         keepShowing = true;
                         Logs.Warning($"[{nameSimple}/STDERR] {line}");
