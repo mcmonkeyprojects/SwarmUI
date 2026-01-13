@@ -11,8 +11,6 @@ namespace SwarmUI.Utils;
 /// <summary>Central class for processing wildcard files.</summary>
 public class WildcardsHelper
 {
-    public const int ListMaxChars = 512;
-
     public class Wildcard
     {
         public string Name;
@@ -40,7 +38,7 @@ public class WildcardsHelper
             return new()
             {
                 ["name"] = Name,
-                ["raw"] = truncate && Raw.Length > ListMaxChars ? Raw[..ListMaxChars] : Raw,
+                ["raw"] = truncate && Raw.Length > 512 ? Raw[..512] + "..." : Raw,
                 ["image"] = previewImg
             };
         }
