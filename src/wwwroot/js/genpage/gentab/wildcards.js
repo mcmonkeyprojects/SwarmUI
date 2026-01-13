@@ -152,28 +152,31 @@ class WildcardHelpers {
         if (card == null) {
             return;
         }
-        this.curWildcardMenuWildcard = card;
-        clearMediaFileInput(this.imageElem);
-        this.enableImageElem.checked = false;
-        let curImg = currentImageHelper.getCurrentImage();
-        this.nameElem.value = card.name;
-        setTextContent(this.contentsElem, card.raw);
-        this.processContents();
-        this.errorBoxElem.innerText = '';
-        this.modalMayClose = true;
-        let run = () => {
-            triggerChangeFor(this.enableImageElem);
-            $(this.modalElem).modal('show');
-        };
-        if (curImg && curImg.tagName == 'IMG') {
-            setMediaFileDirect(this.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
-                this.enableImageElem.checked = false;
+        genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: card.name }, data => {
+            let fullCard = data;
+            this.curWildcardMenuWildcard = fullCard;
+            clearMediaFileInput(this.imageElem);
+            this.enableImageElem.checked = false;
+            let curImg = currentImageHelper.getCurrentImage();
+            this.nameElem.value = fullCard.name;
+            setTextContent(this.contentsElem, fullCard.raw);
+            this.processContents();
+            this.errorBoxElem.innerText = '';
+            this.modalMayClose = true;
+            let run = () => {
+                triggerChangeFor(this.enableImageElem);
+                $(this.modalElem).modal('show');
+            };
+            if (curImg && curImg.tagName == 'IMG') {
+                setMediaFileDirect(this.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
+                    this.enableImageElem.checked = false;
+                    run();
+                });
+            }
+            else {
                 run();
-            });
-        }
-        else {
-            run();
-        }
+            }
+        });
     }
 
     wildcardModalError(error) {

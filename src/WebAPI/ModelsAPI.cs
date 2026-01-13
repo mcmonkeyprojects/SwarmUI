@@ -228,7 +228,7 @@ public static class ModelsAPI
             {
                 if (tryMatch(file))
                 {
-                    WildcardsHelper.Wildcard card = WildcardsHelper.GetWildcard(file);
+                    WildcardsHelper.Wildcard card = WildcardsHelper.GetWildcard(file, truncate: true);
                     files.Add(new(card.Name, card.Name.AfterLast('/'), card.TimeCreated, card.TimeModified, card.GetNetObject(dataImages)));
                     if (files.Count > sanityCap)
                     {

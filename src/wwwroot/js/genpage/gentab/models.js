@@ -701,9 +701,6 @@ class ModelBrowserWrapper {
                 } });
             }
             let raw = model.data.raw;
-            if (raw.length > 512) {
-                raw = raw.substring(0, 512) + '...';
-            }
             detail_list.push(escapeHtml(raw).replaceAll('\n', '').replaceAll('<br>', ', '));
             description = `<span class="wildcard_title">${escapeHtml(name)}</span><br>${escapeHtml(raw)}`;
             let match = wildcardHelpers.matchWildcard(this.promptBox.value, model.data.name);
