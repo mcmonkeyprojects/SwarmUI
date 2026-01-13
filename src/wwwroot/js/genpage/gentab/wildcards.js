@@ -81,22 +81,13 @@ class WildcardHelpers {
         }
         this.curWildcardMenuWildcard = card;
         this.testNameElem.innerText = card.name;
-        let choice = Math.floor(Math.random() * card.options.length);
-        let val = card.options[choice];
-        this.testResultElem.value = val;
-        let button = this.testAgainButtonElem;
-        if (val.includes('<')) {
-            button.disabled = true;
-            genericRequest('TestPromptFill', {'prompt': val}, data => {
-                button.disabled = false;
-                this.testResultElem.value = data.result;
-                $('#test_wildcard_modal').modal('show');
-            });
-        }
-        else {
+        let button = this.testAgainButtonElem
+        button.disabled = true;
+        genericRequest('TestPromptFill', { 'prompt': `<wildcard:${card.name}>` }, data => {
             button.disabled = false;
+            this.testResultElem.value = data.result;
             $('#test_wildcard_modal').modal('show');
-        }
+        });
     }
 
     /** Test a wildcard again, using the same wildcard as before, in the same modal.
@@ -152,8 +143,7 @@ class WildcardHelpers {
         if (card == null) {
             return;
         }
-        genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: card.name }, data => {
-            let fullCard = data;
+        let openEditor = (fullCard) => {
             this.curWildcardMenuWildcard = fullCard;
             clearMediaFileInput(this.imageElem);
             this.enableImageElem.checked = false;
@@ -176,7 +166,15 @@ class WildcardHelpers {
             else {
                 run();
             }
-        });
+        };
+        if (card.raw === '') {
+            openEditor(card);
+        }
+        else {
+            genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: card.name }, data => {
+                openEditor(data);
+            });
+        }
     }
 
     wildcardModalError(error) {
@@ -247,19 +245,21 @@ class WildcardHelpers {
         if (card == null) {
             return;
         }
-        let name = card.name;
-        let i = 2;
-        while (`${name.toLowerCase()} - ${i}` in this.wildcardNameCheck) {
-            i++;
-        }
-        let data = {
-            'card': `${name} - ${i}`,
-            'options': card.raw,
-            'preview_image': card.image && card.image != 'imgs/model_placeholder.jpg' ? card.image : '',
-            'preview_image_metadata': null
-        }
-        genericRequest('EditWildcard', data, resData => {
-            wildcardsBrowser.browser.refresh();
+        genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: card.name }, fullCard => {
+            let name = fullCard.name;
+            let i = 2;
+            while (`${name.toLowerCase()} - ${i}` in this.wildcardNameCheck) {
+                i++;
+            }
+            let data = {
+                'card': `${name} - ${i}`,
+                'options': fullCard.raw,
+                'preview_image': fullCard.image && fullCard.image != 'imgs/model_placeholder.jpg' ? fullCard.image : '',
+                'preview_image_metadata': null
+            }
+            genericRequest('EditWildcard', data, resData => {
+                wildcardsBrowser.browser.refresh();
+            });
         });
     }
 

@@ -38,6 +38,7 @@ public class WildcardsHelper
             return new()
             {
                 ["name"] = Name,
+                ["options"] = truncate ? null : JArray.FromObject(Options),
                 ["raw"] = truncate && Raw.Length > 512 ? Raw[..512] + "..." : Raw,
                 ["image"] = previewImg
             };
