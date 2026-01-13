@@ -136,6 +136,7 @@ public class T2IModelClassSorter
         bool isLtxv(JObject h) => hasKey(h, "adaln_single.emb.timestep_embedder.linear_1.bias");
         bool isLtxvVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias") && h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias");
         bool isLtxv2(JObject h) => hasKey(h, "transformer_blocks.1.audio_to_video_attn.k_norm.weight");
+        bool isLtxv2Lora(JObject h) => hasKey(h, "transformer_blocks.0.attn1.to_k.lora_A.weight") && hasKey(h, "transformer_blocks.0.attn1.to_out.0.lora_A.weight") && hasKey(h, "transformer_blocks.0.ff.net.0.proj.lora_A.weight");
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
         bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight") || h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight");
         bool isHunyuanVideoSkyreelsImage2V(JObject h) => h.TryGetValue("img_in.proj.weight", out JToken jtok) && jtok["shape"].ToArray()[1].Value<long>() == 32;
@@ -609,6 +610,10 @@ public class T2IModelClassSorter
         Register(new() { ID = "lightricks-ltx-video-2", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
         {
             return isLtxv2(h);
+        }});
+        Register(new() { ID = "lightricks-ltx-video-2/lora", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2 LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        {
+            return isLtxv2Lora(h);
         }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
