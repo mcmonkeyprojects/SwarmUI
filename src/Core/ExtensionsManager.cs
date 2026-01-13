@@ -34,6 +34,7 @@ public class ExtensionsManager
                 "hidden" => "<span class=\"tag hidden-tag\" title=\"Should not be visible\">Hidden</span>",
                 "paid" => "<span class=\"tag paid-tag\" title=\"Requires a paid account\">Paid</span>",
                 "beta" => "<span class=\"tag beta-tag\" title=\"Not ready for general use\">Beta</span>",
+                "conflicts" => "<span class=\"tag beta-tag\" title=\"may conflict with core systems or with other extensions (eg overrides core features)\">Conflicts</span>",
                 "none" => "<span class=\"tag\" title=\"No tags\">None</span>",
                 _ => $"<abbr class=\"tag\" title=\"Unrecognized tag\">{t}</abbr>"
             };

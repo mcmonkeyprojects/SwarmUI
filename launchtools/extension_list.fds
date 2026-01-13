@@ -21,6 +21,7 @@
 #   'hidden': don't show on the main listing yet
 #   'paid': requires a paid account
 #   'beta': treat as an alpha or beta, not ready for general use
+#   'conflicts': may conflict with core systems or with other extensions (eg overrides core features)
 #   'none': no tags of relevance to add
 
 FaceTools:
@@ -208,8 +209,9 @@ SeedVR2Upscaler:
 
 WhatTheDuck:
     author: Juan Treminio
-    description: Adds some quality of life changes and optimizations for non-standard power users. See project readme for full details.
+    description: Adds potentially-breaking power tools for obscure special cases. Most users should not install this.
     url: https://github.com/jtreminio/SwarmUI-WhatTheDuckExtension
     license: MIT
     tags:
     - tools
+    - conflicts
