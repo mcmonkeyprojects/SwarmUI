@@ -205,3 +205,11 @@ SeedVR2Upscaler:
     tags:
     - parameters
     - nodes
+
+WhatTheDuck:
+    author: Juan Treminio
+    description: Adds some quality of life changes and optimizations for non-standard power users. See project readme for full details.
+    url: https://github.com/jtreminio/SwarmUI-WhatTheDuckExtension
+    license: MIT
+    tags:
+    - tools
