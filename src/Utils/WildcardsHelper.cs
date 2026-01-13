@@ -11,6 +11,8 @@ namespace SwarmUI.Utils;
 /// <summary>Central class for processing wildcard files.</summary>
 public class WildcardsHelper
 {
+    public const int ListMaxChars = 512;
+
     public class Wildcard
     {
         public string Name;
@@ -28,7 +30,7 @@ public class WildcardsHelper
         /// <summary>Max length cache, calculated in T2IParamInput.</summary>
         public string MaxLength = null;
 
-        public JObject GetNetObject(bool dataImgs = true)
+        public JObject GetNetObject(bool dataImgs = true, bool truncate = false)
         {
             string previewImg = Image ?? "imgs/model_placeholder.jpg";
             if (!dataImgs && previewImg is not null && previewImg.StartsWithFast("data:"))
@@ -38,7 +40,7 @@ public class WildcardsHelper
             return new()
             {
                 ["name"] = Name,
-                ["raw"] = Raw,
+                ["raw"] = truncate && Raw.Length > ListMaxChars ? Raw[..ListMaxChars] : Raw,
                 ["image"] = previewImg
             };
         }
@@ -79,33 +81,19 @@ public class WildcardsHelper
         }
     }
 
-    public const int ListMaxChars = 512;
-
     /// <summary>Gets the wildcard data for the specified exact wildcard name.</summary>
-    public static Wildcard GetWildcard(string name, bool truncate = false)
+    public static Wildcard GetWildcard(string name)
     {
         if (!WildcardFiles.TryGetValue(name.ToLowerFast(), out Wildcard wildcard))
         {
             return null;
-        }
-        if (truncate)
-        {
-            string fname = $"{Folder}/{name}.txt";
-            return new Wildcard
-            {
-                Name = name,
-                Raw = ReadFileText(fname, truncate: true),
-                TimeCreated = new DateTimeOffset(File.GetCreationTimeUtc(fname)).ToUnixTimeMilliseconds(),
-                TimeModified = new DateTimeOffset(File.GetLastWriteTimeUtc(fname)).ToUnixTimeMilliseconds(),
-                Image = File.Exists($"{Folder}/{name}.jpg") ? new Image(File.ReadAllBytes($"{Folder}/{name}.jpg"), MediaType.ImageJpg).AsDataString() : null
-            };
         }
         if (wildcard.Options is null)
         {
             string fname = $"{Folder}/{name}.txt";
             wildcard.TimeCreated = new DateTimeOffset(File.GetCreationTimeUtc(fname)).ToUnixTimeMilliseconds();
             wildcard.TimeModified = new DateTimeOffset(File.GetLastWriteTimeUtc(fname)).ToUnixTimeMilliseconds();
-            string rawText = ReadFileText(fname, truncate: false);
+            string rawText = StringConversionHelper.UTF8Encoding.GetString(File.ReadAllBytes(fname)).Replace("\r\n", "\n").Replace("\r", "").Replace("\uFEFF", "");
             wildcard.Raw = rawText;
             wildcard.Options = [.. rawText.Split('\n').Select(card => card.Before('#').Trim()).Where(card => !string.IsNullOrWhiteSpace(card))];
             if (wildcard.Image is null && File.Exists($"{Folder}/{name}.jpg"))
@@ -128,18 +116,5 @@ public class WildcardsHelper
             return null;
         }
         return wildcard.Options[random.Next(wildcard.Options.Length)];
-    }
-
-    /// <summary>Reads file text, optionally truncated to a max number of characters.</summary>
-    private static string ReadFileText(string path, bool truncate)
-    {
-        if (!truncate)
-        {
-            return StringConversionHelper.UTF8Encoding.GetString(File.ReadAllBytes(path)).Replace("\r\n", "\n").Replace("\r", "").Replace("\uFEFF", "");
-        }
-        using StreamReader reader = new(path, StringConversionHelper.UTF8Encoding);
-        char[] buffer = new char[ListMaxChars];
-        int charsRead = reader.Read(buffer, 0, ListMaxChars);
-        return new string(buffer, 0, charsRead).Replace("\r\n", "\n").Replace("\r", "").Replace("\uFEFF", "");
     }
 }
