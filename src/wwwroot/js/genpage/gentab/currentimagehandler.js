@@ -19,6 +19,9 @@ class ImageFullViewHelper {
             }
             this.noClose = false;
         }, true);
+        this.modalJq.on('hidden.bs.modal', () => {
+            this.close();
+        });
         this.lastMouseX = 0;
         this.lastMouseY = 0;
         this.isDragging = false;
@@ -314,13 +317,12 @@ class ImageFullViewHelper {
     }
 
     close() {
-        if (!this.isOpen()) {
-            return;
+        if (this.isOpen()) {
+            this.modalJq.modal('hide');
+            this.lastClosed = Date.now();
         }
         this.isDragging = false;
         this.didDrag = false;
-        this.modalJq.modal('hide');
-        this.lastClosed = Date.now();
         this.content.innerHTML = '';
     }
 
