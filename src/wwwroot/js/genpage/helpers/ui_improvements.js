@@ -585,6 +585,24 @@ class VideoControls {
         this.progressBar.addEventListener('mousedown', () => { this.isDragging = true; uiImprover.videoControlDragging = this; });
         this.volumeSlider.addEventListener('input', (e) => this.setVolume(e));
         this.volumeBtn.addEventListener('click', () => this.toggleMute());
+        let userSetting = typeof getUserSetting == 'function' ? getUserSetting('audio.videoaudiobehavior', 'last') : 'play';
+        if (userSetting == 'play') {
+            this.video.muted = false;
+        }
+        else if (userSetting == 'silent') {
+            this.volumeSlider.value = 0;
+            this.volumeSlider.dataset.lastRealVolume = "0";
+            this.video.volume = 0;
+            this.video.muted = true;
+        }
+        else { // Remember last
+            let lastVolume = localStorage.getItem('audiovolume_last') || "100";
+            let lastMuted = localStorage.getItem('audiovolume_lastmuted') == "true";
+            this.volumeSlider.value = lastMuted ? 0 : parseFloat(lastVolume);
+            this.volumeSlider.dataset.lastRealVolume = lastVolume;
+            this.video.volume = parseFloat(lastVolume) / 100;
+            this.video.muted = lastMuted;
+        }
         this.updateIcons();
     }
 
@@ -642,6 +660,8 @@ class VideoControls {
         e.target.dataset.lastRealVolume = `${e.target.value}`;
         this.video.volume = volume;
         this.video.muted = volume < 0.001;
+        localStorage.setItem('audiovolume_last', `${e.target.value}`);
+        localStorage.setItem('audiovolume_lastmuted', `${this.video.muted}`);
         this.updateIcons();
     }
 
@@ -657,6 +677,7 @@ class VideoControls {
                 this.video.volume = 0.5;
             }
         }
+        localStorage.setItem('audiovolume_lastmuted', `${this.video.muted}`);
         this.updateIcons();
     }
 

@@ -563,8 +563,12 @@ public class Settings : AutoConfiguration
             [SettingsOptions(Impl = typeof(AudioImpl))]
             public string CompletionSound = "";
 
-            [ConfigComment($"If any sound effects are enabled, this is the volume they will play at.\n0 means silent, 1 means max volume, 0.5 means half volume.")]
+            [ConfigComment($"For system sound effects such as CompletionSound, this is the volume they will play at.\n0 means silent, 1 means max volume, 0.5 means half volume.")]
             public double Volume = 0.5;
+
+            [ConfigComment("When a video is played, what should be done with the audio?")]
+            [ManualSettingsOptions(Impl = null, Vals = ["last", "play", "silent"], ManualNames = ["Remember Last", "Autoplay", "Default to Silent"])]
+            public string VideoAudioBehavior = "last";
         }
 
         [ConfigComment("Settings related to audio.")]

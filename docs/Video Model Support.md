@@ -263,6 +263,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - The upscaler is hardlocked at 2x and will not work at any other upscale amount.
 - Parameters:
     - **Prompt:** LTXV really needs long prompts to accomplish anything.
+        - They have [an official prompting guide](<https://ltx.io/model/model-blog/prompting-guide-for-ltx-2>)
     - **CFG Scale:** The regular model uses normal CFG values such as ~4, the distilled model uses `1`.
     - **Steps:** The regular model uses normal step values, 20+. The distilled model uses `8` but works at `4`.
     - **Negative Prompt:** Reference workflow suggests using this giant negative:
