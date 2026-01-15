@@ -5,7 +5,7 @@
 [Hunyuan Video](#hunyuan-video) | 2024 | Tencent | 12B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Hunyuan Video 1.5](#hunyuan-video-15) | 2025 | Tencent | 8B MMDiT | Text2Video and Image2Video variants | No | Modern, Decent Quality |
 [Lightricks LTX Video](#lightricks-ltx-video) | 2024 | Lightricks | 3B DiT | Text/Image 2Video | ? | Modern, Fast but ugly |
-[Lightricks LTX Video 2](#lightricks-ltx-video-2) | 2026 | Lightricks | 19B DiT | Text/Image 2Video+Audio | ? | ? |
+[Lightricks LTX Video 2](#lightricks-ltx-video-2) | 2026 | Lightricks | 19B DiT | Text/Image 2Video+Audio | Minimal | Modern, good/mixed quality but fun |
 [Wan 2.1](#wan-21) and [2.2](#wan-22) | 2025 | Alibaba - Wan-AI | 1.3B, 5B, 14B | Text/Image 2Video | No | Modern, Incredible Quality |
 [Kandinsky 5](#kandinsky-5) | 2025 | Kandinsky Lab | 2B, 19B | Text/Image 2Video | No | Modern, Decent Quality |
 
@@ -256,22 +256,24 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - Download the model from [Lightricks](<https://huggingface.co/Lightricks/LTX-2/tree/main>)
     - Save in `Stable-Diffusion` models folder
     - Details TBD
-- LTXV-2 has a dedicated latent spatial upscler model
+- LTXV-2 has a dedicated latent spatial upscaler model
     - If you want to use it, download [ltx-2-spatial-upscaler-x2-1.0.safetensors](<https://huggingface.co/Lightricks/LTX-2/blob/main/ltx-2-spatial-upscaler-x2-1.0.safetensors>)
     - save it to `(SwarmUI)/Models/latent_upscale_models`
     - Set `Refiner Upscale` to 2, select the model as the `Refiner Upscale Method` parameter, and set `Refiner Control Percentage` to 0.5. Set your base resolution to half of your target (eg 320 instead of 640).
         - The upscaler is hardlocked at 2x and will not work at any other upscale amount.
+    - This is for T2V only.
+    - It seems largely redundant, the model works about the same if you just don't bother using this.
 - Parameters:
     - **Prompt:** LTXV really needs long prompts to accomplish anything.
-        - They have [an official prompting guide](<https://ltx.io/model/model-blog/prompting-guide-for-ltx-2>)
+        - They have [an official prompting guide](<https://ltx.io/model/model-blog/prompting-guide-for-ltx-2>) but it only covers T2V
+        - I2V prompting is more akin to Wan/other model i2v prompting: describe what actions to take, what to change, what to add. Avoid redescribing the scene already present in the image.
+        - LLM prompt rewrite may be necessary to get the most out of the model.
     - **CFG Scale:** The regular model uses normal CFG values such as ~4, the distilled model uses `1`.
     - **Steps:** The regular model uses normal step values, 20+. The distilled model uses `8` but works at `4`.
     - **Negative Prompt:** Reference workflow suggests using this giant negative:
         <details>
             <summary>Giant negative</summary>
-            ```
             blurry, out of focus, overexposed, underexposed, low contrast, washed out colors, excessive noise, grainy texture, poor lighting, flickering, motion blur, distorted proportions, unnatural skin tones, deformed facial features, asymmetrical face, missing facial features, extra limbs, disfigured hands, wrong hand count, artifacts around text, unreadable text on shirt or hat, incorrect lettering on cap (“PNTR”), incorrect t-shirt slogan (“JUST DO IT”), missing microphone, misplaced microphone, inconsistent perspective, camera shake, incorrect depth of field, background too sharp, background clutter, distracting reflections, harsh shadows, inconsistent lighting direction, color banding, cartoonish rendering, 3D CGI look, unrealistic materials, uncanny valley effect, incorrect ethnicity, wrong gender, exaggerated expressions, smiling, laughing, exaggerated sadness, wrong gaze direction, eyes looking at camera, mismatched lip sync, silent or muted audio, distorted voice, robotic voice, echo, background noise, off-sync audio, missing sniff sounds, incorrect dialogue, added dialogue, repetitive speech, jittery movement, awkward pauses, incorrect timing, unnatural transitions, inconsistent framing, tilted camera, missing door or shelves, missing shallow depth of field, flat lighting, inconsistent tone, cinematic oversaturation, stylized filters, or AI artifacts.
-            ```
         </details>
 
 # Wan 2.1
