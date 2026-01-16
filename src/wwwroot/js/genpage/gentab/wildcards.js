@@ -81,22 +81,13 @@ class WildcardHelpers {
         }
         this.curWildcardMenuWildcard = card;
         this.testNameElem.innerText = card.name;
-        let choice = Math.floor(Math.random() * card.options.length);
-        let val = card.options[choice];
-        this.testResultElem.value = val;
         let button = this.testAgainButtonElem;
-        if (val.includes('<')) {
-            button.disabled = true;
-            genericRequest('TestPromptFill', {'prompt': val}, data => {
-                button.disabled = false;
-                this.testResultElem.value = data.result;
-                $('#test_wildcard_modal').modal('show');
-            });
-        }
-        else {
+        button.disabled = true;
+        genericRequest('TestPromptFill', { 'prompt': `<wildcard:${card.name}>` }, data => {
             button.disabled = false;
+            this.testResultElem.value = data.result;
             $('#test_wildcard_modal').modal('show');
-        }
+        });
     }
 
     /** Test a wildcard again, using the same wildcard as before, in the same modal.
@@ -152,27 +143,37 @@ class WildcardHelpers {
         if (card == null) {
             return;
         }
-        this.curWildcardMenuWildcard = card;
-        clearMediaFileInput(this.imageElem);
-        this.enableImageElem.checked = false;
-        let curImg = currentImageHelper.getCurrentImage();
-        this.nameElem.value = card.name;
-        setTextContent(this.contentsElem, card.raw);
-        this.processContents();
-        this.errorBoxElem.innerText = '';
-        this.modalMayClose = true;
-        let run = () => {
-            triggerChangeFor(this.enableImageElem);
-            $(this.modalElem).modal('show');
-        };
-        if (curImg && curImg.tagName == 'IMG') {
-            setMediaFileDirect(this.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
-                this.enableImageElem.checked = false;
+        let openEditor = (fullCard) => {
+            this.curWildcardMenuWildcard = fullCard;
+            clearMediaFileInput(this.imageElem);
+            this.enableImageElem.checked = false;
+            let curImg = currentImageHelper.getCurrentImage();
+            this.nameElem.value = fullCard.name;
+            setTextContent(this.contentsElem, fullCard.raw);
+            this.processContents();
+            this.errorBoxElem.innerText = '';
+            this.modalMayClose = true;
+            let run = () => {
+                triggerChangeFor(this.enableImageElem);
+                $(this.modalElem).modal('show');
+            };
+            if (curImg && curImg.tagName == 'IMG') {
+                setMediaFileDirect(this.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
+                    this.enableImageElem.checked = false;
+                    run();
+                });
+            }
+            else {
                 run();
-            });
+            }
+        };
+        if (card.raw === '') {
+            openEditor(card);
         }
         else {
-            run();
+            genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: card.name }, data => {
+                openEditor(data);
+            });
         }
     }
 
@@ -244,19 +245,21 @@ class WildcardHelpers {
         if (card == null) {
             return;
         }
-        let name = card.name;
-        let i = 2;
-        while (`${name.toLowerCase()} - ${i}` in this.wildcardNameCheck) {
-            i++;
-        }
-        let data = {
-            'card': `${name} - ${i}`,
-            'options': card.raw,
-            'preview_image': card.image && card.image != 'imgs/model_placeholder.jpg' ? card.image : '',
-            'preview_image_metadata': null
-        }
-        genericRequest('EditWildcard', data, resData => {
-            wildcardsBrowser.browser.refresh();
+        genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: card.name }, fullCard => {
+            let name = fullCard.name;
+            let i = 2;
+            while (`${name.toLowerCase()} - ${i}` in this.wildcardNameCheck) {
+                i++;
+            }
+            let data = {
+                'card': `${name} - ${i}`,
+                'options': fullCard.raw,
+                'preview_image': fullCard.image && fullCard.image != 'imgs/model_placeholder.jpg' ? fullCard.image : '',
+                'preview_image_metadata': null
+            }
+            genericRequest('EditWildcard', data, resData => {
+                wildcardsBrowser.browser.refresh();
+            });
         });
     }
 
@@ -314,7 +317,14 @@ class WildcardHelpers {
             delete this.wildcardDataCache[name + "____READ_NOW"];
         }
         genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: name }, data => {
-            giveResult(data.options);
+            giveResult(data.raw.split('\n').map(line => {
+                line = line.trim();
+                let comment = line.indexOf('#');
+                if (comment != -1) {
+                    line = line.substring(0, comment).trim();
+                }
+                return line;
+            }).filter(line => line));
         }, 0, e => giveResult(null));
         return result;
     }

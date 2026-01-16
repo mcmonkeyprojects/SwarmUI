@@ -28,7 +28,7 @@ public class WildcardsHelper
         /// <summary>Max length cache, calculated in T2IParamInput.</summary>
         public string MaxLength = null;
 
-        public JObject GetNetObject(bool dataImgs = true)
+        public JObject GetNetObject(bool dataImgs = true, bool truncate = false)
         {
             string previewImg = Image ?? "imgs/model_placeholder.jpg";
             if (!dataImgs && previewImg is not null && previewImg.StartsWithFast("data:"))
@@ -38,8 +38,7 @@ public class WildcardsHelper
             return new()
             {
                 ["name"] = Name,
-                ["options"] = JArray.FromObject(Options),
-                ["raw"] = Raw,
+                ["raw"] = truncate && Raw.Length > 512 ? Raw[..512] + "..." : Raw,
                 ["image"] = previewImg
             };
         }
