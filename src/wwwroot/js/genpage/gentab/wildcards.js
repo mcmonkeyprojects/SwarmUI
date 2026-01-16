@@ -317,7 +317,14 @@ class WildcardHelpers {
             delete this.wildcardDataCache[name + "____READ_NOW"];
         }
         genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: name }, data => {
-            giveResult(data.raw.split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#')));
+            giveResult(data.raw.split('\n').map(line => {
+                line = line.trim();
+                let comment = line.indexOf('#');
+                if (comment != -1) {
+                    line = line.substring(0, comment).trim();
+                }
+                return line;
+            }).filter(line => line));
         }, 0, e => giveResult(null));
         return result;
     }
