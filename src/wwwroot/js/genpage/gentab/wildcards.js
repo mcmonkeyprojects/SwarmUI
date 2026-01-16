@@ -81,7 +81,7 @@ class WildcardHelpers {
         }
         this.curWildcardMenuWildcard = card;
         this.testNameElem.innerText = card.name;
-        let button = this.testAgainButtonElem
+        let button = this.testAgainButtonElem;
         button.disabled = true;
         genericRequest('TestPromptFill', { 'prompt': `<wildcard:${card.name}>` }, data => {
             button.disabled = false;
@@ -317,7 +317,7 @@ class WildcardHelpers {
             delete this.wildcardDataCache[name + "____READ_NOW"];
         }
         genericRequest('DescribeModel', { subtype: 'Wildcards', modelName: name }, data => {
-            giveResult(data.options);
+            giveResult(data.raw.split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#')));
         }, 0, e => giveResult(null));
         return result;
     }
