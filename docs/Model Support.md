@@ -296,9 +296,12 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - It is lower quality vs the full Flux.2, but runs much faster.
         - Certain aspects of the quality can actually be better.
     - Download [Klein 4b here](<https://huggingface.co/Comfy-Org/flux2-klein-4B/tree/main/split_files/diffusion_models>)
+        - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-4B-GGUF/blob/main/flux-2-klein-4b-Q4_K_M.gguf>) or [base gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-4B-GGUF/blob/main/flux-2-klein-base-4b-Q4_K_M.gguf>)
         - It has a distilled variant (Steps=8, CFG=1), and a "Base" variant (high steps, high CFG)
     - or [Klein 9b here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/blob/main/flux-2-klein-9b.safetensors>) (you may need to [accept a license here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B>))
-        - It is only a distill version, no 'base'
+        - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/blob/main/flux-2-klein-9b-Q4_K_M.gguf>)
+    - or [klein 9b base here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/blob/main/flux-2-klein-base-9b-fp8.safetensors>)
+        - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-9B-GGUF/blob/main/flux-2-klein-base-9b-Q4_K_M.gguf>)
     - Broadly works the same as Flux.2
     - On the distilled model set `Steps` to `8`, on base model use normal high step counts
     - On the distilled model set `CFG Scale` to `1`, on base model use normal CFG eg `7`
