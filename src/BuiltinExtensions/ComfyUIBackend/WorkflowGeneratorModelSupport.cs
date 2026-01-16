@@ -52,8 +52,17 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is Black Forest Labs' Flux.1.</summary>
     public bool IsFlux() => IsModelCompatClass(T2IModelClassSorter.CompatFlux);
 
-    /// <summary>Returns true if the current model is Black Forest Labs' Flux.2.</summary>
-    public bool IsFlux2() => IsModelCompatClass(T2IModelClassSorter.CompatFlux2);
+    /// <summary>Returns true if the current model is Black Forest Labs' Flux.2 Dev.</summary>
+    public bool IsFlux2Dev() => IsModelCompatClass(T2IModelClassSorter.CompatFlux2);
+
+    /// <summary>Returns true if the current model is Black Forest Labs' Flux.2 Klein (4B).</summary>
+    public bool IsFlux2Klein4B() => IsModelCompatClass(T2IModelClassSorter.CompatFlux2Klein4B);
+
+    /// <summary>Returns true if the current model is Black Forest Labs' Flux.2 Klein (9B).</summary>
+    public bool IsFlux2Klein9B() => IsModelCompatClass(T2IModelClassSorter.CompatFlux2Klein9B);
+
+    /// <summary>Returns true if the current model is any Black Forest Labs' Flux.2 variant.</summary>
+    public bool IsAnyFlux2() => IsFlux2Dev() || IsFlux2Klein4B() || IsFlux2Klein9B();
 
     /// <summary>Returns true if the current model is AuraFlow.</summary>
     public bool IsAuraFlow() => IsModelCompatClass(T2IModelClassSorter.CompatAuraFlow);
@@ -77,7 +86,7 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model supports Flux Guidance.</summary>
     public bool HasFluxGuidance()
     {
-        return (IsFlux() && CurrentModelClass()?.ID != "Flux.1-schnell") || IsFlux2() || IsHunyuanVideo();
+        return (IsFlux() && CurrentModelClass()?.ID != "Flux.1-schnell") || IsAnyFlux2() || IsHunyuanVideo();
     }
 
     /// <summary>Returns true if the current model is NVIDIA Sana.</summary>
@@ -225,7 +234,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsFlux2())
+        else if (IsAnyFlux2())
         {
             return CreateNode("EmptyFlux2LatentImage", new JObject()
             {
@@ -509,6 +518,11 @@ public partial class WorkflowGenerator
         public string GetQwen3_4bModel()
         {
             return RequireClipModel("qwen_3_4b.safetensors", "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b_fp8_mixed.safetensors", "72450b19758172c5a7273cf7de729d1c17e7f434a104a00167624cba94f68f15", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwen3_8bModel()
+        {
+            return RequireClipModel("qwen_3_8b.safetensors", "https://huggingface.co/Comfy-Org/flux2-klein-9B/resolve/main/split_files/text_encoders/qwen_3_8b_fp4mixed.safetensors", "bbf16f981d98e16d080c566134814c4e9f6aadd0d0e1383c60bc44ba939d760d", T2IParamTypes.QwenModel);
         }
 
         public string GetOvisQwenModel()
@@ -877,7 +891,7 @@ public partial class WorkflowGenerator
             LoadingModel = [modelNode, 0];
             LoadingClip = [modelNode, 1];
             LoadingVAE = [modelNode, 2];
-            if ((IsFlux() || IsFlux2()) && (model.Metadata?.TextEncoders ?? "") == "")
+            if ((IsFlux() || IsFlux2Dev()) && (model.Metadata?.TextEncoders ?? "") == "")
             {
                 LoadingClip = null;
                 LoadingVAE = null;
@@ -931,9 +945,19 @@ public partial class WorkflowGenerator
                 helpers.DoVaeLoader( UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
             }
         }
-        else if (IsFlux2())
+        else if (IsFlux2Dev())
         {
             helpers.LoadClip("flux2", helpers.GetMistralFlux2Model());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+        }
+        else if (IsFlux2Klein4B())
+        {
+            helpers.LoadClip("flux2", helpers.GetQwen3_4bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+        }
+        else if (IsFlux2Klein9B())
+        {
+            helpers.LoadClip("flux2", helpers.GetQwen3_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
@@ -1140,7 +1164,7 @@ public partial class WorkflowGenerator
         }
         if (UserInput.TryGet(T2IParamTypes.SigmaShift, out double shiftVal, sectionId: sectionId))
         {
-            if (IsFlux() || IsFlux2())
+            if (IsFlux() || IsAnyFlux2())
             {
                 string samplingNode = CreateNode("ModelSamplingFlux", new JObject()
                 {

@@ -830,7 +830,7 @@ public partial class WorkflowGenerator
         {
             defscheduler ??= "beta";
         }
-        else if (IsFlux2())
+        else if (IsAnyFlux2())
         {
             defscheduler ??= "flux2";
         }
@@ -919,12 +919,12 @@ public partial class WorkflowGenerator
             neg = [ip2p2condNode, 1];
             latent = [ip2p2condNode, 2];
         }
-        else if (IsKontext() || IsOmniGen() || IsQwenImage() || IsFlux2())
+        else if (IsKontext() || IsOmniGen() || IsQwenImage() || IsAnyFlux2())
         {
             JArray img = null;
             JArray imgNeg = null;
             bool doLatentChain = !IsKontext(); // Arguably even kontext should just do this?
-            bool onlyExplicit = (IsQwenImage() && !IsQwenImageEdit()) || IsFlux2();
+            bool onlyExplicit = (IsQwenImage() && !IsQwenImageEdit()) || IsAnyFlux2();
             if (IsOmniGen() || IsQwenImageEditPlus())
             {
                 imgNeg = neg;

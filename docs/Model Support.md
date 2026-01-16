@@ -290,6 +290,19 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Scheduler:** Defaults to `Flux2`, a new specialty scheduler added for Flux.2 to use, but it makes very little difference
     - **Prompt Images:** add up to a max of 6 images to the prompt box to be used as reference images. This uses significantly more memory.
 
+### Flux.2 Klein
+
+- Klein is a smaller variant of Flux.2
+    - It is lower quality vs the full Flux.2, but runs much faster.
+        - Certain aspects of the quality can actually be better.
+    - Download [Klein 4b here](<https://huggingface.co/Comfy-Org/flux2-klein-4B/tree/main/split_files/diffusion_models>)
+        - It has a distilled variant (Steps=8, CFG=1), and a "Base" variant (high steps, high CFG)
+    - or [Klein 9b here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B/blob/main/flux-2-klein-9b.safetensors>) (you may need to [accept a license here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-9B>))
+        - It is only a distill version, no 'base'
+    - Broadly works the same as Flux.2
+    - On the distilled model set `Steps` to `8`, on base model use normal high step counts
+    - On the distilled model set `CFG Scale` to `1`, on base model use normal CFG eg `7`
+
 # Chroma
 
 - Chroma is a derivative of Flux, and is supported in SwarmUI
