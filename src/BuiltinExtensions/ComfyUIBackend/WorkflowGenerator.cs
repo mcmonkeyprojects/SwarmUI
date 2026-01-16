@@ -2035,6 +2035,67 @@ public partial class WorkflowGenerator
             FinalLatentImage = [normalized, 0];
             genInfo.DoFirstFrameLatentSwap = null;
         }
+        string upscaleMethod = UserInput.Get(ComfyUIBackendExtension.RefinerUpscaleMethod, "None");
+        double refinerControl = UserInput.Get(T2IParamTypes.RefinerControl, 0.5);
+        bool doLtxv2Upscale = IsLTXV2() && UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double refineUpscale) && refineUpscale != 1
+            && upscaleMethod.StartsWith("latentmodel-") && refinerControl > 0;
+        if (doLtxv2Upscale) // LTXV2 has a dedicated latent upsampler
+        {
+            int upscaleSteps = UserInput.Get(T2IParamTypes.RefinerSteps, genInfo.Steps);
+            double upscaleCfg = UserInput.Get(T2IParamTypes.RefinerCFGScale, genInfo.VideoCFG ?? 3);
+            int startStep = (int)Math.Round(upscaleSteps * (1 - refinerControl));
+            string upscaleModelLoader = CreateNode("LatentUpscaleModelLoader", new JObject()
+            {
+                ["model_name"] = upscaleMethod.After("latentmodel-")
+            });
+            string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
+            {
+                ["av_latent"] = FinalLatentImage
+            });
+            JArray videoLatent = [separated, 0];
+            JArray audioLatent = [separated, 1];
+            FinalLatentAudio = audioLatent;
+            string cropGuides = CreateNode("LTXVCropGuides", new JObject()
+            {
+                ["positive"] = genInfo.PosCond,
+                ["negative"] = genInfo.NegCond,
+                ["latent"] = videoLatent
+            });
+            JArray croppedPos = [cropGuides, 0];
+            JArray croppedNeg = [cropGuides, 1];
+            JArray croppedLatent = [cropGuides, 2];
+            string upscaled = CreateNode("LTXVLatentUpsampler", new JObject()
+            {
+                ["vae"] = genInfo.Vae,
+                ["samples"] = croppedLatent,
+                ["upscale_model"] = NodePath(upscaleModelLoader, 0)
+            });
+            JArray upscaledLatent = [upscaled, 0];
+            string ltxvCond = CreateNode("LTXVConditioning", new JObject()
+            {
+                ["positive"] = croppedPos,
+                ["negative"] = croppedNeg,
+                ["frame_rate"] = genInfo.VideoFPS ?? 24
+            });
+            JArray upscalePosCond = [ltxvCond, 0];
+            JArray upscaleNegCond = [ltxvCond, 1];
+            string reconcat = CreateNode("LTXVConcatAVLatent", new JObject()
+            {
+                ["video_latent"] = upscaledLatent,
+                ["audio_latent"] = audioLatent
+            });
+            JArray recombinedLatent = [reconcat, 0];
+            string upscaleExplicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false)
+                ?? UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null)
+                ?? explicitSampler;
+            string upscaleExplicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false)
+                ?? UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null)
+                ?? explicitScheduler;
+            string upscaleSampler = CreateKSampler(genInfo.Model, upscalePosCond, upscaleNegCond, recombinedLatent, upscaleCfg, upscaleSteps, startStep, 10000,
+                genInfo.Seed + 2, false, true, sigmin: 0.002, sigmax: 1000, previews: previewType, defsampler: genInfo.DefaultSampler, defscheduler: genInfo.DefaultScheduler,
+                hadSpecialCond: true, explicitSampler: upscaleExplicitSampler, explicitScheduler: upscaleExplicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
+            FinalLatentImage = [upscaleSampler, 0];
+        }
         string decoded = CreateVAEDecode(genInfo.Vae, FinalLatentImage);
         FinalImageOut = [decoded, 0];
         if (UserInput.TryGet(T2IParamTypes.TrimVideoStartFrames, out _) || UserInput.TryGet(T2IParamTypes.TrimVideoEndFrames, out _))

@@ -1234,6 +1234,11 @@ public class WorkflowGeneratorSteps
             if (g.UserInput.TryGet(T2IParamTypes.RefinerMethod, out string method)
                 && g.UserInput.TryGet(T2IParamTypes.RefinerControl, out double refinerControl))
             {
+                // Skip refiner step entirely when VideoModel is LTXV2, has dedicated latent upscaler
+                if (g.UserInput.TryGet(T2IParamTypes.VideoModel, out T2IModel videoModel) && videoModel.ModelClass?.CompatClass?.ID == T2IModelClassSorter.CompatLtxv2.ID && g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out _))
+                {
+                    return;
+                }
                 g.IsRefinerStage = true;
                 JArray origVae = g.FinalVae, prompt = g.FinalPrompt, negPrompt = g.FinalNegativePrompt;
                 bool modelMustReencode = false;
@@ -1379,6 +1384,14 @@ public class WorkflowGeneratorSteps
                             ["samples"] = NodePath(cropGuides, 2),
                             ["upscale_model"] = NodePath("27", 0)
                         }, "26");
+                        string ltxvCond = g.CreateNode("LTXVConditioning", new JObject()
+                        {
+                            ["positive"] = prompt,
+                            ["negative"] = negPrompt,
+                            ["frame_rate"] = g.UserInput.Get(T2IParamTypes.Text2VideoFPS, 24)
+                        });
+                        prompt = [ltxvCond, 0];
+                        negPrompt = [ltxvCond, 1];
                         string reconcat = g.CreateNode("LTXVConcatAVLatent", new JObject()
                         {
                             ["video_latent"] = NodePath("26", 0),
@@ -1710,9 +1723,14 @@ public class WorkflowGeneratorSteps
                 int imageWidth = g.UserInput.GetImageWidth();
                 int imageHeight = g.UserInput.GetImageHeight();
                 int resPrecision = 64;
+                bool hasLatentUpscaler = false;
                 if (vidModel.ModelClass?.CompatClass?.ID == "hunyuan-video")
                 {
                     resPrecision = 16; // wants 720x720, which is wonky x16 and not x32 or x64
+                }
+                else if (vidModel.ModelClass?.CompatClass?.ID == T2IModelClassSorter.CompatLtxv2.ID)
+                {
+                    hasLatentUpscaler = true; // LTXV2 uses dedicated latent upsampler, don't pre-scale dimensions
                 }
                 if (resFormat == "Image Aspect, Model Res")
                 {
@@ -1730,7 +1748,7 @@ public class WorkflowGeneratorSteps
                 {
                     width = imageWidth;
                     height = imageHeight;
-                    if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double scale))
+                    if (g.UserInput.TryGet(T2IParamTypes.RefinerUpscale, out double scale) && !hasLatentUpscaler)
                     {
                         width = (int)Math.Round(width * scale);
                         height = (int)Math.Round(height * scale);
