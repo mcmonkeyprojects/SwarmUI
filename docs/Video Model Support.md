@@ -251,11 +251,12 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 ## Lightricks LTX Video 2
 
-- LTXV-2 is the first proper Audio+Video combo model available as open source
+- LTX-2 is the first proper Audio+Video combo model available as open source
+    - Also known as "LTXV2", "LTXAV", ...
 - SwarmUI has basic support for LTXV-2 (however the model is new and has very different tech than usual, so some edge cases are weird)
     - Download the model from [Lightricks](<https://huggingface.co/Lightricks/LTX-2/tree/main>)
     - Save in `Stable-Diffusion` models folder
-    - Details TBD
+    - More work to be done still on fully supporting the extent of model capabilities
 - LTXV-2 has a dedicated latent spatial upscaler model
     - If you want to use it, download [ltx-2-spatial-upscaler-x2-1.0.safetensors](<https://huggingface.co/Lightricks/LTX-2/blob/main/ltx-2-spatial-upscaler-x2-1.0.safetensors>)
     - save it to `(SwarmUI)/Models/latent_upscale_models`

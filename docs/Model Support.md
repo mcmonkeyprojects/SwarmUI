@@ -9,7 +9,7 @@
 [Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Recent, Good Quality |
 [AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
 [Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Recent, High Quality |
-[Flux.2](#flux-2) | MMDiT | 2025 | Black Forest Labs | 32B | Minimal | Recent, Incredible Quality, extremely memory intense |
+[Flux.2](#flux-2) | MMDiT | 2025 | Black Forest Labs | 4B, 9B, 32B | Minimal | Recent, Incredible Quality, choice of speed or quality preference |
 [Chroma](#chroma) | MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Decent Quality |
 [Chroma Radiance](#chroma-radiance) | Pixel MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Bad Quality (WIP) |
 [Lumina 2.0](#lumina-2) | NextDiT | 2025 | Alpha-VLLM | 2.6B | Partial | Modern, Passable Quality |
@@ -264,8 +264,9 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 ![img](/docs/images/models/flux2.jpg)
 
 - Black Forest Labs' [Flux.2 Models](https://bfl.ai/blog/flux-2) are supported in SwarmUI
-- It is an extremely massive model (32B diffusion model, 24B text encoder) that will demand significant RAM availability on your PC.
+- The main "Dev" model is an extremely massive model (32B diffusion model, 24B text encoder) that will demand significant RAM availability on your PC.
     - This can easily fill up 128 gigs of system RAM in usage, but does still work on 64 gig systems. Lower than 64 may not be possible, or may require heavily using swapfile.
+    - The smaller [Klein model](#flux2-klein) is preferred for more normal PC hardware.
 - Download the standard FP8 model here [silveroxides/FLUX.2-dev-fp8_scaled](<https://huggingface.co/silveroxides/FLUX.2-dev-fp8_scaled/blob/main/flux2-dev-fp8mixedfromscaled.safetensors>)
     - Or GGUF version here [city96/FLUX.2-dev-GGUF](<https://huggingface.co/city96/FLUX.2-dev-gguf/tree/main>)
     - Goes in `diffusion_models` folder
@@ -293,8 +294,9 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 ### Flux.2 Klein
 
 - Klein is a smaller variant of Flux.2
-    - It is lower quality vs the full Flux.2, but runs much faster.
-        - Certain aspects of the quality can actually be better.
+    - It is lower quality vs the full Flux.2-Dev, but runs much faster. Certain aspects of the quality can actually be better, notably visual quality seems to have been tuned better, overall intelligence is lower.
+    - There is a 4B and a 9B variant, while the 9B is larger it often seems like the 4B is smarter.
+    - It uses a smaller text encoder (Qwen 4B for Klein 4B, and Qwen 8B for Klein 9B). It will be autodownloaded.
     - Download [Klein 4b here](<https://huggingface.co/Comfy-Org/flux2-klein-4B/tree/main/split_files/diffusion_models>)
         - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-4B-GGUF/blob/main/flux-2-klein-4b-Q4_K_M.gguf>) or [base gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-4B-GGUF/blob/main/flux-2-klein-base-4b-Q4_K_M.gguf>)
         - It has a distilled variant (Steps=8, CFG=1), and a "Base" variant (high steps, high CFG)
@@ -302,9 +304,10 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/blob/main/flux-2-klein-9b-Q4_K_M.gguf>)
     - or [klein 9b base here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/blob/main/flux-2-klein-base-9b-fp8.safetensors>)
         - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-9B-GGUF/blob/main/flux-2-klein-base-9b-Q4_K_M.gguf>)
-    - Broadly works the same as Flux.2
+    - Broadly works the same as Flux.2-Dev
     - On the distilled model set `Steps` to `8`, on base model use normal high step counts
     - On the distilled model set `CFG Scale` to `1`, on base model use normal CFG eg `7`
+    - They have an [official prompting guide here](<https://docs.bfl.ai/guides/prompting_guide_flux2_klein>)
 
 # Chroma
 
