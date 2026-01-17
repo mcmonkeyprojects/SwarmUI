@@ -431,7 +431,7 @@ public partial class WorkflowGenerator
             }
             if (string.IsNullOrWhiteSpace(vaeFile))
             {
-                vaeModel = Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass?.ID == compatClass);
+                vaeModel = compatClass is null ? null : Program.T2IModelSets["VAE"].Models.Values.FirstOrDefault(m => m.ModelClass?.CompatClass?.ID == compatClass);
                 if (vaeModel is not null)
                 {
                     Logs.Debug($"Auto-selected first available VAE of compat class '{compatClass}', VAE '{vaeModel.Name}' will be applied");
@@ -589,6 +589,12 @@ public partial class WorkflowGenerator
         public string GetGemma3_12bModel()
         {
             return RequireClipModel("gemma_3_12B_it.safetensors", "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it_fp4_mixed.safetensors", "aaca463d11e6d8d2a4bdb0d6299214c15ef78a3f73e0ef8113d5a9d0219b3f6d", T2IParamTypes.GemmaModel);
+        }
+
+        public string GetLTX2EmbedClip()
+        {
+            // TODO: This is cursed and wrong.
+            return RequireClipModel("ltx2/ltx2-embeddings-connector-distill.safetensors", "https://huggingface.co/Kijai/LTXV2_comfy/resolve/main/text_encoders/ltx-2-19b-embeddings_connector_distill_bf16.safetensors", "8990ec3fe88396ca33ac1795c89b1771d88190e51e24084b21f54b25399acbed", null);
         }
 
         public void LoadClip(string type, string model)
@@ -1061,8 +1067,20 @@ public partial class WorkflowGenerator
         }
         else if (IsLTXV2())
         {
-            helpers.LoadClipAudio(helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
-            helpers.AudioVaeLoad(model.ToString(ModelFolderFormat));
+            if (LoadingVAE is null)
+            {
+                // Hypothetical approximation of what would probably be right if comfy wasn't just entirely broken on handling this
+                helpers.LoadClip2("ltxv", helpers.GetGemma3_12bModel(), helpers.GetLTX2EmbedClip());
+                helpers.DoVaeLoader(null, null, "ltx2-audio-vae");
+                FinalAudioVae = LoadingVAE;
+                helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-video-vae");
+                throw new SwarmUserErrorException("LTX2 requires the safetensors checkpoint format currently due to comfy limitations.");
+            }
+            else
+            {
+                helpers.LoadClipAudio(helpers.GetGemma3_12bModel(), model.ToString(ModelFolderFormat));
+                helpers.AudioVaeLoad(model.ToString(ModelFolderFormat));
+            }
         }
         else if (IsHunyuanVideo())
         {
