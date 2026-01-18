@@ -1427,7 +1427,7 @@ public class WorkflowGeneratorSteps
         }, 1);
         #endregion
         #region Segmentation Processing
-        AddStep(g =>
+        void RunSegmentationProcessing(WorkflowGenerator g, bool isBeforeRefiner)
         {
             PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
             if (parts.Any())
@@ -1577,7 +1577,39 @@ public class WorkflowGeneratorSteps
                     g.FinalImageOut = g.RecompositeCropped(g.MaskShrunkInfo.BoundsNode, [g.MaskShrunkInfo.CroppedMask, 0], g.FinalImageOut, [decoded, 0]);
                     g.MaskShrunkInfo = new(null, null, null, null);
                 }
+                if (isBeforeRefiner)
+                {
+                    string encoded = g.CreateVAEEncode(g.FinalVae, g.FinalImageOut);
+                    g.FinalSamples = [encoded, 0];
+                    g.FinalImageOut = null;
+                }
             }
+        }
+        AddStep(g =>
+        {
+            if (g.UserInput.Get(T2IParamTypes.SegmentApplyAfter, "Refiner") != "Base")
+            {
+                return;
+            }
+            PromptRegion.Part[] parts = [.. new PromptRegion(g.UserInput.Get(T2IParamTypes.Prompt, "")).Parts.Where(p => p.Type == PromptRegion.PartType.Segment)];
+            if (!parts.Any())
+            {
+                return;
+            }
+            if (g.FinalImageOut is null)
+            {
+                string decodeNode = g.CreateVAEDecode(g.FinalVae, g.FinalSamples);
+                g.FinalImageOut = [decodeNode, 0];
+            }
+            RunSegmentationProcessing(g, isBeforeRefiner: true);
+        }, -4.5);
+        AddStep(g =>
+        {
+            if (g.UserInput.Get(T2IParamTypes.SegmentApplyAfter, "Refiner") != "Refiner")
+            {
+                return;
+            }
+            RunSegmentationProcessing(g, isBeforeRefiner: false);
         }, 5);
         #endregion
         #region SaveImage
