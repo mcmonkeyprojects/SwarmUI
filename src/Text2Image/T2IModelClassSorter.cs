@@ -135,6 +135,8 @@ public class T2IModelClassSorter
         bool isFlux2Dev(JObject h) => tryGetFlux2Tok(h, out JToken tok) && (tok["shape"].ToArray()[0].Value<long>() == 36864 || tok["shape"].ToArray()[1].Value<long>() == 36864); // ggufs sometimes have this shape backwards
         bool isFlux2Klein4B(JObject h) => tryGetFlux2Tok(h, out JToken tok) && (tok["shape"].ToArray()[0].Value<long>() == 18432 || tok["shape"].ToArray()[1].Value<long>() == 18432);
         bool isFlux2Klein9B(JObject h) => tryGetFlux2Tok(h, out JToken tok) && (tok["shape"].ToArray()[0].Value<long>() == 24576 || tok["shape"].ToArray()[1].Value<long>() == 24576);
+        bool isFlux2KleinLora(JObject h) => hasKey(h, "double_blocks.4.img_attn.proj.lora_A.weight") && hasKey(h, "double_blocks.4.txt_mlp.2.lora_B.weight") && hasKey(h, "single_blocks.18.linear1.lora_A.weight") && hasKey(h, "single_blocks.19.linear2.lora_B.weight");
+        bool isFlux2Klein9BLora(JObject h) => hasKey(h, "single_blocks.23.linear1.lora_A.weight");
         bool isFlux2DevLora(JObject h) => h.ContainsKey("diffusion_model.single_blocks.47.linear2.lora_A.weight");
         bool isSD35Lora(JObject h) => h.ContainsKey("transformer.transformer_blocks.0.attn.to_k.lora_A.weight") && !isFluxLora(h);
         bool isMochi(JObject h) => hasKey(h, "blocks.0.attn.k_norm_x.weight");
@@ -432,9 +434,17 @@ public class T2IModelClassSorter
         {
             return isFlux2Klein4B(h);
         }});
+        Register(new() { ID = "flux.2-klein-4b/lora", CompatClass = CompatFlux2Klein4B, Name = "Flux.2 Klein 4B LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isFlux2KleinLora(h) && !isFlux2Klein9BLora(h);
+        }});
         Register(new() { ID = "flux.2-klein-9b", CompatClass = CompatFlux2Klein9B, Name = "Flux.2 Klein 9B", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isFlux2Klein9B(h);
+        }});
+        Register(new() { ID = "flux.2-klein-9b/lora", CompatClass = CompatFlux2Klein9B, Name = "Flux.2 Klein 9B LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isFlux2KleinLora(h) && isFlux2Klein9BLora(h);
         }});
         // ====================== Wan Video ======================
         Register(new() { ID = "wan-2_1-text2video/vae", CompatClass = CompatWan21, Name = "Wan 2.1 VAE", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) => { return false; }});
