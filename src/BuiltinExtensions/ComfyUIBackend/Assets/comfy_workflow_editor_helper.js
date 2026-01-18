@@ -1171,10 +1171,20 @@ function comfySaveModalSaveNow() {
         params = JSON.parse(JSON.stringify(params));
         delete params.comfyworkflowparammetadata;
         delete params.comfyworkflowraw;
+        let description = getRequiredElementById('comfy_save_description').value;
+        let simpleTab = getRequiredElementById('comfy_save_enable_simple').checked;
+        for (let node of workflow.nodes) {
+            if (node.type == 'SwarmWorkflowDescription') {
+                console.log(node);
+                description = node.widgets_values[0];
+                simpleTab = node.widgets_values[1];
+                break;
+            }
+        }
         let inputs = {
             'name': saveName,
-            'description': getRequiredElementById('comfy_save_description').value,
-            'enable_in_simple': getRequiredElementById('comfy_save_enable_simple').checked,
+            'description': description,
+            'enable_in_simple': simpleTab,
             'workflow': JSON.stringify(workflow),
             'prompt': prompt_text,
             'custom_params': params,

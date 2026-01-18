@@ -13,6 +13,24 @@ except:
 INT_MAX = 0xffffffffffffffff
 INT_MIN = -INT_MAX
 
+class SwarmWorkflowDescription:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "description": ("STRING", {"default": "", "multiline": True, "tooltip": "A description of the workflow. Some basic HTML allowed."}),
+                "enable_in_simple_tab": ("BOOLEAN", {"default": False, "tooltip": "Whether the workflow should be enabled in the Simple tab."}),
+            }
+        }
+    
+    CATEGORY = "SwarmUI/inputs"
+    RETURN_TYPES = ()
+    FUNCTION = "do_input"
+    DESCRIPTION = "Lets you write the workflow description inside the workflow itself, to avoid accidentally losing it."
+
+    def do_input(self, **kwargs):
+        return ()
+
 class SwarmInputGroup:
     @classmethod
     def INPUT_TYPES(s):
@@ -285,6 +303,7 @@ class SwarmInputVideo:
 
 
 NODE_CLASS_MAPPINGS = {
+    "SwarmWorkflowDescription": SwarmWorkflowDescription,
     "SwarmInputGroup": SwarmInputGroup,
     "SwarmInputInteger": SwarmInputInteger,
     "SwarmInputFloat": SwarmInputFloat,
