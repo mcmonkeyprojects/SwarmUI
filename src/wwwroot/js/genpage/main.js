@@ -473,15 +473,17 @@ function installTensorRT() {
     });
 }
 
-function clearPromptImages() {
+function clearPromptImages(hideRevision = true) {
     let promptImageArea = getRequiredElementById('alt_prompt_image_area');
     promptImageArea.innerHTML = '';
     let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
     clearButton.style.display = 'none';
-    autoRevealRevision();
+    if (hideRevision) {
+        hideRevisionInputs(false);
+    }
 }
 
-function hideRevisionInputs() {
+function hideRevisionInputs(doClear = true) {
     let revisionGroup = document.getElementById('input_group_imageprompting');
     let revisionToggler = document.getElementById('input_group_content_imageprompting_toggle');
     if (revisionGroup) {
@@ -491,6 +493,9 @@ function hideRevisionInputs() {
         revisionGroup.style.display = 'none';
     }
     genTabLayout.altPromptSizeHandle();
+    if (doClear) {
+        clearPromptImages(false);
+    }
 }
 
 function showRevisionInputs(toggleOn = false) {
