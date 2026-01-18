@@ -209,8 +209,8 @@ SeedVR2Upscaler:
 
 Base2Edit:
     author: Juan Treminio
-    description: Edit an image in the refiner stage, allowing you to generate and edit in a single generation.
-    url: https://github.com/rlerdorf/SwarmUI-SeedVR2Upscaler
+    description: Edit an image in the refiner stage (with Edit models like Flux2), allowing you to generate and edit in a single generation.
+    url: https://github.com/jtreminio/SwarmUI-Base2Edit
     license: MIT
     tags:
     - parameters
