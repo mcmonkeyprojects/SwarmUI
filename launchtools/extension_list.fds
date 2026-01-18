@@ -207,6 +207,15 @@ SeedVR2Upscaler:
     - parameters
     - nodes
 
+Base2Edit:
+    author: Juan Treminio
+    description: Edit an image in the refiner stage, allowing you to generate and edit in a single generation.
+    url: https://github.com/rlerdorf/SwarmUI-SeedVR2Upscaler
+    license: MIT
+    tags:
+    - parameters
+    - nodes
+
 WhatTheDuck:
     author: Juan Treminio
     description: Adds potentially-breaking power tools for obscure special cases. Most users should not install this.
