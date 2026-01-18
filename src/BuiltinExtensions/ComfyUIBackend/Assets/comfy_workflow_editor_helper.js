@@ -1365,7 +1365,7 @@ function comfyDescribeWorkflowForBrowser(workflow) {
             }
         }
     ];
-    return { name: workflow.name, description: `<b>${escapeHtmlNoBr(workflow.name)}</b><br>${escapeHtmlNoBr(workflow.data.description ?? "")}`, image: workflow.data.image, buttons: buttons, className: '', searchable: `${workflow.name}\n${workflow.description}` };
+    return { name: workflow.name, description: `<b>${escapeHtmlNoBr(workflow.name)}</b><br>${safeHtmlOnly(workflow.data.description ?? "")}`, image: workflow.data.image, buttons: buttons, className: '', searchable: `${workflow.name}\n${workflow.description}` };
 }
 
 function comfySelectWorkflowForBrowser(workflow) {
