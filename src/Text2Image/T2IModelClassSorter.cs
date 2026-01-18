@@ -621,11 +621,11 @@ public class T2IModelClassSorter
         {
             return isLtxvVae(h);
         }});
-        Register(new() { ID = "lightricks-ltx-video-2", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "lightricks-ltx-video-2", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isLtxv2(h);
         }});
-        Register(new() { ID = "lightricks-ltx-video-2/lora", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2 LoRA", StandardWidth = 640, StandardHeight = 640, IsThisModelOfClass = (m, h) =>
+        Register(new() { ID = "lightricks-ltx-video-2/lora", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2 LoRA", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isLtxv2Lora(h);
         }});
