@@ -451,6 +451,8 @@ class PromptPlusButton {
         this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
         this.segmentModalInvertMask = getRequiredElementById('text_prompt_segment_invert_mask');
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
+        this.segmentModalAddButton = document.querySelector('#text_prompt_segment_modal .modal-footer .btn-primary');
+        this.segmentModalErrorBox = getRequiredElementById('text_prompt_segment_modal_error');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
         this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
@@ -584,35 +586,31 @@ class PromptPlusButton {
             let text = translate("Text to match against in the image");
             this.segmentModalTextMatch.placeholder = text;
             this.segmentModalTextMatch.title = text;
-            this.segmentModalTextMatch.required = true;
             this.updateSegmentModalAddButton();
         }
         else {
             findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = 'none';
             findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = '';
             findParentOfClass(this.segmentModalClassIds, 'auto-input').style.display = '';
-            this.segmentModalTextMatch.required = false;
             this.updateSegmentModalAddButton();
         }
     }
 
     updateSegmentModalAddButton() {
-        let addButton = document.querySelector('#text_prompt_segment_modal .modal-footer .btn-primary');
-        if (!addButton || addButton.textContent.includes('Cancel')) return;
-        let errorBox = getRequiredElementById('text_prompt_segment_modal_error');
-        
-        if (this.segmentModalModelSelect && this.segmentModalModelSelect.value == 'CLIP-Seg') {
-            let textMatch = this.segmentModalTextMatch ? this.segmentModalTextMatch.value.trim() : '';
+        if (this.segmentModalModelSelect.value == 'CLIP-Seg') {
+            let textMatch = this.segmentModalTextMatch.value.trim();
             if (!textMatch) {
-                addButton.disabled = true;
-                errorBox.innerText = translate("Text Match is required when using CLIP-Seg");
-            } else {
-                addButton.disabled = false;
-                errorBox.innerText = '';
+                this.segmentModalAddButton.disabled = true;
+                this.segmentModalErrorBox.innerText = translate("Text Match is required when using CLIP-Seg");
             }
-        } else {
-            addButton.disabled = false;
-            errorBox.innerText = '';
+            else {
+                this.segmentModalAddButton.disabled = false;
+                this.segmentModalErrorBox.innerText = '';
+            }
+        }
+        else {
+            this.segmentModalAddButton.disabled = false;
+            this.segmentModalErrorBox.innerText = '';
         }
     }
 
