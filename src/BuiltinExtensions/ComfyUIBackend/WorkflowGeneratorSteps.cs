@@ -1464,16 +1464,7 @@ public class WorkflowGeneratorSteps
                     foreach (string dataText in segmentSections)
                     {
                         string newSegmentNode = null;
-                        if (string.IsNullOrWhiteSpace(dataText))
-                        {
-                            newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
-                            {
-                                ["images"] = g.FinalImageOut,
-                                ["match_text"] = "",
-                                ["threshold"] = Math.Abs(part.Strength)
-                            });
-                        }
-                        else if (dataText.StartsWith("yolo-"))
+                        if (dataText.StartsWith("yolo-"))
                         {
                             string fullname = dataText.After("yolo-");
                             string[] modelParts = fullname.Split(':');

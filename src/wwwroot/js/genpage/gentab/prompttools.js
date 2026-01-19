@@ -513,7 +513,7 @@ class PromptPlusButton {
             this.segmentModalClear();
             this.segmentModalProcessChanges();
             $('#text_prompt_segment_modal').modal('show');
-            setTimeout(() => this.updateSegmentModalAddButton(), 100);
+            this.updateSegmentModalAddButton();
         }});
         buttons.push({ key: 'region', key_html: 'Regional Prompt', title: "Supply a different prompt for a sub-region of an image", action: () => {
             this.autoHideMenu();
@@ -585,22 +585,6 @@ class PromptPlusButton {
             this.segmentModalTextMatch.placeholder = text;
             this.segmentModalTextMatch.title = text;
             this.segmentModalTextMatch.required = true;
-            let label = findParentOfClass(this.segmentModalTextMatch, 'auto-input').querySelector('.auto-input-name');
-            if (label) {
-                let existingAsterisk = label.querySelector('.required-asterisk');
-                if (!existingAsterisk) {
-                    let popoverButton = label.querySelector('.auto-input-qbutton, .info-popover-button');
-                    let asterisk = document.createElement('span');
-                    asterisk.className = 'required-asterisk';
-                    asterisk.style.color = 'white';
-                    asterisk.textContent = '* ';
-                    if (popoverButton) {
-                        label.insertBefore(asterisk, popoverButton);
-                    } else {
-                        label.appendChild(asterisk);
-                    }
-                }
-            }
             this.updateSegmentModalAddButton();
         }
         else {
@@ -608,40 +592,27 @@ class PromptPlusButton {
             findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = '';
             findParentOfClass(this.segmentModalClassIds, 'auto-input').style.display = '';
             this.segmentModalTextMatch.required = false;
-            let label = findParentOfClass(this.segmentModalTextMatch, 'auto-input').querySelector('.auto-input-name');
-            if (label) {
-                let existingAsterisk = label.querySelector('.required-asterisk');
-                if (existingAsterisk) {
-                    existingAsterisk.remove();
-                }
-            }
             this.updateSegmentModalAddButton();
         }
     }
 
     updateSegmentModalAddButton() {
-        let modal = document.getElementById('text_prompt_segment_modal');
-        if (!modal) return;
-        let footer = modal.querySelector('.modal-footer');
-        if (!footer) return;
-        let addButton = footer.querySelector('.btn-primary');
+        let addButton = document.querySelector('#text_prompt_segment_modal .modal-footer .btn-primary');
         if (!addButton || addButton.textContent.includes('Cancel')) return;
+        let errorBox = getRequiredElementById('text_prompt_segment_modal_error');
         
         if (this.segmentModalModelSelect && this.segmentModalModelSelect.value == 'CLIP-Seg') {
             let textMatch = this.segmentModalTextMatch ? this.segmentModalTextMatch.value.trim() : '';
             if (!textMatch) {
                 addButton.disabled = true;
-                addButton.setAttribute('title', translate("Text Match is required when using CLIP-Seg"));
-                addButton.classList.add('disabled');
+                errorBox.innerText = translate("Text Match is required when using CLIP-Seg");
             } else {
                 addButton.disabled = false;
-                addButton.removeAttribute('title');
-                addButton.classList.remove('disabled');
+                errorBox.innerText = '';
             }
         } else {
             addButton.disabled = false;
-            addButton.removeAttribute('title');
-            addButton.classList.remove('disabled');
+            errorBox.innerText = '';
         }
     }
 
