@@ -1457,10 +1457,23 @@ public class WorkflowGeneratorSteps
                     PromptRegion.Part part = parts[i];
                     string[] segmentSections = part.DataText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     string segmentNode = null;
+                    if (segmentSections.Length == 0)
+                    {
+                        segmentSections = [""];
+                    }
                     foreach (string dataText in segmentSections)
                     {
                         string newSegmentNode = null;
-                        if (dataText.StartsWith("yolo-"))
+                        if (string.IsNullOrWhiteSpace(dataText))
+                        {
+                            newSegmentNode = g.CreateNode("SwarmClipSeg", new JObject()
+                            {
+                                ["images"] = g.FinalImageOut,
+                                ["match_text"] = "",
+                                ["threshold"] = Math.Abs(part.Strength)
+                            });
+                        }
+                        else if (dataText.StartsWith("yolo-"))
                         {
                             string fullname = dataText.After("yolo-");
                             string[] modelParts = fullname.Split(':');
