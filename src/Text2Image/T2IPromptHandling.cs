@@ -609,7 +609,7 @@ public class T2IPromptHandling
             context.SectionID = T2IParamInput.SectionID_VideoSwap;
             return $"<videoswap//cid={T2IParamInput.SectionID_VideoSwap}>";
         };
-        PromptTagLengthEstimators["video"] = estimateAsSectionBreak;
+        PromptTagLengthEstimators["videoswap"] = estimateAsSectionBreak;
         string autoConfine(string data, PromptTagContext context)
         {
             if (context.SectionID < 10)
