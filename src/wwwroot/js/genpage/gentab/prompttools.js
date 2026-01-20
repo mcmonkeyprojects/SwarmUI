@@ -451,8 +451,8 @@ class PromptPlusButton {
         this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
         this.segmentModalInvertMask = getRequiredElementById('text_prompt_segment_invert_mask');
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
-        this.segmentModalAddButton = getRequiredElementById('text_prompt_segment_modal_add_button');
-        this.segmentModalErrorBox = getRequiredElementById('text_prompt_segment_modal_error');
+        this.segmentModalAddButton = getRequiredElementById('text_prompt_segment_add_button');
+        this.segmentModalErrorBox = getRequiredElementById('text_prompt_segment_error');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
         this.populateDropdownFromSource('input_sampler', this.segmentModalSampler, 'text_prompt_segment_sampler_toggle');
