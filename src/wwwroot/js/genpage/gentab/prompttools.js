@@ -607,11 +607,6 @@ class PromptPlusButton {
         let modelText = this.segmentModalModelSelect.value;
         if (modelText == "CLIP-Seg") {
             modelText = this.segmentModalTextMatch.value.trim();
-            if (!modelText) {
-                showError(translate("Text Match is required when using CLIP-Seg. Please enter text to match against in the image."));
-                this.segmentModalTextMatch.focus();
-                return;
-            }
         }
         else { // YOLO
             if (parseInt(this.segmentModalYoloId.value) > 0) {
