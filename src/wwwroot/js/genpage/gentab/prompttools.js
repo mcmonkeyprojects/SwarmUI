@@ -451,7 +451,7 @@ class PromptPlusButton {
         this.segmentModalThreshold = getRequiredElementById('text_prompt_segment_threshold');
         this.segmentModalInvertMask = getRequiredElementById('text_prompt_segment_invert_mask');
         this.segmentModalMainText = getRequiredElementById('text_prompt_segment_gentext');
-        this.segmentModalAddButton = document.querySelector('#text_prompt_segment_modal .modal-footer .btn-primary');
+        this.segmentModalAddButton = getRequiredElementById('text_prompt_segment_modal_add_button');
         this.segmentModalErrorBox = getRequiredElementById('text_prompt_segment_modal_error');
         textPromptAddKeydownHandler(this.segmentModalMainText);
         enableSlidersIn(this.segmentModalOther);
@@ -597,16 +597,11 @@ class PromptPlusButton {
     }
 
     updateSegmentModalAddButton() {
-        if (this.segmentModalModelSelect.value == 'CLIP-Seg') {
-            let textMatch = this.segmentModalTextMatch.value.trim();
-            if (!textMatch) {
-                this.segmentModalAddButton.disabled = true;
-                this.segmentModalErrorBox.innerText = translate("Text Match is required when using CLIP-Seg");
-            }
-            else {
-                this.segmentModalAddButton.disabled = false;
-                this.segmentModalErrorBox.innerText = '';
-            }
+        let isCliPSeg = this.segmentModalModelSelect.value == 'CLIP-Seg';
+        let textMatch = isCliPSeg ? this.segmentModalTextMatch.value.trim() : '';
+        if (isCliPSeg && !textMatch) {
+            this.segmentModalAddButton.disabled = true;
+            this.segmentModalErrorBox.innerText = translate("Text Match is required when using CLIP-Seg");
         }
         else {
             this.segmentModalAddButton.disabled = false;
