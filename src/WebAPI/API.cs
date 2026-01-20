@@ -34,6 +34,9 @@ public class API
         RegisterAPICall(APICallReflectBuilder.BuildFor(method.Target, method.Method, isUserUpdate, permission));
     }
 
+    /// <summary>All-lowercase short labels of API routes that have no session requirement, eg 'login'. Only for very special cases.</summary>
+    public static HashSet<string> SessionlessRoutes = ["login", "getnewsession", "registerbasic"];
+
     /// <summary>Web access call route, triggered from <see cref="WebServer"/>.</summary>
     public static async Task HandleAsyncRequest(HttpContext context)
     {
@@ -95,7 +98,7 @@ public class API
                 return;
             }
             string path = context.Request.Path.ToString().ToLowerFast().After("/api/");
-            if (path != "getnewsession" && path != "login")
+            if (!SessionlessRoutes.Contains(path))
             {
                 if (!input.TryGetValue("session_id", out JToken session_id))
                 {

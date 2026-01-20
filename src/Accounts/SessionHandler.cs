@@ -405,6 +405,31 @@ public class SessionHandler
         }
     }
 
+    public static AsciiMatcher UsernameValidator = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + "_");
+
+    public User RegisterUser(string name, string password, string role, bool isAdmin)
+    {
+        string cleaned = UsernameValidator.TrimToMatches(name).ToLowerFast();
+        lock (DBLock)
+        {
+            User existing = GetUser(cleaned, false);
+            if (existing is not null)
+            {
+                return null;
+            }
+            User.DatabaseEntry userData = new() { ID = cleaned, RawSettings = "\n" };
+            User user = new(Program.Sessions, userData);
+            user.Settings.Roles = [role];
+            user.Settings.TrySetFieldModified(nameof(User.Settings.Roles), true);
+            user.Data.PasswordHashed = Utilities.HashPassword(user.UserID, password);
+            user.Data.IsPasswordSetByAdmin = isAdmin;
+            user.BuildRoles();
+            user.Save();
+            Users.TryAdd(cleaned, user);
+            return user;
+        }
+    }
+
     /// <summary>Tries to get the session for an id.</summary>
     /// <returns><see cref="true"/> if found, otherwise <see cref="false"/>.</returns>
     public bool TryGetSession(string id, out Session session)
