@@ -444,7 +444,7 @@ class PromptPlusButton {
         doToggleEnable('text_prompt_segment_scheduler');
         this.segmentModalModelSelect.addEventListener('change', () => this.segmentModalProcessChanges());
         this.segmentModalTextMatch = getRequiredElementById('text_prompt_segment_textmatch');
-        this.segmentModalTextMatch.addEventListener('input', () => this.updateSegmentModalAddButton());
+        this.segmentModalTextMatch.addEventListener('input', () => this.segmentModalProcessChanges());
         this.segmentModalClassIds = getRequiredElementById('text_prompt_segment_classids');
         this.segmentModalYoloId = getRequiredElementById('text_prompt_segment_yoloid');
         this.segmentModalCreativity = getRequiredElementById('text_prompt_segment_creativity');
@@ -515,7 +515,7 @@ class PromptPlusButton {
             this.segmentModalClear();
             this.segmentModalProcessChanges();
             $('#text_prompt_segment_modal').modal('show');
-            this.updateSegmentModalAddButton();
+            this.segmentModalProcessChanges();
         }});
         buttons.push({ key: 'region', key_html: 'Regional Prompt', title: "Supply a different prompt for a sub-region of an image", action: () => {
             this.autoHideMenu();
@@ -579,27 +579,21 @@ class PromptPlusButton {
     }
 
     segmentModalProcessChanges() {
-        if (this.segmentModalModelSelect.value == 'CLIP-Seg') {
+        let isCliPSeg = this.segmentModalModelSelect.value == 'CLIP-Seg';
+        if (isCliPSeg) {
             findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = '';
             findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = 'none';
             findParentOfClass(this.segmentModalClassIds, 'auto-input').style.display = 'none';
             let text = translate("Text to match against in the image");
             this.segmentModalTextMatch.placeholder = text;
             this.segmentModalTextMatch.title = text;
-            this.updateSegmentModalAddButton();
         }
         else {
             findParentOfClass(this.segmentModalTextMatch, 'auto-input').style.display = 'none';
             findParentOfClass(this.segmentModalYoloId, 'auto-input').style.display = '';
             findParentOfClass(this.segmentModalClassIds, 'auto-input').style.display = '';
-            this.updateSegmentModalAddButton();
         }
-    }
-
-    updateSegmentModalAddButton() {
-        let isCliPSeg = this.segmentModalModelSelect.value == 'CLIP-Seg';
-        let textMatch = isCliPSeg ? this.segmentModalTextMatch.value.trim() : '';
-        if (isCliPSeg && !textMatch) {
+        if (isCliPSeg && !this.segmentModalTextMatch.value.trim()) {
             this.segmentModalAddButton.disabled = true;
             this.segmentModalErrorBox.innerText = translate("Text Match is required when using CLIP-Seg");
         }
