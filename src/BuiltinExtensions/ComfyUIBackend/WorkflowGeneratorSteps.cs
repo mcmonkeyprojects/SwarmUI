@@ -1457,6 +1457,10 @@ public class WorkflowGeneratorSteps
                     PromptRegion.Part part = parts[i];
                     string[] segmentSections = part.DataText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                     string segmentNode = null;
+                    if (segmentSections.Length == 0)
+                    {
+                        segmentSections = [""];
+                    }
                     foreach (string dataText in segmentSections)
                     {
                         string newSegmentNode = null;

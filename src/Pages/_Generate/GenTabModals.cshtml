@@ -18,8 +18,9 @@
         <div id="text_prompt_segment_other_inputs"></div>
     </div>
     <div class="modal-footer">
+        <span id="text_prompt_segment_error" class="modal_error_bottom"></span>
         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#text_prompt_segment_modal').modal('hide')">Cancel</button>
-        <button type="button" class="btn btn-primary basic-button translate" onclick="promptPlusButton.segmentModalSubmit()">Add</button>
+        <button type="button" id="text_prompt_segment_add_button" class="btn btn-primary basic-button translate" onclick="promptPlusButton.segmentModalSubmit()">Add</button>
     </div>
 @WebUtil.ModalFooter()
 @WebUtil.ModalHeader("text_prompt_region_modal", "Add Prompt Syntax: Regional Prompt")
