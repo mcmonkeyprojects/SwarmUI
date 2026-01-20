@@ -2,13 +2,13 @@
 
 | Model | Architecture | Year | Author | Scale | Censored? | Quality/Status |
 | ----  | ---- | ---- | ---- | ---- | ---- | ---- |
-[Stable Diffusion XL](#stable-diffusion-xl) | unet | 2023 | Stability AI | 2B | Partial | Older but some finetunes are worth using |
+[Stable Diffusion XL](#stable-diffusion-xl) | unet | 2023 | Stability AI | 2B | Partial | Old but some finetunes remain popular |
 [SD1 and SDXL Turbo Variants](#sd1-and-sdxl-turbo-variants) | unet | 2023 | Stability AI and others | 2B | Partial | Outdated |
 [Stable Diffusion 3](#stable-diffusion-3) | MMDiT | 2024 | Stability AI | 2B | Yes | Outdated, prefer 3.5 |
-[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Partial | Recent, Good Quality |
-[Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Recent, Good Quality |
+[Stable Diffusion 3.5 Large](#stable-diffusion-35-large) | MMDiT | 2024 | Stability AI | 8B | Partial | Outdated, Good Quality for its time |
+[Stable Diffusion 3.5 Medium](#stable-diffusion-35-medium) | MMDiT | 2024 | Stability AI | 2B | Partial | Outdated, Good Quality for its time |
 [AuraFlow](#auraflow) | MMDiT | 2024 | Fal.AI | 6B | Yes | Outdated |
-[Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Recent, High Quality |
+[Flux.1](#black-forest-labs-flux1-models) | MMDiT | 2024 | Black Forest Labs | 12B | Partial | Outdated, High Quality for its time |
 [Flux.2](#flux-2) | MMDiT | 2025 | Black Forest Labs | 4B, 9B, 32B | Minimal | Recent, Incredible Quality, choice of speed or quality preference |
 [Chroma](#chroma) | MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Decent Quality |
 [Chroma Radiance](#chroma-radiance) | Pixel MMDiT | 2025 | Lodestone Rock | 8.9B  | No | Recent, Bad Quality (WIP) |
@@ -52,11 +52,11 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 
 # Current Recommendations
 
-Image model(s) most worth using, as of April 2025:
+Image model(s) most worth using, as of January 2026:
 
-- Flux Dev in Nunchaku format for best speed/quality combo
-- SDXL finetunes for best broad availability of finetunes and loras, at high speed (with limited quality), especially for anime-style usage
-- HiDream for best base model quality and least censorship, at cost of speed (especially with limited PC hardware)
+- Z-Image is the best right now, especially for photoreal gens.
+- Flux.2 Klein is pretty great too, for Editing or for art style variety.
+- Flux.2 Dev is massive, but is the smartest of the bunch if you have the hardware and patience for it.
 
 # General Info
 
