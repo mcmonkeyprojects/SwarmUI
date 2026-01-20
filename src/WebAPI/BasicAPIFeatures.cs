@@ -22,8 +22,11 @@ public static class BasicAPIFeatures
     /// <summary>Called by <see cref="Program"/> to register the core API calls.</summary>
     public static void Register()
     {
-        API.RegisterAPICall(Login); // Login is special
-        API.RegisterAPICall(GetNewSession); // GetNewSession is special
+        // Special APIs
+        API.RegisterAPICall(Login);
+        API.RegisterAPICall(RegisterBasic);
+        API.RegisterAPICall(GetNewSession);
+        // General APIs
         API.RegisterAPICall(Logout, true, Permissions.Fundamental);
         API.RegisterAPICall(InstallConfirmWS, true, Permissions.Install);
         API.RegisterAPICall(GetMyUserData, false, Permissions.FundamentalGenerateTabAccess);
@@ -66,7 +69,7 @@ public static class BasicAPIFeatures
         [API.APIParameter("Login username.")] string username,
         [API.APIParameter("Login password.")] string password)
     {
-        username = AdminAPI.UsernameValidator.TrimToMatches(username);
+        username = SessionHandler.UsernameValidator.TrimToMatches(username).ToLowerFast();
         string ip = WebUtil.GetIPString(context);
         string userAgent = WebUtil.AllowedXForwardedForChars.TrimToMatches(context.Request.Headers.UserAgent[0] ?? "unknown");
         if (username.Length < 3 || username.Length > 100 || password.Length < 8 || password.Length > 500)
@@ -108,6 +111,60 @@ public static class BasicAPIFeatures
         }
         context.Response.Cookies.Append("swarm_token", tok, new CookieOptions() { HttpOnly = true, Expires = DateTimeOffset.UtcNow.AddYears(1), SameSite = SameSiteMode.Lax });
         Logs.Info($"Login attempt from {ip} as {username}, successful.");
+        return new JObject() { ["success"] = "true" };
+    }
+
+    [API.APIDescription("Special route to register a new user account. Generally only for UI users, bots/automated API usages should have a user account generate a token first.",
+        """
+            "success": "true" // and sets a cookie
+            // or
+            "error_id": "invalid_input" // or "ratelimit", "username_exists" (or is reserved/invalid), "registration_failed" (internal)
+        """)]
+    [API.APINonfinalMark]
+    public static async Task<JObject> RegisterBasic(HttpContext context,
+        [API.APIParameter("New registered account username.")] string username,
+        [API.APIParameter("New registered account password.")] string password)
+    {
+        username = SessionHandler.UsernameValidator.TrimToMatches(username).ToLowerFast();
+        string ip = WebUtil.GetIPString(context);
+        if (username.Length < 3 || username.Length > 100 || password.Length < 8 || password.Length > 500)
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to entirely invalid inputs.");
+            return new JObject() { ["error_id"] = "invalid_input" };
+        }
+        if (!LoginRateLimiterByIP.TryUseOne(ip))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, ratelimited by IP.");
+            return new JObject() { ["error_id"] = "ratelimit" };
+        }
+        if (!LoginRateLimiterByUser.TryUseOne(username))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, ratelimited by username.");
+            return new JObject() { ["error_id"] = "ratelimit" };
+        }
+        User user = Program.Sessions.GetUser(username, false);
+        if (user is not null)
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to username already existing.");
+            return new JObject() { ["error_id"] = "username_exists" };
+        }
+        if (username[0] < 'a' || username[0] > 'z')
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to invalid starting character.");
+            return new JObject() { ["error_id"] = "username_exists" };
+        }
+        if (SessionHandler.ReservedUsernames.Contains(username))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to reserved username.");
+            return new JObject() { ["error_id"] = "username_exists" };
+        }
+        user = Program.Sessions.RegisterUser(username, password, Program.ServerSettings.UserAuthorization.Registration.NewUserDefaultRole, false);
+        if (user is null)
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to internal registration failure.");
+            return new JObject() { ["error_id"] = "registration_failed" };
+        }
+        Logs.Info($"Register attempt from {ip} as {username}, successful.");
         return new JObject() { ["success"] = "true" };
     }
 

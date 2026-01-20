@@ -109,6 +109,23 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("Message to add on the login page.\nYou may use (basic!) HTML here.\nIt is recommended to add contact information here, such as a Discord invite code or an email address.")]
         public string LoginNotice = "This is a local instance not yet configured for shared usage. If you're seeing this on the login screen, ask the server owner to fill it in on the Server Configuration page.";
+
+        public class RegistrationData : AutoConfiguration
+        {
+            [ConfigComment("If true, allow new users to register accounts on this SwarmUI instance.\nYou must also enable at least one specific registration method.")]
+            public bool AllowRegistration = false;
+
+            [ConfigComment("If true, and AllowRegistration is true, allow registering accounts with a simple username/password/combo.")]
+            public bool SimplePasswordRegistration = false;
+
+            [ConfigComment("If registration is enabled, what role to assign to new users when they register.")]
+            public string NewUserDefaultRole = "user";
+
+            [ConfigComment("Message to add on the Register page.\nYou may use (basic!) HTML here.\nIt is recommended to add contact information here, such as a Discord invite code or an email address.")]
+            public string RegisterNotice = "This is a local instance not yet configured for registration. If you're seeing this on the register screen, ask the server owner to fill it in on the Server Configuration page.";
+        }
+
+        public RegistrationData Registration = new();
     }
 
     /// <summary>Settings related to logging.</summary>

@@ -58,6 +58,9 @@ public class SessionHandler
 
     public User GenericSharedUser;
 
+    /// <summary>A few words blocked from being exact usernames of new registrations to reduce likelihood of confusion with core name overlaps.</summary>
+    public static HashSet<string> ReservedUsernames = ["shared", "local", "admin", "owner", "moderator", "user", "users", "poweruser", "guest", "guests", "registered", "login", "account", "system", "root", "role", "roles", "tracked", "permission", "permissions"];
+
     /// <summary>Saves persistent data to file.</summary>
     public void Save()
     {
