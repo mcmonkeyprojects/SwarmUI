@@ -63,18 +63,20 @@
     @notice
 </div>
 <div class="login-form-container login-container">
-    <div class="login-input-block">
-        <span class="translate login-label">Username:</span> <input type="text" id="username_input" name="username" class="auto-text auto-text-block translate translate-no-text" placeholder="Username" autocomplete="off" value="" />
-    </div>
-    <div class="login-input-block">
-        <span class="translate login-label">Password:</span> <input type="text" id="password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Password" autocomplete="off" value="" />
-    </div>
-    <div class="login-input-block">
-        <span class="translate login-label">Confirm Password:</span> <input type="text" id="confirm_password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Confirm Password" autocomplete="off" value="" />
-    </div>
-    <div class="login-input-block login-message-block" id="register_error_block"></div>
-    <div class="login-input-block">
-        <button type="button" class="basic-button translate" id="register_button" onclick="registerHandler.doRegisterBasic()">Register</button>
+    <div id="simple-register-container">
+        <div class="login-input-block">
+            <span class="translate login-label">Username:</span> <input type="text" id="username_input" name="username" class="auto-text auto-text-block translate translate-no-text" placeholder="Username" autocomplete="off" value="" />
+        </div>
+        <div class="login-input-block">
+            <span class="translate login-label">Password:</span> <input type="text" id="password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Password" autocomplete="off" value="" />
+        </div>
+        <div class="login-input-block">
+            <span class="translate login-label">Confirm Password:</span> <input type="text" id="confirm_password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Confirm Password" autocomplete="off" value="" />
+        </div>
+        <div class="login-input-block login-message-block" id="register_error_block"></div>
+        <div class="login-input-block">
+            <button type="button" class="basic-button translate" id="register_button" onclick="registerHandler.doRegisterBasic()">Register</button>
+        </div>
     </div>
     @if (googleOAuthRegister)
     {

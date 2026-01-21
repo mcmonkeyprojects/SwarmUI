@@ -5,6 +5,7 @@ class RegisterHandler {
         this.confirmPasswordInput = document.getElementById('confirm_password_input');
         this.registerButton = document.getElementById('register_button');
         this.registerErrorBlock = document.getElementById('register_error_block');
+        this.simpleRegisterContainer = document.getElementById('simple-register-container');
         this.messageRegistering = translatable("Registering...");
         this.messageRegisterSuccess = translatable("Registration successful! Redirecting...");
         this.errorPasswordMatch = translatable("Passwords do not match.");
@@ -14,10 +15,8 @@ class RegisterHandler {
         this.errorRateLimit = translatable("Registration failed (ratelimit reached), please wait a minute before trying again.");
         this.errorUsernameAlreadyExists = translatable("Username already exists (or is reserved). Note that usernames should generally be A-Z plaintext. Please choose a different username.");
         this.errorUnknown = translatable("Registration failed (reason unknown), please check your inputs and try again.\nIf this issue persists, please contact the instance owner.");
-        if (!passwordRegistrationEnabled && this.passwordInput) {
-            this.passwordInput.style.display = 'none';
-            this.confirmPasswordInput.style.display = 'none';
-            this.registerButton.style.display = 'none';
+        if (!passwordRegistrationEnabled && this.simpleRegisterContainer) {
+            this.simpleRegisterContainer.style.display = 'none';
         }
         if (passwordRegistrationEnabled && this.confirmPasswordInput) {
             this.confirmPasswordInput.addEventListener('keydown', (e) => {
