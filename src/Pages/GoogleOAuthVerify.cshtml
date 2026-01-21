@@ -2,6 +2,7 @@
 @attribute [IgnoreAntiforgeryToken]
 @{
     ViewData["Title"] = "Register";
+    bool oAuthRegister = Program.ServerSettings.UserAuthorization.Registration.OAuthRegistration;
     bool googleOAuthRegister = oAuthRegister && Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth;
     if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration || !googleOAuthRegister)
     {
@@ -9,7 +10,6 @@
         return;
     }
     HtmlString notice = new(Program.ServerSettings.UserAuthorization.Registration.RegisterNotice);
-    bool oAuthRegister = Program.ServerSettings.UserAuthorization.Registration.OAuthRegistration;
     string credential = Request.Form["credential"];
     if (string.IsNullOrEmpty(credential))
     {
