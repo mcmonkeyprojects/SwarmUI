@@ -14,16 +14,18 @@ class RegisterHandler {
         this.errorRateLimit = translatable("Registration failed (ratelimit reached), please wait a minute before trying again.");
         this.errorUsernameAlreadyExists = translatable("Username already exists (or is reserved). Note that usernames should generally be A-Z plaintext. Please choose a different username.");
         this.errorUnknown = translatable("Registration failed (reason unknown), please check your inputs and try again.\nIf this issue persists, please contact the instance owner.");
-        if (!passwordRegistrationEnabled) {
+        if (!passwordRegistrationEnabled && this.passwordInput) {
             this.passwordInput.style.display = 'none';
             this.confirmPasswordInput.style.display = 'none';
             this.registerButton.style.display = 'none';
         }
-        this.confirmPasswordInput.addEventListener('keydown', (e) => {
-            if (e.key == 'Enter') {
-                this.registerButton.click();
-            }
-        });
+        if (passwordRegistrationEnabled && this.confirmPasswordInput) {
+            this.confirmPasswordInput.addEventListener('keydown', (e) => {
+                if (e.key == 'Enter') {
+                    this.registerButton.click();
+                }
+            });
+        }
     }
 
     showError(message) {
@@ -62,6 +64,53 @@ class RegisterHandler {
         };
         this.registerButton.disabled = true;
         sendJsonToServer(`API/RegisterBasic`, inData, (status, data) => {
+            data ??= {};
+            if (data.success) {
+                this.showMessage(this.messageRegisterSuccess.get());
+                setTimeout(() => {
+                    this.registerErrorBlock.innerHTML = `<a href="Login">(Click here if you haven't already been redirected)</a>`;
+                    window.location.href = 'Login';
+                }, 1000);
+                return;
+            }
+            this.registerButton.disabled = false;
+            if (data.error_id == 'invalid_input') {
+                this.showError(this.errorInvalidInput.get());
+            }
+            else if (data.error_id == 'ratelimit') {
+                this.showError(this.errorRateLimit.get());
+            }
+            else if (data.error_id == 'username_exists') {
+                this.showError(this.errorUsernameAlreadyExists.get());
+            }
+            else {
+                this.showError(this.errorUnknown.get());
+            }
+        });
+    }
+
+    async doRegisterOAuth(type) {
+        if (!oAuthRegistrationEnabled) {
+            this.showError("OAuth registration is not enabled.");
+            return;
+        }
+        if (!oauthTrackerKey) {
+            this.showError("OAuth registration is not properly connected.");
+            return;
+        }
+        if (this.usernameInput.value.length < 3) {
+            this.showError(this.errorUsernameTooShort.get());
+            return;
+        }
+        this.showMessage(this.messageRegistering.get());
+        let username = this.usernameInput.value.trim();
+        let inData = {
+            username: username,
+            oauth_tracker_key: oauthTrackerKey,
+            oauth_type: type
+        };
+        this.registerButton.disabled = true;
+        sendJsonToServer(`API/RegisterOAuth`, inData, (status, data) => {
             data ??= {};
             if (data.success) {
                 this.showMessage(this.messageRegisterSuccess.get());

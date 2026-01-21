@@ -77,7 +77,8 @@ Currently, SwarmUI is only validated to be safely usable by **Friends and Family
 
 - You can enable user registration via the options under Server Configuration.
     - `AllowRegistration` to turn it on, and other checkboxes to configure what registration methods are allowed.
-        - Currently, only simple username/password is available.
+        - Simple username/password is available.
+        - Also, Google OAuth is available. Follow <https://developers.google.com/identity/protocols/oauth2> for information about how to set this up.
     - You can also configure `NewUserDefaultRole` (defaults to `user`)
     - You should set the `RegisterNotice` text too
 - If enabled, when a user goes to login, there's a link to the `/Register` page they can click to register an account.

@@ -39,6 +39,7 @@ public static class AdminAPI
         API.RegisterAPICall(AdminListUsers, false, Permissions.ManageUsers);
         API.RegisterAPICall(AdminAddUser, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminSetUserPassword, true, Permissions.ManageUsers);
+        API.RegisterAPICall(AdminSetUserOAuthEmail, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminChangeUserSettings, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminDeleteUser, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminGetUserInfo, false, Permissions.ManageUsers);
@@ -882,6 +883,24 @@ public static class AdminAPI
         return new JObject() { ["success"] = true };
     }
 
+    [API.APIDescription("Admin route to force-set a user's OAuth email.",
+        """
+            "success": true
+        """)]
+    [API.APINonfinalMark]
+    public static async Task<JObject> AdminSetUserOAuthEmail(Session session,
+        [API.APIParameter("The name of the user.")] string name,
+        [API.APIParameter("The OAuth email to set for the user, or empty string to clear it.")] string email)
+    {
+        User user = Program.Sessions.GetUser(name, false);
+        if (user is null)
+        {
+            return new JObject() { ["error"] = "No user by that name exists." };
+        }
+        user.SetOAuthEmail(email);
+        return new JObject() { ["success"] = true };
+    }
+
     [API.APIDescription("Admin route to forcibly change user settings data for a user.",
         """
             "success": true
@@ -947,6 +966,7 @@ public static class AdminAPI
             "user_id": "useridhere",
             "password_set_by_admin": true, // false if set by user
             "settings": { ... }, // User settings, same format as GetUserSettings
+            "oauth_email": "", // OAuth email associated with the user, if any
             "max_t2i": 32 // actual value of max t2i simultaneous, calculated from current roles and available backends
         """)]
     [API.APINonfinalMark]
@@ -963,6 +983,7 @@ public static class AdminAPI
             ["user_id"] = user.UserID,
             ["password_set_by_admin"] = user.Data.IsPasswordSetByAdmin,
             ["settings"] = AutoConfigToParamData(user.Settings, false),
+            ["oauth_email"] = user.Data.OAuthEmail,
             ["max_t2i"] = user.CalcMaxT2ISimultaneous
         };
     }

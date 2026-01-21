@@ -158,6 +158,7 @@ class UserAdminManager {
             + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser(unescapeHtml('${escapeHtml(name)}'))">Delete User</button>`)
             + `<br><br><button type="button" class="basic-button translate" onclick="userAdminManager.editUserPw(unescapeHtml('${escapeHtml(name)}'))">Change User Password</button>`
             + `&emsp;<span class="translate">Password was set by: </span><b class="translate password-set-by-field"></b>`
+            + `<br><span class="translate">OAuth email: </span><input type="text" class="translate oauth-email-field" value="" /> <button type="button" class="basic-button translate" onclick="userAdminManager.editUserOAuth(unescapeHtml('${escapeHtml(name)}'))">Apply OAuth Email Change</button>`
             + `<br><br><div class="admin_edit_user_settings_container" id="admin_edit_user_settings_container"></div>
             <div class="settings_submit_confirmer" id="${prefix}confirmer">
                 <span class="settings_submit_confirmer_text">Save <span id="${prefix}edit_count">0</span> edited setting(s)?</span>
@@ -170,6 +171,7 @@ class UserAdminManager {
                 return;
             }
             this.rightBox.querySelector('.password-set-by-field').innerText = data.password_set_by_admin ? 'Admin' : 'User';
+            this.rightBox.querySelector('.oauth-email-field').value = data.oauth_email;
             buildSettingsMenu(userSettingsContainer, data.settings, prefix, this.curUserSettingsEditTracker);
         });
     }
@@ -188,6 +190,13 @@ class UserAdminManager {
     editUserPw(name) {
         this.displayedUser = name;
         $('#server_change_user_password_modal').modal('show');
+    }
+
+    editUserOAuth(name) {
+        let email = this.rightBox.querySelector('.oauth-email-field').value;
+        genericRequest('AdminSetUserOAuthEmail', {'name': name, 'email': email}, data => {
+            this.clickUser(name);
+        });
     }
 
     async changeUserPwSubmit() {

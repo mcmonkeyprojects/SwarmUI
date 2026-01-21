@@ -267,7 +267,7 @@ public class WebServer
         });
         WebApp.UseRouting();
         WebApp.UseWebSockets(new WebSocketOptions() { KeepAliveInterval = TimeSpan.FromSeconds(30) });
-        WebApp.MapRazorPages();
+        WebApp.MapRazorPages().DisableAntiforgery();
         timer.Check("[Web] core use calls");
         WebApp.MapGet("/", () => Results.Redirect("Text2Image"));
         WebApp.Map("/API/{*Call}", API.HandleAsyncRequest);

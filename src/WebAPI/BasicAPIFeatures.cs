@@ -25,6 +25,7 @@ public static class BasicAPIFeatures
         // Special APIs
         API.RegisterAPICall(Login);
         API.RegisterAPICall(RegisterBasic);
+        API.RegisterAPICall(RegisterOAuth);
         API.RegisterAPICall(GetNewSession);
         // General APIs
         API.RegisterAPICall(Logout, true, Permissions.Fundamental);
@@ -164,6 +165,68 @@ public static class BasicAPIFeatures
             Logs.Warning($"Register attempt from {ip} as {username}, failed due to internal registration failure.");
             return new JObject() { ["error_id"] = "registration_failed" };
         }
+        Logs.Info($"Register attempt from {ip} as {username}, successful.");
+        return new JObject() { ["success"] = "true" };
+    }
+
+    [API.APIDescription("Special route to register a new user account via OAuth. Cannot be automated, must be via UI.",
+        """
+            "success": "true" // and sets a cookie
+            // or
+            "error_id": "invalid_input" // or "ratelimit", "username_exists" (or is reserved/invalid), "registration_failed" (internal)
+        """)]
+    [API.APINonfinalMark]
+    public static async Task<JObject> RegisterOAuth(HttpContext context,
+        [API.APIParameter("New registered account username.")] string username,
+        [API.APIParameter("Tracker key to identify the source OAuth request.")] string oauth_tracker_key,
+        [API.APIParameter("OAuth provider type.")] string oauth_type)
+    {
+        username = SessionHandler.UsernameValidator.TrimToMatches(username).ToLowerFast();
+        string ip = WebUtil.GetIPString(context);
+        if (username.Length < 3 || username.Length > 100)
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to entirely invalid inputs.");
+            return new JObject() { ["error_id"] = "invalid_input" };
+        }
+        if (!LoginRateLimiterByIP.TryUseOne(ip))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, ratelimited by IP.");
+            return new JObject() { ["error_id"] = "ratelimit" };
+        }
+        if (!LoginRateLimiterByUser.TryUseOne(username))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, ratelimited by username.");
+            return new JObject() { ["error_id"] = "ratelimit" };
+        }
+        User user = Program.Sessions.GetUser(username, false);
+        if (user is not null)
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to username already existing.");
+            return new JObject() { ["error_id"] = "username_exists" };
+        }
+        if (username[0] < 'a' || username[0] > 'z')
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to invalid starting character.");
+            return new JObject() { ["error_id"] = "username_exists" };
+        }
+        if (SessionHandler.ReservedUsernames.Contains(username))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to reserved username.");
+            return new JObject() { ["error_id"] = "username_exists" };
+        }
+        if (!Program.Sessions.TempAuths.TryGetValue(oauth_tracker_key, out string email))
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to invalid OAuth tracker key.");
+            return new JObject() { ["error_id"] = "invalid_input" };
+        }
+        user = Program.Sessions.RegisterUser(username, null, Program.ServerSettings.UserAuthorization.Registration.NewUserDefaultRole, false);
+        if (user is null)
+        {
+            Logs.Warning($"Register attempt from {ip} as {username}, failed due to internal registration failure.");
+            return new JObject() { ["error_id"] = "registration_failed" };
+        }
+        user.SetOAuthEmail(email);
+        Program.Sessions.TempAuths.Remove(oauth_tracker_key, out _);
         Logs.Info($"Register attempt from {ip} as {username}, successful.");
         return new JObject() { ["success"] = "true" };
     }

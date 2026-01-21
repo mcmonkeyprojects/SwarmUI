@@ -3,32 +3,39 @@
     ViewData["Title"] = "Register";
     HtmlString notice = new(Program.ServerSettings.UserAuthorization.Registration.RegisterNotice);
     bool passwordRegister = Program.ServerSettings.UserAuthorization.Registration.SimplePasswordRegistration;
+    bool oAuthRegister = Program.ServerSettings.UserAuthorization.Registration.OAuthRegistration;
+    bool googleOAuthRegister = oAuthRegister && Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth;
 }
 @section Header {
     <link rel="stylesheet" href="css/loginpage.css?vary=@Utilities.VaryID" />
 }
 @if (WebUtil.HasValidLogin(HttpContext))
 {
-    <script>
-        window.location.href = "Text2Image";
-    </script>
+    <script>window.location.href = "Text2Image";</script>
     return;
 }
 @if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration)
 {
-    <script>
-        window.location.href = "Login";
-    </script>
+    <script>window.location.href = "Login";</script>
     return;
 }
 <script>
     passwordRegistrationEnabled = false;
+    oAuthRegistrationEnabled = false;
+    googleOAuthRegistrationEnabled = false;
 </script>
 @if (passwordRegister)
 {
-    <script>
-        passwordRegistrationEnabled = true;
-    </script>
+    <script>passwordRegistrationEnabled = true;</script>
+}
+@if (oAuthRegister)
+{
+    <script>oAuthRegistrationEnabled = true;</script>
+}
+@if (googleOAuthRegister)
+{
+    <script>googleOAuthRegistrationEnabled = true;</script>
+    <script src="https://accounts.google.com/gsi/client" async></script>
 }
 
 <div class="login-header-container login-container">
@@ -39,8 +46,11 @@
         <span class="translate">Please verify you are on the specific instance of SwarmUI you intend to be, verify the address in the URL is correct. Accounts are not shared between different instances of SwarmUI.</span>
         @if (passwordRegister)
         {
-            <br>
-            <span class="translate">For basic registration, create a unique username and password.</span>
+            <br><span class="translate">For basic registration, create a unique username and password.</span>
+        }
+        @if (googleOAuthRegister)
+        {
+            <br><span class="translate">For Google OAuth registration, click the button below.</span>
         }
         @if (!passwordRegister)
         {
@@ -66,6 +76,16 @@
     <div class="login-input-block">
         <button type="button" class="basic-button translate" id="register_button" onclick="registerHandler.doRegisterBasic()">Register</button>
     </div>
+    @if (googleOAuthRegister)
+    {
+        string pathBase = Program.ServerSettings.UserAuthorization.OAuth.OAuthReturnURL;
+        string clientId = Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuthClientId;
+        <div id="g_id_onload" data-client_id="@clientId"
+                data-context="signin" data-ux_mode="popup" data-login_uri="@pathBase/GoogleOAuthVerify" data-itp_support="true">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left">
+        </div>
+    }
 </div>
 <div class="login-footer-container login-container">
     <span class="translate">This is a local registration page for a specific instance of SwarmUI, owned by the operators of this instance.</span>

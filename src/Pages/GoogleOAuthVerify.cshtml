@@ -1,0 +1,89 @@
+@page
+@attribute [IgnoreAntiforgeryToken]
+@{
+    ViewData["Title"] = "Register";
+    bool googleOAuthRegister = oAuthRegister && Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth;
+    if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration || !googleOAuthRegister)
+    {
+        <script>window.location.href = "Login";</script>
+        return;
+    }
+    HtmlString notice = new(Program.ServerSettings.UserAuthorization.Registration.RegisterNotice);
+    bool oAuthRegister = Program.ServerSettings.UserAuthorization.Registration.OAuthRegistration;
+    string credential = Request.Form["credential"];
+    if (string.IsNullOrEmpty(credential))
+    {
+        Logs.Warning("Google OAuth Verify: No credential provided");
+        <script>window.location.href = "Login";</script>
+        return;
+    }
+    (bool isRegistered, string authData) = await Program.Sessions.CheckOAuth(credential);
+    if (string.IsNullOrWhiteSpace(authData))
+    {
+        <script>window.location.href = "Login";</script>
+        return;
+    }
+    if (isRegistered)
+    {
+        User user = Program.Sessions.GetUser(authData, true);
+        (_, string tok) = user.CreateLoginSession(WebUtil.GetIPString(HttpContext), HttpContext.Request.Headers["User-Agent"]);
+        if (tok is null)
+        {
+            Logs.Warning($"Login attempt from {WebUtil.GetIPString(HttpContext)} as {user.UserID}, failed due to session creation failure.");
+            <script>window.location.href = "Login";</script>
+            return;
+        }
+        HttpContext.Response.Cookies.Append("swarm_token", tok, new CookieOptions() { HttpOnly = true, Expires = DateTimeOffset.UtcNow.AddYears(1), SameSite = SameSiteMode.Lax });
+        Logs.Info($"Login attempt from {WebUtil.GetIPString(HttpContext)} as {user.UserID} via Google OAuth, successful.");
+        <script>window.location.href = "Text2Image";</script>
+        return;
+    }
+    <script>oauthTrackerKey = "@authData";</script>
+}
+@section Header {
+    <link rel="stylesheet" href="css/loginpage.css?vary=@Utilities.VaryID" />
+}
+@if (WebUtil.HasValidLogin(HttpContext))
+{
+    <script>window.location.href = "Text2Image";</script>
+    return;
+}
+@if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration || !googleOAuthRegister)
+{
+    <script>window.location.href = "Login";</script>
+    return;
+}
+<script>
+    passwordRegistrationEnabled = false;
+    oAuthRegistrationEnabled = true;
+    googleOAuthRegistrationEnabled = true;
+</script>
+<div class="login-header-container login-container">
+    <div class="big-header">
+        <span class="translate">Register an account for</span> SwarmUI: @Program.ServerSettings.UserAuthorization.InstanceTitle
+    </div>
+    <div class="small-header">
+        <span class="translate">Please verify you are on the specific instance of SwarmUI you intend to be, verify the address in the URL is correct. Accounts are not shared between different instances of SwarmUI.</span>
+    </div>
+    <br><hr><br>
+    @notice
+</div>
+<div class="login-form-container login-container">
+    <br><span class="translate">Your Google account will be user for your login. Pick a username below.</span>
+    <div class="login-input-block">
+        <span class="translate login-label">Username:</span> <input type="text" id="username_input" name="username" class="auto-text auto-text-block translate translate-no-text" placeholder="Username" autocomplete="off" value="" />
+    </div>
+    <div class="login-input-block login-message-block" id="register_error_block"></div>
+    <div class="login-input-block">
+        <button type="button" class="basic-button translate" id="register_button" onclick="registerHandler.doRegisterOAuth('google')">Register</button>
+    </div>
+</div>
+<div class="login-footer-container login-container">
+    <span class="translate">This is a local registration page for a specific instance of SwarmUI, owned by the operators of this instance.</span>
+    <br><span class="translate">This instance is not associated with</span> <a href="https://swarmui.net" target="_blank" rel="noopener noreferrer">SwarmUI</a> <span class="translate">or its developers.</span>
+    <br>SwarmUI <a href="https://github.com/mcmonkeyprojects/SwarmUI" target="_blank" rel="noopener noreferrer" class="translate">is open source on GitHub</a>.
+</div>
+
+@section Scripts {
+    <script src="js/registerpage.js?vary=@Utilities.VaryID"></script>
+}

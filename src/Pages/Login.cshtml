@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Login";
     HtmlString notice = new(Program.ServerSettings.UserAuthorization.LoginNotice);
+    bool googleOAuthLogin = Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth;
 }
 @section Header {
     <link rel="stylesheet" href="css/loginpage.css?vary=@Utilities.VaryID" />
@@ -40,6 +41,17 @@
     <div class="login-input-block">
         <button type="button" class="basic-button translate" id="login_button" onclick="loginHandler.doLogin()">Login</button>
     </div>
+    @if (googleOAuthLogin)
+    {
+        string pathBase = Program.ServerSettings.UserAuthorization.OAuth.OAuthReturnURL;
+        string clientId = Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuthClientId;
+        <script src="https://accounts.google.com/gsi/client" async></script>
+        <div id="g_id_onload" data-client_id="@clientId"
+                data-context="signin" data-ux_mode="popup" data-login_uri="@pathBase/GoogleOAuthVerify" data-itp_support="true">
+        </div>
+        <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left">
+        </div>
+    }
 </div>
 <div class="login-footer-container login-container">
     <span class="translate">This is a local login page for a specific instance of SwarmUI, owned by the operators of this instance.</span>

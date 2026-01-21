@@ -110,6 +110,7 @@ public class Settings : AutoConfiguration
         [ConfigComment("Message to add on the login page.\nYou may use (basic!) HTML here.\nIt is recommended to add contact information here, such as a Discord invite code or an email address.")]
         public string LoginNotice = "This is a local instance not yet configured for shared usage. If you're seeing this on the login screen, ask the server owner to fill it in on the Server Configuration page.";
 
+        /// <summary>Settings related to user registration.</summary>
         public class RegistrationData : AutoConfiguration
         {
             [ConfigComment("If true, allow new users to register accounts on this SwarmUI instance.\nYou must also enable at least one specific registration method.")]
@@ -118,6 +119,9 @@ public class Settings : AutoConfiguration
             [ConfigComment("If true, and AllowRegistration is true, allow registering accounts with a simple username/password/combo.")]
             public bool SimplePasswordRegistration = false;
 
+            [ConfigComment("If true, and AllowRegistration is true, allow registering accounts via OAuth2 (eg Google login).\nYou must configure OAuth providers in the OAuth section.")]
+            public bool OAuthRegistration = false;
+
             [ConfigComment("If registration is enabled, what role to assign to new users when they register.")]
             public string NewUserDefaultRole = "user";
 
@@ -125,7 +129,31 @@ public class Settings : AutoConfiguration
             public string RegisterNotice = "This is a local instance not yet configured for registration. If you're seeing this on the register screen, ask the server owner to fill it in on the Server Configuration page.";
         }
 
+        [ConfigComment("Settings related to user registration.")]
         public RegistrationData Registration = new();
+
+        /// <summary>Settings related to OAuth providers.</summary>
+        public class OAuthData : AutoConfiguration
+        {
+            [ConfigComment("If true, Google OAuth2 is supported for registration and login. Create in the google cloud console as a 'web application'")]
+            public bool GoogleOAuth = false;
+
+            [ConfigComment("If non-empty, a comma separated whitelist of domains that are allowed for OAuth usage, such as an org domain name.")]
+            public string OAuthAllowedDomains = "";
+
+            [ConfigComment("The Client-ID for Google OAuth.")]
+            public string GoogleOAuthClientId = "";
+
+            [ConfigComment("The Client-Secret for Google OAuth.")]
+            [ValueIsSecret]
+            public string GoogleOAuthClientSecret = "";
+
+            [ConfigComment("The public base URL for this Swarm instance, for OAuth to redirect to. For example, 'https://swarm.example.com'.")]
+            public string OAuthReturnURL = "";
+        }
+
+        [ConfigComment("Settings related to OAuth providers.")]
+        public OAuthData OAuth = new();
     }
 
     /// <summary>Settings related to logging.</summary>
