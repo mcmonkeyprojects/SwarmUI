@@ -52,7 +52,7 @@
         {
             <br><span class="translate">For Google OAuth registration, click the button below.</span>
         }
-        @if (!passwordRegister)
+        @if (!passwordRegister && !googleOAuthRegister)
         {
             <br>
             <span class="translate">No registration methods are enabled. Please contact the instance owner and ask them to correct this in the server configuration.</span>
