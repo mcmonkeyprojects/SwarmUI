@@ -304,6 +304,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-9B-GGUF/blob/main/flux-2-klein-9b-Q4_K_M.gguf>)
     - or [klein 9b base here](<https://huggingface.co/black-forest-labs/FLUX.2-klein-base-9b-fp8/blob/main/flux-2-klein-base-9b-fp8.safetensors>)
         - or a [gguf here](<https://huggingface.co/unsloth/FLUX.2-klein-base-9B-GGUF/blob/main/flux-2-klein-base-9b-Q4_K_M.gguf>)
+    - Save the file into `diffusion_models`
     - Broadly works the same as Flux.2-Dev
     - On the distilled model set `Steps` to `8`, on base model use normal high step counts
     - On the distilled model set `CFG Scale` to `1`, on base model use normal CFG eg `7`

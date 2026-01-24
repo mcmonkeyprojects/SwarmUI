@@ -532,7 +532,7 @@ public partial class WorkflowGenerator
 
         public string GetMistralFlux2Model()
         {
-            return RequireClipModel("mistral_3_small_flux2_fp8.safetensors", "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/text_encoders/mistral_3_small_flux2_fp8.safetensors", "e3467b7d912a234fb929cdf215dc08efdb011810b44bc21081c4234cc75b370e", T2IParamTypes.MistralModel);
+            return RequireClipModel("mistral_3_small_flux2.safetensors", "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/text_encoders/mistral_3_small_flux2_fp4_mixed.safetensors", "1ee1ff334d78228d73049ef0ee4fcd21c1700536b5a45c06547af057f92463a7", T2IParamTypes.MistralModel);
         }
 
         public string GetClipLModel()

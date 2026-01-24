@@ -2428,12 +2428,9 @@ public partial class WorkflowGenerator
         string gligenModel = UserInput.Get(ComfyUIBackendExtension.GligenModel, "None");
         if (gligenModel != "None")
         {
-            string gligenLoader = NodeHelpers.GetOrCreate("gligen_loader", () =>
+            string gligenLoader = CreateNode("GLIGENLoader", new JObject()
             {
-                return CreateNode("GLIGENLoader", new JObject()
-                {
-                    ["gligen_name"] = gligenModel
-                });
+                ["gligen_name"] = gligenModel
             });
             int width = UserInput.GetImageWidth();
             int height = UserInput.GetImageHeight();
