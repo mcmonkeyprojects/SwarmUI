@@ -895,22 +895,60 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let buttons = createDiv(null, 'current-image-buttons');
     let imagePathClean = getImageFullSrc(src);
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
-    if (buttonsChoice == '')
-    {
+    if (buttonsChoice == '') {
         buttonsChoice = defaultButtonChoices;
     }
-    buttonsChoice = buttonsChoice.toLowerCase().replaceAll(' ', '').split(',');
+    let buttonDefs = {};
     let subButtons = [];
+    let buttonsChoiceOrdered = [];
+    function normalizeButtonKey(name) {
+        let normalized = (name || '').toLowerCase().replaceAll(' ', '');
+        if (normalized == 'starred') {
+            normalized = 'star';
+        }
+        return normalized;
+    }
     function includeButton(name, action, extraClass = '', title = '') {
-        let checkName = name.toLowerCase().replaceAll(' ', '');
-        if (checkName == 'starred') {
-            checkName = 'star';
+        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title };
+    }
+    function includeLinkButton(name, href, isDownload = false, title = '') {
+        buttonDefs[normalizeButtonKey(name)] = { name, href, is_download: isDownload, title: title };
+    }
+    function renderButtonsFromDefs() {
+        for (let key of buttonsChoiceOrdered) {
+            let def = buttonDefs[key];
+            if (def) {
+                delete buttonDefs[key];
+                if (def.href) {
+                    let link = document.createElement('a');
+                    link.className = `basic-button${def.extraClass || ''}`;
+                    link.innerHTML = def.name;
+                    link.title = def.title || '';
+                    link.href = def.href;
+                    if (def.is_download) {
+                        link.download = '';
+                    }
+                    buttons.appendChild(link);
+                }
+                else {
+                    quickAppendButton(buttons, def.name, (e, button) => def.action(button), def.extraClass, def.title);
+                }
+            }
         }
-        if (buttonsChoice.includes(checkName)) {
-            quickAppendButton(buttons, name, (e, button) => action(button), extraClass, title);
+        for (let def of Object.values(buttonDefs)) {
+            if (def.href) {
+                subButtons.push({ key: def.name, href: def.href, is_download: def.is_download, title: def.title });
+            }
+            else {
+                subButtons.push({ key: def.name, action: def.action, title: def.title });
+            }
         }
-        else {
-            subButtons.push({ key: name, action: action, title: title });
+    }
+    let rawButtonsChoice = buttonsChoice.toLowerCase().split(',');
+    for (let name of rawButtonsChoice) {
+        let key = normalizeButtonKey(name);
+        if (key) {
+            buttonsChoiceOrdered.push(key);
         }
     }
     let isDataImage = src.startsWith('data:');
@@ -1073,12 +1111,13 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             continue;
         }
         if (added.href) {
-            subButtons.push({ key: added.label, href: added.href, is_download: added.is_download, title: added.title });
+            includeLinkButton(added.label, added.href, added.is_download, added.title);
         }
         else {
             includeButton(added.label, added.onclick, '', added.title);
         }
     }
+    renderButtonsFromDefs();
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {
         let rect = button.getBoundingClientRect();
         new AdvancedPopover('image_more_popover', subButtons, false, rect.x, rect.y + button.offsetHeight + 6, document.body, null);
