@@ -457,6 +457,7 @@ class GenPageBrowserClass {
                 this.select(file, div);
             });
             div.appendChild(img);
+            
             if (this.format.includes('Cards')) {
                 div.className += ' model-block model-block-hoverable';
                 if (this.format.startsWith('Small')) { div.classList.add('model-block-small'); }
@@ -544,6 +545,28 @@ class GenPageBrowserClass {
                     e.dataTransfer.setDragImage(img, 0, 0);
                     e.dataTransfer.setData('text/uri-list', desc.dragimage);
                 });
+            }
+            // If this is the history browser, add a per-item select checkbox.
+            if (this.id == 'imagehistorybrowser') {
+                try {
+                    let cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'history-select-checkbox';
+                    cb.title = translate('Select');
+                    cb.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (typeof _imageHistoryToggle === 'function') {
+                            _imageHistoryToggle(file.name, div, cb.checked);
+                        }
+                        else {
+                            console.warn('_imageHistoryToggle not defined');
+                        }
+                    });
+                    div.appendChild(cb);
+                }
+                catch (e) {
+                    console.error('Failed to add history checkbox', e);
+                }
             }
             if (before) {
                 container.insertBefore(div, before);
