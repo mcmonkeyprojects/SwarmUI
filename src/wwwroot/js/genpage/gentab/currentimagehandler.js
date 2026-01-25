@@ -898,7 +898,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     if (buttonsChoice == '') {
         buttonsChoice = defaultButtonChoices;
     }
-    let buttonDefs = [];
+    let buttonDefs = {};
     let subButtons = [];
     let buttonsChoiceOrdered = [];
     function normalizeButtonKey(name) {
@@ -909,20 +909,16 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         return normalized;
     }
     function includeButton(name, action, extraClass = '', title = '') {
-        buttonDefs.push({ key: normalizeButtonKey(name), name, action, extraClass, title });
+        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title };
     }
     function includeLinkButton(name, href, isDownload = false, title = '') {
-        buttonDefs.push({ key: normalizeButtonKey(name), name, href, is_download: isDownload, title: title });
+        buttonDefs[normalizeButtonKey(name)] = { name, href, is_download: isDownload, title: title };
     }
     function renderButtonsFromDefs() {
-        let used = {};
-        for (let i = 0; i < buttonsChoiceOrdered.length; i++) {
-            let want = buttonsChoiceOrdered[i];
-            for (let j = 0; j < buttonDefs.length; j++) {
-                let def = buttonDefs[j];
-                if (def.key != want || used[j]) {
-                    continue;
-                }
+        for (let key of buttonsChoiceOrdered) {
+            let def = buttonDefs[key];
+            if (def) {
+                delete buttonDefs[key];
                 if (def.href) {
                     let link = document.createElement('a');
                     link.className = `basic-button${def.extraClass || ''}`;
@@ -937,14 +933,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 else {
                     quickAppendButton(buttons, def.name, (e, button) => def.action(button), def.extraClass, def.title);
                 }
-                used[j] = true;
             }
         }
-        for (let j = 0; j < buttonDefs.length; j++) {
-            if (used[j]) {
-                continue;
-            }
-            let def = buttonDefs[j];
+        for (let def of Object.values(buttonDefs)) {
             if (def.href) {
                 subButtons.push({ key: def.name, href: def.href, is_download: def.is_download, title: def.title });
             }
@@ -954,8 +945,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
     }
     let rawButtonsChoice = buttonsChoice.toLowerCase().split(',');
-    for (let i = 0; i < rawButtonsChoice.length; i++) {
-        let key = normalizeButtonKey(rawButtonsChoice[i]);
+    for (let name of rawButtonsChoice) {
+        let key = normalizeButtonKey(name);
         if (key) {
             buttonsChoiceOrdered.push(key);
         }
