@@ -47,14 +47,19 @@ public class ExtensionsManager
     /// <summary>Initial call that prepares the extensions list.</summary>
     public void PrepExtensions()
     {
-        string[] builtins = [.. Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => s.Replace('\\', '/').AfterLast("/src/"))];
-        string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => s.Replace('\\', '/').AfterLast("/src/"))] : [];
+        // Determine base source directory so running from either repo root or from `src` works.
+        string baseSrc = Directory.Exists("./src") ? "./src" : ".";
+        string builtinDir = Path.Combine(baseSrc, "BuiltinExtensions");
+        string extrasDir = Path.Combine(baseSrc, "Extensions");
+        string[] builtins = Directory.Exists(builtinDir) ? [.. Directory.EnumerateDirectories(builtinDir).Select(s => s.Replace('\\', '/').AfterLast("/src/"))] : [];
+        string[] extras = Directory.Exists(extrasDir) ? [.. Directory.EnumerateDirectories(extrasDir).Select(s => s.Replace('\\', '/').AfterLast("/src/"))] : [];
         foreach (string deletable in extras.Where(e => e.TrimEnd('/').EndsWith(".delete")))
         {
-            try
-            {
-                Directory.Delete($"./src/{deletable}", true);
-            }
+                try
+                {
+                    // Delete relative to baseSrc so paths are correct whether launched from repo root or from `src`.
+                    Directory.Delete(Path.Combine(baseSrc, deletable), true);
+                }
             catch (Exception ex)
             {
                 Logs.Error($"Failed to delete extension folder SwarmUI/src/{deletable}: {ex.ReadableString()}, you will need to remove it manually");
