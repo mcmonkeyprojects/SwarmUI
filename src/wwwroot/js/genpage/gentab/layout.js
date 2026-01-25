@@ -299,7 +299,9 @@ class GenTabLayout {
             let offset = container.getBoundingClientRect().top - parent.getBoundingClientRect().top;
             container.style.height = `calc(100% - ${offset}px)`;
         }
-        browserUtil.makeVisible(document);
+        if (!(this.leftBarDrag || this.rightBarDrag || this.bottomBarDrag || this.imageEditorSizeBarDrag)) {
+            browserUtil.makeVisible(document);
+        }
     }
 
     /** Internal initialization of the generate tab. */
@@ -432,10 +434,15 @@ class GenTabLayout {
         document.addEventListener('mousemove', (e) => moveEvt(e, e.pageX, e.pageY));
         document.addEventListener('touchmove', (e) => moveEvt(e, e.touches.item(0).pageX, e.touches.item(0).pageY));
         document.addEventListener('mouseup', (e) => {
+            let wasDragging = this.leftBarDrag || this.rightBarDrag || this.bottomBarDrag || this.imageEditorSizeBarDrag;
             this.leftBarDrag = false;
             this.rightBarDrag = false;
             this.bottomBarDrag = false;
             this.imageEditorSizeBarDrag = false;
+            if (wasDragging) {
+                // allow layout to stabilise before triggering lazy loads
+                setTimeout(() => browserUtil.makeVisible(document), 50);
+            }
         });
         document.addEventListener('touchstart', (e) => {
             if (e.touches.length == 1 && !['BUTTON', 'INPUT'].includes(e.target.tagName) && !findParentOfClass(e.target, 'model-block')) {
@@ -448,6 +455,7 @@ class GenTabLayout {
             }
         });
         document.addEventListener('touchend', (e) => {
+            let wasDragging = this.leftBarDrag || this.rightBarDrag || this.bottomBarDrag || this.imageEditorSizeBarDrag;
             this.leftBarDrag = false;
             this.rightBarDrag = false;
             this.bottomBarDrag = false;
@@ -504,6 +512,10 @@ class GenTabLayout {
                 }
                 this.swipeStartX = -1;
                 this.swipeStartY = -1;
+            }
+            if (wasDragging) {
+                // allow layout to stabilise before triggering lazy loads
+                setTimeout(() => browserUtil.makeVisible(document), 50);
             }
         });
         for (let tab of getRequiredElementById('bottombartabcollection').getElementsByTagName('a')) {
