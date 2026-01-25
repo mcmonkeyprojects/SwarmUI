@@ -189,7 +189,75 @@ function selectOutputInHistory(image, div) {
 }
 
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
-    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
+    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> <label style="margin-left:0.5rem"><input type="checkbox" id="image_history_select_all" autocomplete="off"> Select All</label> <button id="image_history_delete_selected" class="refresh-button">Delete Selected</button>`);
+
+// Multi-select state for history browser
+let _imageHistorySelected = new Set();
+
+function _imageHistoryToggle(path, div, checked) {
+    if (checked) {
+        _imageHistorySelected.add(path);
+        div.classList.add('image-block-selected');
+    }
+    else {
+        _imageHistorySelected.delete(path);
+        div.classList.remove('image-block-selected');
+    }
+    let delBtn = document.getElementById('image_history_delete_selected');
+    if (delBtn) {
+        delBtn.disabled = _imageHistorySelected.size == 0;
+    }
+}
+
+function imageHistorySelectAll(checked) {
+    let container = document.getElementById('imagehistorybrowser-content');
+    if (!container) return;
+    for (let cb of container.querySelectorAll('.history-select-checkbox')) {
+        cb.checked = checked;
+        let div = cb.closest('.image-block');
+        if (div) {
+            let path = div.dataset.name;
+            _imageHistoryToggle(path, div, checked);
+        }
+    }
+}
+
+function imageHistoryDeleteSelected() {
+    if (_imageHistorySelected.size == 0) return;
+    if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm(`Delete ${_imageHistorySelected.size} selected images?\nHold shift to bypass.`)) return;
+    let arr = Array.from(_imageHistorySelected);
+    // Sequential delete to avoid flooding
+    function deleteNext() {
+        if (arr.length == 0) {
+            _imageHistorySelected.clear();
+            let selectAll = document.getElementById('image_history_select_all');
+            if (selectAll) selectAll.checked = false;
+            imageHistoryBrowser.lightRefresh();
+            return;
+        }
+        let path = arr.shift();
+        genericRequest('DeleteImage', {'path': path}, data => {
+            let historySection = getRequiredElementById('imagehistorybrowser-content');
+            let div = historySection.querySelector(`.image-block[data-name="${path}"]`);
+            if (div) div.remove();
+            deleteNext();
+        });
+    }
+    deleteNext();
+}
+
+// Hook up header buttons after browser is built
+imageHistoryBrowser.builtEvent = () => {
+    let selectAll = document.getElementById('image_history_select_all');
+    if (selectAll) {
+        selectAll.onchange = (e) => imageHistorySelectAll(e.target.checked);
+    }
+    let delBtn = document.getElementById('image_history_delete_selected');
+    if (delBtn) {
+        delBtn.disabled = true;
+        delBtn.onclick = () => imageHistoryDeleteSelected();
+    }
+};
 
 function storeImageToHistoryWithCurrentParams(img) {
     let data = getGenInput();
