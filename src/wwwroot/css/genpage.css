@@ -1708,3 +1708,38 @@ body {
     height: 1lh;
     padding-top: 0 !important;
 }
+
+.trigger-phrase-item {
+    display: inline-block;
+    margin-right: 0.3rem;
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+}
+.trigger-phrase-item:hover {
+    background: var(--light-border);
+}
+.trigger-phrase-selected {
+    background: var(--accent-primary-color, #3b82f6);
+    color: white;
+}
+.trigger-phrase-copy-all-button {
+    margin-left: 0.4rem;
+    vertical-align: middle;
+}
+
+.trigger-phrases-container {
+    display: block;
+    margin-top: 0.25rem;
+    line-height: 1.4;
+}
+.trigger-phrases-container .trigger-phrase-copy-button {
+    margin-left: 0.15rem;
+}
+
+.trigger-phrase-sep {
+    display: inline-block;
+    margin-right: 0.1rem;
+    margin-left: 0.1rem;
+    color: var(--muted-text-color, #666);
+}
