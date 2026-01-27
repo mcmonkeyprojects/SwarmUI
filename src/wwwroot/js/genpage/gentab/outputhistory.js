@@ -188,8 +188,61 @@ function selectOutputInHistory(image, div) {
     }
 }
 
+// Toggle checkboxes (select/deselect) for history entries
+function toggleSelectAllHistory(checkboxElem) {
+    try {
+        let container = getRequiredElementById('imagehistorybrowser-content');
+        if (!container) return;
+        let blocks = container.querySelectorAll('.image-block');
+        blocks.forEach(b => {
+            let cb = b.querySelector('.history-select-checkbox');
+            if (!cb) {
+                cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'history-select-checkbox';
+                b.insertBefore(cb, b.firstChild);
+            }
+            cb.checked = checkboxElem.checked;
+            b.classList.toggle('image-block-selected', cb.checked);
+        });
+    }
+    catch (e) { console.error('toggleSelectAllHistory', e); }
+}
+
+// Delete all selected history images
+function deleteSelectedHistoryImages() {
+    try {
+        let container = getRequiredElementById('imagehistorybrowser-content');
+        if (!container) return;
+        let selected = Array.from(container.querySelectorAll('.image-block')).filter(b => {
+            let cb = b.querySelector('.history-select-checkbox');
+            return cb && cb.checked;
+        });
+        if (selected.length === 0) {
+            alert('No images selected.');
+            return;
+        }
+        if (getUserSetting('ui.checkifsurebeforedelete', true)) {
+            if (!confirm(`Are you sure you want to delete ${selected.length} image(s)?`)) {
+                return;
+            }
+        }
+        for (let b of selected) {
+            let name = b.dataset.name;
+            if (!name) continue;
+            genericRequest('DeleteImage', {'path': name}, data => {
+                b.remove();
+            });
+        }
+        // clear select-all checkbox
+        let allCb = document.getElementById('image_history_select_all');
+        if (allCb) allCb.checked = false;
+    }
+    catch (e) { console.error('deleteSelectedHistoryImages', e); }
+}
+
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
-    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label>`);
+    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> &emsp; <input type="checkbox" id="image_history_select_all" autocomplete="off" onchange="toggleSelectAllHistory(this)"> <label for=\"image_history_select_all\">Select All</label> <button class=\"basic-button\" id=\"image_history_delete_selected\" onclick=\"deleteSelectedHistoryImages()\">Delete Selected</button>`);
 
 function storeImageToHistoryWithCurrentParams(img) {
     let data = getGenInput();
