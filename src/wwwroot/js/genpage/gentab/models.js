@@ -164,6 +164,24 @@ function copySelectedTriggerPhrases(buttonElem) {
     }
 }
 
+// Return a compact inline style string for a phrase bubble color derived from the phrase text.
+function getTriggerPhraseStyle(phrase) {
+    try {
+        // simple hash to hue
+        let hash = 0;
+        for (let i = 0; i < phrase.length; i++) {
+            hash = (hash << 5) - hash + phrase.charCodeAt(i);
+            hash |= 0;
+        }
+        let hue = Math.abs(hash) % 360;
+        // expose only hue as a CSS variable; CSS will compute background/border/color
+        return `--tp-hue:${hue};`;
+    }
+    catch (e) {
+        return '';
+    }
+}
+
 //////////// TODO: Merge all the below into the class above (or multiple separate classes)
 
 let models = {};
@@ -634,9 +652,10 @@ class ModelBrowserWrapper {
         }
         let safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
         let safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
-        // Render phrase as a selectable span only (individual copy button removed).
-        // Selection state is toggled by clicking the span.
-        return `<span class="trigger-phrase-item" onclick="toggleTriggerPhraseSelected(this)">${safePhrase}</span>`;
+                // Render phrase as a selectable span only (individual copy button removed).
+                // Selection state is toggled by clicking the span.
+                let style = getTriggerPhraseStyle(phrase);
+                return `<span class="trigger-phrase-item" style="${style}" onclick="toggleTriggerPhraseSelected(this)">${safePhrase}</span>`;
     }
 
     formatTriggerPhrases(val) {
