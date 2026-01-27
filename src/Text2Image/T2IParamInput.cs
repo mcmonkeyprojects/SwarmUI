@@ -176,6 +176,9 @@ public class T2IParamInput
     /// <summary>Set of parameter IDs that have been queried (used to detect parameter inputs that went unused).</summary>
     public HashSet<string> ParamsQueried = [];
 
+    /// <summary>If true, no parameters are ever "unused". Useful for special meta-handlers, eg Grid Image.</summary>
+    public bool NoUnusedParams = false;
+
     /// <summary>Gets the parameter overrides for a given section. Returns the main <see cref="InternalSet"/> if not in a sub-section currently.</summary>
     /// <param name="section">The section ID.</param>
     public T2IParamSet GetSectionParamOverrides(int section)
@@ -389,7 +392,7 @@ public class T2IParamInput
         JArray unused = [];
         foreach (string key in InternalSet.ValuesInput.Keys)
         {
-            if (!ParamsQueried.Contains(key) && (!T2IParamTypes.TryGetType(key, out T2IParamType type, this) || !type.IntentionalUnused))
+            if (!NoUnusedParams && !ParamsQueried.Contains(key) && (!T2IParamTypes.TryGetType(key, out T2IParamType type, this) || !type.IntentionalUnused))
             {
                 unused.Add(key);
                 paramData.Remove(key);

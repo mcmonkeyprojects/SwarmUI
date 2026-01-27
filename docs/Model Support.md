@@ -484,12 +484,13 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 *(Steps=9, Z-Image Turbo)*
 
 - [Z-Image](<https://huggingface.co/Tongyi-MAI/Z-Image>) and [Z-Image Turbo](<https://huggingface.co/Tongyi-MAI/Z-Image-Turbo>) are supported in SwarmUI!
-    - It is a 6B scaled model, with an official turbo designed to run extremely fast while competing at the top level of image models
+    - It is a 6B scaled model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
+    - "Edit" and "Omni" variants are still expected
 - The "Turbo" model was the first version officially released download here [Z-Image-Turbo-FP8Mixed](<https://huggingface.co/mcmonkey/swarm-models/blob/main/SwarmUI_Z-Image-Turbo-FP8Mix.safetensors>)
     - Or the original BF16 fat version [Comfy-Org/z_image_turbo](<https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>)
     - Or GGUF version here [jayn7/Z-Image-Turbo-GGUF](<https://huggingface.co/jayn7/Z-Image-Turbo-GGUF/tree/main>)
     - Save in `diffusion_models`
-- The "Base" model was released around 2 months later, download here (Pending: good fpp8mixed)
+- The "Base" model was released around 2 months later, download here (Pending: good fp8mixed)
     - Or the original BF16 fat version [Comfy-Org/z_image](<https://huggingface.co/Comfy-Org/z_image/blob/main/split_files/diffusion_models/z_image_bf16.safetensors>)
     - Save in `diffusion_models`
 - Uses the Flux.1 VAE, will be downloaded and handled automatically

@@ -575,10 +575,12 @@ public class GridGeneratorExtension : Extension
                 Image outImg = new(gridImg);
                 int batchId = (xAxis.Count * yAxis.Count * y2Axis.Count) + 1;
                 Logs.Verbose("Apply metadata...");
-                (Task<MediaFile> imgTask, string metadata) = session.ApplyMetadata(outImg, grid.InitialParams, batchId);
+                T2IParamInput initialParams = grid.InitialParams.Clone();
+                initialParams.NoUnusedParams = true;
+                (Task<MediaFile> imgTask, string metadata) = session.ApplyMetadata(outImg, initialParams, batchId);
                 T2IEngine.ImageOutput imageOut = new() { File = outImg, ActualFileTask = imgTask };
                 Logs.Verbose("Metadata applied, save to file...");
-                (string url, string filePath) = grid.InitialParams.Get(T2IParamTypes.DoNotSave, false) ? (outImg.AsDataString(), null) : data.Session.SaveImage(imageOut, batchId, grid.InitialParams, metadata);
+                (string url, string filePath) = initialParams.Get(T2IParamTypes.DoNotSave, false) ? (outImg.AsDataString(), null) : data.Session.SaveImage(imageOut, batchId, initialParams, metadata);
                 if (url == "ERROR")
                 {
                     data.ErrorOut = new JObject() { ["error"] = $"Server failed to save an image." };
