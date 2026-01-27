@@ -500,7 +500,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 await pipCall($"Updating '{name}'", $"install {pip}");
                 libs.Add(name);
             }
-            string getVers(string package)
+            string getRawVersion(string package)
             {
                 string prefix = $"{package}-";
                 string dir = distinfos.FirstOrDefault(d => d.StartsWith(prefix));
@@ -508,7 +508,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 {
                     return null;
                 }
-                return dir[prefix.Length..].Before(".dist-info").Before('+');
+                return dir[prefix.Length..].Before(".dist-info");
+            }
+            string getVers(string package)
+            {
+                return getRawVersion(package)?.Before('+');
             }
             if (!libs.Contains("pip"))
             {
@@ -644,23 +648,28 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                     isValid = false;
                 }
                 string osVers = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "win_amd64" : "linux_x86_64";
-                string torchPipVers = getVers("torch");
+                (string torchPipVers, string cudaVers) = getRawVersion("torch").BeforeAndAfter('+');
                 string torchVers = "2.8";
-                if (torchPipVers.StartsWith("2.5.")) { torchVers = "2.5"; }
-                else if (torchPipVers.StartsWith("2.6.")) { torchVers = "2.6"; }
-                else if (torchPipVers.StartsWith("2.7.")) { torchVers = "2.7"; }
-                else if (torchPipVers.StartsWith("2.8.")) { torchVers = "2.8"; }
+                if (torchPipVers.StartsWith("2.8.")) { torchVers = "2.8"; }
                 else if (torchPipVers.StartsWith("2.9.")) { torchVers = "2.9"; }
                 else if (torchPipVers.StartsWith("2.10.")) { torchVers = "2.10"; }
                 else if (torchPipVers.StartsWith("2.11.")) { torchVers = "2.11"; }
                 else
                 {
-                    Logs.Error($"Nunchaku is not currently supported on your Torch version ({torchPipVers} not in range [2.5, 2.11].");
+                    Logs.Error($"Nunchaku is not currently supported on your Torch version, you have torch {torchPipVers} but you need at least Torch 2.8 (up to 2.11).");
                     isValid = false;
                 }
-                string nunchakuTargetVersion = "1.2.0";
-                // eg https://github.com/nunchaku-tech/nunchaku/releases/download/v0.3.2/nunchaku-0.3.2+torch2.5-cp310-cp310-linux_x86_64.whl
-                string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuTargetVersion}/nunchaku-{nunchakuTargetVersion}+torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
+                string cutarget = "cu12.8";
+                if (cudaVers == "cu128") { cutarget = "cu12.8"; }
+                else if (cudaVers == "cu130") { cutarget = "cu13.0"; }
+                else
+                {
+                    Logs.Error($"Nunchaku is not currently supported on your Torch CUDA version, you have torch+{cudaVers} but you need cu12.8 or cu13.0.");
+                    isValid = false;
+                }
+                string nunchakuTargetVersion = "1.2.1";
+                // eg https://github.com/nunchaku-ai/nunchaku/releases/download/v1.2.1/nunchaku-1.2.1+cu12.8torch2.10-cp310-cp310-linux_x86_64.whl
+                string url = $"https://github.com/nunchaku-tech/nunchaku/releases/download/v{nunchakuTargetVersion}/nunchaku-{nunchakuTargetVersion}+{cutarget}torch{torchVers}-cp{pyVers}-cp{pyVers}-{osVers}.whl";
                 if (isValid)
                 {
                     string nunchakuVers = getVers("nunchaku");
