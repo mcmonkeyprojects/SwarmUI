@@ -352,6 +352,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("If true, always resave models after the downloader utility grabs them.\nThis ensures metadata is fully properly set, but wastes some extra time on file processing.\nIf false, the downloader will leave a stray json next to the model.\nDefaults to false.")]
         public bool DownloaderAlwaysResave = false;
+
+        [ConfigComment("If true, populate trigger phrase from secondary metadata sources, such as 'trained words' and similar keys.\nIf false, only use actual trigger_phrase specifications.\nTurning this off may help if you see a lot of LoRAs with 10,000 spammed keywords on them or similar (this type of bad metadata is common in certain model classes for some reason).")]
+        public bool UseSecondaryTriggerPhraseSources = true;
     }
 
     /// <summary>Settings related to image/model metadata.</summary>
