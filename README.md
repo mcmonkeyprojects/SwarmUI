@@ -1,3 +1,18 @@
+I have made this fork to add some basic functionality to the ui. 
+
+# Added Functionality
+
+## Multi image selection in history
+This places check boxes in the top left corner of each image in the history to allow for the easy removal of multiple images at once. 
+<img width="1644" height="482" alt="image" src="https://github.com/user-attachments/assets/2d106674-2857-4859-b001-b8f76e902de6" />
+
+## Lora triger tag usability
+When importing loras often enough the trigger phrases section is filled with multiple tags. I have implemented the standard fuctionality available in all other interfaces to select individual tags from the list and copy them instead of copying the entire trigger phrase section. (if nothing is selected the entire section is still copied for ease of use). <img width="680" height="242" alt="image" src="https://github.com/user-attachments/assets/c7f818f1-38fb-4732-9c77-a035577bcf3e" />
+
+# FIXES:
+Nothing big but when resizing images at spacific resolutions with spacific ui positioning some times the center image will "jiter" or resize repeatedly over and over. This was anoying and should be fixed now. I will try to keep this repo in parody with the origional but may be a day behind.
+
+
 # SwarmUI
 
 **SwarmUI v0.9.7 Beta**.
