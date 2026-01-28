@@ -424,6 +424,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
                     - and leave **Video Swap Percent** at `0.5` (or higher if preferred, cannot go lower)
             - Reference **CFG** range is `3.5`
             - This also supports the `Video End Frame` input to create a video that moves between two known places
+            - The "Low" is very close to the original Wan 2.1, and can be ran as 2.1 just fine. "High" is a much further retune that can only do the initial ~50% of steps properly.
         - For both 14B types:
             - **FPS** is `16`, but loras or even parameter adjustments can change it to a more normal-looking `24`.
                 - Swarm will default to `24`, but if your videos "feel sped up", change the FPS parameter to `16`.

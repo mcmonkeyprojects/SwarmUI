@@ -481,32 +481,35 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 ![img](/docs/images/models/zimage.jpg)
 
-*(Steps=9)*
+*(Steps=9, Z-Image Turbo)*
 
-- [Z-Image](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) is supported in SwarmUI!
-    - It is a 6B scaled model designed to run extremely fast while competing at the top level of image models
-- Only the "Turbo" model is currently released, download here [Z-Image-FP8Mixed](<https://huggingface.co/mcmonkey/swarm-models/blob/main/SwarmUI_Z-Image-Turbo-FP8Mix.safetensors>)
+- [Z-Image](<https://huggingface.co/Tongyi-MAI/Z-Image>) and [Z-Image Turbo](<https://huggingface.co/Tongyi-MAI/Z-Image-Turbo>) are supported in SwarmUI!
+    - It is a 6B scaled model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
+    - "Edit" and "Omni" variants are still expected
+- The "Turbo" model was the first version officially released download here [Z-Image-Turbo-FP8Mixed](<https://huggingface.co/mcmonkey/swarm-models/blob/main/SwarmUI_Z-Image-Turbo-FP8Mix.safetensors>)
     - Or the original BF16 fat version [Comfy-Org/z_image_turbo](<https://huggingface.co/Comfy-Org/z_image_turbo/blob/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors>)
     - Or GGUF version here [jayn7/Z-Image-Turbo-GGUF](<https://huggingface.co/jayn7/Z-Image-Turbo-GGUF/tree/main>)
     - Save in `diffusion_models`
-    - "Base" and "Edit" variants are expected to release in the future
-- Uses the Flux.1 VAE
+- The "Base" model was released around 2 months later, download here (Pending: good fp8mixed)
+    - Or the original BF16 fat version [Comfy-Org/z_image](<https://huggingface.co/Comfy-Org/z_image/blob/main/split_files/diffusion_models/z_image_bf16.safetensors>)
+    - Save in `diffusion_models`
+- Uses the Flux.1 VAE, will be downloaded and handled automatically
     - You might prefer swapping to the [UltraFlux VAE](<https://huggingface.co/Owen777/UltraFlux-v1/blob/main/vae/diffusion_pytorch_model.safetensors>) which gets better photorealism quality (be sure to rename the file when you save it, eg `Flux/UltraFlux-vae.safetensors`)
 - **Parameters:**
     - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply, understands other languages decently well too.
     - **Sampler:** Default is fine. Some users find `Euler Ancestral` can be better on photorealism detail. Comfy examples suggests `Res MultiStep`.
     - **Scheduler:** Default is fine. Some users find `Beta` can be very slightly better.
-    - **CFG Scale:** For Turbo, `1`
-    - **Steps:** For Turbo, small numbers are fine. `4` will work, `8` is better
-        - Original repo suggests 5/9, but this appears redundant in Swarm.
-        - For particularly difficult prompts, raising Steps up to `20` may help get the full detail.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (eg 4 or 7)
+    - **Steps:** For Turbo, small numbers are fine. `4` will work, `8` is better. For Base, 20+ steps as normal.
+        - Original Turbo repo suggests 5/9, but this appears redundant in Swarm.
+        - For particularly difficult prompts, raising Steps up to `20` on Turbo or `50` on Base may help get the full detail.
     - **Resolution:** Side length `1024` is the standard, but anywhere up to `2048` is good. `512` noticeably loses some quality, above `2048` corrupts the image.
     - **Sigma Shift:** Default is `3`, raising to `6` can yield stronger coherence.
     - Here's a big ol' grid of Z-Image Turbo params: [Z-Image MegaGrid](<https://sd.mcmonkey.org/zimagegrid/#auto-loc,true,true,false,true,false,cfgscale,steps,none,none,extremecloseupt,4,1,3,1024x1024,1,euler,simple>)
 
 ### Z-Image Turbo Seed Variety Trick
 
-- There's a trick to get better seed variety in Z-Image:
+- There's a trick to get better seed variety in Z-Image Turbo: (This is less needed on Base)
     - Add an init image (Any image, doesn't matter much - the broad color bias of the image may be used, but that's about it).
     - Set Steps higher than normal (say 8 instead of 4)
     - Set Init Image Creativity to a relatively high value (eg 0.7)
