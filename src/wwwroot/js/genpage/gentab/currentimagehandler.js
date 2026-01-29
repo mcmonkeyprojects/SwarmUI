@@ -892,6 +892,26 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     img.onclick = () => imageFullView.showImage(img.dataset.src, img.dataset.metadata, img.dataset.batch_id);
     let extrasWrapper = isReuse ? document.getElementById('current-image-extras-wrapper') : createDiv('current-image-extras-wrapper', 'current-image-extras-wrapper');
     extrasWrapper.innerHTML = '';
+    // If the generation-stage element exists in the page (rendered from the Razor template),
+    // move it into the extras wrapper so it appears in the header/action area next to the image.
+    try {
+        let stageElem = document.getElementById('current_generation_stage');
+        if (stageElem) {
+            // Remove from current parent and place at the top of the current image container
+            // so it appears in the header/action area consistently.
+            try { stageElem.remove(); } catch (e) {}
+            if (curImg && curImg.prepend) {
+                curImg.prepend(stageElem);
+            }
+            else if (extrasWrapper) {
+                extrasWrapper.appendChild(stageElem);
+            }
+            stageElem.style.display = 'block';
+        }
+    }
+    catch (e) {
+        console.debug('Failed to relocate current_generation_stage:', e);
+    }
     let buttons = createDiv(null, 'current-image-buttons');
     let imagePathClean = getImageFullSrc(src);
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');

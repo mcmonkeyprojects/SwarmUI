@@ -224,6 +224,15 @@ body {
     margin-right: 0.5rem;
     max-height: 10rem;
 }
+
+/* Small stage indicator shown above/next to the current image action buttons */
+.current-generation-stage {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 100%;
+    box-sizing: border-box;
+}
 .extras-wrapper-sideblock .current-image-data {
     text-align: left;
 }

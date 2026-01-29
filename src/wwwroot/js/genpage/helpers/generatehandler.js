@@ -46,8 +46,33 @@ class GenerateHandler {
     gotTrackedImagePreview(image, metadata, batchId) {
     }
 
-    gotProgress(current, overall, batchId) {
-        // nothing to do here
+    gotProgress(current, overall, batchId, stageName = '') {
+        try {
+            let nameElem = document.getElementById('current_generation_stage_name');
+            let barElem = document.getElementById('current_generation_stage_bar');
+            let pctElem = document.getElementById('current_generation_stage_percent');
+            if (!nameElem || !barElem || !pctElem) {
+                return;
+            }
+            let percent = Math.max(0, Math.min(1, parseFloat(current) || 0));
+            // Stage name fallback: if not provided, try to show overall progress text
+            let nameText = '';
+            if (stageName && stageName !== '') {
+                nameText = stageName;
+            }
+            else if (typeof overall === 'number' && overall >= 0) {
+                nameText = 'Generating';
+            }
+            else {
+                nameText = '';
+            }
+            nameElem.innerText = nameText;
+            barElem.style.width = `${percent * 100}%`;
+            pctElem.innerText = `${Math.round(percent * 100)}% of stage`;
+        }
+        catch (e) {
+            console.log('Error updating generation stage UI', e);
+        }
     }
 
     hadError(msg) {
@@ -247,7 +272,13 @@ class GenerateHandler {
                     }
                 }
             }
-            this.gotProgress(data.gen_progress.current_percent, data.gen_progress.overall_percent, thisBatchId);
+            // Determine a human-friendly stage name if provided by backend (try multiple possible keys)
+            let stageName = '';
+            try {
+                let gp = data.gen_progress;
+                stageName = gp.stage_name || gp.stage || gp.node_name || gp.node || gp.current_stage || gp.current_step || gp.op || gp.operation || '';
+            } catch (e) { stageName = ''; }
+            this.gotProgress(data.gen_progress.current_percent, data.gen_progress.overall_percent, thisBatchId, stageName);
         }
         if (data.discard_indices) {
             let needsNew = false;
