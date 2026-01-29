@@ -69,13 +69,14 @@ UniversalTab:
     - tabs
     - ui
 
-SD.cppBackend:
+SDCppBackend:
     author: Hartsy
-    description: Adds a backend powered by stable-diffusion.cpp. It runs image generation through an external SD.cpp executable (CPU/CUDA/Vulkan)
+    description: Experimental approach to add a backend powered by an external stable-diffusion.cpp executable. Non-compatible with general use.
     url: https://github.com/HartsyAI/SwarmUI-SD.cpp-Backend
     license: MIT
     tags:
     - backend
+    - beta
 
 WildcardImporter:
     author: spoomples+bman654
