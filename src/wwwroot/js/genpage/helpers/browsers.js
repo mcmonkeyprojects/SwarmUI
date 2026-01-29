@@ -495,6 +495,15 @@ class GenPageBrowserClass {
                     textBlock.classList.add('image-preview-text-large');
                 }
                 div.appendChild(textBlock);
+                // Add selection checkbox for history/multi-delete support
+                let cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'history-select-checkbox';
+                cb.addEventListener('change', (e) => {
+                    div.classList.toggle('image-block-selected', cb.checked);
+                });
+                // Place checkbox on top-left of block
+                div.insertBefore(cb, div.firstChild);
             }
             else if (this.format == 'List') {
                 div.className += ' browser-list-entry';
