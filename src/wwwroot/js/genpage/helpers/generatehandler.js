@@ -180,18 +180,22 @@ class GenerateHandler {
             else {
                 this.gotTrackedImageResult(data.image, data.metadata, `${data.request_id}_${data.batch_index}`, div);
                 let imgElem = div.querySelector('img');
-                this.setImageFor(imgHolder, data.image);
                 let spinner = div.querySelector('.loading-spinner-parent');
+                let progress_bars = div.querySelector('.image-preview-progress-wrapper');
+                let isPreviewSwapToCompleted = imgElem.dataset.previewGrow || progress_bars || spinner;
+                this.setImageFor(imgHolder, data.image);
                 if (spinner) {
                     spinner.remove();
                 }
                 delete imgElem.dataset.previewGrow;
                 div.dataset.metadata = data.metadata;
-                let progress_bars = div.querySelector('.image-preview-progress-wrapper');
                 if (progress_bars) {
                     progress_bars.remove();
                 }
                 this.gotProgress(-1, -1, `${data.request_id}_${data.batch_index}`);
+                if (isPreviewSwapToCompleted && div.parentElement && div.parentElement.firstElementChild != div) {
+                    div.parentElement.prepend(div);
+                }
             }
             if (data.batch_index in images) {
                 images[data.batch_index].image = data.image;
