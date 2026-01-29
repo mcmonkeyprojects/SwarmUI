@@ -182,9 +182,7 @@ class GenerateHandler {
                 let imgElem = div.querySelector('img');
                 let spinner = div.querySelector('.loading-spinner-parent');
                 let progress_bars = div.querySelector('.image-preview-progress-wrapper');
-                let isPreviewSwapToCompleted = imgElem.dataset.previewGrow
-                    || progress_bars
-                    || spinner;
+                let isPreviewSwapToCompleted = imgElem.dataset.previewGrow || progress_bars || spinner;
                 this.setImageFor(imgHolder, data.image);
                 if (spinner) {
                     spinner.remove();
