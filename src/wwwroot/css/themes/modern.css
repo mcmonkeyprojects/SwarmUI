@@ -339,6 +339,62 @@
     margin-top: 10px;
 }
 
+/* Theme-aware styles for the generation stage element */
+.current-generation-stage {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.2rem 0.4rem;
+    background: transparent;
+    color: var(--text);
+    width: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.current-generation-stage #current_generation_stage_name {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 12rem;
+}
+
+/* bar container is the second child in the Razor markup; ensure it uses theme colors */
+#current_generation_stage > div:nth-child(2) {
+    height: 0.5rem;
+    margin-top: 0;
+    background: color-mix(in srgb, var(--background-panel) 40%, transparent);
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 6rem;
+    flex: 1 1 auto;
+}
+
+#current_generation_stage_bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 150ms linear;
+}
+
+#current_generation_stage_percent {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* When image area is narrow, allow the stage element to stack cleanly */
+.current_image_small .current-generation-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.2rem;
+}
+
 .alt_prompt_region {
     background: var(--background-panel);
 }
