@@ -52,7 +52,7 @@ ComfyDeployBackend:
     - backend
 
 MagicPrompt:
-    author: Hartsy AI
+    author: Hartsy
     description: Provides LLM (language model) usage inside SwarmUI to enhance your prompts.
     url: https://github.com/HartsyAI/SwarmUI-MagicPromptExtension
     license: MIT
@@ -61,13 +61,21 @@ MagicPrompt:
     - ui
 
 UniversalTab:
-    author: Hartsy AI
+    author: Hartsy
     description: Lets you embed iframes of other webservices into subtabs in SwarmUI.
     url: https://github.com/HartsyAI/SwarmUI-UniversalTabExtension
     license: MIT
     tags:
     - tabs
     - ui
+
+SD.cppBackend:
+    author: Hartsy
+    description: Adds a backend powered by stable-diffusion.cpp. It runs image generation through an external SD.cpp executable (CPU/CUDA/Vulkan)
+    url: https://github.com/HartsyAI/SwarmUI-SD.cpp-Backend
+    license: MIT
+    tags:
+    - backend
 
 WildcardImporter:
     author: spoomples+bman654
