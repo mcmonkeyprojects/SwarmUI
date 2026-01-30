@@ -329,6 +329,9 @@ public class T2IParamTypes
         GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupSegmentOverrides, GroupAdvancedSampling, GroupAlternateGuidance, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupAdvancedVideoObscure, GroupVideoExtend,
         GroupStarred, GroupUser1, GroupUser2, GroupUser3;
 
+    [Obsolete("This group was discarded from core.")]
+    public static T2IParamGroup GroupOtherFixes;
+
     public class ControlNetParamHolder
     {
         public T2IParamGroup Group;
@@ -895,6 +898,9 @@ public class T2IParamTypes
         PlaceholderParamGroupUser3 = Register<bool>(new("Placeholder Param - Group User Three", "Placeholder hidden parameter to make the 'User Group 3' Group exist.",
             Default: "false", IgnoreIf: "false", VisibleNormally: false, IsAdvanced: true, Group: GroupUser3
            ));
+#pragma warning disable CS0618 // Type or member is obsolete
+        GroupOtherFixes = GroupSwarmInternal;
+#pragma warning restore CS0618 // Type or member is obsolete
     }
 
     /// <summary>Gets the value in the list that best matches the input text of a model name (for user input handling), or null if no match.</summary>
