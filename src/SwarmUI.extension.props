@@ -1,0 +1,20 @@
+<Project>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <OutputType>library</OutputType>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <RollForward>Major</RollForward>
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+    <ItemGroup>
+        <Reference Include="SwarmUI">
+            <HintPath>../../bin/live_release/SwarmUI.dll</HintPath>
+            <Private>false</Private>
+        </Reference>
+        <None Remove="**" />
+        <Content Remove="**" />
+        <Compile Include="../../GlobalSuppressions.cs" />
+        <Compile Include="../../GlobalUsings.cs" />
+    </ItemGroup>
+    <Import Project="SwarmUI.deps.props" />
+</Project>

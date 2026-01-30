@@ -41,6 +41,7 @@ if exist .\src\bin\must_rebuild (
         rmdir /s /q .\src\bin\live_release_backup
         move .\src\bin\live_release .\src\bin\live_release_backup
     )
+    rmdir /s /q .\src\bin\extensions
     del .\src\bin\must_rebuild
 )
 

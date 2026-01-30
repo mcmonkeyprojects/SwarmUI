@@ -32,6 +32,7 @@ if [ -f ./src/bin/must_rebuild ]; then
         rm -rf ./src/bin/live_release_backup
         mv ./src/bin/live_release ./src/bin/live_release_backup
     fi
+    rm -rf ./src/bin/extensions
     rm ./src/bin/must_rebuild
 fi
 
