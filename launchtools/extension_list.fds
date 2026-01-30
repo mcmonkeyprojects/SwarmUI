@@ -42,6 +42,7 @@ WaifuDiffusionV:
     - parameters
     - nodes
 
+# (ComfyDeployBackend: deprecated as ComfyDeploy shut down)
 ComfyDeployBackend:
     author: mcmonkey
     description: Adds a ComfyDeploy ( https://www.comfydeploy.com/ ) backend.
@@ -50,6 +51,7 @@ ComfyDeployBackend:
     tags:
     - paid
     - backend
+    - hidden
 
 MagicPrompt:
     author: Hartsy

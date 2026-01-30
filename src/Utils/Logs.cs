@@ -142,6 +142,14 @@ public static class Logs
         LogWithColor(ConsoleColor.Black, ConsoleColor.Red, "Error", ConsoleColor.Black, ConsoleColor.Red, message, LogLevel.Error);
     }
 
+    public static void CriticalLoadError(string message)
+    {
+        Error("!!!!");
+        Error(message);
+        Error("!!!!");
+        Thread.Sleep(2000); // Momentary pause here to make the error stand out a bit
+    }
+
     /// <summary>Helper to track recent log outputs.</summary>
     public class LogTracker
     {

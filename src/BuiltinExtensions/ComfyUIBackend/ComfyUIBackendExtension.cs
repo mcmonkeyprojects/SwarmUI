@@ -649,7 +649,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static ConcurrentDictionary<string, JToken> ControlNetPreprocessors = new() { ["None"] = null };
 
-    public static T2IParamGroup ComfyGroup, ComfyAdvancedGroup;
+    public static T2IParamGroup ComfyAdvancedGroup;
 
     /// <inheritdoc/>
     public override void OnInit()
@@ -681,10 +681,9 @@ public class ComfyUIBackendExtension : Extension
         StyleModelApplyStart = T2IParamTypes.Register<double>(new("Style Model Apply Start", "When to start applying the Style Model, as a fraction of steps (if enabled).\nFor example, 0.25 starts applying a quarter (25%) of the way through.\nThis is probably off-scale due to scheduler behavior in ComfyUI internals. Very low values are recommend for practical usage.",
             "0", IgnoreIf: "0", Min: 0.0, Max: 1.0, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupImagePrompting, ViewType: ParamViewType.SLIDER, OrderPriority: 14.7, IsAdvanced: true, Examples: ["0", "0.2", "0.5"], DependNonDefault: UseStyleModel.Type.ID
             ));
-        ComfyGroup = new("ComfyUI", Toggles: false, Open: false);
         ComfyAdvancedGroup = new("ComfyUI Advanced", Toggles: false, IsAdvanced: true, Open: false);
-        CustomWorkflowParam = T2IParamTypes.Register<string>(new("[ComfyUI] Custom Workflow", "What custom workflow to use in ComfyUI (built in the Comfy Workflow Editor tab).\nGenerally, do not use this directly.",
-            "", Toggleable: true, FeatureFlag: "comfyui", Group: ComfyGroup, IsAdvanced: true, ValidateValues: false, ChangeWeight: 8, Permission: PermStoredCustomWorkflows,
+        CustomWorkflowParam = T2IParamTypes.Register<string>(new("ComfyUI Custom Workflow", "What custom workflow to use in ComfyUI (built in the Comfy Workflow Editor tab).\nGenerally, do not use this directly.",
+            "", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSwarmInternal, IsAdvanced: true, ValidateValues: false, ChangeWeight: 8, Permission: PermStoredCustomWorkflows,
             GetValues: (_) => [.. CustomWorkflows.Keys.Order()],
             Clean: (_, val) => CustomWorkflows.ContainsKey(val) ? $"PARSED%{val}%{ComfyUIWebAPI.ReadCustomWorkflow(val)["prompt"]}" : val,
             MetadataFormat: v => v.StartsWith("PARSED%") ? v.After("%").Before("%") : v
@@ -696,7 +695,7 @@ public class ComfyUIBackendExtension : Extension
             "normal", Toggleable: true, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupSampling, OrderPriority: -4, CanSectionalize: true, GetValues: (_) => Schedulers
             ));
         AITemplateParam = T2IParamTypes.Register<bool>(new("Enable AITemplate", "If checked, enables AITemplate for ComfyUI generations (UNet only). Only compatible with some GPUs.",
-            "false", IgnoreIf: "false", FeatureFlag: "aitemplate", Group: ComfyGroup, ChangeWeight: 5
+            "false", IgnoreIf: "false", FeatureFlag: "aitemplate", Group: T2IParamTypes.GroupAlternateGuidance, ChangeWeight: 5
             ));
         PreferredDType = T2IParamTypes.Register<string>(new("Preferred DType", "Preferred data type for models, when a choice is available.\n(Notably primarily affects Flux.1 models currently).\nIf disabled, will automatically decide.\n'fp8_e43fn' is recommended for large models.\n'Default' uses global default type, usually fp16 or bf16.",
             "automatic", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAdvancedSampling, IsAdvanced: true, Toggleable: true, OrderPriority: 9, GetValues: (_) => ["automatic///Automatic (decide by model)", "default///Default (16 bit)", "fp8_e4m3fn///FP8 e4m3fn (8 bit)", "fp8_e5m2///FP8 e5m2 (alt 8 bit)"]

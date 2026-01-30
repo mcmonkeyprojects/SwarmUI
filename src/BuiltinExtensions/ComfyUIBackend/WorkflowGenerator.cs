@@ -602,7 +602,7 @@ public partial class WorkflowGenerator
         {
             fpsDefault = fpsOverride(this, fpsDefault);
         }
-        return UserInput.Get(T2IParamTypes.Text2VideoFPS, UserInput.Get(T2IParamTypes.VideoFPS, fpsDefault));
+        return UserInput.Get(T2IParamTypes.VideoFPS, fpsDefault);
     }
 
     /// <summary>Creates a node to save an image output.</summary>
@@ -610,7 +610,7 @@ public partial class WorkflowGenerator
     {
         if (IsVideoModel())
         {
-            if (UserInput.Get(T2IParamTypes.Text2VideoBoomerang, false))
+            if (UserInput.Get(T2IParamTypes.VideoBoomerang, false))
             {
                 string bounced = CreateNode("SwarmVideoBoomerang", new JObject()
                 {
@@ -765,7 +765,7 @@ public partial class WorkflowGenerator
                 {
                     ["positive"] = pos,
                     ["negative"] = neg,
-                    ["frame_rate"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 24)
+                    ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24)
                 });
                 pos = [ltxvcond, 0];
                 neg = [ltxvcond, 1];
@@ -780,7 +780,7 @@ public partial class WorkflowGenerator
                 {
                     ["positive"] = pos,
                     ["negative"] = neg,
-                    ["frame_rate"] = UserInput.Get(T2IParamTypes.Text2VideoFPS, 24)
+                    ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24)
                 });
                 pos = [ltxvcond, 0];
                 neg = [ltxvcond, 1];

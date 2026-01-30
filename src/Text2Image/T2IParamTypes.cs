@@ -314,7 +314,7 @@ public class T2IParamTypes
     }
 
     public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat;
-    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentSteps, Text2VideoFrames, Text2VideoFPS, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
+    public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentSteps, Text2VideoFrames, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
         FreeUBlock1, FreeUBlock2, FreeUSkip1, FreeUSkip2, GlobalRegionFactor, EndStepsEarly, SamplerSigmaMin, SamplerSigmaMax, SamplerRho, VideoAugmentationLevel, VideoCFG, VideoMinCFG, Video2VideoCreativity, VideoSwapPercent, VideoExtendSwapPercent, IP2PCFG2, RegionalObjectCleanupFactor, SigmaShift, SegmentThresholdMax, SegmentCFGScale, FluxGuidanceScale;
@@ -322,11 +322,11 @@ public class T2IParamTypes
     public static T2IRegisteredParam<T2IModel> Model, RefinerModel, VAE, RegionalObjectInpaintingModel, SegmentModel, VideoModel, VideoSwapModel, RefinerVAE, ClipLModel, ClipGModel, ClipVisionModel, T5XXLModel, LLaVAModel, LLaMAModel, QwenModel, MistralModel, GemmaModel, VideoExtendModel, VideoExtendSwapModel;
     public static T2IRegisteredParam<List<string>> Loras, LoraWeights, LoraTencWeights, LoraSectionConfinement;
     public static T2IRegisteredParam<List<Image>> PromptImages;
-    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, Text2VideoBoomerang, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData,
+    public static T2IRegisteredParam<bool> OutputIntermediateImages, DoNotSave, DoNotSaveIntermediates, ControlNetPreviewOnly, RevisionZeroPrompt, RemoveBackground, NoSeedIncrement, NoPreviews, VideoBoomerang, ModelSpecificEnhancements, UseInpaintingEncode, MaskCompositeUnthresholded, SaveSegmentMask, InitImageRecompositeMask, UseReferenceOnly, RefinerDoTiling, AutomaticVAE, ZeroNegative, FluxDisableGuidance, SmartImagePromptResizing, NoLoadModels, NoInternalSpecialHandling, ForwardRawBackendData, ForwardSwarmData,
         PlaceholderParamGroupStarred, PlaceholderParamGroupUser1, PlaceholderParamGroupUser2, PlaceholderParamGroupUser3;
 
     public static T2IParamGroup GroupImagePrompting, GroupCore, GroupVariation, GroupResolution, GroupSampling, GroupInitImage, GroupRefiners, GroupRefinerOverrides,
-        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupSegmentOverrides, GroupAdvancedSampling, GroupAlternateGuidance, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupVideoExtend, GroupOtherFixes,
+        GroupAdvancedModelAddons, GroupSwarmInternal, GroupFreeU, GroupRegionalPrompting, GroupSegmentRefining, GroupSegmentOverrides, GroupAdvancedSampling, GroupAlternateGuidance, GroupVideo, GroupText2Video, GroupAdvancedVideo, GroupAdvancedVideoObscure, GroupVideoExtend,
         GroupStarred, GroupUser1, GroupUser2, GroupUser3;
 
     public class ControlNetParamHolder
@@ -399,12 +399,6 @@ public class T2IParamTypes
         GroupText2Video = new("Text To Video", Open: false, OrderPriority: -30, Toggles: true, Description: $"Support for Text2Video models.");
         Text2VideoFrames = Register<int>(new("Text2Video Frames", "How many frames to generate within the video.\nGenmo Mochi 1 can support any frame count up to 200, multiples of 6 plus 1 (7, 13, 19, 25, ...) are required and will automatically round if you enter an invalid value. Defaults to 25.\nLTXV supports frame counts anywhere up to 257. Multiples of 8 plus 1 (9, 17, 25, 33, 41, ...) are required and will automatically round if you enter an invalid value. Defaults to 97.\nHunyuan Video and Wan-2.1 support dynamic frame counts. Multiples of 4 plus 1 (5, 9, 13, 17, ...) are required and will automatically round if you enter an invalid value. Hunyuan defaults to 73, Wan defaults to 81.",
             "25", Min: 1, Max: 1000, OrderPriority: 1, Group: GroupText2Video, FeatureFlag: "text2video", Toggleable: true
-            ));
-        Text2VideoFPS = Register<int>(new("Text2Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video is expecting to work at.\nFor Mochi or Hunyuan Video, this is 24.\nFor LTXV, 24 fps is native, but other values may work.\nFor Cosmos, 24 is good but any value from 12 to 40 works.\nFor Wan, only 16 works.",
-            "24", Min: 1, Max: 1024, ViewType: ParamViewType.BIG, OrderPriority: 2, Group: GroupText2Video, FeatureFlag: "text2video", IsAdvanced: true, Toggleable: true
-            ));
-        Text2VideoBoomerang = Register<bool>(new("Text2Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
-            "false", IgnoreIf: "false", OrderPriority: 20, Group: GroupText2Video, IsAdvanced: true, FeatureFlag: "text2video"
             ));
         List<string> videoFormats = ["webp", "gif", "gif-hd", "webm", "h264-mp4", "h265-mp4", "prores"];
         Text2VideoFormat = Register<string>(new("Text2Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
@@ -530,7 +524,7 @@ public class T2IParamTypes
         for (int i = 1; i <= 3; i++)
         {
             string suffix = i switch { 1 => "", 2 => " Two", 3 => " Three", _ => "Error" };
-            T2IParamGroup group = new($"ControlNet{suffix}", Toggles: true, Open: false, IsAdvanced: i != 1, OrderPriority: -1 + i * 0.1, Description: $"Guide your image generations with ControlNets.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ControlNet.md\">See more docs here.</a>");
+            T2IParamGroup group = new($"ControlNet{suffix}", Toggles: true, Open: false, IsAdvanced: i != 1, OrderPriority: -1 + i * 0.1, Description: $"Guide your image generations with ControlNets.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ControlNet.md\">See more docs here.</a>", Parent: i == 1 ? null : Controlnets[0].Group);
             Controlnets[i - 1] = new()
             {
                 NameSuffix = suffix,
@@ -578,9 +572,6 @@ public class T2IParamTypes
         VideoCFG = Register<double>(new("Video CFG", "The CFG Scale to use for video generation.\nWith SVD, videos start with this CFG on the first frame, and then reduce to MinCFG (normally 1) by the end frame.\nSVD prefers 2.5\nCosmos takes normal CFGs (around 7).\nLTXV prefers around 3 for its CFG.\nWan prefers around 6.",
             "7", Min: 1, Max: 100, ViewMax: 20, Step: 0.5, OrderPriority: 4, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, Toggleable: true
             ));
-        VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
-            "false", IgnoreIf: "false", OrderPriority: 18, Group: GroupVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1
-            ));
         VideoResolution = Register<string>(new("Video Resolution", "What resolution/aspect the video should use.\n'Image Aspect, Model Res' uses the aspect-ratio of the image, but the pixel-count size of the model standard resolution.\n'Model Preferred' means use the model's exact resolution (eg 1024x576).\n'Image' means your input image resolution (ie the standard Resolution parameters control this, usually).",
             "Image Aspect, Model Res", GetValues: _ => ["Image Aspect, Model Res", "Model Preferred", "Image"], OrderPriority: 19, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: 1
             ));
@@ -594,18 +585,28 @@ public class T2IParamTypes
             null, OrderPriority: 30, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: 2, IsAdvanced: true
             ));
         // ================================================ Advanced Video ================================================
-        GroupAdvancedVideo = new("Advanced Video", Open: false, OrderPriority: 6, Description: "Advanced/special Video model features that only apply to some video models.");
+        GroupAdvancedVideo = new("Advanced Video", Open: false, OrderPriority: 6, Description: "Advanced/special Video model features.\nYou can use this group to configure some stable defaults, some specialty behaviors, or obscure model-specific options.");
         VideoFPS = Register<int>(new("Video FPS", "The FPS (frames per second) to use for video generation.\nThis configures the target FPS the video will try to generate for, or will output as.\nMost models are locked to a specific framerate, so altering this is a bad idea.\nSVD prefers 6, LTXV prefers 24.",
-            "24", Min: 1, Max: 1024, ViewMax: 30, ViewType: ParamViewType.SLIDER, OrderPriority: 2.5, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
+            "24", Min: 1, Max: 1024, ViewMax: 30, ViewType: ParamViewType.SLIDER, OrderPriority: 1, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
             ));
+        VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
+            "false", IgnoreIf: "false", OrderPriority: 2, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true
+            ));
+        GroupAdvancedVideoObscure = new("Video Obscure Options", Open: false, OrderPriority: 50, IsAdvanced: true, Toggles: false, Description: "You almost never need these.", Parent: GroupAdvancedVideo);
         VideoMinCFG = Register<double>(new("Video Min CFG", "The minimum CFG to use for video generation.\nVideos start with max CFG on first frame, and then reduce to this CFG. Set to -1 to disable.\nOnly used for SVD.",
-            "1.0", Min: -1, Max: 100, ViewMax: 30, Step: 0.5, OrderPriority: 4.5, ViewType: ParamViewType.SLIDER, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
+            "1.0", Min: -1, Max: 100, ViewMax: 30, Step: 0.5, OrderPriority: 4.5, ViewType: ParamViewType.SLIDER, Group: GroupAdvancedVideoObscure, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
             ));
         VideoMotionBucket = Register<int>(new("Video Motion Bucket", "Which trained 'motion bucket' to use for the video model.\nHigher values induce more motion. Most values should stay in the 100-200 range.\n127 is a good baseline, as it is the most common value in SVD's training set.\nOnly used for SVD.",
-            "127", Min: 1, Max: 1023, OrderPriority: 10, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
+            "127", Min: 1, Max: 1023, OrderPriority: 10, Group: GroupAdvancedVideoObscure, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, Toggleable: true
             ));
         VideoAugmentationLevel = Register<double>(new("Video Augmentation Level", "How much noise to add to the init image for Image2Video.\nHigher values yield more motion.\nFor SVD, default is 0.\nFor LTX, default is 0.15.\nOther models do not use this.",
-            "0.0", Min: 0, ViewMax: 1, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", Toggleable: true, IsAdvanced: true
+            "0.0", Min: 0, ViewMax: 1, Max: 10, Step: 0.01, OrderPriority: 11, ViewType: ParamViewType.SLIDER, Group: GroupAdvancedVideoObscure, Permission: Permissions.ParamVideo, FeatureFlag: "video", Toggleable: true, IsAdvanced: true
+            ));
+        TrimVideoStartFrames = Register<int>(new("Trim Video Start Frames", "Trim this many frames from the start of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt start frames (such as early Wan versions).",
+            "0", IgnoreIf: "0", Min: 0, Max: 1000, IsAdvanced: true, Group: GroupAdvancedVideoObscure, Permission: Permissions.ParamVideo, FeatureFlag: "video", OrderPriority: -11
+            ));
+        TrimVideoEndFrames = Register<int>(new("Trim Video End Frames", "Trim this many frames from the end of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt end frames (such as early Wan versions).",
+            "0", IgnoreIf: "0", Min: 0, Max: 1000, IsAdvanced: true, Group: GroupAdvancedVideoObscure, Permission: Permissions.ParamVideo, FeatureFlag: "video", OrderPriority: -10
             ));
         // ================================================ Video Extend ================================================
         GroupVideoExtend = new("Video Extend", Open: false, OrderPriority: 7, IsAdvanced: true, Toggles: true);
@@ -761,26 +762,6 @@ public class T2IParamTypes
         ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nAlso, some video models will automatically use tiled VAE when this is enabled, even if you didn't manually enable tiled VAE.\nIf unchecked, will prefer more 'raw' behavior.",
             "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 5
             ));
-        // ================================================ FreeU (TODO: remove/extensionize?) ================================================
-        GroupFreeU = new("FreeU", Open: false, OrderPriority: 10, IsAdvanced: true, Toggles: true, Description: "<a class=\"translate\" href=\"https://arxiv.org/abs/2309.11497\">Implements 'FreeU: Free Lunch in Diffusion U-Net'</a>\nThis is a minor adjustment to legacy Unet models (eg SDv1, SDXL).\nIt does not apply to newer DiT models, and even for Unet models it's not recommended.");
-        FreeUApplyTo = Register<string>(new("[FreeU] Apply To", "Which models to apply FreeU to, as base, refiner, or both. Irrelevant when not using refiner.",
-            "Both", GetValues: (_) => ["Both", "Base", "Refiner"], IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -10
-            ));
-        FreeUVersion = Register<string>(new("[FreeU] Version", "Which version of FreeU to use.\n1 is the version in the original paper, 2 is a variation of it developed by the same original author of FreeU.",
-            "1", GetValues: (_) => ["1", "2"], IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -9
-            ));
-        FreeUBlock1 = Register<double>(new("[FreeU] Block One", "Block1 multiplier value for FreeU.\nPaper recommends 1.1.",
-            "1.1", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -4
-            ));
-        FreeUBlock2 = Register<double>(new("[FreeU] Block Two", "Block2 multiplier value for FreeU.\nPaper recommends 1.2.",
-            "1.2", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -3
-            ));
-        FreeUSkip1 = Register<double>(new("[FreeU] Skip One", "Skip1 multiplier value for FreeU.\nPaper recommends 0.9.",
-            "0.9", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -2
-            ));
-        FreeUSkip2 = Register<double>(new("[FreeU] Skip Two", "Skip2 multiplier value for FreeU.\nPaper recommends 0.2.",
-            "0.2", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -1
-            ));
         // ================================================ Regional Prompting ================================================
         GroupRegionalPrompting = new("Regional Prompting", Open: false, OrderPriority: 9, IsAdvanced: true);
         GlobalRegionFactor = Register<double>(new("Global Region Factor", "When using regionalized prompts, this factor controls how strongly the global prompt overrides the regional prompts.\n0 means ignore global prompt, 1 means ignore regional, 0.5 means half-n-half.",
@@ -877,13 +858,25 @@ public class T2IParamTypes
             "Differential", Toggleable: true, IsAdvanced: true, GetValues: (_) => ["Differential", "Simple Latent"], OrderPriority: -3.5, Group: GroupAdvancedSampling
             ));
         GroupAlternateGuidance = new("Alternate Guidance", Open: false, OrderPriority: 50, IsAdvanced: true, Parent: GroupAdvancedSampling, Description: "Alternative guidance methods.\nThese replace CFG or sampling with alternative systems that claim to yield better results.\nThese are often highly contextual (eg work on some models but not others), and can be known to add more trouble than they're worth.\nThese generally cannot stack: pick one to use, not multiple, unless documented otherwise.");
-        // ================================================ Other Fixes ================================================
-        GroupOtherFixes = new("Other Fixes", Open: false, OrderPriority: 20, IsAdvanced: true);
-        TrimVideoStartFrames = Register<int>(new("Trim Video Start Frames", "Trim this many frames from the start of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt start frames (such as Wan).",
-            "0", IgnoreIf: "0", Min: 0, Max: 1000, IsAdvanced: true, Group: GroupOtherFixes, OrderPriority: -11
+        // ================================================ FreeU (TODO: remove/extensionize?) ================================================
+        GroupFreeU = new("FreeU", Open: false, OrderPriority: 10, IsAdvanced: true, Toggles: true, Description: "<a class=\"translate\" href=\"https://arxiv.org/abs/2309.11497\">Implements 'FreeU: Free Lunch in Diffusion U-Net'</a>\nThis is a minor adjustment to legacy Unet models (eg SDv1, SDXL).\nIt does not apply to newer DiT models, and even for Unet models it's not recommended.", Parent: GroupAlternateGuidance);
+        FreeUApplyTo = Register<string>(new("[FreeU] Apply To", "Which models to apply FreeU to, as base, refiner, or both. Irrelevant when not using refiner.",
+            "Both", GetValues: (_) => ["Both", "Base", "Refiner"], IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -10
             ));
-        TrimVideoEndFrames = Register<int>(new("Trim Video End Frames", "Trim this many frames from the end of a video output.\nThis will shorten a video, and is just a fix for video models that corrupt end frames (such as Wan).",
-            "0", IgnoreIf: "0", Min: 0, Max: 1000, IsAdvanced: true, Group: GroupOtherFixes, OrderPriority: -10
+        FreeUVersion = Register<string>(new("[FreeU] Version", "Which version of FreeU to use.\n1 is the version in the original paper, 2 is a variation of it developed by the same original author of FreeU.",
+            "1", GetValues: (_) => ["1", "2"], IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -9
+            ));
+        FreeUBlock1 = Register<double>(new("[FreeU] Block One", "Block1 multiplier value for FreeU.\nPaper recommends 1.1.",
+            "1.1", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -4
+            ));
+        FreeUBlock2 = Register<double>(new("[FreeU] Block Two", "Block2 multiplier value for FreeU.\nPaper recommends 1.2.",
+            "1.2", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -3
+            ));
+        FreeUSkip1 = Register<double>(new("[FreeU] Skip One", "Skip1 multiplier value for FreeU.\nPaper recommends 0.9.",
+            "0.9", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -2
+            ));
+        FreeUSkip2 = Register<double>(new("[FreeU] Skip Two", "Skip2 multiplier value for FreeU.\nPaper recommends 0.2.",
+            "0.2", Min: 0, Max: 10, Step: 0.05, IsAdvanced: true, Group: GroupFreeU, FeatureFlag: "freeu", OrderPriority: -1
             ));
         // ================================================ User Defined Groups ================================================
         GroupStarred = new("Starred", Open: true, OrderPriority: -60, Description: "User-selectable starred parameters, brought to the top of the parameter list for convenient access.");
@@ -1116,10 +1109,9 @@ public class T2IParamTypes
     public static T2IParamType GetType(string name, T2IParamInput context)
     {
         name = CleanTypeName(name);
-        if (name == "saveintermediateimages") // TODO: Temporary, renamed 0.9.5
-        {
-            name = "outputintermediateimages";
-        }
+        if (name == "saveintermediateimages") { name = "outputintermediateimages"; } // TODO: Temporary, renamed 0.9.5
+        else if (name == "textvideofps") { name = "videofps"; } // TODO: Temporary, 0.9.7 legacy "Text2Video FPS" separate param dropped
+        else if (name == "textvideoboomerang") { name = "videoboomerang"; }
         T2IParamType result;
         foreach (Func<string, T2IParamInput, T2IParamType> provider in FakeTypeProviders)
         {
