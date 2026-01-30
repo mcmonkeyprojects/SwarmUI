@@ -11,6 +11,9 @@ Properties/
 .aspnet/
 .local/
 
+# So you can customize build if you need to
+Directory.Build.props
+
 # This project
 /Output
 /Data
