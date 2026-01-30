@@ -813,7 +813,14 @@ function genInputs(delay_final = false) {
         }
         let controlnetGroup = document.getElementById('input_group_content_controlnet');
         if (controlnetGroup) {
-            controlnetGroup.append(createDiv(`controlnet_button_preview`, null, `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button>`));
+            let firstGroup = controlnetGroup.querySelector('.input-group');
+            let buttonDiv = createDiv(`controlnet_button_preview`, null, `<button class="basic-button" onclick="controlnetShowPreview()">Preview</button>`);
+            if (firstGroup) {
+                controlnetGroup.insertBefore(buttonDiv, firstGroup);
+            }
+            else {
+                controlnetGroup.append(buttonDiv);
+            }
             if (!currentBackendFeatureSet.includes('controlnetpreprocessors')) {
                 controlnetGroup.append(createDiv(`controlnet_install_preprocessors`, 'keep_group_visible', `<button class="basic-button" onclick="installFeatureById('controlnet_preprocessors', 'controlnet_install_preprocessors')">Install Controlnet Preprocessors</button>`));
             }

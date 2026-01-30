@@ -524,7 +524,7 @@ public class T2IParamTypes
         for (int i = 1; i <= 3; i++)
         {
             string suffix = i switch { 1 => "", 2 => " Two", 3 => " Three", _ => "Error" };
-            T2IParamGroup group = new($"ControlNet{suffix}", Toggles: true, Open: false, IsAdvanced: i != 1, OrderPriority: -1 + i * 0.1, Description: $"Guide your image generations with ControlNets.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ControlNet.md\">See more docs here.</a>");
+            T2IParamGroup group = new($"ControlNet{suffix}", Toggles: true, Open: false, IsAdvanced: i != 1, OrderPriority: -1 + i * 0.1, Description: $"Guide your image generations with ControlNets.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ControlNet.md\">See more docs here.</a>", Parent: i == 1 ? null : Controlnets[0].Group);
             Controlnets[i - 1] = new()
             {
                 NameSuffix = suffix,
