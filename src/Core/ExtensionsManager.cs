@@ -49,7 +49,9 @@ public class ExtensionsManager
     {
         string[] builtins = [.. Directory.EnumerateDirectories("./src/BuiltinExtensions").Select(s => s.Replace('\\', '/').AfterLast("/src/"))];
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => s.Replace('\\', '/').AfterLast("/src/"))] : [];
-        foreach (string deletable in extras.Where(e => e.TrimEnd('/').EndsWith(".delete")))
+        string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
+        extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
+        foreach (string deletable in deleteMe)
         {
             try
             {
@@ -62,66 +64,9 @@ public class ExtensionsManager
         }
         foreach (Type extType in AppDomain.CurrentDomain.GetAssemblies().ToList().SelectMany(x => x.GetTypes()).Where(t => typeof(Extension).IsAssignableFrom(t) && !t.IsAbstract))
         {
-            try
-            {
-                Logs.Init($"Prepping extension: {extType.FullName}...");
-                Extension extension = Activator.CreateInstance(extType) as Extension;
-                extension.ExtensionName = extType.Name;
-                Extensions.Add(extension);
-                extension.IsCore = extType.Namespace.StartsWith("SwarmUI.");
-                if (extension.IsCore)
-                {
-                    extension.ExtensionAuthor = "SwarmUI Team";
-                    extension.Description = "(Core component of SwarmUI)";
-                    extension.Version = Utilities.Version;
-                    extension.ReadmeURL = Utilities.RepoRoot;
-                }
-                string[] possible = extension.IsCore ? builtins : extras;
-                foreach (string path in possible)
-                {
-                    if (File.Exists($"src/{path}/{extType.Name}.cs"))
-                    {
-                        if (extension.FilePath is not null)
-                        {
-                            Logs.Error($"Multiple extensions with the same name {extType.Name}! Something will break.");
-                        }
-                        extension.FilePath = $"src/{path}/";
-                        LoadedExtensionFolders.Add(path.AfterLast('/'));
-                    }
-                }
-                if (extension.FilePath is null)
-                {
-                    Logs.Error($"Could not determine path for extension '{extType.Name}'. Searched in {string.Join(", ", possible)} for '{extType.Name}.cs'");
-                    if (extension.IsCore)
-                    {
-                        Logs.Error("This is labeled as an internal extension - if you're the developer, make sure you give it a unique namespace (do not use 'SwarmUI.')");
-                    }
-                    else if (!Directory.Exists("./src/Extensions"))
-                    {
-                        Logs.Error($"Extensions directory is missing. Did you accidentally launch Swarm outside its directory?");
-                    }
-                    else if (Directory.EnumerateFiles("./src/Extensions").Any(f => f.EndsWith(".cs")))
-                    {
-                        Logs.Error($"You have .cs files directly contained in your extensions directory. This is invalid, extensions need their own subfolders.");
-                    }
-                    else if (extras.IsEmpty())
-                    {
-                        Logs.Error("You have an Extensions directory, but it's empty of any subdirectories.");
-                    }
-                    else if (extras.Any(string.IsNullOrWhiteSpace))
-                    {
-                        Logs.Error("You have an Extensions directory, with subdirectories, but they are invalid or corrupt.");
-                    }
-                    else
-                    {
-                        Logs.Error("You have valid extension directories, but nothing matches the file. Is the classname mismatched from the filename?");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logs.Error($"Failed to create extension of type {extType.FullName}: {ex.ReadableString()}");
-            }
+            bool isCore = extType.Namespace.StartsWith("SwarmUI.");
+            string[] possible = isCore ? builtins : extras;
+            PrepExtension(extType, isCore, possible);
         }
         RunOnAllExtensions(e => e.OnFirstInit());
         try
@@ -139,6 +84,69 @@ public class ExtensionsManager
             Logs.Error($"Failed to read known extensions list: {ex.ReadableString()}");
         }
         RunOnAllExtensions(e => e.PopulateMetadata());
+    }
+
+    public void PrepExtension(Type extType, bool isCore, string[] possible)
+    {
+        try
+        {
+            Logs.Init($"Prepping extension: {extType.FullName}...");
+            Extension extension = Activator.CreateInstance(extType) as Extension;
+            extension.ExtensionName = extType.Name;
+            Extensions.Add(extension);
+            extension.IsCore = isCore;
+            if (isCore)
+            {
+                extension.ExtensionAuthor = "SwarmUI Team";
+                extension.Description = "(Core component of SwarmUI)";
+                extension.Version = Utilities.Version;
+                extension.ReadmeURL = Utilities.RepoRoot;
+            }
+            foreach (string path in possible)
+            {
+                if (File.Exists($"src/{path}/{extType.Name}.cs"))
+                {
+                    if (extension.FilePath is not null)
+                    {
+                        Logs.Error($"Multiple extensions with the same name {extType.Name}! Something will break.");
+                    }
+                    extension.FilePath = $"src/{path}/";
+                    LoadedExtensionFolders.Add(path.AfterLast('/'));
+                }
+            }
+            if (extension.FilePath is null)
+            {
+                Logs.Error($"Could not determine path for extension '{extType.Name}'. Searched in {string.Join(", ", possible)} for '{extType.Name}.cs'");
+                if (extension.IsCore)
+                {
+                    Logs.Error("This is labeled as an internal extension - if you're the developer, make sure you give it a unique namespace (do not use 'SwarmUI.')");
+                }
+                else if (!Directory.Exists("./src/Extensions"))
+                {
+                    Logs.Error($"Extensions directory is missing. Did you accidentally launch Swarm outside its directory?");
+                }
+                else if (Directory.EnumerateFiles("./src/Extensions").Any(f => f.EndsWith(".cs")))
+                {
+                    Logs.Error($"You have .cs files directly contained in your extensions directory. This is invalid, extensions need their own subfolders.");
+                }
+                else if (possible.IsEmpty())
+                {
+                    Logs.Error("You have an Extensions directory, but it's empty of any subdirectories.");
+                }
+                else if (possible.Any(string.IsNullOrWhiteSpace))
+                {
+                    Logs.Error("You have an Extensions directory, with subdirectories, but they are invalid or corrupt.");
+                }
+                else
+                {
+                    Logs.Error("You have valid extension directories, but nothing matches the file. Is the classname mismatched from the filename?");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logs.Error($"Failed to create extension of type {extType.FullName}: {ex.ReadableString()}");
+        }
     }
 
     /// <summary>Runs an action on all extensions.</summary>
