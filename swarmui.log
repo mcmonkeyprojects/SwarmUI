@@ -1,0 +1,368 @@
+nohup: ignoring input
+11:42:54.628 [Init] === SwarmUI v0.9.7.4 Starting at 2026-01-29 11:42:54 ===
+11:42:54.663 [Init] Prepping extension: Spoomples.Extensions.WildcardImporter.WildcardImporterExtension...
+11:42:54.664 [Init] Prepping extension: WhatTheDuck.WhatTheDuckExtension...
+11:42:54.664 [Init] Prepping extension: SeedVR2Upscaler.SeedVR2UpscalerExtension...
+11:42:54.664 [Init] Prepping extension: HellerCommaA.Extensions.PostRenderExtension...
+11:42:54.664 [Init] Prepping extension: DerrianDistro.Extensions.KohyaDeepShrink.KohyaDeepShrink...
+11:42:54.664 [Init] Prepping extension: Base2Edit.Base2EditExtension...
+11:42:54.664 [Init] Prepping extension: Quaggles.Extensions.SkimmedCFG.SkimmedCFGExtension...
+11:42:54.664 [Init] Prepping extension: Quaggles.Extensions.FaceTools.FaceToolsExtension...
+11:42:54.665 [Init] Prepping extension: Quaggles.Extensions.AdaptiveProjectedGuidance.AdaptiveProjectedGuidanceExtension...
+11:42:54.665 [Init] Prepping extension: SwarmSkipLayerGuidanceExtension.SkipLayerGuidanceExtension...
+11:42:54.665 [Init] Prepping extension: DAAMSwarmExtension.DAAMSwarm...
+11:42:54.665 [Init] Prepping extension: SwarmVAEReflectionExtension.SwarmVAEReflection...
+11:42:54.665 [Init] Prepping extension: SwarmUI.Builtin_ScorersExtension.ScorersExtension...
+11:42:54.665 [Init] Prepping extension: SwarmUI.Builtin_ImageBatchToolExtension.ImageBatchToolExtension...
+11:42:54.665 [Init] Prepping extension: SwarmUI.Builtin_GridGeneratorExtension.GridGeneratorExtension...
+11:42:54.665 [Init] Prepping extension: SwarmUI.Builtin_DynamicThresholding.DynamicThresholdingExtension...
+11:42:54.665 [Init] Prepping extension: SwarmUI.Builtin_ComfyUIBackend.ComfyUIBackendExtension...
+11:42:54.665 [Init] Prepping extension: SwarmUI.Builtin_AutoWebUIExtension.AutoWebUIBackendExtension...
+11:42:54.707 [Init] Parsing command line...
+11:42:54.707 [Init] Loading settings file...
+11:42:54.727 [Init] Re-saving settings file...
+11:42:54.749 [Init] Applying command line settings...
+11:42:54.759 [Warning] Experimental Features are enabled. Issue reports will not be accepted until you turn them off in Server Configuration.
+11:42:54.759 [Init] Swarm base path is: /opt/stabilitymatrix/Data/Packages/SwarmUI
+11:42:54.760 [Init] Running on OS: Garuda Linux
+11:42:54.763 [Init] Current git commit is [f9b2d62b: Resolve merge conflicts: accept local (ours) for outputhistory.js], marked as date 2026-01-29 11:04:03 (6 hours ago)
+11:42:54.764 [Init] CPU Cores: 16 | RAM: 124.88 GiB total, 91.79 GiB available, 124.88 GiB virtual, unknown swap
+11:42:54.768 [Info] SeedVR2 Upscaler Extension loading...
+11:42:54.770 [Init] Added src/Extensions/comfyui-vae-reflection/VAEReflectionNodes to the custom nodes paths
+11:42:54.781 [Init] Prepping options...
+11:42:54.884 [Info] WildcardProcessor initialized with destination folder: Data/Wildcards
+11:42:54.888 [Init] Adding src/Extensions/SwarmUI-WildcardImporter/WCNodes to CustomNodePaths
+11:42:54.891 [Info] WhatTheDuck Extension initializing (datadump: disabled)...
+11:42:54.894 [Info] SeedVR2 Upscaler Extension loaded successfully.
+11:42:54.897 [Info] Base2Edit Extension initializing...
+11:42:54.904 [Init] DAAM Extension initializing...
+11:42:54.904 [Init] DAAM Extension initialized successfully
+11:42:54.904 [Init] Initializing VAE Reflection extension...
+11:42:54.904 [Init] VAE Reflection extension initialized.
+11:42:54.936 [Init] Loading models list...
+11:42:55.178 [Init] Swarm is up to date! You have version 0.9.7.4, and 0.9.7-Beta is the latest.
+11:42:57.416 [Init] Loading backends...
+11:42:57.417 [Init] Loading backends from file...
+11:42:57.420 [Init] Initializing backend #0 - ComfyUI Self-Starting...
+11:42:57.420 [Init] Prepping API...
+11:42:57.423 [Init] Prepping webserver...
+11:42:57.425 [Init] Backend request handler loop ready...
+11:42:57.531 [Init] Scan for web extensions...
+11:42:57.532 [Init] Readying extensions for launch...
+11:42:57.532 [Init] Launching server...
+11:42:57.533 [Init] Starting webserver on http://localhost:7801
+11:42:57.570 [Init] SwarmUI v0.9.7.4 - Local is now running.
+11:42:58.020 [Warning] Python lib folder at '/opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/venv/lib/python3.10/site-packages/' appears to not contain pip. Python operations will likely fail. Please make sure your system has a valid python3-pip install.
+11:42:58.070 [Init] Launch web browser to install page...
+kf.kio.gui: Not passing environment variable "ASPNETCORE_hostBuilder:reloadConfigOnChange" to systemd because its name contains illegal characters
+qt.qpa.services: Failed to register with host portal QDBusError("org.freedesktop.portal.Error.Failed", "Could not register app ID: App info not found for 'org.kde.'")
+11:42:59.072 [Info] Creating new session 'local' for 127.0.0.1
+11:42:59.423 [Info] Self-Start ComfyUI (Installing 'kornia') exited properly.
+11:42:59.819 [Info] Self-Start ComfyUI (Installing 'sentencepiece') exited properly.
+11:43:00.234 [Info] Self-Start ComfyUI (Installing 'spandrel') exited properly.
+11:43:00.665 [Info] Self-Start ComfyUI (Installing 'av') exited properly.
+11:43:01.046 [Info] Self-Start ComfyUI (Installing 'pydantic') exited properly.
+11:43:01.514 [Info] Self-Start ComfyUI (Installing 'pydantic-settings') exited properly.
+11:43:01.875 [Info] Self-Start ComfyUI (Installing 'comfyui_frontend_package==1.35.9') exited properly.
+11:43:02.231 [Info] Self-Start ComfyUI (Installing 'alembic') exited properly.
+11:43:03.088 [Warning] [ComfyUI (Installing 'rembg')/STDERR] ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+11:43:03.088 [Warning] [ComfyUI (Installing 'rembg')/STDERR] datasets 4.5.0 requires fsspec[http]<=2025.10.0,>=2023.1.0, but you have fsspec 2025.12.0 which is incompatible.
+11:43:04.143 [Info] Self-Start ComfyUI (Installing 'rembg') exited properly.
+11:43:04.515 [Info] Self-Start ComfyUI (Installing 'onnxruntime') exited properly.
+11:43:04.898 [Info] Self-Start ComfyUI (Installing 'matplotlib') exited properly.
+11:43:05.296 [Info] Self-Start ComfyUI (Installing 'opencv-python-headless') exited properly.
+11:43:05.669 [Info] Self-Start ComfyUI (Installing 'imageio-ffmpeg') exited properly.
+11:43:06.026 [Info] Self-Start ComfyUI (Installing 'dill') exited properly.
+11:43:06.406 [Info] Self-Start ComfyUI (Installing 'omegaconf') exited properly.
+11:43:06.964 [Warning] [ComfyUI (Updating 'numpy')/STDERR] ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+11:43:06.964 [Warning] [ComfyUI (Updating 'numpy')/STDERR] rembg 2.0.72 requires numpy<3.0.0,>=2.3.0, but you have numpy 1.26.4 which is incompatible.
+11:43:08.014 [Info] Self-Start ComfyUI (Updating 'numpy') exited properly.
+11:43:08.395 [Info] Self-Start ComfyUI (Updating 'diffusers') exited properly.
+11:43:08.742 [Info] Self-Start ComfyUI (Updating 'aiohttp') exited properly.
+11:43:09.084 [Info] Self-Start ComfyUI (Updating 'yarl') exited properly.
+11:43:09.426 [Info] Self-Start ComfyUI (Updating 'av') exited properly.
+11:43:09.784 [Info] Self-Start ComfyUI (Updating 'spandrel') exited properly.
+11:43:10.141 [Info] Self-Start ComfyUI (Updating 'transformers') exited properly.
+11:43:10.514 [Info] Self-Start ComfyUI (Updating 'ultralytics') exited properly.
+11:43:10.869 [Info] Self-Start ComfyUI (Updating 'pip') exited properly.
+11:43:11.213 [Info] Self-Start ComfyUI (Updating 'comfyui_frontend_package') exited properly.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'torch' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'torchsde' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'torchvision' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'torchaudio' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'einops' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'tokenizers' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'safetensors' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'pyyaml' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'Pillow' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'scipy' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'tqdm' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'psutil' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'SQLAlchemy' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.261 [Warning] (Developer Warning) ComfyUI required package 'requests' not found in lib folder. May be an install error, or may be a new dependency.
+11:43:11.270 [Init] Self-Start ComfyUI-0 on port 7821 is loading...
+11:43:11.557 [Info] Self-Start ComfyUI (Updating 'comfyui_workflow_templates') exited properly.
+11:43:11.914 [Info] Self-Start ComfyUI (Updating 'comfyui_embedded_docs') exited properly.
+11:43:12.262 [Info] Self-Start ComfyUI (Updating 'comfy_kitchen') exited properly.
+11:43:28.543 [Init] Self-Start ComfyUI-0 on port 7821 started.
+11:47:22.980 [Info] Creating new session 'local' for 127.0.0.1
+11:47:31.909 [Error] [WebAPI] Error handling API request '/API/GenerateText2Image' for user 'local': Invalid value for parameter Model: Invalid model value for param Model - 'OfficialStableDiffusion/sd_xl_base_1.0' - are you sure that model name is correct?
+11:50:10.816 [Info] Creating new session 'local' for 127.0.0.1
+11:50:18.195 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+11:50:54.223 [Info] Generated an image in 34.03 sec (prep) and 1.96 sec (gen)
+11:53:52.454 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+11:53:55.818 [Info] Generated an image in 0.01 sec (prep) and 2.85 sec (gen)
+== SwarmUI logs 2026-01-29 12:09 ==
+12:09:55.950 [Info] Self-Start ComfyUI-0 unexpectedly exited (ExitCode=unknown) (if something failed, change setting `LogLevel` to `Debug` to see why!)
+12:09:55.950 [Info] Self-Start ComfyUI-0 had errors before shutdown:
+[ComfyUI-0/STDERR] Adding extra search path checkpoints /opt/stabilitymatrix/Data/Models/StableDiffusion
+[ComfyUI-0/STDERR] Adding extra search path diffusers /opt/stabilitymatrix/Data/Models/Diffusers
+[ComfyUI-0/STDERR] Adding extra search path loras /opt/stabilitymatrix/Data/Models/Lora
+[ComfyUI-0/STDERR] Adding extra search path loras /opt/stabilitymatrix/Data/Models/LyCORIS
+[ComfyUI-0/STDERR] Adding extra search path clip /opt/stabilitymatrix/Data/Models/TextEncoders
+[ComfyUI-0/STDERR] Adding extra search path clip_vision /opt/stabilitymatrix/Data/Models/ClipVision
+[ComfyUI-0/STDERR] Adding extra search path embeddings /opt/stabilitymatrix/Data/Models/Embeddings
+[ComfyUI-0/STDERR] Adding extra search path vae /opt/stabilitymatrix/Data/Models/VAE
+[ComfyUI-0/STDERR] Adding extra search path vae_approx /opt/stabilitymatrix/Data/Models/ApproxVAE
+[ComfyUI-0/STDERR] Adding extra search path controlnet /opt/stabilitymatrix/Data/Models/ControlNet
+[ComfyUI-0/STDERR] Adding extra search path controlnet /opt/stabilitymatrix/Data/Models/T2IAdapter
+[ComfyUI-0/STDERR] Adding extra search path gligen /opt/stabilitymatrix/Data/Models/GLIGEN
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/ESRGAN
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/RealESRGAN
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/SwinIR
+[ComfyUI-0/STDERR] Adding extra search path hypernetworks /opt/stabilitymatrix/Data/Models/Hypernetwork
+[ComfyUI-0/STDERR] Adding extra search path ipadapter /opt/stabilitymatrix/Data/Models/IpAdapter
+[ComfyUI-0/STDERR] Adding extra search path ipadapter /opt/stabilitymatrix/Data/Models/IpAdapters15
+[ComfyUI-0/STDERR] Adding extra search path ipadapter /opt/stabilitymatrix/Data/Models/IpAdaptersXl
+[ComfyUI-0/STDERR] Adding extra search path prompt_expansion /opt/stabilitymatrix/Data/Models/PromptExpansion
+[ComfyUI-0/STDERR] Adding extra search path ultralytics /opt/stabilitymatrix/Data/Models/Ultralytics
+[ComfyUI-0/STDERR] Adding extra search path ultralytics_bbox /opt/stabilitymatrix/Data/Models/Ultralytics/bbox
+[ComfyUI-0/STDERR] Adding extra search path ultralytics_segm /opt/stabilitymatrix/Data/Models/Ultralytics/segm
+[ComfyUI-0/STDERR] Adding extra search path sams /opt/stabilitymatrix/Data/Models/Sams
+[ComfyUI-0/STDERR] Adding extra search path diffusion_models /opt/stabilitymatrix/Data/Models/DiffusionModels
+[ComfyUI-0/STDERR] Adding extra search path checkpoints /opt/stabilitymatrix/Data/Models/StableDiffusion
+[ComfyUI-0/STDERR] Adding extra search path vae /opt/stabilitymatrix/Data/Models/VAE
+[ComfyUI-0/STDERR] Adding extra search path loras /opt/stabilitymatrix/Data/Models/Lora
+[ComfyUI-0/STDERR] Adding extra search path loras /opt/stabilitymatrix/Data/Models/LyCORIS
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/ESRGAN
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/RealESRGAN
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/SwinIR
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/upscale-models
+[ComfyUI-0/STDERR] Adding extra search path upscale_models /opt/stabilitymatrix/Data/Models/upscale_models
+[ComfyUI-0/STDERR] Adding extra search path embeddings /opt/stabilitymatrix/Data/Models/Embeddings
+[ComfyUI-0/STDERR] Adding extra search path embeddings /opt/stabilitymatrix/Data/Models/embeddings
+[ComfyUI-0/STDERR] Adding extra search path hypernetworks /opt/stabilitymatrix/Data/Models/hypernetworks
+[ComfyUI-0/STDERR] Adding extra search path controlnet /opt/stabilitymatrix/Data/Models/ControlNet
+[ComfyUI-0/STDERR] Adding extra search path controlnet /opt/stabilitymatrix/Data/Models/T2IAdapter
+[ComfyUI-0/STDERR] Adding extra search path model_patches /opt/stabilitymatrix/Data/Models/ControlNet
+[ComfyUI-0/STDERR] Adding extra search path model_patches /opt/stabilitymatrix/Data/Models/T2IAdapter
+[ComfyUI-0/STDERR] Adding extra search path model_patches /opt/stabilitymatrix/Data/Models/model_patches
+[ComfyUI-0/STDERR] Adding extra search path clip /opt/stabilitymatrix/Data/Models/TextEncoders
+[ComfyUI-0/STDERR] Adding extra search path clip /opt/stabilitymatrix/Data/Models/clip
+[ComfyUI-0/STDERR] Adding extra search path clip /opt/stabilitymatrix/Data/Models/CLIP
+[ComfyUI-0/STDERR] Adding extra search path clip_vision /opt/stabilitymatrix/Data/Models/ClipVision
+[ComfyUI-0/STDERR] Adding extra search path clip_vision /opt/stabilitymatrix/Data/Models/clip_vision
+[ComfyUI-0/STDERR] Adding extra search path unet /opt/stabilitymatrix/Data/Models/unet
+[ComfyUI-0/STDERR] Adding extra search path diffusion_models /opt/stabilitymatrix/Data/Models/diffusion_models
+[ComfyUI-0/STDERR] Adding extra search path gligen /opt/stabilitymatrix/Data/Models/gligen
+[ComfyUI-0/STDERR] Adding extra search path ipadapter /opt/stabilitymatrix/Data/Models/ipadapter
+[ComfyUI-0/STDERR] Adding extra search path yolov8 /opt/stabilitymatrix/Data/Models/yolov8
+[ComfyUI-0/STDERR] Adding extra search path tensorrt /opt/stabilitymatrix/Data/Models/tensorrt
+[ComfyUI-0/STDERR] Adding extra search path clipseg /opt/stabilitymatrix/Data/Models/clipseg
+[ComfyUI-0/STDERR] Adding extra search path style_models /opt/stabilitymatrix/Data/Models/style_models
+[ComfyUI-0/STDERR] Adding extra search path latent_upscale_models /opt/stabilitymatrix/Data/Models/latent_upscale_models
+[ComfyUI-0/STDERR] Adding extra search path seedvr2 /opt/stabilitymatrix/Data/Models/seedvr2
+[ComfyUI-0/STDERR] Adding extra search path luts /opt/stabilitymatrix/Data/Models/luts
+[ComfyUI-0/STDERR] Adding extra search path custom_nodes /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes
+[ComfyUI-0/STDERR] Adding extra search path custom_nodes /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/ExtraNodes
+[ComfyUI-0/STDERR] Adding extra search path custom_nodes /opt/stabilitymatrix/Data/Packages/SwarmUI/src/Extensions/comfyui-vae-reflection/VAEReflectionNodes
+[ComfyUI-0/STDERR] Adding extra search path custom_nodes /opt/stabilitymatrix/Data/Packages/SwarmUI/src/Extensions/SwarmUI-WildcardImporter/WCNodes
+[ComfyUI-0/STDERR] [ComfyUI-Manager] Using `uv` as Python module for pip operations.
+[ComfyUI-0/STDERR] Using Python 3.13.5 environment at: venv
+[ComfyUI-0/STDERR] Using Python 3.13.5 environment at: venv
+[ComfyUI-0/STDERR] Using Python 3.13.5 environment at: venv
+[ComfyUI-0/STDERR] Checkpoint files will always be loaded safely.
+[ComfyUI-0/STDERR] /opt/amdgpu/share/libdrm/amdgpu.ids: No such file or directory
+[ComfyUI-0/STDERR] /opt/amdgpu/share/libdrm/amdgpu.ids: No such file or directory
+[ComfyUI-0/STDERR] Total VRAM 24560 MB, total RAM 127881 MB
+[ComfyUI-0/STDERR] pytorch version: 2.9.1+rocm6.4
+[ComfyUI-0/STDERR] Set: torch.backends.cudnn.enabled = False for better AMD performance.
+[ComfyUI-0/STDERR] AMD arch: gfx1100
+[ComfyUI-0/STDERR] ROCm version: (6, 4)
+[ComfyUI-0/STDERR] Enabled fp16 accumulation.
+[ComfyUI-0/STDERR] Set vram state to: NORMAL_VRAM
+[ComfyUI-0/STDERR] Disabling smart memory management
+[ComfyUI-0/STDERR] Device: cuda:0 AMD Radeon Graphics : native
+[ComfyUI-0/STDERR] Using async weight offloading with 2 streams
+[ComfyUI-0/STDERR] Enabled pinned memory 121486.0
+[ComfyUI-0/STDERR] I0129 11:43:17.338000 1193446 venv/lib/python3.13/site-packages/torch/_inductor/config.py:873] compile_threads set to 16
+[ComfyUI-0/STDERR] I0129 11:43:17.461000 1193446 venv/lib/python3.13/site-packages/torch/distributed/nn/jit/instantiator.py:24] Created a temporary directory at /tmp/tmpgybo4c1e
+[ComfyUI-0/STDERR] I0129 11:43:17.464000 1193446 venv/lib/python3.13/site-packages/torch/distributed/nn/jit/instantiator.py:75] Writing /tmp/tmpgybo4c1e/_remote_module_non_scriptable.py
+[ComfyUI-0/STDERR] Found comfy_kitchen backend eager: {'available': True, 'disabled': False, 'unavailable_reason': None, 'capabilities': ['apply_rope', 'apply_rope1', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8', 'scaled_mm_nvfp4']}
+[ComfyUI-0/STDERR] Found comfy_kitchen backend triton: {'available': True, 'disabled': True, 'unavailable_reason': None, 'capabilities': ['apply_rope', 'apply_rope1', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8']}
+[ComfyUI-0/STDERR] Found comfy_kitchen backend cuda: {'available': True, 'disabled': True, 'unavailable_reason': None, 'capabilities': ['apply_rope', 'apply_rope1', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8']}
+[ComfyUI-0/STDERR] Using pytorch attention
+[ComfyUI-0/STDERR] Python version: 3.13.5 (main, Jul 23 2025, 00:37:22) [Clang 20.1.4 ]
+[ComfyUI-0/STDERR] ComfyUI version: 0.11.0
+[ComfyUI-0/STDERR] Using existing copy of specific frontend version tag: Comfy-Org/ComfyUI_frontend@v1.35.9
+[ComfyUI-0/STDERR] [Prompt Server] web root: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/web_custom_versions/Comfy-Org_ComfyUI_frontend/1.35.9
+[ComfyUI-0/STDERR] ### Loading: ComfyUI-Manager (V3.39.2)
+[ComfyUI-0/STDERR] [ComfyUI-Manager] network_mode: public
+[ComfyUI-0/STDERR] [ComfyUI-Manager] ComfyUI per-queue preview override detected (PR #11261). Manager's preview method feature is disabled. Use ComfyUI's --preview-method CLI option or 'Settings > Execution > Live preview method'.
+[ComfyUI-0/STDERR] ### ComfyUI Revision: 4619 [09725967] *DETACHED | Released on '2026-01-26'
+[ComfyUI-0/STDERR] [36;20m[/opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui_controlnet_aux] | INFO -> Using ckpts path: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui_controlnet_aux/ckpts[0m
+[ComfyUI-0/STDERR] [36;20m[/opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui_controlnet_aux] | INFO -> Using symlinks: False[0m
+[ComfyUI-0/STDERR] [36;20m[/opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui_controlnet_aux] | INFO -> Using ort providers: ['CUDAExecutionProvider', 'DirectMLExecutionProvider', 'OpenVINOExecutionProvider', 'ROCMExecutionProvider', 'MIGraphXExecutionProvider', 'CPUExecutionProvider', 'CoreMLExecutionProvider'][0m
+[ComfyUI-0/STDERR] ### Loading: ComfyUI-Impact-Pack (V8.28.2)
+[ComfyUI-0/STDERR] [Impact Pack] Wildcard total size (0.00 MB) is within cache limit (50.00 MB). Using full cache mode.
+[ComfyUI-0/STDERR] [Impact Pack] Wildcards loading done.
+[ComfyUI-0/STDERR] [ComfyUI-Manager] default cache updated: https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/alter-list.json
+[ComfyUI-0/STDERR] [ComfyUI-Manager] default cache updated: https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/model-list.json
+[ComfyUI-0/STDERR] [ComfyUI-Manager] default cache updated: https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/github-stats.json
+[ComfyUI-0/STDERR] /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Crystools/general/gpu.py:67: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+[ComfyUI-0/STDERR]   import pynvml
+[ComfyUI-0/STDERR] ### Loading: ComfyUI-Inspire-Pack (V1.23)
+[ComfyUI-0/STDERR] [ComfyUI-Manager] default cache updated: https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/extension-node-map.json
+[ComfyUI-0/STDERR] [ComfyUI-Manager] default cache updated: https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json
+[ComfyUI-0/STDERR] ### Loading: ComfyUI-Impact-Pack (V8.28.2)
+[ComfyUI-0/STDERR] ### Loading: ComfyUI-Impact-Pack (V8.28.2)
+[ComfyUI-0/STDERR] [Impact Pack] Wildcard total size (0.00 MB) is within cache limit (50.00 MB). Using full cache mode.
+[ComfyUI-0/STDERR] [Impact Pack] Wildcards loading done.
+[ComfyUI-0/STDERR] [Impact Pack] Wildcard total size (0.00 MB) is within cache limit (50.00 MB). Using full cache mode.
+[ComfyUI-0/STDERR] [Impact Pack] Wildcards loading done.
+[ComfyUI-0/STDERR] ### Loading: ComfyUI-Impact-Subpack (V1.3.5)
+[ComfyUI-0/STDERR] [Impact Pack/Subpack] Using folder_paths to determine whitelist path: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/user/default/ComfyUI-Impact-Subpack/model-whitelist.txt
+[ComfyUI-0/STDERR] [Impact Pack/Subpack] Ensured whitelist directory exists: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/user/default/ComfyUI-Impact-Subpack
+[ComfyUI-0/STDERR] [Impact Pack/Subpack] Loaded 0 model(s) from whitelist: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/user/default/ComfyUI-Impact-Subpack/model-whitelist.txt
+[ComfyUI-0/STDERR] [Impact Subpack] ultralytics_bbox: /opt/stabilitymatrix/Data/Models/Ultralytics/bbox, /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/models/ultralytics/bbox
+[ComfyUI-0/STDERR] [Impact Subpack] ultralytics_segm: /opt/stabilitymatrix/Data/Models/Ultralytics/segm, /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/models/ultralytics/segm
+[ComfyUI-0/STDERR] /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes/ComfyUI-SeedVR2_VideoUpscaler/src/optimization/compatibility.py:688: UserWarning: expandable_segments not supported on this platform (Triggered internally at /pytorch/c10/hip/HIPAllocatorConfig.h:36.)
+[ComfyUI-0/STDERR]   a = torch.randn(8, 8, dtype=torch.bfloat16, device='cuda:0')
+[ComfyUI-0/STDERR] 
+[ComfyUI-0/STDERR] Import times for custom nodes:
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/Extensions/comfyui-vae-reflection/VAEReflectionNodes/vae_reflection.py
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/websocket_image_save.py
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/Extensions/SwarmUI-WildcardImporter/WCNodes/wcnodes.py
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/quick-connections
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-mxToolkit
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/skimmed_cfg
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/sd-dynamic-thresholding
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-visualarea-nodes
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Detail-Daemon
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-inpaint-cropandstitch
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-image-processor-zn123
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/cg-image-filter
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-wd14-tagger
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/sd-perturbed-attention
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/masquerade-nodes-comfyui
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-daam
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-yaser-nodes
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Custom-Scripts
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/LanPaint
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-inpaint-nodes
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/ExtraNodes/SwarmComfyExtra
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI_essentials
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-florence2
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-rapidfire
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/efficiency-nodes-comfyui
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI_UltimateSDUpscale
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-TiledDiffusion
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-ppm
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Image-Saver
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/cg-use-everywhere
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-KJNodes
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI_Swwan
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI_IPAdapter_plus
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/ExtraNodes/SwarmComfyCommon
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/rgthree-comfy
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI_Comfyroll_CustomNodes
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-rvtools
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-easy-use
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Impact-Subpack
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-fluxtrainer
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui_layerstyle
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Inspire-Pack
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Manager
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-prompt-control
+[ComfyUI-0/STDERR]    0.0 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-art-venture
+[ComfyUI-0/STDERR]    0.1 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes/ComfyUI-ReActor
+[ComfyUI-0/STDERR]    0.1 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Impact-Pack
+[ComfyUI-0/STDERR]    0.1 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes/comfyui-propost
+[ComfyUI-0/STDERR]    0.2 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/ComfyUI-Crystools
+[ComfyUI-0/STDERR]    0.2 seconds: /opt/stabilitymatrix/Data/Packages/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes/ComfyUI-SeedVR2_VideoUpscaler
+[ComfyUI-0/STDERR]    0.4 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui_controlnet_aux
+[ComfyUI-0/STDERR]    0.8 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/comfyui-supir
+[ComfyUI-0/STDERR]    0.8 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/was-node-suite-comfyui
+[ComfyUI-0/STDERR]    2.1 seconds: /opt/stabilitymatrix/Data/Packages/ComfyUI-22-01-2026/custom_nodes/easyanimate
+[ComfyUI-0/STDERR] 
+[ComfyUI-0/STDERR] Context impl SQLiteImpl.
+[ComfyUI-0/STDERR] Will assume non-transactional DDL.
+[ComfyUI-0/STDERR] Assets scan(roots=['models']) completed in 1.868s (created=0, skipped_existing=7150, total_seen=10803)
+[ComfyUI-0/STDERR] Starting server
+[ComfyUI-0/STDERR] 
+[ComfyUI-0/STDERR] To see the GUI go to: http://127.0.0.1:7821
+[ComfyUI-0/STDERR] [ComfyUI-Manager] default cache updated: https://api.comfy.org/nodes
+[ComfyUI-0/STDERR] [ComfyUI-Manager] All startup tasks have been completed.
+[ComfyUI-0/STDERR] got prompt
+[ComfyUI-0/STDERR] model weight dtype torch.float16, manual cast: None
+[ComfyUI-0/STDERR] model_type EPS
+[ComfyUI-0/STDERR] Using split attention in VAE
+[ComfyUI-0/STDERR] Using split attention in VAE
+[ComfyUI-0/STDERR] VAE load device: cuda:0, offload device: cpu, dtype: torch.bfloat16
+[ComfyUI-0/STDERR] CLIP/text encoder model load device: cuda:0, offload device: cpu, current: cpu, dtype: torch.float16
+[ComfyUI-0/STDERR] Prompt executed in 32.95 seconds
+[ComfyUI-0/STDERR] got prompt
+[ComfyUI-0/STDERR] Requested to load SDXLClipModel
+[ComfyUI-0/STDERR] loaded completely; 20194.80 MB usable, 1560.80 MB loaded, full load: True
+[ComfyUI-0/STDERR] Requested to load SDXL
+[ComfyUI-0/STDERR] loaded completely; 20012.80 MB usable, 4897.05 MB loaded, full load: True
+[ComfyUI-0/STDERR] 
+[ComfyUI-0/STDERR]   0%|          | 0/1 [00:00<?, ?it/s]
+[ComfyUI-0/STDERR] 100%|██████████| 1/1 [00:00<00:00,  4.88it/s]
+[ComfyUI-0/STDERR] 100%|██████████| 1/1 [00:00<00:00,  4.88it/s]
+[ComfyUI-0/STDERR] Requested to load AutoencoderKL
+[ComfyUI-0/STDERR] loaded completely; 17765.03 MB usable, 159.56 MB loaded, full load: True
+[ComfyUI-0/STDERR] Prompt executed in 2.00 seconds
+[ComfyUI-0/STDERR] got prompt
+[ComfyUI-0/STDERR] Requested to load SDXLClipModel
+[ComfyUI-0/STDERR] loaded completely; 19888.80 MB usable, 1560.80 MB loaded, full load: True
+[ComfyUI-0/STDERR] Requested to load SDXL
+[ComfyUI-0/STDERR] loaded completely; 19888.80 MB usable, 4897.05 MB loaded, full load: True
+[ComfyUI-0/STDERR] 
+[ComfyUI-0/STDERR]   0%|          | 0/20 [00:00<?, ?it/s]
+[ComfyUI-0/STDERR]  10%|█         | 2/20 [00:00<00:02,  8.50it/s]
+[ComfyUI-0/STDERR]  20%|██        | 4/20 [00:00<00:01, 11.85it/s]
+[ComfyUI-0/STDERR]  30%|███       | 6/20 [00:00<00:01, 12.19it/s]
+[ComfyUI-0/STDERR]  40%|████      | 8/20 [00:00<00:00, 12.61it/s]
+[ComfyUI-0/STDERR]  50%|█████     | 10/20 [00:00<00:00, 12.86it/s]
+[ComfyUI-0/STDERR]  60%|██████    | 12/20 [00:00<00:00, 12.94it/s]
+[ComfyUI-0/STDERR]  70%|███████   | 14/20 [00:01<00:00, 13.08it/s]
+[ComfyUI-0/STDERR]  80%|████████  | 16/20 [00:01<00:00, 13.15it/s]
+[ComfyUI-0/STDERR]  90%|█████████ | 18/20 [00:01<00:00, 13.16it/s]
+[ComfyUI-0/STDERR] 100%|██████████| 20/20 [00:01<00:00, 13.10it/s]
+[ComfyUI-0/STDERR] 100%|██████████| 20/20 [00:01<00:00, 12.70it/s]
+[ComfyUI-0/STDERR] Requested to load AutoencoderKL
+[ComfyUI-0/STDERR] loaded completely; 17715.03 MB usable, 159.56 MB loaded, full load: True
+[ComfyUI-0/STDERR] Prompt executed in 2.87 seconds
+
+12:09:55.951 [Error] Self-Start ComfyUI-0 on port 7821 failed. Restarting per configuration AutoRestart=true...
+12:09:57.964 [Init] Self-Start ComfyUI-0 on port 7822 is loading...
+12:10:16.195 [Init] Self-Start ComfyUI-0 on port 7822 started.
+12:12:57.371 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:13:02.930 [Info] Generated an image in 0.00 sec (prep) and 5.00 sec (gen)
+12:15:06.377 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:15:09.592 [Info] Generated an image in 0.00 sec (prep) and 2.69 sec (gen)
+12:22:26.480 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:22:29.284 [Info] Generated an image in 0.01 sec (prep) and 2.26 sec (gen)
+== SwarmUI logs 2026-01-29 12:35 ==
+12:35:27.808 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:35:30.639 [Info] Generated an image in 0.01 sec (prep) and 2.26 sec (gen)
+12:35:32.834 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:35:35.185 [Info] Generated an image in 0.00 sec (prep) and 2.33 sec (gen)
+12:35:37.371 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:35:39.690 [Info] Generated an image in 0.00 sec (prep) and 2.30 sec (gen)
+== SwarmUI logs 2026-01-29 12:51 ==
+12:51:22.697 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:51:25.756 [Info] Generated an image in 0.01 sec (prep) and 2.41 sec (gen)
+12:51:51.808 [Info] User local requested 1 image with model 'Illustrious/yiffInHell_yihV30.safetensors'...
+12:51:54.721 [Info] Generated an image in 0.00 sec (prep) and 2.38 sec (gen)

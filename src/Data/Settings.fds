@@ -1,0 +1,643 @@
+#Settings related to file paths.
+Paths:
+	#Root path for model files. Use a full-formed path (starting with '/' or a Windows drive like 'C:') to use an absolute path.
+	#Defaults to 'Models'.
+	#Use a semicolon ';' to split multiple paths.
+	ModelRoot: Models
+	#0-based index of which ModelRoot entry to download models to.
+	#Defaults to 0 (the first entry).
+	#Naturally only is relevant if there's multiple model roots set.
+	DownloadToRootID: 0
+	#The model folder to use within 'ModelRoot'.
+	#Defaults to 'Stable-Diffusion'.
+	#'checkpoints' should be used for matching pre-existing ComfyUI model directories.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDModelFolder: Stable-Diffusion
+	#The LoRA (or related adapter type) model folder to use within 'ModelRoot'.
+	#Defaults to 'Lora'.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDLoraFolder: Lora
+	#The VAE (autoencoder) model folder to use within 'ModelRoot'.
+	#Defaults to 'VAE'.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDVAEFolder: VAE
+	#The Embedding (eg textual inversion) model folder to use within 'ModelRoot'.
+	#Defaults to 'Embeddings'.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDEmbeddingFolder: Embeddings
+	#The ControlNets model folder to use within 'ModelRoot'.
+	#Defaults to 'controlnet'.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDControlNetsFolder: controlnet;model_patches
+	#The CLIP (Text Encoder) model folder to use within 'ModelRoot'.
+	#Defaults to 'text_encoders;clip'.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDClipFolder: text_encoders;clip
+	#The CLIP Vision model folder to use within 'ModelRoot'.
+	#Defaults to 'clip_vision'.
+	#Absolute paths work too (usually do not use an absolute path, use just a folder name).
+	#Use a semicolon ';' to split multiple paths.
+	SDClipVisionFolder: clip_vision
+	#Root path for data (user configs, etc).
+	#Defaults to 'Data'
+	#Absolute paths work too.
+	DataPath: Data
+	#Root path for output files (images, etc).
+	#Defaults to 'Output'
+	#Absolute paths work too.
+	OutputPath: Output
+	#The folder for wildcard (.txt) files, under Data.
+	#Defaults to 'Wildcards'
+	#Absolute paths work too.
+	WildcardsFolder: Wildcards
+	#When true, output paths always have the username as a folder.
+	#When false, this will be skipped.
+	#Keep this on in multi-user environments.
+	AppendUserNameToOutputPath: true
+	#If true, when a user deletes an image, send it to the OS Recycle Bin instead of permanently deleting it.
+	#If false, image files are permanently deleted.
+	#Defaults to false.
+	RecycleDeletedImages: false
+	#If true, when a user deletes a model, send it to the OS Recycle Bin instead of permanently deleting it.
+	#If false, model files are permanently deleted.
+	#Defaults to false.
+	RecycleDeletedModels: false
+	#If true, when a user edits a model's metadata, clear all stray data (eg old images, jsons, etc.) even from other UIs.
+	#If false, only files controlled by Swarm will be altered.
+	#Defaults to false.
+	ClearStrayModelData: false
+	#If true, when a user edits a model's metadata, if there are multiple copies of that model in different folders, edit all copies.
+	#Be warned that if the models with the same name are different, the unique data maybe lost.
+	#This is only a relevant option for users with redundant storage (eg a local drive and a NAS).
+	#This also applies to deletes and renames.
+	#If false, only the file in the first folder will be edited.
+	#Defaults to false.
+	EditMetadataAcrossAllDups: false
+	#If true, always resave models after the downloader utility grabs them.
+	#This ensures metadata is fully properly set, but wastes some extra time on file processing.
+	#If false, the downloader will leave a stray json next to the model.
+	#Defaults to false.
+	DownloaderAlwaysResave: false
+	#If true, populate trigger phrase from secondary metadata sources, such as 'trained words' and similar keys.
+	#If false, only use actual trigger_phrase specifications.
+	#Turning this off may help if you see a lot of LoRAs with 10,000 spammed keywords on them or similar (this type of bad metadata is common in certain model classes for some reason).
+	UseSecondaryTriggerPhraseSources: true
+#Settings related to image/model metadata.
+Metadata:
+	#If true, model metadata is tracked on a per-folder basis. This is better for example if you copy model folders to different machines, or have symlinks to different instances, or etc.
+	#If false, model metadata is tracked in the central data folder. This is better if you don't want stray files in your model folders, or if you have several Swarm instances running simultaneously.
+	ModelMetadataPerFolder: false
+	#If true, image metadata is tracked on a per-folder basis.
+	#If false, image metadata is tracked in the central data folder.
+	#This is better if you don't want stray files in your output folders, or if you have several Swarm instances running simultaneously over the same output folders.
+	ImageMetadataPerFolder: true
+	#If true, unrecognized XL-format models will be treated as SDXL 1.0.
+	#If false, unrecognized XL-format models will be treated as SDXL 0.9.
+	#The SDXL 1.0 specification requires ModelSpec architecture IDs, and any similar model lacking this ID is a 0.9 model,
+	#however, many custom XL model author have excluded this metadata.
+	#This means those models are technically SDXL 0.9 models, however it can be convenient to pretend they are 1.0 models instead.
+	#Note that enabling this will mislabel the official SDXL 0.9 model.
+	XLDefaultAsXL1: false
+	#If true, editing model metadata should write a '.swarm.json' file next to the model.
+	#If false, apply metadata to the model itself.
+	#Applying directly to the model is generally better, however the JSON file might be preferable if you have a very slow data drive, as it avoids rewriting the model content.
+	EditMetadataWriteJSON: false
+	#If true, image metadata will include a list of models with their hashes.
+	#This is useful for services like civitai to automatically link models.
+	#This will cause extra time to be taken when new hashes need to be loaded.
+	ImageMetadataIncludeModelHash: true
+	#How many kilobytes of blank spacer to include in model headers.
+	#This allows for future expansion of metadata without rewriting the entire model file.
+	#Defaults to 64 KiB.
+	#The average header length of a standard model is already between several hundred kilobytes to a few megabytes,
+	#so 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.
+	ModelMetadataSpacerKilobytes: 64
+#Settings related to networking and the webserver.
+Network:
+	#Optionally set an external URL here, eg 'https://swarm.example.com'
+	#This is not used for any practical function,
+	#and only will be used for automatically displaying fully formed URLs in some special cases, such as when transmitting webhooks.
+	#If unset, an autogenerated value based on the Host and port will be used.
+	ExternalURL: \x
+	#What web host address to use. `localhost` means your PC only.
+	#Linux users may use `0.0.0.0` to mean accessible to anyone that can connect to your PC (ie LAN users, or the public if your firewall is open).
+	#Windows users may use `*` for that, though it may require additional Windows firewall configuration.
+	#Advanced server users may wish to manually specify a host bind address here.
+	Host: localhost
+	#What web port to use. Default is '7801'.
+	Port: 7801
+	#If true, if the port is already in use, the server will try to find another port to use instead.
+	#If false, the server will fail to start if the port is already in use.
+	PortCanChange: true
+	#Backends are automatically assigned unique ports. This value selects which port number to start the assignment from.
+	#Default is '7820'.
+	BackendStartingPort: 7820
+	#If enabled, backend starting port will be randomly offset at each restart.
+	#This is an obscure bug fix for 'stuck ports', where restarting and reusing the same backend port causes strange misbehaviors.
+	BackendPortRandomize: false
+	#If you wish to access your Swarm instance externally, set this to the path of a CloudFlared executable, and it will automatically be used.
+	#(Must restart to apply).
+	#The URL will be visible on the Server Info tab and/or terminal log.
+	#See documentation in <a target="_blank" href="{Utilities.RepoDocsRoot}Advanced Usage.md#accessing-swarmui-from-other-devices">the docs here</a>
+	CloudflaredPath: \x
+	#Any IPs that can bypass network-authorization requirements, as a comma-separated list.
+	#Defaults to '127.0.0.1' (localhost IPv4) and '::1' (localhost IPv6) and '::ffff:127.0.0.1' (IPv4 localhost forwarded through IPv6).
+	AuthBypassIPs: 127.0.0.1,::1,::ffff:127.0.0.1
+	#If set, connections will require an Authorization header.
+	#This is intended for if you're hosting your Swarm instance to a public IP and want to reduce the risks from it being exposed.
+	#Using a safe reverse proxy with actual authentication such as Apache2 is recommended instead.
+	#This is a simple equality check, and should be something like `Bearer some_passphrase_or_something_here`.
+	#Defaults to empty (no authorization required).
+	#If you accidentally lock yourself out, edit `Data/Settings.fds` to remove this setting and restart Swarm.
+	RequiredAuthorization: \x
+	#If true, special network forwarding logic will apply for developer modes.
+	#Notably, ComfyUI Frontend NPM Developer Mode requires significant special forwarding as it misroutes itself.
+	#Defaults to false.
+	EnableSpecialDevForwarding: false
+	#How long should browsers be told they can store cached copies of output images.
+	#Defaults to 30 seconds.
+	#Do not set less than 5-ish, temp-caching is important. Setting to a low value (like 5) can help if you often delete images and regenerate with the same filename.
+	#Some files (eg html/js for grids) in output always have a very low cache duration.
+	OutputCacheSeconds: 30
+	#Optional CORS header to set. If empty, no CORS header will be set.
+	#Defaults to empty.
+	AccessControlAllowOrigin: \x
+	#How many entries in an X-Forwarded-For header to trust.
+	#Defaults to 3.
+	#Set to 0 to not trust any forwarded-for.
+	MaxXForwardedFor: 3
+	#Maximum megabytes that can be sent as a single message from a client to the Swarm server.
+	#Set this lower to limit above, set this higher to allow very large file uploads.
+	#Server needs a restart for this to fully apply.
+	MaxNetworkRequestMegabytes: 200
+#Settings related to Swarm server maintenance.
+Maintenance:
+	#If true, Swarm will check if there's any updates available during startup. If false, it will not check for updates.
+	#Update check only runs a 'git fetch' from GitHub to get the list of git version tags, it does not transmit any telemetry nor does it actually apply the update.
+	#Defaults to true.
+	CheckForUpdates: true
+	#If true, Swarm will automatically download and apply any development version updates as soon as they're available.
+	#Defaults to false.
+	AutoPullDevUpdates: false
+	#If the server has been running more than this many hours, automatically restart.
+	#If set to 0, no automatic restart.
+	#Only restarts when the server is not processing any generation requests.
+	#Can use decimal values, but sub-hour durations are likely too fast and will cause issues.
+	#A value of eg 24 is reasonable, with AutoPullDevUpdates enabled, to keep an updated persistent server.
+	RestartAfterHours: 0
+	#Comma-separated list of numeric 24-hour time hours in which auto-restarting is allowed.
+	#If empty, hours are unrestricted.
+	#For example, '0,1,2,3' only allows auto-restarting from midnight up until before 4 am.
+	#Or, '22,23,0,1' allows 10pm-2am.
+	RestartHoursAllowed: \x
+	#Comma-separated list of numeric days-of-week in which auto-restarting is allowed. Sunday is 0, Saturday is 6.
+	#If empty, days are unrestricted.
+	#For example, '6,0' only allows auto-restarting from Sunday/Saturday.
+	RestartDayAllowed: \x
+	#If true, critical GPU errors (eg CUDA operation not permitted, or nvidia-smi crash) will cause SwarmUI to entirely restart itself.
+	#This primarily exists as a workaround for an nvidia-docker bug (docker randomly uses GPU, so do full restart to get the GPU back)
+	#but may be useful to other configs.
+	#If false, GPU errors will be logged and nothing further will happen.
+	RestartOnGpuCriticalError: false
+	#Number of minutes to silently wait for git operations to run.
+	#If this duration is reached, a warning is logged and 1 more minute is allowed.
+	#After that final minute runs out, the git process is backgrounded and ignored (it may still be running, but Swarm will stop waiting for it).
+	#Setting this timeout too low may cause still-running slow processes to glitch or conflict.
+	#Setting this timeout too high may cause Swarm to freeze up any time git doesn't properly shut down.
+	#For most users, the default (1 minute before warn, 1 minute extra) is more than enough, as git extremely rarely needs more than a minute to run.
+	GitTimeoutMinutes: 1
+	#How many weekly backups of the user database to keep.
+	#Default is 3.
+	#Set to 0 to disable backups.
+	#Backups are created weekly, in '(Data)/UsersBackups' named as (Year)_(Week).
+	UserDBBackups: 3
+#Default settings for users (unless the user modifies them, if so permitted).
+#(NOTE: Usually, don't edit this. Go to the 'User' tab to edit your User-Settings).
+DefaultUser:
+	#Settings related to output path building.
+	OutPathBuilder:
+		#Builder for output file paths. Can use auto-filling placeholders like '[model]' for the model name, '[prompt]' for a snippet of prompt text, etc.
+		#Full details in <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/User%20Settings.md#path-format">the docs here</a>
+		Format: raw/[year]-[month]-[day]/[hour][minute][request_time_inc]-[prompt]-[model]
+		#How long any one part can be.
+		#Default is 40 characters.
+		MaxLenPerPart: 40
+		#If true, when including model name (or loras or etc), the path will skip the folder (ie filename only).
+		ModelPathsSkipFolders: false
+	#Settings related to saved file format.
+	FileFormat:
+		#What format to save images in.
+		#Default is '.png', but '.jpg' is recommended to save some filespace.
+		ImageFormat: PNG
+		#Quality for JPEG and WEBP formats (1-100). Other formats are ignored.
+		#Default is 100, recommended 70-90.
+		ImageQuality: 100
+		#Whether to store metadata into saved images.
+		#Defaults enabled.
+		SaveMetadata: true
+		#If not set to 'false', encodes metadata into the pixels of the image itself.
+		#This can bypass services that strip normal metadata.
+		#'Alpha' uses the alpha channel. 'RGB' uses color channels.
+		#Alpha method Noticeably increases file size of PNG images, but not Webp.
+		#Webp and PNG are supported with the exception of lossy Webp with RGB stealth metadata.
+		#Currently SwarmUI cannot read stealth metadata.
+		StealthMetadata: false
+		#If set to non-0, adds DPI metadata to saved images.
+		#'72' is a good value for compatibility with some external software.
+		DPI: 0
+		#If enabled, a '.swarm.json' file will be saved alongside images with the image metadata easily viewable.
+		#This can work even if saving in the image is disabled. Defaults disabled.
+		SaveTextFileMetadata: false
+		#Images that are transient/temporary (not saved to file) generally are better off not being converted between image formats, or having metadata added.
+		#However, if you want to make the conversion and metadata apply anyway, you can enable this option.
+		#If you use 'Do Not Save' param frequently but manually save images, you may want this.
+		ReformatTransientImages: false
+	#Settings related to the user interface, entirely contained to the frontend.
+	UI:
+		#If enabled, you can hold ALT and press left/right arrows to move 'tags' in a prompt - that is, your currently selected comma-separated section will be moved left or right relative to other comma-separated sections.
+		TagMoveHotkeyEnabled: false
+		#If enabled, when pressing delete on an image, ask if you're sure before doing that (bypass by holding shift).
+		#If unchecked, there won't be any check.
+		#Defaults enabled.
+		CheckIfSureBeforeDelete: true
+		#Comma-separated list of fields to display in the preset Details view.
+		#Use 'name' for the preset name, 'path' for the full preset path, 'description' for the description, or 'params' for the param list.
+		#If unset, will act as 'path,description,params'
+		PresetListDetailsFields: \x
+		#If enabled, trigger phrases are copied with a trailing comma added.
+		#If disabled, trigger phrases are copied as-is without any trailing comma.
+		#This is useful when copying them to prompts.
+		CopyTriggerPhraseWithTrailingComma: false
+		#If true, when you interrupt generation, any incomplete generations will be removed from the batch view.
+		#If false, they will linger in the batch view with an X mark indicated they were started but not finished.
+		#In both cases, they will not save to file.
+		RemoveInterruptedGens: false
+		#Pipe-separated list of partial error message bodies.
+		#If an error message contains any of these, it will not show in the main error popup box.
+		#This is to hide intentionally-induced errors, or errors that pop up frequently but you don't want to be annoyed about.
+		#For example, set this to 'Generation session interrupted.|Some Other Error.' if you frequently externally interrupt your own gens.
+		HideErrorMessages: \x
+		#What to do when you delete an image that you are looking at in the UI:
+		#- Nothing: image view is closed / reset to empty
+		#- Next: move to the next image (right/down)
+		#- Previous: move to the previous image (left/up)
+		DeleteImageBehavior: next
+		#If enabled, shifting to next/previous image (eg with arrow keys) in history or batch view,
+		#cycles at the ends (jumps from the start to the end or vice versa).
+		#If disabled, shifting will simply stop at the ends.
+		#If 'only arrow keys', cycling happens when you press the arrow keys, but not other actions (eg deleting an image will not cycle).
+		ImageShiftingCycles: true
+		#If enabled, metadata will be hidden in the image Full View by default.
+		#If disabled, metadata will be shown by default.
+		#You zoom still zoom in or out to show or hide the metadata at any time as usual.
+		DefaultHideMetadataInFullview: false
+	#Settings related to the parsing of generation parameters.
+	ParamParsing:
+		#Whether LoRAs can be added to a generation multiple times.
+		#If false, the firstmost usage of a LoRA will be kept and others will be discarded.
+		AllowLoraStacking: true
+	#Whether your image output files save to server data drive or not.
+	#Disabling this can make some systems misbehave, and makes the Image History do nothing.
+	SaveFiles: true
+	#If enabled, folders will be discarded from starred image paths.
+	#If disabled, entire original image path will be replicated beneath the star folder.
+	StarNoFolders: false
+	#List of role IDs applied to this user. Defaults to owner (for local/accountless usage).
+	Roles:
+	- owner
+	#What theme to use. Default is 'modern_dark'.
+	Theme: modern_dark
+	#If true, images in the main center area will always grow to better fill the screen.
+	CenterImageAlwaysGrow: false
+	#If true, when 'Auto Swap To Images' is enabled, and you have FullView open, the FullView will also be swapped.
+	#If false, the FullView will not change.
+	AutoSwapImagesIncludesFullView: false
+	#A list of what buttons to include directly under images in the main prompt area of the Generate tab.
+	#Other buttons will be moved into the 'More' dropdown.
+	#This should be a comma separated list.
+	#The following options are available: "Use As Init", "Use As Image Prompt", "Edit Image", "Upscale 2x", "Star", "Reuse Parameters", "Open In Folder", "Delete", "Download" "View In History", "Refine Image"
+	#The default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'
+	ButtonsUnderMainImages: \x
+	#How to format image metadata on the Generate tab when looking at an image.
+	#'below' means put the metadata below the image.
+	#'side' means put the image in a vertical column to the side.
+	#'auto' means switch to whichever fits better depending on the page width.
+	#Default is 'auto'.
+	ImageMetadataFormat: auto
+	#If enabled, batch size will be reset to 1 when parameters are loaded.
+	#This can prevent accidents that might thrash your GPU or cause compatibility issues, especially for example when importing a comfy workflow.
+	#You can still set the batch size at will in the GUI.
+	ResetBatchSizeToOne: false
+	#The format for parameter hints to display as.
+	#Default is 'BUTTON'.
+	HintFormat: BUTTON
+	#The delay, in seconds, for parameter hints when 'HOVER_DELAY' is selected.
+	HoverDelaySeconds: 0.5
+	#How many lines of text to display in the standard prompt box before cutting off to a scroll bar.
+	#Actual size in practice tends to be a few lines shorter due to browser and font variations.
+	#Default is 10.
+	MaxPromptLines: 10
+	#Options to override default VAEs with.
+	VAEs:
+		#What VAE to use with SDXL models by default. Use 'None' to use the one in the model.
+		DefaultSDXLVAE: None
+		#What VAE to use with SDv1 models by default. Use 'None' to use the one in the model.
+		DefaultSDv1VAE: None
+		#What VAE to use with SVD (Video) models by default. Use 'None' to use the one in the model. This should normally be an SDv1 VAE.
+		DefaultSVDVAE: None
+		#What VAE to use with Flux models by default.
+		DefaultFluxVAE: None
+		#What VAE to use with Flux2 models by default.
+		DefaultFlux2VAE: None
+		#What VAE to use with SD3 models by default.
+		DefaultSD3VAE: None
+		#What VAE to use with Mochi Text2Video models by default.
+		DefaultMochiVAE: None
+	#Set to a number above 1 to allow generations of multiple images to automatically generate square mini-grids when they're done.
+	MaxImagesInMiniGrid: 1
+	#How many images the history view should stop trying to load after.
+	MaxImagesInHistory: 1000
+	#How many images the history view should scan server-side before deciding the list is sufficient for sorting. Not relevant when sorting by filename.
+	MaxImagesScannedInHistory: 10000
+	#If true, the Image History view will cache small preview thumbnails of images.
+	#This should make things run faster. You can turn it off if you don't want that.
+	ImageHistoryUsePreviews: true
+	#When generating live previews (ie the turbo preview system, not normal generation previews after you've hit the Generate button),
+	#this is how many simultaneous generation requests can be waiting at one time.
+	MaxSimulPreviews: 1
+	#If true, hitting enter while in the prompt box starts generation.
+	#If false, hitting enter will insert a newline.
+	EnterKeyGenerates: true
+	#Delay, in seconds, between Generate Forever updates.
+	#If the delay hits and a generation is still waiting, it will be skipped.
+	#Default is 0.1 seconds.
+	GenerateForeverDelay: 0.1
+	#Number of generations that Generate Forever should always keep queued up when enabled.
+	#Useful when using multiple backends to keep them all busy.
+	GenerateForeverQueueSize: 1
+	#How long to remember your last parameters for, in hours, inside browser cookies.
+	#Default is 6 hours (long enough that you can close+reopen and get same params, but short enough that if you close for the day and come back you get a fresh UI).
+	ParameterMemoryDurationHours: 6
+	#What language to display the UI in.
+	#Default is 'en' (English).
+	Language: en
+	#Comma-separated list of parameters to exclude from 'Reuse Parameters'.
+	#For example, set 'model' to not copy the model, or 'model,refinermodel,videomodel' to really never copy any models.
+	ReuseParamExcludeList: wildcardseed
+	#Settings related to audio.
+	Audio:
+		#Optional audio file to play when a generation is completed.
+		#Supported file formats: .wav, .wave, .mp3, .aac, .ogg, .flac
+		#See <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/UISounds.md">docs/Features/UISounds</a> for info.
+		CompletionSound: \x
+		#For system sound effects such as CompletionSound, this is the volume they will play at.
+		#0 means silent, 1 means max volume, 0.5 means half volume.
+		Volume: 0.5
+		#When a video is played, what should be done with the audio?
+		VideoAudioBehavior: last
+	#Settings related to autocompletions.
+	AutoComplete:
+		#Optional source file for auto-completion texts (inside Data/Autocompletions).
+		#See <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Autocompletions.md#word-lists">docs/Features/Autocompletions</a> for info.
+		Source: \x
+		#If true, the auto-completion will escape parentheses with backslashes to prevent parsing errors.
+		EscapeParens: true
+		#Optional suffix to append to autocompletes, eg ', ' to append commas.
+		Suffix: \x
+		#How to match and list results.
+		#'Contains' lists any match that contains your current text
+		#'StartsWith' only lists matches that start with your current text
+		#'Bucketed' shows StartsWith matches first, and Contains matches after.
+		MatchMode: Bucketed
+		#How to sort the results.
+		#'Active' sorts shortest tags first, then alphabetically after.
+		#'Alphabetical' sorts results alphabetically.
+		#'Frequency' sorts results by how popular the tag is (for tag CSVs).
+		#'None' uses whatever the source list's order is.
+		SortMode: Active
+		#If your completion list is booru tags, use this to optionally alter how spaces/underscores are handled.
+		#Select 'None' to just use what's in the file,
+		#'Spaces' to replace underscores to spaces,
+		#or 'Underscores' to replace spaces to underscores.
+		SpacingMode: None
+#Settings related to backends.
+Backends:
+	#How many times to retry initializing a backend before giving up. Default is 3.
+	MaxBackendInitAttempts: 3
+	#Safety check, the maximum duration all requests can be waiting for a backend before the system declares a backend handling failure.
+	#If you get backend timeout errors while intentionally running very long generations, increase this value.
+	MaxTimeoutMinutes: 120
+	#If checked, when MaxTimeoutMinutes is hit, forcibly restart all backends.
+	#If unchecked, pending jobs will be cancelled with an error message.
+	ForceRestartOnTimeout: false
+	#The maximum duration an individual request can be waiting on a backend to be available before giving up.
+	#Not to be confused with 'MaxTimeoutMinutes' which requires backends be unresponsive for that duration, this duration includes requests that are merely waiting because other requests are queued.
+	#Defaults to 60 * 24 * 7 = 1 week (ultra-long max queue duration).
+	PerRequestTimeoutMinutes: 10080
+	#The maximum number of pending requests to continue forcing orderly processing of.
+	#Over this limit, requests may start going out of order.
+	MaxRequestsForcedOrder: 20
+	#If true, max t2i simultaneous value is not limited by backend count.
+	#Ie, users may queue as many gens as they want directly to backends, with no overload prevention.
+	#This may be preferable on personal instances of Swarm to enforce stricter queue ordering.
+	#User role max t2i simultaneous value is still applied.
+	UnrestrictedMaxT2iSimultaneous: false
+	#How many minutes to wait after the last generation before automatically freeing up VRAM (to prevent issues with other programs).
+	#This has the downside of a small added bit of time to load back onto VRAM at next usage.
+	#Use a decimal number to free after seconds.
+	#Defaults to 10 minutes.
+	#Set to -1 to disable.
+	ClearVRAMAfterMinutes: 10
+	#How many minutes to wait after the last generation before automatically freeing up system RAM (to prevent issues with other programs).
+	#This has the downside of causing models to fully load from data drive at next usage.
+	#Use a decimal number to free after seconds.
+	#Defaults to 60 minutes (one hour).
+	#Set to -1 to disable.
+	ClearSystemRAMAfterMinutes: 60
+	#If true, any time you load the UI, trigger a server refresh.
+	#If false, only triggers a refresh if you restart Swarm or trigger a refresh manually from the Quick Tools menu.
+	#Defaults to true.
+	AlwaysRefreshOnLoad: true
+	#Preference for order of backend selection when loading a new model.
+	#'Last Used' will load the model on the last backend to load a model. This tends to distribute work between GPUs fairly.
+	#'First Free' will load the model on the first free backend. This tends to cause frequent model reloading on your first backend, and underuse of others.
+	#Defaults to Last Used.
+	ModelLoadOrderPreference: last_used
+	#If true, presume all backends can fast-load.
+	#For example, if you have multiple local comfy instances, allow them all to boot up at the same time.
+	AllBackendsLoadFast: false
+#If this is set to 'true', hides the installer page. If 'false', the installer page will be shown.
+IsInstalled: false
+#The date that this instance was installed.
+InstallDate: \x
+#The SwarmUI version that this instance was installed as.
+InstallVersion: \x
+#Ratelimit, in milliseconds, between Nvidia GPU status queries. Default is 1000 ms (1 second).
+NvidiaQueryRateLimitMS: 1000
+#How to launch the UI. If 'none', just quietly launch.
+#If 'web', launch your web-browser to the page.
+#If 'webinstall', launch web-browser to the install page.
+#If 'electron', launch the UI in an electron window (NOT YET IMPLEMENTED).
+LaunchMode: webinstall
+#If set true, some additional debugging data will be attached where relevant, such as in image metadata.
+AddDebugData: false
+#If set true, new/upcoming/experimental features will be visible.
+#Enabling this will cause issues, do not expect a stable server.
+#Do not report any bugs while this is enabled, and do not request new features related to experimental features.
+ShowExperimentalFeatures: false
+#Settings related to multi-user authorization.
+UserAuthorization:
+	#If true, Swarm will require users to log in or use an API key to access the UI. If false, the UI will be open to anyone who can connect to it.
+	#Defaults to false.
+	#Make sure you know your own admin account login before enabling this!
+	AuthorizationRequired: false
+	#If true, a direct connection from localhost can bypass login requirements.
+	#If false, even local users will be required to login (they can just go manually edit the server settings file to toggle this though).
+	#Defaults to true.
+	AllowLocalhostBypass: true
+	#Title of this SwarmUI instance.
+	#Displayed eg in some page headers and logs.
+	#Keep it simple, avoid html text in here.
+	InstanceTitle: Local
+	#Message to add on the login page.
+	#You may use (basic!) HTML here.
+	#It is recommended to add contact information here, such as a Discord invite code or an email address.
+	LoginNotice: This is a local instance not yet configured for shared usage. If you're seeing this on the login screen, ask the server owner to fill it in on the Server Configuration page.
+	#Settings related to user registration.
+	Registration:
+		#If true, allow new users to register accounts on this SwarmUI instance.
+		#You must also enable at least one specific registration method.
+		AllowRegistration: false
+		#If true, and AllowRegistration is true, allow registering accounts with a simple username/password/combo.
+		SimplePasswordRegistration: false
+		#If true, and AllowRegistration is true, allow registering accounts via OAuth2 (eg Google login).
+		#You must configure OAuth providers in the OAuth section.
+		OAuthRegistration: false
+		#If registration is enabled, what role to assign to new users when they register.
+		NewUserDefaultRole: user
+		#Message to add on the Register page.
+		#You may use (basic!) HTML here.
+		#It is recommended to add contact information here, such as a Discord invite code or an email address.
+		RegisterNotice: This is a local instance not yet configured for registration. If you're seeing this on the register screen, ask the server owner to fill it in on the Server Configuration page.
+	#Settings related to OAuth providers.
+	OAuth:
+		#If true, Google OAuth2 is supported for registration and login. Create in the google cloud console as a 'web application'
+		GoogleOAuth: false
+		#If non-empty, a comma separated whitelist of domains that are allowed for OAuth usage, such as an org domain name.
+		OAuthAllowedDomains: \x
+		#The Client-ID for Google OAuth.
+		GoogleOAuthClientId: \x
+		#The Client-Secret for Google OAuth.
+		GoogleOAuthClientSecret: \x
+		#The public base URL for this Swarm instance, for OAuth to redirect to. For example, 'https://swarm.example.com'.
+		OAuthReturnURL: \x
+#Settings related to logging.
+Logs:
+	#The minimum tier of logs that should be visible in the console and saved to file.
+	#Default is 'info'.
+	LogLevel: Info
+	#If true, logs will be saved to a file. If false, logs will be available in console and UI while running, but never saved to file.
+	#Defaults to false.
+	#Must restart Swarm to apply.
+	SaveLogToFile: false
+	#The path for where to store log file, parsed at time of program start, relative to the Data directory.
+	#Must restart Swarm to apply.
+	#Can use [year], [month], [month_name], [day], [day_name], [hour], [minute], [second], [pid].
+	LogsPath: Logs/[year]-[month]/[day]-[hour]-[minute].log
+	#How long (in minutes) the console may be idle for before the next message should have a full date/time stamp shown in it.
+	#This is for Swarm instances that are left open for long times, to make gaps in usage clearer.
+	#This will not show at all in Swarm is used consistently smaller than this duration.
+	#Set to 9999999 to disable this behavior.
+	#Defaults to 10 minutes.
+	RepeatTimestampAfterMinutes: 10
+#Settings related to the User Interface.
+UI:
+	#Optionally specify a (raw HTML) welcome message here. If specified, will override the automatic welcome messages.
+	OverrideWelcomeMessage: \x
+	#Optionally specify a (raw HTML) welcome message here. If specified, will be added to the standard welcome message.
+	ExtraWelcomeInfo: \x
+	#Animated previews make the image history nicer when you've generated videos, but may negatively impact performance.
+	#If having image history loaded with videos generated is negatively affecting your experience, disable this checkbox.
+	#After editing this setting, use the Reset All Metadata button in the Utilities tab.
+	AllowAnimatedPreviews: true
+#Settings related to webhooks. See documentation in <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Webhooks.md">the docs here</a>
+WebHooks:
+	#Webhook to call (JSON POST) when queues are starting up from idle.
+	#Leave empty to disable any webhook.
+	#Call must return before the first generation starts.
+	QueueStartWebhook: \x
+	#If you want to send additional data with the queue start webhook, you can specify it here.
+	#This should be a JSON object, eg '{"key": "value"}'.
+	#If left blank, an empty JSON post (ie '{}') will be used.
+	QueueStartWebhookData: \x
+	#Webhook to call (JSON POST) when all queues are done and the server is going idle.
+	#Leave empty to disable any webhook.
+	#Call must return before queuing may restart.
+	QueueEndWebhook: \x
+	#If you want to send additional data with the queue end webhook, you can specify it here.
+	#This should be a JSON object, eg '{"key": "value"}'.
+	#If left blank, an empty JSON post (ie '{}') will be used.
+	QueueEndWebhookData: \x
+	#Webhook to call (JSON POST) after every generation.
+	#Leave empty to disable any webhook.
+	#Currently runs async, does not delay gen completion.
+	EveryGenWebhook: \x
+	#If you want to send additional data with the every-gen webhook, you can specify it here.
+	#This should be a JSON object, eg '{"key": "value"}'.
+	#If left blank, an empty JSON post (ie '{}') will be used.
+	#See <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Webhooks.md">docs Features/Webhooks</a> for info about special tags you can include in the JSON.
+	EveryGenWebhookData: \x
+	#Webhook to call (JSON POST) after gens that set Swarm internal param 'Webook' as 'Manual' or 'Manual At End'.
+	#Leave empty to disable any webhook.
+	#Currently runs async, does not delay gen completion.
+	ManualGenWebhook: \x
+	#If you want to send additional data with the 'manual gen' webhook, you can specify it here.
+	#This should be a JSON object, eg '{"key": "value"}'.
+	#If left blank, an empty JSON post (ie '{}') will be used.
+	#See <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Webhooks.md">docs Features/Webhooks</a> for info about special tags you can include in the JSON.
+	ManualGenWebhookData: \x
+	#Webhook to call (JSON POST) when the server is has started.
+	#Leave empty to disable any webhook.
+	ServerStartWebhook: \x
+	#If you want to send additional data with the 'server start' webhook, you can specify it here.
+	#This should be a JSON object, eg '{"key": "value"}'.
+	#If left blank, an empty JSON post (ie '{}') will be used.
+	ServerStartWebhookData: \x
+	#Webhook to call (JSON POST) when the server is about to shutdown.
+	#Leave empty to disable any webhook.
+	#Shutdown does not happen until the webhook completes.
+	ServerShutdownWebhook: \x
+	#If you want to send additional data with the 'server shutdown' webhook, you can specify it here.
+	#This should be a JSON object, eg '{"key": "value"}'.
+	#If left blank, an empty JSON post (ie '{}') will be used.
+	ServerShutdownWebhookData: \x
+	#How long to wait (in seconds) after all queues are done before sending the queue end webhook.
+	#This is useful to prevent rapid start+end calls.
+	QueueEndDelay: 1
+#Settings related to server performance.
+Performance:
+	#How likely an outdated image metadata entry is to be revalidated (ie have it's mtime checked against storage) each time an image's metadata is pulled.
+	#Default 0.05 means 5% chance.
+	#SSD users can safely set it higher. HDD users may be happier setting it to 0.
+	#Metadata is always loaded the first time an image is seen.
+	ImageDataValidationChance: 0.05
+	#Can be enabled to cache certain backend data.
+	#For example, with ComfyUI backends this will add an extended cache on the object_info data.
+	#Defaults to false.
+	DoBackendDataCache: false
+	#If true, Swarm may use GPU-specific optimizations.
+	#If false, Swarm will not try to optimize anything in a way specific to the GPU(s) you have.
+	#Some very minor quality changes may result.
+	#If you encounter errors that are solved by turning this off, please report that as a bug immediately.
+	#Defaults to 'true'. Should be left as 'true' in almost all circumstances.
+	AllowGpuSpecificOptimizations: true
+	#How many models can be loaded in a model list at once.
+	#Past this count, the list will simply be cut off.
+	#Use sub-folder organization to prevent issues.
+	ModelListSanityCap: 5000

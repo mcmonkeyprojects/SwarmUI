@@ -1274,6 +1274,18 @@ public class WorkflowGeneratorSteps
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
                 height = (height / 16) * 16;
+                // If requested, run a preliminary refiner pass on the latents before performing any pixel/latent upscale.
+                if (g.UserInput.Get(T2IParamTypes.PreRefineBeforeUpscale, false))
+                {
+                    int preSteps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                    double preCfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                    int preStart = (int)Math.Round(preSteps * (1 - refinerControl));
+                    string preExplicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
+                    string preExplicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
+                    // run a KSampler on current latents and replace FinalSamples with the result
+                    g.CreateKSampler(g.FinalModel, prompt, negPrompt, g.FinalSamples, preCfg, preSteps, preStart, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", sigmin: -1, sigmax: -1, id: "pre_refine", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false), explicitSampler: preExplicitSampler, explicitScheduler: preExplicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
+                    g.FinalSamples = ["pre_refine", 0];
+                }
                 if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
                     g.CreateVAEDecode(origVae, g.FinalSamples, "24");
