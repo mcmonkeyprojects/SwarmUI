@@ -210,7 +210,8 @@ class GenerateHandler {
                         if (insertBefore && insertBefore != div) {
                             div.parentElement.insertBefore(div, insertBefore);
                         }
-                    } else if (div.parentElement.firstElementChild != div) {
+                    }
+                    else if (div.parentElement.firstElementChild != div) {
                         div.parentElement.prepend(div);
                     }
                 }
