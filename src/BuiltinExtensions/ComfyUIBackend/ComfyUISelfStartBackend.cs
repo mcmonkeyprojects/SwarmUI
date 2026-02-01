@@ -589,6 +589,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             {
                 await update("comfy_kitchen", $"comfy-kitchen=={kitchenVers}");
             }
+            string actualAimdoVers = getVers("comfy_aimdo");
+            if (reqs.TryGetValue("comfy-aimdo", out Version aimdoVers) && (actualAimdoVers is null || Version.Parse(actualAimdoVers) < aimdoVers))
+            {
+                await update("comfy_aimdo", $"comfy-aimdo=={aimdoVers}");
+            }
             if (Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI_IPAdapter_plus") || Directory.Exists($"{ComfyUIBackendExtension.Folder}/DLNodes/ComfyUI-nunchaku"))
             {
                 // FaceID IPAdapter models need these, really inconvenient to make dependencies conditional, so... (nunchaku needs it too)
