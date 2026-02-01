@@ -17,6 +17,7 @@
 [Hunyuan Image 2.1](#hunyuan-image-21) | MMDiT | 2025 | Tencent | 17B | No | Modern, Great Quality, very memory intense |
 [Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
 [Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
+[Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -45,7 +46,8 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
     - "No" means it generates what was asked,
     - "Minimal" means it's eg missing genitals but otherwise complete,
     - "Partial" means it's clearly undertrained at NSFW content (eg difficult to prompt for or poor quality body) but doesn't explicitly refuse,
-    - "Yes" means it's entirely incapable or provides an explicit refusal response.
+    - "Yes" means it's entirely incapable or provides an explicit refusal response,
+    - "WTF" means it's the opposite of censored, may generate inappropriate content even without being asked.
 - **Quality/Status** is a loose vibe-based metric to imply whether it's worth using in the current year or not.
 
 - Video models are in [Video Model Support](/docs/Video%20Model%20Support.md)
