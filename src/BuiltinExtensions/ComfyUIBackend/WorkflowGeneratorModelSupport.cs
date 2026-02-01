@@ -67,6 +67,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is AuraFlow.</summary>
     public bool IsAuraFlow() => IsModelCompatClass(T2IModelClassSorter.CompatAuraFlow);
 
+    /// <summary>Returns true if the current model is Anima.</summary>
+    public bool IsAnima() => IsModelCompatClass(T2IModelClassSorter.CompatAnima);
+
     /// <summary>Returns true if the current model is a Kontext model (eg Flux.1 Kontext Dev).</summary>
     public bool IsKontext()
     {
@@ -243,7 +246,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id);
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite() || IsAnima())
         {
             return CreateNode("EmptySD3LatentImage", new JObject()
             {
@@ -513,6 +516,11 @@ public partial class WorkflowGenerator
         public string GetQwenImage25_7b_tenc()
         {
             return RequireClipModel("qwen_2.5_vl_7b_fp8_scaled.safetensors", "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors", "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4", T2IParamTypes.QwenModel);
+        }
+
+        public string GetQwen3_600mModel()
+        {
+            return RequireClipModel("qwen_3_600m.safetensors", "https://huggingface.co/circlestone-labs/Anima/resolve/main/split_files/text_encoders/qwen_3_06b_base.safetensors", "cd2a512003e2f9f3cd3c32a9c3573f820bb28c940f73c57b1ddaa983d9223eba", T2IParamTypes.QwenModel);
         }
 
         public string GetQwen3_4bModel()
@@ -825,7 +833,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsZImage()) // Model is small and dense, so trust user preferred download format
+                    else if (IsZImage() || IsAnima()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
@@ -982,6 +990,11 @@ public partial class WorkflowGenerator
             });
             LoadingClip = [t5Patch, 0];
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSDXLVAE, "stable-diffusion-xl-v1", "sdxl-vae");
+        }
+        else if (IsAnima())
+        {
+            helpers.LoadClip("stable_diffusion", helpers.GetQwen3_600mModel());
+            helpers.DoVaeLoader(null, "qwen-image", "qwen-image-vae");
         }
         else if (IsChroma() || IsChromaRadiance())
         {

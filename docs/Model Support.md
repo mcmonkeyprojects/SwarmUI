@@ -537,6 +537,23 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Steps:** Regular 20+ steps.
     - **Resolution:** Side length 1024.
 
+# Anima
+
+- [Anima by Circlestone Labs](<https://huggingface.co/circlestone-labs/Anima>) is a 2B anime model build on Cosmos, and it is fully supported in SwarmUI.
+    - It is designed to be tiny, lightweight, fast, but built on a strong architecture.
+    - It is the first model architecture publicly released that was sponsored by Comfy Org!
+- Download the [preview version here](<https://huggingface.co/circlestone-labs/Anima/blob/main/split_files/diffusion_models/anima-preview.safetensors>)
+    - Save in `diffusion_models`
+- It uses a tiny Qwen 3 600M ("0.6B") text encoder. This will be autodownloaded.
+- It uses the Qwen Image VAE. This will be autodownloaded.
+- **Parameters:**
+    - **Prompt:** Trained on both booru style tag prompts (`1girl, etc`) and natural language prompts. They have official specific writing guidance [here](<https://huggingface.co/circlestone-labs/Anima#prompting>)
+    - **CFG Scale:** Regular CFG scales (eg `4`) work.
+    - **Steps:** Regular 20+ steps.
+    - **Resolution:** Side length 1024.
+    - **Sampler:** Defaults to `ER-SDE-Solver`, but all common samplers work. They officially recommend also trying out `Euler Ancestral` or `DPM++ 2M SDE`
+    - **Scheduler:** Default is fine (`Simple`), or you can experiment at will. The model is adaptable.
+
 # Video Models
 
 - Video models are documented in [Video Model Support](/docs/Video%20Model%20Support.md).

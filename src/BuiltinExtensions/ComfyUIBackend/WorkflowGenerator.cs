@@ -788,6 +788,11 @@ public partial class WorkflowGenerator
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
         }
+        else if (IsAnima())
+        {
+            defsampler ??= "er_sde";
+            defscheduler ??= "simple";
+        }
         else if (IsHunyuanImageRefiner())
         {
             if (!hadSpecialCond)
