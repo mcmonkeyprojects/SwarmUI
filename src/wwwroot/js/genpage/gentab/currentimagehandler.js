@@ -1187,6 +1187,9 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
     container.dataset.numImages = parseInt(container.dataset.numImages ?? 0) + 1;
     let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
     div.dataset.batch_id = batchId;
+    if (batchId.includes('_')) {
+        div.dataset.request_id = batchId.split('_')[0];
+    }
     div.dataset.preview_text = textPreview;
     if (imageSrc.startsWith('DOPLACEHOLDER:')) {
         let model = imageSrc.substring('DOPLACEHOLDER:'.length);
@@ -1269,6 +1272,7 @@ function gotImagePreview(image, metadata, batchId) {
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
     let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
+    batch_div.dataset.is_generating = 'true';
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (showLoadSpinnersElem.checked) {
