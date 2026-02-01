@@ -164,6 +164,14 @@
         <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#edit_model_modal').modal('hide')">Cancel</button>
     </div>
 @WebUtil.ModalFooter()
+@WebUtil.ModalHeader("view_raw_header_modal", """Raw Header for <span id="view_raw_header_modal_title"></span>""")
+    <div class="modal-body">
+        <div class="view_raw_header_modal_content"><pre id="view_raw_header_modal_content"></pre></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#view_raw_header_modal').modal('hide')">Close</button>
+    </div>
+@WebUtil.ModalFooter()
 @WebUtil.ModalHeader("edit_wildcard_modal", """Edit Wildcard: <input type="text" class="modal_text_extra" id="edit_wildcard_name" placeholder="Wildcard Name" />""")
     <div class="modal-body">
         <p class="translate">Wildcards are lists of random prompt segments. One entry per line. Prompt sub-syntax is allowed (eg you can link another wildcard, or use <code>&lt;random:...&gt;</code>, or <code>&lt;preset:...&gt;</code> or anything else you want).</p>

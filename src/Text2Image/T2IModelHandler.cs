@@ -788,6 +788,10 @@ public class T2IModelHandler
         });
         Parallel.ForEach(Directory.EnumerateFiles(actualFolder), file =>
         {
+            if (Program.GlobalProgramCancel.IsCancellationRequested)
+            {
+                return;
+            }
             string fixedFileName = file.Replace('\\', '/');
             string fn = fixedFileName.AfterLast('/');
             if (fn.StartsWithFast('.'))

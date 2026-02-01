@@ -1708,3 +1708,7 @@ body {
     height: 1lh;
     padding-top: 0 !important;
 }
+.view_raw_header_modal_content {
+    max-height: 70vh;
+    overflow: auto;
+}
