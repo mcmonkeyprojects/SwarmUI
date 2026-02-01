@@ -377,6 +377,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("How many kilobytes of blank spacer to include in model headers.\nThis allows for future expansion of metadata without rewriting the entire model file.\nDefaults to 64 KiB.\nThe average header length of a standard model is already between several hundred kilobytes to a few megabytes,\nso 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.")]
         public int ModelMetadataSpacerKilobytes = 64;
+
+        [ConfigComment("Special developmental debug tool: if true, always recheck model class when rescanning models.\nThis ignores any saved architecture in the modelspec header.\nThis is quite performance wasteful, and will undo user choices.")]
+        public bool DebugAlwaysRecheckClass = false;
     }
 
     /// <summary>Settings per-user.</summary>

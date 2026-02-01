@@ -20,6 +20,9 @@ public record class T2IModelClass
     /// <summary>Matcher, return true if the model x safetensors header is the given class, or false if not.</summary>
     public Func<T2IModel, JObject, bool> IsThisModelOfClass;
 
+    /// <summary>If true, this model class represents a LoRA type. This bool is just a minor performance tweak.</summary>
+    public bool IsLora;
+
     /// <summary>Get a networkable JObject for this model class.</summary>
     public JObject ToNetData()
     {

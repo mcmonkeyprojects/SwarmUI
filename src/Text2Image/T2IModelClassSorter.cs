@@ -20,6 +20,7 @@ public class T2IModelClassSorter
     /// <summary>Register a new model class to the sorter.</summary>
     public static T2IModelClass Register(T2IModelClass clazz)
     {
+        clazz.IsLora = clazz.ID.Contains("/lora") || clazz.ID.Contains("/control-lora");
         ModelClasses.Add(clazz.ID.ToLowerFast(), clazz);
         return clazz;
     }
@@ -818,6 +819,7 @@ public class T2IModelClassSorter
             ?? fix(header.Value<string>("general.architecture"))
             ?? fix(header?["__metadata__"]?.Value<string>("model_type"))
             ?? fix(header.Value<string>("model_type"));
+        T2IModelClass matchedClass = null;
         if (arch is not null)
         {
             arch = arch.ToLowerFast();
@@ -837,25 +839,33 @@ public class T2IModelClassSorter
                 if ((width == clazz.StandardWidth && height == clazz.StandardHeight) || (width <= 0 && height <= 0))
                 {
                     Logs.Debug($"{modelType} Model {model.Name} matches {clazz.Name} by architecture ID");
-                    return clazz;
+                    matchedClass = clazz;
                 }
                 else
                 {
                     Logs.Debug($"{modelType} Model {model.Name} matches {clazz.Name} by architecture ID, but resolution is different ({width}x{height} vs {clazz.StandardWidth}x{clazz.StandardHeight})");
-                    return clazz with { StandardWidth = width, StandardHeight = height, IsThisModelOfClass = (m, h) => false };
+                    matchedClass = clazz with { StandardWidth = width, StandardHeight = height, IsThisModelOfClass = (m, h) => false };
                 }
             }
-            Logs.Debug($"{modelType} Model {model.Name} has unknown architecture ID {arch}");
+            else
+            {
+                Logs.Debug($"{modelType} Model {model.Name} has unknown architecture ID {arch}");
+            }
         }
         if (!model.RawFilePath.EndsWith(".safetensors") && !model.RawFilePath.EndsWith(".sft") && header is null)
         {
             Logs.Debug($"{modelType} Model {model.Name} cannot have known type, not safetensors and no header");
-            return null;
+            return matchedClass;
         }
-        T2IModelClass matchedClass = null;
+        if (matchedClass is not null && !Program.ServerSettings.Metadata.DebugAlwaysRecheckClass)
+        {
+            return matchedClass;
+        }
+        matchedClass = null;
+        bool isLora = header.Properties().Any(p => p.Name.StartsWith("lora_") || p.Name.EndsWith(".lora_A.weight") || p.Name.EndsWith(".lora_A.default.weight") || p.Name.EndsWith(".lora_up.weight") || p.Name.EndsWith(".lora.up.weight") || p.Name.EndsWith(".lokr_w1"));
         foreach (T2IModelClass modelClass in ModelClasses.Values)
         {
-            if (modelClass.IsThisModelOfClass(model, header))
+            if (isLora == modelClass.IsLora && modelClass.IsThisModelOfClass(model, header))
             {
                 if (matchedClass is not null)
                 {
