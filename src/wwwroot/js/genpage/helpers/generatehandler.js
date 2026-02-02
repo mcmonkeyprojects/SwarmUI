@@ -189,12 +189,31 @@ class GenerateHandler {
                 }
                 delete imgElem.dataset.previewGrow;
                 div.dataset.metadata = data.metadata;
+                div.dataset.request_id = data.request_id;
                 if (progress_bars) {
                     progress_bars.remove();
                 }
+                delete div.dataset.is_generating;
                 this.gotProgress(-1, -1, `${data.request_id}_${data.batch_index}`);
-                if (isPreviewSwapToCompleted && div.parentElement && div.parentElement.firstElementChild != div) {
-                    div.parentElement.prepend(div);
+                if (isPreviewSwapToCompleted && div.parentElement) {
+                    if (data.request_id) {
+                        let insertBefore = null;
+                        for (let c of div.parentElement.children) {
+                            if (c.dataset.is_generating == 'true') {
+                                continue;
+                            }
+                            if (c.dataset.request_id == data.request_id) {
+                                insertBefore = c;
+                                break;
+                            }
+                        }
+                        if (insertBefore && insertBefore != div) {
+                            div.parentElement.insertBefore(div, insertBefore);
+                        }
+                    }
+                    else if (div.parentElement.firstElementChild != div) {
+                        div.parentElement.prepend(div);
+                    }
                 }
             }
             if (data.batch_index in images) {
