@@ -1255,6 +1255,18 @@ function gotImageResult(image, metadata, batchId) {
     let src = image;
     let fname = src && src.includes('/') ? src.substring(src.lastIndexOf('/') + 1) : src;
     let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch');
+    if (batch_div.dataset.request_id) {
+        let insertAfter = null;
+        for (let c of batch_div.parentElement.children) {
+            if (c.dataset.is_generating == 'true' && c.dataset.request_id == batch_div.dataset.request_id && c.dataset.batch_id != batch_div.dataset.batch_id) {
+                insertAfter = c;
+                break;
+            }
+        }
+        if (insertAfter) {
+            batch_div.parentElement.insertBefore(batch_div, insertAfter.nextSibling);
+        }
+    }
     batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
     batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!currentImageHelper.getCurrentImage() || autoLoadImagesElem.checked) {
