@@ -25,6 +25,8 @@ When writing a pull request, you are expected:
 
 Pull Requests from newer contributors that are not directly addressing an issue with the `Easy PR` label may be closed without warning or reason. Frequent contributors may take issues that do not have that label. Only trusted maintainers should make code changes not related to a listed issue.
 
+Pull Requests should seek to solve exactly one problem at a time. Do not combine several different things into one PR, please submit those separately.
+
 ## C#
 
 Contributing to the C# server code, or writing an extension? I recommend Visual Studio 2022 as the optimal IDE for this. Follow standard C# formatting rules. Look at existing code if in doubt. We use a modern C# Syntax.
