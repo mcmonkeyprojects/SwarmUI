@@ -86,12 +86,10 @@ Note: if you're on Windows 10, you may need to manually install [git](https://gi
 
 ### Linux Easy Install
 
-- Download [the install-linux.sh file](https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh), store it somewhere you want to install at, and run it
-    - If you like terminals, you can open a terminal to the folder and run the following commands: (Yes this link is still current):
-        - `wget https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh -O install-linux.sh`
-        - `chmod +x install-linux.sh`
-- Run the `./install-linux.sh` script, it will install everything for you and eventually open the webpage in your browser.
-- Follow the install instructions on-page.
+- Just run on the CLI, then follow the install instructions on-page. 
+```bash
+    curl -fsSL https://github.com/mcmonkeyprojects/SwarmUI/releases/download/0.6.5-Beta/install-linux.sh | bash
+```
 
 ### Linux Manual Install
 
