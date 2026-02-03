@@ -403,6 +403,28 @@ function genInputs(delay_final = false) {
         if (presetArea) {
             presetArea.innerHTML = presetHtml;
         }
+        
+        // Also generate same content for mobile copy (runnables need to be executed too)
+        if (areaData[0] == 'main_inputs_area') {
+            let mobileCopy = document.querySelector('#input_sidebar_mobile_copy #main_inputs_area');
+            if (mobileCopy) {
+                mobileCopy.innerHTML = html;
+                // Execute runnables for mobile copy
+                for (let runnable of runnables) {
+                    try {
+                        runnable();
+                    } catch (e) {
+                        // Ignore if element doesn't exist in mobile copy
+                    }
+                }
+            }
+        }
+        if (areaData[0] == 'main_inputs_area_hidden') {
+            let mobileCopy = document.querySelector('#input_sidebar_mobile_copy #main_inputs_area_hidden');
+            if (mobileCopy) {
+                mobileCopy.innerHTML = html;
+            }
+        }
     }
     hideUnsupportableParams();
     let final = () => {

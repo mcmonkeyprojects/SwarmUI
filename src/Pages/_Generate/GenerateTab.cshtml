@@ -185,6 +185,9 @@
         <li class="nav-item" role="presentation">
             <a class="nav-link translate" data-bs-toggle="tab" href="#Tools-Tab" aria-selected="false" tabindex="-1" role="tab">Tools</a>
         </li>
+        <li class="nav-item" role="presentation" id="settings_tab_mobile_only">
+            <a class="nav-link translate" data-bs-toggle="tab" href="#Settings-Tab" aria-selected="false" tabindex="-1" role="tab">Settings</a>
+        </li>
     </ul>
     <div class="tab-content" id="t2i_bottom_bar_content">
         <div class="tab-pane show active genpage-bottom-tab" id="Image-History-Tab" role="tabpanel">
@@ -228,6 +231,9 @@
             </select>
             <div class="tool-container" id="tool_container">
             </div>
+        </div>
+        <div class="tab-pane genpage-bottom-tab" id="Settings-Tab" role="tabpanel">
+            <!-- Content is dynamically added by JavaScript -->
         </div>
     </div>
     @await Html.PartialAsync("GenTabModals.cshtml", Model)

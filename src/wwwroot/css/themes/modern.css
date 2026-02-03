@@ -99,9 +99,43 @@
     padding-top: 4px;
     padding-bottom: 4px;
 }
+.small-window .nav-tabs {
+    font-size: 14px;
+}
 .small-window .nav-tabs .nav-item a {
     padding-left: 8px;
     padding-right: 8px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+/* モバイルでアイコンのみ表示 */
+.small-window .nav-tabs .nav-link .nav-link-text {
+    display: none;
+}
+.small-window .nav-tabs .nav-link::before {
+    content: attr(data-mobile-icon);
+    font-size: 20px;
+    display: inline-block;
+}
+.small-window .nav-tabs .nav-link {
+    padding-left: 12px;
+    padding-right: 12px;
+    min-width: 44px;
+    text-align: center;
+}
+/* Comfy Workflowタブのアイコン - テキストを非表示にしてアイコンのみ表示 */
+.small-window .nav-tabs #maintab_comfyworkflow {
+    padding-left: 12px;
+    padding-right: 12px;
+    min-width: 44px;
+    text-align: center;
+    font-size: 0; /* テキストを非表示 */
+}
+.small-window .nav-tabs #maintab_comfyworkflow::before {
+    content: "C";
+    font-size: 20px;
+    font-weight: bold;
+    display: inline-block;
 }
 
 .nav-tabs .nav-link,

@@ -1125,7 +1125,24 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     extrasWrapper.appendChild(buttons);
     let data = createDiv(null, 'current-image-data');
     data.innerHTML = formatMetadata(metadata);
+    data.style.display = 'none'; // Hidden by default
     extrasWrapper.appendChild(data);
+    
+    // Add toggle button for metadata visibility in mobile view
+    if (window.innerWidth <= 768) {
+        let metadataToggleButton = createDiv(null, 'basic-button', 'Show Metadata');
+        metadataToggleButton.style.marginTop = '0.5rem';
+        metadataToggleButton.onclick = () => {
+            if (data.style.display == 'none') {
+                data.style.display = 'block';
+                metadataToggleButton.textContent = 'Hide Metadata';
+            } else {
+                data.style.display = 'none';
+                metadataToggleButton.textContent = 'Show Metadata';
+            }
+        };
+        extrasWrapper.appendChild(metadataToggleButton);
+    }
     if (!isReuse) {
         curImg.appendChild(container);
         curImg.appendChild(extrasWrapper);

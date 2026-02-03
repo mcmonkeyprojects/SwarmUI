@@ -134,6 +134,7 @@ class GenTabLayout {
         this.toolContainer = getRequiredElementById('tool_container');
         this.t2iRootDiv = getRequiredElementById('Text2Image');
         this.quickToolsButton = getRequiredElementById('quicktools-button');
+        this.topBarContainer = this.topSection.parentElement; // t2i-top-bar-container
         this.managedTabs = [...this.tabCollections].flatMap(e => [...e.querySelectorAll('.nav-link')]).map(e => new MovableGenTab(e, this));
         this.managedTabContainers = [];
         this.leftBarDrag = false;
@@ -221,71 +222,237 @@ class GenTabLayout {
         setCookie('barspot_pageBarMidPx', this.bottomSectionBarPos, 365);
         setCookie('barspot_imageEditorSizeBar', this.imageEditorBarPos, 365);
         this.toolContainer.style.minHeight = `calc(100% - ${this.toolContainer.getBoundingClientRect().top - this.toolContainer.parentElement.getBoundingClientRect().top}px - 1.5rem)`;
-        let barTopLeft = leftShut ? `0px` : this.leftSectionBarPos == -1 ? (this.isSmallWindow ? `14rem` : `28rem`) : `${this.leftSectionBarPos}px`;
-        let barTopRight = this.rightSectionBarPos == -1 ? (this.isSmallWindow ? `4rem` : `21rem`) : `${this.rightSectionBarPos}px`;
-        let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
-        // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
-        let fontRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
-        let curImgWidthNum = eval(curImgWidth.replace(/vw/g, `* ${window.innerWidth * 0.01}`).replace(/rem/g, `* ${fontRem}`).replace(/px/g, ''));
-        if (curImgWidthNum < 400 && !this.isSmallWindow) {
-            barTopRight = `${barTopRight} + ${400 - curImgWidthNum}px`;
-            curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
-        }
-        if (this.isSmallWindow && (this.rightSectionBarPos > 0 || !this.bottomShut)) {
-            this.altRegion.style.visibility = 'hidden';
+        
+        // Mobile layout: vertical scroll layout
+        if (this.isSmallWindow) {
+            // Enable body scrolling
+            document.body.style.overflow = 'auto';
+            document.body.style.position = 'relative';
+            document.body.style.height = 'auto';
+            
+            // Make container vertically scrollable
+            this.topBarContainer.style.height = 'auto';
+            this.topBarContainer.style.overflowY = 'visible';
+            this.topBarContainer.style.overflowX = 'hidden';
+            
+            // Set top bar to flexbox column layout
+            this.topSection.style.display = 'flex';
+            this.topSection.style.flexDirection = 'column';
+            this.topSection.style.height = 'auto';
+            this.topSection.style.whiteSpace = 'normal';
+            this.topSection.style.overflow = 'visible';
+            
+            // Display image area first (order: 1)
+            this.mainImageArea.style.display = 'block';
+            this.mainImageArea.style.width = '100vw';
+            this.mainImageArea.style.height = 'auto';
+            this.mainImageArea.style.minHeight = '50vh';
+            this.mainImageArea.style.order = '1';
+            this.mainImageArea.style.padding = '0.5rem';
+            this.mainImageArea.style.position = 'relative';
+            this.mainImageArea.scrollTop = 0;
+            
+            this.currentImageWrapbox.style.display = 'block';
+            this.currentImageWrapbox.style.width = '100%';
+            this.currentImageWrapbox.style.height = 'auto';
+            this.currentImageWrapbox.style.minHeight = '50vh';
+            this.currentImageWrapbox.style.position = 'relative';
+            
+            this.currentImage.style.display = 'block';
+            this.currentImage.style.width = '100%';
+            this.currentImage.style.height = 'auto';
+            this.currentImage.style.minHeight = '50vh';
+            this.currentImage.style.padding = '0.5rem';
+            this.currentImage.style.position = 'relative';
+            
+            // Disable individual scrolling
+            this.currentImageWrapbox.style.overflowY = 'visible';
+            this.currentImage.style.overflowY = 'visible';
+            
+            // Display prompt input area second (order: 2)
+            this.altRegion.style.display = 'block';
+            this.altRegion.style.width = '100vw';
+            this.altRegion.style.order = '2';
+            this.altRegion.style.position = 'relative';
+            this.altRegion.style.marginTop = '1rem';
+            this.altRegion.style.padding = '1rem';
+            this.altRegion.style.visibility = 'visible';
+            this.altRegion.style.top = 'auto';
+            
+            // Hide parameter settings area (moved to bottom tab)
+            this.inputSidebar.style.display = 'none';
+            
+            // Show Settings tab in bottom bar
+            let settingsTab = document.getElementById('settings_tab_mobile_only');
+            let settingsTabContent = getRequiredElementById('Settings-Tab');
+            if (settingsTab) {
+                settingsTab.style.display = '';
+                
+                // Skip if copy already exists
+                if (!settingsTabContent.querySelector('#input_sidebar_mobile_copy')) {
+                    // Deep copy input-sidebar content to Settings tab
+                    let inputSidebarContent = this.inputSidebar.cloneNode(true);
+                    inputSidebarContent.id = 'input_sidebar_mobile_copy';
+                    inputSidebarContent.style.display = 'block';
+                    inputSidebarContent.style.width = '100%';
+                    inputSidebarContent.style.height = 'auto';
+                    inputSidebarContent.style.position = 'relative';
+                    inputSidebarContent.style.marginTop = '0';
+                    inputSidebarContent.style.padding = '1rem';
+                    
+                    settingsTabContent.appendChild(inputSidebarContent);
+                    
+                    // Apply mobile-specific styles
+                    let mobileInputsArea = inputSidebarContent.querySelector('#main_inputs_area_wrapper');
+                    if (mobileInputsArea) {
+                        mobileInputsArea.style.height = 'auto';
+                        mobileInputsArea.style.maxHeight = 'none';
+                        mobileInputsArea.style.overflowY = 'visible';
+                    }
+                    
+                    // Re-attach event handlers (cloneNode doesn't copy events)
+                    let mobileFilter = inputSidebarContent.querySelector('#main_inputs_filter');
+                    let mobileClearIcon = inputSidebarContent.querySelector('#clear_input_icon');
+                    let mobileAdvancedCheckbox = inputSidebarContent.querySelector('#advanced_options_checkbox');
+                    if (mobileFilter) {
+                        mobileFilter.oninput = () => hideUnsupportableParams();
+                    }
+                    if (mobileClearIcon) {
+                        mobileClearIcon.onclick = () => clearParamFilterInput();
+                    }
+                    if (mobileAdvancedCheckbox) {
+                        mobileAdvancedCheckbox.onclick = () => toggle_advanced();
+                    }
+                }
+            }
+            
+            // Hide right sidebar (batch)
+            this.currentImageBatch.style.display = 'none';
+            
+            // Hide splitter bars
+            this.leftSplitBar.style.display = 'none';
+            this.rightSplitBar.style.display = 'none';
+            this.bottomSplitBar.style.display = 'none';
+            
+            // Keep bottom bar visible
+            this.bottomBar.style.display = 'block';
+            this.bottomBar.style.height = 'auto';
+            this.bottomBar.style.marginTop = '1rem';
+            
+            // Handle image editor
+            if (imageEditor && imageEditor.active) {
+                imageEditor.resize();
+            }
         }
         else {
+            // Desktop layout (existing logic)
+            // Reset body styles
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.height = '100vh';
+            
+            // Reset container styles
+            this.topBarContainer.style.height = '';
+            this.topBarContainer.style.overflowY = '';
+            this.topBarContainer.style.overflowX = '';
+            
+            // Hide Settings tab
+            let settingsTab = document.getElementById('settings_tab_mobile_only');
+            if (settingsTab) {
+                settingsTab.style.display = 'none';
+            }
+            // Clear Settings tab content (restore original input-sidebar)
+            let settingsTabContent = document.getElementById('Settings-Tab');
+            if (settingsTabContent) {
+                let mobileCopy = settingsTabContent.querySelector('#input_sidebar_mobile_copy');
+                if (mobileCopy) {
+                    mobileCopy.remove();
+                }
+            }
+            // Show input-sidebar again
+            this.inputSidebar.style.display = '';
+            
+            let barTopLeft = leftShut ? `0px` : this.leftSectionBarPos == -1 ? `28rem` : `${this.leftSectionBarPos}px`;
+            let barTopRight = this.rightSectionBarPos == -1 ? `21rem` : `${this.rightSectionBarPos}px`;
+            let curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
+            // TODO: this 'eval()' hack to read the size in advance is a bit cursed.
+            let fontRem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            let curImgWidthNum = eval(curImgWidth.replace(/vw/g, `* ${window.innerWidth * 0.01}`).replace(/rem/g, `* ${fontRem}`).replace(/px/g, ''));
+            if (curImgWidthNum < 400) {
+                barTopRight = `${barTopRight} + ${400 - curImgWidthNum}px`;
+                curImgWidth = `100vw - ${barTopLeft} - ${barTopRight} - 10px`;
+            }
             this.altRegion.style.visibility = '';
-        }
-        this.inputSidebar.style.width = `${barTopLeft}`;
-        this.inputSidebar.style.display = leftShut ? 'none' : '';
-        this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
-        this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
-        this.mainImageArea.scrollTop = 0;
-        if (imageEditor && imageEditor.active) {
-            let imageEditorSizePercent = this.imageEditorBarPos < 0 ? 0.5 : (this.imageEditorBarPos / 100.0);
-            imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent})`;
-            this.currentImage.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 6px)`;
-        }
-        else {
-            this.currentImage.style.width = `calc(${curImgWidth})`;
-        }
-        this.currentImageWrapbox.style.width = `calc(${curImgWidth})`;
-        this.currentImageBatch.style.width = `calc(${barTopRight} - 6px)`;
-        if (this.currentImageBatchCore.offsetWidth < 425) {
-            this.currentImageBatchCore.classList.add('current_image_batch_core_small');
-        }
-        else {
-            this.currentImageBatchCore.classList.remove('current_image_batch_core_small');
-        }
-        this.leftSplitBarButton.innerHTML = leftShut ? '&#x21DB;' : '&#x21DA;';
-        this.bottomSplitBarButton.innerHTML = bottomShut ? '&#x290A;' : '&#x290B;';
-        let altHeight = this.altRegion.style.display == 'none' ? '0px' : `${this.altRegion.offsetHeight}px`;
-        if (this.bottomSectionBarPos != -1 || bottomShut) {
-            let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            let addedHeight = this.isSmallWindow ? '0.4rem' : '2.8rem';
-            let fixed = bottomShut ? `(${rootTop}px + ${addedHeight} + ${bottomBarHeight}px)` : `${this.bottomSectionBarPos}px`;
-            this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
-            this.rightSplitBar.style.height = `calc(100vh - ${fixed} - 5px)`;
-            this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
-            this.mainImageArea.style.height = `calc(100vh - ${fixed})`;
-            this.currentImageWrapbox.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
-            this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
-            this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
-            this.topSection.style.height = `calc(100vh - ${fixed})`;
-            this.bottomBar.style.height = `calc(${fixed} - 45px)`;
-        }
-        else {
-            this.leftSplitBar.style.height = 'calc(49vh)';
-            this.rightSplitBar.style.height = 'calc(49vh)';
-            this.inputSidebar.style.height = '';
-            this.mainImageArea.style.height = '';
-            this.currentImageWrapbox.style.height = `calc(49vh - ${altHeight} + 1rem)`;
-            this.editorSizebar.style.height = `calc(49vh - ${altHeight})`;
-            this.currentImageBatch.style.height = '';
-            this.topSection.style.height = '';
-            let bottomBarHeight = this.bottomInfoBar.offsetHeight;
-            this.bottomBar.style.height = `calc(49vh - 30px)`;
+            this.inputSidebar.style.width = `${barTopLeft}`;
+            this.inputSidebar.style.display = leftShut ? 'none' : '';
+            this.altRegion.style.width = `calc(100vw - ${barTopLeft} - ${barTopRight} - 10px)`;
+            this.mainImageArea.style.width = `calc(100vw - ${barTopLeft})`;
+            this.mainImageArea.scrollTop = 0;
+            if (imageEditor && imageEditor.active) {
+                let imageEditorSizePercent = this.imageEditorBarPos < 0 ? 0.5 : (this.imageEditorBarPos / 100.0);
+                imageEditor.inputDiv.style.width = `calc((${curImgWidth}) * ${imageEditorSizePercent})`;
+                this.currentImage.style.width = `calc((${curImgWidth}) * ${(1.0 - imageEditorSizePercent)} - 6px)`;
+            }
+            else {
+                this.currentImage.style.width = `calc(${curImgWidth})`;
+            }
+            this.currentImageWrapbox.style.width = `calc(${curImgWidth})`;
+            this.currentImageBatch.style.width = `calc(${barTopRight} - 6px)`;
+            this.currentImageBatch.style.display = '';
+            
+            // Re-enable individual scrolling
+            this.currentImageWrapbox.style.overflowY = '';
+            this.currentImage.style.overflowY = '';
+            
+            if (this.currentImageBatchCore.offsetWidth < 425) {
+                this.currentImageBatchCore.classList.add('current_image_batch_core_small');
+            }
+            else {
+                this.currentImageBatchCore.classList.remove('current_image_batch_core_small');
+            }
+            this.leftSplitBarButton.innerHTML = leftShut ? '&#x21DB;' : '&#x21DA;';
+            this.bottomSplitBarButton.innerHTML = bottomShut ? '&#x290A;' : '&#x290B;';
+            this.leftSplitBar.style.display = '';
+            this.rightSplitBar.style.display = '';
+            this.bottomSplitBar.style.display = '';
+            let altHeight = this.altRegion.style.display == 'none' ? '0px' : `${this.altRegion.offsetHeight}px`;
+            if (this.bottomSectionBarPos != -1 || bottomShut) {
+                let bottomBarHeight = this.bottomInfoBar.offsetHeight;
+                let addedHeight = '2.8rem';
+                let fixed = bottomShut ? `(${rootTop}px + ${addedHeight} + ${bottomBarHeight}px)` : `${this.bottomSectionBarPos}px`;
+                this.leftSplitBar.style.height = `calc(100vh - ${fixed})`;
+                this.rightSplitBar.style.height = `calc(100vh - ${fixed} - 5px)`;
+                this.inputSidebar.style.height = `calc(100vh - ${fixed})`;
+                this.mainImageArea.style.height = `calc(100vh - ${fixed})`;
+                this.currentImageWrapbox.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+                this.editorSizebar.style.height = `calc(100vh - ${fixed} - ${altHeight})`;
+                this.currentImageBatch.style.height = `calc(100vh - ${fixed})`;
+                this.topSection.style.height = `calc(100vh - ${fixed})`;
+                this.topSection.style.display = 'block';
+                this.topSection.style.flexDirection = '';
+                this.topSection.style.whiteSpace = 'nowrap';
+                this.topSection.style.overflow = 'hidden';
+                this.bottomBar.style.height = `calc(${fixed} - 45px)`;
+            }
+            else {
+                this.leftSplitBar.style.height = 'calc(49vh)';
+                this.rightSplitBar.style.height = 'calc(49vh)';
+                this.inputSidebar.style.height = '';
+                this.mainImageArea.style.height = '';
+                this.currentImageWrapbox.style.height = `calc(49vh - ${altHeight} + 1rem)`;
+                this.editorSizebar.style.height = `calc(49vh - ${altHeight})`;
+                this.currentImageBatch.style.height = '';
+                this.topSection.style.height = '';
+                this.topSection.style.display = 'block';
+                this.topSection.style.flexDirection = '';
+                this.topSection.style.whiteSpace = 'nowrap';
+                this.topSection.style.overflow = 'hidden';
+                let bottomBarHeight = this.bottomInfoBar.offsetHeight;
+                this.bottomBar.style.height = `calc(49vh - 30px)`;
+            }
+            if (imageEditor) {
+                imageEditor.resize();
+            }
         }
         if (imageEditor) {
             imageEditor.resize();

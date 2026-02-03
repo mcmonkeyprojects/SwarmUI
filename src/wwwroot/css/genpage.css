@@ -1482,6 +1482,75 @@ body {
         width: calc(16rem - 5px);
     }
 }
+
+/* モバイル用レイアウトの装飾スタイル（JavaScriptで設定されるスタイルを補助） */
+.small-window .t2i-top-bar-container {
+    border-top: 1px solid var(--light-border);
+}
+
+.small-window .main-image-area {
+    border-bottom: 1px solid var(--light-border);
+}
+
+.small-window .alt_prompt_region {
+    border-bottom: 1px solid var(--light-border);
+}
+
+.small-window .input-sidebar {
+    border-bottom: 1px solid var(--light-border);
+}
+
+.small-window .t2i-bottom-bar {
+    border-top: 2px solid var(--light-border);
+}
+
+/* モバイル時の下部タブのスタイル調整 */
+.small-window .t2i-bottom-bar .tab-content {
+    height: auto;
+    max-height: 60vh;
+    overflow-y: auto;
+    min-height: 300px;
+}
+
+.small-window .t2i-bottom-bar #Settings-Tab {
+    padding: 0;
+}
+
+.small-window .t2i-bottom-bar #input_sidebar_mobile_copy {
+    width: 100%;
+}
+
+.small-window .t2i-bottom-bar #input_sidebar_mobile_copy .main_inputs_area_wrapper {
+    padding: 0.5rem;
+    padding-right: 1rem;
+}
+
+/* モバイル時のwelcome_messageのスタイル調整 */
+.small-window .welcome_message {
+    position: relative;
+    top: auto;
+    transform: none;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+.small-window .current_image {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 1rem;
+}
+
+/* モバイル時のメタ情報タグのスタイル */
+.small-window .current-image-data {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    font-size: 80%;
+    white-space: pre-wrap;
+    background-color: var(--background-soft);
+    border-radius: 0.25rem;
+}
+
 .auto-symbol {
     color:var(--emphasis);
     margin-right: 0.25rem;
