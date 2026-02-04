@@ -7,6 +7,7 @@ class ModelCompatClass {
         this.isText2Video = data.is_text2video;
         this.isImage2Video = data.is_image2video;
         this.lorasTargetTextEnc = data.loras_target_text_enc;
+        this.isAudioModel = data.is_audio_model;
     }
 }
 
@@ -755,8 +756,11 @@ class ModelBrowserWrapper {
                 return `<b>${label}:</b> <span>${content}</span><br>`;
             };
             let getOptLine = (label, val) => val ? getLine(label, val) : '';
+            let helperData = modelsHelpers.getDataFor(this.subType, model.data.name);
             if (this.subType == 'LoRA' || this.subType == 'Stable-Diffusion') {
-                interject += `${getLine("Resolution", `${model.data.standard_width}x${model.data.standard_height}`)}`;
+                if (!helperData?.modelClass?.compatClass?.isAudioModel) {
+                    interject += `${getLine("Resolution", `${model.data.standard_width}x${model.data.standard_height}`)}`;
+                }
             }
             if (!model.data.local) {
                 interject += `<b>(This model is only available on some backends.)</b><br>`;
