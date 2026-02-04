@@ -51,6 +51,7 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 - **Quality/Status** is a loose vibe-based metric to imply whether it's worth using in the current year or not.
 
 - Video models are in [Video Model Support](/docs/Video%20Model%20Support.md)
+- Audio models are in [Audio Model Support](/docs/Audio%20Model%20Support.md)
 
 # Current Recommendations
 

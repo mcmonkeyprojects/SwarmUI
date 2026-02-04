@@ -9,6 +9,7 @@
 - [Sharing Your Swarm](/docs/Sharing%20Your%20Swarm.md) for info about sharing your SwarmUI instance with others.
 - [Model Support](/docs/Model%20Support.md) for details about support of different image model types.
     - [Video Model Support](/docs/Video%20Model%20Support.md) for details about video model types.
+    - [Audio Model Support](/docs/Audio%20Model%20Support.md) for details about audio model types.
 - TODO: Settings guide (server & user)
 - [Command line arguments](/docs/Command%20Line%20Arguments.md) describes the available command line arguments in detail.
 - [Extensions](/docs/Extensions.md) for info about how to use extensions.
