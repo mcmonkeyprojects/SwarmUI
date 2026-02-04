@@ -414,6 +414,11 @@ public partial class WorkflowGenerator
 
     public class ModelLoadHelpers(WorkflowGenerator g)
     {
+        public void DoVaeLoader(string defaultVal, T2IModelCompatClass compatClass, string knownName)
+        {
+            DoVaeLoader(defaultVal, compatClass?.ID, knownName);
+        }
+
         public void DoVaeLoader(string defaultVal, string compatClass, string knownName)
         {
             string vaeFile = defaultVal;
@@ -463,7 +468,7 @@ public partial class WorkflowGenerator
             g.FinalAudioVae = [avaeLoader, 0];
         }
 
-        string RequireClipModel(string name, string url, string hash, T2IRegisteredParam<T2IModel> param)
+        public string RequireClipModel(string name, string url, string hash, T2IRegisteredParam<T2IModel> param)
         {
             if (param is not null && g.UserInput.TryGet(param, out T2IModel model))
             {
@@ -1084,7 +1089,7 @@ public partial class WorkflowGenerator
             {
                 // Hypothetical approximation of what would probably be right if comfy wasn't just entirely broken on handling this
                 helpers.LoadClip2("ltxv", helpers.GetGemma3_12bModel(), helpers.GetLTX2EmbedClip());
-                helpers.DoVaeLoader(null, null, "ltx2-audio-vae");
+                helpers.DoVaeLoader(null, (string)null, "ltx2-audio-vae");
                 FinalAudioVae = LoadingVAE;
                 helpers.DoVaeLoader(null, "lightricks-ltx-video-2", "ltx2-video-vae");
                 throw new SwarmUserErrorException("LTX2 requires the safetensors checkpoint format currently due to comfy limitations.");

@@ -79,6 +79,14 @@ public partial class WorkflowGenerator
     /// <summary>The output workflow object.</summary>
     public JObject Workflow;
 
+    /// <summary>Represents output data from a node.</summary>
+    public record class NodeOutData(string Node, int Index, string DataType)
+    {
+        public static string DT_IMAGE = "IMAGE", DT_LATENT_IMAGE = "LATENT_IMAGE", DT_VIDEO = "VIDEO", DT_LATENT_VIDEO = "LATENT_VIDEO", DT_AUDIO = "AUDIO", DT_LATENT_AUDIO = "LATENT_AUDIO";
+
+        public JArray Path => [Node, Index];
+    }
+
     /// <summary>Lastmost node ID for key input trackers.</summary>
     public JArray FinalModel = ["4", 0],
         FinalClip = ["4", 1],
@@ -603,6 +611,54 @@ public partial class WorkflowGenerator
             fpsDefault = fpsOverride(this, fpsDefault);
         }
         return UserInput.Get(T2IParamTypes.VideoFPS, fpsDefault);
+    }
+
+    public string CreateSaveNode(NodeOutData data, string id = null)
+    {
+        if (data.DataType == NodeOutData.DT_LATENT_IMAGE)
+        {
+            string decoded = CreateVAEDecode(FinalVae, data.Path);
+            data = new NodeOutData(decoded, 0, NodeOutData.DT_IMAGE);
+        }
+        else if (data.DataType == NodeOutData.DT_LATENT_VIDEO)
+        {
+            string decoded = CreateVAEDecode(FinalVae, data.Path);
+            data = new NodeOutData(decoded, 0, NodeOutData.DT_VIDEO);
+        }
+        else if (data.DataType == NodeOutData.DT_LATENT_AUDIO)
+        {
+            // TODO: Proper function to handle this
+            string decoded = CreateNode("VAEDecodeAudio", new JObject()
+            {
+                ["vae"] = FinalAudioVae,
+                ["samples"] = data.Path
+            });
+            data = new NodeOutData(decoded, 0, NodeOutData.DT_AUDIO);
+        }
+        if (data.DataType == NodeOutData.DT_IMAGE)
+        {
+            return CreateImageSaveNode([data.Path], id);
+        }
+        else if (data.DataType == NodeOutData.DT_VIDEO)
+        {
+            return CreateAnimationSaveNode([data.Path], Text2VideoFPS(), UserInput.Get(T2IParamTypes.Text2VideoFormat, "h264-mp4"), id);
+        }
+        else if (data.DataType == NodeOutData.DT_AUDIO)
+        {
+            return CreateAudioSaveNode([data.Path], id);
+        }
+        throw new SwarmReadableErrorException($"Cannot create save node for unknown data type '{data.DataType}'.");
+    }
+
+    public string CreateAudioSaveNode(JArray audio, string id = null)
+    {
+        // TODO: SwarmSaveAudio?
+        return CreateNode("SaveAudioMP3", new JObject()
+        {
+            ["audio"] = audio,
+            ["filename_prefix"] = $"SwarmUI_{Random.Shared.Next():X4}_",
+            ["quality"] = "V0"
+        }, id);
     }
 
     /// <summary>Creates a node to save an image output.</summary>

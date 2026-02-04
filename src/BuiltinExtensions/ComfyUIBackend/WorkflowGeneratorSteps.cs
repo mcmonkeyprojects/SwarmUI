@@ -2,6 +2,7 @@
 using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
+using SwarmUI.Media;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 
@@ -373,7 +374,15 @@ public class WorkflowGeneratorSteps
         #region Base Image
         AddStep(g =>
         {
-            if (g.UserInput.TryGet(T2IParamTypes.InitImage, out Image img))
+            // TODO: Something like this for audio models.
+            /*if (g.IsAudioModel() && g.UserInput.TryGet(T2IParamTypes.InitAudio, out AudioFile audioData))
+            {
+                string audioNode = g.CreateLoadAudioNode(audioData, "${initaudio}", true);
+                g.FinalInputAudio = [audioNode, 0];
+                g.FinalLatentAudio = g.CreateAudioVAEEncode(g.FinalAudioVae, g.FinalInputAudio, "5");
+            }
+            else*/
+            if (!g.IsAudioModel() && g.UserInput.TryGet(T2IParamTypes.InitImage, out Image img))
             {
                 string maskImageNode = null;
                 if (g.UserInput.TryGet(T2IParamTypes.MaskImage, out Image mask))
@@ -1716,7 +1725,15 @@ public class WorkflowGeneratorSteps
                 }
                 if (nodeId is not null)
                 {
-                    g.CreateImageSaveNode(g.FinalImageOut, nodeId);
+                    // TODO: use CreateSaveNode and NodeOutData
+                    if (g.IsAudioModel())
+                    {
+                        g.CreateAudioSaveNode(g.FinalAudioOut, nodeId);
+                    }
+                    else
+                    {
+                        g.CreateImageSaveNode(g.FinalImageOut, nodeId);
+                    }
                 }
             }
         }, 10);
