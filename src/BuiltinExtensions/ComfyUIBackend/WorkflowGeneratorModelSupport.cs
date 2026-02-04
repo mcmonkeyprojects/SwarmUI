@@ -8,7 +8,6 @@ using SwarmUI.Text2Image;
 using SwarmUI.Utils;
 using Newtonsoft.Json.Linq;
 using FreneticUtilities.FreneticExtensions;
-using FreneticUtilities.FreneticToolkit;
 
 namespace SwarmUI.Builtin_ComfyUIBackend;
 
@@ -220,6 +219,18 @@ public partial class WorkflowGenerator
         return IsLTXV() || IsLTXV2() || IsMochi() || IsHunyuanVideo() || IsHunyuanVideo15() || IsNvidiaCosmos1() || IsAnyWanModel() || IsKandinsky5VidLite() || IsKandinsky5VidPro();
     }
 
+    /// <summary>Returns true if the current model is Ace Step 1.5.</summary>
+    public bool IsAceStep15()
+    {
+        return IsModelCompatClass(T2IModelClassSorter.CompatAceStep15);
+    }
+
+    /// <summary>Returns true if the current model primarily operates on audio.</summary>
+    public bool IsAudioModel()
+    {
+        return CurrentCompat()?.IsAudioModel ?? false;
+    }
+
     /// <summary>Creates an Empty Latent Image node.</summary>
     public string CreateEmptyImage(int width, int height, int batchSize, string id = null)
     {
@@ -313,6 +324,14 @@ public partial class WorkflowGenerator
             {
                 ["video_latent"] = NodePath(emptyVideo, 0),
                 ["audio_latent"] = NodePath(emptyAudio, 0)
+            }, id);
+        }
+        else if (IsAceStep15())
+        {
+            return CreateNode("EmptyAceStep1.5LatentAudio", new JObject()
+            {
+                ["batch_size"] = batchSize,
+                ["seconds"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120)
             }, id);
         }
         else if (IsWanVideo22())
@@ -1176,6 +1195,21 @@ public partial class WorkflowGenerator
             helpers.LoadClip2("kandinsky5", helpers.GetClipLModel(), helpers.GetQwenImage25_7b_tenc());
             helpers.DoVaeLoader(null, "hunyuan-video", "hunyuan-video-vae");
         }
+        else if (IsAceStep15())
+        {
+            // TODO: WTF? these twin qwen tencs are wacky.
+            if (LoadingClip is null)
+            {
+                string qwen06 = helpers.RequireClipModel("AceStep/qwen_0.6b_ace15.safetensors", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_0.6b_ace15.safetensors", "fd4590c82153b8ddb67e15a2e7aaa8afa8b83a858c8a9b82a4831063156aa7a7", T2IParamTypes.QwenModel);
+                string qwen17 = helpers.RequireClipModel("AceStep/qwen_1.7b_ace15.safetensors", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/text_encoders/qwen_1.7b_ace15.safetensors", "ed63e9247d1f55f3ace04fa11e95b085fc82d459c82c5626f0b2e37b91ebd710", T2IParamTypes.QwenModel);
+                helpers.LoadClip2("ace", qwen06, qwen17);
+            }
+            if (LoadingVAE is null)
+            {
+                helpers.DoVaeLoader(null, T2IModelClassSorter.CompatAceStep15, "ace-step-15-vae");
+            }
+            FinalAudioVae = LoadingVAE;
+        }
         else if (!string.IsNullOrWhiteSpace(predType) && LoadingModel is not null)
         {
             if (predType == "sd3")
@@ -1212,7 +1246,7 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [samplingNode, 0];
             }
-            else if (IsZImage())
+            else if (IsZImage() || IsAceStep15())
             {
                 string samplingNode = CreateNode("ModelSamplingAuraFlow", new JObject()
                 {

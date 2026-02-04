@@ -750,22 +750,35 @@ public partial class WorkflowGenerator
     /// <summary>Creates a VAEDecode node and returns its node ID.</summary>
     public string CreateVAEDecode(JArray vae, JArray latent, string id = null, bool canAudioDecode = true)
     {
-        if (IsLTXV2() && FinalAudioVae is not null && canAudioDecode)
+        if (FinalAudioVae is not null && canAudioDecode)
         {
-            string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
+            if (IsLTXV2())
             {
-                ["av_latent"] = latent
-            });
-            FinalLatentAudio = [separated, 1];
-            string audioDecoded = CreateNode("LTXVAudioVAEDecode", new JObject()
+                string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
+                {
+                    ["av_latent"] = latent
+                });
+                FinalLatentAudio = [separated, 1];
+                string audioDecoded = CreateNode("LTXVAudioVAEDecode", new JObject()
+                {
+                    ["audio_vae"] = FinalAudioVae,
+                    ["samples"] = FinalLatentAudio
+                });
+                FinalAudioOut = [audioDecoded, 0];
+                return CreateVAEDecode(vae, [separated, 0], id, false);
+            }
+            else if (IsAceStep15())
             {
-                ["audio_vae"] = FinalAudioVae,
-                ["samples"] = FinalLatentAudio
-            });
-            FinalAudioOut = [audioDecoded, 0];
-            return CreateVAEDecode(vae, [separated, 0], id, false);
+                string audioDecoded = CreateNode("VAEDecodeAudio", new JObject()
+                {
+                    ["vae"] = FinalAudioVae,
+                    ["samples"] = latent
+                });
+                FinalAudioOut = [audioDecoded, 0];
+                return audioDecoded;
+            }
         }
-        if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
+        else if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
         {
             return CreateNode("VAEDecodeTiled", new JObject()
             {
@@ -2269,7 +2282,22 @@ public partial class WorkflowGenerator
         }
         bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels());
         JArray qwenImage;
-        if (IsSana())
+        if (IsAceStep15())
+        {
+            node = CreateNode("TextEncodeAceStepAudio1.5", new JObject()
+            {
+                ["clip"] = clip,
+                ["lyrics"] = prompt,
+                ["tags"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
+                ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 10, // TODO: Weird that the input here needs a seed?
+                ["bpm"] = UserInput.Get(T2IParamTypes.Text2AudioBPM, 120),
+                ["duration"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120),
+                ["timesignature"] = UserInput.Get(T2IParamTypes.Text2AudioTimeSignature, "4"),
+                ["language"] = UserInput.Get(T2IParamTypes.Text2AudioLanguage, "en"),
+                ["keyscale"] = UserInput.Get(T2IParamTypes.Text2AudioKeyScale, "E minor")
+            }, id);
+        }
+        else if (IsSana())
         {
             node = CreateNode("SanaTextEncode", new JObject()
             {
