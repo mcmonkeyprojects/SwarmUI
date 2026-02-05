@@ -70,6 +70,10 @@ public static class BasicAPIFeatures
         [API.APIParameter("Login username.")] string username,
         [API.APIParameter("Login password.")] string password)
     {
+        if (!Program.ServerSettings.UserAuthorization.AllowSimplePasswordLogin)
+        {
+            return new JObject() { ["error_id"] = "invalid_login" };
+        }
         username = SessionHandler.UsernameValidator.TrimToMatches(username).ToLowerFast();
         string ip = WebUtil.GetIPString(context);
         string userAgent = WebUtil.AllowedXForwardedForChars.TrimToMatches(context.Request.Headers.UserAgent[0] ?? "unknown");
