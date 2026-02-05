@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwarmUI", "src\SwarmUI.csproj", "{2A621042-196A-4F9C-88EA-10369EAEE774}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SwarmUI.Desktop", "src\Desktop\SwarmUI.Desktop.csproj", "{B8F3A5E7-1C2D-4E6F-9A8B-0D1E2F3A4B5C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{2A621042-196A-4F9C-88EA-10369EAEE774}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2A621042-196A-4F9C-88EA-10369EAEE774}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2A621042-196A-4F9C-88EA-10369EAEE774}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F3A5E7-1C2D-4E6F-9A8B-0D1E2F3A4B5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F3A5E7-1C2D-4E6F-9A8B-0D1E2F3A4B5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F3A5E7-1C2D-4E6F-9A8B-0D1E2F3A4B5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F3A5E7-1C2D-4E6F-9A8B-0D1E2F3A4B5C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
