@@ -155,7 +155,7 @@ class UserAdminManager {
         };
         let prefix = `admin_edit_user_${escapeHtml(name)}_settings_`;
         this.rightBox.innerHTML = `<div class="admin-user-right-titlebar">User: <span class="admin-user-right-titlebar-name">${escapeHtml(name)}</span></div>`
-            + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser(unescapeHtml('${escapeHtml(name)}'))">Delete User</button>`)
+            + (name == user_id ? `<div class="admin-user-manage-notice translate">This is you! You shouldn't admin-edit yourself.</div>` : `<button type="button" class="basic-button translate" onclick="userAdminManager.deleteUser(unescapeHtml('${escapeHtml(name)}'))">Delete User</button> <button type="button" class="basic-button translate" onclick="userAdminManager.impersonateUser(unescapeHtml('${escapeHtml(name)}'))">Impersonate User</button>`)
             + `<br><br><button type="button" class="basic-button translate" onclick="userAdminManager.editUserPw(unescapeHtml('${escapeHtml(name)}'))">Change User Password</button>`
             + `&emsp;<span class="translate">Password was set by: </span><b class="translate password-set-by-field"></b>`
             + `<br><span class="translate">OAuth email: </span><input type="text" class="translate oauth-email-field" value="" /> <button type="button" class="basic-button translate" onclick="userAdminManager.editUserOAuth(unescapeHtml('${escapeHtml(name)}'))">Apply OAuth Email Change</button>`
@@ -197,6 +197,13 @@ class UserAdminManager {
         genericRequest('AdminSetUserOAuthEmail', {'name': name, 'email': email}, data => {
             this.clickUser(name);
         });
+    }
+
+    impersonateUser(name) {
+        let url = new URL(window.location.href);
+        url.searchParams.set('impersonate', name);
+        url.hash = '';
+        window.location.href = url.toString();
     }
 
     async changeUserPwSubmit() {
