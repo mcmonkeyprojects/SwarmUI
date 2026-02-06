@@ -233,11 +233,28 @@
                         <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
                         <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                         <td>
+                            <button class="basic-button danger-button translate" onclick="extensionsManager.setExtensionEnabled('@ext.ExtensionName', false, this)">Disable</button>
                             @if (ext.CanUpdate)
                             {
                                 <button class="basic-button" onclick="extensionsManager.updateExtension('@ext.ExtensionName', this)">Update</button>
                             }
                             <button class="basic-button" onclick="extensionsManager.uninstallExtension('@ext.ExtensionName', this)">Uninstall</button>
+                        </td>
+                    </tr>
+                }
+                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.GetDisabledExtensionsForUi())
+                {
+                    <tr>
+                        <td>@ext.Name</td>
+                        <td><code>(Disabled)</code></td>
+                        <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
+                        <td>@ext.Author</td>
+                        <td>@ext.Description</td>
+                        <td>@(ext.URL == "" ? "(Missing)" : new HtmlString($"<a target=\"_blank\" href=\"{ext.URL}\">Here</a>"))</td>
+                        <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
+                        <td>
+                            <button class="basic-button translate" onclick="extensionsManager.setExtensionEnabled('@ext.Name', true, this)">Enable</button>
+                            <button class="basic-button" onclick="extensionsManager.uninstallExtension('@ext.Name', this)">Uninstall</button>
                         </td>
                     </tr>
                 }
@@ -254,7 +271,7 @@
                     <th>License</th>
                     <th>Actions</th>
                 </tr>
-                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
+                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.InstalledExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
                 {
                     <tr>
                         <td>@ext.Name</td>

@@ -36,6 +36,7 @@ public static class AdminAPI
         API.RegisterAPICall(InstallExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(UpdateExtension, true, Permissions.ManageExtensions);
         API.RegisterAPICall(UninstallExtension, true, Permissions.ManageExtensions);
+        API.RegisterAPICall(SetExtensionEnabled, true, Permissions.ManageExtensions);
         API.RegisterAPICall(AdminListUsers, false, Permissions.ManageUsers);
         API.RegisterAPICall(AdminAddUser, true, Permissions.ManageUsers);
         API.RegisterAPICall(AdminSetUserPassword, true, Permissions.ManageUsers);
@@ -706,6 +707,7 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
+        Program.Extensions.RemoveDisabledExtensionSetting(extensionName);
         string extensionsFolder = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions");
         string folder = Utilities.CombinePathWithAbsolute(extensionsFolder, ext.FolderName);
         if (Directory.Exists(folder))
@@ -716,7 +718,30 @@ public static class AdminAPI
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart.",
+    [API.APIDescription("Enables or disables an installed extension by name. Does not trigger a restart. Does signal required rebuild.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> SetExtensionEnabled(Session session,
+        [API.APIParameter("The name of the extension to enable/disable.")] string extensionName,
+        [API.APIParameter("True to enable the extension, false to disable it.")] bool enabled)
+    {
+        if (Program.Extensions.Extensions.Any(e => e.IsCore && string.Equals(e.ExtensionName, extensionName, StringComparison.OrdinalIgnoreCase)))
+        {
+            return new JObject() { ["error"] = "Core extensions cannot be enabled/disabled." };
+        }
+        Program.ServerSettings.Extensions.DisabledExtensions.RemoveAll(n => string.Equals(n, extensionName, StringComparison.OrdinalIgnoreCase));
+        if (!enabled)
+        {
+            Program.ServerSettings.Extensions.DisabledExtensions.Add(extensionName);
+        }
+        Program.SaveSettingsFile();
+        File.WriteAllText("src/bin/must_rebuild", "yes");
+        Logs.Debug($"User {session.User.UserID} {(enabled ? "enabled" : "disabled")} extension '{extensionName}'. Restart required to apply.");
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.",
         """
             "success": true // or false if no update available
         """)]
@@ -748,11 +773,20 @@ public static class AdminAPI
         [API.APIParameter("The name of the extension to uninstall.")] string extensionName)
     {
         Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
-        if (ext is null)
+        string folder = ext?.FilePath;
+        if (folder is null)
+        {
+            if (Program.Extensions.DisabledExtensions.TryGetValue(extensionName, out string folderName))
+            {
+                folder = $"src/Extensions/{folderName}/";
+            }
+        }
+        if (folder is null)
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
-        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, ext.FilePath));
+        Program.Extensions.RemoveDisabledExtensionSetting(extensionName);
+        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, folder));
         Logs.Debug($"Will clear out Extension path: {path}");
         if (!Directory.Exists(path))
         {

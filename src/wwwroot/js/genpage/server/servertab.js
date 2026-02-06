@@ -57,6 +57,20 @@ class ExtensionsManager {
             button.disabled = false;
         });
     }
+
+    setExtensionEnabled(name, enabled, button) {
+        button.disabled = true;
+        button.parentElement.querySelectorAll('.installing_info').forEach(e => e.remove());
+        let infoDiv = createDiv(null, 'installing_info', (enabled ? 'Enabling' : 'Disabling') + ' (restart required)...');
+        button.parentElement.appendChild(infoDiv);
+        genericRequest('SetExtensionEnabled', {'extensionName': name, 'enabled': enabled}, data => {
+            button.parentElement.innerHTML = (enabled ? 'Enabled' : 'Disabled') + ', restart to apply';
+            this.newInstallsCard.style.display = 'block';
+        }, 0, e => {
+            infoDiv.innerText = (enabled ? 'Failed to enable: ' : 'Failed to disable: ') + e;
+            button.disabled = false;
+        });
+    }
 }
 
 extensionsManager = new ExtensionsManager();
