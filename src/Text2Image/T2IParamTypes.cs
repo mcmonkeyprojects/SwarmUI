@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -174,10 +174,9 @@ public record class T2IParamType(string Name, string Description, string Default
 
 /// <summary>Helper class to easily read T2I Parameters.</summary>
 /// <typeparam name="T">The C# datatype of the parameter.</typeparam>
-public class T2IRegisteredParam<T>
+/// <param name="Type">The underlying type data.</param>
+public record class T2IRegisteredParam<T>(T2IParamType Type)
 {
-    /// <summary>The underlying type data.</summary>
-    public T2IParamType Type;
 }
 
 /// <summary>Represents a group of parameters.</summary>
@@ -265,7 +264,7 @@ public class T2IParamTypes
         }
         Types.Add(type.ID, type);
         LanguagesHelper.AppendSetInternal(type.Name, type.Description);
-        return new T2IRegisteredParam<T>() { Type = type };
+        return new T2IRegisteredParam<T>(type);
     }
 
     /// <summary>Type-name cleaner.</summary>
