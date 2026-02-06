@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
@@ -90,6 +90,11 @@ public class GridGeneratorExtension : Extension
                 (call.LocalData as GridCallData).Additions.Add(val);
                 return true;
             }
+            else if (cleaned == PresetsParameter.Type.ID)
+            {
+                (call.LocalData as GridCallData).Presets.Add(val);
+                return true;
+            }
             else if (cleaned == "width" || cleaned == "outwidth")
             {
                 call.Grid.MinWidth = Math.Min(call.Grid.MinWidth, int.Parse(val));
@@ -129,6 +134,15 @@ public class GridGeneratorExtension : Extension
             {
                 string prompt = param.InternalSet.Get(T2IParamTypes.Prompt, "") + " " + data.Additions.JoinString(" ");
                 param.InternalSet.Set(T2IParamTypes.Prompt, prompt.Trim());
+            }
+            if (data.Presets.Any())
+            {
+                string presets = data.Presets.JoinString(",");
+                if (param.InternalSet.TryGet(PresetsParameter, out string existing))
+                {
+                    presets += $",{existing}";
+                }
+                param.InternalSet.Set(PresetsParameter, presets);
             }
         };
         GridRunnerPreRunHook = (runner) =>
@@ -325,6 +339,8 @@ public class GridGeneratorExtension : Extension
         public List<string> Replacements = [];
 
         public List<string> Additions = [];
+
+        public List<string> Presets = [];
     }
 
     public class SwarmUIGridData
