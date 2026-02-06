@@ -220,10 +220,13 @@ function getSession(callback) {
     lastSessionCheck = Date.now();
     haveBadSession = true;
     let inData = {};
-    impersonate_user_container.style.display = impersonateTargetUserId ? 'block' : 'none';
-    if (impersonateTargetUserId) {
-        inData.impersonateUser = impersonateTargetUserId;
-        getRequiredElementById('impersonate_user_name').innerText = impersonateTargetUserId;
+    let impersonateContainer = document.getElementById('impersonate_user_container');
+    if (impersonateContainer) {
+        impersonateContainer.style.display = impersonateTargetUserId ? 'block' : 'none';
+        if (impersonateTargetUserId) {
+            inData.impersonateUser = impersonateTargetUserId;
+            getRequiredElementById('impersonate_user_name').innerText = impersonateTargetUserId;
+        }
     }
     genericRequest('GetNewSession', inData, data => {
         haveBadSession = false;
