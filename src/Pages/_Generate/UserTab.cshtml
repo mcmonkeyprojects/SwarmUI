@@ -31,6 +31,12 @@
                     <button class="basic-button translate" id="logout_button" onclick="doUserLogout()">Logout</button>
                     // TODO: Other user stuff here. List of tokens/sessions, etc.
                     <button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
+                    <div id="impersonate_user_container" style="display:none">
+                        <br>
+                        <span class="translate">You are impersonating user:</span> <b id="impersonate_user_name"></b>
+                        <br>
+                        <button class="basic-button translate" id="impersonate_user_button" onclick="stopImpersonatingUser()">Stop Impersonating</button>
+                    </div>
                 }
             </div>
         </div>

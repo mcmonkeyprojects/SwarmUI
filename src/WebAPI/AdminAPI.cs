@@ -695,7 +695,7 @@ public static class AdminAPI
         return new JObject() { ["success"] = true, ["result"] = "Update successful. Restarting... (please wait a moment, then refresh the page)" };
     }
 
-    [API.APIDescription("Installs an extension from the known extensions list. Does not trigger a restart. Does signal required rebuild.",
+    [API.APIDescription("Installs an extension from the known extensions list. Does not trigger a restart.",
         """
             "success": true
         """)]
@@ -715,11 +715,10 @@ public static class AdminAPI
             return new JObject() { ["error"] = "Extension already installed." };
         }
         await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
-        File.WriteAllText("src/bin/must_rebuild", "yes");
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Enables or disables an installed extension by name. Does not trigger a restart. Does signal required rebuild.",
+    [API.APIDescription("Enables or disables an installed extension by name. Does not trigger a restart.",
         """
             "success": true
         """)]
@@ -737,12 +736,11 @@ public static class AdminAPI
             Program.ServerSettings.Extensions.DisabledExtensions.Add(extensionName);
         }
         Program.SaveSettingsFile();
-        File.WriteAllText("src/bin/must_rebuild", "yes");
-        Logs.Debug($"User {session.User.UserID} {(enabled ? "enabled" : "disabled")} extension '{extensionName}'. Restart required to apply.");
+        Logs.Debug($"User {session.User.UserID} {(enabled ? "enabled" : "disabled")} extension '{extensionName}'.");
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.",
+    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart.",
         """
             "success": true // or false if no update available
         """)]
@@ -763,11 +761,10 @@ public static class AdminAPI
         {
             return new JObject() { ["success"] = false };
         }
-        File.WriteAllText("src/bin/must_rebuild", "yes");
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Triggers an extension uninstallation for an installed extension. Does not trigger a restart. Does signal required rebuild.",
+    [API.APIDescription("Triggers an extension uninstallation for an installed extension. Does not trigger a restart.",
         """
             "success": true
         """)]
@@ -794,7 +791,6 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Extension has invalid path, cannot delete." };
         }
-        File.WriteAllText("src/bin/must_rebuild", "yes");
         try
         {
             FileSystem.DeleteDirectory(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);

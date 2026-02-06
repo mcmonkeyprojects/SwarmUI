@@ -39,6 +39,8 @@ It will run better if you use Linux instead of Windows. You can install Linux as
 
 As time goes on it's likely the Windows drivers will become more stable.
 
+Some users report that setting an environment variable of `HSA_OVERRIDE_GFX_VERSION=10.3.0` can make more older AMD GPUs work with the modern drivers.
+
 ## Common Error Messages
 
 ### AssertionError: Torch not compiled with CUDA enabled

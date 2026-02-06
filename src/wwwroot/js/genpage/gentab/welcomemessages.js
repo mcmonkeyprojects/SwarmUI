@@ -43,6 +43,8 @@ function automaticWelcomeMessage(override = null) {
         /* Generic welcome messages, order-sensitive, keep at top */
         `Type your prompt below and hit Generate!`,
         `Join the SwarmUI <a target="_blank" href="https://discord.gg/q2y38cqjNw">official Discord!</a>`,
+        /* Other toss-ins */
+        `Love SwarmUI? You can support development on <a target="_blank" href="https://patreon.com/swarmui">Patreon!</a>`,
         /* "Did you know" facts - interesting things you can do in swarm */
         `Did you know:\nyou can drag and drop images onto the prompt box to use them as an Image Prompt (eg Edit models, Flux Redux, IP-Adapter, ...).`,
         `Did you know:\nyou can create multiple variations of one image by locking in your seed, then enabling the <b>Variation Seed</b> parameter.`,
@@ -53,7 +55,7 @@ function automaticWelcomeMessage(override = null) {
         `Did you know:\nWant to try some fancy prompting?\nJust type a '&lt;' symbol and watch the suggestions for prompt-syntax tools appear! Give the syntax features a try! <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/Features/Prompt%20Syntax.md">(Documentation Here)</a>`,
         `Did you know:\nSwarm doesn't update itself by default.\nGo to the '<b>Server</b>' tab and click '<b>Update and Restart</b>' to get the latest version. There's also a '<b>Server Config</b>' option to always pull dev updates.`,
         /* Version release notes */
-        `Release notes (2025-08-25): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.7-Beta">Release Notes for version 0.9.7 (Beta)</a>`
+        `Release notes (2026-02-06): Check out the <a target="_blank" href="https://github.com/mcmonkeyprojects/SwarmUI/releases/tag/0.9.8-Beta">Release Notes for version 0.9.8 (Beta)</a>`
     ];
     let dotnetNotice = document.getElementById('dotnet_missing_message');
     if (dotnetNotice) {

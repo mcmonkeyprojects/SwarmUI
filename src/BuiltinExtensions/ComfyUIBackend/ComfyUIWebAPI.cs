@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
@@ -38,7 +38,14 @@ public static class ComfyUIWebAPI
         Directory.CreateDirectory(Directory.GetParent(path).FullName);
         if (!string.IsNullOrWhiteSpace(image))
         {
-            image = ImageFile.FromDataString(image).ToMetadataFormat();
+            if (image == "clear")
+            {
+                image = null;
+            }
+            else
+            {
+                image = ImageFile.FromDataString(image).ToMetadataFormat();
+            }
         }
         else if (ComfyUIBackendExtension.CustomWorkflows.ContainsKey(origPath))
         {
