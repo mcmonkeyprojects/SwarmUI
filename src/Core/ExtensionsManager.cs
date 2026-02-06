@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Html;
 using SwarmUI.Utils;
@@ -14,6 +14,12 @@ public class ExtensionsManager
 
     /// <summary>Hashset of folder names of all extensions currently loaded.</summary>
     public HashSet<string> LoadedExtensionFolders = [];
+
+    /// <summary>Hashset of folder names of all extensions currently installed (loaded or disabled).</summary>
+    public HashSet<string> InstalledExtensionFolders = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Dictionary of disabled extension name to its folder name.</summary>
+    public Dictionary<string, string> DisabledExtensions = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Simple holder of information about extensions available online.</summary>
     public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string[] Tags, string FolderName)
@@ -62,6 +68,9 @@ public class ExtensionsManager
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
         string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
         extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
+        InstalledExtensionFolders = new HashSet<string>(extras.Select(e => e.AfterLast('/')), StringComparer.OrdinalIgnoreCase);
+        List<string> disabledExtras = BuildDisabledExtensionsAndGetDisabledExtras(extras);
+        extras = [.. extras.Where(e => !disabledExtras.Contains(e))];
         foreach (string deletable in deleteMe)
         {
             try
@@ -266,5 +275,81 @@ public class ExtensionsManager
     public T GetExtension<T>() where T : Extension
     {
         return Extensions.FirstOrDefault(e => e is T) as T;
+    }
+
+    /// <summary>Returns disabled extensions for UI display.</summary>
+    public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
+    {
+        foreach (string name in DisabledExtensions.Keys.OrderBy(n => n))
+        {
+            DisabledExtensions.TryGetValue(name, out string folderName);
+            ExtensionInfo info = folderName is null ? null : KnownExtensions.FirstOrDefault(e => string.Equals(e.FolderName, folderName, StringComparison.OrdinalIgnoreCase));
+            info ??= new ExtensionInfo(name, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", ["none"], folderName ?? "");
+            yield return info;
+        }
+    }
+
+    /// <summary>
+    /// Builds <see cref="DisabledExtensions"/> as a map of extension name -> folder name,
+    /// and returns a list of disabled entries in the same format as <paramref name="extras"/>.
+    /// </summary>
+    public List<string> BuildDisabledExtensionsAndGetDisabledExtras(string[] extras)
+    {
+        static string DetectNameFromFolder(string extDir)
+        {
+            try
+            {
+                if (!Directory.Exists(extDir))
+                {
+                    return null;
+                }
+                string[] csFiles = Directory.EnumerateFiles(extDir, "*.cs", SearchOption.TopDirectoryOnly)
+                    .Where(f => !f.EndsWith($"{Path.DirectorySeparatorChar}AssemblyInfo.cs") && !f.EndsWith("/AssemblyInfo.cs"))
+                    .ToArray();
+                if (csFiles.IsEmpty())
+                {
+                    return null;
+                }
+                string preferred = csFiles
+                    .OrderBy(f => f.EndsWith("Extension.cs", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                    .ThenBy(f => Path.GetFileNameWithoutExtension(f).Length)
+                    .Select(Path.GetFileNameWithoutExtension)
+                    .FirstOrDefault();
+                return string.IsNullOrWhiteSpace(preferred) ? null : preferred;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        DisabledExtensions = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> disabledNames = new((Program.ServerSettings?.Extensions?.DisabledExtensions ?? [])
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim()),
+            StringComparer.OrdinalIgnoreCase);
+        if (disabledNames.IsEmpty())
+        {
+            return [];
+        }
+        List<string> disabledExtras = [];
+        foreach (string extDir in extras)
+        {
+            string detectedName = DetectNameFromFolder(extDir)?.Trim();
+            if (string.IsNullOrWhiteSpace(detectedName) || !disabledNames.Contains(detectedName))
+            {
+                continue;
+            }
+            DisabledExtensions[detectedName] = extDir.TrimEnd('/').AfterLast('/');
+            disabledExtras.Add(extDir);
+        }
+        return disabledExtras;
+    }
+
+    /// <summary>Removes an extension name from the disabled list in settings and saves.</summary>
+    public void RemoveDisabledExtensionSetting(string extensionName)
+    {
+        Program.ServerSettings.Extensions.DisabledExtensions.RemoveAll(n => string.Equals(n, extensionName, StringComparison.OrdinalIgnoreCase));
+        Program.SaveSettingsFile();
     }
 }
