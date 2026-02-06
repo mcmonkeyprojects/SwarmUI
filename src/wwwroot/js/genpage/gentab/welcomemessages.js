@@ -43,6 +43,8 @@ function automaticWelcomeMessage(override = null) {
         /* Generic welcome messages, order-sensitive, keep at top */
         `Type your prompt below and hit Generate!`,
         `Join the SwarmUI <a target="_blank" href="https://discord.gg/q2y38cqjNw">official Discord!</a>`,
+        /* Other toss-ins */
+        `Love SwarmUI? You can support development on <a target="_blank" href="https://patreon.com/swarmui">Patreon!</a>`,
         /* "Did you know" facts - interesting things you can do in swarm */
         `Did you know:\nyou can drag and drop images onto the prompt box to use them as an Image Prompt (eg Edit models, Flux Redux, IP-Adapter, ...).`,
         `Did you know:\nyou can create multiple variations of one image by locking in your seed, then enabling the <b>Variation Seed</b> parameter.`,
