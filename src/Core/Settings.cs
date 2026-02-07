@@ -73,9 +73,9 @@ public class Settings : AutoConfiguration
     /// <summary>Settings related to extensions.</summary>
     public class ExtensionsData : AutoConfiguration
     {
-        [ConfigComment("List of extension names that are disabled.\nDisabled extensions remain installed on disk, but are not loaded at server startup.")]
+        [ConfigComment("Map of disabled extension folder name to extension name.\nDisabled extensions remain installed on disk, but are not loaded at server startup.")]
         [SettingHidden]
-        public List<string> DisabledExtensions = [];
+        public Dictionary<string, string> DisabledExtensions = [];
     }
 
     /// <summary>Settings related to Swarm server maintenance..</summary>
