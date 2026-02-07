@@ -225,8 +225,14 @@ public static class NetworkBackendUtils
     }
 
     /// <summary>Tries to identify the lib/site-packages/ folder that will be used for a given start script.</summary>
-    public static string GetProbableLibFolderFor(string script)
+    public static string GetProbableLibFolderFor(string script, string pythonPath = null)
     {
+        string cleanPythonPath = NormalizePathInput(pythonPath);
+        string overrideLibPath = GetLibPathForPythonOverride(cleanPythonPath);
+        if (overrideLibPath is not null)
+        {
+            return overrideLibPath;
+        }
         string path = script.Replace('\\', '/');
         string dir = Path.GetDirectoryName(path);
         if (File.Exists($"{dir}/venv/Scripts/python.exe"))
@@ -258,7 +264,7 @@ public static class NetworkBackendUtils
                 RedirectStandardError = true,
                 WorkingDirectory = dir
             };
-            ConfigurePythonExeFor(script, "folder-finder", start, out _, out string forcePrior);
+            ConfigurePythonExeFor(script, "folder-finder", start, out _, out string forcePrior, cleanPythonPath);
             start.Arguments = $"{forcePrior} -s -c \"import sysconfig; print(sysconfig.get_path('purelib'))\"".Trim();
             Process process = Process.Start(start);
             process.WaitForExitAsync(Program.GlobalProgramCancel).Wait();
@@ -278,8 +284,163 @@ public static class NetworkBackendUtils
         return null;
     }
 
+    /// <summary>Normalizes a manually entered path value that may include wrapping quotes.</summary>
+    public static string NormalizePathInput(string path)
+    {
+        if (path is null)
+        {
+            return null;
+        }
+        return path.Trim(' ', '"', '\'', '\n', '\r', '\t');
+    }
+
+    /// <summary>Gets a probable lib path for a manually configured python path, if possible.</summary>
+    public static string GetLibPathForPythonOverride(string pythonPath)
+    {
+        if (string.IsNullOrWhiteSpace(pythonPath))
+        {
+            return null;
+        }
+        string cleanPath = NormalizePathInput(pythonPath);
+        if (string.IsNullOrWhiteSpace(cleanPath))
+        {
+            return null;
+        }
+        string fullPath = Path.GetFullPath(cleanPath);
+        if (File.Exists(fullPath))
+        {
+            string fileName = Path.GetFileName(fullPath);
+            string parent = Path.GetDirectoryName(fullPath);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                if (fileName.Equals("python.exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    fullPath = Path.GetFileName(parent).Equals("Scripts", StringComparison.OrdinalIgnoreCase)
+                        ? Path.GetFullPath(Path.Combine(parent, ".."))
+                        : parent;
+                }
+            }
+            else if (fileName.StartsWith("python", StringComparison.OrdinalIgnoreCase))
+            {
+                fullPath = Path.GetFileName(parent).Equals("bin", StringComparison.OrdinalIgnoreCase)
+                    ? Path.GetFullPath(Path.Combine(parent, ".."))
+                    : parent;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        if (!Directory.Exists(fullPath))
+        {
+            return null;
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            string winLib = Path.GetFullPath(Path.Combine(fullPath, "Lib", "site-packages"));
+            return Directory.Exists(winLib) ? winLib : null;
+        }
+        string linuxLibBase = Path.Combine(fullPath, "lib");
+        if (!Directory.Exists(linuxLibBase))
+        {
+            return null;
+        }
+        foreach (string subDir in Directory.GetDirectories(linuxLibBase))
+        {
+            string subName = Path.GetFileName(subDir);
+            if (subName.StartsWith("python", StringComparison.OrdinalIgnoreCase))
+            {
+                string sitePacks = Path.GetFullPath(Path.Combine(subDir, "site-packages"));
+                if (Directory.Exists(sitePacks))
+                {
+                    return sitePacks;
+                }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Tries to set up python executable using a manually specified path.</summary>
+    public static bool TryConfigurePythonExeOverride(ProcessStartInfo start, string pythonPath, string nameSimple, Action<string> addPath)
+    {
+        if (string.IsNullOrWhiteSpace(pythonPath))
+        {
+            return false;
+        }
+        string cleanPath = NormalizePathInput(pythonPath);
+        if (string.IsNullOrWhiteSpace(cleanPath))
+        {
+            return false;
+        }
+        string fullPath = Path.GetFullPath(cleanPath);
+        if (File.Exists(fullPath))
+        {
+            start.FileName = fullPath;
+            string parent = Path.GetDirectoryName(fullPath);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Path.GetFileName(parent).Equals("Scripts", StringComparison.OrdinalIgnoreCase))
+            {
+                addPath(Path.GetFullPath(Path.Combine(parent, "..")));
+            }
+            else if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Path.GetFileName(parent).Equals("bin", StringComparison.OrdinalIgnoreCase))
+            {
+                addPath(Path.GetFullPath(Path.Combine(parent, "..")));
+            }
+            else
+            {
+                addPath(parent);
+            }
+            Logs.Debug($"({nameSimple} launch) Using python override executable: {fullPath}");
+            return true;
+        }
+        if (!Directory.Exists(fullPath))
+        {
+            Logs.Warning($"({nameSimple} launch) Python path override '{pythonPath}' does not exist. Falling back to auto-detection.");
+            return false;
+        }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            string winVenv = Path.GetFullPath(Path.Combine(fullPath, "Scripts", "python.exe"));
+            if (File.Exists(winVenv))
+            {
+                start.FileName = winVenv;
+                addPath(fullPath);
+                Logs.Debug($"({nameSimple} launch) Using python override venv: {winVenv}");
+                return true;
+            }
+            string winPython = Path.GetFullPath(Path.Combine(fullPath, "python.exe"));
+            if (File.Exists(winPython))
+            {
+                start.FileName = winPython;
+                addPath(fullPath);
+                Logs.Debug($"({nameSimple} launch) Using python override executable: {winPython}");
+                return true;
+            }
+        }
+        else
+        {
+            string linuxVenv = Path.GetFullPath(Path.Combine(fullPath, "bin", "python3"));
+            if (File.Exists(linuxVenv))
+            {
+                start.FileName = linuxVenv;
+                addPath(fullPath);
+                Logs.Debug($"({nameSimple} launch) Using python override venv: {linuxVenv}");
+                return true;
+            }
+            string linuxPython = Path.GetFullPath(Path.Combine(fullPath, "bin", "python"));
+            if (File.Exists(linuxPython))
+            {
+                start.FileName = linuxPython;
+                addPath(fullPath);
+                Logs.Debug($"({nameSimple} launch) Using python override executable: {linuxPython}");
+                return true;
+            }
+        }
+        Logs.Warning($"({nameSimple} launch) Python path override '{pythonPath}' was not recognized as a python executable or venv. Falling back to auto-detection.");
+        return false;
+    }
+
     /// <summary>Configures python execution for a given python start script.</summary>
-    public static void ConfigurePythonExeFor(string script, string nameSimple, ProcessStartInfo start, out string preArgs, out string forcePrior)
+    public static void ConfigurePythonExeFor(string script, string nameSimple, ProcessStartInfo start, out string preArgs, out string forcePrior, string pythonPath = null)
     {
         void AddPath(string path)
         {
@@ -293,7 +454,11 @@ public static class NetworkBackendUtils
         forcePrior = "";
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            if (File.Exists($"{dir}/venv/Scripts/python.exe"))
+            if (TryConfigurePythonExeOverride(start, pythonPath, nameSimple, AddPath))
+            {
+                // Override path is already configured.
+            }
+            else if (File.Exists($"{dir}/venv/Scripts/python.exe"))
             {
                 start.FileName = Path.GetFullPath($"{dir}/venv/Scripts/python.exe");
                 AddPath(Path.GetFullPath($"{dir}/venv"));
@@ -319,7 +484,11 @@ public static class NetworkBackendUtils
         }
         else
         {
-            if (File.Exists($"{dir}/venv/bin/python3"))
+            if (TryConfigurePythonExeOverride(start, pythonPath, nameSimple, AddPath))
+            {
+                // Override path is already configured.
+            }
+            else if (File.Exists($"{dir}/venv/bin/python3"))
             {
                 start.FileName = Path.GetFullPath($"{dir}/venv/bin/python3");
                 AddPath(Path.GetFullPath($"{dir}/venv"));
@@ -332,13 +501,13 @@ public static class NetworkBackendUtils
     }
 
     /// <summary>Starts a self-start backend based on the user-configuration and backend-specifics provided.</summary>
-    public static Task DoSelfStart(string startScript, AbstractT2IBackend backend, string nameSimple, string identifier, string gpuId, string extraArgs, Func<bool, Task> initInternal, Action<int, Process> takeOutput, bool autoRestart = false)
+    public static Task DoSelfStart(string startScript, AbstractT2IBackend backend, string nameSimple, string identifier, string gpuId, string extraArgs, Func<bool, Task> initInternal, Action<int, Process> takeOutput, bool autoRestart = false, string pythonPath = null)
     {
-        return DoSelfStart(startScript, nameSimple, identifier, gpuId, extraArgs, status => backend.Status = status, async (b) => { await initInternal(b); return backend.Status == BackendStatus.RUNNING; }, takeOutput, () => backend.Status, a => backend.OnShutdown += a, autoRestart, backend.AddLoadStatus);
+        return DoSelfStart(startScript, nameSimple, identifier, gpuId, extraArgs, status => backend.Status = status, async (b) => { await initInternal(b); return backend.Status == BackendStatus.RUNNING; }, takeOutput, () => backend.Status, a => backend.OnShutdown += a, autoRestart, backend.AddLoadStatus, pythonPath);
     }
 
     /// <summary>Starts a self-start backend based on the user-configuration and backend-specifics provided.</summary>
-    public static async Task DoSelfStart(string startScript, string nameSimple, string identifier, string gpuId, string extraArgs, Action<BackendStatus> reviseStatus, Func<bool, Task<bool>> initInternal, Action<int, Process> takeOutput, Func<BackendStatus> getStatus, Action<Action> addShutdownEvent, bool autoRestart = false, Action<string> addLoadStatus = null)
+    public static async Task DoSelfStart(string startScript, string nameSimple, string identifier, string gpuId, string extraArgs, Action<BackendStatus> reviseStatus, Func<bool, Task<bool>> initInternal, Action<int, Process> takeOutput, Func<BackendStatus> getStatus, Action<Action> addShutdownEvent, bool autoRestart = false, Action<string> addLoadStatus = null, string pythonPath = null)
     {
         addLoadStatus ??= Logs.Debug;
         async Task launch()
@@ -380,7 +549,7 @@ public static class NetworkBackendUtils
             string postArgs = extraArgs.Replace("{PORT}", $"{port}").Trim();
             if (path.EndsWith(".py"))
             {
-                ConfigurePythonExeFor(startScript, nameSimple, start, out preArgs, out _);
+                ConfigurePythonExeFor(startScript, nameSimple, start, out preArgs, out _, pythonPath);
                 addLoadStatus($"({nameSimple} launch) Will use python: {start.FileName}");
             }
             else

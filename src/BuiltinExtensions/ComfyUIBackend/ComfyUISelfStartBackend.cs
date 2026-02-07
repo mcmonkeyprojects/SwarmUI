@@ -20,6 +20,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         [ConfigComment("The location of the 'main.py' file. Can be an absolute or relative path, but must end with 'main.py'.\nIf you used the installer, this should be 'dlbackend/comfy/ComfyUI/main.py'.")]
         public string StartScript = "";
 
+        [ConfigComment("Optional: path to a custom Python runtime for this backend.\nCan be a path to a python executable, or to a venv root folder.\nIf empty, Swarm will auto-detect python (default behavior).")]
+        public string PythonPath = "";
+
         [ConfigComment("Any arguments to include in the launch script.")]
         public string ExtraArgs = "";
 
@@ -319,7 +322,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        NetworkBackendUtils.ConfigurePythonExeFor((SettingsRaw as ComfyUISelfStartSettings).StartScript, "ComfyUI", start, out _, out string forcePrior);
+        NetworkBackendUtils.ConfigurePythonExeFor((SettingsRaw as ComfyUISelfStartSettings).StartScript, "ComfyUI", start, out _, out string forcePrior, (SettingsRaw as ComfyUISelfStartSettings).PythonPath);
         start.Arguments = $"{forcePrior} {call.Trim()}".Trim();
         return Process.Start(start);
     }
@@ -458,12 +461,12 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         }
         await DoLibFixes(doFixFrontend, doLatestFrontend);
         AddLoadStatus("Starting self-start ComfyUI process...");
-        await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart);
+        await NetworkBackendUtils.DoSelfStart(Settings.StartScript, this, $"ComfyUI-{BackendData.ID}", $"backend-{BackendData.ID}", Settings.GPU_ID, Settings.ExtraArgs.Trim() + " --port {PORT}" + addedArgs, InitInternal, (p, r) => { Port = p; RunningProcess = r; }, Settings.AutoRestart, Settings.PythonPath);
     }
 
     public async Task DoLibFixes(bool doFixFrontend, bool doLatestFrontend)
     {
-        string lib = NetworkBackendUtils.GetProbableLibFolderFor(Settings.StartScript);
+        string lib = NetworkBackendUtils.GetProbableLibFolderFor(Settings.StartScript, Settings.PythonPath);
         if (lib is null || lib.Length < 3)
         {
             AddLoadStatus($"Skip lib validation, can't find folder.");

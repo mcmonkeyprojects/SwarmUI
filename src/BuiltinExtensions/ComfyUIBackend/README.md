@@ -17,6 +17,7 @@ You can also view the ComfyUI node graph and work with custom workflows directly
 
 - First: Have a valid ComfyUI install. The SwarmUI installer automatically provides you one (if not disabled) as `dlbackend/comfy/ComfyUI/main.py`.
 - Go to `Server` -> `Backends`, and click `ComfyUI Self-Starting`, and fill in the `StartScript` path as above. Other values can be left default or configured to your preference.
+    - Optional: set `PythonPath` if your desired python/venv is not in ComfyUI's default location. This can point to either a python executable or a venv root folder.
 - Save the backend, and it should just work.
 
 ### Installation (API)
