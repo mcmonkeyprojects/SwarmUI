@@ -713,28 +713,42 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Extension already installed." };
         }
-        Program.Extensions.RemoveDisabledExtensionSetting(extensionName);
+        Program.Extensions.RemoveDisabledExtensionSetting(ext.FolderName);
         Program.SaveSettingsFile();
         await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Enables or disables an installed extension by name. Does not trigger a restart.",
+    [API.APIDescription("Enables or disables an installed extension. Does not trigger a restart.",
         """
             "success": true
         """)]
     public static async Task<JObject> SetExtensionEnabled(Session session,
-        [API.APIParameter("The name of the extension to enable/disable.")] string extensionName,
+        [API.APIParameter("The extension name (disable) or folder name (enable).")] string extensionName,
         [API.APIParameter("True to enable the extension, false to disable it.")] bool enabled)
     {
-        if (Program.Extensions.Extensions.Any(e => e.IsCore && string.Equals(e.ExtensionName, extensionName, StringComparison.OrdinalIgnoreCase)))
+        if (enabled)
         {
-            return new JObject() { ["error"] = "Core extensions cannot be enabled/disabled." };
+            if (!Program.Extensions.RemoveDisabledExtensionSetting(extensionName))
+            {
+                return new JObject() { ["error"] = "Unknown extension." };
+            }
         }
-        if ((enabled && !Program.Extensions.RemoveDisabledExtensionSetting(extensionName)) ||
-            (!enabled && !Program.Extensions.AddDisabledExtensionSetting(extensionName)))
+        else
         {
-            return new JObject() { ["error"] = "Unknown extension." };
+            Extension extension = Program.Extensions.Extensions.FirstOrDefault(e => string.Equals(e.ExtensionName, extensionName, StringComparison.OrdinalIgnoreCase));
+            if (extension is null)
+            {
+                return new JObject() { ["error"] = "Unknown extension." };
+            }
+            if (extension.IsCore)
+            {
+                return new JObject() { ["error"] = "Core extensions cannot be enabled/disabled." };
+            }
+            if (!Program.Extensions.AddDisabledExtensionSetting(ExtensionsManager.GetFolderNameFromPath(extension.FilePath)))
+            {
+                return new JObject() { ["error"] = "Unknown extension." };
+            }
         }
         Program.SaveSettingsFile();
         Logs.Debug($"User {session.User.UserID} {(enabled ? "enabled" : "disabled")} extension '{extensionName}'.");
@@ -770,13 +784,13 @@ public static class AdminAPI
             "success": true
         """)]
     public static async Task<JObject> UninstallExtension(Session session,
-        [API.APIParameter("The name of the extension to uninstall.")] string extensionName)
+        [API.APIParameter("The name (if loaded) or folder name (if disabled) of the extension to uninstall.")] string extensionName)
     {
         Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
         string folder = ext?.FilePath;
         if (folder is null)
         {
-            string folderName = Program.Extensions.DisabledExtensions.FirstOrDefault(e => string.Equals(e.Value, extensionName, StringComparison.OrdinalIgnoreCase)).Key;
+            string folderName = extensionName?.Trim();
             if (!string.IsNullOrWhiteSpace(folderName))
             {
                 folder = $"src/Extensions/{folderName}/";
@@ -786,7 +800,8 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
-        if (Program.Extensions.RemoveDisabledExtensionSetting(extensionName)) {
+        if (Program.Extensions.RemoveDisabledExtensionSetting(ExtensionsManager.GetFolderNameFromPath(folder)))
+        {
             Program.SaveSettingsFile();
         }
         string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, folder));
