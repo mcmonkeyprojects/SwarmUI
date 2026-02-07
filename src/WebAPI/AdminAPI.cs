@@ -707,13 +707,14 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
-        Program.Extensions.RemoveDisabledExtensionSetting(extensionName);
         string extensionsFolder = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions");
         string folder = Utilities.CombinePathWithAbsolute(extensionsFolder, ext.FolderName);
         if (Directory.Exists(folder))
         {
             return new JObject() { ["error"] = "Extension already installed." };
         }
+        Program.Extensions.RemoveDisabledExtensionSetting(extensionName);
+        Program.SaveSettingsFile();
         await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
         return new JObject() { ["success"] = true };
     }
@@ -730,10 +731,10 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Core extensions cannot be enabled/disabled." };
         }
-        Program.ServerSettings.Extensions.DisabledExtensions.RemoveAll(n => string.Equals(n, extensionName, StringComparison.OrdinalIgnoreCase));
-        if (!enabled)
+        if ((enabled && !Program.Extensions.RemoveDisabledExtensionSetting(extensionName)) ||
+            (!enabled && !Program.Extensions.AddDisabledExtensionSetting(extensionName)))
         {
-            Program.ServerSettings.Extensions.DisabledExtensions.Add(extensionName);
+            return new JObject() { ["error"] = "Unknown extension." };
         }
         Program.SaveSettingsFile();
         Logs.Debug($"User {session.User.UserID} {(enabled ? "enabled" : "disabled")} extension '{extensionName}'.");
@@ -775,7 +776,8 @@ public static class AdminAPI
         string folder = ext?.FilePath;
         if (folder is null)
         {
-            if (Program.Extensions.DisabledExtensions.TryGetValue(extensionName, out string folderName))
+            string folderName = Program.Extensions.DisabledExtensions.FirstOrDefault(e => string.Equals(e.Value, extensionName, StringComparison.OrdinalIgnoreCase)).Key;
+            if (!string.IsNullOrWhiteSpace(folderName))
             {
                 folder = $"src/Extensions/{folderName}/";
             }
@@ -784,7 +786,9 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
-        Program.Extensions.RemoveDisabledExtensionSetting(extensionName);
+        if (Program.Extensions.RemoveDisabledExtensionSetting(extensionName)) {
+            Program.SaveSettingsFile();
+        }
         string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, folder));
         Logs.Debug($"Will clear out Extension path: {path}");
         if (!Directory.Exists(path))
