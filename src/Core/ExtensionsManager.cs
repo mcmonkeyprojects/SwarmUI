@@ -18,8 +18,8 @@ public class ExtensionsManager
     /// <summary>Hashset of folder names of all extensions currently installed (loaded or disabled).</summary>
     public HashSet<string> InstalledExtensionFolders = [];
 
-    /// <summary>Dictionary of disabled extension folder name to extension name.</summary>
-    public Dictionary<string, string> DisabledExtensions = [];
+    /// <summary>Folder names of disabled extensions.</summary>
+    public HashSet<string> DisabledExtensions = [];
 
     /// <summary>Simple holder of information about extensions available online.</summary>
     public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string[] Tags, string FolderName)
@@ -68,8 +68,7 @@ public class ExtensionsManager
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
         string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
         extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
-        InstalledExtensionFolders = new HashSet<string>(extras.Select(e => e.AfterLast('/')), StringComparer.OrdinalIgnoreCase);
-        LoadKnownExtensions();
+        InstalledExtensionFolders = [.. extras.Select(e => e.AfterLast('/'))];
         HashSet<string> disabledFolders = BuildDisabledExtensionsAndGetDisabledFolders();
         extras = [.. extras.Where(e => !disabledFolders.Contains(e.AfterLast('/')))];
         foreach (string deletable in deleteMe)
@@ -141,13 +140,6 @@ public class ExtensionsManager
             catch (Exception) { }
         }
         RunOnAllExtensions(e => e.OnFirstInit());
-        RunOnAllExtensions(e => e.PopulateMetadata());
-    }
-
-    /// <summary>Loads known extension metadata from the extension list file.</summary>
-    public void LoadKnownExtensions()
-    {
-        KnownExtensions.Clear();
         try
         {
             FDSSection extensionsOutThere = FDSUtility.ReadFile("./launchtools/extension_list.fds");
@@ -162,6 +154,7 @@ public class ExtensionsManager
         {
             Logs.Error($"Failed to read known extensions list: {ex.ReadableString()}");
         }
+        RunOnAllExtensions(e => e.PopulateMetadata());
     }
 
     public async Task<Assembly> BuildExtension(string folder, string projFile)
@@ -284,6 +277,12 @@ public class ExtensionsManager
         return Extensions.FirstOrDefault(e => e is T) as T;
     }
 
+    /// <summary>Returns folder name from an extension path.</summary>
+    public static string GetFolderNameFromPath(string path)
+    {
+        return path?.Replace('\\', '/').TrimEnd('/').AfterLast('/') ?? "";
+    }
+
     /// <summary>Builds <see cref="DisabledExtensions"/> and returns disabled extension folders.</summary>
     public HashSet<string> BuildDisabledExtensionsAndGetDisabledFolders()
     {
@@ -293,14 +292,14 @@ public class ExtensionsManager
         }
         DisabledExtensions = [];
         HashSet<string> disabledFolders = [];
-        foreach ((string folderName, string extensionName) in Program.ServerSettings.Extensions.DisabledExtensions)
+        foreach (string rawFolderName in Program.ServerSettings.Extensions.DisabledExtensions)
         {
-            if (string.IsNullOrWhiteSpace(extensionName) || string.IsNullOrWhiteSpace(folderName)
-                || !InstalledExtensionFolders.Contains(folderName) || !disabledFolders.Add(folderName))
+            string folderName = rawFolderName?.Trim();
+            if (string.IsNullOrWhiteSpace(folderName) || !InstalledExtensionFolders.Contains(folderName) || !disabledFolders.Add(folderName))
             {
                 continue;
             }
-            DisabledExtensions[folderName] = extensionName;
+            DisabledExtensions.Add(folderName);
         }
         return disabledFolders;
     }
@@ -308,67 +307,40 @@ public class ExtensionsManager
     /// <summary>Returns disabled extensions for UI display.</summary>
     public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
     {
-        foreach ((string folderName, string name) in DisabledExtensions.OrderBy(e => e.Value, StringComparer.OrdinalIgnoreCase))
+        foreach (string folderName in DisabledExtensions.OrderBy(e => e, StringComparer.OrdinalIgnoreCase))
         {
-            ExtensionInfo info = KnownExtensions.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
-            info ??= new ExtensionInfo(name, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", ["none"], folderName ?? "");
+            ExtensionInfo info = KnownExtensions.FirstOrDefault(e => string.Equals(e.FolderName, folderName, StringComparison.OrdinalIgnoreCase));
+            info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", ["none"], folderName);
             yield return info;
         }
     }
 
-    /// <summary>Removes an extension name from the disabled list in settings.</summary>
-    public bool RemoveDisabledExtensionSetting(string extensionName)
+    /// <summary>Removes an extension folder from the disabled list in settings.</summary>
+    public bool RemoveDisabledExtensionSetting(string folderName)
     {
-        extensionName = extensionName?.Trim();
-        if (string.IsNullOrWhiteSpace(extensionName))
+        folderName = folderName?.Trim();
+        if (string.IsNullOrWhiteSpace(folderName))
         {
             return false;
         }
-        List<string> keysToRemove = [.. Program.ServerSettings.Extensions.DisabledExtensions
-            .Where(e =>
-                string.Equals(e.Key, extensionName, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(e.Value, extensionName, StringComparison.OrdinalIgnoreCase))
-            .Select(e => e.Key)];
-        ExtensionInfo known = KnownExtensions.FirstOrDefault(e =>
-            string.Equals(e.Name, extensionName, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals($"{e.Name}Extension", extensionName, StringComparison.OrdinalIgnoreCase));
-        if (known is not null)
-        {
-            keysToRemove.Add(known.FolderName);
-        }
-        Extension loaded = Extensions.FirstOrDefault(e => string.Equals(e.ExtensionName, extensionName, StringComparison.OrdinalIgnoreCase));
-        string loadedFolder = loaded?.FilePath?.Replace('\\', '/').TrimEnd('/').AfterLast('/');
-        if (!string.IsNullOrWhiteSpace(loadedFolder))
-        {
-            keysToRemove.Add(loadedFolder);
-        }
-        foreach (string key in keysToRemove.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            Program.ServerSettings.Extensions.DisabledExtensions.Remove(key);
-        }
-        return true;
+        int removed = Program.ServerSettings.Extensions.DisabledExtensions.RemoveAll(f => string.Equals(f, folderName, StringComparison.OrdinalIgnoreCase));
+        DisabledExtensions.RemoveWhere(f => string.Equals(f, folderName, StringComparison.OrdinalIgnoreCase));
+        return removed > 0;
     }
 
-    public bool AddDisabledExtensionSetting(string extensionName)
+    /// <summary>Adds an extension folder to the disabled list in settings.</summary>
+    public bool AddDisabledExtensionSetting(string folderName)
     {
-        extensionName = extensionName?.Trim();
-        if (string.IsNullOrWhiteSpace(extensionName))
+        folderName = folderName?.Trim();
+        if (string.IsNullOrWhiteSpace(folderName) || !InstalledExtensionFolders.Contains(folderName))
         {
             return false;
         }
-        Extension extension = Extensions.FirstOrDefault(e => string.Equals(e.ExtensionName, extensionName, StringComparison.OrdinalIgnoreCase));
-        if (extension is null)
+        if (!Program.ServerSettings.Extensions.DisabledExtensions.Any(f => string.Equals(f, folderName, StringComparison.OrdinalIgnoreCase)))
         {
-            return false;
+            Program.ServerSettings.Extensions.DisabledExtensions.Add(folderName);
         }
-        string folder = extension.FilePath?.Replace('\\', '/').TrimEnd('/').AfterLast('/');
-        if (string.IsNullOrWhiteSpace(folder))
-        {
-            return false;
-        }
-        ExtensionInfo known = KnownExtensions.FirstOrDefault(e => string.Equals(e.FolderName, folder, StringComparison.OrdinalIgnoreCase));
-        string storedName = known?.Name ?? extension.ExtensionName;
-        Program.ServerSettings.Extensions.DisabledExtensions[folder] = storedName;
+        DisabledExtensions.Add(folderName);
         return true;
     }
 }

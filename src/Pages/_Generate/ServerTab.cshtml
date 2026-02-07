@@ -253,8 +253,8 @@
                         <td>@(ext.URL == "" ? "(Missing)" : new HtmlString($"<a target=\"_blank\" href=\"{ext.URL}\">Here</a>"))</td>
                         <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                         <td>
-                            <button class="basic-button translate" onclick="extensionsManager.setExtensionEnabled('@ext.Name', true, this)">Enable</button>
-                            <button class="basic-button" onclick="extensionsManager.uninstallExtension('@ext.Name', this)">Uninstall</button>
+                            <button class="basic-button translate" onclick="extensionsManager.setExtensionEnabled('@ext.FolderName', true, this)">Enable</button>
+                            <button class="basic-button" onclick="extensionsManager.uninstallExtension('@ext.FolderName', this)">Uninstall</button>
                         </td>
                     </tr>
                 }
