@@ -787,15 +787,7 @@ public static class AdminAPI
         [API.APIParameter("The name (if loaded) or folder name (if disabled) of the extension to uninstall.")] string extensionName)
     {
         Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
-        string folder = ext?.FilePath;
-        if (folder is null)
-        {
-            string folderName = extensionName?.Trim();
-            if (!string.IsNullOrWhiteSpace(folderName))
-            {
-                folder = $"src/Extensions/{folderName}/";
-            }
-        }
+        string folder = ext?.FilePath ?? ExtensionsManager.GetNormalizedExtensionFolderPath(extensionName);
         if (folder is null)
         {
             return new JObject() { ["error"] = "Unknown extension." };

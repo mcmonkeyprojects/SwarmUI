@@ -283,6 +283,29 @@ public class ExtensionsManager
         return path?.Replace('\\', '/').TrimEnd('/').AfterLast('/') ?? "";
     }
 
+    /// <summary>Returns normalized "src/Extensions/{folderName}/" for a direct child folder match, or null if not found.</summary>
+    public static string GetNormalizedExtensionFolderPath(string folderName)
+    {
+        folderName = folderName?.Trim();
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            return null;
+        }
+        string extensionsRoot = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions"));
+        if (!Directory.Exists(extensionsRoot))
+        {
+            return null;
+        }
+        string matchingFolder = Directory.EnumerateDirectories(extensionsRoot)
+            .Select(Path.GetFileName)
+            .FirstOrDefault(name => string.Equals(name, folderName, StringComparison.OrdinalIgnoreCase));
+        if (string.IsNullOrWhiteSpace(matchingFolder))
+        {
+            return null;
+        }
+        return $"src/Extensions/{matchingFolder}/";
+    }
+
     /// <summary>Builds <see cref="DisabledExtensions"/> and returns disabled extension folders.</summary>
     public HashSet<string> BuildDisabledExtensionsAndGetDisabledFolders()
     {
