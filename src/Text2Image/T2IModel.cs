@@ -459,6 +459,10 @@ public class T2IModel(T2IModelHandler handler, string folderPath, string filePat
     /// <summary>Get the safetensors or gguf header from a model. Return includes "__metadata__" key with metadata key:value map, other data at root.</summary>
     public static JObject GetMetadataHeaderFrom(string modelPath)
     {
+        if (!modelPath.EndsWith(".safetensors") && !modelPath.EndsWith(".sft") && !modelPath.EndsWith(".gguf"))
+        {
+            throw new SwarmReadableErrorException($"Cannot get metadata header from unsupported model file type: {modelPath.Replace('\\', '/').AfterLast('/')}");
+        }
         using FileStream file = File.OpenRead(modelPath);
         if (file.Length < 8)
         {

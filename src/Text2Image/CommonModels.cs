@@ -93,5 +93,8 @@ public static class CommonModels
         Register(new("hunyuan-image-2_1-vae", "Hunyuan Image 2.1 VAE", "The VAE for Hunyuan Image 2.1 Base", "https://huggingface.co/Comfy-Org/HunyuanImage_2.1_ComfyUI/resolve/main/split_files/vae/hunyuan_image_2.1_vae_fp16.safetensors", "f2ae19863609206196b5e3a86bfd94f67bd3866f5042004e3994f07e3c93b2f9", "VAE", "HunyuanImage/hunyuan_image_2.1_vae_fp16.safetensors"));
         Register(new("hunyuan-image-2_1-refiner-vae", "Hunyuan Image 2.1 Refiner VAE", "The VAE for Hunyuan Image 2.1 Refiner", "https://huggingface.co/Comfy-Org/HunyuanImage_2.1_ComfyUI/resolve/main/split_files/vae/hunyuan_image_refiner_vae_fp16.safetensors", "e1b74e85d61b65e18cc05ca390e387d93cfadf161e737de229ebb800ea3db769", "VAE", "HunyuanImage/hunyuan_image_2.1_refiner_vae_fp16.safetensors"));
         Register(new("hunyuan-video-1_5-vae", "Hunyuan Video 1.5 VAE", "The VAE for Hunyuan Video 1.5", "https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/vae/hunyuanvideo15_vae_fp16.safetensors", "e7c3091949c27e2d55ae6d5df917b99dadfebbf308e5a50d0ade0d16c90297ae", "VAE", "HunyuanVideo/hunyuanvideo15_vae_fp16.safetensors"));
+
+        // Audio VAEs
+        Register(new("ace-step-15-vae", "Ace Step 1.5 VAE", "The audio VAE for Ace Step 1.5", "https://huggingface.co/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/split_files/vae/ace_1.5_vae.safetensors", "6de92e3a862acd287e08b024ac90f0783a8635451b728721a33ff03565bcb2bb", "VAE", "AceStep/ace_1.5_vae.safetensors"));
     }
 }

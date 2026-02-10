@@ -1729,7 +1729,6 @@ body {
     height: 1lh;
     padding-top: 0 !important;
 }
-
 .trigger-phrase-item {
     display: inline-block;
     margin-right: 0.3rem;
@@ -1794,3 +1793,7 @@ body {
     height: 1rem;
 }
 .image-block-selected { outline: 2px solid var(--accent-primary-color, #3b82f6); }
+.view_raw_header_modal_content {
+    max-height: 70vh;
+    overflow: auto;
+}

@@ -29,6 +29,7 @@ public static class ModelsAPI
         API.RegisterAPICall(TestPromptFill, false, Permissions.FundamentalModelAccess);
         API.RegisterAPICall(EditWildcard, true, Permissions.EditWildcards);
         API.RegisterAPICall(EditModelMetadata, true, Permissions.EditModelMetadata);
+        API.RegisterAPICall(GetModelHeaders, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(DoModelDownloadWS, true, Permissions.DownloadModels);
         API.RegisterAPICall(GetModelHash, true, Permissions.EditModelMetadata);
         API.RegisterAPICall(ForwardMetadataRequest, false, Permissions.EditModelMetadata);
@@ -545,6 +546,27 @@ public static class ModelsAPI
         _ = Utilities.RunCheckedTask(() => actualModel.ResaveModel(), "model resave");
         Interlocked.Increment(ref ModelEditID);
         return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("Gets the raw headers of a model as raw JSON.", "\"headers\": { \"diffusion_model.some.key\": { \"dtype\": \"BF16\", ... }, ... }")]
+    public static async Task<JObject> GetModelHeaders(Session session,
+        [API.APIParameter("Exact filepath name of the model.")] string model,
+        [API.APIParameter("The model's sub-type, eg `Stable-Diffusion`, `LoRA`, etc.")] string subtype = "Stable-Diffusion")
+    {
+        using ManyReadOneWriteLock.ReadClaim claim = Program.RefreshLock.LockRead();
+        if (!Program.T2IModelSets.TryGetValue(subtype, out T2IModelHandler handler))
+        {
+            return new JObject() { ["error"] = "Invalid sub-type." };
+        }
+        if (TryGetRefusalForModel(session, model, out JObject refusal))
+        {
+            return refusal;
+        }
+        if (!handler.Models.TryGetValue(model, out T2IModel actualModel))
+        {
+            return new JObject() { ["error"] = "Model not found." };
+        }
+        return new JObject() { ["headers"] = T2IModel.GetMetadataHeaderFrom(actualModel.RawFilePath) };
     }
 
     public static AsciiMatcher TokenTextLimiter = new(AsciiMatcher.BothCaseLetters + AsciiMatcher.Digits + " -_.,/");

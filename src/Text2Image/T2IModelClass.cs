@@ -20,6 +20,9 @@ public record class T2IModelClass
     /// <summary>Matcher, return true if the model x safetensors header is the given class, or false if not.</summary>
     public Func<T2IModel, JObject, bool> IsThisModelOfClass;
 
+    /// <summary>If true, this model class represents a LoRA type. This bool is just a minor performance tweak.</summary>
+    public bool IsLora;
+
     /// <summary>Get a networkable JObject for this model class.</summary>
     public JObject ToNetData()
     {
@@ -51,6 +54,9 @@ public record class T2IModelCompatClass
     /// <summary>If true, this class group can input an image and output video. May be over-broad.</summary>
     public bool IsImage2Video = false;
 
+    /// <summary>If true, this is a model that primarily operates on audio.</summary>
+    public bool IsAudioModel = false;
+
     /// <summary>Get a networkable JObject for this compat class.</summary>
     public JObject ToNetData()
     {
@@ -60,7 +66,8 @@ public record class T2IModelCompatClass
             ["short_code"] = ShortCode,
             ["loras_target_text_enc"] = LorasTargetTextEnc,
             ["is_text2video"] = IsText2Video,
-            ["is_image2video"] = IsImage2Video
+            ["is_image2video"] = IsImage2Video,
+            ["is_audio_model"] = IsAudioModel
         };
     }
 }

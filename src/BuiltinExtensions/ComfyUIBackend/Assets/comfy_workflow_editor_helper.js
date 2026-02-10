@@ -1,6 +1,21 @@
 /** If true, the workflow iframe is present. If false, the tab has never been opened, or loading failed. */
 let hasComfyLoaded = false;
 
+/** Helper class for managing the Comfy workflow tab. */
+class ComfyWorkflowHelpers {
+
+    constructor() {
+        this.imageBlockElem = getRequiredElementById('comfy_save_image_block');
+        let imageHtml = makeImageInput(null, 'comfy_save_image', null, 'Image', 'Image', true, false);
+        this.imageBlockElem.innerHTML = imageHtml;
+        this.imageElem = getRequiredElementById('comfy_save_image');
+        this.enableImageElem = getRequiredElementById('comfy_save_image_toggle');
+    }
+}
+
+/** Helper instance for comfy workflow save modal, just an instance of {@link ComfyWorkflowHelpers}. */
+let comfyWorkflowHelpers = new ComfyWorkflowHelpers();
+
 let comfyButtonsArea = getRequiredElementById('comfy_workflow_buttons');
 
 let comfyObjectData = {};
@@ -1090,25 +1105,21 @@ function comfyNoticeMessage(message) {
 function comfySaveWorkflowNow() {
     comfyReconfigureQuickload();
     getRequiredElementById('comfy_save_modal_replace').value = '';
-    let curImg = document.getElementById('current_image_img');
-    let enableImage = getRequiredElementById('comfy_save_use_image');
-    let saveImageSection = getRequiredElementById('comfy_save_image');
-    saveImageSection.innerHTML = '';
-    if (curImg) {
-        let newImg = curImg.cloneNode(true);
-        newImg.id = 'comfy_save_image_img';
-        newImg.style.maxWidth = '100%';
-        newImg.removeAttribute('width');
-        newImg.removeAttribute('height');
-        saveImageSection.appendChild(newImg);
-        enableImage.checked = true;
-        enableImage.disabled = false;
+    let curImg = currentImageHelper.getCurrentImage();
+    comfyWorkflowHelpers.enableImageElem.checked = false;
+    let run = () => {
+        triggerChangeFor(comfyWorkflowHelpers.enableImageElem);
+        $('#comfy_workflow_save_modal').modal('show');
+    };
+    if (curImg && curImg.tagName == 'IMG') {
+        setMediaFileDirect(comfyWorkflowHelpers.imageElem, curImg.src, 'image', 'cur', 'cur', () => {
+            comfyWorkflowHelpers.enableImageElem.checked = false;
+            run();
+        });
     }
     else {
-        enableImage.checked = false;
-        enableImage.disabled = true;
+        run();
     }
-    $('#comfy_workflow_save_modal').modal('show');
 }
 
 function comfyLoadByName(name) {
@@ -1161,45 +1172,56 @@ function comfySaveModalSaveNow() {
         }
         saveName = match.value;
     }
-    let image = null;
-    if (getRequiredElementById('comfy_save_use_image').checked) {
-        image = imageToSmallPreviewData(getRequiredElementById('comfy_save_image').getElementsByTagName('img')[0]);
-    }
-    $('#comfy_workflow_save_modal').modal('hide');
-    comfyNoticeMessage("Saving...");
-    comfyBuildParams(false, (params, prompt_text, retained, paramVal, workflow) => {
-        params = JSON.parse(JSON.stringify(params));
-        delete params.comfyworkflowparammetadata;
-        delete params.comfyworkflowraw;
-        let description = getRequiredElementById('comfy_save_description').value;
-        let simpleTab = getRequiredElementById('comfy_save_enable_simple').checked;
-        for (let node of workflow.nodes) {
-            if (node.type == 'SwarmWorkflowDescription') {
-                console.log(node);
-                description = node.widgets_values[0];
-                simpleTab = node.widgets_values[1];
-                break;
+    let doSave = (image) => {
+        $('#comfy_workflow_save_modal').modal('hide');
+        comfyNoticeMessage("Saving...");
+        comfyBuildParams(false, (params, prompt_text, retained, paramVal, workflow) => {
+            params = JSON.parse(JSON.stringify(params));
+            delete params.comfyworkflowparammetadata;
+            delete params.comfyworkflowraw;
+            let description = getRequiredElementById('comfy_save_description').value;
+            let simpleTab = getRequiredElementById('comfy_save_enable_simple').checked;
+            for (let node of workflow.nodes) {
+                if (node.type == 'SwarmWorkflowDescription') {
+                    description = node.widgets_values[0];
+                    simpleTab = node.widgets_values[1];
+                    break;
+                }
             }
-        }
-        let inputs = {
-            'name': saveName,
-            'description': description,
-            'enable_in_simple': simpleTab,
-            'workflow': JSON.stringify(workflow),
-            'prompt': prompt_text,
-            'custom_params': params,
-            'param_values': paramVal,
-            'image': image,
-            'replace': getRequiredElementById('comfy_save_modal_replace').value
-        };
-        genericRequest('ComfySaveWorkflow', inputs, (data) => {
-            comfyNoticeMessage("Saved!");
-            comfyReconfigureQuickload();
-            if (comfyWorkflowBrowser.everLoaded) {
-                comfyWorkflowBrowser.refresh();
-            }
+            let inputs = {
+                'name': saveName,
+                'description': description,
+                'enable_in_simple': simpleTab,
+                'workflow': JSON.stringify(workflow),
+                'prompt': prompt_text,
+                'custom_params': params,
+                'param_values': paramVal,
+                'image': image,
+                'replace': getRequiredElementById('comfy_save_modal_replace').value
+            };
+            genericRequest('ComfySaveWorkflow', inputs, (data) => {
+                comfyNoticeMessage("Saved!");
+                comfyReconfigureQuickload();
+                if (comfyWorkflowBrowser.everLoaded) {
+                    comfyWorkflowBrowser.refresh();
+                }
+            });
         });
-    });
+    };
+    if (comfyWorkflowHelpers.enableImageElem.checked) {
+        let imageVal = getInputVal(comfyWorkflowHelpers.imageElem);
+        if (imageVal) {
+            imageToData(imageVal, (dataURL) => {
+                doSave(dataURL);
+            }, true);
+            return;
+        }
+        else {
+            doSave('clear');
+            return;
+        }
+    }
+    doSave(null);
 }
 
 /** Cancel button in the Save modal. */

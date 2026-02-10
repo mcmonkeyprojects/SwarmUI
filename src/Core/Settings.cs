@@ -110,6 +110,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("Message to add on the login page.\nYou may use (basic!) HTML here.\nIt is recommended to add contact information here, such as a Discord invite code or an email address.")]
         public string LoginNotice = "This is a local instance not yet configured for shared usage. If you're seeing this on the login screen, ask the server owner to fill it in on the Server Configuration page.";
 
+        [ConfigComment("If true, and authorization is enabled, allow logging in to accounts with a simple username/password/combo.")]
+        public bool AllowSimplePasswordLogin = true;
+
         /// <summary>Settings related to user registration.</summary>
         public class RegistrationData : AutoConfiguration
         {
@@ -377,6 +380,9 @@ public class Settings : AutoConfiguration
 
         [ConfigComment("How many kilobytes of blank spacer to include in model headers.\nThis allows for future expansion of metadata without rewriting the entire model file.\nDefaults to 64 KiB.\nThe average header length of a standard model is already between several hundred kilobytes to a few megabytes,\nso 64 KiB is not a major increase in space but is enough to fit major metadata changes including eg adding a small jpeg thumbnail.")]
         public int ModelMetadataSpacerKilobytes = 64;
+
+        [ConfigComment("Special developmental debug tool: if true, always recheck model class when rescanning models.\nThis ignores any saved architecture in the modelspec header.\nThis is quite performance wasteful, and will undo user choices.")]
+        public bool DebugAlwaysRecheckClass = false;
     }
 
     /// <summary>Settings per-user.</summary>

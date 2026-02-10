@@ -20,7 +20,7 @@ Nothing big but when resizing images at spacific resolutions with spacific ui po
 
 # SwarmUI
 
-**SwarmUI v0.9.7 Beta**.
+**SwarmUI v0.9.8 Beta**.
 
 *Formerly known as StableSwarmUI.*
 

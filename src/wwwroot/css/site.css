@@ -45,6 +45,7 @@
 }
 .modal-content {
     background-color: var(--background) !important;
+    max-width: 100%;
 }
 @font-face {
     /* Fallback font to force all OS's to render unicode glyphs properly. */

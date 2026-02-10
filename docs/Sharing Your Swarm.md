@@ -83,6 +83,17 @@ Currently, SwarmUI is only validated to be safely usable by **Friends and Family
     - You should set the `RegisterNotice` text too
 - If enabled, when a user goes to login, there's a link to the `/Register` page they can click to register an account.
 
+## User Impersonation
+
+- Do you want to test how another user sees your Swarm install? It's easy!
+    - On the `Server` tab then `Users` subtab, click the relevant user, and there's an `Impersonate User` button
+    - This will reload the page with you fully viewing and operating as that user instead of yourself.
+    - In the `User` main tab, there is a button to `Stop Impersonating`
+        - If the User tab is inaccessible, don't worry: just open a fresh copy of the SwarmUI tab, and it will be on your own account again.
+    - This is tracked by URL, so for example `http://localhost:7801/Text2Image?impersonate=bob` makes you impersonate the user `bob`
+    - This all of course only works if your real account has the `Manage Users` permission
+- This has a bonus benefit: if you install a personal SwarmUI instance, you can enable the user system to set up separate personal work environments, and then use the Impersonate option to swap between them quickly.
+
 ## Using Shared Swarms As A Backend
 
 You can hook up someone else's shared SwarmUI instance as a backend in your own Swarm!

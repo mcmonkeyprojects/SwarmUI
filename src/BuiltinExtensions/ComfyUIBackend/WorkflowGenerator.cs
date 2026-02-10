@@ -79,6 +79,14 @@ public partial class WorkflowGenerator
     /// <summary>The output workflow object.</summary>
     public JObject Workflow;
 
+    /// <summary>Represents output data from a node.</summary>
+    public record class NodeOutData(string Node, int Index, string DataType)
+    {
+        public static string DT_IMAGE = "IMAGE", DT_LATENT_IMAGE = "LATENT_IMAGE", DT_VIDEO = "VIDEO", DT_LATENT_VIDEO = "LATENT_VIDEO", DT_AUDIO = "AUDIO", DT_LATENT_AUDIO = "LATENT_AUDIO";
+
+        public JArray Path => [Node, Index];
+    }
+
     /// <summary>Lastmost node ID for key input trackers.</summary>
     public JArray FinalModel = ["4", 0],
         FinalClip = ["4", 1],
@@ -605,6 +613,54 @@ public partial class WorkflowGenerator
         return UserInput.Get(T2IParamTypes.VideoFPS, fpsDefault);
     }
 
+    public string CreateSaveNode(NodeOutData data, string id = null)
+    {
+        if (data.DataType == NodeOutData.DT_LATENT_IMAGE)
+        {
+            string decoded = CreateVAEDecode(FinalVae, data.Path);
+            data = new NodeOutData(decoded, 0, NodeOutData.DT_IMAGE);
+        }
+        else if (data.DataType == NodeOutData.DT_LATENT_VIDEO)
+        {
+            string decoded = CreateVAEDecode(FinalVae, data.Path);
+            data = new NodeOutData(decoded, 0, NodeOutData.DT_VIDEO);
+        }
+        else if (data.DataType == NodeOutData.DT_LATENT_AUDIO)
+        {
+            // TODO: Proper function to handle this
+            string decoded = CreateNode("VAEDecodeAudio", new JObject()
+            {
+                ["vae"] = FinalAudioVae,
+                ["samples"] = data.Path
+            });
+            data = new NodeOutData(decoded, 0, NodeOutData.DT_AUDIO);
+        }
+        if (data.DataType == NodeOutData.DT_IMAGE)
+        {
+            return CreateImageSaveNode([data.Path], id);
+        }
+        else if (data.DataType == NodeOutData.DT_VIDEO)
+        {
+            return CreateAnimationSaveNode([data.Path], Text2VideoFPS(), UserInput.Get(T2IParamTypes.Text2VideoFormat, "h264-mp4"), id);
+        }
+        else if (data.DataType == NodeOutData.DT_AUDIO)
+        {
+            return CreateAudioSaveNode([data.Path], id);
+        }
+        throw new SwarmReadableErrorException($"Cannot create save node for unknown data type '{data.DataType}'.");
+    }
+
+    public string CreateAudioSaveNode(JArray audio, string id = null)
+    {
+        // TODO: SwarmSaveAudio?
+        return CreateNode("SaveAudioMP3", new JObject()
+        {
+            ["audio"] = audio,
+            ["filename_prefix"] = $"SwarmUI_{Random.Shared.Next():X4}_",
+            ["quality"] = "V0"
+        }, id);
+    }
+
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
@@ -694,22 +750,35 @@ public partial class WorkflowGenerator
     /// <summary>Creates a VAEDecode node and returns its node ID.</summary>
     public string CreateVAEDecode(JArray vae, JArray latent, string id = null, bool canAudioDecode = true)
     {
-        if (IsLTXV2() && FinalAudioVae is not null && canAudioDecode)
+        if (FinalAudioVae is not null && canAudioDecode)
         {
-            string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
+            if (IsLTXV2())
             {
-                ["av_latent"] = latent
-            });
-            FinalLatentAudio = [separated, 1];
-            string audioDecoded = CreateNode("LTXVAudioVAEDecode", new JObject()
+                string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
+                {
+                    ["av_latent"] = latent
+                });
+                FinalLatentAudio = [separated, 1];
+                string audioDecoded = CreateNode("LTXVAudioVAEDecode", new JObject()
+                {
+                    ["audio_vae"] = FinalAudioVae,
+                    ["samples"] = FinalLatentAudio
+                });
+                FinalAudioOut = [audioDecoded, 0];
+                return CreateVAEDecode(vae, [separated, 0], id, false);
+            }
+            else if (IsAceStep15())
             {
-                ["audio_vae"] = FinalAudioVae,
-                ["samples"] = FinalLatentAudio
-            });
-            FinalAudioOut = [audioDecoded, 0];
-            return CreateVAEDecode(vae, [separated, 0], id, false);
+                string audioDecoded = CreateNode("VAEDecodeAudio", new JObject()
+                {
+                    ["vae"] = FinalAudioVae,
+                    ["samples"] = latent
+                });
+                FinalAudioOut = [audioDecoded, 0];
+                return audioDecoded;
+            }
         }
-        if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
+        else if (UserInput.TryGet(T2IParamTypes.VAETileSize, out _) || UserInput.TryGet(T2IParamTypes.VAETemporalTileSize, out _))
         {
             return CreateNode("VAEDecodeTiled", new JObject()
             {
@@ -787,6 +856,11 @@ public partial class WorkflowGenerator
             }
             defsampler ??= "res_multistep";
             defscheduler ??= "karras";
+        }
+        else if (IsAnima())
+        {
+            defsampler ??= "er_sde";
+            defscheduler ??= "simple";
         }
         else if (IsHunyuanImageRefiner())
         {
@@ -2208,7 +2282,22 @@ public partial class WorkflowGenerator
         }
         bool wantsSwarmCustom = Features.Contains("variation_seed") && (needsAdvancedEncode || (UserInput.TryGet(T2IParamTypes.FluxGuidanceScale, out _) && HasFluxGuidance()) || IsHunyuanVideoSkyreels());
         JArray qwenImage;
-        if (IsSana())
+        if (IsAceStep15())
+        {
+            node = CreateNode("TextEncodeAceStepAudio1.5", new JObject()
+            {
+                ["clip"] = clip,
+                ["lyrics"] = prompt,
+                ["tags"] = UserInput.Get(T2IParamTypes.Text2AudioStyle, ""),
+                ["seed"] = UserInput.Get(T2IParamTypes.Seed, 0) + 10, // TODO: Weird that the input here needs a seed?
+                ["bpm"] = UserInput.Get(T2IParamTypes.Text2AudioBPM, 120),
+                ["duration"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120),
+                ["timesignature"] = UserInput.Get(T2IParamTypes.Text2AudioTimeSignature, "4"),
+                ["language"] = UserInput.Get(T2IParamTypes.Text2AudioLanguage, "en"),
+                ["keyscale"] = UserInput.Get(T2IParamTypes.Text2AudioKeyScale, "E minor")
+            }, id);
+        }
+        else if (IsSana())
         {
             node = CreateNode("SanaTextEncode", new JObject()
             {

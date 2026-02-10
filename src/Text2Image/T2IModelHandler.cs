@@ -609,7 +609,7 @@ public class T2IModelHandler
                 Logs.Debug($"Model {model.Name} has special format '{specialFormat}'");
             }
             string img = metaHeader?.Value<string>("modelspec.preview_image") ?? metaHeader?.Value<string>("modelspec.thumbnail") ?? metaHeader?.Value<string>("thumbnail") ?? metaHeader?.Value<string>("preview_image");
-            if (img is not null && !img.StartsWith("data:image/"))
+            if (img is not null && !img.StartsWith("data:image/") && img != "imgs/model_placeholder.jpg")
             {
                 Logs.Warning($"Ignoring image in metadata of {model.Name} '{img}'");
                 img = null;
@@ -788,6 +788,10 @@ public class T2IModelHandler
         });
         Parallel.ForEach(Directory.EnumerateFiles(actualFolder), file =>
         {
+            if (Program.GlobalProgramCancel.IsCancellationRequested)
+            {
+                return;
+            }
             string fixedFileName = file.Replace('\\', '/');
             string fn = fixedFileName.AfterLast('/');
             if (fn.StartsWithFast('.'))

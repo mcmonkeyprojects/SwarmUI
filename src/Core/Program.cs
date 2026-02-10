@@ -86,6 +86,9 @@ public class Program
     /// <summary>General data directory root.</summary>
     public static string DataDir = "Data";
 
+    /// <summary>Temporary data folder, cleared on exit.</summary>
+    public static string TempDir = "Data/tmp";
+
     /// <summary>If a version update is available, this is the message.</summary>
     public static string VersionUpdateMessage = null, VersionUpdateMessageShort = null;
 
@@ -134,6 +137,9 @@ public class Program
             SettingsFilePath = GetCommandLineFlag("settings_file", $"{DataDir}/Settings.fds");
             LoadSettingsFile();
             RebuildDataDir();
+            TempDir = Path.GetFullPath($"{DataDir}/tmp/{Environment.ProcessId}");
+            Directory.CreateDirectory(TempDir);
+            Environment.SetEnvironmentVariable("TMPDIR", TempDir);
             // TODO: Legacy format patch from Alpha 0.5! Remove this before 1.0.
             if (ServerSettings.DefaultUser.FileFormat.ImageFormat == "jpg")
             {
@@ -547,6 +553,15 @@ public class Program
         Extensions.Extensions.Clear();
         Logs.Verbose("Shutdown image metadata tracker...");
         OutputMetadataTracker.Shutdown();
+        Logs.Verbose("Clear temp folder...");
+        try
+        {
+            Directory.Delete(TempDir, true);
+        }
+        catch (Exception ex)
+        {
+            Logs.Warning($"Failed to clear temp folder: {ex.ReadableString()}");
+        }
         Logs.Info("All core shutdowns complete.");
         if (Logs.LogSaveThread is not null)
         {

@@ -164,16 +164,26 @@ function genericRequest(url, in_data, callback, depth = 0, errorHandle = null) {
             fail(genericServerErrorMsg.get());
             return;
         }
-        if (data.error_id && data.error_id == 'invalid_session_id') {
+        if (data.error_id) {
             if (depth > 3) {
                 fail(failedDepth.get());
                 return;
             }
-            console.log('Session refused, will get new one and try again.');
-            getSession(() => {
-                genericRequest(url, in_data, callback, depth + 1);
-            });
-            return;
+            if (data.error_id == 'invalid_session_id') {
+                console.log('Session refused, will get new one and try again.');
+                getSession(() => {
+                    genericRequest(url, in_data, callback, depth + 1, errorHandle);
+                });
+                return;
+            }
+            if (url == 'GetNewSession' && data.error_id == 'bad_impersonate') {
+                console.log(`Failed to impersonate user ${impersonateTargetUserId}, will clear and try again.`);
+                impersonateTargetUserId = null;
+                getSession(() => {
+                    genericRequest(url, in_data, callback, depth + 1, errorHandle);
+                });
+                return;
+            }
         }
         if (data.error) {
             console.log(`Tried making generic request ${url} but failed with error: ${data.error}`);
@@ -189,6 +199,7 @@ let lastServerVersion = null;
 let versionIsWrong = false;
 let lastSessionCheck = 0;
 let haveBadSession = false;
+let impersonateTargetUserId = new URLSearchParams(window.location.search).get('impersonate')?.trim() || null;
 
 let serverHasUpdated = translatable(`The server has updated since you opened the page, please refresh.`);
 
@@ -208,7 +219,16 @@ function getSession(callback) {
     }
     lastSessionCheck = Date.now();
     haveBadSession = true;
-    genericRequest('GetNewSession', {}, data => {
+    let inData = {};
+    let impersonateContainer = document.getElementById('impersonate_user_container');
+    if (impersonateContainer) {
+        impersonateContainer.style.display = impersonateTargetUserId ? 'block' : 'none';
+        if (impersonateTargetUserId) {
+            inData.impersonateUser = impersonateTargetUserId;
+            getRequiredElementById('impersonate_user_name').innerText = impersonateTargetUserId;
+        }
+    }
+    genericRequest('GetNewSession', inData, data => {
         haveBadSession = false;
         console.log("Session started.");
         session_id = data.session_id;
@@ -232,6 +252,15 @@ function getSession(callback) {
             callback();
         }
     });
+}
+
+function stopImpersonatingUser() {
+    if (!impersonateTargetUserId) {
+        return;
+    }
+    let url = new URL(window.location.href);
+    url.searchParams.delete('impersonate');
+    window.location.href = url.toString();
 }
 
 function sendServerDebugMessage(message) {

@@ -85,6 +85,9 @@ class SwarmClipTextEncodeAdvanced:
                         cond_arr[0] = [catted_cond, cond_arr[0][1]]
                 encoding_cache[text] = cond_arr
             result = {"pooled_output": cond_arr[0][1]["pooled_output"], "width": width, "height": height, "crop_w": 0, "crop_h": 0, "target_width": target_width, "target_height": target_height, "start_percent": start_percent, "end_percent": end_percent}
+            for k, v in cond_arr[0][1].items():
+                if k not in result:
+                    result[k] = v
             if guidance >= 0:
                 result["guidance"] = guidance
             out_cond_arr = [[cond_arr[0][0], result]]

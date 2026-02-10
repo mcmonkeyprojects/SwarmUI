@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
 using SwarmUI.Utils;
 using SwarmUI.Accounts;
@@ -70,6 +70,10 @@ public static class BasicAPIFeatures
         [API.APIParameter("Login username.")] string username,
         [API.APIParameter("Login password.")] string password)
     {
+        if (!Program.ServerSettings.UserAuthorization.AllowSimplePasswordLogin)
+        {
+            return new JObject() { ["error_id"] = "invalid_login" };
+        }
         username = SessionHandler.UsernameValidator.TrimToMatches(username).ToLowerFast();
         string ip = WebUtil.GetIPString(context);
         string userAgent = WebUtil.AllowedXForwardedForChars.TrimToMatches(context.Request.Headers.UserAgent[0] ?? "unknown");
@@ -240,7 +244,8 @@ public static class BasicAPIFeatures
             "server_id": "abc123",
             "permissions": ["permission1", "permission2"]
         """)]
-    public static async Task<JObject> GetNewSession(HttpContext context)
+    public static async Task<JObject> GetNewSession(HttpContext context,
+        [API.APIParameter("If you have an admin account with manage_users permission, specify the id of a different user to impersonate here.")] string impersonateUser = null)
     {
         User user = WebServer.GetUserFor(context);
         if (user is null)
@@ -251,6 +256,19 @@ public static class BasicAPIFeatures
         if (source.Length > 100)
         {
             source = source[..100] + "...";
+        }
+        if (impersonateUser is not null)
+        {
+            if (!user.HasPermission(Permissions.ManageUsers))
+            {
+                return new JObject() { ["error"] = "You do not have permission to impersonate other users.", ["error_id"] = "bad_impersonate" };
+            }
+            User target = Program.Sessions.GetUser(impersonateUser, false);
+            if (target is null)
+            {
+                return new JObject() { ["error"] = "The user you are trying to impersonate does not exist.", ["error_id"] = "bad_impersonate" };
+            }
+            user = target;
         }
         Session session = Program.Sessions.CreateSession(source, user.UserID);
         return new JObject()

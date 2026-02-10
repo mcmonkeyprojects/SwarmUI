@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Login";
     HtmlString notice = new(Program.ServerSettings.UserAuthorization.LoginNotice);
+    bool simpleLogin = Program.ServerSettings.UserAuthorization.AllowSimplePasswordLogin;
     bool googleOAuthLogin = Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth;
 }
 @section Header {
@@ -31,16 +32,19 @@
     @notice
 </div>
 <div class="login-form-container login-container">
-    <div class="login-input-block">
-        <span class="translate login-label">Username:</span> <input type="text" id="username_input" name="username" class="auto-text auto-text-block translate translate-no-text" placeholder="Username" autocomplete="off" value="" />
-    </div>
-    <div class="login-input-block">
-        <span class="translate login-label">Password:</span> <input type="text" id="password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Password" autocomplete="off" value="" />
-    </div>
-    <div class="login-input-block login-message-block" id="login_error_block"></div>
-    <div class="login-input-block">
-        <button type="button" class="basic-button translate" id="login_button" onclick="loginHandler.doLogin()">Login</button>
-    </div>
+    @if (simpleLogin)
+    {
+        <div class="login-input-block">
+            <span class="translate login-label">Username:</span> <input type="text" id="username_input" name="username" class="auto-text auto-text-block translate translate-no-text" placeholder="Username" autocomplete="off" value="" />
+        </div>
+        <div class="login-input-block">
+            <span class="translate login-label">Password:</span> <input type="text" id="password_input" class="auto-text auto-text-block password translate translate-no-text" placeholder="Password" autocomplete="off" value="" />
+        </div>
+        <div class="login-input-block login-message-block" id="login_error_block"></div>
+        <div class="login-input-block">
+            <button type="button" class="basic-button translate" id="login_button" onclick="loginHandler.doLogin()">Login</button>
+        </div>
+    }
     @if (googleOAuthLogin)
     {
         string pathBase = Program.ServerSettings.UserAuthorization.OAuth.OAuthReturnURL;
