@@ -1,42 +1,83 @@
 I have made this fork to add some basic functionality to the ui.
 # Added Functionality
 ## Multi image selection in history
+
 <br/>
+
 This places check boxes in the top left corner of each image in the history to allow for the easy removal of multiple images at once. 
+
 <br/>
+
 <img width="1644" height="482" alt="image" src="https://github.com/user-attachments/assets/7f8ef9e4-c673-4c8b-8743-d8c4dd4d9895" />
+
 <br/>
+
 <br/>
+
 ## Lora triger tag usability
+
 <br/>
+
 When importing loras often enough the trigger phrases section is filled with multiple tags. I have implemented the standard fuctionality available in all other interfaces to select individual tags from the list and copy them instead of copying the entire trigger phrase section. (if nothing is selected the entire section is still copied for ease of use). This works under the lora tab as well as when clicking on the active lora under the center area. The colors of the bubles should obey theming.
+
 <br/>
+
 <br/>
+
 <img width="680" height="242" alt="image" src="https://github.com/user-attachments/assets/193319d4-435b-4d96-8b49-307f0cb3a8c9" /> <img width="857" height="324" alt="image" src="https://github.com/user-attachments/assets/4a83eb80-958c-4944-bf8c-479ffa189e0e" />
+
 <br/>
+
 ## Exposed peramiters to allow for inpainting resolution setting
+
 <br/>
-This lets you set a resolution manualy for inpainting so you can do a part of an image at a higher resolution than the rest of the image or just override swarms default resolution without going into the models metadata. <img width="403" height="548" alt="image" src="https://github.com/user-attachments/assets/c46c786f-0254-42be-96eb-13562543c5ed" />
+
+This lets you set a resolution manualy for inpainting so you can do a part of an image at a higher resolution than the rest of the image or just override swarms default resolution without going into the models metadata. 
+
 <br/>
+
+<img width="403" height="548" alt="image" src="https://github.com/user-attachments/assets/c46c786f-0254-42be-96eb-13562543c5ed" />
+
+<br/>
+
 ## Pre upscale refiner 
+
 <br/>
+
 When doing upscales it is well known that you will simply amplify the errors that are already present this is somewhat offset by doing a refiner pass after the fact. However doing a refiner pass to add detail and correct mistakes before upscalling makes even the after upscale refiner even more effective. <img width="602" height="138" alt="image" src="https://github.com/user-attachments/assets/b80eb9a2-18af-494b-90ac-fa1cf06e33f1" />
+
 <br/>
+
 <br/>
+
 # FIXES:
+
 <br/>
+
 Nothing big but when resizing images at spacific resolutions with spacific ui positioning some times the center image will "jiter" or resize repeatedly over and over. This was anoying and should be fixed now. I will try to keep this repo in parody with the origional but may be a day behind.
+
 <br/>
+
 <br/>
+
 <br/>
+
 # SwarmUI
+
 <br/>
+
 *Formerly known as StableSwarmUI.*
+
 <br/>
+
 A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Stable Diffusion, Z-Image, Flux, Qwen Image, etc.*), and AI video models (*Wan, Hunyuan Video, etc.*), with plans to support eg audio and more in the future.
+
 <br/>
+
 ![ui-screenshot](.github/images/swarmui.jpg)
+
 <br/>
+
 - **Discord Community**: Join the [Discord](https://discord.gg/q2y38cqjNw) to discuss the project, get support, see announcements, etc.
 - **Announcements**: Follow the [Feature Announcements Thread](https://github.com/mcmonkeyprojects/SwarmUI/discussions/1) for updates on new features.
 - **General documentation**: [/docs folder](https://github.com/mcmonkeyprojects/SwarmUI/blob/master/docs/README.md)
