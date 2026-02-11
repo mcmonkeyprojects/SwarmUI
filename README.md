@@ -7,7 +7,10 @@ This places check boxes in the top left corner of each image in the history to a
 
 ## Lora triger tag usability
 
-When importing loras often enough the trigger phrases section is filled with multiple tags. I have implemented the standard fuctionality available in all other interfaces to select individual tags from the list and copy them instead of copying the entire trigger phrase section. (if nothing is selected the entire section is still copied for ease of use). This works under the lora tab as well as when clicking on the active lora under the center area. <img width="680" height="242" alt="image" src="https://github.com/user-attachments/assets/193319d4-435b-4d96-8b49-307f0cb3a8c9" /> <img width="857" height="324" alt="image" src="https://github.com/user-attachments/assets/4a83eb80-958c-4944-bf8c-479ffa189e0e" />
+When importing loras often enough the trigger phrases section is filled with multiple tags. I have implemented the standard fuctionality available in all other interfaces to select individual tags from the list and copy them instead of copying the entire trigger phrase section. (if nothing is selected the entire section is still copied for ease of use). This works under the lora tab as well as when clicking on the active lora under the center area. The colors of the bubles should obey theming.
+<br/>
+
+<img width="680" height="242" alt="image" src="https://github.com/user-attachments/assets/193319d4-435b-4d96-8b49-307f0cb3a8c9" /> <img width="857" height="324" alt="image" src="https://github.com/user-attachments/assets/4a83eb80-958c-4944-bf8c-479ffa189e0e" />
 
 ## Exposed peramiters to allow for inpainting resolution setting
 
