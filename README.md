@@ -26,8 +26,6 @@ Nothing big but when resizing images at spacific resolutions with spacific ui po
 
 # SwarmUI
 
-**SwarmUI v0.9.8 Beta**.
-
 *Formerly known as StableSwarmUI.*
 
 A Modular AI Image Generation Web-User-Interface, with an emphasis on making powertools easily accessible, high performance, and extensibility. Supports AI image models (*Stable Diffusion, Z-Image, Flux, Qwen Image, etc.*), and AI video models (*Wan, Hunyuan Video, etc.*), with plans to support eg audio and more in the future.
