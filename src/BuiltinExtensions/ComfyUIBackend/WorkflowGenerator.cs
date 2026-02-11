@@ -438,7 +438,7 @@ public partial class WorkflowGenerator
         return result;
     }
 
-    /// <summary>For <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/>.</summary>
+    /// <summary>For <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double, int, int, bool)"/>.</summary>
     public record class ImageMaskCropData(string BoundsNode, string CroppedMask, string MaskedLatent, string ScaledImage);
 
     /// <summary>Creates an automatic image mask-crop before sampling, to be followed by <see cref="RecompositeCropped(string, string, JArray, JArray)"/> after sampling.</summary>
@@ -450,7 +450,7 @@ public partial class WorkflowGenerator
     /// <param name="threshold">Optional minimum value threshold.</param>
     /// <param name="thresholdMax">Optional maximum value of the threshold.</param>
     /// <returns>(boundsNode, croppedMask, maskedLatent, scaledImage).</returns>
-    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1)
+    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1, int scaleWidth = 0, int scaleHeight = 0, bool canShrink = true)
     {
         if (threshold > 0)
         {
@@ -490,12 +490,14 @@ public partial class WorkflowGenerator
             ["width"] = NodePath(boundsNode, 2),
             ["height"] = NodePath(boundsNode, 3)
         });
+        int targetWidthAuto = isCustomRes ? targetX : model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth;
+        int targetHeightAuto = isCustomRes ? targetY : model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight;
         string scaledImage = CreateNode("SwarmImageScaleForMP", new JObject()
         {
             ["image"] = NodePath(croppedImage, 0),
-            ["width"] = isCustomRes ? targetX : model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth,
-            ["height"] = isCustomRes ? targetY : model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight,
-            ["can_shrink"] = true
+            ["width"] = scaleWidth > 0 ? scaleWidth : targetWidthAuto,
+            ["height"] = scaleHeight > 0 ? scaleHeight : targetHeightAuto,
+            ["can_shrink"] = canShrink
         });
         JArray encoded = DoMaskedVAEEncode(vae, [scaledImage, 0], [croppedMask, 0], null);
         return new(boundsNode, croppedMask, $"{encoded[0]}", scaledImage);

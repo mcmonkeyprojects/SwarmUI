@@ -296,36 +296,6 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 toSend["metadata"] = previewMetadata;
                 previewMetadata = null;
             }
-            // Attach current node information so frontend can display the current stage/step name.
-            try
-            {
-                if (!string.IsNullOrWhiteSpace(currentNode))
-                {
-                    toSend["node"] = currentNode;
-                    // Prefer the workflow JSON for a human-friendly node label (nodes keyed by id in the parsed workflow).
-                    if (workflowJson is not null && workflowJson.TryGetValue(currentNode, out JToken wfNodeObj))
-                    {
-                        string nodeName = wfNodeObj.Value<string>("name") ?? wfNodeObj.Value<string>("label") ?? wfNodeObj.Value<string>("title");
-                        if (!string.IsNullOrWhiteSpace(nodeName))
-                        {
-                            toSend["node_name"] = nodeName;
-                        }
-                    }
-                    else if (RawObjectInfo is not null && RawObjectInfo.TryGetValue(currentNode, out JToken nodeObj))
-                    {
-                        // Fallback: RawObjectInfo may contain type-level labels for nodes.
-                        string nodeName = nodeObj.Value<string>("label") ?? nodeObj.Value<string>("name") ?? nodeObj.Value<string>("title");
-                        if (!string.IsNullOrWhiteSpace(nodeName))
-                        {
-                            toSend["node_name"] = nodeName;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logs.Verbose($"Failed to attach node name to progress update: {ex.Message}");
-            }
             takeOutput(toSend);
         }
         try

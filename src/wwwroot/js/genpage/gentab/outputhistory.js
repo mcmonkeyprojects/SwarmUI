@@ -1,3 +1,190 @@
+let imageHistorySelected = new Set();
+let imageHistoryBulkDeleteRunning = false;
+
+function getImageHistoryEntries() {
+    let historySection = document.getElementById('imagehistorybrowser-content');
+    if (!historySection) {
+        return [];
+    }
+    return Array.from(historySection.children).filter(c => c.dataset?.name);
+}
+
+function pruneImageHistorySelectionToCurrentFiles() {
+    if (!imageHistoryBrowser?.lastFiles) {
+        return;
+    }
+    let currentFiles = new Set(imageHistoryBrowser.lastFiles.map(f => f.name));
+    for (let path of imageHistorySelected) {
+        if (!currentFiles.has(path)) {
+            imageHistorySelected.delete(path);
+        }
+    }
+}
+
+function updateImageHistoryBulkControls() {
+    let controls = document.getElementById('image_history_bulk_controls');
+    if (!controls) {
+        return;
+    }
+    let canDelete = permissions.hasPermission('user_delete_image');
+    controls.style.display = canDelete ? '' : 'none';
+    if (!canDelete) {
+        return;
+    }
+    let count = imageHistorySelected.size;
+    let countElem = document.getElementById('image_history_selected_count');
+    if (countElem) {
+        countElem.innerText = `${count} selected`;
+    }
+    let selectAllButton = document.getElementById('image_history_select_all');
+    let clearButton = document.getElementById('image_history_clear_selection');
+    let deleteButton = document.getElementById('image_history_delete_selected');
+    let anyEntries = getImageHistoryEntries().length > 0;
+    if (selectAllButton) {
+        selectAllButton.disabled = !anyEntries || imageHistoryBulkDeleteRunning;
+    }
+    if (clearButton) {
+        clearButton.disabled = count == 0 || imageHistoryBulkDeleteRunning;
+    }
+    if (deleteButton) {
+        deleteButton.disabled = count == 0 || imageHistoryBulkDeleteRunning;
+    }
+}
+
+function setImageHistorySelection(fullsrc, isSelected, entry = null) {
+    if (isSelected) {
+        imageHistorySelected.add(fullsrc);
+    }
+    else {
+        imageHistorySelected.delete(fullsrc);
+    }
+    if (!entry) {
+        entry = getImageHistoryEntries().find(e => e.dataset.name == fullsrc);
+    }
+    if (entry) {
+        entry.classList.toggle('browser-entry-selected', isSelected);
+        let checkbox = entry.querySelector('.browser-entry-checkbox');
+        if (checkbox) {
+            checkbox.checked = isSelected;
+        }
+    }
+    updateImageHistoryBulkControls();
+}
+
+function clearImageHistorySelection() {
+    imageHistorySelected.clear();
+    for (let entry of getImageHistoryEntries()) {
+        entry.classList.remove('browser-entry-selected');
+        let checkbox = entry.querySelector('.browser-entry-checkbox');
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+    }
+    updateImageHistoryBulkControls();
+}
+
+function ensureImageHistoryBulkControlsReady() {
+    let controls = document.getElementById('image_history_bulk_controls');
+    if (!controls || controls.dataset.ready) {
+        updateImageHistoryBulkControls();
+        return;
+    }
+    controls.dataset.ready = 'true';
+    getRequiredElementById('image_history_select_all').addEventListener('click', () => {
+        for (let entry of getImageHistoryEntries()) {
+            setImageHistorySelection(entry.dataset.name, true, entry);
+        }
+        updateImageHistoryBulkControls();
+    });
+    getRequiredElementById('image_history_clear_selection').addEventListener('click', () => {
+        clearImageHistorySelection();
+    });
+    getRequiredElementById('image_history_delete_selected').addEventListener('click', () => {
+        deleteSelectedHistoryImages();
+    });
+    updateImageHistoryBulkControls();
+}
+
+function removeImageFromHistoryUI(fullsrc, src, explicitEntry = null) {
+    imageHistorySelected.delete(fullsrc);
+    let historySection = document.getElementById('imagehistorybrowser-content');
+    if (historySection) {
+        let entry = explicitEntry || getImageHistoryEntries().find(e => e.dataset.name == fullsrc || e.dataset.name == src);
+        if (entry) {
+            entry.remove();
+        }
+    }
+    let currentImage = currentImageHelper.getCurrentImage();
+    if (currentImage && currentImage.dataset.src == src) {
+        setCurrentImage(null);
+    }
+    let currentBatch = document.getElementById('current_image_batch');
+    if (currentBatch) {
+        let batchEntry = Array.from(currentBatch.children).find(e => e.dataset?.src == src);
+        if (batchEntry) {
+            removeImageBlockFromBatch(batchEntry);
+        }
+    }
+    updateImageHistoryBulkControls();
+}
+
+function deleteSingleHistoryImage(fullsrc, src, explicitEntry = null, errorHandle = null) {
+    return new Promise(resolve => {
+        let onSuccess = () => {
+            removeImageFromHistoryUI(fullsrc, src, explicitEntry);
+            resolve({ success: true });
+        };
+        genericRequest('DeleteImage', { 'path': fullsrc }, onSuccess, 0, error => {
+            if (errorHandle) {
+                errorHandle(error);
+            }
+            else {
+                showError(error);
+            }
+            resolve({ success: false, error });
+        });
+    });
+}
+
+async function deleteSelectedHistoryImages() {
+    if (imageHistoryBulkDeleteRunning) {
+        return;
+    }
+    let selected = [...imageHistorySelected];
+    if (selected.length == 0) {
+        return;
+    }
+    let imgWord = selected.length == 1 ? 'image' : 'images';
+    if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm(`Are you sure you want to delete ${selected.length} ${imgWord}?\nHold shift to bypass.`)) {
+        return;
+    }
+    imageHistoryBulkDeleteRunning = true;
+    updateImageHistoryBulkControls();
+    let deleted = 0;
+    let failed = 0;
+    for (let fullsrc of selected) {
+        let src = `${getImageOutPrefix()}/${fullsrc}`;
+        let res = await deleteSingleHistoryImage(fullsrc, src, null, () => {});
+        if (res.success) {
+            deleted++;
+        }
+        else {
+            failed++;
+            console.log(`Failed to delete image '${fullsrc}': ${res.error}`);
+        }
+    }
+    imageHistoryBulkDeleteRunning = false;
+    updateImageHistoryBulkControls();
+    if (deleted > 0) {
+        imageHistoryBrowser.lightRefresh();
+    }
+    if (failed > 0) {
+        showError(`Deleted ${deleted} image(s). Failed to delete ${failed} image(s).`);
+    }
+    else if (deleted > 0) {
+        doNoticePopover(`Deleted ${deleted} image${deleted == 1 ? '' : 's'}.`, 'notice-pop-green');
+    }
+}
 
 function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     let sortBy = localStorage.getItem('image_history_sort_by') ?? 'Name';
@@ -11,6 +198,7 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
         sortBy = sortElem.value;
         reverse = sortReverseElem.checked;
         allowAnims = allowAnimsElem.checked;
+        ensureImageHistoryBulkControlsReady();
     }
     else { // first call happens before headers are built atm
         fix = () => {
@@ -31,6 +219,7 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
                 localStorage.setItem('image_history_allow_anims', allowAnimsElem.checked);
                 imageHistoryBrowser.lightRefresh();
             });
+            ensureImageHistoryBulkControlsReady();
         }
     }
     let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
@@ -55,7 +244,7 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
 
 function buttonsForImage(fullsrc, src, metadata) {
     let isDataImage = src.startsWith('data:');
-    buttons = [];
+    let buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
             label: (metadata && JSON.parse(metadata).is_starred) ? 'Unstar' : 'Star',
@@ -104,28 +293,7 @@ function buttonsForImage(fullsrc, src, metadata) {
                 if (!shifted) {
                     imageFullView.close();
                 }
-                genericRequest('DeleteImage', {'path': fullsrc}, data => {
-                    if (e) {
-                        e.remove();
-                    }
-                    let historySection = getRequiredElementById('imagehistorybrowser-content');
-                    let div = historySection.querySelector(`.image-block[data-name="${fullsrc}"]`);
-                    if (div) {
-                        div.remove();
-                    }
-                    div = historySection.querySelector(`.image-block[data-name="${src}"]`);
-                    if (div) {
-                        div.remove();
-                    }
-                    let currentImage = currentImageHelper.getCurrentImage();
-                    if (currentImage && currentImage.dataset.src == src) {
-                        setCurrentImage(null);
-                    }
-                    div = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${src}"]`);
-                    if (div) {
-                        removeImageBlockFromBatch(div);
-                    }
-                });
+                deleteSingleHistoryImage(fullsrc, src, e);
             }
         });
     }
@@ -134,6 +302,8 @@ function buttonsForImage(fullsrc, src, metadata) {
 
 function describeOutputFile(image) {
     let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
+    let canDelete = permissions.hasPermission('user_delete_image') && !image.data.src.startsWith('data:');
+    let isSelected = imageHistorySelected.has(image.data.fullsrc);
     let parsedMeta = { is_starred: false };
     if (image.data.metadata) {
         let metadata = image.data.metadata;
@@ -164,7 +334,18 @@ function describeOutputFile(image) {
     let searchable = `${image.data.name}, ${image.data.metadata}, ${image.data.fullsrc}`;
     let detail_list = [escapeHtml(image.data.name), formattedMetadata.replaceAll('<br>', '&emsp;')];
     let aspectRatio = parsedMeta.sui_image_params?.width && parsedMeta.sui_image_params?.height ? parsedMeta.sui_image_params.width / parsedMeta.sui_image_params.height : null;
-    return { name, description, buttons, 'image': imageSrc, 'dragimage': dragImage, className: parsedMeta.is_starred ? 'image-block-starred' : '', searchable, display: name, detail_list, aspectRatio };
+    let className = parsedMeta.is_starred ? 'image-block-starred' : '';
+    if (isSelected) {
+        className = `${className} browser-entry-selected`.trim();
+    }
+    let checkbox = canDelete ? {
+        checked: isSelected,
+        title: 'Select image',
+        onchange: (checked, file, div) => {
+            setImageHistorySelection(image.data.fullsrc, checked, div);
+        }
+    } : null;
+    return { name, description, buttons, checkbox, 'image': imageSrc, 'dragimage': dragImage, className, searchable, display: name, detail_list, aspectRatio };
 }
 
 function selectOutputInHistory(image, div) {
@@ -189,74 +370,13 @@ function selectOutputInHistory(image, div) {
 }
 
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
-    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> <label style="margin-left:0.5rem"><input type="checkbox" id="image_history_select_all" autocomplete="off"> Select All</label> <button id="image_history_delete_selected" class="refresh-button">Delete Selected</button>`);
-
-// Multi-select state for history browser
-let _imageHistorySelected = new Set();
-
-function _imageHistoryToggle(path, div, checked) {
-    if (checked) {
-        _imageHistorySelected.add(path);
-        div.classList.add('image-block-selected');
-    }
-    else {
-        _imageHistorySelected.delete(path);
-        div.classList.remove('image-block-selected');
-    }
-    let delBtn = document.getElementById('image_history_delete_selected');
-    if (delBtn) {
-        delBtn.disabled = _imageHistorySelected.size == 0;
-    }
-}
-
-function imageHistorySelectAll(checked) {
-    let container = document.getElementById('imagehistorybrowser-content');
-    if (!container) return;
-    for (let cb of container.querySelectorAll('.history-select-checkbox')) {
-        cb.checked = checked;
-        let div = cb.closest('.image-block');
-        if (div) {
-            let path = div.dataset.name;
-            _imageHistoryToggle(path, div, checked);
-        }
-    }
-}
-
-function imageHistoryDeleteSelected() {
-    if (_imageHistorySelected.size == 0) return;
-    if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm(`Delete ${_imageHistorySelected.size} selected images?\nHold shift to bypass.`)) return;
-    let arr = Array.from(_imageHistorySelected);
-    // Sequential delete to avoid flooding
-    function deleteNext() {
-        if (arr.length == 0) {
-            _imageHistorySelected.clear();
-            let selectAll = document.getElementById('image_history_select_all');
-            if (selectAll) selectAll.checked = false;
-            imageHistoryBrowser.lightRefresh();
-            return;
-        }
-        let path = arr.shift();
-        genericRequest('DeleteImage', {'path': path}, data => {
-            let historySection = getRequiredElementById('imagehistorybrowser-content');
-            let div = historySection.querySelector(`.image-block[data-name="${path}"]`);
-            if (div) div.remove();
-            deleteNext();
-        });
-    }
-    deleteNext();
-}
-
-// Hook up header buttons after browser is built
+    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> <span id="image_history_bulk_controls" class="image-history-bulk-controls"><span id="image_history_selected_count" class="image-history-selected-count">0 selected</span> <button id="image_history_select_all" class="refresh-button">Select All</button> <button id="image_history_clear_selection" class="refresh-button">Clear</button> <button id="image_history_delete_selected" class="interrupt-button">Delete Selected</button></span>`);
+imageHistoryBrowser.folderSelectedEvent = () => {
+    clearImageHistorySelection();
+};
 imageHistoryBrowser.builtEvent = () => {
-    let selectAll = document.getElementById('image_history_select_all');
-    if (selectAll) {
-        selectAll.onchange = (e) => imageHistorySelectAll(e.target.checked);
-    }
-    let delBtn = document.getElementById('image_history_delete_selected');
-    if (delBtn) {
-        delBtn.disabled = true;
-        delBtn.onclick = () => imageHistoryDeleteSelected();
-    }
+    pruneImageHistorySelectionToCurrentFiles();
+    updateImageHistoryBulkControls();
 };
 
 function storeImageToHistoryWithCurrentParams(img) {

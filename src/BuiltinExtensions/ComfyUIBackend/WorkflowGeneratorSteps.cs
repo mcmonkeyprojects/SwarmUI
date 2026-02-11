@@ -442,7 +442,10 @@ public class WorkflowGeneratorSteps
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
                     {
-                        g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel);
+                        g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel,
+                            scaleWidth: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPWidth, 0),
+                            scaleHeight: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPHeight, 0),
+                            canShrink: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPCanShrink, true));
                         currentMask = [g.MaskShrunkInfo.CroppedMask, 0];
                         g.FinalLatentImage = [g.MaskShrunkInfo.MaskedLatent, 0];
                     }
@@ -1283,17 +1286,38 @@ public class WorkflowGeneratorSteps
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
                 height = (height / 16) * 16;
-                // If requested, run a preliminary refiner pass on the latents before performing any pixel/latent upscale.
-                if (g.UserInput.Get(T2IParamTypes.PreRefineBeforeUpscale, false))
+                JArray model = g.FinalModel;
+                if (g.UserInput.TryGet(ComfyUIBackendExtension.RefinerHyperTile, out int tileSize))
                 {
-                    int preSteps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
-                    double preCfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
-                    int preStart = (int)Math.Round(preSteps * (1 - refinerControl));
-                    string preExplicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
-                    string preExplicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
-                    // run a KSampler on current latents and replace FinalSamples with the result
-                    g.CreateKSampler(g.FinalModel, prompt, negPrompt, g.FinalSamples, preCfg, preSteps, preStart, 10000, g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", sigmin: -1, sigmax: -1, id: "pre_refine", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false), explicitSampler: preExplicitSampler, explicitScheduler: preExplicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
-                    g.FinalSamples = ["pre_refine", 0];
+                    string hyperTileNode = g.CreateNode("HyperTile", new JObject()
+                    {
+                        ["model"] = model,
+                        ["tile_size"] = tileSize,
+                        ["swap_size"] = 2, // TODO: Do these other params matter?
+                        ["max_depth"] = 0,
+                        ["scale_depth"] = false
+                    });
+                    model = [hyperTileNode, 0];
+                }
+                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
+                string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
+                string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
+                int refinerStart = (int)Math.Round(steps * (1 - refinerControl));
+                bool refinerAddNoise = method != "StepSwapNoisy";
+                int refinerPassIndex = 0;
+                void runRefinerPass(string id)
+                {
+                    g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, refinerStart, 10000,
+                        g.UserInput.Get(T2IParamTypes.Seed) + 1 + refinerPassIndex, false, refinerAddNoise, id: id, doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
+                        explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
+                    g.FinalSamples = [id, 0];
+                    refinerPassIndex++;
+                }
+                bool doPreUpscaleRefiner = doUspcale && refinerControl > 0 && g.UserInput.Get(T2IParamTypes.RefinerPassBeforeUpscale, false);
+                if (doPreUpscaleRefiner)
+                {
+                    runRefinerPass("22");
                 }
                 if (modelMustReencode || doPixelUpscale || doSave || g.MaskShrunkInfo.BoundsNode is not null)
                 {
@@ -1412,27 +1436,7 @@ public class WorkflowGeneratorSteps
                         throw new SwarmUserErrorException($"Cannot latent-upscale for {g.CurrentCompatClass()}");
                     }
                 }
-                JArray model = g.FinalModel;
-                if (g.UserInput.TryGet(ComfyUIBackendExtension.RefinerHyperTile, out int tileSize))
-                {
-                    string hyperTileNode = g.CreateNode("HyperTile", new JObject()
-                    {
-                        ["model"] = model,
-                        ["tile_size"] = tileSize,
-                        ["swap_size"] = 2, // TODO: Do these other params matter?
-                        ["max_depth"] = 0,
-                        ["scale_depth"] = false
-                    });
-                    model = [hyperTileNode, 0];
-                }
-                int steps = g.UserInput.Get(T2IParamTypes.RefinerSteps, g.UserInput.Get(T2IParamTypes.Steps, 20, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
-                double cfg = g.UserInput.Get(T2IParamTypes.RefinerCFGScale, g.UserInput.Get(T2IParamTypes.CFGScale, 7, sectionId: T2IParamInput.SectionID_Refiner), sectionId: T2IParamInput.SectionID_Refiner);
-                string explicitSampler = g.UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSamplerParam, null);
-                string explicitScheduler = g.UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_Refiner, includeBase: false) ?? g.UserInput.Get(ComfyUIBackendExtension.RefinerSchedulerParam, null);
-                g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, (int)Math.Round(steps * (1 - refinerControl)), 10000,
-                    g.UserInput.Get(T2IParamTypes.Seed) + 1, false, method != "StepSwapNoisy", id: "23", doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
-                    explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
-                g.FinalSamples = ["23", 0];
+                runRefinerPass("23");
                 g.IsRefinerStage = false;
             }
         }, -4);

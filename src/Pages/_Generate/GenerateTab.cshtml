@@ -35,13 +35,6 @@
             <div class="tab-content" id="currentimagecontent">
                 <div class="tab-pane show active genpage-bottom-tab" style="overflow:hidden" id="Image-Result-Tab" role="tabpanel">
                     <div class="image_editor_input" id="image_editor_input" style="display:none;"></div><div class="image_editor_sizebar splitter-bar t2i-top-imageeditor-bar" id="image_editor_sizebar" style="display:none;"></div><div class="current_image drag_image_target" id="current_image"><div id="welcome_message" class="welcome_message">@(new HtmlString(Program.VersionUpdateMessage ?? (Program.ServerSettings.ShowExperimentalFeatures ? "Experimental Features are enabled. Issue reports will not be accepted." : Program.ServerSettings.UI.OverrideWelcomeMessage)))</div></div>
-                    <div id="current_generation_stage" class="current-generation-stage" style="padding:0.35rem 0.5rem;">
-                        <div id="current_generation_stage_name" style="font-size:0.9rem;color:var(--text-muted, #ddd);">&nbsp;</div>
-                        <div style="height:0.5rem;margin-top:0.25rem;background:var(--bg-muted,#2a2a2a);border-radius:4px;overflow:hidden;">
-                            <div id="current_generation_stage_bar" style="height:100%;width:0%;background:var(--accent,#4caf50);transition:width 150ms linear;"></div>
-                        </div>
-                        <div id="current_generation_stage_percent" style="font-size:0.8rem;color:var(--text-muted,#bbb);margin-top:0.15rem;">&nbsp;</div>
-                    </div>
                 </div>
                 <div id="extra_welcome_message">
                     @if (Program.ServerSettings.UserAuthorization.AuthorizationRequired && Model.User is not null && Model.User.Data.IsPasswordSetByAdmin && Model.User.UserID != SessionHandler.LocalUserID && !Model.User.HasPermission(Permissions.ManageUsers))

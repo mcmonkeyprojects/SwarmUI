@@ -121,68 +121,6 @@ class ModelsHelpers {
 /** Collection of helper functions and data related to models, just an instance of {@link ModelsHelpers}. */
 let modelsHelpers = new ModelsHelpers();
 
-// Toggle selection for a trigger phrase span (click to select/deselect)
-function toggleTriggerPhraseSelected(elem) {
-    try {
-        if (!elem) return;
-        if (elem.classList.contains('trigger-phrase-item')) {
-            elem.classList.toggle('trigger-phrase-selected');
-        }
-    }
-    catch (e) {
-        console.error('toggleTriggerPhraseSelected error', e);
-    }
-}
-
-// Copy selected trigger phrases within the same container. If none selected, copies all.
-function copySelectedTriggerPhrases(buttonElem) {
-    try {
-        let container = buttonElem && buttonElem.closest ? buttonElem.closest('.trigger-phrases-container') : null;
-        if (!container) return;
-        let selected = Array.from(container.querySelectorAll('.trigger-phrase-item.trigger-phrase-selected'));
-        if (selected.length === 0) {
-            selected = Array.from(container.querySelectorAll('.trigger-phrase-item'));
-        }
-        let phrases = selected.map(el => el.innerText.trim()).filter(s => s.length > 0);
-        let text = phrases.join(', ');
-        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', false) && text !== '' && !text.endsWith(',')) {
-            text += ', ';
-        }
-        if (text.length > 0) {
-            copyText(text);
-            doNoticePopover('Copied!', 'notice-pop-green');
-            // Clear selection after copying
-            try {
-                selected.forEach(el => el.classList.remove('trigger-phrase-selected'));
-            }
-            catch (e) {
-                console.error('Error clearing trigger phrase selections', e);
-            }
-        }
-    }
-    catch (e) {
-        console.error('copySelectedTriggerPhrases error', e);
-    }
-}
-
-// Return a compact inline style string for a phrase bubble color derived from the phrase text.
-function getTriggerPhraseStyle(phrase) {
-    try {
-        // simple hash to hue
-        let hash = 0;
-        for (let i = 0; i < phrase.length; i++) {
-            hash = (hash << 5) - hash + phrase.charCodeAt(i);
-            hash |= 0;
-        }
-        let hue = Math.abs(hash) % 360;
-        // expose only hue as a CSS variable; CSS will compute background/border/color
-        return `--tp-hue:${hue};`;
-    }
-    catch (e) {
-        return '';
-    }
-}
-
 //////////// TODO: Merge all the below into the class above (or multiple separate classes)
 
 let models = {};
@@ -513,6 +451,37 @@ function cleanModelName(name) {
     return name.endsWith('.safetensors') ? name.substring(0, name.length - '.safetensors'.length) : name;
 }
 
+function toggleTriggerPhraseTag(elem) {
+    elem.classList.toggle('trigger-phrase-tag-selected');
+}
+
+function copyTriggerPhraseSelection(button) {
+    let phraseEntry = button.closest('.trigger-phrase-entry');
+    if (!phraseEntry) {
+        return;
+    }
+    let allTags = [...phraseEntry.querySelectorAll('.trigger-phrase-tag')];
+    if (allTags.length == 0) {
+        return;
+    }
+    let selectedTags = allTags.filter(tag => tag.classList.contains('trigger-phrase-tag-selected'));
+    let tagsToCopy = (selectedTags.length > 0 ? selectedTags : allTags)
+        .map(tag => decodeURIComponent(tag.dataset.phraseTag || ''))
+        .filter(tag => tag.length > 0);
+    if (tagsToCopy.length == 0) {
+        return;
+    }
+    let copyValue = tagsToCopy.join(', ');
+    if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', false) && !copyValue.endsWith(',')) {
+        copyValue += ', ';
+    }
+    copyText(copyValue);
+    for (let tag of allTags) {
+        tag.classList.remove('trigger-phrase-tag-selected');
+    }
+    doNoticePopover('Copied!', 'notice-pop-green');
+}
+
 class ModelBrowserWrapper {
     constructor(subType, subIds, container, id, selectOne, extraHeader = '') {
         this.subType = subType;
@@ -676,32 +645,27 @@ class ModelBrowserWrapper {
         this.browser.update();
     }
 
+    createTriggerPhraseTag(tag) {
+        let encodedTag = encodeURIComponent(tag);
+        return `<span class="trigger-phrase-tag" data-phrase-tag="${encodedTag}" onclick="toggleTriggerPhraseTag(this)" title="Click to select this tag for copying">${escapeHtml(tag)}</span>`;
+    }
+
     createCopyableTriggerPhrase(phrase) {
-        let copyPhrase = phrase;
-        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', false) && !phrase.endsWith(',')) {
-          copyPhrase += ', ';
+        let tags = phrase.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        if (tags.length == 0) {
+            tags = [phrase.trim()].filter(tag => tag.length > 0);
         }
-        let safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
-        let safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
-                // Render phrase as a selectable span only (individual copy button removed).
-                // Selection state is toggled by clicking the span.
-                let style = getTriggerPhraseStyle(phrase);
-                return `<span class="trigger-phrase-item" style="${style}" onclick="toggleTriggerPhraseSelected(this)">${safePhrase}</span>`;
+        let renderedTags = tags.map(tag => this.createTriggerPhraseTag(tag)).join('<span class="trigger-phrase-separator">, </span>');
+        return `<span class="trigger-phrase-entry">${renderedTags}<button title="Copy selected tags (or all if none selected)" class="basic-button trigger-phrase-copy-button" onclick="copyTriggerPhraseSelection(this)">&#x29C9;</button></span>`;
     }
 
     formatTriggerPhrases(val) {
-        // Support both semicolon and comma separated lists. Split on either and trim.
-        let phrases = val.split(/[;,]/).map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
+        let phrases = val.split(';').map(phrase => phrase.trim()).filter(phrase => phrase.length > 0);
         if (phrases.length > 128) {
             phrases = phrases.slice(0, 128);
         }
-        // Join phrases with a visible comma separator so each value is individually selectable.
-        let inner = phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('<span class="trigger-phrase-sep">, </span>');
-        return `<div class="trigger-phrases-container">${inner}<button title="Copy selected phrases" class="basic-button trigger-phrase-copy-all-button" onclick="copySelectedTriggerPhrases(this)">&#x2398;</button></div>`;
+        return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('<br>');
     }
-
-    // Toggle selection state for a trigger phrase element
-    
 
     describeModel(model) {
         let description = '';
