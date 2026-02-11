@@ -1,3 +1,29 @@
+I have made this fork to add some basic functionality to the ui.
+# Added Functionality
+## Multi image selection in history
+
+This places check boxes in the top left corner of each image in the history to allow for the easy removal of multiple images at once. <img width="1644" height="482" alt="image" src="https://github.com/user-attachments/assets/7f8ef9e4-c673-4c8b-8743-d8c4dd4d9895" />
+
+
+## Lora triger tag usability
+
+When importing loras often enough the trigger phrases section is filled with multiple tags. I have implemented the standard fuctionality available in all other interfaces to select individual tags from the list and copy them instead of copying the entire trigger phrase section. (if nothing is selected the entire section is still copied for ease of use). This works under the lora tab as well as when clicking on the active lora under the center area. <img width="680" height="242" alt="image" src="https://github.com/user-attachments/assets/193319d4-435b-4d96-8b49-307f0cb3a8c9" /> <img width="857" height="324" alt="image" src="https://github.com/user-attachments/assets/4a83eb80-958c-4944-bf8c-479ffa189e0e" />
+
+## Exposed peramiters to allow for inpainting resolution setting
+
+This lets you set a resolution manualy for inpainting so you can do a part of an image at a higher resolution than the rest of the image or just override swarms default resolution without going into the models metadata. <img width="403" height="548" alt="image" src="https://github.com/user-attachments/assets/c46c786f-0254-42be-96eb-13562543c5ed" />
+
+## Pre upscale refiner 
+
+When doing upscales it is well known that you will simply amplify the errors that are already present this is somewhat offset by doing a refiner pass after the fact. However doing a refiner pass to add detail and correct mistakes before upscalling makes even the after upscale refiner even more effective. <img width="602" height="138" alt="image" src="https://github.com/user-attachments/assets/b80eb9a2-18af-494b-90ac-fa1cf06e33f1" />
+
+
+# FIXES:
+
+Nothing big but when resizing images at spacific resolutions with spacific ui positioning some times the center image will "jiter" or resize repeatedly over and over. This was anoying and should be fixed now. I will try to keep this repo in parody with the origional but may be a day behind.
+
+
+
 # SwarmUI
 
 **SwarmUI v0.9.8 Beta**.
