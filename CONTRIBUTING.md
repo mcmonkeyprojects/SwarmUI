@@ -2,8 +2,6 @@
 
 Please open an Issue or Discussion, or ask on [Discord](https://discord.gg/q2y38cqjNw) before opening a pull request, to make sure your work doesn't overlap with others, and to ensure you don't spend time working on an idea that doesn't make sense or can't be pulled.
 
-(TODO: More general contributing info)
-
 ## Extensions
 
 Want to make something out of scope for Swarm's core systems? Make an extension! See the [Making Extensions Doc](/docs/Making%20Extensions.md)
@@ -26,6 +24,17 @@ When writing a pull request, you are expected:
 Pull Requests from newer contributors that are not directly addressing an issue with the `Easy PR` label may be closed without warning or reason. Frequent contributors may take issues that do not have that label. Only trusted maintainers should make code changes not related to a listed issue.
 
 Pull Requests should seek to solve exactly one problem at a time. Do not combine several different things into one PR, please submit those separately.
+
+## Git
+
+If you're new to git, here's some tips:
+- Look up some general guides on how git works to get familiarity with the basic ideas.
+    - It's not hard to use at all, but it has a lot of new words to learn, yknow?
+- Use [GitHub Desktop](<https://github.com/apps/desktop>), a friendly and clear UI for git management
+    - Some wackjobs will tell you to use command line. Absolutely do not. Even if you're pro, CLI is a bad idea for general git management.
+- Always look over the pending changes before committing
+- Always work from a branch, never from master.
+- On the GitHub PR submission page, when you get review comments, look on the `Files Changed` tab specifically, that properly shows your edits and any comments on it in context, with past comments auto-hidden.
 
 ## C#
 
