@@ -423,6 +423,9 @@ class GenPageBrowserClass {
                 break;
             }
             let div = createDiv(null, `${desc.className}`);
+            if (desc.checkbox) {
+                div.classList.add('browser-entry-has-checkbox');
+            }
             let popoverId = `${this.id}-${id}`;
             if (desc.buttons.length > 0) {
                 let menuDiv = createDiv(`popover_${popoverId}`, 'sui-popover sui_popover_model');
@@ -457,6 +460,28 @@ class GenPageBrowserClass {
                 this.select(file, div);
             });
             div.appendChild(img);
+            if (desc.checkbox) {
+                let checkboxWrap = createSpan(null, 'browser-entry-checkbox-wrap');
+                checkboxWrap.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                let checkbox = document.createElement('input');
+                checkbox.className = 'browser-entry-checkbox';
+                checkbox.type = 'checkbox';
+                checkbox.checked = !!desc.checkbox.checked;
+                checkbox.title = desc.checkbox.title || 'Select';
+                checkbox.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                checkbox.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    if (desc.checkbox.onchange) {
+                        desc.checkbox.onchange(checkbox.checked, file, div, checkbox);
+                    }
+                });
+                checkboxWrap.appendChild(checkbox);
+                div.appendChild(checkboxWrap);
+            }
             if (this.format.includes('Cards')) {
                 div.className += ' model-block model-block-hoverable';
                 if (this.format.startsWith('Small')) { div.classList.add('model-block-small'); }

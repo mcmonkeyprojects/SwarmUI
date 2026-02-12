@@ -251,6 +251,32 @@ body {
     display: inline-block;
     cursor: pointer;
 }
+.browser-entry-has-checkbox {
+    position: relative;
+}
+.browser-entry-checkbox-wrap {
+    position: absolute;
+    top: 0.15rem;
+    left: 0.2rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    z-index: 4;
+    border-radius: 0.2rem;
+    background-color: color-mix(in srgb, var(--background) 65%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.browser-entry-checkbox {
+    margin: 0;
+    width: 0.95rem;
+    height: 0.95rem;
+    cursor: pointer;
+}
+.browser-entry-selected {
+    outline: 2px solid var(--box-selected-border-stronger);
+    background-color: color-mix(in srgb, var(--box-selected-background) 70%, transparent);
+}
 .image-block img, .img-block video {
     display: block;
     margin: auto;
@@ -575,6 +601,24 @@ body {
 .refresh-button:disabled {
     background-color: var(--button-background-disabled);
     color: var(--button-foreground-disabled);
+}
+.image-history-bulk-controls {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-left: 0.5rem;
+    gap: 0.2rem;
+}
+.image-history-selected-count {
+    min-width: 5.5rem;
+    text-align: center;
+    font-size: 90%;
+}
+#image_history_delete_selected.interrupt-button {
+    min-width: auto;
+    margin-left: 0.2rem;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
 }
 .tool-container .tool {
     display: none;
