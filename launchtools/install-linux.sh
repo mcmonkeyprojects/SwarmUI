@@ -33,4 +33,4 @@ cd ..
 rm ./launchtools/dotnet-install.sh
 
 # Launch
-./launch-linux.sh $@
+./launch-linux.sh "$@"

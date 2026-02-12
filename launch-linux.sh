@@ -14,13 +14,13 @@ if [ "$1" == "--forward_restart" ]; then
 fi
 
 # Actual runner.
-./src/bin/live_release/SwarmUI $@
+./src/bin/live_release/SwarmUI "$@"
 
 # Exit code 42 means restart, anything else = don't.
 if [ $? == 42 ]; then
     if [ "$FORWARD_RESTART" == "true" ]; then
         exit 42
     else
-        exec ./launch-linux.sh $@
+        exec ./launch-linux.sh "$@"
     fi
 fi

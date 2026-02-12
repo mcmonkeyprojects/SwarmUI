@@ -15,8 +15,8 @@ docker run -it \
     --user $UID:$(id -g) --cap-drop=ALL \
     --name swarmui \
     -v "$PWD:/SwarmUI" \
-    --gpus=all -p 7801:7801 swarmui --forward_restart $@
+    --gpus=all -p 7801:7801 swarmui --forward_restart "$@"
 
 if [ $? == 42 ]; then
-    exec "$SCRIPT_DIR/launch-open-docker.sh" $@
+    exec "$SCRIPT_DIR/launch-open-docker.sh" "$@"
 fi
