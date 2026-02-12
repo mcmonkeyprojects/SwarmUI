@@ -451,6 +451,37 @@ function cleanModelName(name) {
     return name.endsWith('.safetensors') ? name.substring(0, name.length - '.safetensors'.length) : name;
 }
 
+function toggleTriggerPhraseTag(elem) {
+    elem.classList.toggle('trigger-phrase-tag-selected');
+}
+
+function copyTriggerPhraseSelection(button) {
+    let phraseEntry = button.closest('.trigger-phrase-entry');
+    if (!phraseEntry) {
+        return;
+    }
+    let allTags = [...phraseEntry.querySelectorAll('.trigger-phrase-tag')];
+    if (allTags.length == 0) {
+        return;
+    }
+    let selectedTags = allTags.filter(tag => tag.classList.contains('trigger-phrase-tag-selected'));
+    let tagsToCopy = (selectedTags.length > 0 ? selectedTags : allTags)
+        .map(tag => decodeURIComponent(tag.dataset.phraseTag || ''))
+        .filter(tag => tag.length > 0);
+    if (tagsToCopy.length == 0) {
+        return;
+    }
+    let copyValue = tagsToCopy.join(', ');
+    if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', false) && !copyValue.endsWith(',')) {
+        copyValue += ', ';
+    }
+    copyText(copyValue);
+    for (let tag of allTags) {
+        tag.classList.remove('trigger-phrase-tag-selected');
+    }
+    doNoticePopover('Copied!', 'notice-pop-green');
+}
+
 class ModelBrowserWrapper {
     constructor(subType, subIds, container, id, selectOne, extraHeader = '') {
         this.subType = subType;
@@ -614,14 +645,18 @@ class ModelBrowserWrapper {
         this.browser.update();
     }
 
+    createTriggerPhraseTag(tag) {
+        let encodedTag = encodeURIComponent(tag);
+        return `<span class="trigger-phrase-tag" data-phrase-tag="${encodedTag}" onclick="toggleTriggerPhraseTag(this)" title="Click to select this tag for copying">${escapeHtml(tag)}</span>`;
+    }
+
     createCopyableTriggerPhrase(phrase) {
-        let copyPhrase = phrase;
-        if (getUserSetting('ui.copytriggerphrasewithtrailingcomma', false) && !phrase.endsWith(',')) {
-          copyPhrase += ', ';
+        let tags = phrase.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        if (tags.length == 0) {
+            tags = [phrase.trim()].filter(tag => tag.length > 0);
         }
-        let safePhrase = escapeHtmlNoBr(escapeJsString(phrase));
-        let safeCopyPhrase = escapeHtmlNoBr(escapeJsString(copyPhrase));
-        return `${safePhrase}<button title="Click to copy" class="basic-button trigger-phrase-copy-button" onclick="copyText('${safeCopyPhrase}');doNoticePopover('Copied!', 'notice-pop-green');">&#x29C9;</button>`;
+        let renderedTags = tags.map(tag => this.createTriggerPhraseTag(tag)).join('<span class="trigger-phrase-separator">, </span>');
+        return `<span class="trigger-phrase-entry">${renderedTags}<button title="Copy selected tags (or all if none selected)" class="basic-button trigger-phrase-copy-button" onclick="copyTriggerPhraseSelection(this)">&#x29C9;</button></span>`;
     }
 
     formatTriggerPhrases(val) {
@@ -629,7 +664,7 @@ class ModelBrowserWrapper {
         if (phrases.length > 128) {
             phrases = phrases.slice(0, 128);
         }
-        return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('');
+        return phrases.map(phrase => this.createCopyableTriggerPhrase(phrase)).join('<br>');
     }
 
     describeModel(model) {
