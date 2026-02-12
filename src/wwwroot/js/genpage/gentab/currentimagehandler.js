@@ -756,7 +756,106 @@ function toggleStar(path, rawSrc) {
     });
 }
 
-defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
+function getSaveInputFromMetadata(metadata) {
+    let fallback = getGenInput();
+    fallback.donotsave = false;
+    fallback.images = 1;
+    if (!metadata) {
+        return fallback;
+    }
+    try {
+        let readable = interpretMetadata(metadata);
+        let metaObj = readable ? JSON.parse(readable) : null;
+        if (!metaObj?.sui_image_params || typeof metaObj.sui_image_params != 'object') {
+            return fallback;
+        }
+        let input = { ...metaObj.sui_image_params };
+        input.donotsave = false;
+        input.images = 1;
+        if (metaObj.sui_extra_data && typeof metaObj.sui_extra_data == 'object' && !Array.isArray(metaObj.sui_extra_data)) {
+            input.extra_metadata = { ...metaObj.sui_extra_data };
+        }
+        return input;
+    }
+    catch (e) {
+        console.log(`Failed to parse metadata for manual save, using current params instead: ${e}`);
+        return fallback;
+    }
+}
+
+function saveCurrentImageToHistory(img, button = null) {
+    if (!img || img.tagName != 'IMG') {
+        showError('Manual save is only supported for images.');
+        return;
+    }
+    if (button?.dataset.saving == 'true') {
+        return;
+    }
+    if (button) {
+        button.dataset.saving = 'true';
+        button.disabled = true;
+    }
+    let oldSrc = img.dataset.src || img.src;
+    let batchId = img.dataset.batch_id || '';
+    let requestData = getSaveInputFromMetadata(img.dataset.metadata || currentMetadataVal || '');
+    let releaseButton = () => {
+        if (!button) {
+            return;
+        }
+        delete button.dataset.saving;
+        button.disabled = false;
+    };
+    let finish = (imageData) => {
+        requestData.image = imageData;
+        genericRequest('AddImageToHistory', requestData, res => {
+            releaseButton();
+            if (!res || res.error) {
+                showError(res?.error || 'Failed to save image.');
+                return;
+            }
+            let saved = res.images?.[0];
+            if (!saved?.image) {
+                showError('Image save did not return an output file.');
+                return;
+            }
+            let savedMetadata = saved.metadata || img.dataset.metadata || currentMetadataVal || '{}';
+            setCurrentImage(saved.image, savedMetadata, batchId);
+            let batchContainer = document.getElementById('current_image_batch');
+            if (batchContainer) {
+                for (let block of batchContainer.getElementsByClassName('image-block')) {
+                    if (block.dataset.src == oldSrc) {
+                        block.dataset.src = saved.image;
+                        block.dataset.metadata = savedMetadata;
+                        let blockImg = block.querySelector('img');
+                        if (blockImg) {
+                            blockImg.src = saved.image;
+                        }
+                    }
+                }
+            }
+            if (imageFullView.isOpen() && imageFullView.currentSrc == oldSrc) {
+                let state = imageFullView.copyState();
+                imageFullView.showImage(saved.image, savedMetadata, imageFullView.currentBatchId);
+                imageFullView.pasteState(state);
+            }
+            if (typeof imageHistoryBrowser !== 'undefined' && imageHistoryBrowser?.lightRefresh) {
+                imageHistoryBrowser.lightRefresh();
+            }
+            doNoticePopover('Saved image and metadata.', 'notice-pop-green');
+        }, 0, error => {
+            releaseButton();
+            showError(error);
+        });
+    };
+    if (img.src.startsWith('data:')) {
+        finish(img.src);
+    }
+    else {
+        toDataURL(img.src, finish);
+    }
+}
+
+defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters,Save Image';
 
 function getImageFullSrc(src) {
     if (src == null) {
@@ -897,6 +996,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
     if (buttonsChoice == '') {
         buttonsChoice = defaultButtonChoices;
+    }
+    else if (buttonsChoice.toLowerCase().replaceAll(' ', '') == 'useasinit,editimage,star,reuseparameters') {
+        buttonsChoice = `${buttonsChoice},Save Image`;
     }
     let buttonDefs = {};
     let subButtons = [];
@@ -1095,6 +1197,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
     }
     includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
+    if (!isVideo && !isAudio) {
+        includeButton('Save Image', button => saveCurrentImageToHistory(img, button), '', 'Saves this image and metadata into history. Useful when Do Not Save is enabled.');
+    }
     if (!isDataImage) {
         includeButton('View In History', () => {
             let folder = imagePathClean;
