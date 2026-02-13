@@ -442,7 +442,10 @@ public class WorkflowGeneratorSteps
                 {
                     if (g.UserInput.TryGet(T2IParamTypes.MaskShrinkGrow, out int shrinkGrow))
                     {
-                        g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel);
+                        g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.FinalInputImage, shrinkGrow, g.FinalVae, g.FinalLoadedModel,
+                            scaleWidth: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPWidth, 0),
+                            scaleHeight: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPHeight, 0),
+                            canShrink: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPCanShrink, true));
                         currentMask = [g.MaskShrunkInfo.CroppedMask, 0];
                         g.FinalLatentImage = [g.MaskShrunkInfo.MaskedLatent, 0];
                     }

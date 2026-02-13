@@ -788,11 +788,7 @@ function saveCurrentImageToHistory(img, button = null) {
         showError('Manual save is only supported for images.');
         return;
     }
-    if (button?.dataset.saving == 'true') {
-        return;
-    }
     if (button) {
-        button.dataset.saving = 'true';
         button.disabled = true;
     }
     let oldSrc = img.dataset.src || img.src;
@@ -802,17 +798,12 @@ function saveCurrentImageToHistory(img, button = null) {
         if (!button) {
             return;
         }
-        delete button.dataset.saving;
         button.disabled = false;
     };
     let finish = (imageData) => {
         requestData.image = imageData;
         genericRequest('AddImageToHistory', requestData, res => {
             releaseButton();
-            if (!res || res.error) {
-                showError(res?.error || 'Failed to save image.');
-                return;
-            }
             let saved = res.images?.[0];
             if (!saved?.image) {
                 showError('Image save did not return an output file.');
@@ -838,21 +829,14 @@ function saveCurrentImageToHistory(img, button = null) {
                 imageFullView.showImage(saved.image, savedMetadata, imageFullView.currentBatchId);
                 imageFullView.pasteState(state);
             }
-            if (typeof imageHistoryBrowser !== 'undefined' && imageHistoryBrowser?.lightRefresh) {
-                imageHistoryBrowser.lightRefresh();
-            }
+            imageHistoryBrowser.lightRefresh();
             doNoticePopover('Saved image and metadata.', 'notice-pop-green');
         }, 0, error => {
             releaseButton();
             showError(error);
         });
     };
-    if (img.src.startsWith('data:')) {
-        finish(img.src);
-    }
-    else {
-        toDataURL(img.src, finish);
-    }
+    finish(img.src);
 }
 
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters,Save Image';
@@ -996,9 +980,6 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
     if (buttonsChoice == '') {
         buttonsChoice = defaultButtonChoices;
-    }
-    else if (buttonsChoice.toLowerCase().replaceAll(' ', '') == 'useasinit,editimage,star,reuseparameters') {
-        buttonsChoice = `${buttonsChoice},Save Image`;
     }
     let buttonDefs = {};
     let subButtons = [];
@@ -1197,7 +1178,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }, (metaParsed.is_starred ? ' star-button button-starred-image' : ' star-button'), 'Toggles this image as starred - starred images get moved to a separate folder and highlighted');
     }
     includeButton('Reuse Parameters', copy_current_image_params, '', 'Copies the parameters used to generate this image to the current generation settings');
-    if (!isVideo && !isAudio) {
+    if (isDataImage && !isVideo && !isAudio) {
         includeButton('Save Image', button => saveCurrentImageToHistory(img, button), '', 'Saves this image and metadata into history. Useful when Do Not Save is enabled.');
     }
     if (!isDataImage) {
