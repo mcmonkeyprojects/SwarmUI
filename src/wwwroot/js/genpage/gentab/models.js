@@ -351,12 +351,12 @@ function edit_model_load_civitai() {
         return;
     }
     let [id, versId] = modelDownloader.parseCivitaiUrl(url);
-    if (!id) {
+    if (!id && !versId) {
         info.innerText = 'Invalid URL.';
         return;
     }
     info.innerText = 'Loading...';
-    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, errMsg) => {
+    modelDownloader.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs, errMsg) => {
         if (!rawData) {
             info.innerText = `Failed to load metadata. ${(errMsg ?? '')}`;
             return;
