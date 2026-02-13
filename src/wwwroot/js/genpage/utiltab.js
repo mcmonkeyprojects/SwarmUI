@@ -247,6 +247,19 @@ class ModelDownloaderUtil {
         let doError = (msg = null) => {
             callback(null, null, null, null, null, null, null, msg);
         }
+        if (!id && versId) {
+            genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/model-versions/${versId}` }, (rawData) => {
+                rawData = rawData.response;
+                if (!rawData || !rawData.modelId) {
+                    doError();
+                    return;
+                }
+                this.getCivitaiMetadata(rawData.modelId, versId, callback, identifier, validateSafe);
+            }, 0, () => {
+                doError();
+            });
+            return;
+        }
         genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
             rawData = rawData.response;
             if (!rawData) {
@@ -375,6 +388,12 @@ class ModelDownloaderUtil {
             else {
                 return [parts[1], null];
             }
+        }
+        if (parts[0] == 'api' && parts[1] == 'download' && parts[2] == 'models' && parts.length >= 4) {
+            return [null, splitWithTail(parts[3], '?', 2)[0]];
+        }
+        if (parts[0] == 'api' && parts[1] == 'v1' && parts[2] == 'model-versions' && parts.length >= 4) {
+            return [null, splitWithTail(parts[3], '?', 2)[0]];
         }
         return [null, null];
     }
