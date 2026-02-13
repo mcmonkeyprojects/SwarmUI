@@ -829,7 +829,7 @@ function saveCurrentImageToHistory(img, button = null) {
                 imageFullView.showImage(saved.image, savedMetadata, imageFullView.currentBatchId);
                 imageFullView.pasteState(state);
             }
-            imageHistoryBrowser.lightRefresh();
+            imageHistoryBrowser.refresh();
             doNoticePopover('Saved image and metadata.', 'notice-pop-green');
         }, 0, error => {
             releaseButton();
