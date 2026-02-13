@@ -235,3 +235,11 @@ WhatTheDuck:
     tags:
     - tools
     - conflicts
+
+DownloaderHelper:
+    author: Juan Treminio
+    description: Allows sending model download URLs directly to the SwarmUI Model Downloader page from a "Send to SwarmUI" right-click menu item in Chrome Web Browser. See README for instructions on installing the Chrome extension.
+    url: https://github.com/jtreminio/SwarmUI-DownloaderHelper
+    license: MIT
+    tags:
+    - tools
