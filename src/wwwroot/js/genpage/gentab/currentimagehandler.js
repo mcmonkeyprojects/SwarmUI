@@ -800,6 +800,52 @@ function saveCurrentImageToHistory(img, button = null) {
         }
         button.disabled = false;
     };
+    let waitForHistoryToContain = (savedPath) => {
+        if (typeof imageHistoryBrowser === 'undefined') {
+            return;
+        }
+        let expected = getImageFullSrc(savedPath);
+        if (!expected) {
+            return;
+        }
+        let attempts = 0;
+        let maxAttempts = 8;
+        let hasExpected = () => {
+            if (!imageHistoryBrowser?.lastFiles) {
+                return false;
+            }
+            for (let file of imageHistoryBrowser.lastFiles) {
+                if (!file) {
+                    continue;
+                }
+                if (file.name == expected) {
+                    return true;
+                }
+                let fileSrc = file.data?.fullsrc || file.data?.src || file.name;
+                if (getImageFullSrc(fileSrc) == expected) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        let tryRefresh = () => {
+            if (hasExpected()) {
+                return;
+            }
+            attempts++;
+            if (attempts <= 6 && imageHistoryBrowser?.lightRefresh) {
+                imageHistoryBrowser.lightRefresh();
+            }
+            else if (imageHistoryBrowser?.refresh) {
+                imageHistoryBrowser.refresh();
+            }
+            if (attempts < maxAttempts) {
+                let delay = attempts < 4 ? 250 : 500;
+                setTimeout(tryRefresh, delay);
+            }
+        };
+        setTimeout(tryRefresh, 100);
+    };
     let finish = (imageData) => {
         requestData.image = imageData;
         genericRequest('AddImageToHistory', requestData, res => {
