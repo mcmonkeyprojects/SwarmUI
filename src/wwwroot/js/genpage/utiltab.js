@@ -389,10 +389,8 @@ class ModelDownloaderUtil {
                 return [parts[1], null];
             }
         }
-        if (parts[0] == 'api' && parts[1] == 'download' && parts[2] == 'models' && parts.length >= 4) {
-            return [null, splitWithTail(parts[3], '?', 2)[0]];
-        }
-        if (parts[0] == 'api' && parts[1] == 'v1' && parts[2] == 'model-versions' && parts.length >= 4) {
+        if ((parts[0] == 'api' && parts[1] == 'download' && parts[2] == 'models' && parts.length >= 4) ||
+            (parts[0] == 'api' && parts[1] == 'v1' && parts[2] == 'model-versions' && parts.length >= 4)) {
             return [null, splitWithTail(parts[3], '?', 2)[0]];
         }
         return [null, null];
