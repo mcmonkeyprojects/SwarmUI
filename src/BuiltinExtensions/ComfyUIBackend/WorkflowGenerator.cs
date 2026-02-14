@@ -450,7 +450,7 @@ public partial class WorkflowGenerator
     /// <param name="threshold">Optional minimum value threshold.</param>
     /// <param name="thresholdMax">Optional maximum value of the threshold.</param>
     /// <returns>(boundsNode, croppedMask, maskedLatent, scaledImage).</returns>
-    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1, int scaleWidth = 0, int scaleHeight = 0, bool canShrink = true)
+    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1)
     {
         if (threshold > 0)
         {
