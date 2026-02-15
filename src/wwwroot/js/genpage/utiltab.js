@@ -247,6 +247,19 @@ class ModelDownloaderUtil {
         let doError = (msg = null) => {
             callback(null, null, null, null, null, null, null, msg);
         }
+        if (!id && versId) {
+            genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/model-versions/${versId}` }, (rawData) => {
+                rawData = rawData.response;
+                if (!rawData || !rawData.modelId) {
+                    doError();
+                    return;
+                }
+                this.getCivitaiMetadata(rawData.modelId, versId, callback, identifier, validateSafe);
+            }, 0, () => {
+                doError();
+            });
+            return;
+        }
         genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/models/${id}` }, (rawData) => {
             rawData = rawData.response;
             if (!rawData) {
@@ -261,7 +274,8 @@ class ModelDownloaderUtil {
             if (versId) {
                 for (let vers of rawData.modelVersions) {
                     for (let vFile of vers.files) {
-                        if (vFile.downloadUrl.endsWith(`/${versId}`)) {
+                        // ignore type=Model&format=SafeTensor
+                        if (splitWithTail(vFile.downloadUrl || '', '?', 2)[0].endsWith(`/${versId}`)) {
                             rawVersion = vers;
                             file = vFile;
                             break;
@@ -374,6 +388,10 @@ class ModelDownloaderUtil {
             else {
                 return [parts[1], null];
             }
+        }
+        if ((parts[0] == 'api' && parts[1] == 'download' && parts[2] == 'models' && parts.length >= 4) ||
+            (parts[0] == 'api' && parts[1] == 'v1' && parts[2] == 'model-versions' && parts.length >= 4)) {
+            return [null, splitWithTail(parts[3], '?', 2)[0]];
         }
         return [null, null];
     }
@@ -518,10 +536,23 @@ class ModelDownloaderUtil {
                 this.nameInput();
                 return;
             }
-            if (parts[0] == 'api' && parts[1] == 'download' && parts[2] == 'models') {
-                this.urlStatusArea.innerText = "URL appears to be a valid CivitAI download link.";
+            if ((parts[0] == 'api' && parts[1] == 'download' && parts[2] == 'models')
+                || (parts[0] == 'api' && parts[1] == 'v1' && parts[2] == 'model-versions')) {
+                let versId = splitWithTail(parts[3] || '', '?', 2)[0];
+                this.urlStatusArea.innerText = "URL appears to be a valid CivitAI model-version link. Resolving metadata...";
                 this.nameInput();
-                loadMetadata(parts[3], null);
+                let onMetadataError = () => {
+                    this.urlStatusArea.innerText = "URL appears to be a CivitAI model-version link, but could not resolve model metadata from Civitai API.";
+                    this.nameInput();
+                };
+                genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/model-versions/${versId}` }, (rawData) => {
+                    rawData = rawData.response;
+                    if (!rawData || !rawData.modelId) {
+                        onMetadataError();
+                        return;
+                    }
+                    loadMetadata(rawData.modelId, versId);
+                }, 0, onMetadataError);
                 return;
             }
             this.urlStatusArea.innerText = "URL appears to be a CivitAI link, but seems to not be valid. Attempting to check it...";
