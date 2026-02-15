@@ -551,7 +551,7 @@ class ModelDownloaderUtil {
                         onMetadataError();
                         return;
                     }
-                    loadMetadata(rawData.modelId, versId);
+                    loadMetadata(`${rawData.modelId}`, versId);
                 }, 0, onMetadataError);
                 return;
             }
