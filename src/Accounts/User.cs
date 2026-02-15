@@ -468,7 +468,12 @@ public class User
             historySaveFolder = historySaveFolder.Replace('\\', '/').Trim('/');
             if (!string.IsNullOrWhiteSpace(historySaveFolder))
             {
-                path = string.IsNullOrWhiteSpace(path) ? historySaveFolder : $"{historySaveFolder}/{path.TrimStart('/')}";
+                string fileNameOnly = path.Replace('\\', '/').AfterLast('/');
+                if (string.IsNullOrWhiteSpace(fileNameOnly))
+                {
+                    fileNameOnly = "image";
+                }
+                path = $"{historySaveFolder}/{fileNameOnly}";
             }
         }
         if (CalculatedRole.Data.AllowUnsafeOutpaths)
