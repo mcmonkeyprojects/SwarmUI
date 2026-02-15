@@ -4,6 +4,70 @@ let postParamBuildSteps = [];
 let refreshParamsExtra = [];
 
 let lastHistoryFolderDropdownRefresh = 0;
+const HISTORY_SAVE_CREATE_NEW_VALUE = '__create_new_folder__';
+
+function sanitizeHistoryFolderInput(folder) {
+    return (folder || '').trim().replaceAll('\\', '/').replaceAll('//', '/').replace(/^\/+|\/+$/g, '');
+}
+
+function ensureHistorySaveCreateOption(selectElem) {
+    if (!selectElem || [...selectElem.options].find(o => o.value == HISTORY_SAVE_CREATE_NEW_VALUE)) {
+        return;
+    }
+    selectElem.add(new Option('Create New Folder...', HISTORY_SAVE_CREATE_NEW_VALUE, false, false));
+}
+
+function bindHistorySaveFolderSelectInput(selectElem) {
+    if (!selectElem || selectElem.dataset.historySaveFolderBound) {
+        return;
+    }
+    selectElem.dataset.historySaveFolderBound = 'true';
+    if (selectElem.value && selectElem.value != HISTORY_SAVE_CREATE_NEW_VALUE) {
+        selectElem.dataset.prevHistorySaveFolderValue = selectElem.value;
+    }
+    let refreshFolders = () => {
+        let now = Date.now();
+        if (now - lastHistoryFolderDropdownRefresh < 5000) {
+            return;
+        }
+        lastHistoryFolderDropdownRefresh = now;
+        refreshParameterValues(false);
+    };
+    selectElem.addEventListener('focus', refreshFolders);
+    selectElem.addEventListener('pointerdown', refreshFolders);
+    selectElem.addEventListener('change', () => {
+        if (selectElem.value != HISTORY_SAVE_CREATE_NEW_VALUE) {
+            selectElem.dataset.prevHistorySaveFolderValue = selectElem.value;
+            return;
+        }
+        let entered = prompt('Enter a new History folder path. You can include subfolders using "/".');
+        if (entered === null) {
+            selectElem.value = selectElem.dataset.prevHistorySaveFolderValue || '';
+            triggerChangeFor(selectElem);
+            return;
+        }
+        entered = sanitizeHistoryFolderInput(entered);
+        if (!entered || entered == HISTORY_SAVE_CREATE_NEW_VALUE) {
+            selectElem.value = selectElem.dataset.prevHistorySaveFolderValue || '';
+            triggerChangeFor(selectElem);
+            return;
+        }
+        if (![...selectElem.options].find(o => o.value == entered)) {
+            let createOption = [...selectElem.options].find(o => o.value == HISTORY_SAVE_CREATE_NEW_VALUE);
+            let newOption = new Option(entered, entered, true, true);
+            if (createOption) {
+                selectElem.insertBefore(newOption, createOption);
+            }
+            else {
+                selectElem.add(newOption);
+            }
+        }
+        selectElem.value = entered;
+        selectElem.dataset.prevHistorySaveFolderValue = entered;
+        triggerChangeFor(selectElem);
+    });
+    ensureHistorySaveCreateOption(selectElem);
+}
 
 /** Set 'id': true to indicate that advanced status should be overridden for a group, ie it should be visible even when Display Advanced is unchecked. */
 let groupAdvancedOverrides = {};
@@ -1033,9 +1097,20 @@ function refreshParameterValues(strong = true, refreshType = null, callback = nu
                         }
                         html += `<option data-cleanname="${escapeHtmlNoBr(cleanName)}" value="${escapeHtmlNoBr(value)}"${selected}>${simpleName}</option>\n`;
                     }
+                    if (param.id == 'historysavefolder') {
+                        if (val && val != HISTORY_SAVE_CREATE_NEW_VALUE && !values.includes(val)) {
+                            html += `<option value="${escapeHtmlNoBr(val)}" selected="true">${escapeHtmlNoBr(val)}</option>\n`;
+                        }
+                        let createSelected = val == HISTORY_SAVE_CREATE_NEW_VALUE ? ' selected="true"' : '';
+                        html += `<option value="${HISTORY_SAVE_CREATE_NEW_VALUE}"${createSelected}>Create New Folder...</option>\n`;
+                    }
                     elem.innerHTML = html;
                     elem.value = val;
                     presetElem.innerHTML = html;
+                    if (param.id == 'historysavefolder') {
+                        bindHistorySaveFolderSelectInput(elem);
+                        bindHistorySaveFolderSelectInput(presetElem);
+                    }
                     if (triggerChange) {
                         triggerChangeFor(elem);
                     }
@@ -1499,17 +1574,11 @@ function addInstallButton(groupId, featureId, installId, buttonText) {
 
 postParamBuildSteps.push(() => {
     let folderInput = document.getElementById('input_historysavefolder');
-    if (!folderInput) {
-        return;
+    if (folderInput) {
+        bindHistorySaveFolderSelectInput(folderInput);
     }
-    let refreshFolders = () => {
-        let now = Date.now();
-        if (now - lastHistoryFolderDropdownRefresh < 5000) {
-            return;
-        }
-        lastHistoryFolderDropdownRefresh = now;
-        refreshParameterValues(false);
-    };
-    folderInput.addEventListener('focus', refreshFolders);
-    folderInput.addEventListener('pointerdown', refreshFolders);
+    let folderPresetInput = document.getElementById('preset_input_historysavefolder');
+    if (folderPresetInput) {
+        bindHistorySaveFolderSelectInput(folderPresetInput);
+    }
 });

@@ -799,8 +799,8 @@ public class T2IParamTypes
         OverrideOutpathFormat = Register<string>(new("Override Outpath Format", $"Override the Outpath-Format user setting.\nFull details in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}User%20Settings.md#path-format\">the docs here</a>.",
             "raw/[year]-[month]-[day]/[hour][minute][request_time_inc]-[prompt]-[model]", Toggleable: true, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3, IntentionalUnused: true
             ));
-        HistorySaveFolder = Register<string>(new("History Save Folder", "Select a folder in your History root to save generated images into.\nThe list includes existing folders and subfolders under your output root.",
-            "", Toggleable: true, IgnoreIf: "", GetValues: GetUserOutputRootFolderValues, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3.1, IntentionalUnused: true
+        HistorySaveFolder = Register<string>(new("History Save Folder", "Select a folder in your History root to save generated images into.\nThe list includes existing folders and subfolders under your output root.\nYou can also create a new folder directly from the dropdown.",
+            "", Toggleable: true, IgnoreIf: "", GetValues: GetUserOutputRootFolderValues, ValidateValues: false, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3.1, IntentionalUnused: true
             ));
         ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nAlso, some video models will automatically use tiled VAE when this is enabled, even if you didn't manually enable tiled VAE.\nIf unchecked, will prefer more 'raw' behavior.",
             "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 5
