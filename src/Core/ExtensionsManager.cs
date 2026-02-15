@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Html;
 using SwarmUI.Utils;
@@ -14,6 +14,12 @@ public class ExtensionsManager
 
     /// <summary>Hashset of folder names of all extensions currently loaded.</summary>
     public HashSet<string> LoadedExtensionFolders = [];
+
+    /// <summary>Hashset of folder names of all extensions currently installed (loaded or disabled).</summary>
+    public HashSet<string> InstalledExtensionFolders = [];
+
+    /// <summary>Folder names of disabled extensions.</summary>
+    public HashSet<string> DisabledExtensions = [];
 
     /// <summary>Simple holder of information about extensions available online.</summary>
     public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string[] Tags, string FolderName)
@@ -62,6 +68,9 @@ public class ExtensionsManager
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
         string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
         extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
+        InstalledExtensionFolders = [.. extras.Select(e => e.AfterLast('/'))];
+        HashSet<string> disabledFolders = BuildDisabledExtensionsAndGetDisabledFolders();
+        extras = [.. extras.Where(e => !disabledFolders.Contains(e.AfterLast('/')))];
         foreach (string deletable in deleteMe)
         {
             try
@@ -266,5 +275,95 @@ public class ExtensionsManager
     public T GetExtension<T>() where T : Extension
     {
         return Extensions.FirstOrDefault(e => e is T) as T;
+    }
+
+    /// <summary>Returns folder name from an extension path.</summary>
+    public static string GetFolderNameFromPath(string path)
+    {
+        return path?.Replace('\\', '/').TrimEnd('/').AfterLast('/') ?? "";
+    }
+
+    /// <summary>Returns normalized "src/Extensions/{folderName}/" for a direct child folder match, or null if not found.</summary>
+    public static string GetNormalizedExtensionFolderPath(string folderName)
+    {
+        folderName = folderName?.Trim();
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            return null;
+        }
+        string extensionsRoot = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions"));
+        if (!Directory.Exists(extensionsRoot))
+        {
+            return null;
+        }
+        string matchingFolder = Directory.EnumerateDirectories(extensionsRoot)
+            .Select(Path.GetFileName)
+            .FirstOrDefault(name => string.Equals(name, folderName, StringComparison.OrdinalIgnoreCase));
+        if (string.IsNullOrWhiteSpace(matchingFolder))
+        {
+            return null;
+        }
+        return $"src/Extensions/{matchingFolder}/";
+    }
+
+    /// <summary>Builds <see cref="DisabledExtensions"/> and returns disabled extension folders.</summary>
+    public HashSet<string> BuildDisabledExtensionsAndGetDisabledFolders()
+    {
+        if (Program.ServerSettings?.Extensions.DisabledExtensions is null)
+        {
+            Program.ServerSettings.Extensions.DisabledExtensions = [];
+        }
+        DisabledExtensions = [];
+        HashSet<string> disabledFolders = [];
+        foreach (string rawFolderName in Program.ServerSettings.Extensions.DisabledExtensions)
+        {
+            string folderName = rawFolderName?.Trim();
+            if (string.IsNullOrWhiteSpace(folderName) || !InstalledExtensionFolders.Contains(folderName) || !disabledFolders.Add(folderName))
+            {
+                continue;
+            }
+            DisabledExtensions.Add(folderName);
+        }
+        return disabledFolders;
+    }
+
+    /// <summary>Returns disabled extensions for UI display.</summary>
+    public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
+    {
+        foreach (string folderName in DisabledExtensions.OrderBy(e => e, StringComparer.OrdinalIgnoreCase))
+        {
+            ExtensionInfo info = KnownExtensions.FirstOrDefault(e => string.Equals(e.FolderName, folderName, StringComparison.OrdinalIgnoreCase));
+            info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", ["none"], folderName);
+            yield return info;
+        }
+    }
+
+    /// <summary>Removes an extension folder from the disabled list in settings.</summary>
+    public bool RemoveDisabledExtensionSetting(string folderName)
+    {
+        folderName = folderName?.Trim();
+        if (string.IsNullOrWhiteSpace(folderName))
+        {
+            return false;
+        }
+        int removed = Program.ServerSettings.Extensions.DisabledExtensions.RemoveAll(f => string.Equals(f, folderName, StringComparison.OrdinalIgnoreCase));
+        DisabledExtensions.RemoveWhere(f => string.Equals(f, folderName, StringComparison.OrdinalIgnoreCase));
+        return removed > 0;
+    }
+
+    /// <summary>Adds an extension folder to the disabled list in settings.</summary>
+    public bool AddDisabledExtensionSetting(string folderName)
+    {
+        folderName = folderName?.Trim();
+        if (string.IsNullOrWhiteSpace(folderName) || !InstalledExtensionFolders.Contains(folderName))
+        {
+            return false;
+        }
+        if (!Program.ServerSettings.Extensions.DisabledExtensions.Any(f => string.Equals(f, folderName, StringComparison.OrdinalIgnoreCase)))
+        {
+            Program.ServerSettings.Extensions.DisabledExtensions.Add(folderName);
+        }
+        DisabledExtensions.Add(folderName);
+        return true;
     }
 }
