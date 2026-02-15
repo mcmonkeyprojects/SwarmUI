@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
@@ -312,7 +313,7 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat, Text2AudioTimeSignature, Text2AudioLanguage, Text2AudioKeyScale, Text2AudioStyle;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat, HistorySaveFolder, Text2AudioTimeSignature, Text2AudioLanguage, Text2AudioKeyScale, Text2AudioStyle;
     public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, InitImageScaleForMPWidth, InitImageScaleForMPHeight, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentSteps, Text2VideoFrames, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed, Text2AudioBPM;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
@@ -798,6 +799,9 @@ public class T2IParamTypes
         OverrideOutpathFormat = Register<string>(new("Override Outpath Format", $"Override the Outpath-Format user setting.\nFull details in <a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}User%20Settings.md#path-format\">the docs here</a>.",
             "raw/[year]-[month]-[day]/[hour][minute][request_time_inc]-[prompt]-[model]", Toggleable: true, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3, IntentionalUnused: true
             ));
+        HistorySaveFolder = Register<string>(new("History Save Folder", "Select a top-level folder in your History root to save generated images into.\nThe list uses folders currently present under your output root.",
+            "", Toggleable: true, IgnoreIf: "", GetValues: GetUserOutputRootFolderValues, IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 3.1, IntentionalUnused: true
+            ));
         ModelSpecificEnhancements = Register<bool>(new("Model Specific Enhancements", "If checked, enables model-specific enhancements.\nFor example, on SDXL, smarter res-cond will be used.\nAlso, some video models will automatically use tiled VAE when this is enabled, even if you didn't manually enable tiled VAE.\nIf unchecked, will prefer more 'raw' behavior.",
             "true", IgnoreIf: "true", IsAdvanced: true, Group: GroupSwarmInternal, OrderPriority: 5
             ));
@@ -937,6 +941,33 @@ public class T2IParamTypes
 #pragma warning disable CS0618 // Type or member is obsolete
         GroupOtherFixes = GroupSwarmInternal;
 #pragma warning restore CS0618 // Type or member is obsolete
+    }
+
+    /// <summary>List top-level output folders for the current user to target as explicit save destinations.</summary>
+    public static List<string> GetUserOutputRootFolderValues(Session session)
+    {
+        if (session?.User is null)
+        {
+            return [];
+        }
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        if (!Directory.Exists(root))
+        {
+            return [];
+        }
+        try
+        {
+            return [.. Directory.EnumerateDirectories(root)
+                .Select(path => Path.GetFileName(path.Replace('\\', '/')))
+                .Where(name => !string.IsNullOrWhiteSpace(name) && !name.StartsWithFast('.'))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)];
+        }
+        catch (Exception ex)
+        {
+            Logs.Debug($"Failed to list output folders for user {session.User.UserID}: {ex.GetType().Name}: {ex.Message}");
+            return [];
+        }
     }
 
     /// <summary>Gets the value in the list that best matches the input text of a model name (for user input handling), or null if no match.</summary>

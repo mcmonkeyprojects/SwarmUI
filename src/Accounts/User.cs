@@ -462,6 +462,15 @@ public class User
         }
         string path = user_input.Get(T2IParamTypes.OverrideOutpathFormat, Settings.OutPathBuilder.Format);
         path = StringConversionHelper.QuickSimpleTagFiller(path, "[", "]", buildPathPart, false);
+        string historySaveFolder = user_input.Get(T2IParamTypes.HistorySaveFolder, "");
+        if (!string.IsNullOrWhiteSpace(historySaveFolder))
+        {
+            historySaveFolder = historySaveFolder.Replace('\\', '/').Trim('/');
+            if (!string.IsNullOrWhiteSpace(historySaveFolder))
+            {
+                path = string.IsNullOrWhiteSpace(path) ? historySaveFolder : $"{historySaveFolder}/{path.TrimStart('/')}";
+            }
+        }
         if (CalculatedRole.Data.AllowUnsafeOutpaths)
         {
             return path;

@@ -3,6 +3,8 @@ let postParamBuildSteps = [];
 
 let refreshParamsExtra = [];
 
+let lastHistoryFolderDropdownRefresh = 0;
+
 /** Set 'id': true to indicate that advanced status should be overridden for a group, ie it should be visible even when Display Advanced is unchecked. */
 let groupAdvancedOverrides = {};
 
@@ -1494,3 +1496,20 @@ function addInstallButton(groupId, featureId, installId, buttonText) {
         }
     });
 }
+
+postParamBuildSteps.push(() => {
+    let folderInput = document.getElementById('input_historysavefolder');
+    if (!folderInput) {
+        return;
+    }
+    let refreshFolders = () => {
+        let now = Date.now();
+        if (now - lastHistoryFolderDropdownRefresh < 5000) {
+            return;
+        }
+        lastHistoryFolderDropdownRefresh = now;
+        refreshParameterValues(false);
+    };
+    folderInput.addEventListener('focus', refreshFolders);
+    folderInput.addEventListener('pointerdown', refreshFolders);
+});
