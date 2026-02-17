@@ -1,10 +1,8 @@
 @page
 @attribute [IgnoreAntiforgeryToken]
 @{
-    ViewData["Title"] = "Register";
-    bool oAuthRegister = Program.ServerSettings.UserAuthorization.Registration.OAuthRegistration;
-    bool googleOAuthRegister = oAuthRegister && Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth;
-    if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration || !googleOAuthRegister)
+    ViewData["Title"] = "OAuth";
+    if (!Program.ServerSettings.UserAuthorization.OAuth.GoogleOAuth)
     {
         <script>window.location.href = "Login";</script>
         return;
@@ -48,7 +46,7 @@
     <script>window.location.href = "Text2Image";</script>
     return;
 }
-@if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration || !googleOAuthRegister)
+@if (!Program.ServerSettings.UserAuthorization.Registration.AllowRegistration || !Program.ServerSettings.UserAuthorization.Registration.OAuthRegistration)
 {
     <script>window.location.href = "Login";</script>
     return;
