@@ -502,6 +502,9 @@ public static class T2IAPI
         {
             return new() { ["error"] = ex.Message };
         }
+        // This endpoint doesn't run a generation pipeline, so no params are naturally "queried".
+        // Keep full parameter metadata instead of collapsing most fields into `unused_parameters`.
+        user_input.NoUnusedParams = true;
         user_input.ApplySpecialLogic();
         Logs.Info($"User {session.User.UserID} stored an image to history.");
         (Task<MediaFile> imgTask, string metadata) = user_input.SourceSession.ApplyMetadata(img, user_input, 1);

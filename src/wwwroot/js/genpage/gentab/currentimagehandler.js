@@ -855,7 +855,7 @@ function saveCurrentImageToHistory(img, button = null) {
                 showError('Image save did not return an output file.');
                 return;
             }
-            let savedMetadata = saved.metadata || img.dataset.metadata || currentMetadataVal || '{}';
+            let savedMetadata = img.dataset.metadata || currentMetadataVal || saved.metadata || '{}';
             setCurrentImage(saved.image, savedMetadata, batchId);
             let batchContainer = document.getElementById('current_image_batch');
             if (batchContainer) {
