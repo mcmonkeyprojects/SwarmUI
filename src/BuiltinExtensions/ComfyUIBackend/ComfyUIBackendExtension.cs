@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Builder;
 using Newtonsoft.Json;
@@ -616,7 +616,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<bool> AITemplateParam, DebugRegionalPrompting, ShiftedLatentAverageInit, UseCfgZeroStar, UseTCFG;
 
-    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG;
+    public static T2IRegisteredParam<double> IPAdapterWeight, IPAdapterStart, IPAdapterEnd, SelfAttentionGuidanceScale, SelfAttentionGuidanceSigmaBlur, PerturbedAttentionGuidanceScale, StyleModelMergeStrength, StyleModelApplyStart, StyleModelMultiplyStrength, RescaleCFGMultiplier, TeaCacheThreshold, TeaCacheStart, NunchakuCacheThreshold, EasyCacheThreshold, EasyCacheStart, EasyCacheEnd, RenormCFG, NormalizedAttentionGuidanceScale, NormalizedAttentionGuidanceAlpha, NormalizedAttentionGuidanceTau;
 
     public static T2IRegisteredParam<int> RefinerHyperTile, VideoFrameInterpolationMultiplier;
 
@@ -720,6 +720,15 @@ public class ComfyUIBackendExtension : Extension
             ));
         UseTCFG = T2IParamTypes.Register<bool>(new("Use TCFG", "If enabled, use 'TCFG' (Tangential Damping Classifier-Free Guidance, defined <a target=\"_blank\" href=\"https://arxiv.org/abs/2503.18137\">in this paper</a>).\nThis may reduce CFG artifacts. Compatible with modern 'Flow' models.",
             "false", IgnoreIf: "false", FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAlternateGuidance, IsAdvanced: true, OrderPriority: 17
+            ));
+        NormalizedAttentionGuidanceScale = T2IParamTypes.Register<double>(new("Normalized Attention Guidance Scale", "Scale for Normalized Attention Guidance, defined <a target=\"_blank\" href=\"https://arxiv.org/abs/2505.21179\">in this paper</a>).\nDesigned to when CFG Scale is set to 1 (CFG disabled).\n5 is a reasonable starter value for using this.\nDefaults to 0 (disabled).",
+            "0", IgnoreIf: "0", Min: 0, Max: 50, Step: 1, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAlternateGuidance, IsAdvanced: true, ViewType: ParamViewType.SLIDER, OrderPriority: 18
+            ));
+        NormalizedAttentionGuidanceAlpha = T2IParamTypes.Register<double>(new("Normalized Attention Guidance Alpha", "Alpha value for Normalized Attention Guidance, aka blending scale.\nIn other words, how strongly to mix NAG with the base generation.\n1 means fully NAG, 0 means fully base, 0.5 means half-n-half. 0.5 is a safe default.",
+            "0.5", Min: 0, Max: 1, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAlternateGuidance, IsAdvanced: true, Toggleable: true, ViewType: ParamViewType.SLIDER, OrderPriority: 18.1, DependNonDefault: NormalizedAttentionGuidanceScale.Type.ID
+            ));
+        NormalizedAttentionGuidanceTau = T2IParamTypes.Register<double>(new("Normalized Attention Guidance Tau", "Tau value for Normalized Attention Guidance.\nThis is a more internal value which modifies the guidance scaling.",
+            "1.5", Min: 0.5, Max: 10, Step: 0.01, FeatureFlag: "comfyui", Group: T2IParamTypes.GroupAlternateGuidance, IsAdvanced: true, Toggleable: true, ViewType: ParamViewType.SLIDER, OrderPriority: 18.2, DependNonDefault: NormalizedAttentionGuidanceScale.Type.ID
             ));
         RefinerUpscaleMethod = T2IParamTypes.Register<string>(new("Refiner Upscale Method", "How to upscale the image, if upscaling is used.",
             "pixel-lanczos", Group: T2IParamTypes.GroupRefiners, OrderPriority: -1, FeatureFlag: "comfyui", ChangeWeight: 1,

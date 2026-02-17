@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
@@ -206,6 +206,17 @@ public class WorkflowGeneratorSteps
                 string patched = g.CreateNode("TCFG", new JObject()
                 {
                     ["model"] = g.LoadingModel
+                });
+                g.LoadingModel = [patched, 0];
+            }
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.NormalizedAttentionGuidanceScale, out double nagScale) && nagScale > 0)
+            {
+                string patched = g.CreateNode("NAGuidance", new JObject()
+                {
+                    ["model"] = g.LoadingModel,
+                    ["nag_scale"] = nagScale,
+                    ["nag_alpha"] = g.UserInput.Get(ComfyUIBackendExtension.NormalizedAttentionGuidanceAlpha, 0.5),
+                    ["nag_tau"] = g.UserInput.Get(ComfyUIBackendExtension.NormalizedAttentionGuidanceTau, 1.5),
                 });
                 g.LoadingModel = [patched, 0];
             }
