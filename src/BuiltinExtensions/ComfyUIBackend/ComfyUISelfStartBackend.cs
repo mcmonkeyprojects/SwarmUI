@@ -96,6 +96,9 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("pydantic_settings", "pydantic-settings"),
         ("comfyui_frontend_package", $"comfyui_frontend_package=={SwarmValidatedFrontendVersion}"),
         ("alembic", "alembic"),
+        ("pyopengl", "pyopengl"),
+        ("pyopengl_accelerate", "pyopengl-accelerate"),
+        ("glfw", "glfw"),
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
