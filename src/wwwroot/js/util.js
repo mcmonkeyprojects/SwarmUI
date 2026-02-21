@@ -889,6 +889,9 @@ function imageToData(src, callback, resize256 = false) {
                 context.drawImage(image, 0, 0, widthFixed, heightFixed);
                 callback(canvas.toDataURL('image/jpeg'));
         };
+        image.onerror = () => {
+            callback(null);
+        };
         image.src = src;
     }
     else {
@@ -899,6 +902,9 @@ function imageToData(src, callback, resize256 = false) {
                 callback(reader.result);
             };
             reader.readAsDataURL(xhr.response);
+        };
+        xhr.onerror = () => {
+            callback(null);
         };
         xhr.open('GET', src);
         xhr.responseType = 'blob';
