@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Collections.Generic;
 using System.IO;
@@ -2294,7 +2294,14 @@ public partial class WorkflowGenerator
                 ["duration"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120),
                 ["timesignature"] = UserInput.Get(T2IParamTypes.Text2AudioTimeSignature, "4"),
                 ["language"] = UserInput.Get(T2IParamTypes.Text2AudioLanguage, "en"),
-                ["keyscale"] = UserInput.Get(T2IParamTypes.Text2AudioKeyScale, "E minor")
+                ["keyscale"] = UserInput.Get(T2IParamTypes.Text2AudioKeyScale, "E minor"),
+                // TODO: Parameters for these?
+                ["generate_audio_codes"] = true,
+                ["cfg_scale"] = 2,
+                ["temperature"] = 0.85,
+                ["top_p"] = 0.9,
+                ["top_k"] = 0,
+                ["min_p"] = 0
             }, id);
         }
         else if (IsSana())
