@@ -385,14 +385,25 @@ public class WorkflowGeneratorSteps
         #region Base Image
         AddStep(g =>
         {
-            // TODO: Something like this for audio models.
-            /*if (g.IsAudioModel() && g.UserInput.TryGet(T2IParamTypes.InitAudio, out AudioFile audioData))
+            // TODO: if g.IsAudioModel(), InitAudio?
+            if (g.UserInput.TryGet(T2IParamTypes.VideoAudioInput, out AudioFile audioData))
             {
-                string audioNode = g.CreateLoadAudioNode(audioData, "${initaudio}", true);
-                g.FinalInputAudio = [audioNode, 0];
-                g.FinalLatentAudio = g.CreateAudioVAEEncode(g.FinalAudioVae, g.FinalInputAudio, "5");
+                string audioNode = g.CreateAudioLoadNode(audioData, "${videoaudioinput}");
+                g.FinalAudioOut = [audioNode, 0]; // TODO: Input not out?
+                string audioEncoded = g.CreateAudioVAEEncode(g.FinalAudioVae, g.FinalAudioOut);
+                string mask = g.CreateNode("SolidMask", new JObject()
+                {
+                    ["value"] = 0,
+                    ["width"] = 512,
+                    ["height"] = 512 // TODO: ?
+                });
+                string masked = g.CreateNode("SetLatentNoiseMask", new JObject()
+                {
+                    ["samples"] = NodePath(audioEncoded, 0),
+                    ["mask"] = NodePath(mask, 0)
+                });
+                g.FinalLatentAudio = [masked, 0];
             }
-            else*/
             if (!g.IsAudioModel() && g.UserInput.TryGet(T2IParamTypes.InitImage, out Image img))
             {
                 string maskImageNode = null;

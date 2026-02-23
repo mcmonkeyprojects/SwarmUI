@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Collections.Generic;
 using System.IO;
@@ -142,6 +142,9 @@ public partial class WorkflowGenerator
 
     /// <summary>If true, Differential Diffusion node has been attached to the current model.</summary>
     public bool IsDifferentialDiffusion = false;
+
+    /// <summary>If true, assume all handling is video handling.</summary>
+    public bool AssumeVideo = false;
 
     /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/> if used for the main image.</summary>
     public ImageMaskCropData MaskShrunkInfo = new(null, null, null, null);
@@ -391,6 +394,15 @@ public partial class WorkflowGenerator
         return (model, clip);
     }
 
+    public string CreateAudioLoadNode(AudioFile audio, string param, string nodeId = null)
+    {
+        // TODO: Fallback for base LoadAudio node?
+        return CreateNode("SwarmLoadAudioB64", new JObject()
+        {
+            ["audio_base64"] = audio.AsBase64
+        }, nodeId);
+    }
+
     /// <summary>Creates a new node to load an image.</summary>
     public string CreateLoadImageNode(ImageFile img, string param, bool resize, string nodeId = null, int? width = null, int? height = null)
     {
@@ -410,10 +422,27 @@ public partial class WorkflowGenerator
             }
             else
             {
-                result = CreateNode("SwarmLoadImageB64", new JObject()
+                if (img.Type.MetaType == MediaMetaType.Video)
                 {
-                    ["image_base64"] = img.AsBase64
-                }, resize ? null : nodeId);
+                    result = CreateNode("SwarmLoadVideoB64", new JObject()
+                    {
+                        ["video_base64"] = img.AsBase64
+                    }, resize ? null : nodeId);
+                    string splitNode = CreateNode("GetVideoComponents", new JObject()
+                    {
+                        ["video"] = NodePath(result, 0)
+                    });
+                    result = splitNode;
+                    FinalAudioOut = [splitNode, 1];
+                    AssumeVideo = true;
+                }
+                else
+                {
+                    result = CreateNode("SwarmLoadImageB64", new JObject()
+                    {
+                        ["image_base64"] = img.AsBase64
+                    }, resize ? null : nodeId);
+                }
                 if (resize)
                 {
                     result = CreateNode("ImageScale", new JObject()
@@ -637,15 +666,15 @@ public partial class WorkflowGenerator
             });
             data = new NodeOutData(decoded, 0, NodeOutData.DT_AUDIO);
         }
+        if (data.DataType == NodeOutData.DT_VIDEO || AssumeVideo)
+        {
+            return CreateAnimationSaveNode([data.Path], Text2VideoFPS(), UserInput.Get(T2IParamTypes.Text2VideoFormat, "h264-mp4"), id);
+        }
         if (data.DataType == NodeOutData.DT_IMAGE)
         {
             return CreateImageSaveNode([data.Path], id);
         }
-        else if (data.DataType == NodeOutData.DT_VIDEO)
-        {
-            return CreateAnimationSaveNode([data.Path], Text2VideoFPS(), UserInput.Get(T2IParamTypes.Text2VideoFormat, "h264-mp4"), id);
-        }
-        else if (data.DataType == NodeOutData.DT_AUDIO)
+        if (data.DataType == NodeOutData.DT_AUDIO)
         {
             return CreateAudioSaveNode([data.Path], id);
         }
@@ -666,26 +695,9 @@ public partial class WorkflowGenerator
     /// <summary>Creates a node to save an image output.</summary>
     public string CreateImageSaveNode(JArray image, string id = null)
     {
-        if (IsVideoModel())
+        if (IsVideoModel() || AssumeVideo)
         {
-            if (UserInput.Get(T2IParamTypes.VideoBoomerang, false))
-            {
-                string bounced = CreateNode("SwarmVideoBoomerang", new JObject()
-                {
-                    ["images"] = image
-                });
-                image = [bounced, 0];
-            }
-            return CreateNode("SwarmSaveAnimationWS", new JObject()
-            {
-                ["images"] = image,
-                ["fps"] = Text2VideoFPS(),
-                ["lossless"] = false,
-                ["quality"] = 95,
-                ["method"] = "default",
-                ["format"] = UserInput.Get(T2IParamTypes.Text2VideoFormat, "h264-mp4"),
-                ["audio"] = FinalAudioOut
-            }, id);
+            return CreateAnimationSaveNode(image, Text2VideoFPS(), UserInput.Get(T2IParamTypes.Text2VideoFormat, "h264-mp4"), id);
         }
         else if (Features.Contains("comfy_saveimage_ws") && !RestrictCustomNodes)
         {
@@ -708,6 +720,14 @@ public partial class WorkflowGenerator
     /// <summary>Creates a node to save an animation output.</summary>
     public string CreateAnimationSaveNode(JArray anim, int fps, string format, string id = null)
     {
+        if (UserInput.Get(T2IParamTypes.VideoBoomerang, false))
+        {
+            string bounced = CreateNode("SwarmVideoBoomerang", new JObject()
+            {
+                ["images"] = anim
+            });
+            anim = [bounced, 0];
+        }
         return CreateNode("SwarmSaveAnimationWS", new JObject()
         {
             ["images"] = anim,
@@ -1407,6 +1427,27 @@ public partial class WorkflowGenerator
         }, id);
     }
 
+    /// <summary>Encodes audio using the specified VAE into latent audio.</summary>
+    public string CreateAudioVAEEncode(JArray vae, JArray audio, string id = null)
+    {
+        if (IsLTXV2())
+        {
+            return CreateNode("LTXVAudioVAEEncode", new JObject()
+            {
+                ["audio_vae"] = vae,
+                ["audio"] = audio
+            }, id);
+        }
+        else
+        {
+            return CreateNode("VAEEncodeAudio", new JObject()
+            {
+                ["vae"] = vae,
+                ["audio"] = audio
+            }, id);
+        }
+    }
+
     /// <summary>Enables Differential Diffusion on the current model if is enabled in user settings.</summary>
     public void EnableDifferential()
     {
@@ -1585,13 +1626,17 @@ public partial class WorkflowGenerator
                         ["length"] = Frames,
                         ["batch_size"] = 1
                     });
-                    string emptyAudio = g.CreateNode("LTXVEmptyLatentAudio", new JObject()
+                    if (g.FinalLatentAudio is null)
                     {
-                        ["audio_vae"] = g.FinalAudioVae,
-                        ["frames_number"] = Frames,
-                        ["frame_rate"] = VideoFPS,
-                        ["batch_size"] = 1
-                    });
+                        string emptyAudio = g.CreateNode("LTXVEmptyLatentAudio", new JObject()
+                        {
+                            ["audio_vae"] = g.FinalAudioVae,
+                            ["frames_number"] = Frames,
+                            ["frame_rate"] = VideoFPS,
+                            ["batch_size"] = 1
+                        });
+                        g.FinalLatentAudio = NodePath(emptyAudio, 0);
+                    }
                     string preproc = g.CreateNode("LTXVPreprocess", new JObject()
                     {
                         ["image"] = g.FinalImageOut,
@@ -1608,7 +1653,7 @@ public partial class WorkflowGenerator
                     string concatNode = g.CreateNode("LTXVConcatAVLatent", new JObject()
                     {
                         ["video_latent"] = NodePath(latentOutNode, 0),
-                        ["audio_latent"] = NodePath(emptyAudio, 0)
+                        ["audio_latent"] = g.FinalLatentAudio
                     });
                     Latent = [concatNode, 0];
                 }
@@ -2296,7 +2341,14 @@ public partial class WorkflowGenerator
                 ["duration"] = UserInput.Get(T2IParamTypes.Text2AudioDuration, 120),
                 ["timesignature"] = UserInput.Get(T2IParamTypes.Text2AudioTimeSignature, "4"),
                 ["language"] = UserInput.Get(T2IParamTypes.Text2AudioLanguage, "en"),
-                ["keyscale"] = UserInput.Get(T2IParamTypes.Text2AudioKeyScale, "E minor")
+                ["keyscale"] = UserInput.Get(T2IParamTypes.Text2AudioKeyScale, "E minor"),
+                // TODO: Parameters for these?
+                ["generate_audio_codes"] = true,
+                ["cfg_scale"] = 2,
+                ["temperature"] = 0.85,
+                ["top_p"] = 0.9,
+                ["top_k"] = 0,
+                ["min_p"] = 0
             }, id);
         }
         else if (IsSana())

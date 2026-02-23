@@ -557,6 +557,15 @@ function setMediaFileInput(elem, file, type) {
     label.textContent = name;
     let reader = new FileReader();
     reader.addEventListener("load", () => {
+        if (file.type.startsWith('video/')) {
+            type = 'video';
+        }
+        else if (file.type.startsWith('image/')) {
+            type = 'image';
+        }
+        else if (file.type.startsWith('audio/')) {
+            type = 'audio';
+        }
         setMediaFileDirect(elem, reader.result, type, name, longName);
     }, false);
     reader.readAsDataURL(file);
@@ -905,9 +914,10 @@ function makeMultiselectInput(featureid, id, paramid, name, description, values,
 }
 
 function onFileInputPaste(e, type) {
+    let types = type.split(',');
     let element = findParentOfClass(e.target, 'auto-input').querySelector('input[type="file"]');
     let files = e.clipboardData.files;
-    if (files.length > 0 && files[0].type.startsWith(type)) {
+    if (files.length > 0 && types.some(t => files[0].type.startsWith(t))) {
         element.files = files;
         triggerChangeFor(element);
     }
@@ -922,10 +932,10 @@ function makeImageInput(featureid, id, paramid, name, description, toggles = fal
     <div class="auto-input auto-file-box"${featureid}>
         <label class="auto-file-input-label">
             <span class="auto-input-name">${getToggleHtml(toggles, id, name)}${translateableHtml(name)}${popover}</span>
-            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onFileInputPaste(arguments[0], 'image/')">
+            <input type="text" id="${id}_pastebox" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" onpaste="onFileInputPaste(arguments[0], 'image/,video/')">
         </label>
         <label for="${id}" class="auto-file-label drag_image_target">
-            <input class="auto-file" type="file" accept="image/png, image/jpeg, image/webp, image/gif" id="${id}" data-param_id="${paramid}" onchange="load_media_file(this, 'image')" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
+            <input class="auto-file" type="file" accept="image/png, image/jpeg, image/webp, image/gif, video/mp4, video/webm, video/quicktime, video/mov" id="${id}" data-param_id="${paramid}" onchange="load_media_file(this, 'image')" ondragover="updateFileDragging(arguments[0], false)" ondragleave="updateFileDragging(arguments[0], true)" autocomplete="off">
             <div class="auto-file-input">
                 <a class="auto-file-input-button basic-button">${translateableHtml("Choose File")}</a>
                 <span class="auto-file-input-filename"></span>

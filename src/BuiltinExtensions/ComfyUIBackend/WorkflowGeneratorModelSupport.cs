@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Collections.Generic;
 using System.IO;
@@ -313,17 +313,21 @@ public partial class WorkflowGenerator
                 ["height"] = height,
                 ["width"] = width
             });
-            string emptyAudio = CreateNode("LTXVEmptyLatentAudio", new JObject()
+            if (FinalLatentAudio is null)
             {
-                ["batch_size"] = batchSize,
-                ["frames_number"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
-                ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24),
-                ["audio_vae"] = FinalAudioVae
-            });
+                string emptyAudio = CreateNode("LTXVEmptyLatentAudio", new JObject()
+                {
+                    ["batch_size"] = batchSize,
+                    ["frames_number"] = UserInput.Get(T2IParamTypes.Text2VideoFrames, 97),
+                    ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24),
+                    ["audio_vae"] = FinalAudioVae
+                });
+                FinalLatentAudio = [emptyAudio, 0];
+            }
             return CreateNode("LTXVConcatAVLatent", new JObject()
             {
                 ["video_latent"] = NodePath(emptyVideo, 0),
-                ["audio_latent"] = NodePath(emptyAudio, 0)
+                ["audio_latent"] = FinalLatentAudio
             }, id);
         }
         else if (IsAceStep15())
