@@ -75,6 +75,14 @@ Currently in swarm you have to manualy type out the save path override when doin
 
 <img width="541" height="352" alt="image" src="https://github.com/user-attachments/assets/fe1cabb5-e185-4d43-96c9-4f0bcd6fdb9c" />
 
+<br/>
+
+## Added a hide image function. 
+From time to time I make images that I do not wish to show when streaming or while at work. So I added a simple show hide option that also uses the bulk image selection check boxes the same way that the remove image options does. This allows for easy search and bulk hide operations. 
+
+<br/>
+
+<img width="2047" height="81" alt="image" src="https://github.com/user-attachments/assets/4174abe0-a861-4fab-a883-7b1926b2275f" />
 
 <br/>
 
