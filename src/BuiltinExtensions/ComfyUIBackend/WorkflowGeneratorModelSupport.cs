@@ -324,6 +324,7 @@ public partial class WorkflowGenerator
                 });
                 FinalLatentAudio = [emptyAudio, 0];
             }
+            HasConcattedAudio = true;
             return CreateNode("LTXVConcatAVLatent", new JObject()
             {
                 ["video_latent"] = NodePath(emptyVideo, 0),
