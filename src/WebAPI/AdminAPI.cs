@@ -788,8 +788,13 @@ public static class AdminAPI
         [API.APIParameter("The name (if loaded) or folder name (if disabled) of the extension to uninstall.")] string extensionName)
     {
         Extension ext = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
-        string folder = ext?.FilePath ?? ExtensionsManager.GetNormalizedExtensionFolderPath(extensionName);
+        string folder = ext?.FilePath;
         if (folder is null)
+        {
+            folder = $"src/Extensions/{extensionName}/";
+        }
+        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, folder));
+        if (!Directory.Exists(path))
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
@@ -797,12 +802,7 @@ public static class AdminAPI
         {
             Program.SaveSettingsFile();
         }
-        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, folder));
         Logs.Debug($"Will clear out Extension path: {path}");
-        if (!Directory.Exists(path))
-        {
-            return new JObject() { ["error"] = "Extension has invalid path, cannot delete." };
-        }
         try
         {
             FileSystem.DeleteDirectory(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);

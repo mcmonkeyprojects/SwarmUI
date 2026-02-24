@@ -271,7 +271,7 @@
                     <th>License</th>
                     <th>Actions</th>
                 </tr>
-                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.InstalledExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
+                @foreach (ExtensionsManager.ExtensionInfo ext in Program.Extensions.KnownExtensions.Where(e => !Program.Extensions.LoadedExtensionFolders.Contains(e.FolderName) && !e.Tags.Contains("hidden")))
                 {
                     <tr>
                         <td>@ext.Name</td>
