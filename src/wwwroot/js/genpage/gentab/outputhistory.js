@@ -1,5 +1,39 @@
 let imageHistorySelected = new Set();
 let imageHistoryBulkDeleteRunning = false;
+let imageHistoryShowHidden = localStorage.getItem('image_history_show_hidden') == 'true';
+
+function parseHistoryMetadata(metadata) {
+    if (!metadata) {
+        return {};
+    }
+    try {
+        return JSON.parse(interpretMetadata(metadata)) || {};
+    }
+    catch (e) {
+        return {};
+    }
+}
+
+function setMetadataBoolValue(metadata, key, value) {
+    if (!metadata) {
+        return JSON.stringify({ [key]: value });
+    }
+    let interpreted = metadata;
+    try {
+        interpreted = interpretMetadata(metadata);
+    }
+    catch (e) {
+        // Ignore and keep original.
+    }
+    try {
+        let parsed = JSON.parse(interpreted) || {};
+        parsed[key] = value;
+        return JSON.stringify(parsed);
+    }
+    catch (e) {
+        return metadata;
+    }
+}
 
 function getImageHistoryEntries() {
     let historySection = document.getElementById('imagehistorybrowser-content');
@@ -146,6 +180,34 @@ function deleteSingleHistoryImage(fullsrc, src, explicitEntry = null, errorHandl
     });
 }
 
+function toggleImageHidden(path, rawSrc) {
+    genericRequest('ToggleImageHidden', { 'path': path }, data => {
+        let setHidden = metadata => setMetadataBoolValue(metadata, 'is_hidden', data.new_state);
+        let curImgImg = currentImageHelper.getCurrentImage();
+        if (curImgImg && curImgImg.dataset.src == rawSrc) {
+            curImgImg.dataset.metadata = setHidden(curImgImg.dataset.metadata ?? '{}');
+        }
+        let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
+        if (batchDiv) {
+            batchDiv.dataset.metadata = setHidden(batchDiv.dataset.metadata ?? '{}');
+            batchDiv.classList.toggle('image-block-hidden', data.new_state);
+        }
+        let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
+        if (historyDiv) {
+            historyDiv.dataset.metadata = setHidden(historyDiv.dataset.metadata ?? '{}');
+            historyDiv.classList.toggle('image-block-hidden', data.new_state);
+        }
+        if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
+            let state = imageFullView.copyState();
+            imageFullView.showImage(rawSrc, setHidden(imageFullView.currentMetadata), imageFullView.currentBatchId);
+            imageFullView.pasteState(state);
+        }
+        if (imageHistoryBrowser) {
+            imageHistoryBrowser.lightRefresh();
+        }
+    });
+}
+
 async function deleteSelectedHistoryImages() {
     if (imageHistoryBulkDeleteRunning) {
         return;
@@ -190,14 +252,18 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     let sortBy = localStorage.getItem('image_history_sort_by') ?? 'Name';
     let reverse = localStorage.getItem('image_history_sort_reverse') == 'true';
     let allowAnims = localStorage.getItem('image_history_allow_anims') != 'false';
+    let showHidden = imageHistoryShowHidden;
     let sortElem = document.getElementById('image_history_sort_by');
     let sortReverseElem = document.getElementById('image_history_sort_reverse');
     let allowAnimsElem = document.getElementById('image_history_allow_anims');
+    let showHiddenElem = document.getElementById('image_history_show_hidden');
     let fix = null;
     if (sortElem) {
         sortBy = sortElem.value;
         reverse = sortReverseElem.checked;
         allowAnims = allowAnimsElem.checked;
+        showHidden = showHiddenElem.checked;
+        imageHistoryShowHidden = showHidden;
         ensureImageHistoryBulkControlsReady();
     }
     else { // first call happens before headers are built atm
@@ -205,8 +271,10 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
             let sortElem = document.getElementById('image_history_sort_by');
             let sortReverseElem = document.getElementById('image_history_sort_reverse');
             let allowAnimsElem = document.getElementById('image_history_allow_anims');
+            let showHiddenElem = document.getElementById('image_history_show_hidden');
             sortElem.value = sortBy;
             sortReverseElem.checked = reverse;
+            showHiddenElem.checked = showHidden;
             sortElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_sort_by', sortElem.value);
                 imageHistoryBrowser.lightRefresh();
@@ -219,11 +287,16 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
                 localStorage.setItem('image_history_allow_anims', allowAnimsElem.checked);
                 imageHistoryBrowser.lightRefresh();
             });
+            showHiddenElem.addEventListener('change', () => {
+                imageHistoryShowHidden = showHiddenElem.checked;
+                localStorage.setItem('image_history_show_hidden', showHiddenElem.checked);
+                imageHistoryBrowser.lightRefresh();
+            });
             ensureImageHistoryBulkControlsReady();
         }
     }
     let prefix = path == '' ? '' : (path.endsWith('/') ? path : `${path}/`);
-    genericRequest('ListImages', {'path': path, 'depth': depth, 'sortBy': sortBy, 'sortReverse': reverse}, data => {
+    genericRequest('ListImages', {'path': path, 'depth': depth, 'sortBy': sortBy, 'sortReverse': reverse, 'includeHidden': showHidden}, data => {
         let folders = data.folders.sort((a, b) => b.toLowerCase().localeCompare(a.toLowerCase()));
         function isPreSortFile(f) {
             return f.src == 'index.html'; // Grid index files
@@ -244,14 +317,24 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
 
 function buttonsForImage(fullsrc, src, metadata) {
     let isDataImage = src.startsWith('data:');
+    let parsedMetadata = parseHistoryMetadata(metadata);
     let buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
-            label: (metadata && JSON.parse(metadata).is_starred) ? 'Unstar' : 'Star',
+            label: parsedMetadata.is_starred ? 'Unstar' : 'Star',
             title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
-            className: (metadata && JSON.parse(metadata).is_starred) ? ' star-button button-starred-image' : ' star-button',
+            className: parsedMetadata.is_starred ? ' star-button button-starred-image' : ' star-button',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
+            }
+        });
+    }
+    if (!isDataImage) {
+        buttons.push({
+            label: parsedMetadata.is_hidden ? 'Unhide' : 'Hide',
+            title: 'Hide this image from normal history view without deleting it.',
+            onclick: (e) => {
+                toggleImageHidden(fullsrc, src);
             }
         });
     }
@@ -304,7 +387,7 @@ function describeOutputFile(image) {
     let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
     let canDelete = permissions.hasPermission('user_delete_image') && !image.data.src.startsWith('data:');
     let isSelected = imageHistorySelected.has(image.data.fullsrc);
-    let parsedMeta = { is_starred: false };
+    let parsedMeta = { is_starred: false, is_hidden: false };
     if (image.data.metadata) {
         let metadata = image.data.metadata;
         try {
@@ -335,6 +418,9 @@ function describeOutputFile(image) {
     let detail_list = [escapeHtml(image.data.name), formattedMetadata.replaceAll('<br>', '&emsp;')];
     let aspectRatio = parsedMeta.sui_image_params?.width && parsedMeta.sui_image_params?.height ? parsedMeta.sui_image_params.width / parsedMeta.sui_image_params.height : null;
     let className = parsedMeta.is_starred ? 'image-block-starred' : '';
+    if (parsedMeta.is_hidden) {
+        className = `${className} image-block-hidden`.trim();
+    }
     if (isSelected) {
         className = `${className} browser-entry-selected`.trim();
     }
@@ -370,7 +456,7 @@ function selectOutputInHistory(image, div) {
 }
 
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
-    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> <span id="image_history_bulk_controls" class="image-history-bulk-controls"><span id="image_history_selected_count" class="image-history-selected-count">0 selected</span> <button id="image_history_select_all" class="refresh-button">Select All</button> <button id="image_history_clear_selection" class="refresh-button">Clear</button> <button id="image_history_delete_selected" class="interrupt-button">Delete Selected</button></span>`);
+    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> &emsp; <input type="checkbox" id="image_history_show_hidden" autocomplete="off"> <label for="image_history_show_hidden">Show Hidden</label> <span id="image_history_bulk_controls" class="image-history-bulk-controls"><span id="image_history_selected_count" class="image-history-selected-count">0 selected</span> <button id="image_history_select_all" class="refresh-button">Select All</button> <button id="image_history_clear_selection" class="refresh-button">Clear</button> <button id="image_history_delete_selected" class="interrupt-button">Delete Selected</button></span>`);
 imageHistoryBrowser.folderSelectedEvent = () => {
     clearImageHistorySelection();
 };

@@ -338,6 +338,9 @@ body {
 .image-block-starred {
     box-shadow: 0 0 1px 1px var(--star);
 }
+.image-block-hidden {
+    opacity: 0.5;
+}
 .image-block .loading-spinner-parent {
     width: 0;
     height: 0;

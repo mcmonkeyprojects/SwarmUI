@@ -31,6 +31,7 @@ public static class T2IAPI
         API.RegisterAPICall(AddImageToHistory, true, Permissions.BasicImageGeneration);
         API.RegisterAPICall(ListImages, false, Permissions.ViewImageHistory);
         API.RegisterAPICall(ToggleImageStarred, true, Permissions.UserStarImages);
+        API.RegisterAPICall(ToggleImageHidden, true, Permissions.ViewImageHistory);
         API.RegisterAPICall(OpenImageFolder, true, Permissions.LocalImageFolder);
         API.RegisterAPICall(DeleteImage, true, Permissions.UserDeleteImage);
         API.RegisterAPICall(ListT2IParams, false, Permissions.FundamentalGenerateTabAccess);
@@ -524,11 +525,28 @@ public static class T2IAPI
 
     public enum ImageHistorySortMode { Name, Date }
 
-    private static JObject GetListAPIInternal(Session session, string rawPath, string root, HashSet<string> extensions, Func<string, bool> isAllowed, int depth, ImageHistorySortMode sortBy, bool sortReverse)
+    private static bool MetadataIsHidden(OutputMetadataTracker.OutputMetadataEntry metadata)
+    {
+        if (metadata is null || string.IsNullOrWhiteSpace(metadata.Metadata) || !metadata.Metadata.Contains("\"is_hidden\""))
+        {
+            return false;
+        }
+        try
+        {
+            JToken hidden = metadata.Metadata.ParseToJson()["is_hidden"];
+            return hidden?.Type == JTokenType.Boolean && hidden.Value<bool>();
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static JObject GetListAPIInternal(Session session, string rawPath, string root, HashSet<string> extensions, Func<string, bool> isAllowed, int depth, ImageHistorySortMode sortBy, bool sortReverse, bool includeHidden)
     {
         int maxInHistory = session.User.Settings.MaxImagesInHistory;
         int maxScanned = session.User.Settings.MaxImagesScannedInHistory;
-        Logs.Verbose($"User {session.User.UserID} wants to list images in '{rawPath}', maxDepth={depth}, sortBy={sortBy}, reverse={sortReverse}, maxInHistory={maxInHistory}, maxScanned={maxScanned}");
+        Logs.Verbose($"User {session.User.UserID} wants to list images in '{rawPath}', maxDepth={depth}, sortBy={sortBy}, reverse={sortReverse}, includeHidden={includeHidden}, maxInHistory={maxInHistory}, maxScanned={maxScanned}");
         long timeStart = Environment.TickCount64;
         int limit = sortBy == ImageHistorySortMode.Name ? maxInHistory : Math.Max(maxInHistory, maxScanned);
         (string path, string consoleError, string userError) = WebServer.CheckFilePath(root, rawPath);
@@ -641,7 +659,7 @@ public static class T2IAPI
                 }
                 List<string> subFiles = [.. Directory.EnumerateFiles(actualPath).Take(localLimit)];
                 IEnumerable<string> newFileNames = subFiles.Select(f => f.Replace('\\', '/')).Where(isAllowed).Where(f => !f.AfterLast('/').StartsWithFast('.') && extensions.Contains(f.AfterLast('.')) && !f.EndsWith(".swarmpreview.jpg") && !f.EndsWith(".swarmpreview.webp"));
-                List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), OutputMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null)];
+                List<ImageHistoryHelper> localFiles = [.. newFileNames.Select(f => new ImageHistoryHelper(prefix + f.AfterLast('/'), OutputMetadataTracker.GetMetadataFor(f, root, starNoFolders))).Where(f => f.Metadata is not null).Where(f => includeHidden || !MetadataIsHidden(f.Metadata))];
                 int leftOver = Interlocked.Add(ref remaining, -localFiles.Count);
                 sortList(localFiles);
                 filesConc.TryAdd(localId, localFiles);
@@ -704,14 +722,15 @@ public static class T2IAPI
         [API.APIParameter("The folder path to start the listing in. Use an empty string for root.")] string path,
         [API.APIParameter("Maximum depth (number of recursive folders) to search.")] int depth,
         [API.APIParameter("What to sort the list by - `Name` or `Date`.")] string sortBy = "Name",
-        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false)
+        [API.APIParameter("If true, the sorting should be done in reverse.")] bool sortReverse = false,
+        [API.APIParameter("If true, include images marked as hidden.")] bool includeHidden = false)
     {
         if (!Enum.TryParse(sortBy, true, out ImageHistorySortMode sortMode))
         {
             return new JObject() { ["error"] = $"Invalid sort mode '{sortBy}'." };
         }
         string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
-        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, depth, sortMode, sortReverse);
+        return GetListAPIInternal(session, path, root, HistoryExtensions, f => true, depth, sortMode, sortReverse, includeHidden);
     }
 
     [API.APIDescription("Open an image folder in the file explorer. Used for local users directly.", "\"success\": true")]
@@ -752,7 +771,7 @@ public static class T2IAPI
         return new JObject() { ["success"] = true };
     }
 
-    public static string[] DeletableFileExtensions = [".txt", ".metadata.js", ".swarm.json", ".swarmpreview.jpg", ".swarmpreview.webp"];
+    public static string[] DeletableFileExtensions = [".txt", ".metadata.js", ".swarm.json", OutputMetadataTracker.HiddenMarkerExtension, ".swarmpreview.jpg", ".swarmpreview.webp"];
 
     [API.APIDescription("Delete an image from history.", "\"success\": true")]
     public static async Task<JObject> DeleteImage(Session session,
@@ -866,6 +885,73 @@ public static class T2IAPI
             OutputMetadataTracker.RemoveMetadataFor(starPath);
             return new JObject() { ["new_state"] = true };
         }
+    }
+
+    [API.APIDescription("Toggle whether an image is hidden in history or not.", "\"new_state\": true")]
+    public static async Task<JObject> ToggleImageHidden(Session session,
+        [API.APIParameter("The path to the image to hide or unhide.")] string path)
+    {
+        bool wasStar = false;
+        path = path.Replace('\\', '/').Trim('/');
+        if (path.StartsWith("Starred/"))
+        {
+            wasStar = true;
+            path = path["Starred/".Length..];
+        }
+        string origPath = path;
+        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, session.User.OutputDirectory);
+        (path, string consoleError, string userError) = WebServer.CheckFilePath(root, path);
+        if (consoleError is not null)
+        {
+            Logs.Error(consoleError);
+            return new JObject() { ["error"] = userError };
+        }
+        string rawPath = UserImageHistoryHelper.GetRealPathFor(session.User, path, root: root);
+        string starPath = $"Starred/{(session.User.Settings.StarNoFolders ? origPath.Replace("/", "") : origPath)}";
+        (starPath, _, _) = WebServer.CheckFilePath(root, starPath);
+        starPath = UserImageHistoryHelper.GetRealPathFor(session.User, starPath, root: root);
+        string primaryPath = wasStar ? starPath : rawPath;
+        bool rawExists = File.Exists(rawPath);
+        bool starExists = File.Exists(starPath);
+        if (!File.Exists(primaryPath) && !rawExists && !starExists)
+        {
+            Logs.Warning($"User {session.User.UserID} tried to hide image path '{origPath}' which maps to '{primaryPath}', but cannot as the image does not exist.");
+            return new JObject() { ["error"] = "That file does not exist, cannot hide." };
+        }
+        string rawMarker = $"{rawPath.BeforeLast('.')}{OutputMetadataTracker.HiddenMarkerExtension}";
+        string starMarker = $"{starPath.BeforeLast('.')}{OutputMetadataTracker.HiddenMarkerExtension}";
+        bool currentlyHidden = (rawExists && File.Exists(rawMarker)) || (starExists && File.Exists(starMarker));
+        bool newState = !currentlyHidden;
+        static void setMarker(string marker, bool fileExists, bool hidden)
+        {
+            if (!fileExists)
+            {
+                return;
+            }
+            if (hidden)
+            {
+                File.WriteAllText(marker, "1");
+            }
+            else if (File.Exists(marker))
+            {
+                File.Delete(marker);
+            }
+        }
+        setMarker(rawMarker, rawExists, newState);
+        if (rawPath != starPath)
+        {
+            setMarker(starMarker, starExists, newState);
+        }
+        if (rawExists)
+        {
+            OutputMetadataTracker.RemoveMetadataFor(rawPath.Replace('\\', '/'));
+        }
+        if (starExists)
+        {
+            OutputMetadataTracker.RemoveMetadataFor(starPath.Replace('\\', '/'));
+        }
+        Logs.Debug($"User {session.User.UserID} {(newState ? "hid" : "unhid")} image '{origPath}'");
+        return new JObject() { ["new_state"] = newState };
     }
 
     public static SemaphoreSlim RefreshSemaphore = new(1, 1);

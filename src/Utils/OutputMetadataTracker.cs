@@ -128,6 +128,32 @@ public static class OutputMetadataTracker
     /// <summary>File format extensions that are animations in an image file format.</summary>
     public static HashSet<string> ExtensionsForAnimatedImages = ["webp", "gif"];
 
+    /// <summary>Extra sidecar extension used to mark an image as hidden in history.</summary>
+    public const string HiddenMarkerExtension = ".swarm.hidden";
+
+    /// <summary>Applies a true/false boolean flag to metadata JSON if possible.</summary>
+    public static string ApplyBooleanFlagToMetadata(string metadata, string key, bool enabled)
+    {
+        if (!enabled)
+        {
+            return metadata;
+        }
+        if (string.IsNullOrWhiteSpace(metadata))
+        {
+            return $"{{ \"{key}\": true }}";
+        }
+        try
+        {
+            JObject obj = metadata.ParseToJson();
+            obj[key] = true;
+            return obj.ToString();
+        }
+        catch (Exception)
+        {
+            return metadata;
+        }
+    }
+
     /// <summary>Deletes any tracked metadata for the given filepath.</summary>
     public static void RemoveMetadataFor(string file)
     {
@@ -399,19 +425,9 @@ public static class OutputMetadataTracker
             }
             string starPath = $"{root}/Starred/{subPath}";
             bool isStarred = rawSubPath.StartsWith("Starred/") || File.Exists(starPath);
-            if (isStarred)
-            {
-                if (fileData is null)
-                {
-                    fileData = "{ \"is_starred\": true }";
-                }
-                else
-                {
-                    JObject jData = fileData.ParseToJson();
-                    jData["is_starred"] = true;
-                    fileData = jData.ToString();
-                }
-            }
+            fileData = ApplyBooleanFlagToMetadata(fileData, "is_starred", isStarred);
+            bool isHidden = File.Exists($"{file.BeforeLast('.')}{HiddenMarkerExtension}");
+            fileData = ApplyBooleanFlagToMetadata(fileData, "is_hidden", isHidden);
         }
         catch (Exception ex)
         {
