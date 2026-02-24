@@ -1,5 +1,5 @@
 let imageHistorySelected = new Set();
-let imageHistoryBulkDeleteRunning = false;
+let imageHistoryBulkActionRunning = false;
 let imageHistoryShowHidden = localStorage.getItem('image_history_show_hidden') == 'true';
 
 function parseHistoryMetadata(metadata) {
@@ -60,9 +60,10 @@ function updateImageHistoryBulkControls() {
     if (!controls) {
         return;
     }
+    let canHide = permissions.hasPermission('view_image_history');
     let canDelete = permissions.hasPermission('user_delete_image');
-    controls.style.display = canDelete ? '' : 'none';
-    if (!canDelete) {
+    controls.style.display = canDelete || canHide ? '' : 'none';
+    if (!canDelete && !canHide) {
         return;
     }
     let count = imageHistorySelected.size;
@@ -72,16 +73,27 @@ function updateImageHistoryBulkControls() {
     }
     let selectAllButton = document.getElementById('image_history_select_all');
     let clearButton = document.getElementById('image_history_clear_selection');
+    let hideButton = document.getElementById('image_history_hide_selected');
+    let unhideButton = document.getElementById('image_history_unhide_selected');
     let deleteButton = document.getElementById('image_history_delete_selected');
     let anyEntries = getImageHistoryEntries().length > 0;
     if (selectAllButton) {
-        selectAllButton.disabled = !anyEntries || imageHistoryBulkDeleteRunning;
+        selectAllButton.disabled = !anyEntries || imageHistoryBulkActionRunning;
     }
     if (clearButton) {
-        clearButton.disabled = count == 0 || imageHistoryBulkDeleteRunning;
+        clearButton.disabled = count == 0 || imageHistoryBulkActionRunning;
+    }
+    if (hideButton) {
+        hideButton.style.display = canHide ? '' : 'none';
+        hideButton.disabled = count == 0 || imageHistoryBulkActionRunning;
+    }
+    if (unhideButton) {
+        unhideButton.style.display = canHide ? '' : 'none';
+        unhideButton.disabled = count == 0 || imageHistoryBulkActionRunning;
     }
     if (deleteButton) {
-        deleteButton.disabled = count == 0 || imageHistoryBulkDeleteRunning;
+        deleteButton.style.display = canDelete ? '' : 'none';
+        deleteButton.disabled = count == 0 || imageHistoryBulkActionRunning;
     }
 }
 
@@ -133,6 +145,12 @@ function ensureImageHistoryBulkControlsReady() {
     getRequiredElementById('image_history_clear_selection').addEventListener('click', () => {
         clearImageHistorySelection();
     });
+    getRequiredElementById('image_history_hide_selected').addEventListener('click', () => {
+        setSelectedHistoryImagesHidden(true);
+    });
+    getRequiredElementById('image_history_unhide_selected').addEventListener('click', () => {
+        setSelectedHistoryImagesHidden(false);
+    });
     getRequiredElementById('image_history_delete_selected').addEventListener('click', () => {
         deleteSelectedHistoryImages();
     });
@@ -180,36 +198,96 @@ function deleteSingleHistoryImage(fullsrc, src, explicitEntry = null, errorHandl
     });
 }
 
-function toggleImageHidden(path, rawSrc) {
-    genericRequest('ToggleImageHidden', { 'path': path }, data => {
-        let setHidden = metadata => setMetadataBoolValue(metadata, 'is_hidden', data.new_state);
-        let curImgImg = currentImageHelper.getCurrentImage();
-        if (curImgImg && curImgImg.dataset.src == rawSrc) {
-            curImgImg.dataset.metadata = setHidden(curImgImg.dataset.metadata ?? '{}');
-        }
-        let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
-        if (batchDiv) {
-            batchDiv.dataset.metadata = setHidden(batchDiv.dataset.metadata ?? '{}');
-            batchDiv.classList.toggle('image-block-hidden', data.new_state);
-        }
-        let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
-        if (historyDiv) {
-            historyDiv.dataset.metadata = setHidden(historyDiv.dataset.metadata ?? '{}');
-            historyDiv.classList.toggle('image-block-hidden', data.new_state);
-        }
-        if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
-            let state = imageFullView.copyState();
-            imageFullView.showImage(rawSrc, setHidden(imageFullView.currentMetadata), imageFullView.currentBatchId);
-            imageFullView.pasteState(state);
-        }
-        if (imageHistoryBrowser) {
-            imageHistoryBrowser.lightRefresh();
-        }
+function toggleImageHidden(path, rawSrc, refreshAfter = true, errorHandle = null) {
+    return new Promise(resolve => {
+        genericRequest('ToggleImageHidden', { 'path': path }, data => {
+            let setHidden = metadata => setMetadataBoolValue(metadata, 'is_hidden', data.new_state);
+            let curImgImg = currentImageHelper.getCurrentImage();
+            if (curImgImg && curImgImg.dataset.src == rawSrc) {
+                curImgImg.dataset.metadata = setHidden(curImgImg.dataset.metadata ?? '{}');
+            }
+            let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
+            if (batchDiv) {
+                batchDiv.dataset.metadata = setHidden(batchDiv.dataset.metadata ?? '{}');
+                batchDiv.classList.toggle('image-block-hidden', data.new_state);
+            }
+            let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
+            if (historyDiv) {
+                historyDiv.dataset.metadata = setHidden(historyDiv.dataset.metadata ?? '{}');
+                historyDiv.classList.toggle('image-block-hidden', data.new_state);
+            }
+            if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
+                let state = imageFullView.copyState();
+                imageFullView.showImage(rawSrc, setHidden(imageFullView.currentMetadata), imageFullView.currentBatchId);
+                imageFullView.pasteState(state);
+            }
+            if (imageHistoryBrowser) {
+                let file = imageHistoryBrowser.getFileFor(path);
+                if (file?.data) {
+                    file.data.metadata = setHidden(file.data.metadata ?? '{}');
+                }
+                if (refreshAfter) {
+                    imageHistoryBrowser.lightRefresh();
+                }
+            }
+            resolve({ success: true, new_state: data.new_state });
+        }, 0, error => {
+            if (errorHandle) {
+                errorHandle(error);
+            }
+            else {
+                showError(error);
+            }
+            resolve({ success: false, error });
+        });
     });
 }
 
+async function setSelectedHistoryImagesHidden(targetHidden) {
+    if (imageHistoryBulkActionRunning) {
+        return;
+    }
+    let selected = [...imageHistorySelected];
+    if (selected.length == 0) {
+        return;
+    }
+    imageHistoryBulkActionRunning = true;
+    updateImageHistoryBulkControls();
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+    for (let fullsrc of selected) {
+        let current = imageHistoryBrowser?.getFileFor(fullsrc);
+        let isHidden = parseHistoryMetadata(current?.data?.metadata).is_hidden === true;
+        if (isHidden == targetHidden) {
+            skipped++;
+            continue;
+        }
+        let src = `${getImageOutPrefix()}/${fullsrc}`;
+        let res = await toggleImageHidden(fullsrc, src, false, () => {});
+        if (res.success) {
+            updated++;
+        }
+        else {
+            failed++;
+            console.log(`Failed to ${targetHidden ? 'hide' : 'unhide'} image '${fullsrc}': ${res.error}`);
+        }
+    }
+    imageHistoryBulkActionRunning = false;
+    updateImageHistoryBulkControls();
+    if (updated > 0) {
+        imageHistoryBrowser.lightRefresh();
+    }
+    if (failed > 0) {
+        showError(`${targetHidden ? 'Hid' : 'Unhid'} ${updated} image(s), skipped ${skipped}, failed ${failed}.`);
+    }
+    else if (updated > 0 || skipped > 0) {
+        doNoticePopover(`${targetHidden ? 'Hid' : 'Unhid'} ${updated} image${updated == 1 ? '' : 's'}${skipped > 0 ? ` (${skipped} already ${targetHidden ? 'hidden' : 'visible'})` : ''}.`, 'notice-pop-green');
+    }
+}
+
 async function deleteSelectedHistoryImages() {
-    if (imageHistoryBulkDeleteRunning) {
+    if (imageHistoryBulkActionRunning) {
         return;
     }
     let selected = [...imageHistorySelected];
@@ -220,7 +298,7 @@ async function deleteSelectedHistoryImages() {
     if (!uiImprover.lastShift && getUserSetting('ui.checkifsurebeforedelete', true) && !confirm(`Are you sure you want to delete ${selected.length} ${imgWord}?\nHold shift to bypass.`)) {
         return;
     }
-    imageHistoryBulkDeleteRunning = true;
+    imageHistoryBulkActionRunning = true;
     updateImageHistoryBulkControls();
     let deleted = 0;
     let failed = 0;
@@ -235,7 +313,7 @@ async function deleteSelectedHistoryImages() {
             console.log(`Failed to delete image '${fullsrc}': ${res.error}`);
         }
     }
-    imageHistoryBulkDeleteRunning = false;
+    imageHistoryBulkActionRunning = false;
     updateImageHistoryBulkControls();
     if (deleted > 0) {
         imageHistoryBrowser.lightRefresh();
@@ -385,7 +463,9 @@ function buttonsForImage(fullsrc, src, metadata) {
 
 function describeOutputFile(image) {
     let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
+    let canHide = permissions.hasPermission('view_image_history') && !image.data.src.startsWith('data:');
     let canDelete = permissions.hasPermission('user_delete_image') && !image.data.src.startsWith('data:');
+    let canBulkSelect = canHide || canDelete;
     let isSelected = imageHistorySelected.has(image.data.fullsrc);
     let parsedMeta = { is_starred: false, is_hidden: false };
     if (image.data.metadata) {
@@ -424,7 +504,7 @@ function describeOutputFile(image) {
     if (isSelected) {
         className = `${className} browser-entry-selected`.trim();
     }
-    let checkbox = canDelete ? {
+    let checkbox = canBulkSelect ? {
         checked: isSelected,
         title: 'Select image',
         onchange: (checked, file, div) => {
@@ -456,7 +536,7 @@ function selectOutputInHistory(image, div) {
 }
 
 let imageHistoryBrowser = new GenPageBrowserClass('image_history', listOutputHistoryFolderAndFiles, 'imagehistorybrowser', 'Thumbnails', describeOutputFile, selectOutputInHistory,
-    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> &emsp; <input type="checkbox" id="image_history_show_hidden" autocomplete="off"> <label for="image_history_show_hidden">Show Hidden</label> <span id="image_history_bulk_controls" class="image-history-bulk-controls"><span id="image_history_selected_count" class="image-history-selected-count">0 selected</span> <button id="image_history_select_all" class="refresh-button">Select All</button> <button id="image_history_clear_selection" class="refresh-button">Clear</button> <button id="image_history_delete_selected" class="interrupt-button">Delete Selected</button></span>`);
+    `<label for="image_history_sort_by">Sort:</label> <select id="image_history_sort_by"><option>Name</option><option>Date</option></select> <input type="checkbox" id="image_history_sort_reverse"> <label for="image_history_sort_reverse">Reverse</label> &emsp; <input type="checkbox" id="image_history_allow_anims" checked autocomplete="off"> <label for="image_history_allow_anims">Allow Animation</label> &emsp; <input type="checkbox" id="image_history_show_hidden" autocomplete="off"> <label for="image_history_show_hidden">Show Hidden</label> <span id="image_history_bulk_controls" class="image-history-bulk-controls"><span id="image_history_selected_count" class="image-history-selected-count">0 selected</span> <button id="image_history_select_all" class="refresh-button">Select All</button> <button id="image_history_clear_selection" class="refresh-button">Clear</button> <button id="image_history_hide_selected" class="refresh-button">Hide Selected</button> <button id="image_history_unhide_selected" class="refresh-button">Unhide Selected</button> <button id="image_history_delete_selected" class="interrupt-button">Delete Selected</button></span>`);
 imageHistoryBrowser.folderSelectedEvent = () => {
     clearImageHistorySelection();
 };
