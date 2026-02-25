@@ -82,7 +82,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
-    public static string SwarmValidatedFrontendVersion = "1.39.14";
+    public static string SwarmValidatedFrontendVersion = "1.39.16";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
