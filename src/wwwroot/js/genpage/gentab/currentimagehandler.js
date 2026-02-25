@@ -226,14 +226,90 @@ class ImageFullViewHelper {
         this.lastClosed = 0;
         this.showMetadata = true;
         this.didPasteState = false;
+        this.pendingDragX = 0;
+        this.pendingDragY = 0;
+        this.dragMoveRaf = null;
+        this.pendingWheelSteps = 0;
+        this.pendingWheelMouseX = 0;
+        this.pendingWheelMouseY = 0;
+        this.wheelRaf = null;
+        this.imageWrap = null;
+        this.buttonsWrap = null;
+        this.metadataWrap = null;
+    }
+
+    ensureScaffold() {
+        if (this.imageWrap?.isConnected && this.buttonsWrap?.isConnected && this.metadataWrap?.isConnected) {
+            return;
+        }
+        this.content.innerHTML = `
+        <div class="modal-dialog" style="display:none">(click outside image to close)</div>
+        <div class="imageview_modal_inner_div">
+            <div class="imageview_modal_imagewrap" id="imageview_modal_imagewrap" style="text-align:center;"></div>
+            <div class="imageview_popup_modal_undertext">
+                <div class="image_fullview_extra_buttons"></div>
+                <div class="image_fullview_metadata"></div>
+            </div>
+        </div>`;
+        this.imageWrap = this.content.querySelector('#imageview_modal_imagewrap');
+        this.buttonsWrap = this.content.querySelector('.image_fullview_extra_buttons');
+        this.metadataWrap = this.content.querySelector('.image_fullview_metadata');
+    }
+
+    createMediaElement(src, isVideo, isAudio) {
+        let encodedSrc = escapeHtmlForUrl(src);
+        if (isVideo) {
+            let container = document.createElement('div');
+            container.className = 'video-container imageview_popup_modal_img';
+            container.id = 'imageview_popup_modal_img';
+            let video = document.createElement('video');
+            video.className = 'imageview_popup_modal_img';
+            video.style.cursor = 'grab';
+            video.style.maxWidth = '100%';
+            video.style.objectFit = 'contain';
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = true;
+            video.addEventListener('loadeddata', () => this.onImgLoad(), { once: true });
+            let source = document.createElement('source');
+            source.src = encodedSrc;
+            source.type = isVideo;
+            video.appendChild(source);
+            container.appendChild(video);
+            return container;
+        }
+        if (isAudio) {
+            let audio = document.createElement('audio');
+            audio.className = 'imageview_popup_modal_img';
+            audio.id = 'imageview_popup_modal_img';
+            audio.style.cursor = 'grab';
+            audio.style.maxWidth = '100%';
+            audio.style.objectFit = 'contain';
+            audio.controls = true;
+            audio.src = encodedSrc;
+            audio.addEventListener('loadeddata', () => this.onImgLoad(), { once: true });
+            return audio;
+        }
+        let img = document.createElement('img');
+        img.className = 'imageview_popup_modal_img';
+        img.id = 'imageview_popup_modal_img';
+        img.style.cursor = 'grab';
+        img.style.maxWidth = '100%';
+        img.style.objectFit = 'contain';
+        img.src = encodedSrc;
+        img.addEventListener('load', () => this.onImgLoad(), { once: true });
+        return img;
     }
 
     getImgOrContainer() {
-        return getRequiredElementById('imageview_popup_modal_img');
+        return this.content.querySelector('#imageview_popup_modal_img');
     }
 
     getImg() {
         let container = this.getImgOrContainer();
+        if (!container) {
+            return null;
+        }
         if (container.classList.contains('video-container')) {
             return container.querySelector('video');
         }
@@ -274,6 +350,7 @@ class ImageFullViewHelper {
         if (!this.isDragging) {
             return;
         }
+        this.flushPendingDragMove();
         this.getImgOrContainer().style.cursor = 'grab';
         this.isDragging = false;
         this.noClose = this.didDrag;
@@ -292,16 +369,32 @@ class ImageFullViewHelper {
         img.style.top = `${newTop}px`;
     }
 
+    flushPendingDragMove() {
+        if (this.pendingDragX == 0 && this.pendingDragY == 0) {
+            return;
+        }
+        this.detachImg();
+        this.moveImg(this.pendingDragX, this.pendingDragY);
+        this.pendingDragX = 0;
+        this.pendingDragY = 0;
+    }
+
     onGlobalMouseMove(e) {
         if (!this.isDragging) {
             return;
         }
-        this.detachImg();
         let xDiff = e.clientX - this.lastMouseX;
         let yDiff = e.clientY - this.lastMouseY;
         this.lastMouseX = e.clientX;
         this.lastMouseY = e.clientY;
-        this.moveImg(xDiff, yDiff);
+        this.pendingDragX += xDiff;
+        this.pendingDragY += yDiff;
+        if (!this.dragMoveRaf) {
+            this.dragMoveRaf = requestAnimationFrame(() => {
+                this.dragMoveRaf = null;
+                this.flushPendingDragMove();
+            });
+        }
         if (Math.abs(xDiff) > 1 || Math.abs(yDiff) > 1) {
             this.didDrag = true;
         }
@@ -358,15 +451,18 @@ class ImageFullViewHelper {
         this.didPasteState = true;
     }
 
-    onWheel(e) {
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
-            return;
-        }
+    applyWheelZoom(stepDelta, clientX, clientY) {
         this.detachImg();
         let img = this.getImg();
+        if (!img) {
+            return;
+        }
         let container = this.getImgOrContainer();
+        if (!container) {
+            return;
+        }
         let origHeight = this.getHeightPercent();
-        let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
+        let zoom = Math.pow(this.zoomRate, stepDelta);
         let width = img.naturalWidth ?? img.videoWidth;
         let height = img.naturalHeight ?? img.videoHeight;
         let maxHeight = Math.sqrt(width * height) * 2;
@@ -385,17 +481,41 @@ class ImageFullViewHelper {
         }
         container.style.cursor = 'grab';
         let [imgLeft, imgTop] = [this.getImgLeft(), this.getImgTop()];
-        let [mouseX, mouseY] = [e.clientX - container.offsetLeft, e.clientY - container.offsetTop];
+        let [mouseX, mouseY] = [clientX - container.offsetLeft, clientY - container.offsetTop];
         let [origX, origY] = [mouseX / origHeight - imgLeft, mouseY / origHeight - imgTop];
         let [newX, newY] = [mouseX / newHeight - imgLeft, mouseY / newHeight - imgTop];
         this.moveImg((newX - origX) * newHeight, (newY - origY) * newHeight);
         container.style.height = `${newHeight}%`;
     }
 
+    onWheel(e) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
+            return;
+        }
+        this.pendingWheelSteps += -e.deltaY / 100;
+        this.pendingWheelMouseX = e.clientX;
+        this.pendingWheelMouseY = e.clientY;
+        if (this.wheelRaf) {
+            return;
+        }
+        this.wheelRaf = requestAnimationFrame(() => {
+            this.wheelRaf = null;
+            let stepDelta = this.pendingWheelSteps;
+            let mouseX = this.pendingWheelMouseX;
+            let mouseY = this.pendingWheelMouseY;
+            this.pendingWheelSteps = 0;
+            this.applyWheelZoom(stepDelta, mouseX, mouseY);
+        });
+    }
+
     toggleMetadataVisibility(showMetadata) {
         this.showMetadata = showMetadata;
-        let undertext = this.content.querySelector('.imageview_popup_modal_undertext');
-        let imagewrap = this.content.querySelector('.imageview_modal_imagewrap');
+        this.ensureScaffold();
+        let undertext = this.metadataWrap?.parentElement;
+        let imagewrap = this.imageWrap;
+        if (!undertext || !imagewrap) {
+            return;
+        }
         if (showMetadata) {
             undertext.classList.remove('minimized-mode');
             imagewrap.classList.remove('expanded-mode');
@@ -435,26 +555,12 @@ class ImageFullViewHelper {
         let wasAlreadyOpen = this.isOpen();
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
-        let encodedSrc = escapeHtmlForUrl(src);
-        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}" onload="imageFullView.onImgLoad()">`;
-        if (isVideo) {
-            imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted onload="imageFullView.onImgLoad()"><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
-        }
-        else if (isAudio) {
-            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}" onload="imageFullView.onImgLoad()"></audio>`;
-        }
-        this.content.innerHTML = `
-        <div class="modal-dialog" style="display:none">(click outside image to close)</div>
-        <div class="imageview_modal_inner_div">
-            <div class="imageview_modal_imagewrap" id="imageview_modal_imagewrap" style="text-align:center;">
-                ${imgHtml}
-            </div>
-            <div class="imageview_popup_modal_undertext">
-                <div class="image_fullview_extra_buttons"></div>
-                <div class="image_fullview_metadata">${formatMetadata(metadata)}</div>
-            </div>
-        </div>`;
-        let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
+        this.ensureScaffold();
+        let mediaElem = this.createMediaElement(src, isVideo, isAudio);
+        this.imageWrap.replaceChildren(mediaElem);
+        this.buttonsWrap.replaceChildren();
+        this.metadataWrap.innerHTML = formatMetadata(metadata);
+        let subDiv = this.buttonsWrap;
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
             if (added.href) {
                 if (added.is_download) {
@@ -515,7 +621,21 @@ class ImageFullViewHelper {
         }
         this.isDragging = false;
         this.didDrag = false;
-        this.content.innerHTML = '';
+        this.pendingDragX = 0;
+        this.pendingDragY = 0;
+        this.pendingWheelSteps = 0;
+        if (this.dragMoveRaf) {
+            cancelAnimationFrame(this.dragMoveRaf);
+            this.dragMoveRaf = null;
+        }
+        if (this.wheelRaf) {
+            cancelAnimationFrame(this.wheelRaf);
+            this.wheelRaf = null;
+        }
+        let media = this.getImg();
+        if (media && (media.tagName == 'VIDEO' || media.tagName == 'AUDIO')) {
+            media.pause();
+        }
     }
 
     isOpen() {
@@ -615,6 +735,33 @@ separateBatchesElem.checked = localStorage.getItem('separateBatches') == 'true';
 /** Called when the user changes separate-batches toggle to update local storage. */
 function toggleSeparateBatches() {
     localStorage.setItem('separateBatches', `${separateBatchesElem.checked}`);
+}
+
+let batchCardDelegationReady = false;
+
+function ensureBatchCardDelegationReady() {
+    if (batchCardDelegationReady) {
+        return;
+    }
+    let batchRoot = getRequiredElementById('current_image_batch');
+    batchRoot.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button != 0) {
+            return;
+        }
+        let div = e.target.closest('.image-block');
+        if (!div || !batchRoot.contains(div)) {
+            return;
+        }
+        clickImageInBatch(div);
+    });
+    batchRoot.addEventListener('contextmenu', (e) => {
+        let div = e.target.closest('.image-block');
+        if (!div || !batchRoot.contains(div)) {
+            return;
+        }
+        rightClickImageInBatch(e, div);
+    });
+    batchCardDelegationReady = true;
 }
 
 function clickImageInBatch(div) {
@@ -1047,19 +1194,27 @@ function saveCurrentImageToHistory(img, button = null) {
             }
             let savedMetadata = img.dataset.metadata || currentMetadataVal || saved.metadata || '{}';
             setCurrentImage(saved.image, savedMetadata, batchId);
-            let batchContainer = document.getElementById('current_image_batch');
-            if (batchContainer) {
-                for (let block of batchContainer.getElementsByClassName('image-block')) {
-                    if (block.dataset.src == oldSrc) {
-                        block.dataset.src = saved.image;
-                        block.dataset.metadata = savedMetadata;
-                        let blockImg = block.querySelector('img');
-                        if (blockImg) {
-                            blockImg.src = saved.image;
-                        }
+            forEachSwarmImageCardForSrc(oldSrc, card => {
+                card.dataset.src = saved.image;
+                card.dataset.metadata = savedMetadata;
+                let media = card.querySelector('img, video, audio');
+                if (!media) {
+                    return;
+                }
+                if (media.tagName == 'VIDEO') {
+                    let source = media.querySelector('source');
+                    if (source) {
+                        source.src = saved.image;
+                        media.load();
+                    }
+                    else {
+                        media.src = saved.image;
                     }
                 }
-            }
+                else {
+                    media.src = saved.image;
+                }
+            });
             if (imageFullView.isOpen() && imageFullView.currentSrc == oldSrc) {
                 let state = imageFullView.copyState();
                 imageFullView.showImage(saved.image, savedMetadata, imageFullView.currentBatchId);
@@ -1478,6 +1633,7 @@ function getPreferredBatchContainer(batchId) {
 }
 
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
+    ensureBatchCardDelegationReady();
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
     }
@@ -1565,8 +1721,6 @@ function gotImageResult(image, metadata, batchId) {
             batch_div.parentElement.insertBefore(batch_div, insertAfter.nextSibling);
         }
     }
-    batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!currentImageHelper.getCurrentImage() || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
     }
@@ -1583,8 +1737,6 @@ function gotImagePreview(image, metadata, batchId) {
     let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.dataset.is_generating = 'true';
-    batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (showLoadSpinnersElem.checked) {
         let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
         batch_div.appendChild(spinnerDiv);
