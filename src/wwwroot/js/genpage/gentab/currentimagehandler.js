@@ -1,3 +1,195 @@
+let swarmImageCardRegistry = {
+    byCanonicalSrc: new Map(),
+    cardToKeys: new Map(),
+    currentCards: new Set(),
+
+    canonicalize(src) {
+        if (!src) {
+            return null;
+        }
+        try {
+            if (typeof getImageFullSrc == 'function') {
+                let canonical = getImageFullSrc(src);
+                if (canonical) {
+                    return canonical;
+                }
+            }
+        }
+        catch (err) {
+            // Fallback to the raw key when canonicalization is unavailable.
+        }
+        return src;
+    },
+
+    keysForCard(card) {
+        let keys = new Set();
+        let addKey = (value) => {
+            let key = this.canonicalize(value);
+            if (key) {
+                keys.add(key);
+            }
+        };
+        addKey(card?.dataset?.src);
+        addKey(card?.dataset?.name);
+        return keys;
+    },
+
+    unregister(card) {
+        let keys = this.cardToKeys.get(card);
+        if (keys) {
+            for (let key of keys) {
+                let cards = this.byCanonicalSrc.get(key);
+                if (!cards) {
+                    continue;
+                }
+                cards.delete(card);
+                if (cards.size == 0) {
+                    this.byCanonicalSrc.delete(key);
+                }
+            }
+        }
+        this.cardToKeys.delete(card);
+        this.currentCards.delete(card);
+    },
+
+    register(card) {
+        this.unregister(card);
+        if (!card || !card.isConnected) {
+            return;
+        }
+        let keys = this.keysForCard(card);
+        this.cardToKeys.set(card, keys);
+        for (let key of keys) {
+            let cards = this.byCanonicalSrc.get(key);
+            if (!cards) {
+                cards = new Set();
+                this.byCanonicalSrc.set(key, cards);
+            }
+            cards.add(card);
+        }
+    },
+
+    reindex(card) {
+        this.register(card);
+    },
+
+    forSource(src, callback) {
+        let key = this.canonicalize(src);
+        if (!key) {
+            return;
+        }
+        let cards = this.byCanonicalSrc.get(key);
+        if (!cards || cards.size == 0) {
+            return;
+        }
+        for (let card of [...cards]) {
+            if (!card.isConnected) {
+                this.unregister(card);
+                continue;
+            }
+            callback(card);
+        }
+    },
+
+    setCurrentSource(src) {
+        for (let card of this.currentCards) {
+            if (card.setCurrent) {
+                card.setCurrent(false);
+            }
+            else {
+                card.classList.remove('image-block-current');
+            }
+        }
+        this.currentCards.clear();
+        if (!src) {
+            return;
+        }
+        this.forSource(src, card => {
+            if (card.classList.contains('image-block-placeholder')) {
+                return;
+            }
+            if (card.setCurrent) {
+                card.setCurrent(true);
+            }
+            else {
+                card.classList.add('image-block-current');
+            }
+            this.currentCards.add(card);
+        });
+    }
+};
+
+class SwarmImageCard extends HTMLElement {
+    static get observedAttributes() {
+        return ['data-src', 'data-name'];
+    }
+
+    connectedCallback() {
+        swarmImageCardRegistry.register(this);
+    }
+
+    disconnectedCallback() {
+        swarmImageCardRegistry.unregister(this);
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue != newValue) {
+            swarmImageCardRegistry.reindex(this);
+        }
+    }
+
+    getMetadataObject() {
+        if (!this.dataset.metadata) {
+            return {};
+        }
+        let metadata = this.dataset.metadata;
+        try {
+            metadata = interpretMetadata(metadata);
+        }
+        catch (err) {
+            // Ignore metadata parse errors and fallback to raw JSON parse.
+        }
+        try {
+            return JSON.parse(metadata) || {};
+        }
+        catch (err) {
+            return {};
+        }
+    }
+
+    setMetadataObject(metadata) {
+        this.dataset.metadata = JSON.stringify(metadata || {});
+    }
+
+    setMetadataFlag(key, enabled) {
+        let metadata = this.getMetadataObject();
+        metadata[key] = !!enabled;
+        this.setMetadataObject(metadata);
+        return metadata;
+    }
+
+    setStarred(enabled) {
+        this.setMetadataFlag('is_starred', enabled);
+        this.classList.toggle('image-block-starred', !!enabled);
+    }
+
+    setHidden(enabled) {
+        this.setMetadataFlag('is_hidden', enabled);
+        this.classList.toggle('image-block-hidden', !!enabled);
+    }
+
+    setCurrent(enabled) {
+        this.classList.toggle('image-block-current', !!enabled);
+    }
+}
+
+if (window.customElements && !customElements.get('swarm-image-card')) {
+    customElements.define('swarm-image-card', SwarmImageCard);
+}
+
+function forEachSwarmImageCardForSrc(src, callback) {
+    swarmImageCardRegistry.forSource(src, callback);
+}
 
 /** Central helper class to handle the 'image full view' modal. */
 class ImageFullViewHelper {
@@ -736,16 +928,14 @@ function toggleStar(path, rawSrc) {
                 }
             }
         }
-        let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
-        if (batchDiv) {
-            batchDiv.dataset.metadata = JSON.stringify({ ...(JSON.parse(batchDiv.dataset.metadata ?? '{}') ?? {}), is_starred: data.new_state });
-            batchDiv.classList.toggle('image-block-starred', data.new_state);
-        }
-        let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
-        if (historyDiv) {
-            historyDiv.dataset.metadata = JSON.stringify({ ...(JSON.parse(historyDiv.dataset.metadata ?? '{}') ?? {}), is_starred: data.new_state });
-            historyDiv.classList.toggle('image-block-starred', data.new_state);
-        }
+        forEachSwarmImageCardForSrc(rawSrc, card => {
+            if (card.setStarred) {
+                card.setStarred(data.new_state);
+            }
+            else {
+                card.classList.toggle('image-block-starred', data.new_state);
+            }
+        });
         if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
             let oldMetadata = JSON.parse(imageFullView.currentMetadata);
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
@@ -1269,32 +1459,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
 }
 
 function highlightSelectedImage(src) {
-    let batchContainer = getRequiredElementById('current_image_batch');
-    if (batchContainer) {
-        for (let i of batchContainer.getElementsByClassName('image-block')) {
-            if (i.dataset.src == src) {
-                i.classList.add('image-block-current');
-            }
-            else {
-                i.classList.remove('image-block-current');
-            }
-        }
-    }
-    let historyContainer = document.getElementById('imagehistorybrowser-content');
-    if (historyContainer) {
-        let normalizedSrc = getImageFullSrc(src);
-        for (let i of historyContainer.getElementsByClassName('image-block')) {
-            // History browser images may have data-src (if clicked) or just data-name (if not clicked yet)
-            let historyImgSrc = i.dataset.src || i.dataset.name;
-            let normalizedHistorySrc = historyImgSrc ? getImageFullSrc(historyImgSrc) : null;
-            if (normalizedHistorySrc && normalizedSrc == normalizedHistorySrc) {
-                i.classList.add('image-block-current');
-            }
-            else {
-                i.classList.remove('image-block-current');
-            }
-        }
-    }
+    swarmImageCardRegistry.setCurrentSource(src);
 }
 
 /** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
@@ -1317,7 +1482,8 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         container = getRequiredElementById(container);
     }
     container.dataset.numImages = parseInt(container.dataset.numImages ?? 0) + 1;
-    let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
+    let div = document.createElement('swarm-image-card');
+    div.className = `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`;
     div.dataset.batch_id = batchId;
     if (batchId.includes('_')) {
         div.dataset.request_id = batchId.split('_')[0];

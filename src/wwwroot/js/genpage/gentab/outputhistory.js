@@ -206,15 +206,16 @@ function toggleImageHidden(path, rawSrc, refreshAfter = true, errorHandle = null
             if (curImgImg && curImgImg.dataset.src == rawSrc) {
                 curImgImg.dataset.metadata = setHidden(curImgImg.dataset.metadata ?? '{}');
             }
-            let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
-            if (batchDiv) {
-                batchDiv.dataset.metadata = setHidden(batchDiv.dataset.metadata ?? '{}');
-                batchDiv.classList.toggle('image-block-hidden', data.new_state);
-            }
-            let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
-            if (historyDiv) {
-                historyDiv.dataset.metadata = setHidden(historyDiv.dataset.metadata ?? '{}');
-                historyDiv.classList.toggle('image-block-hidden', data.new_state);
+            if (typeof forEachSwarmImageCardForSrc == 'function') {
+                forEachSwarmImageCardForSrc(rawSrc, card => {
+                    if (card.setHidden) {
+                        card.setHidden(data.new_state);
+                    }
+                    else {
+                        card.dataset.metadata = setHidden(card.dataset.metadata ?? '{}');
+                        card.classList.toggle('image-block-hidden', data.new_state);
+                    }
+                });
             }
             if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
                 let state = imageFullView.copyState();
