@@ -463,6 +463,9 @@ class GenPageBrowserClass {
                 }
             }
             let img = document.createElement('img');
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.setAttribute('fetchpriority', 'low');
             img.addEventListener('click', () => {
                 this.select(file, div);
             });

@@ -85,6 +85,99 @@ public static class OutputMetadataTracker
     /// <summary>Set of all image metadatabases, as a map from folder name to database.</summary>
     public static ConcurrentDictionary<string, OutputDatabase> Databases = new();
 
+    public class PreviewMemoryCacheEntry
+    {
+        public OutputPreviewEntry Entry;
+
+        public long ExpiresAt;
+
+        public LinkedListNode<string> LruNode;
+    }
+
+    /// <summary>In-memory LRU cache for generated previews to avoid repeated DB/disk hits during history browsing bursts.</summary>
+    public static Dictionary<string, PreviewMemoryCacheEntry> PreviewMemoryCache = [];
+
+    /// <summary>Linked-list ordering for <see cref="PreviewMemoryCache"/> where the tail is most recently used.</summary>
+    public static LinkedList<string> PreviewMemoryCacheLru = [];
+
+    /// <summary>Lock for <see cref="PreviewMemoryCache"/> and <see cref="PreviewMemoryCacheLru"/>.</summary>
+    public static LockObject PreviewMemoryCacheLock = new();
+
+    /// <summary>Maximum number of image previews to hold in-memory.</summary>
+    public static int PreviewMemoryCacheMaxEntries = 512;
+
+    /// <summary>How long preview entries stay alive in memory.</summary>
+    public static int PreviewMemoryCacheMaxAgeSeconds = 120;
+
+    public static void RemovePreviewFromMemoryCache(string file)
+    {
+        file = file.Replace('\\', '/');
+        lock (PreviewMemoryCacheLock)
+        {
+            if (PreviewMemoryCache.TryGetValue(file, out PreviewMemoryCacheEntry existing))
+            {
+                PreviewMemoryCacheLru.Remove(existing.LruNode);
+                PreviewMemoryCache.Remove(file);
+            }
+        }
+    }
+
+    public static bool TryGetPreviewFromMemoryCache(string file, out OutputPreviewEntry entry)
+    {
+        file = file.Replace('\\', '/');
+        long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        lock (PreviewMemoryCacheLock)
+        {
+            if (!PreviewMemoryCache.TryGetValue(file, out PreviewMemoryCacheEntry existing))
+            {
+                entry = null;
+                return false;
+            }
+            if (existing.ExpiresAt < now || existing.Entry is null)
+            {
+                PreviewMemoryCacheLru.Remove(existing.LruNode);
+                PreviewMemoryCache.Remove(file);
+                entry = null;
+                return false;
+            }
+            PreviewMemoryCacheLru.Remove(existing.LruNode);
+            PreviewMemoryCacheLru.AddLast(existing.LruNode);
+            entry = existing.Entry;
+            return true;
+        }
+    }
+
+    public static void SetPreviewToMemoryCache(string file, OutputPreviewEntry entry)
+    {
+        if (entry is null)
+        {
+            return;
+        }
+        file = file.Replace('\\', '/');
+        long expiry = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + PreviewMemoryCacheMaxAgeSeconds;
+        lock (PreviewMemoryCacheLock)
+        {
+            if (PreviewMemoryCache.TryGetValue(file, out PreviewMemoryCacheEntry existing))
+            {
+                existing.Entry = entry;
+                existing.ExpiresAt = expiry;
+                PreviewMemoryCacheLru.Remove(existing.LruNode);
+                PreviewMemoryCacheLru.AddLast(existing.LruNode);
+            }
+            else
+            {
+                LinkedListNode<string> node = PreviewMemoryCacheLru.AddLast(file);
+                PreviewMemoryCache[file] = new() { Entry = entry, ExpiresAt = expiry, LruNode = node };
+            }
+            while (PreviewMemoryCache.Count > PreviewMemoryCacheMaxEntries && PreviewMemoryCacheLru.First is not null)
+            {
+                string oldest = PreviewMemoryCacheLru.First.Value;
+                PreviewMemoryCacheLru.RemoveFirst();
+                PreviewMemoryCache.Remove(oldest);
+            }
+        }
+    }
+
     /// <summary>Returns the database corresponding to the given folder path.</summary>
     public static OutputDatabase GetDatabaseForFolder(string folder)
     {
@@ -157,6 +250,7 @@ public static class OutputMetadataTracker
     /// <summary>Deletes any tracked metadata for the given filepath.</summary>
     public static void RemoveMetadataFor(string file)
     {
+        RemovePreviewFromMemoryCache(file);
         string folder = file.BeforeAndAfterLast('/', out string filename);
         OutputDatabase metadata = GetDatabaseForFolder(folder);
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
@@ -181,6 +275,10 @@ public static class OutputMetadataTracker
         {
             return null;
         }
+        if (TryGetPreviewFromMemoryCache(file, out OutputPreviewEntry cached))
+        {
+            return cached;
+        }
         if (!Program.ServerSettings.Metadata.ImageMetadataPerFolder)
         {
             filename = file;
@@ -201,6 +299,7 @@ public static class OutputMetadataTracker
                     float chance = Program.ServerSettings.Performance.ImageDataValidationChance;
                     if (chance == 0 || Random.Shared.NextDouble() > chance)
                     {
+                        SetPreviewToMemoryCache(file, entry);
                         return entry;
                     }
                     long fTime = ((DateTimeOffset)File.GetLastWriteTimeUtc(file)).ToUnixTimeSeconds();
@@ -219,6 +318,7 @@ public static class OutputMetadataTracker
                 }
                 if (entry is not null)
                 {
+                    SetPreviewToMemoryCache(file, entry);
                     return entry;
                 }
             }
@@ -331,6 +431,7 @@ public static class OutputMetadataTracker
             {
                 metadata.Previews.Upsert(entry);
             }
+            SetPreviewToMemoryCache(file, entry);
             return entry;
         }
         catch (Exception ex)
