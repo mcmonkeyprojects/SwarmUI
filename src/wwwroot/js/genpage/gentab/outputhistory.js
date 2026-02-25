@@ -1,32 +1,60 @@
 let imageHistorySelected = new Set();
 let imageHistoryBulkActionRunning = false;
 let imageHistoryShowHidden = localStorage.getItem('image_history_show_hidden') == 'true';
+let imageHistoryRefreshQueued = false;
+const IMAGE_HISTORY_METADATA_CACHE_LIMIT = 1024;
+const imageHistoryMetadataCache = new Map();
+
+function requestImageHistoryRefresh() {
+    if (!imageHistoryBrowser || imageHistoryRefreshQueued) {
+        return;
+    }
+    imageHistoryRefreshQueued = true;
+    let run = () => {
+        imageHistoryRefreshQueued = false;
+        if (imageHistoryBrowser) {
+            imageHistoryBrowser.lightRefresh();
+        }
+    };
+    if (window.requestAnimationFrame) {
+        requestAnimationFrame(run);
+    }
+    else {
+        setTimeout(run, 0);
+    }
+}
 
 function parseHistoryMetadata(metadata) {
     if (!metadata) {
         return {};
     }
+    if (typeof metadata == 'object') {
+        return metadata;
+    }
+    if (imageHistoryMetadataCache.has(metadata)) {
+        return imageHistoryMetadataCache.get(metadata);
+    }
+    let parsed = {};
     try {
-        return JSON.parse(interpretMetadata(metadata)) || {};
+        parsed = JSON.parse(interpretMetadata(metadata)) || {};
     }
     catch (e) {
-        return {};
+        parsed = {};
     }
+    if (imageHistoryMetadataCache.size >= IMAGE_HISTORY_METADATA_CACHE_LIMIT) {
+        let firstKey = imageHistoryMetadataCache.keys().next().value;
+        imageHistoryMetadataCache.delete(firstKey);
+    }
+    imageHistoryMetadataCache.set(metadata, parsed);
+    return parsed;
 }
 
 function setMetadataBoolValue(metadata, key, value) {
     if (!metadata) {
         return JSON.stringify({ [key]: value });
     }
-    let interpreted = metadata;
     try {
-        interpreted = interpretMetadata(metadata);
-    }
-    catch (e) {
-        // Ignore and keep original.
-    }
-    try {
-        let parsed = JSON.parse(interpreted) || {};
+        let parsed = { ...parseHistoryMetadata(metadata) };
         parsed[key] = value;
         return JSON.stringify(parsed);
     }
@@ -206,15 +234,16 @@ function toggleImageHidden(path, rawSrc, refreshAfter = true, errorHandle = null
             if (curImgImg && curImgImg.dataset.src == rawSrc) {
                 curImgImg.dataset.metadata = setHidden(curImgImg.dataset.metadata ?? '{}');
             }
-            let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
-            if (batchDiv) {
-                batchDiv.dataset.metadata = setHidden(batchDiv.dataset.metadata ?? '{}');
-                batchDiv.classList.toggle('image-block-hidden', data.new_state);
-            }
-            let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
-            if (historyDiv) {
-                historyDiv.dataset.metadata = setHidden(historyDiv.dataset.metadata ?? '{}');
-                historyDiv.classList.toggle('image-block-hidden', data.new_state);
+            if (typeof forEachSwarmImageCardForSrc == 'function') {
+                forEachSwarmImageCardForSrc(rawSrc, card => {
+                    if (card.setHidden) {
+                        card.setHidden(data.new_state);
+                    }
+                    else {
+                        card.dataset.metadata = setHidden(card.dataset.metadata ?? '{}');
+                        card.classList.toggle('image-block-hidden', data.new_state);
+                    }
+                });
             }
             if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
                 let state = imageFullView.copyState();
@@ -227,7 +256,7 @@ function toggleImageHidden(path, rawSrc, refreshAfter = true, errorHandle = null
                     file.data.metadata = setHidden(file.data.metadata ?? '{}');
                 }
                 if (refreshAfter) {
-                    imageHistoryBrowser.lightRefresh();
+                    requestImageHistoryRefresh();
                 }
             }
             resolve({ success: true, new_state: data.new_state });
@@ -276,7 +305,7 @@ async function setSelectedHistoryImagesHidden(targetHidden) {
     imageHistoryBulkActionRunning = false;
     updateImageHistoryBulkControls();
     if (updated > 0) {
-        imageHistoryBrowser.lightRefresh();
+        requestImageHistoryRefresh();
     }
     if (failed > 0) {
         showError(`${targetHidden ? 'Hid' : 'Unhid'} ${updated} image(s), skipped ${skipped}, failed ${failed}.`);
@@ -316,7 +345,7 @@ async function deleteSelectedHistoryImages() {
     imageHistoryBulkActionRunning = false;
     updateImageHistoryBulkControls();
     if (deleted > 0) {
-        imageHistoryBrowser.lightRefresh();
+        requestImageHistoryRefresh();
     }
     if (failed > 0) {
         showError(`Deleted ${deleted} image(s). Failed to delete ${failed} image(s).`);
@@ -355,20 +384,20 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
             showHiddenElem.checked = showHidden;
             sortElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_sort_by', sortElem.value);
-                imageHistoryBrowser.lightRefresh();
+                requestImageHistoryRefresh();
             });
             sortReverseElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_sort_reverse', sortReverseElem.checked);
-                imageHistoryBrowser.lightRefresh();
+                requestImageHistoryRefresh();
             });
             allowAnimsElem.addEventListener('change', () => {
                 localStorage.setItem('image_history_allow_anims', allowAnimsElem.checked);
-                imageHistoryBrowser.lightRefresh();
+                requestImageHistoryRefresh();
             });
             showHiddenElem.addEventListener('change', () => {
                 imageHistoryShowHidden = showHiddenElem.checked;
                 localStorage.setItem('image_history_show_hidden', showHiddenElem.checked);
-                imageHistoryBrowser.lightRefresh();
+                requestImageHistoryRefresh();
             });
             ensureImageHistoryBulkControlsReady();
         }
@@ -393,9 +422,9 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     });
 }
 
-function buttonsForImage(fullsrc, src, metadata) {
+function buttonsForImage(fullsrc, src, metadata, parsedMetadata = null) {
     let isDataImage = src.startsWith('data:');
-    let parsedMetadata = parseHistoryMetadata(metadata);
+    parsedMetadata = parsedMetadata || parseHistoryMetadata(metadata);
     let buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
@@ -462,22 +491,12 @@ function buttonsForImage(fullsrc, src, metadata) {
 }
 
 function describeOutputFile(image) {
-    let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata);
+    let parsedMeta = parseHistoryMetadata(image.data.metadata);
+    let buttons = buttonsForImage(image.data.fullsrc, image.data.src, image.data.metadata, parsedMeta);
     let canHide = permissions.hasPermission('view_image_history') && !image.data.src.startsWith('data:');
     let canDelete = permissions.hasPermission('user_delete_image') && !image.data.src.startsWith('data:');
     let canBulkSelect = canHide || canDelete;
     let isSelected = imageHistorySelected.has(image.data.fullsrc);
-    let parsedMeta = { is_starred: false, is_hidden: false };
-    if (image.data.metadata) {
-        let metadata = image.data.metadata;
-        try {
-            metadata = interpretMetadata(image.data.metadata);
-            parsedMeta = JSON.parse(metadata) || parsedMeta;
-        }
-        catch (e) {
-            console.log(`Failed to parse image metadata: ${e}, metadata was ${metadata}`);
-        }
-    }
     let formattedMetadata = formatMetadata(image.data.metadata);
     let description = image.data.name + "\n" + formattedMetadata;
     let name = image.data.name;

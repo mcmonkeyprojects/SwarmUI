@@ -1,3 +1,195 @@
+let swarmImageCardRegistry = {
+    byCanonicalSrc: new Map(),
+    cardToKeys: new Map(),
+    currentCards: new Set(),
+
+    canonicalize(src) {
+        if (!src) {
+            return null;
+        }
+        try {
+            if (typeof getImageFullSrc == 'function') {
+                let canonical = getImageFullSrc(src);
+                if (canonical) {
+                    return canonical;
+                }
+            }
+        }
+        catch (err) {
+            // Fallback to the raw key when canonicalization is unavailable.
+        }
+        return src;
+    },
+
+    keysForCard(card) {
+        let keys = new Set();
+        let addKey = (value) => {
+            let key = this.canonicalize(value);
+            if (key) {
+                keys.add(key);
+            }
+        };
+        addKey(card?.dataset?.src);
+        addKey(card?.dataset?.name);
+        return keys;
+    },
+
+    unregister(card) {
+        let keys = this.cardToKeys.get(card);
+        if (keys) {
+            for (let key of keys) {
+                let cards = this.byCanonicalSrc.get(key);
+                if (!cards) {
+                    continue;
+                }
+                cards.delete(card);
+                if (cards.size == 0) {
+                    this.byCanonicalSrc.delete(key);
+                }
+            }
+        }
+        this.cardToKeys.delete(card);
+        this.currentCards.delete(card);
+    },
+
+    register(card) {
+        this.unregister(card);
+        if (!card || !card.isConnected) {
+            return;
+        }
+        let keys = this.keysForCard(card);
+        this.cardToKeys.set(card, keys);
+        for (let key of keys) {
+            let cards = this.byCanonicalSrc.get(key);
+            if (!cards) {
+                cards = new Set();
+                this.byCanonicalSrc.set(key, cards);
+            }
+            cards.add(card);
+        }
+    },
+
+    reindex(card) {
+        this.register(card);
+    },
+
+    forSource(src, callback) {
+        let key = this.canonicalize(src);
+        if (!key) {
+            return;
+        }
+        let cards = this.byCanonicalSrc.get(key);
+        if (!cards || cards.size == 0) {
+            return;
+        }
+        for (let card of [...cards]) {
+            if (!card.isConnected) {
+                this.unregister(card);
+                continue;
+            }
+            callback(card);
+        }
+    },
+
+    setCurrentSource(src) {
+        for (let card of this.currentCards) {
+            if (card.setCurrent) {
+                card.setCurrent(false);
+            }
+            else {
+                card.classList.remove('image-block-current');
+            }
+        }
+        this.currentCards.clear();
+        if (!src) {
+            return;
+        }
+        this.forSource(src, card => {
+            if (card.classList.contains('image-block-placeholder')) {
+                return;
+            }
+            if (card.setCurrent) {
+                card.setCurrent(true);
+            }
+            else {
+                card.classList.add('image-block-current');
+            }
+            this.currentCards.add(card);
+        });
+    }
+};
+
+class SwarmImageCard extends HTMLElement {
+    static get observedAttributes() {
+        return ['data-src', 'data-name'];
+    }
+
+    connectedCallback() {
+        swarmImageCardRegistry.register(this);
+    }
+
+    disconnectedCallback() {
+        swarmImageCardRegistry.unregister(this);
+    }
+
+    attributeChangedCallback(name, oldValue, newValue) {
+        if (oldValue != newValue) {
+            swarmImageCardRegistry.reindex(this);
+        }
+    }
+
+    getMetadataObject() {
+        if (!this.dataset.metadata) {
+            return {};
+        }
+        let metadata = this.dataset.metadata;
+        try {
+            metadata = interpretMetadata(metadata);
+        }
+        catch (err) {
+            // Ignore metadata parse errors and fallback to raw JSON parse.
+        }
+        try {
+            return JSON.parse(metadata) || {};
+        }
+        catch (err) {
+            return {};
+        }
+    }
+
+    setMetadataObject(metadata) {
+        this.dataset.metadata = JSON.stringify(metadata || {});
+    }
+
+    setMetadataFlag(key, enabled) {
+        let metadata = this.getMetadataObject();
+        metadata[key] = !!enabled;
+        this.setMetadataObject(metadata);
+        return metadata;
+    }
+
+    setStarred(enabled) {
+        this.setMetadataFlag('is_starred', enabled);
+        this.classList.toggle('image-block-starred', !!enabled);
+    }
+
+    setHidden(enabled) {
+        this.setMetadataFlag('is_hidden', enabled);
+        this.classList.toggle('image-block-hidden', !!enabled);
+    }
+
+    setCurrent(enabled) {
+        this.classList.toggle('image-block-current', !!enabled);
+    }
+}
+
+if (window.customElements && !customElements.get('swarm-image-card')) {
+    customElements.define('swarm-image-card', SwarmImageCard);
+}
+
+function forEachSwarmImageCardForSrc(src, callback) {
+    swarmImageCardRegistry.forSource(src, callback);
+}
 
 /** Central helper class to handle the 'image full view' modal. */
 class ImageFullViewHelper {
@@ -34,14 +226,90 @@ class ImageFullViewHelper {
         this.lastClosed = 0;
         this.showMetadata = true;
         this.didPasteState = false;
+        this.pendingDragX = 0;
+        this.pendingDragY = 0;
+        this.dragMoveRaf = null;
+        this.pendingWheelSteps = 0;
+        this.pendingWheelMouseX = 0;
+        this.pendingWheelMouseY = 0;
+        this.wheelRaf = null;
+        this.imageWrap = null;
+        this.buttonsWrap = null;
+        this.metadataWrap = null;
+    }
+
+    ensureScaffold() {
+        if (this.imageWrap?.isConnected && this.buttonsWrap?.isConnected && this.metadataWrap?.isConnected) {
+            return;
+        }
+        this.content.innerHTML = `
+        <div class="modal-dialog" style="display:none">(click outside image to close)</div>
+        <div class="imageview_modal_inner_div">
+            <div class="imageview_modal_imagewrap" id="imageview_modal_imagewrap" style="text-align:center;"></div>
+            <div class="imageview_popup_modal_undertext">
+                <div class="image_fullview_extra_buttons"></div>
+                <div class="image_fullview_metadata"></div>
+            </div>
+        </div>`;
+        this.imageWrap = this.content.querySelector('#imageview_modal_imagewrap');
+        this.buttonsWrap = this.content.querySelector('.image_fullview_extra_buttons');
+        this.metadataWrap = this.content.querySelector('.image_fullview_metadata');
+    }
+
+    createMediaElement(src, isVideo, isAudio) {
+        let encodedSrc = escapeHtmlForUrl(src);
+        if (isVideo) {
+            let container = document.createElement('div');
+            container.className = 'video-container imageview_popup_modal_img';
+            container.id = 'imageview_popup_modal_img';
+            let video = document.createElement('video');
+            video.className = 'imageview_popup_modal_img';
+            video.style.cursor = 'grab';
+            video.style.maxWidth = '100%';
+            video.style.objectFit = 'contain';
+            video.autoplay = true;
+            video.loop = true;
+            video.muted = true;
+            video.addEventListener('loadeddata', () => this.onImgLoad(), { once: true });
+            let source = document.createElement('source');
+            source.src = encodedSrc;
+            source.type = isVideo;
+            video.appendChild(source);
+            container.appendChild(video);
+            return container;
+        }
+        if (isAudio) {
+            let audio = document.createElement('audio');
+            audio.className = 'imageview_popup_modal_img';
+            audio.id = 'imageview_popup_modal_img';
+            audio.style.cursor = 'grab';
+            audio.style.maxWidth = '100%';
+            audio.style.objectFit = 'contain';
+            audio.controls = true;
+            audio.src = encodedSrc;
+            audio.addEventListener('loadeddata', () => this.onImgLoad(), { once: true });
+            return audio;
+        }
+        let img = document.createElement('img');
+        img.className = 'imageview_popup_modal_img';
+        img.id = 'imageview_popup_modal_img';
+        img.style.cursor = 'grab';
+        img.style.maxWidth = '100%';
+        img.style.objectFit = 'contain';
+        img.src = encodedSrc;
+        img.addEventListener('load', () => this.onImgLoad(), { once: true });
+        return img;
     }
 
     getImgOrContainer() {
-        return getRequiredElementById('imageview_popup_modal_img');
+        return this.content.querySelector('#imageview_popup_modal_img');
     }
 
     getImg() {
         let container = this.getImgOrContainer();
+        if (!container) {
+            return null;
+        }
         if (container.classList.contains('video-container')) {
             return container.querySelector('video');
         }
@@ -82,6 +350,7 @@ class ImageFullViewHelper {
         if (!this.isDragging) {
             return;
         }
+        this.flushPendingDragMove();
         this.getImgOrContainer().style.cursor = 'grab';
         this.isDragging = false;
         this.noClose = this.didDrag;
@@ -100,16 +369,32 @@ class ImageFullViewHelper {
         img.style.top = `${newTop}px`;
     }
 
+    flushPendingDragMove() {
+        if (this.pendingDragX == 0 && this.pendingDragY == 0) {
+            return;
+        }
+        this.detachImg();
+        this.moveImg(this.pendingDragX, this.pendingDragY);
+        this.pendingDragX = 0;
+        this.pendingDragY = 0;
+    }
+
     onGlobalMouseMove(e) {
         if (!this.isDragging) {
             return;
         }
-        this.detachImg();
         let xDiff = e.clientX - this.lastMouseX;
         let yDiff = e.clientY - this.lastMouseY;
         this.lastMouseX = e.clientX;
         this.lastMouseY = e.clientY;
-        this.moveImg(xDiff, yDiff);
+        this.pendingDragX += xDiff;
+        this.pendingDragY += yDiff;
+        if (!this.dragMoveRaf) {
+            this.dragMoveRaf = requestAnimationFrame(() => {
+                this.dragMoveRaf = null;
+                this.flushPendingDragMove();
+            });
+        }
         if (Math.abs(xDiff) > 1 || Math.abs(yDiff) > 1) {
             this.didDrag = true;
         }
@@ -166,15 +451,18 @@ class ImageFullViewHelper {
         this.didPasteState = true;
     }
 
-    onWheel(e) {
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
-            return;
-        }
+    applyWheelZoom(stepDelta, clientX, clientY) {
         this.detachImg();
         let img = this.getImg();
+        if (!img) {
+            return;
+        }
         let container = this.getImgOrContainer();
+        if (!container) {
+            return;
+        }
         let origHeight = this.getHeightPercent();
-        let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
+        let zoom = Math.pow(this.zoomRate, stepDelta);
         let width = img.naturalWidth ?? img.videoWidth;
         let height = img.naturalHeight ?? img.videoHeight;
         let maxHeight = Math.sqrt(width * height) * 2;
@@ -193,17 +481,41 @@ class ImageFullViewHelper {
         }
         container.style.cursor = 'grab';
         let [imgLeft, imgTop] = [this.getImgLeft(), this.getImgTop()];
-        let [mouseX, mouseY] = [e.clientX - container.offsetLeft, e.clientY - container.offsetTop];
+        let [mouseX, mouseY] = [clientX - container.offsetLeft, clientY - container.offsetTop];
         let [origX, origY] = [mouseX / origHeight - imgLeft, mouseY / origHeight - imgTop];
         let [newX, newY] = [mouseX / newHeight - imgLeft, mouseY / newHeight - imgTop];
         this.moveImg((newX - origX) * newHeight, (newY - origY) * newHeight);
         container.style.height = `${newHeight}%`;
     }
 
+    onWheel(e) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || e.ctrlKey || e.shiftKey) {
+            return;
+        }
+        this.pendingWheelSteps += -e.deltaY / 100;
+        this.pendingWheelMouseX = e.clientX;
+        this.pendingWheelMouseY = e.clientY;
+        if (this.wheelRaf) {
+            return;
+        }
+        this.wheelRaf = requestAnimationFrame(() => {
+            this.wheelRaf = null;
+            let stepDelta = this.pendingWheelSteps;
+            let mouseX = this.pendingWheelMouseX;
+            let mouseY = this.pendingWheelMouseY;
+            this.pendingWheelSteps = 0;
+            this.applyWheelZoom(stepDelta, mouseX, mouseY);
+        });
+    }
+
     toggleMetadataVisibility(showMetadata) {
         this.showMetadata = showMetadata;
-        let undertext = this.content.querySelector('.imageview_popup_modal_undertext');
-        let imagewrap = this.content.querySelector('.imageview_modal_imagewrap');
+        this.ensureScaffold();
+        let undertext = this.metadataWrap?.parentElement;
+        let imagewrap = this.imageWrap;
+        if (!undertext || !imagewrap) {
+            return;
+        }
         if (showMetadata) {
             undertext.classList.remove('minimized-mode');
             imagewrap.classList.remove('expanded-mode');
@@ -243,26 +555,12 @@ class ImageFullViewHelper {
         let wasAlreadyOpen = this.isOpen();
         let isVideo = isVideoExt(src);
         let isAudio = isAudioExt(src);
-        let encodedSrc = escapeHtmlForUrl(src);
-        let imgHtml = `<img class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" src="${encodedSrc}" onload="imageFullView.onImgLoad()">`;
-        if (isVideo) {
-            imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted onload="imageFullView.onImgLoad()"><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
-        }
-        else if (isAudio) {
-            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}" onload="imageFullView.onImgLoad()"></audio>`;
-        }
-        this.content.innerHTML = `
-        <div class="modal-dialog" style="display:none">(click outside image to close)</div>
-        <div class="imageview_modal_inner_div">
-            <div class="imageview_modal_imagewrap" id="imageview_modal_imagewrap" style="text-align:center;">
-                ${imgHtml}
-            </div>
-            <div class="imageview_popup_modal_undertext">
-                <div class="image_fullview_extra_buttons"></div>
-                <div class="image_fullview_metadata">${formatMetadata(metadata)}</div>
-            </div>
-        </div>`;
-        let subDiv = this.content.querySelector('.image_fullview_extra_buttons');
+        this.ensureScaffold();
+        let mediaElem = this.createMediaElement(src, isVideo, isAudio);
+        this.imageWrap.replaceChildren(mediaElem);
+        this.buttonsWrap.replaceChildren();
+        this.metadataWrap.innerHTML = formatMetadata(metadata);
+        let subDiv = this.buttonsWrap;
         for (let added of buttonsForImage(getImageFullSrc(src), src, metadata)) {
             if (added.href) {
                 if (added.is_download) {
@@ -323,7 +621,21 @@ class ImageFullViewHelper {
         }
         this.isDragging = false;
         this.didDrag = false;
-        this.content.innerHTML = '';
+        this.pendingDragX = 0;
+        this.pendingDragY = 0;
+        this.pendingWheelSteps = 0;
+        if (this.dragMoveRaf) {
+            cancelAnimationFrame(this.dragMoveRaf);
+            this.dragMoveRaf = null;
+        }
+        if (this.wheelRaf) {
+            cancelAnimationFrame(this.wheelRaf);
+            this.wheelRaf = null;
+        }
+        let media = this.getImg();
+        if (media && (media.tagName == 'VIDEO' || media.tagName == 'AUDIO')) {
+            media.pause();
+        }
     }
 
     isOpen() {
@@ -423,6 +735,33 @@ separateBatchesElem.checked = localStorage.getItem('separateBatches') == 'true';
 /** Called when the user changes separate-batches toggle to update local storage. */
 function toggleSeparateBatches() {
     localStorage.setItem('separateBatches', `${separateBatchesElem.checked}`);
+}
+
+let batchCardDelegationReady = false;
+
+function ensureBatchCardDelegationReady() {
+    if (batchCardDelegationReady) {
+        return;
+    }
+    let batchRoot = getRequiredElementById('current_image_batch');
+    batchRoot.addEventListener('click', (e) => {
+        if (e.defaultPrevented || e.button != 0) {
+            return;
+        }
+        let div = e.target.closest('.image-block');
+        if (!div || !batchRoot.contains(div)) {
+            return;
+        }
+        clickImageInBatch(div);
+    });
+    batchRoot.addEventListener('contextmenu', (e) => {
+        let div = e.target.closest('.image-block');
+        if (!div || !batchRoot.contains(div)) {
+            return;
+        }
+        rightClickImageInBatch(e, div);
+    });
+    batchCardDelegationReady = true;
 }
 
 function clickImageInBatch(div) {
@@ -736,16 +1075,14 @@ function toggleStar(path, rawSrc) {
                 }
             }
         }
-        let batchDiv = getRequiredElementById('current_image_batch').querySelector(`.image-block[data-src="${rawSrc}"]`);
-        if (batchDiv) {
-            batchDiv.dataset.metadata = JSON.stringify({ ...(JSON.parse(batchDiv.dataset.metadata ?? '{}') ?? {}), is_starred: data.new_state });
-            batchDiv.classList.toggle('image-block-starred', data.new_state);
-        }
-        let historyDiv = getRequiredElementById('imagehistorybrowser-content').querySelector(`.image-block[data-src="${rawSrc}"]`);
-        if (historyDiv) {
-            historyDiv.dataset.metadata = JSON.stringify({ ...(JSON.parse(historyDiv.dataset.metadata ?? '{}') ?? {}), is_starred: data.new_state });
-            historyDiv.classList.toggle('image-block-starred', data.new_state);
-        }
+        forEachSwarmImageCardForSrc(rawSrc, card => {
+            if (card.setStarred) {
+                card.setStarred(data.new_state);
+            }
+            else {
+                card.classList.toggle('image-block-starred', data.new_state);
+            }
+        });
         if (imageFullView.isOpen() && imageFullView.currentSrc == rawSrc) {
             let oldMetadata = JSON.parse(imageFullView.currentMetadata);
             let newMetadata = { ...oldMetadata, is_starred: data.new_state };
@@ -857,19 +1194,27 @@ function saveCurrentImageToHistory(img, button = null) {
             }
             let savedMetadata = img.dataset.metadata || currentMetadataVal || saved.metadata || '{}';
             setCurrentImage(saved.image, savedMetadata, batchId);
-            let batchContainer = document.getElementById('current_image_batch');
-            if (batchContainer) {
-                for (let block of batchContainer.getElementsByClassName('image-block')) {
-                    if (block.dataset.src == oldSrc) {
-                        block.dataset.src = saved.image;
-                        block.dataset.metadata = savedMetadata;
-                        let blockImg = block.querySelector('img');
-                        if (blockImg) {
-                            blockImg.src = saved.image;
-                        }
+            forEachSwarmImageCardForSrc(oldSrc, card => {
+                card.dataset.src = saved.image;
+                card.dataset.metadata = savedMetadata;
+                let media = card.querySelector('img, video, audio');
+                if (!media) {
+                    return;
+                }
+                if (media.tagName == 'VIDEO') {
+                    let source = media.querySelector('source');
+                    if (source) {
+                        source.src = saved.image;
+                        media.load();
+                    }
+                    else {
+                        media.src = saved.image;
                     }
                 }
-            }
+                else {
+                    media.src = saved.image;
+                }
+            });
             if (imageFullView.isOpen() && imageFullView.currentSrc == oldSrc) {
                 let state = imageFullView.copyState();
                 imageFullView.showImage(saved.image, savedMetadata, imageFullView.currentBatchId);
@@ -1269,32 +1614,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
 }
 
 function highlightSelectedImage(src) {
-    let batchContainer = getRequiredElementById('current_image_batch');
-    if (batchContainer) {
-        for (let i of batchContainer.getElementsByClassName('image-block')) {
-            if (i.dataset.src == src) {
-                i.classList.add('image-block-current');
-            }
-            else {
-                i.classList.remove('image-block-current');
-            }
-        }
-    }
-    let historyContainer = document.getElementById('imagehistorybrowser-content');
-    if (historyContainer) {
-        let normalizedSrc = getImageFullSrc(src);
-        for (let i of historyContainer.getElementsByClassName('image-block')) {
-            // History browser images may have data-src (if clicked) or just data-name (if not clicked yet)
-            let historyImgSrc = i.dataset.src || i.dataset.name;
-            let normalizedHistorySrc = historyImgSrc ? getImageFullSrc(historyImgSrc) : null;
-            if (normalizedHistorySrc && normalizedSrc == normalizedHistorySrc) {
-                i.classList.add('image-block-current');
-            }
-            else {
-                i.classList.remove('image-block-current');
-            }
-        }
-    }
+    swarmImageCardRegistry.setCurrentSource(src);
 }
 
 /** Gets the container div element for a generated image to put into, in the batch output view. If Separate Batches is enabled, will use or create a per-batch container. */
@@ -1313,11 +1633,13 @@ function getPreferredBatchContainer(batchId) {
 }
 
 function appendImage(container, imageSrc, batchId, textPreview, metadata = '', type = 'legacy', prepend = true) {
+    ensureBatchCardDelegationReady();
     if (typeof container == 'string') {
         container = getRequiredElementById(container);
     }
     container.dataset.numImages = parseInt(container.dataset.numImages ?? 0) + 1;
-    let div = createDiv(null, `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`);
+    let div = document.createElement('swarm-image-card');
+    div.className = `image-block image-block-${type} image-batch-${batchId == "folder" ? "folder" : (container.dataset.numImages % 2 ? "1" : "0")}`;
     div.dataset.batch_id = batchId;
     if (batchId.includes('_')) {
         div.dataset.request_id = batchId.split('_')[0];
@@ -1399,8 +1721,6 @@ function gotImageResult(image, metadata, batchId) {
             batch_div.parentElement.insertBefore(batch_div, insertAfter.nextSibling);
         }
     }
-    batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (!currentImageHelper.getCurrentImage() || autoLoadImagesElem.checked) {
         setCurrentImage(src, metadata, batchId, false, true);
     }
@@ -1417,8 +1737,6 @@ function gotImagePreview(image, metadata, batchId) {
     let batch_div = appendImage(getPreferredBatchContainer(batchId), src, batchId, fname, metadata, 'batch', true);
     batch_div.querySelector('img').dataset.previewGrow = 'true';
     batch_div.dataset.is_generating = 'true';
-    batch_div.addEventListener('click', () => clickImageInBatch(batch_div));
-    batch_div.addEventListener('contextmenu', (e) => rightClickImageInBatch(e, batch_div));
     if (showLoadSpinnersElem.checked) {
         let spinnerDiv = createDiv(null, "loading-spinner-parent", `<div class="loading-spinner"><div class="loadspin1"></div><div class="loadspin2"></div><div class="loadspin3"></div></div>`);
         batch_div.appendChild(spinnerDiv);

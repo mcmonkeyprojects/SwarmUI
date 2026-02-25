@@ -422,7 +422,14 @@ class GenPageBrowserClass {
                 }
                 break;
             }
-            let div = createDiv(null, `${desc.className}`);
+            let div;
+            if (this.id == 'imagehistorybrowser' && this.format.includes('Thumbnails')) {
+                div = document.createElement('swarm-image-card');
+                div.className = desc.className || '';
+            }
+            else {
+                div = createDiv(null, `${desc.className}`);
+            }
             if (desc.checkbox) {
                 div.classList.add('browser-entry-has-checkbox');
             }
