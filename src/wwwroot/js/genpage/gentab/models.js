@@ -981,28 +981,48 @@ function selectEmbedding(model) {
 }
 
 let lastPromptForEmbedMonitor = {};
+let promptMonitorDebounceTimers = {};
+
+function countSubstrings(text, needle) {
+    if (!text || !needle) {
+        return 0;
+    }
+    let count = 0;
+    let index = 0;
+    while (true) {
+        index = text.indexOf(needle, index);
+        if (index == -1) {
+            return count;
+        }
+        count++;
+        index += needle.length;
+    }
+}
 
 function monitorPromptChangeForEmbed(promptText, type) {
-    let last = lastPromptForEmbedMonitor[type];
-    if (!last) {
-        last = "";
+    if (promptMonitorDebounceTimers[type]) {
+        clearTimeout(promptMonitorDebounceTimers[type]);
     }
-    if (promptText == last) {
-        return;
-    }
-    let countEndsNew = promptText.split(`>`).length - 1;
-    let countEndsOld = last.split(`>`).length - 1;
-    lastPromptForEmbedMonitor[type] = promptText;
-    let countNew = promptText.split(`<embed:`).length - 1;
-    let countOld = last.split(`<embed:`).length - 1;
-    if (countNew != countOld || (countNew > 0 && countEndsNew != countEndsOld)) {
-        sdEmbedBrowser.rebuildSelectedClasses();
-    }
-    let countNewWc = promptText.split(`<wildcard`).length - 1;
-    let countOldWc = last.split(`<wildcard`).length - 1;
-    if (countNewWc != countOldWc || (countNewWc > 0 && countEndsNew != countEndsOld)) {
-        wildcardsBrowser.rebuildSelectedClasses();
-    }
+    promptMonitorDebounceTimers[type] = setTimeout(() => {
+        delete promptMonitorDebounceTimers[type];
+        let last = lastPromptForEmbedMonitor[type] || '';
+        if (promptText == last) {
+            return;
+        }
+        lastPromptForEmbedMonitor[type] = promptText;
+        let countEndsNew = countSubstrings(promptText, `>`);
+        let countEndsOld = countSubstrings(last, `>`);
+        let countNew = countSubstrings(promptText, `<embed:`);
+        let countOld = countSubstrings(last, `<embed:`);
+        if (countNew != countOld || (countNew > 0 && countEndsNew != countEndsOld)) {
+            sdEmbedBrowser.rebuildSelectedClasses();
+        }
+        let countNewWc = countSubstrings(promptText, `<wildcard`);
+        let countOldWc = countSubstrings(last, `<wildcard`);
+        if (countNewWc != countOldWc || (countNewWc > 0 && countEndsNew != countEndsOld)) {
+            wildcardsBrowser.rebuildSelectedClasses();
+        }
+    }, 120);
 }
 
 function setControlNet(model) {

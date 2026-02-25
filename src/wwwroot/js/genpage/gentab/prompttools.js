@@ -152,6 +152,8 @@ class PromptTabCompleteClass {
         this.lastWord = null;
         this.lastResults = null;
         this.blockInput = false;
+        this.pendingInputFrames = new WeakMap();
+        this.pendingInputTimers = new WeakMap();
     }
 
     getOrderedMatches(set, prefixLow) {
@@ -169,7 +171,31 @@ class PromptTabCompleteClass {
 
     enableFor(box) {
         box.addEventListener('keydown', e => this.onKeyDown(e), true);
-        box.addEventListener('input', () => this.onInput(box), true);
+        box.addEventListener('input', () => this.queueInput(box), true);
+    }
+
+    queueInput(box, delay = 0) {
+        if (this.pendingInputTimers.has(box)) {
+            clearTimeout(this.pendingInputTimers.get(box));
+            this.pendingInputTimers.delete(box);
+        }
+        if (this.pendingInputFrames.has(box)) {
+            cancelAnimationFrame(this.pendingInputFrames.get(box));
+            this.pendingInputFrames.delete(box);
+        }
+        if (delay > 0) {
+            let timer = setTimeout(() => {
+                this.pendingInputTimers.delete(box);
+                this.queueInput(box);
+            }, delay);
+            this.pendingInputTimers.set(box, timer);
+            return;
+        }
+        let frame = requestAnimationFrame(() => {
+            this.pendingInputFrames.delete(box);
+            this.onInput(box);
+        });
+        this.pendingInputFrames.set(box, frame);
     }
 
     registerPrefix(name, description, completer, selfStanding = false) {
@@ -311,7 +337,7 @@ class PromptTabCompleteClass {
                 this.blockInput = true;
                 setTimeout(() => {
                     this.blockInput = false;
-                    this.onInput(e.target);
+                    this.queueInput(e.target);
                 }, 10);
             }
         }
@@ -330,9 +356,7 @@ class PromptTabCompleteClass {
             return;
         }
         if (possible.length == 1 && possible[0] == '\n<AUTO-RETRY>') { // TODO: Spam limiter for in case auto-retry gets stuck on?
-            setTimeout(() => {
-                this.onInput(box);
-            }, 100);
+            this.queueInput(box, 100);
             return;
         }
         let buttons = [];

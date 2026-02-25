@@ -145,6 +145,9 @@ class GenTabLayout {
         this.swipeStartX = -1;
         this.swipeStartY = -1;
         this.minSwipeDelta = Math.min(100, window.innerWidth * 0.4);
+        this.promptLayoutFrame = null;
+        this.queuedReapplyFrame = null;
+        this.promptInputTimers = {};
         if (this.isSmallWindow) {
             this.bottomShut = true;
             this.leftShut = true;
@@ -191,6 +194,48 @@ class GenTabLayout {
                 this.antiDup = false;
             }, 1);
         }
+    }
+
+    scheduleReapplyPositions() {
+        if (this.queuedReapplyFrame) {
+            return;
+        }
+        this.queuedReapplyFrame = requestAnimationFrame(() => {
+            this.queuedReapplyFrame = null;
+            this.reapplyPositions();
+        });
+    }
+
+    schedulePromptLayoutUpdate() {
+        if (this.promptLayoutFrame) {
+            return;
+        }
+        this.promptLayoutFrame = requestAnimationFrame(() => {
+            this.promptLayoutFrame = null;
+            let priorHeight = this.altText.offsetHeight + this.altNegText.offsetHeight;
+            dynamicSizeTextBox(this.altText);
+            dynamicSizeTextBox(this.altNegText);
+            this.altRegion.style.top = `calc(-${this.altText.offsetHeight + this.altNegText.offsetHeight + this.altImageRegion.offsetHeight}px - 1rem - 7px)`;
+            let nextHeight = this.altText.offsetHeight + this.altNegText.offsetHeight;
+            if (nextHeight != priorHeight) {
+                this.scheduleReapplyPositions();
+            }
+        });
+    }
+
+    schedulePromptHeavyInputWork(key, runnable, immediate = false) {
+        if (this.promptInputTimers[key]) {
+            clearTimeout(this.promptInputTimers[key]);
+            delete this.promptInputTimers[key];
+        }
+        if (immediate) {
+            runnable();
+            return;
+        }
+        this.promptInputTimers[key] = setTimeout(() => {
+            delete this.promptInputTimers[key];
+            runnable();
+        }, 80);
     }
     
     /** Does the full position update logic. */
@@ -537,21 +582,27 @@ class GenTabLayout {
             if (inputPrompt) {
                 inputPrompt.value = this.altText.value;
             }
-            setCookie(`lastparam_input_prompt`, this.altText.value, getParamMemoryDays());
-            textPromptDoCount(this.altText, getRequiredElementById('alt_text_tokencount'));
-            monitorPromptChangeForEmbed(this.altText.value, 'positive');
-            setGroupAdvancedOverride('regionalprompting', this.altText.value.includes('<segment:') || this.altText.value.includes('<region:'));
+            this.schedulePromptLayoutUpdate();
+            this.schedulePromptHeavyInputWork('positive', () => {
+                setCookie(`lastparam_input_prompt`, this.altText.value, getParamMemoryDays());
+                textPromptDoCount(this.altText, getRequiredElementById('alt_text_tokencount'));
+                monitorPromptChangeForEmbed(this.altText.value, 'positive');
+                setGroupAdvancedOverride('regionalprompting', this.altText.value.includes('<segment:') || this.altText.value.includes('<region:'));
+            });
         });
-        this.altText.addEventListener('input', () => {
-            setCookie(`lastparam_input_prompt`, this.altText.value, getParamMemoryDays());
-            this.reapplyPositions();
+        this.altText.addEventListener('change', () => {
+            this.schedulePromptHeavyInputWork('positive', () => {
+                setCookie(`lastparam_input_prompt`, this.altText.value, getParamMemoryDays());
+                textPromptDoCount(this.altText, getRequiredElementById('alt_text_tokencount'));
+                monitorPromptChangeForEmbed(this.altText.value, 'positive');
+                setGroupAdvancedOverride('regionalprompting', this.altText.value.includes('<segment:') || this.altText.value.includes('<region:'));
+            }, true);
         });
         this.altNegText.addEventListener('input', (e) => {
             let inputNegPrompt = document.getElementById('input_negativeprompt');
             if (inputNegPrompt) {
                 inputNegPrompt.value = this.altNegText.value;
             }
-            setCookie(`lastparam_input_negativeprompt`, this.altNegText.value, getParamMemoryDays());
             let negTokCount = getRequiredElementById('alt_negtext_tokencount');
             if (this.altNegText.value == '') {
                 negTokCount.style.display = 'none';
@@ -559,12 +610,20 @@ class GenTabLayout {
             else {
                 negTokCount.style.display = '';
             }
-            textPromptDoCount(this.altNegText, negTokCount, ', Neg: ');
-            monitorPromptChangeForEmbed(this.altNegText.value, 'negative');
+            this.schedulePromptLayoutUpdate();
+            this.schedulePromptHeavyInputWork('negative', () => {
+                setCookie(`lastparam_input_negativeprompt`, this.altNegText.value, getParamMemoryDays());
+                textPromptDoCount(this.altNegText, negTokCount, ', Neg: ');
+                monitorPromptChangeForEmbed(this.altNegText.value, 'negative');
+            });
         });
-        this.altNegText.addEventListener('input', () => {
-            setCookie(`lastparam_input_negativeprompt`, this.altNegText.value, getParamMemoryDays());
-            this.reapplyPositions();
+        this.altNegText.addEventListener('change', () => {
+            let negTokCount = getRequiredElementById('alt_negtext_tokencount');
+            this.schedulePromptHeavyInputWork('negative', () => {
+                setCookie(`lastparam_input_negativeprompt`, this.altNegText.value, getParamMemoryDays());
+                textPromptDoCount(this.altNegText, negTokCount, ', Neg: ');
+                monitorPromptChangeForEmbed(this.altNegText.value, 'negative');
+            }, true);
         });
         this.altPromptSizeHandle();
         new ResizeObserver(this.altPromptSizeHandle.bind(this)).observe(this.altText);
