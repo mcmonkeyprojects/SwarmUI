@@ -18,6 +18,7 @@ Directory.Build.props
 /Output
 /Data
 /Models
+/src/BuiltinExtensions/ComfyUIBackend/models/
 tmp/
 /src/Extensions
 /dlbackend
