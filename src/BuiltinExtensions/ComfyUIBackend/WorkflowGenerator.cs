@@ -146,6 +146,12 @@ public partial class WorkflowGenerator
     /// <summary>If true, assume all handling is video handling.</summary>
     public bool AssumeVideo = false;
 
+    /// <summary>
+    /// TODO: TEMPORARY HACK: Tracks if an audio concat has been emitted. If so, LTX-2 audio is likely in use and needs a split.
+    /// This needs to be replaced with actual coherent tracking.
+    /// </summary>
+    public bool HasConcattedAudio = false;
+
     /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/> if used for the main image.</summary>
     public ImageMaskCropData MaskShrunkInfo = new(null, null, null, null);
 
@@ -774,7 +780,7 @@ public partial class WorkflowGenerator
     {
         if (FinalAudioVae is not null && canAudioDecode)
         {
-            if (IsLTXV2())
+            if (IsLTXV2() && HasConcattedAudio)
             {
                 string separated = CreateNode("LTXVSeparateAVLatent", new JObject()
                 {
@@ -1655,6 +1661,7 @@ public partial class WorkflowGenerator
                         ["video_latent"] = NodePath(latentOutNode, 0),
                         ["audio_latent"] = g.FinalLatentAudio
                     });
+                    g.HasConcattedAudio = true;
                     Latent = [concatNode, 0];
                 }
                 DefaultCFG = 3;

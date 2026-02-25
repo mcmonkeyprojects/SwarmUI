@@ -1451,6 +1451,7 @@ public class WorkflowGeneratorSteps
                             ["video_latent"] = NodePath("26", 0),
                             ["audio_latent"] = g.FinalLatentAudio
                         });
+                        g.HasConcattedAudio = true;
                         g.FinalSamples = [reconcat, 0];
                     }
                     else
