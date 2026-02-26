@@ -2050,18 +2050,19 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Creates an image preprocessor node.</summary>
-    public JArray CreatePreprocessor(string preprocessor, JArray imageNode)
+    public JArray CreatePreprocessor(string preprocessor, WGNodeData imageNode)
     {
+        imageNode = imageNode.AsRawImage(CurrentVae);
         JToken objectData = ComfyUIBackendExtension.ControlNetPreprocessors[preprocessor] ?? throw new SwarmUserErrorException($"ComfyUI backend does not have a preprocessor named '{preprocessor}'");
         if (objectData is JObject objObj && objObj.TryGetValue("swarm_custom", out JToken swarmCustomTok) && swarmCustomTok.Value<bool>())
         {
-            return CreateNodesFromSpecialSyntax(objObj, [imageNode]);
+            return CreateNodesFromSpecialSyntax(objObj, [imageNode.Path]);
         }
         string preProcNode = CreateNode(preprocessor, (_, n) =>
         {
             n["inputs"] = new JObject()
             {
-                ["image"] = imageNode
+                ["image"] = imageNode.Path
             };
             foreach (string type in new[] { "required", "optional" })
             {

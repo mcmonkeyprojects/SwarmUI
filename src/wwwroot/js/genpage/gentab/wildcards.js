@@ -42,7 +42,7 @@ class WildcardHelpers {
     toggleExperimentalEditor() {
         let content = null;
         if (this.contentsElem) {
-            content = getTextContent(this.contentsElem);
+            content = this.getProperEditorContent();
         }
         if (this.experimentalEditorElem.checked) {
             this.experimentalEditorSpotElem.innerHTML = '<div class="editable-textbox" id="edit_wildcard_contents" style="min-height: 15lh" contenteditable="true"></div>';
@@ -119,19 +119,73 @@ class WildcardHelpers {
             return;
         }
         let [start, end] = getTextSelRange(this.contentsElem);
-        let contents = getTextContent(this.contentsElem);
-        let lines = contents.split('\n');
+        let children = this.contentsElem.children;
+        let lines = [];
+        let nextLinePrepend = '';
+        let realLines = 0;
+        for (let child of children) {
+            let textContent = getTextContent(child);
+            if (textContent == '\n') {
+                textContent = '\u2009';
+                start++; end++;
+            }
+            if (child.classList.contains('wc_line')) {
+                lines.push(nextLinePrepend + textContent);
+                nextLinePrepend = '';
+                realLines++;
+            }
+            else if (textContent != '\\') {
+                if (textContent.startsWith('\\')) {
+                    textContent = textContent.substring(1);
+                    nextLinePrepend += textContent;
+                }
+                else if (textContent.endsWith('\\')) {
+                    textContent = textContent.substring(0, textContent.length - 1);
+                    lines[lines.length - 1] += textContent;
+                }
+                else {
+                    lines.push(textContent);
+                }
+            }
+        }
+        if (nextLinePrepend != '') {
+            lines.push(nextLinePrepend);
+        }
+        if (realLines == 0 && this.contentsElem.textContent.length > 0) {
+            lines = [];
+            lines.push(...getTextContent(this.contentsElem).trim().split('\n'));
+        }
+        if (lines.length == 0) {
+            lines = [''];
+        }
+        if (lines.length > this.contentsElem.dataset.lines) {
+            start++; end++;
+        }
+        this.contentsElem.dataset.lines = lines.length;
         let html = '';
+        let charCount = 0;
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
+            if (line.startsWith('\u2009') && line != '\u2009') {
+                line = line.substring(1);
+                if (start > charCount) { start--; }
+                if (end > charCount) { end--; }
+            }
+            else if (line.endsWith('\u2009') && line != '\u2009') {
+                line = line.substring(0, line.length - 1);
+                if (start > charCount + line.length) { start--; }
+                if (end > charCount + line.length) { end--; }
+            }
             let trimLine = line.trim();
-            let clazz = `wc_line_${i % 2}`;
+            let clazz = `wc_line wc_line_${i % 2}`;
             if (trimLine.startsWith('#')) {
                 clazz += ' wc_line_comment';
             }
-            html += `<span class="${clazz}">${line}</span>`;
+            charCount += trimLine.length == 0 ? 1 : line.length;
+            html += `<div class="${clazz}">${trimLine.length == 0 ? '\u2009' : line}</div>`;
             if (i < lines.length - 1) {
-                html += '<br>';
+                charCount++;
+                html += '<div class="wc_line_spacer">\\</div>';
             }
         }
         this.contentsElem.innerHTML = html;
@@ -177,9 +231,25 @@ class WildcardHelpers {
         }
     }
 
+    /** Shows an error message in the wildcard modal. */
     wildcardModalError(error) {
         console.log(`Wildcard modal error: ${error}`);
         this.errorBoxElem.innerText = error;
+    }
+
+    /** Gets the proper editor content for the wildcard contents edit box, accounting for which editor mode is in use. */
+    getProperEditorContent() {
+        if (this.contentsElem.tagName == 'TEXTAREA') {
+            return this.contentsElem.value.trimEnd();
+        }
+        let children = this.contentsElem.children;
+        let content = '';
+        for (let child of children) {
+            if (child.classList.contains('wc_line')) {
+                content += getTextContent(child) + '\n';
+            }
+        }
+        return content.trimEnd();
     }
 
     /** Saves the edits to a wildcard from the modal created by {@link WildcardHelpers#editWildcard}. */
@@ -199,7 +269,7 @@ class WildcardHelpers {
             this.wildcardModalError('Cannot save a wildcard as a folder, give it a filename, or remove the trailing slash');
             return;
         }
-        let content = getTextContent(this.contentsElem).trim();
+        let content = this.getProperEditorContent();
         if (content == '') {
             this.wildcardModalError('At least one entry is required');
             return;

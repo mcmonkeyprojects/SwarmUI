@@ -1095,11 +1095,11 @@ public class WorkflowGeneratorSteps
                     }
                     if (preprocessor.ToLowerFast() != "none")
                     {
-                        JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual.Path);
+                        JArray preprocActual = g.CreatePreprocessor(preprocessor, imageNodeActual);
                         g.NodeHelpers["controlnet_preprocessor"] = $"{preprocActual[0]}";
                         if (g.UserInput.Get(T2IParamTypes.ControlNetPreviewOnly))
                         {
-                            g.CurrentMedia = g.CurrentMedia.WithPath(preprocActual);
+                            g.CurrentMedia = imageNodeActual.WithPath(preprocActual);
                             g.CurrentMedia.SaveOutput(g.CurrentVae, g.CurrentAudioVae, id: "9");
                             g.SkipFurtherSteps = true;
                             return;

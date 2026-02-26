@@ -865,23 +865,26 @@ textarea, input, select {
     display: inline-block;
     border: 1px solid var(--light-border);
     background-color: var(--background-soft);
-    white-space: pre-wrap;
+    white-space: wrap;
 }
 .wc_line_0 {
-    display: inline-block;
-    white-space: pre-wrap;
+    display: block;
+    white-space: wrap;
     width: 100%;
     min-height: 1lh;
     background-color: rgba(255, 255, 255, 0.1);
     vertical-align: top;
 }
 .wc_line_1 {
-    display: inline-block;
-    white-space: pre-wrap;
+    display: block;
+    white-space: wrap;
     width: 100%;
     min-height: 1.6em;
     background-color: rgba(0, 0, 0, 0.1);
     vertical-align: top;
+}
+.wc_line_spacer {
+    display: none;
 }
 .wc_line_comment {
     color: var(--text-soft);
