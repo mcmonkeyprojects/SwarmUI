@@ -284,9 +284,46 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
         return null;
     }
 
+    /// <summary>If this is a format that requires attached audio (eg LTX-2), ensure it has attached audio. Create empty audio for the given frame count if needed.</summary>
+    public WGNodeData EnsureHasAudioIfNeeded(WGNodeData vae, WGNodeData audioVae)
+    {
+        if (audioVae is null || DataType == DT_LATENT_AUDIOVIDEO || DataType == DT_LATENT_AUDIO || DataType == DT_AUDIO || AttachedAudio is not null)
+        {
+            return this;
+        }
+        if (audioVae.IsCompat(T2IModelClassSorter.CompatLtxv2))
+        {
+            JToken framesTok = Frames;
+            if (!Frames.HasValue)
+            {
+                string frameCountNode = Gen.CreateNode("SwarmCountFrames", new JObject()
+                {
+                    ["image"] = AsRawImage(vae).Path
+                });
+                framesTok = frameCountNode;
+            }
+            string emptyAudio = Gen.CreateNode("LTXVEmptyLatentAudio", new JObject()
+            {
+                ["batch_size"] = UserInput.Get(T2IParamTypes.BatchSize, 1),
+                ["frames_number"] = framesTok,
+                ["frame_rate"] = UserInput.Get(T2IParamTypes.VideoFPS, 24),
+                ["audio_vae"] = audioVae.Path
+            });
+            WGNodeData newNode = Duplicate();
+            newNode.AttachedAudio = WithPath([emptyAudio, 0], DT_LATENT_AUDIO, audioVae.Compat);
+            return newNode;
+        }
+        return this;
+    }
+
     /// <summary>Converts this data to a format fit for sampling, generally some form of latent.</summary>
     public WGNodeData AsSamplingLatent(WGNodeData vae, WGNodeData audioVae)
     {
+        WGNodeData withAudio = EnsureHasAudioIfNeeded(vae, audioVae);
+        if (withAudio != this)
+        {
+            return withAudio.AsSamplingLatent(vae, audioVae);
+        }
         if (IsLatentData)
         {
             WGAssert(vae.Compat.ID == Compat.ID, $"Data is compatible with '{Compat}' but provided VAE is compatible with '{vae.Compat}', cannot encode to sampling latent, ensure correctly decoded first.");

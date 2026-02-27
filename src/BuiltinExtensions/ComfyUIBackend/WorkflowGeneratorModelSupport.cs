@@ -326,15 +326,7 @@ public partial class WorkflowGenerator
                 ["height"] = height,
                 ["width"] = width
             }, id);
-            string emptyAudio = CreateNode("LTXVEmptyLatentAudio", new JObject()
-            {
-                ["batch_size"] = batchSize,
-                ["frames_number"] = frames,
-                ["frame_rate"] = fps,
-                ["audio_vae"] = CurrentAudioVae.Path
-            });
-            WGNodeData attachAudio = new([emptyAudio, 0], this, WGNodeData.DT_LATENT_AUDIO, CurrentCompat());
-            return new([emptyVideo, 0], this, WGNodeData.DT_LATENT_VIDEO, CurrentCompat()) { Width = width, Height = height, Frames = frames, FPS = fps, AttachedAudio = attachAudio };
+            return new([emptyVideo, 0], this, WGNodeData.DT_LATENT_VIDEO, CurrentCompat()) { Width = width, Height = height, Frames = frames, FPS = fps };
         }
         else if (IsAceStep15())
         {
