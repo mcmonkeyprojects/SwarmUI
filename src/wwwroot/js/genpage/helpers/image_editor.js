@@ -124,6 +124,829 @@ class ImageEditorTempTool extends ImageEditorTool {
     }
 }
 
+function imageEditorClampNumber(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+}
+
+function imageEditorRgbToHex(r, g, b) {
+    r = Math.round(imageEditorClampNumber(r, 0, 255));
+    g = Math.round(imageEditorClampNumber(g, 0, 255));
+    b = Math.round(imageEditorClampNumber(b, 0, 255));
+    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function imageEditorNormalizeHexColor(value) {
+    if (typeof value != 'string') {
+        return null;
+    }
+    let text = value.trim().toLowerCase();
+    let match = text.match(/^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/);
+    if (!match) {
+        return null;
+    }
+    let color = match[1];
+    if (color.length == 3 || color.length == 4) {
+        color = `${color[0]}${color[0]}${color[1]}${color[1]}${color[2]}${color[2]}`;
+    }
+    if (color.length == 8) {
+        color = color.substring(0, 6);
+    }
+    return `#${color}`;
+}
+
+function imageEditorHexToRgb(value) {
+    let color = imageEditorNormalizeHexColor(value);
+    if (!color) {
+        return null;
+    }
+    return [
+        parseInt(color.substring(1, 3), 16),
+        parseInt(color.substring(3, 5), 16),
+        parseInt(color.substring(5, 7), 16)
+    ];
+}
+
+function imageEditorParseHueValue(value) {
+    if (typeof value != 'string') {
+        return null;
+    }
+    let text = value.trim().toLowerCase();
+    if (text == '') {
+        return null;
+    }
+    if (text.endsWith('deg')) {
+        text = text.substring(0, text.length - 3);
+    }
+    else if (text.endsWith('turn')) {
+        let turns = parseFloat(text.substring(0, text.length - 4));
+        return Number.isFinite(turns) ? turns * 360 : null;
+    }
+    else if (text.endsWith('rad')) {
+        let radians = parseFloat(text.substring(0, text.length - 3));
+        return Number.isFinite(radians) ? radians * (180 / Math.PI) : null;
+    }
+    let number = parseFloat(text);
+    return Number.isFinite(number) ? number : null;
+}
+
+function imageEditorParseRatioValue(value) {
+    if (typeof value != 'string') {
+        return null;
+    }
+    let text = value.trim().toLowerCase();
+    if (text == '') {
+        return null;
+    }
+    if (text.endsWith('%')) {
+        let percent = parseFloat(text.substring(0, text.length - 1));
+        return Number.isFinite(percent) ? imageEditorClampNumber(percent / 100, 0, 1) : null;
+    }
+    let number = parseFloat(text);
+    if (!Number.isFinite(number)) {
+        return null;
+    }
+    if (number >= 0 && number <= 1) {
+        return number;
+    }
+    return imageEditorClampNumber(number / 100, 0, 1);
+}
+
+function imageEditorParseRgbComponent(value) {
+    if (typeof value != 'string') {
+        return null;
+    }
+    let text = value.trim().toLowerCase();
+    if (text == '') {
+        return null;
+    }
+    if (text.endsWith('%')) {
+        let percent = parseFloat(text.substring(0, text.length - 1));
+        if (!Number.isFinite(percent)) {
+            return null;
+        }
+        return imageEditorClampNumber(percent, 0, 100) * 2.55;
+    }
+    let number = parseFloat(text);
+    return Number.isFinite(number) ? imageEditorClampNumber(number, 0, 255) : null;
+}
+
+function imageEditorNormalizeHue(value) {
+    return ((value % 360) + 360) % 360;
+}
+
+function imageEditorHslToRgb(h, s, l) {
+    h = imageEditorNormalizeHue(h);
+    let c = (1 - Math.abs(2 * l - 1)) * s;
+    let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    let m = l - c / 2;
+    let [r, g, b] = [0, 0, 0];
+    if (h < 60) { [r, g, b] = [c, x, 0]; }
+    else if (h < 120) { [r, g, b] = [x, c, 0]; }
+    else if (h < 180) { [r, g, b] = [0, c, x]; }
+    else if (h < 240) { [r, g, b] = [0, x, c]; }
+    else if (h < 300) { [r, g, b] = [x, 0, c]; }
+    else { [r, g, b] = [c, 0, x]; }
+    return [255 * (r + m), 255 * (g + m), 255 * (b + m)];
+}
+
+function imageEditorHsvToRgb(h, s, v) {
+    h = imageEditorNormalizeHue(h);
+    let c = v * s;
+    let x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    let m = v - c;
+    let [r, g, b] = [0, 0, 0];
+    if (h < 60) { [r, g, b] = [c, x, 0]; }
+    else if (h < 120) { [r, g, b] = [x, c, 0]; }
+    else if (h < 180) { [r, g, b] = [0, c, x]; }
+    else if (h < 240) { [r, g, b] = [0, x, c]; }
+    else if (h < 300) { [r, g, b] = [x, 0, c]; }
+    else { [r, g, b] = [c, 0, x]; }
+    return [255 * (r + m), 255 * (g + m), 255 * (b + m)];
+}
+
+function imageEditorRgbToHsv(r, g, b) {
+    r = imageEditorClampNumber(r, 0, 255) / 255;
+    g = imageEditorClampNumber(g, 0, 255) / 255;
+    b = imageEditorClampNumber(b, 0, 255) / 255;
+    let max = Math.max(r, g, b);
+    let min = Math.min(r, g, b);
+    let delta = max - min;
+    let h = 0;
+    if (delta > 0) {
+        if (max == r) {
+            h = 60 * (((g - b) / delta) % 6);
+        }
+        else if (max == g) {
+            h = 60 * (((b - r) / delta) + 2);
+        }
+        else {
+            h = 60 * (((r - g) / delta) + 4);
+        }
+    }
+    h = imageEditorNormalizeHue(h);
+    let s = max == 0 ? 0 : delta / max;
+    let v = max;
+    return [Math.round(h), Math.round(s * 255), Math.round(v * 255)];
+}
+
+function imageEditorParseFunctionColor(value) {
+    if (typeof value != 'string') {
+        return null;
+    }
+    let match = value.trim().toLowerCase().match(/^([a-z]+)\((.*)\)$/);
+    if (!match) {
+        return null;
+    }
+    let fn = match[1];
+    let parts = match[2].split(',').map(part => part.trim()).filter(part => part != '');
+    if ((fn == 'rgb' || fn == 'rgba') && parts.length >= 3) {
+        let r = imageEditorParseRgbComponent(parts[0]);
+        let g = imageEditorParseRgbComponent(parts[1]);
+        let b = imageEditorParseRgbComponent(parts[2]);
+        if (r == null || g == null || b == null) {
+            return null;
+        }
+        return imageEditorRgbToHex(r, g, b);
+    }
+    if ((fn == 'hsl' || fn == 'hsla' || fn == 'hsa') && parts.length >= 3) {
+        let h = imageEditorParseHueValue(parts[0]);
+        let s = imageEditorParseRatioValue(parts[1]);
+        let l = imageEditorParseRatioValue(parts[2]);
+        if (h == null || s == null || l == null) {
+            return null;
+        }
+        let [r, g, b] = imageEditorHslToRgb(h, s, l);
+        return imageEditorRgbToHex(r, g, b);
+    }
+    if ((fn == 'hsv' || fn == 'hsva' || fn == 'hsb' || fn == 'hsba') && parts.length >= 3) {
+        let h = imageEditorParseHueValue(parts[0]);
+        let s = imageEditorParseRatioValue(parts[1]);
+        let v = imageEditorParseRatioValue(parts[2]);
+        if (h == null || s == null || v == null) {
+            return null;
+        }
+        let [r, g, b] = imageEditorHsvToRgb(h, s, v);
+        return imageEditorRgbToHex(r, g, b);
+    }
+    return null;
+}
+
+function imageEditorParseColorInput(value) {
+    if (typeof value != 'string') {
+        return null;
+    }
+    let text = value.trim();
+    if (text == '') {
+        return null;
+    }
+    if (text.match(/^[0-9a-fA-F]{3}$|^[0-9a-fA-F]{4}$|^[0-9a-fA-F]{6}$|^[0-9a-fA-F]{8}$/)) {
+        text = `#${text}`;
+    }
+    let hex = imageEditorNormalizeHexColor(text);
+    if (hex) {
+        return hex;
+    }
+    let prefixed = text.match(/^([a-z]+)\s*:\s*(.+)$/i);
+    if (prefixed) {
+        let fnColor = imageEditorParseFunctionColor(`${prefixed[1]}(${prefixed[2]})`);
+        if (fnColor) {
+            return fnColor;
+        }
+    }
+    let funcColor = imageEditorParseFunctionColor(text);
+    if (funcColor) {
+        return funcColor;
+    }
+    let rgbParts = text.split(',').map(part => part.trim()).filter(part => part != '');
+    if (rgbParts.length == 3 || rgbParts.length == 4) {
+        let looksLikeHsa = (rgbParts[1].includes('%') && rgbParts[2].includes('%')) || /(deg|turn|rad)$/i.test(rgbParts[0]);
+        if (looksLikeHsa) {
+            let h = imageEditorParseHueValue(rgbParts[0]);
+            let s = imageEditorParseRatioValue(rgbParts[1]);
+            let l = imageEditorParseRatioValue(rgbParts[2]);
+            if (h != null && s != null && l != null) {
+                let [r, g, b] = imageEditorHslToRgb(h, s, l);
+                return imageEditorRgbToHex(r, g, b);
+            }
+        }
+        let r = imageEditorParseRgbComponent(rgbParts[0]);
+        let g = imageEditorParseRgbComponent(rgbParts[1]);
+        let b = imageEditorParseRgbComponent(rgbParts[2]);
+        if (r != null && g != null && b != null) {
+            return imageEditorRgbToHex(r, g, b);
+        }
+    }
+    return null;
+}
+
+function getImageEditorColorControlHtml(defaultColor) {
+    return `
+    <div class="image-editor-tool-block tool-block-nogrow image-editor-color-control">
+        <label>Color:&nbsp;</label>
+        <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="${defaultColor}">
+        <input type="color" class="id-col2" value="${defaultColor}">
+        <button class="basic-button id-col3">Pick</button>
+        <button class="basic-button id-col4">Popout</button>
+    </div>`;
+}
+
+class ImageEditorColorControl {
+    constructor(tool, defaultColor) {
+        this.tool = tool;
+        this.currentColor = imageEditorParseColorInput(defaultColor) || '#ffffff';
+        this.customColors = new Array(16).fill('#ffffff');
+        this.nextCustomColorIndex = 0;
+        this.draggingHue = false;
+        this.draggingSv = false;
+        this.draggingPanel = false;
+        this.resizingPanel = false;
+        this.panelDragStartX = 0;
+        this.panelDragStartY = 0;
+        this.panelStartLeft = 0;
+        this.panelStartTop = 0;
+        this.panelStartWidth = 0;
+        this.panelStartHeight = 0;
+        this.panelWidth = null;
+        this.panelHeight = null;
+        this.panelLeft = null;
+        this.panelTop = null;
+        this.hue = 0;
+        this.sat = 0;
+        this.val = 255;
+        this.alpha = 255;
+        this.root = this.tool.configDiv.querySelector('.image-editor-color-control');
+        if (!this.root) {
+            throw new Error(`Color control is missing for tool ${tool.id}`);
+        }
+        this.colorText = this.root.querySelector('.id-col1');
+        this.colorSelector = this.root.querySelector('.id-col2');
+        this.colorPickButton = this.root.querySelector('.id-col3');
+        this.colorPopoutButton = this.root.querySelector('.id-col4');
+        this.tool.colorText = this.colorText;
+        this.tool.colorSelector = this.colorSelector;
+        this.tool.colorPickButton = this.colorPickButton;
+        this.tool.colorPopoutButton = this.colorPopoutButton;
+        this.buildPopoutPanel();
+        this.bind();
+        this.setColor(this.currentColor, false);
+    }
+
+    buildPopoutPanel() {
+        this.popoutPanel = document.createElement('div');
+        this.popoutPanel.className = 'image-editor-color-floating-panel';
+        this.popoutPanel.style.display = 'none';
+        this.popoutPanel.innerHTML = `
+        <div class="image-editor-color-floating-titlebar id-panel-titlebar">Color Picker</div>
+        <div class="image-editor-color-floating-body">
+            <div class="image-editor-color-floating-columns">
+                <div class="image-editor-color-floating-left">
+                    <div class="image-editor-color-floating-title">Basic colors</div>
+                    <div class="image-editor-color-swatch-grid id-basic-swatches"></div>
+                    <button class="basic-button image-editor-color-wide-button id-pick-screen">Pick Screen Color</button>
+                    <div class="image-editor-color-floating-title image-editor-color-custom-title">Custom colors</div>
+                    <div class="image-editor-color-swatch-grid id-custom-swatches"></div>
+                    <button class="basic-button image-editor-color-wide-button id-add-custom">Add to Custom Colors</button>
+                </div>
+                <div class="image-editor-color-floating-right">
+                    <div class="image-editor-color-canvas-row">
+                        <canvas class="id-sv-canvas" width="230" height="172"></canvas>
+                        <canvas class="id-hue-canvas" width="24" height="172"></canvas>
+                    </div>
+                    <div class="image-editor-color-fields-row">
+                        <div class="image-editor-color-current-preview id-current-preview"></div>
+                        <div class="image-editor-color-field-grid">
+                            <label>Hue:</label><input type="number" class="id-hue image-editor-color-input" min="0" max="360" step="1" value="0">
+                            <label>Red:</label><input type="number" class="id-red image-editor-color-input" min="0" max="255" step="1" value="255">
+                            <label>Sat:</label><input type="number" class="id-sat image-editor-color-input" min="0" max="255" step="1" value="0">
+                            <label>Green:</label><input type="number" class="id-green image-editor-color-input" min="0" max="255" step="1" value="255">
+                            <label>Val:</label><input type="number" class="id-val image-editor-color-input" min="0" max="255" step="1" value="255">
+                            <label>Blue:</label><input type="number" class="id-blue image-editor-color-input" min="0" max="255" step="1" value="255">
+                            <label>Alpha channel:</label><input type="number" class="id-alpha image-editor-color-input" min="0" max="255" step="1" value="255">
+                            <label>HTML:</label><input type="text" class="id-html image-editor-color-input image-editor-color-html-input" value="#ffffff">
+                        </div>
+                    </div>
+                    <div class="image-editor-color-footer-row">
+                        <button class="basic-button id-popout-ok">OK</button>
+                        <button class="basic-button id-popout-cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="image-editor-color-resize-handle id-panel-resize" title="Resize"></div>`;
+        this.tool.editor.inputDiv.appendChild(this.popoutPanel);
+        this.titleBar = this.popoutPanel.querySelector('.id-panel-titlebar');
+        this.resizeHandle = this.popoutPanel.querySelector('.id-panel-resize');
+        this.preview = this.popoutPanel.querySelector('.id-current-preview');
+        this.basicSwatchesDiv = this.popoutPanel.querySelector('.id-basic-swatches');
+        this.customSwatchesDiv = this.popoutPanel.querySelector('.id-custom-swatches');
+        this.pickScreenButton = this.popoutPanel.querySelector('.id-pick-screen');
+        this.addCustomButton = this.popoutPanel.querySelector('.id-add-custom');
+        this.svCanvas = this.popoutPanel.querySelector('.id-sv-canvas');
+        this.hueCanvas = this.popoutPanel.querySelector('.id-hue-canvas');
+        this.svCtx = this.svCanvas.getContext('2d');
+        this.hueCtx = this.hueCanvas.getContext('2d');
+        this.hueInput = this.popoutPanel.querySelector('.id-hue');
+        this.satInput = this.popoutPanel.querySelector('.id-sat');
+        this.valInput = this.popoutPanel.querySelector('.id-val');
+        this.redInput = this.popoutPanel.querySelector('.id-red');
+        this.greenInput = this.popoutPanel.querySelector('.id-green');
+        this.blueInput = this.popoutPanel.querySelector('.id-blue');
+        this.alphaInput = this.popoutPanel.querySelector('.id-alpha');
+        this.htmlInput = this.popoutPanel.querySelector('.id-html');
+        this.popoutOkButton = this.popoutPanel.querySelector('.id-popout-ok');
+        this.popoutCancelButton = this.popoutPanel.querySelector('.id-popout-cancel');
+        this.basicColors = [
+            '#000000', '#202020', '#3b3b3b', '#595959', '#727272', '#9a9a9a', '#c4c4c4', '#ffffff',
+            '#7f0000', '#a44c00', '#a56d00', '#8fa100', '#2d8d00', '#008c57', '#0079a8', '#004e9f',
+            '#28008f', '#56008f', '#8b006f', '#9f0047', '#b4002f', '#e60000', '#ff6f00', '#ffc300',
+            '#d9ff00', '#7dff00', '#00ff44', '#00ffd0', '#00a6ff', '#0066ff', '#4f3dff', '#d100ff'
+        ];
+        this.renderBasicSwatches();
+        this.renderCustomSwatches();
+    }
+
+    bind() {
+        this.colorText.addEventListener('input', () => this.applyTextInput(this.colorText, false));
+        this.colorText.addEventListener('change', () => this.applyTextInput(this.colorText, true));
+        this.colorSelector.addEventListener('input', () => {
+            this.setColor(this.colorSelector.value, true);
+        });
+        this.colorSelector.addEventListener('change', () => {
+            this.setColor(this.colorSelector.value, true);
+        });
+        this.colorPickButton.addEventListener('click', () => this.toggleScreenPick());
+        this.colorPopoutButton.addEventListener('click', () => this.togglePopout());
+        this.pickScreenButton.addEventListener('click', () => this.toggleScreenPick());
+        this.addCustomButton.addEventListener('click', () => this.addCurrentToCustomColors());
+        this.popoutOkButton.addEventListener('click', () => this.closePopout());
+        this.popoutCancelButton.addEventListener('click', () => this.closePopout());
+        this.titleBar.addEventListener('mousedown', (e) => this.startPanelDrag(e));
+        this.resizeHandle.addEventListener('mousedown', (e) => this.startPanelResize(e));
+        this.bindNumberInput(this.hueInput, () => this.applyHsvFields());
+        this.bindNumberInput(this.satInput, () => this.applyHsvFields());
+        this.bindNumberInput(this.valInput, () => this.applyHsvFields());
+        this.bindNumberInput(this.redInput, () => this.applyRgbFields());
+        this.bindNumberInput(this.greenInput, () => this.applyRgbFields());
+        this.bindNumberInput(this.blueInput, () => this.applyRgbFields());
+        this.bindNumberInput(this.alphaInput, () => this.applyAlphaField());
+        for (let input of this.popoutPanel.querySelectorAll('.image-editor-color-input')) {
+            input.addEventListener('mousedown', (e) => e.stopPropagation());
+            input.addEventListener('click', (e) => e.stopPropagation());
+            input.addEventListener('focus', (e) => e.stopPropagation());
+        }
+        // Commit HTML color only on explicit actions (Enter/blur), so partial typing isn't auto-corrected mid-entry.
+        this.htmlInput.addEventListener('change', () => this.applyTextInput(this.htmlInput, true));
+        this.htmlInput.addEventListener('keydown', (e) => {
+            if (e.key == 'Enter') {
+                this.applyTextInput(this.htmlInput, true);
+            }
+        });
+        this.svCanvas.addEventListener('mousedown', (e) => {
+            this.draggingSv = true;
+            this.applySvFromPointer(e.clientX, e.clientY);
+        });
+        this.hueCanvas.addEventListener('mousedown', (e) => {
+            this.draggingHue = true;
+            this.applyHueFromPointer(e.clientY);
+        });
+        document.addEventListener('mousemove', (e) => this.onGlobalMouseMove(e));
+        document.addEventListener('mouseup', () => this.onGlobalMouseUp());
+        this.basicSwatchesDiv.addEventListener('click', (e) => this.onSwatchClick(e));
+        this.customSwatchesDiv.addEventListener('click', (e) => this.onSwatchClick(e));
+    }
+
+    bindNumberInput(input, onApply) {
+        input.addEventListener('input', () => {
+            // Allow temporary empty state while user is editing (eg backspacing "347" to type a new value).
+            if (input.value.trim() == '') {
+                return;
+            }
+            onApply();
+        });
+        input.addEventListener('change', onApply);
+        input.addEventListener('keyup', (e) => {
+            if (e.key == 'Enter') {
+                onApply();
+            }
+        });
+    }
+
+    onSwatchClick(e) {
+        let button = findParentOfClass(e.target, 'image-editor-color-swatch');
+        if (!button || !button.dataset.color) {
+            return;
+        }
+        this.setColor(button.dataset.color, true);
+    }
+
+    onGlobalMouseMove(e) {
+        if (this.draggingPanel) {
+            let left = this.panelStartLeft + (e.clientX - this.panelDragStartX);
+            let top = this.panelStartTop + (e.clientY - this.panelDragStartY);
+            this.setPanelGeometry(left, top, this.panelWidth, this.panelHeight);
+            return;
+        }
+        if (this.resizingPanel) {
+            let width = this.panelStartWidth + (e.clientX - this.panelDragStartX);
+            let height = this.panelStartHeight + (e.clientY - this.panelDragStartY);
+            this.setPanelGeometry(this.panelLeft, this.panelTop, width, height);
+            return;
+        }
+        if (this.draggingHue) {
+            this.applyHueFromPointer(e.clientY);
+        }
+        if (this.draggingSv) {
+            this.applySvFromPointer(e.clientX, e.clientY);
+        }
+    }
+
+    onGlobalMouseUp() {
+        this.draggingPanel = false;
+        this.resizingPanel = false;
+        this.draggingHue = false;
+        this.draggingSv = false;
+    }
+
+    startPanelDrag(e) {
+        if (e.button != 0) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        this.draggingPanel = true;
+        this.resizingPanel = false;
+        this.panelDragStartX = e.clientX;
+        this.panelDragStartY = e.clientY;
+        this.panelStartLeft = this.panelLeft ?? this.popoutPanel.offsetLeft;
+        this.panelStartTop = this.panelTop ?? this.popoutPanel.offsetTop;
+    }
+
+    startPanelResize(e) {
+        if (e.button != 0) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        this.resizingPanel = true;
+        this.draggingPanel = false;
+        this.panelDragStartX = e.clientX;
+        this.panelDragStartY = e.clientY;
+        this.panelStartWidth = this.panelWidth ?? this.popoutPanel.offsetWidth;
+        this.panelStartHeight = this.panelHeight ?? this.popoutPanel.offsetHeight;
+    }
+
+    setPanelGeometry(left, top, width, height) {
+        let container = this.tool.editor.inputDiv;
+        let maxWidth = Math.max(220, container.clientWidth - 4);
+        let maxHeight = Math.max(180, container.clientHeight - 4);
+        let minWidth = Math.min(520, maxWidth);
+        let minHeight = Math.min(360, maxHeight);
+        width = imageEditorClampNumber(Math.round(width ?? this.popoutPanel.offsetWidth), minWidth, maxWidth);
+        height = imageEditorClampNumber(Math.round(height ?? this.popoutPanel.offsetHeight), minHeight, maxHeight);
+        left = Math.round(left ?? this.popoutPanel.offsetLeft);
+        top = Math.round(top ?? this.popoutPanel.offsetTop);
+        left = imageEditorClampNumber(left, 2, Math.max(2, container.clientWidth - width - 2));
+        top = imageEditorClampNumber(top, 2, Math.max(2, container.clientHeight - height - 2));
+        this.panelWidth = width;
+        this.panelHeight = height;
+        this.panelLeft = left;
+        this.panelTop = top;
+        this.popoutPanel.style.width = `${width}px`;
+        this.popoutPanel.style.height = `${height}px`;
+        this.popoutPanel.style.left = `${left}px`;
+        this.popoutPanel.style.top = `${top}px`;
+    }
+
+    toggleScreenPick() {
+        if (this.colorPickButton.classList.contains('interrupt-button')) {
+            this.colorPickButton.classList.remove('interrupt-button');
+            this.tool.editor.activateTool(this.tool.id);
+            return;
+        }
+        this.colorPickButton.classList.add('interrupt-button');
+        this.tool.editor.pickerTool.toolFor = this.tool;
+        this.tool.editor.activateTool('picker');
+    }
+
+    applyHueFromPointer(clientY) {
+        let rect = this.hueCanvas.getBoundingClientRect();
+        let y = imageEditorClampNumber(clientY - rect.top, 0, rect.height);
+        this.hue = Math.round((y / rect.height) * 360);
+        if (this.hue > 359) {
+            this.hue = 359;
+        }
+        this.hueInput.value = this.hue;
+        this.applyHsvFields();
+    }
+
+    applySvFromPointer(clientX, clientY) {
+        let rect = this.svCanvas.getBoundingClientRect();
+        let x = imageEditorClampNumber(clientX - rect.left, 0, rect.width);
+        let y = imageEditorClampNumber(clientY - rect.top, 0, rect.height);
+        this.sat = Math.round((x / rect.width) * 255);
+        this.val = Math.round((1 - (y / rect.height)) * 255);
+        this.satInput.value = this.sat;
+        this.valInput.value = this.val;
+        this.applyHsvFields();
+    }
+
+    applyHsvFields() {
+        let h = parseInt(this.hueInput.value);
+        let s = parseInt(this.satInput.value);
+        let v = parseInt(this.valInput.value);
+        if (Number.isNaN(h)) {
+            h = this.hue;
+        }
+        if (Number.isNaN(s)) {
+            s = this.sat;
+        }
+        if (Number.isNaN(v)) {
+            v = this.val;
+        }
+        h = Math.round(imageEditorClampNumber(h, 0, 359));
+        s = Math.round(imageEditorClampNumber(s, 0, 255));
+        v = Math.round(imageEditorClampNumber(v, 0, 255));
+        this.hue = h;
+        this.sat = s;
+        this.val = v;
+        this.hueInput.value = h;
+        this.satInput.value = s;
+        this.valInput.value = v;
+        let [r, g, b] = imageEditorHsvToRgb(h, s / 255, v / 255);
+        this.setColor(imageEditorRgbToHex(r, g, b), true, { preserveHsv: true });
+    }
+
+    applyRgbFields() {
+        let r = parseInt(this.redInput.value);
+        let g = parseInt(this.greenInput.value);
+        let b = parseInt(this.blueInput.value);
+        if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+            let rgb = imageEditorHexToRgb(this.currentColor);
+            [r, g, b] = rgb;
+        }
+        this.setColor(imageEditorRgbToHex(r, g, b), true);
+    }
+
+    applyAlphaField() {
+        let alpha = parseInt(this.alphaInput.value);
+        if (Number.isNaN(alpha)) {
+            alpha = this.alpha;
+        }
+        this.alpha = Math.round(imageEditorClampNumber(alpha, 0, 255));
+        this.alphaInput.value = this.alpha;
+        this.preview.style.opacity = `${this.alpha / 255}`;
+        // Map alpha to tool opacity when the tool supports explicit opacity controls.
+        if (this.tool.opacityNumber && this.tool.opacitySelector) {
+            let percent = Math.round(imageEditorClampNumber((this.alpha / 255) * 100, 1, 100));
+            this.tool.opacityNumber.value = percent;
+            this.tool.opacitySelector.value = percent;
+            this.tool.onConfigChange();
+        }
+    }
+
+    applyTextInput(input, strict) {
+        if (!this.setColor(input.value, true) && strict) {
+            input.value = this.currentColor;
+        }
+    }
+
+    setColor(value, notify = false, options = {}) {
+        let color = imageEditorParseColorInput(value);
+        if (!color) {
+            return false;
+        }
+        this.currentColor = color;
+        this.tool.color = color;
+        this.colorText.value = color;
+        this.colorSelector.value = color;
+        this.syncPopoutInputs(!!options.preserveHsv);
+        if (this.tool.editor.activeTool?.id != 'picker') {
+            this.colorPickButton.classList.remove('interrupt-button');
+        }
+        if (notify) {
+            this.tool.onConfigChange();
+        }
+        return true;
+    }
+
+    getColor() {
+        return this.currentColor;
+    }
+
+    syncPopoutInputs(preserveHsv = false) {
+        let [r, g, b] = imageEditorHexToRgb(this.currentColor);
+        let h, s, v;
+        if (preserveHsv) {
+            h = Math.round(imageEditorClampNumber(this.hue, 0, 359));
+            s = Math.round(imageEditorClampNumber(this.sat, 0, 255));
+            v = Math.round(imageEditorClampNumber(this.val, 0, 255));
+        }
+        else {
+            [h, s, v] = imageEditorRgbToHsv(r, g, b);
+            // Grayscale colors have undefined hue; keep the user's active hue instead of snapping to 0.
+            if (s == 0) {
+                h = this.hue;
+            }
+        }
+        this.hue = h;
+        this.sat = s;
+        this.val = v;
+        this.hueInput.value = h;
+        this.satInput.value = s;
+        this.valInput.value = v;
+        this.redInput.value = r;
+        this.greenInput.value = g;
+        this.blueInput.value = b;
+        this.alphaInput.value = this.alpha;
+        this.htmlInput.value = this.currentColor;
+        this.preview.style.backgroundColor = this.currentColor;
+        this.preview.style.opacity = `${this.alpha / 255}`;
+        this.drawHueCanvas();
+        this.drawSvCanvas();
+    }
+
+    togglePopout() {
+        if (this.popoutPanel.style.display != 'none' && this.popoutPanel.style.display != '') {
+            this.closePopout();
+            return;
+        }
+        if (this.tool.editor.activeTool?.id == 'picker' && this.tool.editor.pickerTool.toolFor == this.tool) {
+            this.tool.editor.activateTool(this.tool.id);
+        }
+        this.popoutPanel.style.display = 'block';
+        this.colorPopoutButton.classList.add('interrupt-button');
+        this.updatePopoutPosition(true);
+        this.drawHueCanvas();
+        this.drawSvCanvas();
+    }
+
+    closePopout() {
+        this.popoutPanel.style.display = 'none';
+        this.colorPopoutButton.classList.remove('interrupt-button');
+        this.draggingPanel = false;
+        this.resizingPanel = false;
+        this.draggingHue = false;
+        this.draggingSv = false;
+    }
+
+    refreshFloatingPanel() {
+        if (this.popoutPanel.style.display != 'none' && this.popoutPanel.style.display != '') {
+            this.updatePopoutPosition();
+        }
+        if (this.tool.editor.activeTool?.id != 'picker') {
+            this.colorPickButton.classList.remove('interrupt-button');
+        }
+    }
+
+    updatePopoutPosition(isInitial = false) {
+        let canvas = this.tool.editor.canvas;
+        if (!canvas) {
+            return;
+        }
+        let margin = 12;
+        let left = this.panelLeft;
+        let top = this.panelTop;
+        let width = this.panelWidth;
+        let height = this.panelHeight;
+        if (isInitial || left == null || top == null) {
+            left = canvas.offsetLeft + margin;
+            top = canvas.offsetTop + margin;
+        }
+        if (width == null) {
+            width = this.popoutPanel.offsetWidth;
+        }
+        if (height == null) {
+            height = this.popoutPanel.offsetHeight;
+        }
+        this.setPanelGeometry(left, top, width, height);
+    }
+
+    drawHueCanvas() {
+        let ctx = this.hueCtx;
+        let width = this.hueCanvas.width;
+        let height = this.hueCanvas.height;
+        ctx.clearRect(0, 0, width, height);
+        let gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, '#ff0000');
+        gradient.addColorStop(1 / 6, '#ffff00');
+        gradient.addColorStop(2 / 6, '#00ff00');
+        gradient.addColorStop(3 / 6, '#00ffff');
+        gradient.addColorStop(4 / 6, '#0000ff');
+        gradient.addColorStop(5 / 6, '#ff00ff');
+        gradient.addColorStop(1, '#ff0000');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+        let y = Math.round((this.hue / 360) * height);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+    }
+
+    drawSvCanvas() {
+        let ctx = this.svCtx;
+        let width = this.svCanvas.width;
+        let height = this.svCanvas.height;
+        ctx.clearRect(0, 0, width, height);
+        let [r, g, b] = imageEditorHsvToRgb(this.hue, 1, 1);
+        ctx.fillStyle = imageEditorRgbToHex(r, g, b);
+        ctx.fillRect(0, 0, width, height);
+        let whiteGradient = ctx.createLinearGradient(0, 0, width, 0);
+        whiteGradient.addColorStop(0, '#ffffff');
+        whiteGradient.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = whiteGradient;
+        ctx.fillRect(0, 0, width, height);
+        let blackGradient = ctx.createLinearGradient(0, 0, 0, height);
+        blackGradient.addColorStop(0, 'rgba(0,0,0,0)');
+        blackGradient.addColorStop(1, '#000000');
+        ctx.fillStyle = blackGradient;
+        ctx.fillRect(0, 0, width, height);
+        let x = Math.round((this.sat / 255) * width);
+        let y = Math.round((1 - (this.val / 255)) * height);
+        ctx.strokeStyle = '#ffffff';
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    renderBasicSwatches() {
+        this.basicSwatchesDiv.innerHTML = '';
+        for (let color of this.basicColors) {
+            let button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'image-editor-color-swatch';
+            button.dataset.color = color;
+            button.title = color;
+            button.style.backgroundColor = color;
+            this.basicSwatchesDiv.appendChild(button);
+        }
+    }
+
+    renderCustomSwatches() {
+        this.customSwatchesDiv.innerHTML = '';
+        for (let color of this.customColors) {
+            let button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'image-editor-color-swatch';
+            button.dataset.color = color;
+            button.title = color;
+            button.style.backgroundColor = color;
+            this.customSwatchesDiv.appendChild(button);
+        }
+    }
+
+    addCurrentToCustomColors() {
+        this.customColors[this.nextCustomColorIndex] = this.currentColor;
+        this.nextCustomColorIndex = (this.nextCustomColorIndex + 1) % this.customColors.length;
+        this.renderCustomSwatches();
+    }
+}
+
 /**
  * The special extra options tool.
  */
@@ -525,13 +1348,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.opacity = 1;
         this.brushing = false;
         this.isEraser = isEraser;
-        let colorHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <label>Color:&nbsp;</label>
-            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
-            <input type="color" class="id-col2" value="#ffffff">
-            <button class="basic-button id-col3">Pick</button>
-        </div>`;
+        let colorHTML = getImageEditorColorControlHtml('#ffffff');
         let radiusHtml = `<div class="image-editor-tool-block id-rad-block">
                 <label>Radius:&nbsp;</label>
                 <input type="number" style="width: 40px;" class="auto-number id-rad1" min="1" max="1024" step="1" value="10">
@@ -551,28 +1368,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
         }
         else {
             this.configDiv.innerHTML = colorHTML + radiusHtml + opacityHtml;
-            this.colorText = this.configDiv.querySelector('.id-col1');
-            this.colorSelector = this.configDiv.querySelector('.id-col2');
-            this.colorPickButton = this.configDiv.querySelector('.id-col3');
-            this.colorText.addEventListener('input', () => {
-                this.colorSelector.value = this.colorText.value;
-                this.onConfigChange();
-            });
-            this.colorSelector.addEventListener('change', () => {
-                this.colorText.value = this.colorSelector.value;
-                this.onConfigChange();
-            });
-            this.colorPickButton.addEventListener('click', () => {
-                if (this.colorPickButton.classList.contains('interrupt-button')) {
-                    this.colorPickButton.classList.remove('interrupt-button');
-                    this.editor.activateTool(this.id);
-                }
-                else {
-                    this.colorPickButton.classList.add('interrupt-button');
-                    this.editor.pickerTool.toolFor = this;
-                    this.editor.activateTool('picker');
-                }
-            });
+            this.colorControl = new ImageEditorColorControl(this, '#ffffff');
         }
         enableSliderForBox(this.configDiv.querySelector('.id-rad-block'));
         enableSliderForBox(this.configDiv.querySelector('.id-opac-block'));
@@ -586,15 +1382,21 @@ class ImageEditorToolBrush extends ImageEditorTool {
     }
 
     setColor(col) {
-        this.color = col;
-        this.colorText.value = col;
-        this.colorSelector.value = col;
-        this.colorPickButton.classList.remove('interrupt-button');
+        if (!this.isEraser && this.colorControl) {
+            this.colorControl.setColor(col, true);
+        }
+    }
+
+    setInactive() {
+        super.setInactive();
+        if (this.colorControl) {
+            this.colorControl.closePopout();
+        }
     }
 
     onConfigChange() {
         if (!this.isEraser) {
-            this.color = this.colorText.value;
+            this.color = this.colorControl.getColor();
         }
         this.radius = parseInt(this.radiusNumber.value);
         this.opacity = parseInt(this.opacityNumber.value) / 100;
@@ -698,13 +1500,7 @@ class ImageEditorToolBucket extends ImageEditorTool {
         this.color = '#ffffff';
         this.threshold = 10;
         this.opacity = 1;
-        let colorHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <label>Color:&nbsp;</label>
-            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
-            <input type="color" class="id-col2" value="#ffffff">
-            <button class="basic-button id-col3">Pick</button>
-        </div>`;
+        let colorHTML = getImageEditorColorControlHtml('#ffffff');
         let thresholdHtml = `<div class="image-editor-tool-block id-thresh-block">
                 <label>Threshold:&nbsp;</label>
                 <input type="number" style="width: 40px;" class="auto-number id-thresh1" min="1" max="256" step="1" value="10">
@@ -713,28 +1509,7 @@ class ImageEditorToolBucket extends ImageEditorTool {
                 </div>
             </div>`;
         this.configDiv.innerHTML = colorHTML + thresholdHtml;
-        this.colorText = this.configDiv.querySelector('.id-col1');
-        this.colorSelector = this.configDiv.querySelector('.id-col2');
-        this.colorPickButton = this.configDiv.querySelector('.id-col3');
-        this.colorText.addEventListener('input', () => {
-            this.colorSelector.value = this.colorText.value;
-            this.onConfigChange();
-        });
-        this.colorSelector.addEventListener('change', () => {
-            this.colorText.value = this.colorSelector.value;
-            this.onConfigChange();
-        });
-        this.colorPickButton.addEventListener('click', () => {
-            if (this.colorPickButton.classList.contains('interrupt-button')) {
-                this.colorPickButton.classList.remove('interrupt-button');
-                this.editor.activateTool(this.id);
-            }
-            else {
-                this.colorPickButton.classList.add('interrupt-button');
-                this.editor.pickerTool.toolFor = this;
-                this.editor.activateTool('picker');
-            }
-        });
+        this.colorControl = new ImageEditorColorControl(this, '#ffffff');
         enableSliderForBox(this.configDiv.querySelector('.id-thresh-block'));
         this.thresholdNumber = this.configDiv.querySelector('.id-thresh1');
         this.thresholdSelector = this.configDiv.querySelector('.id-thresh2');
@@ -743,14 +1518,20 @@ class ImageEditorToolBucket extends ImageEditorTool {
     }
 
     setColor(col) {
-        this.color = col;
-        this.colorText.value = col;
-        this.colorSelector.value = col;
-        this.colorPickButton.classList.remove('interrupt-button');
+        if (this.colorControl) {
+            this.colorControl.setColor(col, true);
+        }
+    }
+
+    setInactive() {
+        super.setInactive();
+        if (this.colorControl) {
+            this.colorControl.closePopout();
+        }
     }
 
     onConfigChange() {
-        this.color = this.colorText.value;
+        this.color = this.colorControl.getColor();
         this.threshold = parseInt(this.thresholdNumber.value);
         this.editor.redraw();
     }
@@ -858,13 +1639,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.currentLayerY = 0;
         this.bufferLayer = null;
         this.hasDrawn = false;
-        let colorHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <label>Color:&nbsp;</label>
-            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ff0000">
-            <input type="color" class="id-col2" value="#ff0000">
-            <button class="basic-button id-col3">Pick</button>
-        </div>`;
+        let colorHTML = getImageEditorColorControlHtml('#ff0000');
         let shapeHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <label>Shape:&nbsp;</label>
@@ -880,33 +1655,12 @@ class ImageEditorToolShape extends ImageEditorTool {
             <div class="auto-slider-range-wrapper" style="${getRangeStyle(4, 1, 20)}">
                 <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
             </div>
-        </div>`;
+            </div>`;
         this.configDiv.innerHTML = colorHTML + shapeHTML + strokeHTML;
-        this.colorText = this.configDiv.querySelector('.id-col1');
-        this.colorSelector = this.configDiv.querySelector('.id-col2');
-        this.colorPickButton = this.configDiv.querySelector('.id-col3');
+        this.colorControl = new ImageEditorColorControl(this, '#ff0000');
         this.shapeSelect = this.configDiv.querySelector('.id-shape');
         this.strokeNumber = this.configDiv.querySelector('.id-stroke1');
         this.strokeSelector = this.configDiv.querySelector('.id-stroke2');
-        this.colorText.addEventListener('input', () => {
-            this.colorSelector.value = this.colorText.value;
-            this.onConfigChange();
-        });
-        this.colorSelector.addEventListener('change', () => {
-            this.colorText.value = this.colorSelector.value;
-            this.onConfigChange();
-        });
-        this.colorPickButton.addEventListener('click', () => {
-            if (this.colorPickButton.classList.contains('interrupt-button')) {
-                this.colorPickButton.classList.remove('interrupt-button');
-                this.editor.activateTool(this.id);
-            }
-            else {
-                this.colorPickButton.classList.add('interrupt-button');
-                this.editor.pickerTool.toolFor = this;
-                this.editor.activateTool('picker');
-            }
-        });
         this.shapeSelect.addEventListener('change', () => {
             this.shape = this.shapeSelect.value;
             this.editor.redraw();
@@ -916,14 +1670,20 @@ class ImageEditorToolShape extends ImageEditorTool {
     }
     
     setColor(col) {
-        this.color = col;
-        this.colorText.value = col;
-        this.colorSelector.value = col;
-        this.colorPickButton.classList.remove('interrupt-button');
+        if (this.colorControl) {
+            this.colorControl.setColor(col, true);
+        }
+    }
+
+    setInactive() {
+        super.setInactive();
+        if (this.colorControl) {
+            this.colorControl.closePopout();
+        }
     }
     
     onConfigChange() {
-        this.color = this.colorText.value;
+        this.color = this.colorControl.getColor();
         this.strokeWidth = parseInt(this.strokeNumber.value);
         this.editor.redraw();
     }
@@ -1878,6 +2638,11 @@ class ImageEditor {
         if (this.onDeactivate) {
             this.onDeactivate();
         }
+        for (let tool of Object.values(this.tools)) {
+            if (tool.colorControl) {
+                tool.colorControl.closePopout();
+            }
+        }
         this.active = false;
         this.inputDiv.style.display = 'none';
         this.unhideParams();
@@ -2212,6 +2977,11 @@ class ImageEditor {
         }
         this.activeTool.draw();
         this.ctx.restore();
+        for (let tool of Object.values(this.tools)) {
+            if (tool.colorControl) {
+                tool.colorControl.refreshFloatingPanel();
+            }
+        }
     }
 
     getFinalImageData(format = 'image/png') {

@@ -341,6 +341,9 @@ class UIImprovementHandler {
                 return;
             }
             if (e.target.tagName == 'INPUT' && (e.target.type == 'number' || e.target.type == 'range')) {
+                if (e.target.classList.contains('image-editor-color-input')) {
+                    return;
+                }
                 let input = e.target;
                 let step = parseFloat(input.step);
                 if (typeof step != 'number' || isNaN(step)) {
@@ -397,6 +400,9 @@ class UIImprovementHandler {
         window.addEventListener('mousedown', (e) => {
             clickedElem = null;
             if (e.target.tagName == 'INPUT' && e.target.type == 'number') {
+                if (e.target.classList.contains('image-editor-color-input')) {
+                    return;
+                }
                 lastX = 0;
                 lastY = 0;
                 clickedElem = e.target;
@@ -405,6 +411,9 @@ class UIImprovementHandler {
         window.addEventListener('mouseup', (e) => {
             clickedElem = null;
             if (e.target.tagName == 'INPUT' && e.target.type == 'number') {
+                if (e.target.classList.contains('image-editor-color-input')) {
+                    return;
+                }
                 e.target.style.cursor = '';
                 lastX = 0;
                 lastY = 0;
