@@ -1346,9 +1346,38 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.color = '#ffffff';
         this.radius = 10;
         this.opacity = 1;
+        this.flow = 1;
         this.brushing = false;
         this.isEraser = isEraser;
+        this.brushStyle = 'round';
+        this.brushStyleOptions = [
+            { id: 'round', name: 'Round' },
+            { id: 'airbrush', name: 'Round Airbrush' },
+            { id: 'square', name: 'Square' },
+            { id: 'diamond', name: 'Diamond' },
+            { id: 'triangle', name: 'Triangle' },
+            { id: 'pentagon', name: 'Pentagon' },
+            { id: 'hexagon', name: 'Hexagon' },
+            { id: 'octagon', name: 'Octagon' },
+            { id: 'horizontal', name: 'Horizontal' },
+            { id: 'vertical', name: 'Vertical' },
+            { id: 'slash', name: 'Slash' },
+            { id: 'backslash', name: 'Backslash' },
+            { id: 'cross', name: 'Cross' },
+            { id: 'xcross', name: 'X Cross' },
+            { id: 'star', name: 'Star' },
+            { id: 'hollow', name: 'Hollow Ring' },
+            { id: 'hollow-square', name: 'Hollow Square' },
+            { id: 'checker', name: 'Checker' },
+            { id: 'scatter', name: 'Scatter' },
+            { id: 'splatter', name: 'Splatter' },
+            { id: 'pixel', name: 'Pixel' }
+        ];
         let colorHTML = getImageEditorColorControlHtml('#ffffff');
+        let styleHtml = `<div class="image-editor-tool-block tool-block-nogrow">
+                <label>Brush:&nbsp;</label>
+                <select class="id-style" style="width:145px;">${this.brushStyleOptions.map(option => `<option value="${option.id}">${option.name}</option>`).join('')}</select>
+            </div>`;
         let radiusHtml = `<div class="image-editor-tool-block id-rad-block">
                 <label>Radius:&nbsp;</label>
                 <input type="number" style="width: 40px;" class="auto-number id-rad1" min="1" max="1024" step="1" value="10">
@@ -1363,21 +1392,34 @@ class ImageEditorToolBrush extends ImageEditorTool {
                     <input type="range" style="flex-grow: 2" class="auto-slider-range id-opac2" min="1" max="100" step="1" value="100" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
                 </div>
             </div>`;
+        let flowHtml = `<div class="image-editor-tool-block id-flow-block">
+                <label>Flow:&nbsp;</label>
+                <input type="number" style="width: 40px;" class="auto-number id-flow1" min="1" max="100" step="1" value="100">
+                <div class="auto-slider-range-wrapper" style="${getRangeStyle(100, 1, 100)}">
+                    <input type="range" style="flex-grow: 2" class="auto-slider-range id-flow2" min="1" max="100" step="1" value="100" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+                </div>
+            </div>`;
         if (isEraser) {
-            this.configDiv.innerHTML = radiusHtml + opacityHtml;
+            this.configDiv.innerHTML = styleHtml + radiusHtml + opacityHtml + flowHtml;
         }
         else {
-            this.configDiv.innerHTML = colorHTML + radiusHtml + opacityHtml;
+            this.configDiv.innerHTML = colorHTML + styleHtml + radiusHtml + opacityHtml + flowHtml;
             this.colorControl = new ImageEditorColorControl(this, '#ffffff');
         }
         enableSliderForBox(this.configDiv.querySelector('.id-rad-block'));
         enableSliderForBox(this.configDiv.querySelector('.id-opac-block'));
+        enableSliderForBox(this.configDiv.querySelector('.id-flow-block'));
         this.radiusNumber = this.configDiv.querySelector('.id-rad1');
         this.radiusSelector = this.configDiv.querySelector('.id-rad2');
         this.opacityNumber = this.configDiv.querySelector('.id-opac1');
         this.opacitySelector = this.configDiv.querySelector('.id-opac2');
+        this.flowNumber = this.configDiv.querySelector('.id-flow1');
+        this.flowSelector = this.configDiv.querySelector('.id-flow2');
+        this.styleSelector = this.configDiv.querySelector('.id-style');
         this.radiusNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.opacityNumber.addEventListener('change', () => { this.onConfigChange(); });
+        this.flowNumber.addEventListener('change', () => { this.onConfigChange(); });
+        this.styleSelector.addEventListener('change', () => { this.onConfigChange(); });
         this.lastTouch = null;
     }
 
@@ -1400,6 +1442,8 @@ class ImageEditorToolBrush extends ImageEditorTool {
         }
         this.radius = parseInt(this.radiusNumber.value);
         this.opacity = parseInt(this.opacityNumber.value) / 100;
+        this.flow = parseInt(this.flowNumber.value) / 100;
+        this.brushStyle = this.styleSelector.value || 'round';
         this.editor.redraw();
     }
 
@@ -1410,10 +1454,209 @@ class ImageEditorToolBrush extends ImageEditorTool {
     brush(force = 1) {
         let [lastX, lastY] = this.editor.activeLayer.canvasCoordToLayerCoord(this.editor.lastMouseX, this.editor.lastMouseY);
         let [x, y] = this.editor.activeLayer.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
-        this.bufferLayer.drawFilledCircle(lastX, lastY, this.radius * force, this.color);
-        this.bufferLayer.drawFilledCircleStrokeBetween(lastX, lastY, x, y, this.radius * force, this.color);
-        this.bufferLayer.drawFilledCircle(x, y, this.radius * force, this.color);
+        this.paintStroke(lastX, lastY, x, y, this.radius * force);
         this.editor.markChanged();
+    }
+
+    getBrushSpacing(radius) {
+        if (this.brushStyle == 'airbrush') {
+            return Math.max(1, radius * 0.18);
+        }
+        if (this.brushStyle == 'scatter' || this.brushStyle == 'splatter') {
+            return Math.max(1, radius * 0.7);
+        }
+        if (this.brushStyle == 'pixel') {
+            return Math.max(1, Math.floor(radius * 0.35));
+        }
+        return Math.max(1, radius * 0.4);
+    }
+
+    paintStroke(x1, y1, x2, y2, radius) {
+        let dx = x2 - x1;
+        let dy = y2 - y1;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+        let spacing = this.getBrushSpacing(radius);
+        let steps = Math.max(1, Math.ceil(dist / spacing));
+        for (let i = 0; i <= steps; i++) {
+            let t = i / steps;
+            this.stampBrush(x1 + dx * t, y1 + dy * t, radius);
+        }
+    }
+
+    drawRotatedRectStamp(x, y, width, height, angle) {
+        let ctx = this.bufferLayer.ctx;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.fillRect(-width / 2, -height / 2, width, height);
+        ctx.restore();
+    }
+
+    drawRegularPolygon(x, y, radius, points, angleOffset = -Math.PI / 2) {
+        let ctx = this.bufferLayer.ctx;
+        ctx.beginPath();
+        for (let i = 0; i < points; i++) {
+            let angle = angleOffset + (Math.PI * 2 * i / points);
+            let px = x + radius * Math.cos(angle);
+            let py = y + radius * Math.sin(angle);
+            if (i == 0) {
+                ctx.moveTo(px, py);
+            }
+            else {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    drawStar(x, y, radius, points = 5) {
+        let ctx = this.bufferLayer.ctx;
+        let innerRadius = radius * 0.45;
+        ctx.beginPath();
+        for (let i = 0; i < points * 2; i++) {
+            let isOuter = i % 2 == 0;
+            let r = isOuter ? radius : innerRadius;
+            let angle = -Math.PI / 2 + (Math.PI * i / points);
+            let px = x + r * Math.cos(angle);
+            let py = y + r * Math.sin(angle);
+            if (i == 0) {
+                ctx.moveTo(px, py);
+            }
+            else {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    stampBrush(x, y, radius) {
+        let ctx = this.bufferLayer.ctx;
+        let thickness = Math.max(1, radius * 0.55);
+        let thin = Math.max(1, radius * 0.35);
+        let stampAlpha = imageEditorClampNumber(this.flow, 0.01, 1);
+        ctx.fillStyle = this.color;
+        ctx.strokeStyle = this.color;
+        ctx.save();
+        ctx.globalAlpha = stampAlpha;
+        switch (this.brushStyle) {
+        case 'airbrush': {
+            let rgb = imageEditorHexToRgb(this.color) || [255, 255, 255];
+            let grad = ctx.createRadialGradient(x, y, 0, x, y, Math.max(1, radius));
+            grad.addColorStop(0, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9)`);
+            grad.addColorStop(0.4, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.45)`);
+            grad.addColorStop(1, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, Math.max(1, radius), 0, 2 * Math.PI);
+            ctx.fill();
+            break;
+        }
+        case 'square':
+            ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+            break;
+        case 'diamond':
+            ctx.beginPath();
+            ctx.moveTo(x, y - radius);
+            ctx.lineTo(x + radius, y);
+            ctx.lineTo(x, y + radius);
+            ctx.lineTo(x - radius, y);
+            ctx.closePath();
+            ctx.fill();
+            break;
+        case 'triangle':
+            this.drawRegularPolygon(x, y, radius, 3);
+            break;
+        case 'pentagon':
+            this.drawRegularPolygon(x, y, radius, 5);
+            break;
+        case 'hexagon':
+            this.drawRegularPolygon(x, y, radius, 6);
+            break;
+        case 'octagon':
+            this.drawRegularPolygon(x, y, radius, 8);
+            break;
+        case 'horizontal':
+            ctx.fillRect(x - radius, y - thin / 2, radius * 2, thin);
+            break;
+        case 'vertical':
+            ctx.fillRect(x - thin / 2, y - radius, thin, radius * 2);
+            break;
+        case 'slash':
+            this.drawRotatedRectStamp(x, y, radius * 2.4, thin, -Math.PI / 4);
+            break;
+        case 'backslash':
+            this.drawRotatedRectStamp(x, y, radius * 2.4, thin, Math.PI / 4);
+            break;
+        case 'cross':
+            ctx.fillRect(x - radius, y - thin / 2, radius * 2, thin);
+            ctx.fillRect(x - thin / 2, y - radius, thin, radius * 2);
+            break;
+        case 'xcross':
+            this.drawRotatedRectStamp(x, y, radius * 2.4, thin, Math.PI / 4);
+            this.drawRotatedRectStamp(x, y, radius * 2.4, thin, -Math.PI / 4);
+            break;
+        case 'star':
+            this.drawStar(x, y, radius);
+            break;
+        case 'hollow':
+            ctx.save();
+            ctx.lineWidth = Math.max(1, radius * 0.45);
+            ctx.beginPath();
+            ctx.arc(x, y, Math.max(1, radius - ctx.lineWidth / 2), 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.restore();
+            break;
+        case 'hollow-square':
+            ctx.save();
+            ctx.lineWidth = thickness;
+            ctx.strokeRect(x - radius + thickness / 2, y - radius + thickness / 2, radius * 2 - thickness, radius * 2 - thickness);
+            ctx.restore();
+            break;
+        case 'checker': {
+            let cell = Math.max(1, Math.round(radius * 0.55));
+            for (let row = -1; row <= 1; row++) {
+                for (let col = -1; col <= 1; col++) {
+                    if ((row + col) % 2 == 0) {
+                        let cx = x + col * cell;
+                        let cy = y + row * cell;
+                        ctx.fillRect(cx - cell / 2, cy - cell / 2, cell, cell);
+                    }
+                }
+            }
+            break;
+        }
+        case 'scatter':
+            for (let i = 0; i < 5; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let dist = Math.random() * radius * 0.9;
+                let dotRadius = Math.max(1, radius * (0.12 + Math.random() * 0.22));
+                this.bufferLayer.drawFilledCircle(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, dotRadius, this.color);
+            }
+            this.bufferLayer.drawFilledCircle(x, y, Math.max(1, radius * 0.18), this.color);
+            break;
+        case 'splatter':
+            for (let i = 0; i < 9; i++) {
+                let angle = Math.random() * Math.PI * 2;
+                let dist = Math.random() * radius * 1.8;
+                let dotRadius = Math.max(1, radius * (0.08 + Math.random() * 0.28));
+                this.bufferLayer.drawFilledCircle(x + Math.cos(angle) * dist, y + Math.sin(angle) * dist, dotRadius, this.color);
+            }
+            break;
+        case 'pixel': {
+            let pixel = Math.max(1, Math.round(radius * 0.35));
+            let px = Math.round(x / pixel) * pixel;
+            let py = Math.round(y / pixel) * pixel;
+            ctx.fillRect(px - pixel, py - pixel, pixel * 2, pixel * 2);
+            break;
+        }
+        case 'round':
+        default:
+            this.bufferLayer.drawFilledCircle(x, y, radius, this.color);
+            break;
+        }
+        ctx.restore();
     }
 
     getForceFrom(e) {
@@ -1947,6 +2190,590 @@ class ImageEditorToolShape extends ImageEditorTool {
 }
 
 /**
+ * The Pen tool for editable bezier paths.
+ */
+class ImageEditorToolPen extends ImageEditorTool {
+    constructor(editor) {
+        super(editor, 'pen', 'pen', 'Pen', 'Draw editable paths with standard or curvature mode.\nPath mode draws outlines, shape mode fills.\nHotKey: N', 'n');
+        this.cursor = 'crosshair';
+        this.color = '#00d0ff';
+        this.strokeWidth = 3;
+        this.penMode = 'standard';
+        this.outputMode = 'path';
+        this.curveTension = 1;
+        this.points = [];
+        this.closed = false;
+        this.dragging = false;
+        this.dragKind = null;
+        this.dragIndex = -1;
+        this.dragMoved = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        let colorHTML = getImageEditorColorControlHtml(this.color);
+        let modeHTML = `
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <label>Pen:&nbsp;</label>
+            <select class="id-pen-mode" style="width:125px;">
+                <option value="standard">Standard</option>
+                <option value="curvature">Curvature</option>
+            </select>
+        </div>
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <label>Mode:&nbsp;</label>
+            <select class="id-output-mode" style="width:100px;">
+                <option value="path">Path</option>
+                <option value="shape">Shape</option>
+            </select>
+        </div>`;
+        let strokeHTML = `
+        <div class="image-editor-tool-block id-pen-stroke-block">
+            <label>Width:&nbsp;</label>
+            <input type="number" style="width: 40px;" class="auto-number id-pen-stroke1" min="1" max="64" step="1" value="3">
+            <div class="auto-slider-range-wrapper" style="${getRangeStyle(3, 1, 64)}">
+                <input type="range" style="flex-grow: 2" class="auto-slider-range id-pen-stroke2" min="1" max="64" step="1" value="3" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+            </div>
+        </div>`;
+        let tensionHTML = `
+        <div class="image-editor-tool-block id-pen-tension-block">
+            <label>Curve:&nbsp;</label>
+            <input type="number" style="width: 40px;" class="auto-number id-pen-tension1" min="10" max="200" step="1" value="100">
+            <div class="auto-slider-range-wrapper" style="${getRangeStyle(100, 10, 200)}">
+                <input type="range" style="flex-grow: 2" class="auto-slider-range id-pen-tension2" min="10" max="200" step="1" value="100" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
+            </div>
+        </div>`;
+        let actionsHTML = `
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <button class="basic-button id-pen-apply">Apply</button>
+            <button class="basic-button id-pen-close">Close Path</button>
+            <button class="basic-button id-pen-undo">Undo Point</button>
+            <button class="basic-button id-pen-clear">Clear</button>
+        </div>`;
+        this.configDiv.innerHTML = colorHTML + modeHTML + strokeHTML + tensionHTML + actionsHTML;
+        this.colorControl = new ImageEditorColorControl(this, this.color);
+        this.penModeSelect = this.configDiv.querySelector('.id-pen-mode');
+        this.outputModeSelect = this.configDiv.querySelector('.id-output-mode');
+        this.strokeNumber = this.configDiv.querySelector('.id-pen-stroke1');
+        this.strokeSelector = this.configDiv.querySelector('.id-pen-stroke2');
+        this.tensionBlock = this.configDiv.querySelector('.id-pen-tension-block');
+        this.tensionNumber = this.configDiv.querySelector('.id-pen-tension1');
+        this.tensionSelector = this.configDiv.querySelector('.id-pen-tension2');
+        this.applyButton = this.configDiv.querySelector('.id-pen-apply');
+        this.closeButton = this.configDiv.querySelector('.id-pen-close');
+        this.undoButton = this.configDiv.querySelector('.id-pen-undo');
+        this.clearButton = this.configDiv.querySelector('.id-pen-clear');
+        enableSliderForBox(this.configDiv.querySelector('.id-pen-stroke-block'));
+        enableSliderForBox(this.configDiv.querySelector('.id-pen-tension-block'));
+        this.penModeSelect.addEventListener('change', () => this.onConfigChange());
+        this.outputModeSelect.addEventListener('change', () => this.onConfigChange());
+        this.strokeNumber.addEventListener('change', () => this.onConfigChange());
+        this.tensionNumber.addEventListener('change', () => this.onConfigChange());
+        this.applyButton.addEventListener('click', () => this.applyPath());
+        this.closeButton.addEventListener('click', () => this.toggleClosedPath());
+        this.undoButton.addEventListener('click', () => this.undoPoint());
+        this.clearButton.addEventListener('click', () => this.clearPath());
+        this.refreshUiState();
+    }
+
+    setColor(col) {
+        if (this.colorControl) {
+            this.colorControl.setColor(col, true);
+        }
+    }
+
+    setInactive() {
+        super.setInactive();
+        if (this.colorControl) {
+            this.colorControl.closePopout();
+        }
+    }
+
+    onConfigChange() {
+        this.color = this.colorControl.getColor();
+        this.penMode = this.penModeSelect.value || 'standard';
+        this.outputMode = this.outputModeSelect.value || 'path';
+        this.strokeWidth = imageEditorClampNumber(parseInt(this.strokeNumber.value) || 1, 1, 64);
+        this.curveTension = imageEditorClampNumber((parseInt(this.tensionNumber.value) || 100) / 100, 0.1, 2);
+        this.refreshUiState();
+        this.editor.redraw();
+    }
+
+    refreshUiState() {
+        this.tensionBlock.style.display = this.penMode == 'curvature' ? '' : 'none';
+        this.closeButton.innerText = this.closed ? 'Reopen Path' : 'Close Path';
+    }
+
+    createPoint(x, y) {
+        return { x, y, inX: x, inY: y, outX: x, outY: y };
+    }
+
+    getMouseLayerPos() {
+        let target = this.editor.activeLayer;
+        if (!target) {
+            return null;
+        }
+        return target.canvasCoordToLayerCoord(this.editor.mouseX, this.editor.mouseY);
+    }
+
+    getAnchorCanvasPos(point) {
+        return this.editor.activeLayer.layerCoordToCanvasCoord(point.x, point.y);
+    }
+
+    getHandleCanvasPos(point, handleType) {
+        if (handleType == 'in') {
+            return this.editor.activeLayer.layerCoordToCanvasCoord(point.inX, point.inY);
+        }
+        return this.editor.activeLayer.layerCoordToCanvasCoord(point.outX, point.outY);
+    }
+
+    isPrimaryButton(e) {
+        return e.button == 0 || e.button === undefined;
+    }
+
+    distSq(x1, y1, x2, y2) {
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        return dx * dx + dy * dy;
+    }
+
+    findHitTarget() {
+        if (!this.editor.activeLayer || this.points.length == 0) {
+            return null;
+        }
+        let hitRadius = 7;
+        let handleRadius = 6;
+        let hitRadiusSq = hitRadius * hitRadius;
+        let handleRadiusSq = handleRadius * handleRadius;
+        if (this.penMode == 'standard') {
+            for (let i = this.points.length - 1; i >= 0; i--) {
+                let p = this.points[i];
+                let inVisible = this.distSq(p.x, p.y, p.inX, p.inY) > 0.25;
+                let outVisible = this.distSq(p.x, p.y, p.outX, p.outY) > 0.25;
+                if (outVisible) {
+                    let [hx, hy] = this.getHandleCanvasPos(p, 'out');
+                    if (this.distSq(this.editor.mouseX, this.editor.mouseY, hx, hy) <= handleRadiusSq) {
+                        return { type: 'handle-out', index: i };
+                    }
+                }
+                if (inVisible) {
+                    let [hx, hy] = this.getHandleCanvasPos(p, 'in');
+                    if (this.distSq(this.editor.mouseX, this.editor.mouseY, hx, hy) <= handleRadiusSq) {
+                        return { type: 'handle-in', index: i };
+                    }
+                }
+            }
+        }
+        for (let i = this.points.length - 1; i >= 0; i--) {
+            let p = this.points[i];
+            let [ax, ay] = this.getAnchorCanvasPos(p);
+            if (this.distSq(this.editor.mouseX, this.editor.mouseY, ax, ay) <= hitRadiusSq) {
+                return { type: 'point', index: i };
+            }
+        }
+        return null;
+    }
+
+    toggleClosedPath() {
+        if (this.points.length < 3) {
+            this.closed = false;
+        }
+        else {
+            this.closed = !this.closed;
+        }
+        this.refreshUiState();
+        this.editor.redraw();
+    }
+
+    undoPoint() {
+        if (this.points.length == 0) {
+            return;
+        }
+        this.points.pop();
+        if (this.points.length < 3) {
+            this.closed = false;
+        }
+        this.refreshUiState();
+        this.editor.redraw();
+    }
+
+    clearPath() {
+        this.points = [];
+        this.closed = false;
+        this.dragging = false;
+        this.dragKind = null;
+        this.dragIndex = -1;
+        this.refreshUiState();
+        this.editor.redraw();
+    }
+
+    getCurvatureControlPoints(i, j, closePath) {
+        let points = this.points;
+        let count = points.length;
+        let prevIndex = i - 1;
+        let nextNextIndex = j + 1;
+        if (closePath) {
+            prevIndex = (prevIndex + count) % count;
+            nextNextIndex = nextNextIndex % count;
+        }
+        else {
+            prevIndex = imageEditorClampNumber(prevIndex, 0, count - 1);
+            nextNextIndex = imageEditorClampNumber(nextNextIndex, 0, count - 1);
+        }
+        let p0 = points[prevIndex];
+        let p1 = points[i];
+        let p2 = points[j];
+        let p3 = points[nextNextIndex];
+        let k = this.curveTension / 6;
+        return {
+            cp1x: p1.x + (p2.x - p0.x) * k,
+            cp1y: p1.y + (p2.y - p0.y) * k,
+            cp2x: p2.x - (p3.x - p1.x) * k,
+            cp2y: p2.y - (p3.y - p1.y) * k
+        };
+    }
+
+    tracePath(ctx, transformPoint, closePath) {
+        if (this.points.length < 2) {
+            return false;
+        }
+        let [startX, startY] = transformPoint(this.points[0].x, this.points[0].y);
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        let segmentCount = closePath ? this.points.length : this.points.length - 1;
+        for (let i = 0; i < segmentCount; i++) {
+            let j = (i + 1) % this.points.length;
+            let cp1x = 0, cp1y = 0, cp2x = 0, cp2y = 0;
+            if (this.penMode == 'curvature') {
+                let cp = this.getCurvatureControlPoints(i, j, closePath);
+                cp1x = cp.cp1x;
+                cp1y = cp.cp1y;
+                cp2x = cp.cp2x;
+                cp2y = cp.cp2y;
+            }
+            else {
+                cp1x = this.points[i].outX;
+                cp1y = this.points[i].outY;
+                cp2x = this.points[j].inX;
+                cp2y = this.points[j].inY;
+            }
+            let [tx1, ty1] = transformPoint(cp1x, cp1y);
+            let [tx2, ty2] = transformPoint(cp2x, cp2y);
+            let [toX, toY] = transformPoint(this.points[j].x, this.points[j].y);
+            ctx.bezierCurveTo(tx1, ty1, tx2, ty2, toX, toY);
+        }
+        if (closePath) {
+            ctx.closePath();
+        }
+        return true;
+    }
+
+    applyPath() {
+        let target = this.editor.activeLayer;
+        if (!target || this.points.length < 2) {
+            return;
+        }
+        let doShape = this.outputMode == 'shape';
+        if (doShape && this.points.length < 3) {
+            return;
+        }
+        let closePath = this.closed || doShape;
+        target.saveBeforeEdit();
+        let ctx = target.ctx;
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        ctx.setLineDash([]);
+        ctx.strokeStyle = this.color;
+        ctx.fillStyle = this.color;
+        ctx.lineWidth = Math.max(1, Math.round(this.strokeWidth));
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        let drew = this.tracePath(ctx, (x, y) => [x, y], closePath);
+        if (drew) {
+            if (doShape) {
+                ctx.fill();
+            }
+            else {
+                ctx.stroke();
+            }
+            target.hasAnyContent = true;
+            this.editor.markChanged();
+            this.closed = closePath;
+            this.refreshUiState();
+        }
+        ctx.restore();
+        this.editor.redraw();
+    }
+
+    drawPreviewPath() {
+        if (!this.editor.activeLayer || this.points.length == 0) {
+            return;
+        }
+        let ctx = this.editor.ctx;
+        let closePath = this.closed || (this.outputMode == 'shape' && this.points.length >= 3);
+        let drew = this.tracePath(ctx, (x, y) => this.editor.activeLayer.layerCoordToCanvasCoord(x, y), closePath);
+        if (drew) {
+            ctx.lineWidth = Math.max(1, this.strokeWidth * this.editor.zoomLevel);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = this.color;
+            if (this.outputMode == 'shape') {
+                ctx.fillStyle = this.color;
+                ctx.save();
+                ctx.globalAlpha = 0.2;
+                ctx.fill();
+                ctx.restore();
+            }
+            ctx.stroke();
+        }
+        if (!this.closed && this.points.length > 0 && this.editor.isMouseInBox(0, 0, this.editor.canvas.width, this.editor.canvas.height)) {
+            let last = this.points[this.points.length - 1];
+            let [startX, startY] = this.editor.activeLayer.layerCoordToCanvasCoord(last.x, last.y);
+            ctx.save();
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            if (this.penMode == 'standard') {
+                let [cp1x, cp1y] = this.editor.activeLayer.layerCoordToCanvasCoord(last.outX, last.outY);
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(cp1x, cp1y, this.editor.mouseX, this.editor.mouseY, this.editor.mouseX, this.editor.mouseY);
+            }
+            else {
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(this.editor.mouseX, this.editor.mouseY);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    drawAnchors() {
+        if (!this.editor.activeLayer || this.points.length == 0) {
+            return;
+        }
+        let ctx = this.editor.ctx;
+        let showHandles = this.penMode == 'standard';
+        if (showHandles) {
+            for (let i = 0; i < this.points.length; i++) {
+                let p = this.points[i];
+                let [ax, ay] = this.editor.activeLayer.layerCoordToCanvasCoord(p.x, p.y);
+                let [inX, inY] = this.editor.activeLayer.layerCoordToCanvasCoord(p.inX, p.inY);
+                let [outX, outY] = this.editor.activeLayer.layerCoordToCanvasCoord(p.outX, p.outY);
+                if (this.distSq(p.x, p.y, p.inX, p.inY) > 0.25) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    ctx.lineTo(inX, inY);
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.strokeStyle = this.color;
+                    ctx.fillRect(inX - 3, inY - 3, 6, 6);
+                    ctx.strokeRect(inX - 3, inY - 3, 6, 6);
+                }
+                if (this.distSq(p.x, p.y, p.outX, p.outY) > 0.25) {
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    ctx.lineTo(outX, outY);
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.strokeStyle = this.color;
+                    ctx.fillRect(outX - 3, outY - 3, 6, 6);
+                    ctx.strokeRect(outX - 3, outY - 3, 6, 6);
+                }
+            }
+        }
+        for (let i = 0; i < this.points.length; i++) {
+            let p = this.points[i];
+            let [ax, ay] = this.editor.activeLayer.layerCoordToCanvasCoord(p.x, p.y);
+            let canClose = i == 0 && !this.closed && this.points.length >= 3;
+            ctx.fillStyle = canClose ? '#ffffff' : this.color;
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(ax, ay, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+    }
+
+    draw() {
+        if (this.points.length == 0) {
+            return;
+        }
+        this.editor.ctx.save();
+        this.editor.ctx.imageSmoothingEnabled = true;
+        this.editor.ctx.setLineDash([]);
+        this.drawPreviewPath();
+        this.drawAnchors();
+        this.editor.ctx.restore();
+    }
+
+    onMouseDown(e) {
+        if (!this.isPrimaryButton(e)) {
+            return;
+        }
+        if (!this.editor.activeLayer) {
+            return;
+        }
+        let layerPos = this.getMouseLayerPos();
+        if (!layerPos) {
+            return;
+        }
+        let [x, y] = layerPos;
+        let hit = this.findHitTarget();
+        if (hit) {
+            if (hit.type == 'point' && hit.index == 0 && !this.closed && this.points.length >= 3 && !e.shiftKey) {
+                this.closed = true;
+                this.refreshUiState();
+                this.editor.redraw();
+                return;
+            }
+            this.dragging = true;
+            this.dragKind = hit.type;
+            this.dragIndex = hit.index;
+            this.dragMoved = false;
+            if (hit.type == 'point') {
+                this.dragOffsetX = this.points[hit.index].x - x;
+                this.dragOffsetY = this.points[hit.index].y - y;
+            }
+            return;
+        }
+        if (this.closed) {
+            this.closed = false;
+            this.refreshUiState();
+        }
+        this.points.push(this.createPoint(x, y));
+        this.dragging = true;
+        this.dragKind = 'new-point';
+        this.dragIndex = this.points.length - 1;
+        this.dragMoved = false;
+        this.editor.redraw();
+    }
+
+    onMouseMove(e) {
+        if (!this.dragging || !this.editor.activeLayer) {
+            return;
+        }
+        let layerPos = this.getMouseLayerPos();
+        if (!layerPos) {
+            return;
+        }
+        let [x, y] = layerPos;
+        let point = this.points[this.dragIndex];
+        if (!point) {
+            return;
+        }
+        if (this.dragKind == 'new-point') {
+            if (this.penMode == 'curvature') {
+                if (this.distSq(point.x, point.y, x, y) > 1) {
+                    this.dragMoved = true;
+                }
+                point.x = x;
+                point.y = y;
+                point.inX = x;
+                point.inY = y;
+                point.outX = x;
+                point.outY = y;
+            }
+            else {
+                let dx = x - point.x;
+                let dy = y - point.y;
+                if (dx * dx + dy * dy > 1) {
+                    this.dragMoved = true;
+                }
+                point.inX = point.x - dx;
+                point.inY = point.y - dy;
+                point.outX = point.x + dx;
+                point.outY = point.y + dy;
+            }
+        }
+        else if (this.dragKind == 'point') {
+            let newX = x + this.dragOffsetX;
+            let newY = y + this.dragOffsetY;
+            let dx = newX - point.x;
+            let dy = newY - point.y;
+            if (dx * dx + dy * dy > 0) {
+                this.dragMoved = true;
+            }
+            point.x = newX;
+            point.y = newY;
+            point.inX += dx;
+            point.inY += dy;
+            point.outX += dx;
+            point.outY += dy;
+        }
+        else if (this.dragKind == 'handle-in') {
+            this.dragMoved = true;
+            point.inX = x;
+            point.inY = y;
+            if (!e.altKey) {
+                point.outX = point.x + (point.x - x);
+                point.outY = point.y + (point.y - y);
+            }
+        }
+        else if (this.dragKind == 'handle-out') {
+            this.dragMoved = true;
+            point.outX = x;
+            point.outY = y;
+            if (!e.altKey) {
+                point.inX = point.x + (point.x - x);
+                point.inY = point.y + (point.y - y);
+            }
+        }
+        this.editor.redraw();
+    }
+
+    finishDrag(e) {
+        if (!this.dragging) {
+            return;
+        }
+        if (this.dragKind == 'new-point' && this.penMode == 'standard' && !this.dragMoved) {
+            let point = this.points[this.dragIndex];
+            if (point) {
+                point.inX = point.x;
+                point.inY = point.y;
+                point.outX = point.x;
+                point.outY = point.y;
+            }
+        }
+        this.dragging = false;
+        this.dragKind = null;
+        this.dragIndex = -1;
+        this.dragMoved = false;
+        if (e && e.detail >= 2 && this.points.length >= 2) {
+            this.applyPath();
+        }
+        this.editor.redraw();
+    }
+
+    onMouseUp(e) {
+        if (!this.isPrimaryButton(e)) {
+            return;
+        }
+        this.finishDrag(e);
+    }
+
+    onGlobalMouseMove(e) {
+        if (!this.dragging) {
+            return false;
+        }
+        this.editor.updateMousePosFrom(e);
+        this.onMouseMove(e);
+        return true;
+    }
+
+    onGlobalMouseUp(e) {
+        if (!this.dragging || !this.isPrimaryButton(e)) {
+            return false;
+        }
+        this.finishDrag(e);
+        return true;
+    }
+}
+
+/**
  * The Color Picker tool, a special hidden sub-tool.
  */
 class ImageEditorToolPicker extends ImageEditorTempTool {
@@ -2352,6 +3179,7 @@ class ImageEditor {
         this.addTool(new ImageEditorToolBrush(this, 'brush', 'paintbrush', 'Paintbrush', 'Draw on the image.\nHotKey: B', false, 'b'));
         this.addTool(new ImageEditorToolBrush(this, 'eraser', 'eraser', 'Eraser', 'Erase parts of the image.\nHotKey: E', true, 'e'));
         this.addTool(new ImageEditorToolBucket(this));
+        this.addTool(new ImageEditorToolPen(this));
         this.addTool(new ImageEditorToolShape(this));
         this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'paintbrush', 'Color Picker', 'Pick a color from the image.');
         this.addTool(this.pickerTool);
@@ -2535,8 +3363,9 @@ class ImageEditor {
         this.activeTool.onMouseWheel(e);
         if (!e.defaultPrevented) {
             let zoom = Math.pow(this.zoomRate, -e.deltaY / 100);
-            let mouseX = e.clientX - this.canvas.offsetLeft;
-            let mouseY = e.clientY - this.canvas.offsetTop;
+            let rect = this.canvas.getBoundingClientRect();
+            let mouseX = e.clientX - rect.left;
+            let mouseY = e.clientY - rect.top;
             let [origX, origY] = this.canvasCoordToImageCoord(mouseX, mouseY);
             this.zoomLevel = Math.max(0.01, Math.min(100, this.zoomLevel * zoom));
             let [newX, newY] = this.canvasCoordToImageCoord(mouseX, mouseY);
@@ -2578,8 +3407,9 @@ class ImageEditor {
             eX = e.touches[0].clientX;
             eY = e.touches[0].clientY;
         }
-        this.mouseX = eX - this.canvas.offsetLeft;
-        this.mouseY = eY - this.canvas.offsetTop;
+        let rect = this.canvas.getBoundingClientRect();
+        this.mouseX = eX - rect.left;
+        this.mouseY = eY - rect.top;
     }
 
     onGlobalMouseMove(e) {
