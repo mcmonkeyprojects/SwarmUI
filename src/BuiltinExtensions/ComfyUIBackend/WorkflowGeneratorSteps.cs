@@ -2056,7 +2056,7 @@ public class WorkflowGeneratorSteps
                     JArray subSource = actualNode["inputs"]["av_latent"] as JArray;
                     string subSourceNode = $"{subSource[0]}";
                     JObject actualSubNode = g.Workflow[subSourceNode] as JObject;
-                    if ($"{actualSubNode["class_type"]}" == "VAEEncode")
+                    if ($"{actualSubNode["class_type"]}" == "VAEEncode" || $"{actualSubNode["class_type"]}" == "VAEEncodeTiled")
                     {
                         JArray srcVae = actualSubNode["inputs"]["vae"] as JArray;
                         if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
@@ -2067,7 +2067,7 @@ public class WorkflowGeneratorSteps
                         }
                     }
                 }
-                else if ($"{actualNode["class_type"]}" == "VAEEncode")
+                else if ($"{actualNode["class_type"]}" == "VAEEncode" || $"{actualNode["class_type"]}" == "VAEEncodeTiled")
                 {
                     JArray srcVae = actualNode["inputs"]["vae"] as JArray;
                     if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")

@@ -274,8 +274,7 @@ class ModelDownloaderUtil {
             if (versId) {
                 for (let vers of rawData.modelVersions) {
                     for (let vFile of vers.files) {
-                        // ignore type=Model&format=SafeTensor
-                        if (splitWithTail(vFile.downloadUrl || '', '?', 2)[0].endsWith(`/${versId}`)) {
+                        if ((vFile.name.endsWith(`.safetensors`) || vFile.name.endsWith(`.sft`) || vFile.name.endsWith(`.gguf`)) && splitWithTail(vFile.downloadUrl || '', '?', 2)[0].endsWith(`/${versId}`)) {
                             rawVersion = vers;
                             file = vFile;
                             break;
