@@ -172,7 +172,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 # LongCat-Image
 
 - [LongCat-Image](https://huggingface.co/meituan-longcat/LongCat-Image) is supported in SwarmUI.
-    - It is a 6B-scale MM-DiT + Single-DiT image model, with image quality roughly a bit above base SDXL and a fairly strong text understanding.
+    - It is a 6B-scale MMDiT image model, with image quality roughly a bit above base SDXL and a fairly strong text understanding.
 - Download the model from [Comfy-Org/LongCat-Image](<https://huggingface.co/Comfy-Org/LongCat-Image/blob/main/split_files/diffusion_models/longcat_image_bf16.safetensors>)
     - Save in `diffusion_models`
 - Uses the Flux.1 VAE
