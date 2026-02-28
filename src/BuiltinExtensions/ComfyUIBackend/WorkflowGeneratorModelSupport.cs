@@ -103,6 +103,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is an Ovis model.</summary>
     public bool IsOvis() => IsModelCompatClass(T2IModelClassSorter.CompatOvis);
 
+    /// <summary>Returns true if the current model is a Longcat Image model.</summary>
+    public bool IsLongcatImage() => IsModelCompatClass(T2IModelClassSorter.CompatLongcatImage);
+
     /// <summary>Returns true if the current model is OmniGen.</summary>
     public bool IsOmniGen()
     {
@@ -266,7 +269,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id));
         }
-        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite() || IsAnima())
+        else if (IsSD3() || IsFlux() || IsHiDream() || IsChroma() || IsOmniGen() || IsQwenImage() || IsZImage() || IsOvis() || IsKandinsky5ImgLite() || IsAnima() || IsLongcatImage())
         {
             return resultImage(CreateNode("EmptySD3LatentImage", new JObject()
             {
@@ -1182,6 +1185,11 @@ public partial class WorkflowGenerator
         else if (IsOvis())
         {
             helpers.LoadClip("ovis", helpers.GetOvisQwenModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsLongcatImage())
+        {
+            helpers.LoadClip("longcat_image", helpers.GetQwenImage25_7b_tenc());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
         }
         else if (IsLumina())

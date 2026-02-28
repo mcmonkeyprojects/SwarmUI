@@ -16,6 +16,7 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality, quickly outclassed |
 [Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
+[LongCat-Image](#longcat-image) | MMDiT + Single DiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
 
 Obscure video models are tracked at the [Video Models heading](#video-models)
 
@@ -165,6 +166,21 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Sampler:** Default is fine (`Euler`)
     - **Scheduler:** Default works, but `Beta` may be better
     - **CFG Scale:** Normal CFG ranges, `5` is the official recommendation
+    - **Steps:** Normal step counts (eg `20`), but they recommend `50`
+    - **Resolution:** Side length `1024`. Quickly breaks above that.
+
+# LongCat-Image
+
+- [LongCat-Image](https://huggingface.co/meituan-longcat/LongCat-Image) is supported in SwarmUI.
+    - It is a 6B-scale MM-DiT + Single-DiT image model, with image quality roughly a bit above base SDXL and a fairly strong text understanding.
+- Download the model from [Comfy-Org/LongCat-Image](<https://huggingface.co/Comfy-Org/LongCat-Image/blob/main/split_files/diffusion_models/longcat_image_bf16.safetensors>)
+    - Save in `diffusion_models`
+- Uses the Flux.1 VAE
+- **Parameters:**
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese.
+    - **Sampler:** Default is fine (`Euler`)
+    - **Scheduler:** Default works, but `Beta` may be better
+    - **CFG Scale:** Normal CFG ranges, `4` is the official recommendation
     - **Steps:** Normal step counts (eg `20`), but they recommend `50`
     - **Resolution:** Side length `1024`. Quickly breaks above that.
 
