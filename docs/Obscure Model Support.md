@@ -16,7 +16,7 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [HiDream i1](#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality, quickly outclassed |
 [Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
-[LongCat-Image](#longcat-image) | MMDiT + Single DiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
+[LongCat-Image](#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
 
 Obscure video models are tracked at the [Video Models heading](#video-models)
 
