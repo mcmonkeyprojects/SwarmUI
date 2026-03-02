@@ -709,7 +709,7 @@ public partial class WorkflowGenerator
     public JArray CreateVAELoader(string vae, string id = null)
     {
         string vaeFixed = vae.Replace('\\', '/').Replace("/", ModelFolderFormat ?? $"{Path.DirectorySeparatorChar}");
-        if (id is null && NodeHelpers.TryGetValue($"vaeloader-{vaeFixed}", out string helper))
+        if (NodeHelpers.TryGetValue($"vaeloader-{vaeFixed}", out string helper))
         {
             return [helper, 0];
         }
