@@ -100,6 +100,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is a Z-Image model.</summary>
     public bool IsZImage() => IsModelCompatClass(T2IModelClassSorter.CompatZImage);
 
+    /// <summary>Returns true if the current model is a Zeta Chroma model.</summary>
+    public bool IsZetaChroma() => IsModelCompatClass(T2IModelClassSorter.CompatZetaChroma);
+
     /// <summary>Returns true if the current model is an Ovis model.</summary>
     public bool IsOvis() => IsModelCompatClass(T2IModelClassSorter.CompatOvis);
 
@@ -389,7 +392,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id), frames);
         }
-        else if (IsChromaRadiance())
+        else if (IsChromaRadiance() || IsZetaChroma())
         {
             return resultImage(CreateNode("EmptyChromaRadianceLatentImage", new JObject()
             {
@@ -876,7 +879,7 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
-                    else if (IsZImage() || IsAnima()) // Model is small and dense, so trust user preferred download format
+                    else if (IsZImage() || IsZetaChroma() || IsAnima()) // Model is small and dense, so trust user preferred download format
                     {
                         dtype = "default";
                     }
@@ -1181,6 +1184,11 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("lumina2", helpers.GetQwen3_4bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFluxVAE, "flux-1", "flux-ae");
+        }
+        else if (IsZetaChroma())
+        {
+            helpers.LoadClip("lumina2", helpers.GetQwen3_4bModel());
+            LoadingVAE = CreateVAELoader("pixel_space");
         }
         else if (IsOvis())
         {
