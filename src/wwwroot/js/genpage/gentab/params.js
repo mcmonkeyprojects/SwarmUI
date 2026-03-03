@@ -1234,7 +1234,7 @@ function hideUnsupportableParams() {
             let paramToggler = document.getElementById(`input_${param.id}_toggle`);
             let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != `${param.default}`;
             let group = param.original_group || param.group;
-            if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
+            if (group && group.toggles && !document.getElementById(`input_group_content_${group.id}_toggle`)?.checked) {
                 isAltered = false;
             }
             if (box && box.style.display == 'none' && box.dataset.visible_controlled) {
