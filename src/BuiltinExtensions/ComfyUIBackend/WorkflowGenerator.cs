@@ -827,7 +827,7 @@ public partial class WorkflowGenerator
                 latent = [srCond, 2];
             }
         }
-        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage())
+        else if (IsFlux() || IsWanVideo() || IsWanVideo22() || IsOmniGen() || IsQwenImage() || IsZImage() || IsZetaChroma())
         {
             defscheduler ??= "simple";
         }

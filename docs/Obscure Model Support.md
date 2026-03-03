@@ -17,6 +17,7 @@ This doc tracks specifically the old, bad, unpopular, etc. models that are suppo
 [OmniGen 2](#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality, quickly outclassed |
 [Ovis](#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
 [LongCat-Image](#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
+[Zeta Chroma](#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 
 Obscure video models are tracked at the [Video Models heading](#video-models)
 
@@ -183,6 +184,21 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **CFG Scale:** Normal CFG ranges, `4` is the official recommendation
     - **Steps:** Normal step counts (eg `20`)
     - **Resolution:** Side length `1024` is default, but works with custom sizes freely
+
+# Zeta Chroma
+
+- [Zeta Chroma](<https://huggingface.co/lodestones/Zeta-Chroma>) is supported in SwarmUI.
+    - It is a pixel-space variant of Z-Image, similar to what Chroma Radiance is to Chroma.
+    - Still under active development, results are pretty poor at the moment. Like Chroma, likely to improve as new versions are released. Z-Image LORAs do not seem to work well with it (yet?).
+    - Download the model from [lodestones/Zeta-Chroma](<https://huggingface.co/lodestones/Zeta-Chroma>)
+    - Save model files in `diffusion_models`
+    - It does not use a VAE
+- **Parameters**
+    - **CFG Scale:** Normal CFG ranges (eg `4` or `7`)
+    - **Steps:** `20`+ steps seems to be minimum
+    - **Sampler:** Heun recommended
+    - **Scheduler:** Default is fine
+    - **Resolution:** Side length `1024` is the standard
 
 --------------------------------------------------------------------------
 
