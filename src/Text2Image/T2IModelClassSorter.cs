@@ -595,7 +595,7 @@ public class T2IModelClassSorter
         // ====================== Zeta Chroma ======================
         Register(new() { ID = "zeta-chroma", CompatClass = CompatZetaChroma, Name = "Zeta Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLumina2(h) && isZetaChroma(h);
+            return isLumina2(h) && isZImage(h) && isZetaChroma(h);
         }});
         // ====================== Qwen Image ======================
         Register(new() { ID = "qwen-image", CompatClass = CompatQwenImage, Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>

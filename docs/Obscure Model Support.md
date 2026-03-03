@@ -188,15 +188,15 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
 # Zeta Chroma
 
 - [Zeta Chroma](<https://huggingface.co/lodestones/Zeta-Chroma>) is supported in SwarmUI.
-    - It is a pixel-space variant of Z-Image, similar to what Chroma Radiance is to Chroma.
-    - Still under active development, results are pretty poor at the moment. Like Chroma, likely to improve as new versions are released. Z-Image LORAs do not seem to work well with it (yet?).
-    - Download the model from [lodestones/Zeta-Chroma](<https://huggingface.co/lodestones/Zeta-Chroma>)
+    - It is a pixel-space variant of Z-Image by the Chroma team, similar to what Chroma Radiance is to regular Chroma.
+    - Still under active development, results are pretty poor at the moment. Like Chroma, likely to improve as new versions are released. Z-Image LORAs will not work on it.
+    - Download the model from [lodestones/Zeta-Chroma](<https://huggingface.co/lodestones/Zeta-Chroma/tree/main>)
     - Save model files in `diffusion_models`
     - It does not use a VAE
 - **Parameters**
     - **CFG Scale:** Normal CFG ranges (eg `4` or `7`)
-    - **Steps:** `20`+ steps seems to be minimum
-    - **Sampler:** Heun recommended
+    - **Steps:** Normal step counts (eg `20`), higher values may help compensate for the early pretrain
+    - **Sampler:** Default is fine (`Euler`)
     - **Scheduler:** Default is fine
     - **Resolution:** Side length `1024` is the standard
 
