@@ -2078,8 +2078,28 @@ public class WorkflowGeneratorSteps
                     }
                 }
             }
+            void fixEncode(string id, JObject data)
+            {
+                JArray source = data["inputs"]["pixels"] as JArray;
+                string sourceNode = $"{source[0]}";
+                JObject actualNode = g.Workflow[sourceNode] as JObject;
+                JArray myVae = data["inputs"]["vae"] as JArray;
+                // TODO: LTX concat
+                if ($"{actualNode["class_type"]}" == "VAEDecode" || $"{actualNode["class_type"]}" == "VAEDecodeTiled")
+                {
+                    JArray srcVae = actualNode["inputs"]["vae"] as JArray;
+                    if ($"{myVae[0]}" == $"{srcVae[0]}" && $"{myVae[1]}" == $"{srcVae[1]}")
+                    {
+                        JArray srcLatent = actualNode["inputs"]["samples"] as JArray;
+                        g.ReplaceNodeConnection([id, 0], srcLatent);
+                        g.Workflow.Remove(id);
+                    }
+                }
+            }
             g.RunOnNodesOfClass("VAEDecode", fixDecode);
             g.RunOnNodesOfClass("VAEDecodeTiled", fixDecode);
+            g.RunOnNodesOfClass("VAEEncode", fixEncode);
+            g.RunOnNodesOfClass("VAEEncodeTiled", fixEncode);
             g.RemoveClassesIfUnused(AutoCleanupNodeTypes);
         }, 200);
         #endregion

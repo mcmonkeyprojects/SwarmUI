@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Html;
@@ -227,22 +227,32 @@ public class WebServer
         timer.Check("[Web] StartStop handler");
         WebApp.UseStaticFiles(new StaticFileOptions());
         timer.Check("[Web] static files");
+        static string fixRoute(HttpRequest request)
+        {
+            if (request.QueryString.HasValue)
+            {
+                return $"/ComfyBackendDirect{request.Path}{request.QueryString}";
+            }
+            return $"/ComfyBackendDirect{request.Path}";
+        }
         WebApp.Use(async (context, next) =>
         {
             string referrer = (context.Request.Headers.Referer.FirstOrDefault() ?? "").After("://").After('/').ToLowerFast();
             string path = context.Request.Path.Value.ToLowerFast();
             if (referrer.StartsWith("comfybackenddirect/") && !path.StartsWith("/comfybackenddirect/"))
             {
-                Logs.Debug($"ComfyBackendDirect call via Referrer '{referrer}' was misrouted, rerouting to 'ComfyBackendDirect{context.Request.Path}'");
+                string fixedRoute = fixRoute(context.Request);
+                Logs.Debug($"ComfyBackendDirect call via Referrer '{referrer}' was misrouted, rerouting to '{fixedRoute}'");
                 context.Response.StatusCode = StatusCodes.Status307TemporaryRedirect;
-                context.Response.Headers.Location = $"/ComfyBackendDirect{context.Request.Path}";
+                context.Response.Headers.Location = fixedRoute;
                 return;
             }
             else if (path.StartsWith("/assets/"))
             {
-                Logs.Debug($"ComfyBackendDirect assets call was misrouted and improperly referrered, rerouting to '{context.Request.Path}'");
+                string fixedRoute = fixRoute(context.Request);
+                Logs.Debug($"ComfyBackendDirect assets call was misrouted and improperly referrered, rerouting to '{fixedRoute}'");
                 context.Response.StatusCode = StatusCodes.Status307TemporaryRedirect;
-                context.Response.Headers.Location = $"/ComfyBackendDirect{context.Request.Path}";
+                context.Response.Headers.Location = fixedRoute;
                 return;
             }
             if (Program.ServerSettings.Network.EnableSpecialDevForwarding)
