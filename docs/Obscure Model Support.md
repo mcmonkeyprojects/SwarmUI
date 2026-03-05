@@ -198,7 +198,7 @@ These steps are not friendly to beginners (if Sana gains popularity, likely more
     - **Steps:** Normal step counts (eg `20`), higher values may help compensate for the early pretrain
     - **Sampler:** Default is fine (`Euler`)
     - **Scheduler:** Default is fine
-    - **Resolution:** Side length `1024` is the standard
+    - **Resolution:** Side length `1024` is the standard, broadly supports the same range as regular Z-Image (roughly 512 to 2048)
 
 --------------------------------------------------------------------------
 
