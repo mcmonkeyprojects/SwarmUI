@@ -63,7 +63,7 @@ There's a full step by step guide for video model usage here: <https://github.co
 
 # Video Models
 
-## Hunyuan Video
+# Hunyuan Video
 
 ![hunyuan-video](https://github.com/user-attachments/assets/12d898c4-d9c8-447e-99b3-42ad0f0eb16d)
 
@@ -158,7 +158,7 @@ There's a full step by step guide for video model usage here: <https://github.co
     - Set Video Steps higher, at least `30`, to reduce these
 - `Sigma Shift` default value is `7`, you do not need to edit it
 
-## Hunyuan Video 1.5
+# Hunyuan Video 1.5
 
 https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
@@ -202,7 +202,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 - Not yet supported, WIP.
 
-## Lightricks LTX Video
+# Lightricks LTX Video
 
 ![ltxv](https://github.com/user-attachments/assets/23e51754-79c6-47cd-9840-e65ec24fac1f)
 
