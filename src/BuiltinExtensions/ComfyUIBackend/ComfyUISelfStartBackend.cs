@@ -98,6 +98,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         ("alembic", "alembic"),
         ("pyopengl", "pyopengl"),
         ("glfw", "glfw"),
+        ("simpleeval", "simpleeval"),
         // Other added dependencies
         ("rembg", "rembg"),
         ("onnxruntime", "onnxruntime"), // subdependency of rembg but inexplicably not autoinstalled anymore?
