@@ -374,6 +374,9 @@ DefaultUser:
 	#If true, hitting enter while in the prompt box starts generation.
 	#If false, hitting enter will insert a newline.
 	EnterKeyGenerates: true
+	#If true, hitting Ctrl+Enter while in the prompt box starts generation.
+	#If false, Ctrl+Enter will insert a newline.
+	CtrlEnterKeyGenerates: true
 	#Delay, in seconds, between Generate Forever updates.
 	#If the delay hits and a generation is still waiting, it will be skipped.
 	#Default is 0.1 seconds.

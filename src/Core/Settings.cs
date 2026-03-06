@@ -583,6 +583,9 @@ public class Settings : AutoConfiguration
         [ConfigComment("If true, hitting enter while in the prompt box starts generation.\nIf false, hitting enter will insert a newline.")]
         public bool EnterKeyGenerates = true; // TODO: UserUI
 
+        [ConfigComment("If true, hitting Ctrl+Enter while in the prompt box starts generation.\nIf false, Ctrl+Enter will insert a newline.")]
+        public bool CtrlEnterKeyGenerates = true; // TODO: UserUI
+
         [ConfigComment("Delay, in seconds, between Generate Forever updates.\nIf the delay hits and a generation is still waiting, it will be skipped.\nDefault is 0.1 seconds.")]
         public double GenerateForeverDelay = 0.1;
 

@@ -1000,10 +1000,10 @@ window.addEventListener('keydown', function(kbevent) {
     else if ((kbevent.key == 'ArrowRight' || kbevent.key == 'ArrowDown') && (isFullView || isCurImgFocused)) {
         shiftToNextImagePreview(true, isFullView, true);
     }
-    else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('main_image_area'))) {
+    else if (kbevent.key === "Enter" && kbevent.ctrlKey && internalSiteJsGetUserSetting('ctrlenterkeygenerates', true) && isVisible(getRequiredElementById('main_image_area'))) {
         getRequiredElementById('alt_generate_button').click();
     }
-    else if (kbevent.key === "Enter" && kbevent.ctrlKey && isVisible(getRequiredElementById('simple_generate_button'))) {
+    else if (kbevent.key === "Enter" && kbevent.ctrlKey && internalSiteJsGetUserSetting('ctrlenterkeygenerates', true) && isVisible(getRequiredElementById('simple_generate_button'))) {
         getRequiredElementById('simple_generate_button').click();
     }
     else {

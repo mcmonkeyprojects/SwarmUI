@@ -560,7 +560,10 @@ class GenTabLayout {
             });
         }
         this.altText.addEventListener('keydown', (e) => {
-            if (e.key == 'Enter' && !e.shiftKey && internalSiteJsGetUserSetting('enterkeygenerates', true)) {
+            let shouldGenerate = e.key == 'Enter' && !e.shiftKey
+                && ((e.ctrlKey && internalSiteJsGetUserSetting('ctrlenterkeygenerates', true))
+                    || (!e.ctrlKey && internalSiteJsGetUserSetting('enterkeygenerates', true)));
+            if (shouldGenerate) {
                 this.altText.dispatchEvent(new Event('change'));
                 getRequiredElementById('alt_generate_button').click();
                 e.preventDefault();
@@ -569,7 +572,10 @@ class GenTabLayout {
             }
         });
         this.altNegText.addEventListener('keydown', (e) => {
-            if (e.key == 'Enter' && !e.shiftKey && internalSiteJsGetUserSetting('enterkeygenerates', true)) {
+            let shouldGenerate = e.key == 'Enter' && !e.shiftKey
+                && ((e.ctrlKey && internalSiteJsGetUserSetting('ctrlenterkeygenerates', true))
+                    || (!e.ctrlKey && internalSiteJsGetUserSetting('enterkeygenerates', true)));
+            if (shouldGenerate) {
                 this.altNegText.dispatchEvent(new Event('change'));
                 getRequiredElementById('alt_generate_button').click();
                 e.preventDefault();
