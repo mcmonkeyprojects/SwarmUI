@@ -284,6 +284,9 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 - Main downloads here <https://huggingface.co/Lightricks/LTX-2.3/tree/main>
     - or FP8 download here <https://huggingface.co/Lightricks/LTX-2.3-fp8/tree/main>
     - Save in `Stable-Diffusion` models folder
+- Parameters:
+    - Mostly the same as regular LTX-2
+    - New prompt guide here: <https://x.com/ltx_model/status/2029927683539325332>
 
 # Wan 2.1
 
