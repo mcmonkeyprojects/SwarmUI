@@ -950,7 +950,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         }
         let group = type.original_group || type.group;
         while (group) {
-            if (group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
+            if (group.toggles && !document.getElementById(`input_group_content_${group.id}_toggle`)?.checked) {
                 continue paramLoop;
             }
             group = group.parent;

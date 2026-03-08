@@ -63,7 +63,7 @@ There's a full step by step guide for video model usage here: <https://github.co
 
 # Video Models
 
-## Hunyuan Video
+# Hunyuan Video
 
 ![hunyuan-video](https://github.com/user-attachments/assets/12d898c4-d9c8-447e-99b3-42ad0f0eb16d)
 
@@ -158,7 +158,7 @@ There's a full step by step guide for video model usage here: <https://github.co
     - Set Video Steps higher, at least `30`, to reduce these
 - `Sigma Shift` default value is `7`, you do not need to edit it
 
-## Hunyuan Video 1.5
+# Hunyuan Video 1.5
 
 https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
@@ -202,7 +202,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 
 - Not yet supported, WIP.
 
-## Lightricks LTX Video
+# Lightricks LTX Video
 
 ![ltxv](https://github.com/user-attachments/assets/23e51754-79c6-47cd-9840-e65ec24fac1f)
 
@@ -276,6 +276,17 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
             <summary>Giant negative</summary>
             blurry, out of focus, overexposed, underexposed, low contrast, washed out colors, excessive noise, grainy texture, poor lighting, flickering, motion blur, distorted proportions, unnatural skin tones, deformed facial features, asymmetrical face, missing facial features, extra limbs, disfigured hands, wrong hand count, artifacts around text, unreadable text on shirt or hat, incorrect lettering on cap (“PNTR”), incorrect t-shirt slogan (“JUST DO IT”), missing microphone, misplaced microphone, inconsistent perspective, camera shake, incorrect depth of field, background too sharp, background clutter, distracting reflections, harsh shadows, inconsistent lighting direction, color banding, cartoonish rendering, 3D CGI look, unrealistic materials, uncanny valley effect, incorrect ethnicity, wrong gender, exaggerated expressions, smiling, laughing, exaggerated sadness, wrong gaze direction, eyes looking at camera, mismatched lip sync, silent or muted audio, distorted voice, robotic voice, echo, background noise, off-sync audio, missing sniff sounds, incorrect dialogue, added dialogue, repetitive speech, jittery movement, awkward pauses, incorrect timing, unnatural transitions, inconsistent framing, tilted camera, missing door or shelves, missing shallow depth of field, flat lighting, inconsistent tone, cinematic oversaturation, stylized filters, or AI artifacts.
         </details>
+
+### LTX-2.3
+
+- LTX-2.3 is an official upgrade to LTX-2, with some higher quality and capability.
+- It has (partial) compatibility with LTX-2, eg some loras will cross-apply.
+- Main downloads here <https://huggingface.co/Lightricks/LTX-2.3/tree/main>
+    - or FP8 download here <https://huggingface.co/Lightricks/LTX-2.3-fp8/tree/main>
+    - Save in `Stable-Diffusion` models folder
+- Parameters:
+    - Mostly the same as regular LTX-2
+    - New prompt guide here: <https://x.com/ltx_model/status/2029927683539325332>
 
 # Wan 2.1
 

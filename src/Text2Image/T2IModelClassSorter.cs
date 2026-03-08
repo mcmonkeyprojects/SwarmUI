@@ -66,7 +66,6 @@ public class T2IModelClassSorter
         CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false }),
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true }),
-        CompatLtxv23 = RegisterCompat(new() { ID = "lightricks-ltx-video-2-3", ShortCode = "LTXV23", IsText2Video = true, IsImage2Video = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false }),
@@ -163,7 +162,7 @@ public class T2IModelClassSorter
         bool isLtxv(JObject h) => hasKey(h, "adaln_single.emb.timestep_embedder.linear_1.bias");
         bool isLtxvVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias") && h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias");
         bool isLtxv2(JObject h) => hasKey(h, "transformer_blocks.1.audio_to_video_attn.k_norm.weight");
-        bool isLtxv23(JObject h) => hasKey(h, "text_embedding_projection.aggregate_embed.weight");
+        bool isLtxv23(JObject h) => hasKey(h, "text_embedding_projection.audio_aggregate_embed.weight");
         bool isLtxv2Lora(JObject h) => hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v");
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
         bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight") || h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight");
