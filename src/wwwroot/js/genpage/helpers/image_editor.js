@@ -1253,14 +1253,21 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         this.pendingMaskUpdate = false;
         this.modelWarmed = false;
         this.isWarmingUp = false;
-        this.configDiv.innerHTML = `
+        this.controlsHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <button class="basic-button id-clear-mask">Clear Mask</button>
             <label style="margin-left:8px;">Mask Padding:&nbsp;</label>
             <input type="number" class="auto-number id-mask-padding" style="width:50px;" min="0" max="256" step="1" value="0">
-            <span class="id-sam2-status" style="display:none; margin-left:8px; opacity:0.8; font-style:italic;">Warming up SAM2 model...</span>
         </div>`;
+        this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
+        this.showControls();
+    }
+
+    showControls() {
+        let prevPadding = this.maskPaddingInput ? this.maskPaddingInput.value : '0';
+        this.configDiv.innerHTML = this.controlsHTML;
         this.maskPaddingInput = this.configDiv.querySelector('.id-mask-padding');
+        this.maskPaddingInput.value = prevPadding;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
             // Clear points
             this.positivePoints = [];
@@ -1326,8 +1333,9 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
 
     triggerWarmup() {
         this.isWarmingUp = true;
-        let statusElem = this.configDiv.querySelector('.id-sam2-status');
-        if (statusElem) { statusElem.style.display = ''; }
+        this.cursor = 'wait';
+        this.editor.canvas.style.cursor = 'wait';
+        this.configDiv.innerHTML = this.warmupHTML;
         try {
             let img = this.editor.getFinalImageData();
             let genData = getGenInput();
@@ -1343,13 +1351,17 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
                 if (data.image || data.error) {
                     this.modelWarmed = true;
                     this.isWarmingUp = false;
-                    if (statusElem) { statusElem.style.display = 'none'; }
+                    this.cursor = 'crosshair';
+                    this.editor.canvas.style.cursor = 'crosshair';
+                    this.showControls();
                 }
             });
         } catch (e) {
             this.modelWarmed = true;
             this.isWarmingUp = false;
-            if (statusElem) { statusElem.style.display = 'none'; }
+            this.cursor = 'crosshair';
+            this.editor.canvas.style.cursor = 'crosshair';
+            this.showControls();
         }
     }
 
@@ -1459,14 +1471,21 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         this.maskRequestInFlight = false;
         this.modelWarmed = false;
         this.isWarmingUp = false;
-        this.configDiv.innerHTML = `
+        this.controlsHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <button class="basic-button id-clear-mask">Clear Mask</button>
             <label style="margin-left:8px;">Mask Padding:&nbsp;</label>
             <input type="number" class="auto-number id-mask-padding" style="width:50px;" min="0" max="256" step="1" value="0">
-            <span class="id-sam2-status" style="display:none; margin-left:8px; opacity:0.8; font-style:italic;">Warming up SAM2 model...</span>
         </div>`;
+        this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
+        this.showControls();
+    }
+
+    showControls() {
+        let prevPadding = this.maskPaddingInput ? this.maskPaddingInput.value : '0';
+        this.configDiv.innerHTML = this.controlsHTML;
         this.maskPaddingInput = this.configDiv.querySelector('.id-mask-padding');
+        this.maskPaddingInput.value = prevPadding;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
             let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
             if (!maskLayer) {
@@ -1506,8 +1525,9 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
 
     triggerWarmup() {
         this.isWarmingUp = true;
-        let statusElem = this.configDiv.querySelector('.id-sam2-status');
-        if (statusElem) { statusElem.style.display = ''; }
+        this.cursor = 'wait';
+        this.editor.canvas.style.cursor = 'wait';
+        this.configDiv.innerHTML = this.warmupHTML;
         try {
             let img = this.editor.getFinalImageData();
             let genData = getGenInput();
@@ -1523,13 +1543,17 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
                 if (data.image || data.error) {
                     this.modelWarmed = true;
                     this.isWarmingUp = false;
-                    if (statusElem) { statusElem.style.display = 'none'; }
+                    this.cursor = 'crosshair';
+                    this.editor.canvas.style.cursor = 'crosshair';
+                    this.showControls();
                 }
             });
         } catch (e) {
             this.modelWarmed = true;
             this.isWarmingUp = false;
-            if (statusElem) { statusElem.style.display = 'none'; }
+            this.cursor = 'crosshair';
+            this.editor.canvas.style.cursor = 'crosshair';
+            this.showControls();
         }
     }
 
