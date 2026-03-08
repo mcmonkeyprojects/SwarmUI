@@ -1664,6 +1664,113 @@ public class WorkflowGeneratorSteps
             RunSegmentationProcessing(g, isBeforeRefiner: false);
         }, 5);
         #endregion
+        #region SAM2 Masking
+        AddStep(g =>
+        {
+            if (!g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointCoordsPositive, out string coords) || string.IsNullOrWhiteSpace(coords) || coords == "[]")
+            {
+                return;
+            }
+            string negCoords = null;
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointCoordsNegative, out string negCoordsRaw) && !string.IsNullOrWhiteSpace(negCoordsRaw) && negCoordsRaw != "[]")
+            {
+                negCoords = negCoordsRaw;
+            }
+            JArray imageNodeActual = null;
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointImage, out Image img))
+            {
+                WGNodeData imageNode = g.LoadImage(img, "${sampointimage}", true);
+                imageNodeActual = imageNode.Path;
+            }
+            else if (g.BasicInputImage is not null)
+            {
+                imageNodeActual = g.BasicInputImage.Path;
+            }
+            if (imageNodeActual is null)
+            {
+                return;
+            }
+            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", new JObject()
+            {
+                ["model"] = "sam2_hiera_base_plus.safetensors",
+                ["segmentor"] = "single_image",
+                ["device"] = "cuda",
+                ["precision"] = "bf16"
+            });
+            JObject segInputs = new()
+            {
+                ["sam2_model"] = new JArray() { modelNode, 0 },
+                ["image"] = imageNodeActual,
+                ["keep_model_loaded"] = true,
+                ["coordinates_positive"] = coords,
+                ["fill_holes"] = true,
+                ["hole_kernel_size"] = 9,
+                ["mask_padding"] = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int pointsPadding) ? pointsPadding : 0
+            };
+            Logs.Debug($"[SAM2-Points] mask_padding from UserInput = {g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0")}");
+            if (negCoords is not null)
+            {
+                segInputs["coordinates_negative"] = negCoords;
+            }
+            string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+            string maskNode = g.CreateNode("MaskToImage", new JObject()
+            {
+                ["mask"] = new JArray() { segNode, 0 }
+            });
+            new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
+            g.SkipFurtherSteps = true;
+        }, 8.9);
+        AddStep(g =>
+        {
+            if (!g.UserInput.TryGet(ComfyUIBackendExtension.Sam2BBox, out string bboxJson) || string.IsNullOrWhiteSpace(bboxJson))
+            {
+                return;
+            }
+            JArray imageNodeActual = null;
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointImage, out Image img))
+            {
+                WGNodeData imageNode = g.LoadImage(img, "${sampointimage}", true);
+                imageNodeActual = imageNode.Path;
+            }
+            else if (g.BasicInputImage is not null)
+            {
+                imageNodeActual = g.BasicInputImage.Path;
+            }
+            if (imageNodeActual is null)
+            {
+                return;
+            }
+            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", new JObject()
+            {
+                ["model"] = "sam2_hiera_base_plus.safetensors",
+                ["segmentor"] = "single_image",
+                ["device"] = "cuda",
+                ["precision"] = "bf16"
+            });
+            string bboxNode = g.CreateNode("Sam2BBoxFromJson", new JObject()
+            {
+                ["bbox_json"] = bboxJson
+            });
+            JObject segInputs = new()
+            {
+                ["sam2_model"] = new JArray() { modelNode, 0 },
+                ["image"] = imageNodeActual,
+                ["keep_model_loaded"] = true,
+                ["bboxes"] = new JArray() { bboxNode, 0 },
+                ["fill_holes"] = true,
+                ["hole_kernel_size"] = 5,
+                ["mask_padding"] = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int bboxPadding) ? bboxPadding : 0
+            };
+            Logs.Debug($"[SAM2-BBox] mask_padding from UserInput = {g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0")}");
+            string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+            string maskNode = g.CreateNode("MaskToImage", new JObject()
+            {
+                ["mask"] = new JArray() { segNode, 0 }
+            });
+            new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
+            g.SkipFurtherSteps = true;
+        }, 8.85);
+        #endregion
         #region SaveImage
         AddStep(g =>
         {
