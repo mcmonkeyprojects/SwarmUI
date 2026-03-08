@@ -653,9 +653,7 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IRegisteredParam<Image> Sam2PointImage;
 
-    public static T2IRegisteredParam<string> Sam2PointCoordsPositive, Sam2PointCoordsNegative, Sam2BBox;
-
-    public static T2IRegisteredParam<string> Sam2MaskPadding;
+    public static T2IRegisteredParam<string> Sam2PointCoordsPositive, Sam2PointCoordsNegative, Sam2BBox, Sam2MaskPadding;
 
     /// <inheritdoc/>
     public override void OnInit()
