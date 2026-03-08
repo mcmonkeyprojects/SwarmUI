@@ -7,8 +7,6 @@ from io import BytesIO
 from .sam2 import (
     predict_mask_from_points,
     predict_mask_from_bboxes,
-    crop_image_with_mask,
-    remove_background,
 )
 
 
@@ -162,71 +160,14 @@ class Sam2BBoxSegmentation:
         return (mask_tensor.unsqueeze(0),)
 
 
-class Sam2MaskPostProcess:
-    """Post-process SAM2 masks: crop to bounds, remove background, etc."""
-
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "image": ("IMAGE",),
-                "mask": ("MASK",),
-            },
-            "optional": {
-                "operation": (["crop_to_mask", "remove_background"], {"default": "crop_to_mask"}),
-                "padding_pixels": ("INT", {"default": 0, "min": 0, "max": 100}),
-                "aspect_ratio": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
-            }
-        }
-
-    RETURN_TYPES = ("IMAGE", "STRING")
-    RETURN_NAMES = ("result", "info")
-    FUNCTION = "process"
-    CATEGORY = "SAM2"
-
-    def process(self, image, mask, operation, padding_pixels=0, aspect_ratio=1.0):
-        """Post-process masks: crop or remove background"""
-        # Convert image to bytes
-        img_pil = Image.fromarray((image[0].cpu().numpy() * 255).astype(np.uint8))
-        img_buffer = BytesIO()
-        img_pil.save(img_buffer, format="JPEG")
-        image_bytes = img_buffer.getvalue()
-
-        # Convert mask to numpy (0 or 255)
-        mask_np = (mask[0].cpu().numpy() * 255).astype(np.uint8)
-
-        if operation == "crop_to_mask":
-            target_ratio = aspect_ratio if aspect_ratio != 1.0 else None
-            result_bytes, info_dict = crop_image_with_mask(
-                image_bytes,
-                mask_np,
-                padding_pixels=padding_pixels,
-                target_aspect_ratio=target_ratio,
-            )
-            result_img = Image.open(BytesIO(result_bytes))
-        else:  # remove_background
-            result_bytes = remove_background(image_bytes, mask_np)
-            result_img = Image.open(BytesIO(result_bytes)).convert("RGB")
-            info_dict = {"operation": "background_removed"}
-
-        # Convert back to tensor
-        result_tensor = torch.from_numpy(np.array(result_img)).float() / 255.0
-        if result_tensor.ndim == 2:
-            result_tensor = result_tensor.unsqueeze(-1).repeat(1, 1, 3)
-
-        return (result_tensor.unsqueeze(0), json.dumps(info_dict))
-
-
 NODE_CLASS_MAPPINGS = {
     "Sam2BBoxFromJson": Sam2BBoxFromJson,
     "Sam2PointSegmentation": Sam2PointSegmentation,
     "Sam2BBoxSegmentation": Sam2BBoxSegmentation,
-    "Sam2MaskPostProcess": Sam2MaskPostProcess,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Sam2BBoxFromJson": "SAM2 BBox From JSON",
     "Sam2PointSegmentation": "SAM2 Point Segmentation",
     "Sam2BBoxSegmentation": "SAM2 BBox Segmentation",
-    "Sam2MaskPostProcess": "SAM2 Mask Post-Process",
 }
