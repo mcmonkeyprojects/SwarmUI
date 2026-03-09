@@ -283,7 +283,14 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
 - It has (partial) compatibility with LTX-2, eg some loras will cross-apply.
 - Main downloads here <https://huggingface.co/Lightricks/LTX-2.3/tree/main>
     - or FP8 download here <https://huggingface.co/Lightricks/LTX-2.3-fp8/tree/main>
+    - or other FP8 and FP4 options here <https://huggingface.co/Hippotes/LTX-2.3-various-formats/tree/main>
     - Save in `Stable-Diffusion` models folder
+- They have new spatial upscalers in the same main download folder, they work the same as LTX-2's upscaler does
+- They also have a 'refiner distilled lora', which you apply to the dev model to simultaneously make it act like the distilled and also enhance it's capabilities as a refiner
+    - That is here <https://huggingface.co/Lightricks/LTX-2.3/blob/main/ltx-2.3-22b-distilled-lora-384.safetensors>
+    - It is generally attached at a weight of 0.8 for some reason, but lower weights can also make sense in some contexts
+    - One officially suggested pipeline is dev model as the base, then latent upscale, then dev+this lora as a refiner
+    - They also have a pipeline to run it on both base at 0.25 and refiner at 0.5
 - Parameters:
     - Mostly the same as regular LTX-2
     - New prompt guide here: <https://x.com/ltx_model/status/2029927683539325332>

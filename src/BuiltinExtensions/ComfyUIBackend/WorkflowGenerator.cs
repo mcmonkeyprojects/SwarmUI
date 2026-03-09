@@ -1507,7 +1507,7 @@ public partial class WorkflowGenerator
                     string preproc = g.CreateNode("LTXVPreprocess", new JObject()
                     {
                         ["image"] = origSrcImg.Path,
-                        ["img_compression"] = 32
+                        ["img_compression"] = 18
                     });
                     string latentOutNode = g.CreateNode("LTXVImgToVideoInplace", new JObject()
                     {
