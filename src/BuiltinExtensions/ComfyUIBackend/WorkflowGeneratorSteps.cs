@@ -1696,20 +1696,24 @@ public class WorkflowGeneratorSteps
                 ["sam2_model"] = new JArray() { modelNode, 0 },
                 ["image"] = imageNodeActual,
                 ["keep_model_loaded"] = true,
-                ["coordinates_positive"] = coords,
-                ["fill_holes"] = true,
-                ["hole_kernel_size"] = 9,
-                ["mask_padding"] = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int pointsPadding) ? pointsPadding : 0
+                ["coordinates_positive"] = coords
             };
-            Logs.Debug($"[SAM2-Points] mask_padding from UserInput = {g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0")}");
             if (negCoords is not null)
             {
                 segInputs["coordinates_negative"] = negCoords;
             }
             string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+            int pointsPadding = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int pp) ? pp : 0;
+            string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
+            {
+                ["mask"] = new JArray() { segNode, 0 },
+                ["fill_holes"] = true,
+                ["hole_kernel_size"] = 9,
+                ["mask_padding"] = pointsPadding
+            });
             string maskNode = g.CreateNode("MaskToImage", new JObject()
             {
-                ["mask"] = new JArray() { segNode, 0 }
+                ["mask"] = new JArray() { postNode, 0 }
             });
             new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
             g.SkipFurtherSteps = true;
@@ -1744,16 +1748,20 @@ public class WorkflowGeneratorSteps
                 ["sam2_model"] = new JArray() { modelNode, 0 },
                 ["image"] = imageNodeActual,
                 ["keep_model_loaded"] = true,
-                ["bboxes"] = new JArray() { bboxNode, 0 },
+                ["bboxes"] = new JArray() { bboxNode, 0 }
+            };
+            string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+            int bboxPadding = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int bp) ? bp : 0;
+            string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
+            {
+                ["mask"] = new JArray() { segNode, 0 },
                 ["fill_holes"] = true,
                 ["hole_kernel_size"] = 5,
-                ["mask_padding"] = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int bboxPadding) ? bboxPadding : 0
-            };
-            Logs.Debug($"[SAM2-BBox] mask_padding from UserInput = {g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0")}");
-            string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+                ["mask_padding"] = bboxPadding
+            });
             string maskNode = g.CreateNode("MaskToImage", new JObject()
             {
-                ["mask"] = new JArray() { segNode, 0 }
+                ["mask"] = new JArray() { postNode, 0 }
             });
             new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
             g.SkipFurtherSteps = true;
