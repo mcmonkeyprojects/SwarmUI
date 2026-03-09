@@ -1690,13 +1690,7 @@ public class WorkflowGeneratorSteps
             {
                 return;
             }
-            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", new JObject()
-            {
-                ["model"] = "sam2_hiera_base_plus.safetensors",
-                ["segmentor"] = "single_image",
-                ["device"] = "cuda",
-                ["precision"] = "bf16"
-            });
+            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs());
             JObject segInputs = new()
             {
                 ["sam2_model"] = new JArray() { modelNode, 0 },
@@ -1740,13 +1734,7 @@ public class WorkflowGeneratorSteps
             {
                 return;
             }
-            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", new JObject()
-            {
-                ["model"] = "sam2_hiera_base_plus.safetensors",
-                ["segmentor"] = "single_image",
-                ["device"] = "cuda",
-                ["precision"] = "bf16"
-            });
+            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs());
             string bboxNode = g.CreateNode("Sam2BBoxFromJson", new JObject()
             {
                 ["bbox_json"] = bboxJson

@@ -556,13 +556,7 @@ public class ComfyUIBackendExtension : Extension
                             new JObject()
                             {
                                 ["class_type"] = "DownloadAndLoadSAM2Model",
-                                ["inputs"] = new JObject()
-                                {
-                                    ["model"] = $"sam2_hiera_{size}.safetensors",
-                                    ["segmentor"] = "automaskgenerator",
-                                    ["device"] = "cuda", // TODO: This should really be decided by the python, not by swarm's workflow generator - the python knows what the GPU supports, swarm does not
-                                    ["precision"] = "bf16"
-                                }
+                                ["inputs"] = Sam2ModelInputs(size, "automaskgenerator")
                             },
                             new JObject()
                             {
@@ -654,6 +648,18 @@ public class ComfyUIBackendExtension : Extension
     public static T2IRegisteredParam<Image> Sam2PointImage;
 
     public static T2IRegisteredParam<string> Sam2PointCoordsPositive, Sam2PointCoordsNegative, Sam2BBox, Sam2MaskPadding;
+
+    /// <summary>Creates the standard input set for a DownloadAndLoadSAM2Model node.</summary>
+    public static JObject Sam2ModelInputs(string size = "base_plus", string segmentor = "single_image")
+    {
+        return new JObject()
+        {
+            ["model"] = $"sam2_hiera_{size}.safetensors",
+            ["segmentor"] = segmentor,
+            ["device"] = "cuda", // TODO: This should really be decided by the python, not by swarm's workflow generator - the python knows what the GPU supports, swarm does not
+            ["precision"] = "bf16"
+        };
+    }
 
     /// <inheritdoc/>
     public override void OnInit()
