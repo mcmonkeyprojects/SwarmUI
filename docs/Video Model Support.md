@@ -271,6 +271,9 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
         - LLM prompt rewrite may be necessary to get the most out of the model.
     - **CFG Scale:** The regular model uses normal CFG values such as ~4, the distilled model uses `1`.
     - **Steps:** The regular model uses normal step values, 20+. The distilled model uses `8` but works at `4`.
+    - **Frames:** 8n+1 (9, 17, 25, 33, 41, 49, ...)
+    - **Sampler:** Defaults to `Euler`
+    - **Scheduler:** Defaults to `Normal`
     - **Negative Prompt:** Reference workflow suggests using this giant negative:
         <details>
             <summary>Giant negative</summary>
