@@ -1505,7 +1505,7 @@ public partial class WorkflowGenerator
                         ["length"] = Frames,
                         ["batch_size"] = 1
                     });
-                    g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames };
+                    g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames, AttachedAudio = g.CurrentMedia?.AttachedAudio };
                     g.CurrentMedia = g.CurrentMedia.EnsureHasAudioIfNeeded(Vae, g.CurrentAudioVae);
                     string preproc = g.CreateNode("LTXVPreprocess", new JObject()
                     {

@@ -564,19 +564,7 @@ public class WorkflowGeneratorSteps
             if (g.UserInput.TryGet(T2IParamTypes.VideoAudioInput, out AudioFile audioData))
             {
                 string audioNode = g.CreateAudioLoadNode(audioData, "${videoaudioinput}");
-                WGNodeData encoded = new WGNodeData([audioNode, 0], g, WGNodeData.DT_AUDIO, g.CurrentCompat()).EncodeToLatent(g.CurrentAudioVae);
-                string mask = g.CreateNode("SolidMask", new JObject()
-                {
-                    ["value"] = 0,
-                    ["width"] = 512,
-                    ["height"] = 512 // TODO: ?
-                });
-                string masked = g.CreateNode("SetLatentNoiseMask", new JObject()
-                {
-                    ["samples"] = encoded.Path,
-                    ["mask"] = NodePath(mask, 0)
-                });
-                g.CurrentMedia.AttachedAudio = new([masked, 0], g, WGNodeData.DT_LATENT_AUDIO, g.CurrentCompat());
+                g.CurrentMedia.AttachedAudio = new WGNodeData([audioNode, 0], g, WGNodeData.DT_AUDIO, g.CurrentCompat());
             }
         }, -9);
         #endregion
