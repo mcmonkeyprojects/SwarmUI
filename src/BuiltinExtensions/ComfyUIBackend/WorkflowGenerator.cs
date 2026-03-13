@@ -772,7 +772,10 @@ public partial class WorkflowGenerator
                 pos = [ltxvcond, 0];
                 neg = [ltxvcond, 1];
             }
-            defscheduler ??= "ltxv";
+            if (IsLTXV())
+            {
+                defscheduler ??= "ltxv";
+            }
         }
         else if (IsNvidiaCosmos1())
         {
@@ -1504,7 +1507,7 @@ public partial class WorkflowGenerator
                         ["length"] = Frames,
                         ["batch_size"] = 1
                     });
-                    g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames };
+                    g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames, AttachedAudio = g.CurrentMedia?.AttachedAudio };
                     g.CurrentMedia = g.CurrentMedia.EnsureHasAudioIfNeeded(Vae, g.CurrentAudioVae);
                     string preproc = g.CreateNode("LTXVPreprocess", new JObject()
                     {
@@ -1532,7 +1535,7 @@ public partial class WorkflowGenerator
                 NegCond = [ltxvcond, 1];
                 HadSpecialCond = true;
                 DefaultSampler = "euler";
-                DefaultScheduler = "ltxv-image";
+                DefaultScheduler = "normal";
             }
             else if (VideoModel.ModelClass?.CompatClass?.ID == "nvidia-cosmos-1")
             {

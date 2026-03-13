@@ -1002,7 +1002,7 @@ public partial class WorkflowGenerator
             }
             if (LoadingVAE is null)
             {
-                helpers.DoVaeLoader( UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
+                helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultSD3VAE, "stable-diffusion-v3", "sd35-vae");
             }
         }
         else if (IsFlux2Dev())
@@ -1019,6 +1019,14 @@ public partial class WorkflowGenerator
         {
             helpers.LoadClip("flux2", helpers.GetQwen3_8bModel());
             helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
+            if (model.Name.ToLowerFast().Contains("9b-kv"))
+            {
+                string kvcached = CreateNode("FluxKVCache", new JObject()
+                {
+                    ["model"] = LoadingModel
+                });
+                LoadingModel = [kvcached, 0];
+            }
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {
