@@ -737,7 +737,7 @@ public class WorkflowGeneratorSteps
                         ["latent"] = g.CurrentMedia.Path
                     });
                     g.CurrentModel = g.CurrentModel.WithPath([referencedModel, 0]);
-                    g.CurrentMedia = g.CurrentMedia.WithPath([referencedModel, 0]);
+                    g.CurrentMedia = g.CurrentMedia.WithPath([referencedModel, 1]);
                     g.DefaultPreviews = "second";
                 }
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.UseIPAdapterForRevision, out string ipAdapter) && ipAdapter != "None")
