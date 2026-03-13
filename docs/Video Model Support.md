@@ -273,7 +273,7 @@ https://github.com/user-attachments/assets/b3605901-78ed-4f13-a065-adfbc0d63232
     - **Steps:** The regular model uses normal step values, 20+. The distilled model uses `8` but works at `4`.
     - **Frames:** 8n+1 (9, 17, 25, 33, 41, 49, ...)
     - **Sampler:** Defaults to `Euler`
-    - **Scheduler:** Defaults to `Normal`
+    - **Scheduler:** Defaults to `Normal`. With an upscale/refiner, `Linear Quadratic` may be better
     - **Negative Prompt:** Reference workflow suggests using this giant negative:
         <details>
             <summary>Giant negative</summary>
