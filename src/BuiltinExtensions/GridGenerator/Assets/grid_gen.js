@@ -7,6 +7,7 @@ class GridGenClass {
     lastAxisId = 0;
     popover = null;
     excludedParams = ['images', 'batchsize', 'refinersavebeforerefine'];
+    inputFilesCache = null;
 
     fillSelectorOptions(selector) {
         selector.add(new Option('', '', true, true));
@@ -80,12 +81,21 @@ class GridGenClass {
         inputBox.className = 'grid-gen-axis-input';
         inputBox.id = `grid-gen-axis-input-${id}`;
         let mode = null;
-        function getFillable() {
+        let getFillable = () => {
             if (!mode) {
                 return null;
             }
             if (mode.type == 'model' || mode.subtype in coreModelMap) {
                 return coreModelMap[mode.subtype || 'Stable-Diffusion'].filter(m => m != '(None)');
+            }
+            if (mode.type == 'image' || mode.type == 'image_list') {
+                return this.inputFilesCache.filter(f => !isAudioExt(f));
+            }
+            if (mode.type == 'video') {
+                return this.inputFilesCache.filter(f => isVideoExt(f));
+            }
+            if (mode.type == 'audio') {
+                return this.inputFilesCache.filter(f => isAudioExt(f));
             }
             if (mode.values) {
                 return mode.values;
@@ -315,6 +325,17 @@ class GridGenClass {
                 fillButton.innerText = 'Fill';
                 fillButton.style.visibility = 'visible';
                 fillButton.title = 'Fill with "true" and "false"';
+            }
+            else if (mode && ['image', 'video', 'audio'].includes(mode.type)) {
+                fillButton.innerText = 'Fill';
+                fillButton.style.visibility = 'visible';
+                fillButton.title = 'Fill with input files';
+                if (!this.inputFilesCache) {
+                    genericRequest('ListImages', {'path': 'inputs/', 'depth': 10, 'sortBy': 'Name', 'sortReverse': false}, data => {
+                        this.inputFilesCache = data.files.map(f => `inputs/${f.src}`);
+                        updateInput();
+                    });
+                }
             }
             else if (mode && mode.examples) {
                 fillButton.innerText = 'Examples';
