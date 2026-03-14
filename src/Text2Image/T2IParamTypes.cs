@@ -9,6 +9,7 @@ using SwarmUI.Utils;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
+using System.IO;
 
 namespace SwarmUI.Text2Image;
 
@@ -312,7 +313,7 @@ public class T2IParamTypes
         return update;
     }
 
-    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, Text2VideoFormat, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat, Text2AudioTimeSignature, Text2AudioLanguage, Text2AudioKeyScale, Text2AudioStyle;
+    public static T2IRegisteredParam<string> Prompt, NegativePrompt, AspectRatio, BackendType, RefinerMethod, FreeUApplyTo, FreeUVersion, PersonalNote, VideoFormat, VideoResolution, UnsamplerPrompt, ImageFormat, MaskBehavior, ColorCorrectionBehavior, RawResolution, SeamlessTileable, SD3TextEncs, BitDepth, Webhooks, WildcardSeedBehavior, SegmentSortOrder, SegmentTargetResolution, SegmentApplyAfter, TorchCompile, VideoExtendFormat, ExactBackendID, OverridePredictionType, OverrideOutpathFormat, Text2AudioTimeSignature, Text2AudioLanguage, Text2AudioKeyScale, Text2AudioStyle;
     public static T2IRegisteredParam<int> Images, Steps, Width, Height, SideLength, BatchSize, VAETileSize, VAETileOverlap, VAETemporalTileSize, VAETemporalTileOverlap, ClipStopAtLayer, VideoFrames, VideoMotionBucket, VideoFPS, VideoSteps, RefinerSteps, CascadeLatentCompression, MaskShrinkGrow, MaskBlur, MaskGrow, SegmentMaskBlur, SegmentMaskGrow, SegmentMaskOversize, SegmentSteps, Text2VideoFrames, TrimVideoStartFrames, TrimVideoEndFrames, VideoExtendFrameOverlap;
     public static T2IRegisteredParam<long> Seed, VariationSeed, WildcardSeed, Text2AudioBPM;
     public static T2IRegisteredParam<double> CFGScale, VariationSeedStrength, InitImageCreativity, InitImageResetToNorm, InitImageNoise, RefinerControl, RefinerUpscale, RefinerCFGScale, ReVisionStrength, AltResolutionHeightMult,
@@ -404,9 +405,6 @@ public class T2IParamTypes
             "25", Min: 1, Max: 1000, OrderPriority: 1, Group: GroupText2Video, FeatureFlag: "text2video", Toggleable: true
             ));
         List<string> videoFormats = ["webp", "gif", "gif-hd", "webm", "h264-mp4", "h265-mp4", "prores"];
-        Text2VideoFormat = Register<string>(new("Text2Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
-            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 21, Group: GroupText2Video, FeatureFlag: "text2video"
-            ));
         // ================================================ Text2Audio ================================================
         GroupText2Audio = new("Text To Audio", Open: false, OrderPriority: -29, Toggles: true, Description: $"Support for Text2Audio models.");
         Text2AudioDuration = Register<double>(new("Text2Audio Duration", "How long the generated audio clip should be, in seconds.",
@@ -602,9 +600,6 @@ public class T2IParamTypes
         Video2VideoCreativity = Register<double>(new("Video2Video Creativity", "Optional advanced method to start the video diffusion late.\nThis is equivalent to Init Image Creativity.\nSet below 1 to skip some fraction of steps.\nThis only makes sense if the base input is a video.\n'Video Frame's param must have same frame length as the input video.\nIf set to 1, video2video logic is not applied, and the input is treated as a single image.",
             "1", IgnoreIf: "1", Min: 0, Max: 1, Step: 0.05, OrderPriority: 19.5, ViewType: ParamViewType.SLIDER, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", IsAdvanced: true, DoNotPreview: true
             ));
-        VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
-            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 20, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1
-            ));
         VideoEndFrame = Register<Image>(new("Video End Image", "An image to use as the 'end frame' of a video.\nOnly some models support end frames (Wan FLF2V, LTX-V), most don't.",
             null, OrderPriority: 30, Group: GroupVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: 2, IsAdvanced: true
             ));
@@ -615,6 +610,9 @@ public class T2IParamTypes
             ));
         VideoBoomerang = Register<bool>(new("Video Boomerang", "Whether to boomerang (aka pingpong) the video.\nIf true, the video will play and then play again in reverse to enable smooth looping.",
             "false", IgnoreIf: "false", OrderPriority: 2, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, IsAdvanced: true, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true
+            ));
+        VideoFormat = Register<string>(new("Video Format", "What format to save videos in.\nWebp video is simple and efficient, but has compatibility issues. Gif is simple and compatible, while gif-hd is higher quality via ffmpeg.\nh264-mp4 is a standard video file that works anywhere, but doesn't get treated like an image file.\nh265-mp4 is a smaller file size but may not work for all devices.\nprores is a specialty format.",
+            "h264-mp4", GetValues: _ => videoFormats, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, ChangeWeight: -1, Toggleable: true
             ));
         VideoAudioInput = Register<AudioFile>(new("Video Audio Input", "If generating a video with a model that supports audio input, this is the audio input.",
             null, OrderPriority: 3, Group: GroupAdvancedVideo, Permission: Permissions.ParamVideo, FeatureFlag: "video", DoNotPreview: true, IsAdvanced: true
@@ -1018,44 +1016,50 @@ public class T2IParamTypes
                 }
                 return val;
             case T2IParamDataType.LIST:
-                string splitter =  val.Contains("\n|||\n") ? "\n|||\n" : ",";
-                string[] vals = val.Split(splitter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (vals.Length == 0)
                 {
-                    return "";
-                }
-                if (type.GetValues is not null && type.ValidateValues)
-                {
-                    string[] possible = [.. type.GetValues(session).Select(v => v.Before("///"))];
-                    for (int i = 0; i < vals.Length; i++)
+                    string splitter = val.Contains("\n|||\n") ? "\n|||\n" : ",";
+                    string[] vals = val.Split(splitter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (vals.Length == 0)
                     {
-                        string search = vals[i];
-                        vals[i] = GetBestInList(search, possible);
-                        if (vals[i] is null)
+                        return "";
+                    }
+                    if (type.GetValues is not null && type.ValidateValues)
+                    {
+                        string[] possible = [.. type.GetValues(session).Select(v => v.Before("///"))];
+                        for (int i = 0; i < vals.Length; i++)
                         {
-                            vals[i] = GetBestModelInList(CleanModelName(search), possible);
+                            string search = vals[i];
+                            vals[i] = GetBestInList(search, possible);
                             if (vals[i] is null)
                             {
-                                if (possible.Length < 10)
+                                vals[i] = GetBestModelInList(CleanModelName(search), possible);
+                                if (vals[i] is null)
                                 {
-                                    throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{possible.JoinString("`, `")}`");
-                                }
-                                else
-                                {
-                                    throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - option does not exist. Has it been deleted?");
+                                    if (possible.Length < 10)
+                                    {
+                                        throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - must be one of: `{possible.JoinString("`, `")}`");
+                                    }
+                                    else
+                                    {
+                                        throw new SwarmUserErrorException($"Invalid value for param {type.Name} - '{origVal}' - option does not exist. Has it been deleted?");
+                                    }
                                 }
                             }
                         }
+                        return vals.JoinString("\n|||\n");
                     }
-                    return vals.JoinString("\n|||\n");
+                    return val;
                 }
-                return val;
             case T2IParamDataType.IMAGE:
             case T2IParamDataType.AUDIO:
             case T2IParamDataType.VIDEO:
                 if (val.StartsWith("data:"))
                 {
                     val = val.After(',');
+                }
+                if (val.StartsWith("inputs/") || val.StartsWith("raw/") || val.StartsWith("Starred/"))
+                {
+                    return FilePathToDataString(session, val, $"for param {type.Name}");
                 }
                 if (string.IsNullOrWhiteSpace(val))
                 {
@@ -1068,24 +1072,29 @@ public class T2IParamTypes
                 }
                 return origVal;
             case T2IParamDataType.IMAGE_LIST:
-                foreach (string part in val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|"))
                 {
-                    string partVal = part.Trim();
-                    if (partVal.StartsWith("data:"))
+                    string splitter = val.Contains("\n|||\n") ? "\n|||\n" : "|";
+                    string[] rawSplit = val.Split(splitter, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    for (int i = 0; i < rawSplit.Length; i++)
                     {
-                        partVal = partVal.After(',');
+                        string partVal = rawSplit[i];
+                        if (partVal.StartsWith("data:"))
+                        {
+                            partVal = partVal.After(',');
+                        }
+                        if (partVal.StartsWith("inputs/") || partVal.StartsWith("raw/") || partVal.StartsWith("Starred/"))
+                        {
+                            partVal = FilePathToDataString(session, partVal, $"for param {type.Name}");
+                            rawSplit[i] = partVal;
+                        }
+                        if (!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10)
+                        {
+                            string shortText = partVal.Length > 10 ? partVal[..10] + "..." : partVal;
+                            throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
+                        }
                     }
-                    if (string.IsNullOrWhiteSpace(val))
-                    {
-                        continue;
-                    }
-                    if (!ValidBase64Matcher.IsOnlyMatches(partVal) || partVal.Length < 10)
-                    {
-                        string shortText = partVal.Length > 10 ? partVal[..10] + "..." : partVal;
-                        throw new SwarmUserErrorException($"Invalid image-list value for param {type.Name} - '{origVal}' - must be a valid base64 string - got '{shortText}'");
-                    }
+                    return rawSplit.JoinString(splitter);
                 }
-                return origVal;
             case T2IParamDataType.MODEL:
                 if (!Program.T2IModelSets.TryGetValue(type.Subtype ?? "Stable-Diffusion", out T2IModelHandler handler))
                 {
@@ -1099,6 +1108,27 @@ public class T2IParamTypes
                 return val;
         }
         throw new SwarmUserErrorException($"Unknown parameter type's data type? {type.Type}");
+    }
+
+    public static string FilePathToDataString(Session session, string filePath, string errorContext)
+    {
+        string root = WebServer.GetUserOutputRoot(session.User);
+        (string path, string consoleError, string userError) = WebServer.CheckFilePath(root, filePath);
+        if (consoleError is not null)
+        {
+            Logs.Error(consoleError);
+            throw new SwarmUserErrorException($"Invalid file path {errorContext} - '{filePath}' - {userError}");
+        }
+        path = UserImageHistoryHelper.GetRealPathFor(session.User, path, root: root);
+        byte[] data = null;
+        string contentType = Utilities.GuessContentType(path);
+        string pathNorm = Path.GetFullPath(path);
+        if (data is null && Session.StillSavingFiles.TryGetValue(pathNorm, out Task<byte[]> cacheData))
+        {
+            data = cacheData.Result;
+        }
+        data ??= File.ReadAllBytes(path);
+        return $"data:{contentType};base64,{Convert.ToBase64String(data)}";
     }
 
     /// <summary>Takes user input of a parameter and applies it to the parameter tracking data object.</summary>
@@ -1142,6 +1172,7 @@ public class T2IParamTypes
         if (name == "saveintermediateimages") { name = "outputintermediateimages"; } // TODO: Temporary, renamed 0.9.5
         else if (name == "textvideofps") { name = "videofps"; } // TODO: Temporary, 0.9.7 legacy "Text2Video FPS" separate param dropped
         else if (name == "textvideoboomerang") { name = "videoboomerang"; }
+        else if (name == "textvideoformat") { name = "videoformat"; }
         T2IParamType result;
         foreach (Func<string, T2IParamInput, T2IParamType> provider in FakeTypeProviders)
         {

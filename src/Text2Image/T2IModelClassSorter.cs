@@ -67,6 +67,7 @@ public class T2IModelClassSorter
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false }),
+        CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
         CompatAnima = RegisterCompat(new() { ID = "anima", ShortCode = "Anima", LorasTargetTextEnc = false }),
         // Audio models
         CompatAceStep15 = RegisterCompat(new() { ID = "ace-step-1_5", ShortCode = "Ace15", IsAudioModel = true }),
@@ -82,6 +83,7 @@ public class T2IModelClassSorter
         CompatSana = RegisterCompat(new() { ID = "nvidia-sana-1600", ShortCode = "Sana" }),
         CompatPixartMsSigmaXl2 = RegisterCompat(new() { ID = "pixart-ms-sigma-xl-2", ShortCode = "Pix" }),
         CompatOvis = RegisterCompat(new() { ID = "ovis", ShortCode = "Ovis", LorasTargetTextEnc = false }),
+        CompatLongcatImage = RegisterCompat(new() { ID = "longcat-image", ShortCode = "LCat", LorasTargetTextEnc = false }),
         CompatGenmoMochi = RegisterCompat(new() { ID = "genmo-mochi-1", IsText2Video = true, ShortCode = "Mochi" }),
         CompatKandinsky5ImgLite = RegisterCompat(new() { ID = "kandinsky5-imglite", ShortCode = "Kan5IL", LorasTargetTextEnc = false }),
         CompatKandinsky5VidLite = RegisterCompat(new() { ID = "kandinsky5-vidlite", ShortCode = "Kan5VL", LorasTargetTextEnc = false, IsText2Video = true, IsImage2Video = true }),
@@ -160,6 +162,7 @@ public class T2IModelClassSorter
         bool isLtxv(JObject h) => hasKey(h, "adaln_single.emb.timestep_embedder.linear_1.bias");
         bool isLtxvVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias") && h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias");
         bool isLtxv2(JObject h) => hasKey(h, "transformer_blocks.1.audio_to_video_attn.k_norm.weight");
+        bool isLtxv23(JObject h) => hasKey(h, "text_embedding_projection.audio_aggregate_embed.weight");
         bool isLtxv2Lora(JObject h) => hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v");
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
         bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight") || h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight");
@@ -174,6 +177,7 @@ public class T2IModelClassSorter
         bool isCosmosPredict2_14B(JObject h) => h.ContainsKey("net.blocks.0.adaln_modulation_cross_attn.1.weight") && h.ContainsKey("net.pos_embedder.dim_temporal_range") && h.ContainsKey("net.x_embedder.proj.1.weight") && h.ContainsKey("net.blocks.35.adaln_modulation_mlp.2.weight");
         bool isLumina2(JObject h) => hasKey(h, "cap_embedder.0.weight");
         bool isZImage(JObject h) => (hasKey(h, "context_refiner.0.attention.k_norm.weight") || hasKey(h, "context_refiner.0.attention.norm_k.weight")) && hasKey(h, "layers.0.adaLN_modulation.0.bias");
+        bool isZetaChroma(JObject h) => hasKey(h, "dec_net.input_embedder.embedder.0.bias") && hasKey(h, "__x0__");
         bool isOvis(JObject h) => hasKey(h, "double_blocks.0.img_mlp.down_proj.weight");
         bool isZImageLora(JObject h) => (hasLoraKey(h, "layers.0.adaLN_modulation.0") && hasLoraKey(h, "layers.9.feed_forward.w3"))
             || (hasLoraKey(h, "context_refiner.1.attention.to_k") && hasLoraKey(h, "layers.29.attention.to_v") && hasLoraKey(h, "noise_refiner.0.attention.to_q"));
@@ -217,6 +221,7 @@ public class T2IModelClassSorter
         bool isKan5VidPro(JObject h) => tryGetKan5IdKey(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 4096;
         bool isAnima(JObject h) => hasKey(h, "t_embedder.1.linear_2.weight") && hasKey(h, "llm_adapter.blocks.0.self_attn.v_proj.weight") && hasKey(h, "blocks.27.adaln_modulation_cross_attn.2.weight");
         bool isAnimaLora(JObject h) => hasLoraKey(h, "llm_adapter.blocks.5.self_attn.v_proj") && hasLoraKey(h, "blocks.27.self_attn.v_proj") && hasLoraKey(h, "blocks.27.adaln_modulation_cross_attn.1");
+        bool isLongcat(JObject h) => hasKey(h, "double_blocks.0.txt_attn.norm.query_norm.weight") && hasKey(h, "time_in.out_layer.weight") && hasKey(h, "final_layer.adaLN_modulation.1.weight");
         // Audio models
         bool isAceStep15(JObject h) => hasKey(h, "encoder.lyric_encoder.layers.0.post_attention_layernorm.weight");
         // ====================== Stable Diffusion v1 ======================
@@ -578,7 +583,7 @@ public class T2IModelClassSorter
         // ====================== Z-Image ======================
         Register(new() { ID = "z-image", CompatClass = CompatZImage, Name = "Z-Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isLumina2(h) && isZImage(h);
+            return isLumina2(h) && isZImage(h) && !isZetaChroma(h);
         }});
         Register(new() { ID = "z-image/lora", CompatClass = CompatZImage, Name = "Z-Image LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -587,6 +592,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "z-image/control-diffpatch", CompatClass = CompatZImage, Name = "Z-Image ControlNet (DiffPatch)", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isZImageControlNetDiffPatch(h);
+        }});
+        // ====================== Zeta Chroma ======================
+        Register(new() { ID = "zeta-chroma", CompatClass = CompatZetaChroma, Name = "Zeta Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isLumina2(h) && isZImage(h) && isZetaChroma(h);
         }});
         // ====================== Qwen Image ======================
         Register(new() { ID = "qwen-image", CompatClass = CompatQwenImage, Name = "Qwen Image", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
@@ -653,11 +663,15 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "lightricks-ltx-video-2", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
-            return isLtxv2(h);
+            return isLtxv2(h) && !isLtxv23(h);
         }});
         Register(new() { ID = "lightricks-ltx-video-2/lora", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2 LoRA", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
         {
             return isLtxv2Lora(h);
+        }});
+        Register(new() { ID = "lightricks-ltx-video-2-3", CompatClass = CompatLtxv2, Name = "Lightricks LTX Video 2.3", StandardWidth = 960, StandardHeight = 960, IsThisModelOfClass = (m, h) =>
+        {
+            return isLtxv2(h) && isLtxv23(h);
         }});
         // ====================== Random Other Models ======================
         Register(new() { ID = "chroma", CompatClass = CompatChroma, Name = "Chroma", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
@@ -754,6 +768,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "ovis", CompatClass = CompatOvis, Name = "Ovis", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isOvis(h);
+        }});
+        // ====================== LongCat ======================
+        Register(new() { ID = "longcat-image", CompatClass = CompatLongcatImage, Name = "Longcat Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isLongcat(h);
         }});
         // ====================== Audio Models ======================
         Register(new() { ID = "ace-step-1_5", CompatClass = CompatAceStep15, Name = "Ace Step 1.5", IsThisModelOfClass = (m, h) =>

@@ -97,6 +97,7 @@ public class ExtensionsManager
                 Task<Assembly> asm = BuildExtension(extDir, projFile);
                 if (asm is not null)
                 {
+                    await asm; // TODO: TEMP: Builds can sometimes break because of some form of file lock silliness, need to investigate.
                     loaded.Add((asm, extDir));
                 }
             }

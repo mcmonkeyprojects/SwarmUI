@@ -234,6 +234,7 @@ function clearPresetView() {
 
 let createNewPresetTitle = translatable('Create New Preset');
 let editPresetTitle = translatable('Edit Preset');
+let presetOverrideMsg = translatable('Overridden by preset(s):');
 
 function create_new_preset_button() {
     clearPresetView();
@@ -358,12 +359,23 @@ function updatePresetList() {
     let view = getRequiredElementById('current_preset_list_view');
     view.innerHTML = '';
     for (let param of gen_param_types) {
-        getRequiredElementById(`input_${param.id}`).disabled = false;
+        let elem = getRequiredElementById(`input_${param.id}`);
+        elem.disabled = false;
+        let rangeSlider = document.getElementById(`input_${param.id}_rangeslider`);
+        if (rangeSlider) {
+            rangeSlider.disabled = false;
+        }
+        let container = findParentOfClass(elem, 'auto-input');
+        if (container) {
+            container.classList.remove('preset-overridden');
+            container.title = '';
+        }
         if (param.toggleable) {
             getRequiredElementById(`input_${param.id}_toggle`).disabled = false;
         }
     }
     let overrideCount = 0;
+    let paramOverrides = {};
     for (let preset of currentPresets) {
         let div = createDiv(null, 'preset-in-list');
         div.innerText = preset.title;
@@ -384,10 +396,30 @@ function updatePresetList() {
                     let elem = getRequiredElementById(`input_${param.id}`);
                     overrideCount += 1;
                     elem.disabled = true;
+                    let rangeSlider = document.getElementById(`input_${param.id}_rangeslider`);
+                    if (rangeSlider) {
+                        rangeSlider.disabled = true;
+                    }
                     if (param.toggleable) {
                         getRequiredElementById(`input_${param.id}_toggle`).disabled = true;
                     }
+                    if (!paramOverrides[param.id]) {
+                        paramOverrides[param.id] = { names: [], value: null };
+                    }
+                    paramOverrides[param.id].names.push(preset.title);
+                    paramOverrides[param.id].value = preset.param_map[key];
                 }
+            }
+        }
+    }
+    for (let paramId in paramOverrides) {
+        let elem = document.getElementById(`input_${paramId}`);
+        if (elem) {
+            let container = findParentOfClass(elem, 'auto-input');
+            if (container) {
+                container.classList.add('preset-overridden');
+                let override = paramOverrides[paramId];
+                container.title = `${presetOverrideMsg.get()} ${override.names.join(', ')}: ${override.value}`;
             }
         }
     }

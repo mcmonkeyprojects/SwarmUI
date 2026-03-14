@@ -538,6 +538,10 @@ public class GridGeneratorExtension : Extension
                     Brush brush = new SolidBrush(Color.Black);
                     void DrawTextAutoScale(string text, float x, float y, float width, float height)
                     {
+                        if (text.Length > 500)
+                        {
+                            text = text.Substring(0, 500) + "...";
+                        }
                         RichTextOptions rto = new(font) { WrappingLength = width, Origin = new(x, y) };
                         float lines = height / rawTextHeight;
                         FontRectangle measured = TextMeasurer.MeasureSize(text, options);

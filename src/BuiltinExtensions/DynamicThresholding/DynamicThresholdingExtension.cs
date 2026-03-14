@@ -1,4 +1,4 @@
-﻿
+
 using Newtonsoft.Json.Linq;
 using SwarmUI.Builtin_ComfyUIBackend;
 using SwarmUI.Core;
@@ -80,7 +80,7 @@ public class DynamicThresholdingExtension : Extension
                 }
                 string newNode = g.CreateNode("DynamicThresholdingFull", new JObject()
                 {
-                    ["model"] = g.FinalModel,
+                    ["model"] = g.CurrentModel.Path,
                     ["mimic_scale"] = mimicScale,
                     ["threshold_percentile"] = g.UserInput.Get(ThresholdPercentile, 1),
                     ["mimic_mode"] = g.UserInput.Get(MimicScaleMode, "Constant"),
@@ -94,8 +94,8 @@ public class DynamicThresholdingExtension : Extension
                     ["interpolate_phi"] = g.UserInput.Get(InterpolatePhi, 1)
                 });
                 // Workflow additions generally only do anything if a key passthrough field is updated.
-                // In our case, we're replacing the Model node, so update FinalModel to point at our node's output.
-                g.FinalModel = [newNode, 0];
+                // In our case, we're replacing the Model node, so update CurrentModel to point at our node's output.
+                g.CurrentModel = g.CurrentModel.WithPath([newNode, 0]);
             }
             // See WorkflowGeneratorSteps for definition of the priority values.
             // -5.5 puts this before the main Sampler, but after most other model changes (eg controlnet)

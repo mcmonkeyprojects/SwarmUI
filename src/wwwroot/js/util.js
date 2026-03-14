@@ -342,10 +342,15 @@ function setSelectionRange(el, start, end) {
     let foundStart = false;
     let charCount = 0
     let endCharCount;
+    function isSpacer(node) { return node.tagName == 'BR' || (node.parentElement?.classList?.contains('wc_line_spacer')); }
     for (let i = 0; i < textNodes.length; i++) {
         let textNode = textNodes[i];
         endCharCount = charCount + (textNode.tagName == 'BR' ? 1 : textNode.textContent.length);
         if (!foundStart && start >= charCount && (i == textNodes.length - 1 ? start <= endCharCount : start < endCharCount)) {
+            range.setStart(textNode, start - charCount);
+            foundStart = true;
+        }
+        else if (!foundStart && start >= charCount && start == endCharCount && i + 1 < textNodes.length && isSpacer(textNodes[i + 1])) {
             range.setStart(textNode, start - charCount);
             foundStart = true;
         }

@@ -15,7 +15,7 @@
     </li>
 </ul>
 <div class="tab-content scroll-within-tab">
-    <div class="tab-pane show active translate" id="user-info" role="tabpanel">
+    <div class="tab-pane show active" id="user-info" role="tabpanel">
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">User Account</div>
             <div class="card-body">
@@ -29,7 +29,7 @@
                     <br>
                     <br>
                     <button class="basic-button translate" id="logout_button" onclick="doUserLogout()">Logout</button>
-                    // TODO: Other user stuff here. List of tokens/sessions, etc.
+                    // TODO: Other user stuff here?
                     <button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
                     <div id="impersonate_user_container" style="display:none">
                         <br>
@@ -53,6 +53,40 @@
                 <button type="button" class="btn btn-secondary basic-button translate" id="change_password_cancel_button" onclick="$('#change_password_modal').modal('hide')">Cancel</button>
             </div>
         @WebUtil.ModalFooter()
+        @if (Model.IsLoginEnabled)
+        {
+            <br>
+            <div class="card border-secondary mb-3 card-center-container">
+                <div class="card-header translate">Swarm Auth Tokens</div>
+                <div class="card-body">
+                    <p class="card-text translate">These are the active login sessions for your account. <button class="basic-button translate" data-requiredpermission="edit_user_settings" onclick="authTokenHelpers.showCreateTokenModal()">Create New Auth Token</button></p>
+                    <div class="auth-tokens-list" id="auth_tokens_list"><p class="translate">Loading...</p></div>
+                    <br>
+                </div>
+            </div>
+            @WebUtil.ModalHeader("create_swarm_token_modal", "Create Swarm Token")
+                <div class="modal-body">
+                    <p class="translate">Enter a reason or label for this token (e.g. "My API bot", "my funny app").</p>
+                    <input type="text" class="auto-text auto-text-block translate translate-no-text" id="create_token_reason" placeholder="Token reason..." autocomplete="off" value="" maxlength="500" oninput="authTokenHelpers.onReasonInput()" />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary basic-button translate" id="create_token_confirm_button" onclick="authTokenHelpers.doCreateAuthToken()" disabled>Confirm</button>
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="authTokenHelpers.hideCreateTokenModal()">Cancel</button>
+                </div>
+            @WebUtil.ModalFooter()
+            @WebUtil.ModalHeader("created_token_result_modal", "New Token Created")
+                <div class="modal-body">
+                    <p class="translate"><b>Your new token is shown below. Copy it now, you will not be able to display it again.</b></p>
+                    <div style="display:flex; gap:0.5rem; align-items:center">
+                        <input type="text" class="auto-text auto-text-block" id="create_token_raw_value" readonly />
+                        <button class="basic-button translate" onclick="authTokenHelpers.copyTokenToClipboard()">Copy</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary basic-button translate" onclick="authTokenHelpers.hideResultTokenModal()">Close</button>
+                </div>
+            @WebUtil.ModalFooter()
+        }
         <br>
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">API Keys</div>

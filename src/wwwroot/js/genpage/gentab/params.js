@@ -844,6 +844,9 @@ function genInputs(delay_final = false) {
         if (imageEditor.active) {
             imageEditor.doParamHides();
         }
+        if (currentPresets.length > 0) {
+            updatePresetList();
+        }
     };
     if (delay_final) {
         setTimeout(() => {
@@ -884,7 +887,7 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         }
         let group = type.original_group || type.group;
         while (group) {
-            if (group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
+            if (group.toggles && !document.getElementById(`input_group_content_${group.id}_toggle`)?.checked) {
                 continue paramLoop;
             }
             group = group.parent;
@@ -901,6 +904,9 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         if (type.type == 'image') {
             extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
             extraMetadata[`${type.id}_resolution`] = elem.dataset.resolution;
+            if (elem.dataset.duration) {
+                extraMetadata[`${type.id}_duration`] = elem.dataset.duration;
+            }
         }
         else if (type.type == 'video') {
             extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
@@ -1103,6 +1109,23 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
     }
 }
 
+/** Clear all temporary parameter/group/etc. state data. */
+function clearParamStorage() {
+    for (let cookie of listCookies('lastparam_input_')) {
+        deleteCookie(cookie);
+    }
+    for (let cookie of listCookies('group_toggle_')) {
+        deleteCookie(cookie);
+    }
+    for (let cookie of listCookies('group_open_')) {
+        deleteCookie(cookie);
+    }
+    deleteCookie('selected_model');
+    localStorage.removeItem('display_advanced');
+    localStorage.removeItem('last_comfy_workflow_input');
+    localStorage.removeItem('current_presets');
+}
+
 function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     for (let cookie of listCookies('lastparam_')) {
         if (!exclude.includes(cookie.substring('lastparam_'.length))) {
@@ -1234,7 +1257,7 @@ function hideUnsupportableParams() {
             let paramToggler = document.getElementById(`input_${param.id}_toggle`);
             let isAltered = paramToggler ? paramToggler.checked : `${getInputVal(elem)}` != `${param.default}`;
             let group = param.original_group || param.group;
-            if (group && group.toggles && !getRequiredElementById(`input_group_content_${group.id}_toggle`).checked) {
+            if (group && group.toggles && !document.getElementById(`input_group_content_${group.id}_toggle`)?.checked) {
                 isAltered = false;
             }
             if (box && box.style.display == 'none' && box.dataset.visible_controlled) {

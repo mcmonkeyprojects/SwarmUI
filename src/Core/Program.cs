@@ -137,9 +137,16 @@ public class Program
             SettingsFilePath = GetCommandLineFlag("settings_file", $"{DataDir}/Settings.fds");
             LoadSettingsFile();
             RebuildDataDir();
-            TempDir = Path.GetFullPath($"{DataDir}/tmp/{Environment.ProcessId}");
-            Directory.CreateDirectory(TempDir);
-            Environment.SetEnvironmentVariable("TMPDIR", TempDir);
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("TMPDIR")))
+            {
+                TempDir = Path.GetFullPath($"{DataDir}/tmp/{Environment.ProcessId}");
+                Directory.CreateDirectory(TempDir);
+                Environment.SetEnvironmentVariable("TMPDIR", TempDir);
+            }
+            else
+            {
+                TempDir = null;
+            }
             // TODO: Legacy format patch from Alpha 0.5! Remove this before 1.0.
             if (ServerSettings.DefaultUser.FileFormat.ImageFormat == "jpg")
             {
@@ -556,7 +563,10 @@ public class Program
         Logs.Verbose("Clear temp folder...");
         try
         {
-            Directory.Delete(TempDir, true);
+            if (!string.IsNullOrWhiteSpace(TempDir))
+            {
+                Directory.Delete(TempDir, true);
+            }
         }
         catch (Exception ex)
         {

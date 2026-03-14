@@ -1,4 +1,4 @@
-﻿using SwarmUI.Utils;
+using SwarmUI.Utils;
 using SwarmUI.Core;
 using System.Collections.Concurrent;
 using LiteDB;
@@ -180,6 +180,8 @@ public class SessionHandler
         public string OriginAddress { get; set; }
 
         public string OriginUserAgent { get; set; }
+
+        public long CreatedUnixTime { get; set; }
 
         public long LastActiveUnixTime { get; set; }
 

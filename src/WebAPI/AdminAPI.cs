@@ -64,6 +64,7 @@ public static class AdminAPI
                 throw new Exception($"[ServerSettings] Unknown type '{data.Field.FieldType}' for field '{data.Field.Name}'!");
             }
             object val = config.GetFieldValueOrDefault<object>(key);
+            object defVal = config.TryGetFieldInternalData(key, out _).Default;
             if (val is AutoConfiguration subConf)
             {
                 val = AutoConfigToParamData(subConf);
@@ -83,7 +84,7 @@ public static class AdminAPI
                 typeName = typeName == "LIST" ? "LIST" : "DROPDOWN";
                 val_names = data.Field.GetCustomAttribute<SettingsOptionsAttribute>()?.Names ?? null;
             }
-            output[key] = new JObject()
+            JObject settingObj = new()
             {
                 ["type"] = typeName.ToLowerFast(),
                 ["name"] = data.Name,
@@ -93,6 +94,11 @@ public static class AdminAPI
                 ["value_names"] = val_names == null ? null : new JArray(val_names),
                 ["is_secret"] = isSecret
             };
+            if (!data.IsSection && !isSecret)
+            {
+                settingObj["default_value"] = JToken.FromObject(defVal is List<string> defList ? defList.JoinString(" || ") : defVal);
+            }
+            output[key] = settingObj;
         }
         return output;
     }

@@ -1321,6 +1321,21 @@ function imageInputHandler() {
                 }
                 reader.readAsDataURL(file);
             }
+            else if (file.name.endsWith('.json') || file.type == 'application/json') {
+                let reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        let metadata = interpretMetadata(e.target.result);
+                        if (metadata) {
+                            setCurrentImage('imgs/model_placeholder.jpg', metadata, '', false, false, false, true);
+                        }
+                    }
+                    catch (e) {
+                        showError(`Failed to parse JSON metadata: ${e}`);
+                    }
+                }
+                reader.readAsText(file);
+            }
         }
     });
 }

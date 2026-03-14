@@ -46,6 +46,9 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(ServerDebugMessage, false, Permissions.ServerDebugMessage);
         API.RegisterAPICall(SetAPIKey, true, Permissions.EditUserSettings);
         API.RegisterAPICall(GetAPIKeyStatus, false, Permissions.ReadUserSettings);
+        API.RegisterAPICall(ListMyAuthTokens, false, Permissions.ReadUserSettings);
+        API.RegisterAPICall(RevokeMyAuthToken, true, Permissions.EditUserSettings);
+        API.RegisterAPICall(CreateAuthToken, true, Permissions.EditUserSettings);
         T2IAPI.Register();
         ModelsAPI.Register();
         BackendAPI.Register();
@@ -706,6 +709,102 @@ public static class BasicAPIFeatures
     {
         Logs.Info($"User '{session.User.UserID}' sent a debug message: {message}");
         return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("User route to list the current user's auth tokens (login sessions).\nOnly valid if authorization is enabled.",
+        """
+            "tokens": [
+                {
+                    "id": "abc123", // Note this is not the full token, just the ID prefix.
+                    "created": 1700000000, // Unix time seconds.
+                    "last_active": 1700001000,
+                    "user_agent": "Mozilla/5.0...",
+                    "origin_address": "127.0.0.1",
+                    "is_current": true // If this was the token that sent this request.
+                }
+            ]
+        """)]
+    public static async Task<JObject> ListMyAuthTokens(HttpContext context, Session session)
+    {
+        if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return new JObject() { ["error"] = "Authorization is not enabled." };
+        }
+        string[] swarmToken = WebUtil.GetSwarmTokenFor(context);
+        string currentTokenId = swarmToken?[1];
+        JArray tokens = [];
+        lock (Program.Sessions.DBLock)
+        {
+            foreach (string tokenId in session.User.Data.LoginSessions)
+            {
+                SessionHandler.LoginSession loginSession = Program.Sessions.LoginSessions.FindById(tokenId);
+                if (loginSession is null)
+                {
+                    continue;
+                }
+                tokens.Add(new JObject()
+                {
+                    ["id"] = tokenId,
+                    ["created"] = loginSession.CreatedUnixTime,
+                    ["last_active"] = loginSession.LastActiveUnixTime,
+                    ["user_agent"] = loginSession.OriginUserAgent ?? "unknown",
+                    ["origin_address"] = loginSession.OriginAddress ?? "unknown",
+                    ["is_current"] = tokenId == currentTokenId
+                });
+            }
+        }
+        return new JObject() { ["tokens"] = tokens };
+    }
+
+    [API.APIDescription("User route to revoke (delete) one of the current user's auth tokens.",
+        """
+            "success": true
+        """)]
+    public static async Task<JObject> RevokeMyAuthToken(HttpContext context, Session session,
+        [API.APIParameter("The ID of the token to revoke.")] string tokenId)
+    {
+        if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return new JObject() { ["error"] = "Authorization is not enabled." };
+        }
+        lock (Program.Sessions.DBLock)
+        {
+            if (!session.User.Data.LoginSessions.Remove(tokenId))
+            {
+                return new JObject() { ["error"] = "Token not found." };
+            }
+            Program.Sessions.LoginSessions.Delete(tokenId);
+            foreach (Session sess in Program.Sessions.Sessions.Values.Where(s => s.OriginToken == tokenId).ToArray())
+            {
+                Program.Sessions.RemoveSession(sess);
+            }
+            session.User.Save();
+        }
+        return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("User route to create a new auth token (login session) for the current user.\nOnly valid if authorization is enabled.",
+        """
+            "token": "useridhex.tokenid.validationtext"
+        """)]
+    public static async Task<JObject> CreateAuthToken(HttpContext context, Session session,
+        [API.APIParameter("A user-provided reason/label for this token, stored as the user-agent.")] string reason)
+    {
+        if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return new JObject() { ["error"] = "Authorization is not enabled." };
+        }
+        if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500)
+        {
+            return new JObject() { ["error"] = "Reason must be between 1 and 500 characters." };
+        }
+        string ip = WebUtil.GetIPString(context);
+        (_, string rawToken) = session.User.CreateLoginSession(ip, reason);
+        if (rawToken is null)
+        {
+            return new JObject() { ["error"] = "Failed to create token." };
+        }
+        return new JObject() { ["token"] = rawToken };
     }
 
     public static HashSet<string> AcceptedAPIKeyTypes = ["stability_api", "civitai_api", "huggingface_api"];
