@@ -844,6 +844,9 @@ function genInputs(delay_final = false) {
         if (imageEditor.active) {
             imageEditor.doParamHides();
         }
+        if (currentPresets.length > 0) {
+            updatePresetList();
+        }
     };
     if (delay_final) {
         setTimeout(() => {

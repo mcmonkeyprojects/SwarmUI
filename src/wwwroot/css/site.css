@@ -701,6 +701,13 @@ textarea, input, select {
 .disabled-input {
     opacity: 0.5;
 }
+.auto-input.preset-overridden {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.auto-input.preset-overridden input[type="range"] {
+    cursor: not-allowed;
+}
 .card-center-container {
     width: fit-content;
     margin: auto;
