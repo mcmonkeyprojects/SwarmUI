@@ -1,5 +1,7 @@
-import torch
+import json
+
 import numpy as np
+import torch
 import cv2
 
 
@@ -26,16 +28,29 @@ def fill_mask_holes(mask: np.ndarray, kernel_size: int = 5) -> np.ndarray:
     return filled_mask
 
 
-def add_mask_padding(mask: np.ndarray, padding: int = 0) -> np.ndarray:
-    """Expand a mask boundary by dilating outward."""
-    if padding <= 0:
-        return mask
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (padding * 2 + 1, padding * 2 + 1))
-    return cv2.dilate(mask, kernel, iterations=1)
+class Sam2BBoxFromJson:
+    """Converts a JSON bounding box string '[x1,y1,x2,y2]' into a BBOX type."""
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "bbox_json": ("STRING", {"forceInput": True}),
+            }
+        }
+
+    RETURN_TYPES = ("BBOX",)
+    RETURN_NAMES = ("bboxes",)
+    FUNCTION = "convert"
+    CATEGORY = "SAM2"
+
+    def convert(self, bbox_json):
+        coords = json.loads(bbox_json)
+        return ([[float(coords[0]), float(coords[1]), float(coords[2]), float(coords[3])]],)
 
 
 class SwarmSam2MaskPostProcess:
-    """Post-processes a SAM2 segmentation mask with hole-filling and padding."""
+    """Post-processes a SAM2 segmentation mask with hole-filling."""
 
     @classmethod
     def INPUT_TYPES(s):
@@ -46,7 +61,6 @@ class SwarmSam2MaskPostProcess:
             "optional": {
                 "fill_holes": ("BOOLEAN", {"default": True}),
                 "hole_kernel_size": ("INT", {"default": 5, "min": 1, "max": 21, "step": 2}),
-                "mask_padding": ("INT", {"default": 0, "min": 0, "max": 256, "step": 1}),
             },
         }
 
@@ -55,23 +69,23 @@ class SwarmSam2MaskPostProcess:
     FUNCTION = "process"
     CATEGORY = "SAM2"
 
-    def process(self, mask, fill_holes=True, hole_kernel_size=5, mask_padding=0):
+    def process(self, mask, fill_holes=True, hole_kernel_size=5):
         out_list = []
         for i in range(mask.shape[0]):
             m = mask[i].cpu().numpy()
             m_uint8 = (m * 255).astype(np.uint8)
             if fill_holes:
                 m_uint8 = fill_mask_holes(m_uint8, kernel_size=hole_kernel_size)
-            if mask_padding > 0:
-                m_uint8 = add_mask_padding(m_uint8, padding=mask_padding)
             out_list.append(torch.from_numpy(m_uint8.astype(np.float32) / 255.0))
         return (torch.stack(out_list, dim=0),)
 
 
 NODE_CLASS_MAPPINGS = {
+    "Sam2BBoxFromJson": Sam2BBoxFromJson,
     "SwarmSam2MaskPostProcess": SwarmSam2MaskPostProcess,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "SwarmSam2MaskPostProcess": "SAM2 Mask Post-Process (Fill Holes + Padding)",
+    "Sam2BBoxFromJson": "SAM2 BBox From JSON",
+    "SwarmSam2MaskPostProcess": "SAM2 Mask Post-Process (Fill Holes)",
 }

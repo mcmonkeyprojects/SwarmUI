@@ -1703,13 +1703,11 @@ public class WorkflowGeneratorSteps
                 segInputs["coordinates_negative"] = negCoords;
             }
             string segNode = g.CreateNode("Sam2Segmentation", segInputs);
-            int pointsPadding = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int pp) ? pp : 0;
             string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
             {
                 ["mask"] = new JArray() { segNode, 0 },
                 ["fill_holes"] = true,
-                ["hole_kernel_size"] = 9,
-                ["mask_padding"] = pointsPadding
+                ["hole_kernel_size"] = 9
             });
             string maskNode = g.CreateNode("MaskToImage", new JObject()
             {
@@ -1751,13 +1749,11 @@ public class WorkflowGeneratorSteps
                 ["bboxes"] = new JArray() { bboxNode, 0 }
             };
             string segNode = g.CreateNode("Sam2Segmentation", segInputs);
-            int bboxPadding = int.TryParse(g.UserInput.Get(ComfyUIBackendExtension.Sam2MaskPadding, "0"), out int bp) ? bp : 0;
             string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
             {
                 ["mask"] = new JArray() { segNode, 0 },
                 ["fill_holes"] = true,
-                ["hole_kernel_size"] = 5,
-                ["mask_padding"] = bboxPadding
+                ["hole_kernel_size"] = 5
             });
             string maskNode = g.CreateNode("MaskToImage", new JObject()
             {

@@ -1256,18 +1256,13 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         this.controlsHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <button class="basic-button id-clear-mask">Clear Mask</button>
-            <label style="margin-left:8px;">Mask Padding:&nbsp;</label>
-            <input type="number" class="auto-number id-mask-padding" style="width:50px;" min="0" max="256" step="1" value="0">
         </div>`;
         this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
         this.showControls();
     }
 
     showControls() {
-        let prevPadding = this.maskPaddingInput ? this.maskPaddingInput.value : '0';
         this.configDiv.innerHTML = this.controlsHTML;
-        this.maskPaddingInput = this.configDiv.querySelector('.id-mask-padding');
-        this.maskPaddingInput.value = prevPadding;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
             // Clear points
             this.positivePoints = [];
@@ -1430,10 +1425,6 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         if (this.negativePoints.length > 0) {
             genData['samnegativepoints'] = JSON.stringify(this.negativePoints);
         }
-        let maskPadding = parseInt(this.maskPaddingInput.value) || 0;
-        if (maskPadding > 0) {
-            genData['sammaskpadding'] = `${maskPadding}`;
-        }
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId !== this.activeRequestId) {
                 return;
@@ -1474,18 +1465,13 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         this.controlsHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <button class="basic-button id-clear-mask">Clear Mask</button>
-            <label style="margin-left:8px;">Mask Padding:&nbsp;</label>
-            <input type="number" class="auto-number id-mask-padding" style="width:50px;" min="0" max="256" step="1" value="0">
         </div>`;
         this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
         this.showControls();
     }
 
     showControls() {
-        let prevPadding = this.maskPaddingInput ? this.maskPaddingInput.value : '0';
         this.configDiv.innerHTML = this.controlsHTML;
-        this.maskPaddingInput = this.configDiv.querySelector('.id-mask-padding');
-        this.maskPaddingInput.value = prevPadding;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
             let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
             if (!maskLayer) {
@@ -1619,10 +1605,6 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         let maxX = Math.max(this.bboxStartX, this.bboxEndX);
         let maxY = Math.max(this.bboxStartY, this.bboxEndY);
         genData['sambbox'] = JSON.stringify([minX, minY, maxX, maxY]);
-        let maskPadding = parseInt(this.maskPaddingInput.value) || 0;
-        if (maskPadding > 0) {
-            genData['sammaskpadding'] = `${maskPadding}`;
-        }
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId !== this.activeRequestId) {
                 return;
