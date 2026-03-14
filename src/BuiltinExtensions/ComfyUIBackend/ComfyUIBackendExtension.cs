@@ -556,13 +556,7 @@ public class ComfyUIBackendExtension : Extension
                             new JObject()
                             {
                                 ["class_type"] = "DownloadAndLoadSAM2Model",
-                                ["inputs"] = new JObject()
-                                {
-                                    ["model"] = $"sam2_hiera_{size}.safetensors",
-                                    ["segmentor"] = "automaskgenerator",
-                                    ["device"] = "cuda", // TODO: This should really be decided by the python, not by swarm's workflow generator - the python knows what the GPU supports, swarm does not
-                                    ["precision"] = "bf16"
-                                }
+                                ["inputs"] = Sam2ModelInputs(size, "automaskgenerator")
                             },
                             new JObject()
                             {
@@ -651,9 +645,35 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IParamGroup ComfyAdvancedGroup;
 
+    public static T2IRegisteredParam<string> Sam2PointCoordsPositive, Sam2PointCoordsNegative, Sam2BBox, Sam2MaskPadding;
+
+    /// <summary>Creates the standard input set for a DownloadAndLoadSAM2Model node.</summary>
+    public static JObject Sam2ModelInputs(string size = "base_plus", string segmentor = "single_image")
+    {
+        return new JObject()
+        {
+            ["model"] = $"sam2_hiera_{size}.safetensors",
+            ["segmentor"] = segmentor,
+            ["device"] = "cuda", // TODO: This should really be decided by the python, not by swarm's workflow generator - the python knows what the GPU supports, swarm does not
+            ["precision"] = "bf16"
+        };
+    }
+
     /// <inheritdoc/>
     public override void OnInit()
     {
+        Sam2PointCoordsPositive = T2IParamTypes.Register<string>(new("SAM2 Positive Points", "Internal: JSON list of positive point coordinates for SAM2 point masking.",
+            "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            ));
+        Sam2PointCoordsNegative = T2IParamTypes.Register<string>(new("SAM2 Negative Points", "Internal: JSON list of negative point coordinates for SAM2 point masking.",
+            "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            ));
+        Sam2BBox = T2IParamTypes.Register<string>(new("SAM2 BBox", "Internal: JSON bounding box [x1,y1,x2,y2] for SAM2 bbox masking.",
+            null, FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            ));
+        Sam2MaskPadding = T2IParamTypes.Register<string>(new("SAM2 Mask Padding", "Internal: Number of pixels to dilate/expand the SAM2 mask boundary.",
+            "0", IgnoreIf: "0", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
+            ));
         UseIPAdapterForRevision = T2IParamTypes.Register<string>(new("Use IP-Adapter", $"Select an IP-Adapter model to use IP-Adapter for image-prompt input handling.\nModels will automatically be downloaded when you first use them.\nNote if you use a custom model, you must also set your CLIP-Vision Model under Advanced Model Addons, otherwise CLIP Vision G will be presumed.\n<a target=\"_blank\" href=\"{Utilities.RepoDocsRoot}/Features/ImagePrompting.md\">See more docs here.</a>",
             "None", IgnoreIf: "None", FeatureFlag: "ipadapter", GetValues: _ => IPAdapterModels, Group: T2IParamTypes.GroupImagePrompting, OrderPriority: 15, ChangeWeight: 1
             ));

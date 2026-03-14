@@ -95,6 +95,10 @@ class ImageEditorTool {
     onGlobalMouseUp(e) {
         return false;
     }
+
+    onContextMenu(e) {
+        return false;
+    }
 }
 
 /**
@@ -1235,6 +1239,389 @@ class ImageEditorToolPicker extends ImageEditorTempTool {
 }
 
 /**
+ * The SAM2 Point Segmentation tool - click to place positive/negative points and auto-generate a mask.
+ */
+class ImageEditorToolSam2Points extends ImageEditorTool {
+    constructor(editor) {
+        super(editor, 'sam2points', 'crosshair', 'SAM2 Points', 'Left click to add positive points. Right click to add negative points.\nEach click regenerates the mask.\nRequires SAM2 to be installed.\nHotKey: Y', 'y');
+        this.cursor = 'crosshair';
+        this.positivePoints = [];
+        this.negativePoints = [];
+        this.requestSerial = 0;
+        this.activeRequestId = 0;
+        this.maskRequestInFlight = false;
+        this.pendingMaskUpdate = false;
+        this.modelWarmed = false;
+        this.isWarmingUp = false;
+        this.controlsHTML = `
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <button class="basic-button id-clear-mask">Clear Mask</button>
+        </div>`;
+        this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
+        this.showControls();
+    }
+
+    showControls() {
+        this.configDiv.innerHTML = this.controlsHTML;
+        this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
+            this.positivePoints = [];
+            this.negativePoints = [];
+            let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
+            if (maskLayer) {
+                maskLayer.saveBeforeEdit();
+                maskLayer.ctx.clearRect(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
+                maskLayer.hasAnyContent = false;
+            }
+            this.activeRequestId = ++this.requestSerial;
+            this.maskRequestInFlight = false;
+            this.pendingMaskUpdate = false;
+            this.editor.redraw();
+        });
+    }
+
+    drawPoint(ctx, x, y, fillColor, showX) {
+        let [cx, cy] = this.editor.imageCoordToCanvasCoord(x, y);
+        let radius = Math.max(3, Math.round(4 * this.editor.zoomLevel));
+        ctx.save();
+        ctx.lineWidth = Math.max(1, Math.round(2 * this.editor.zoomLevel));
+        ctx.strokeStyle = '#000000';
+        ctx.fillStyle = fillColor;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        if (showX) {
+            let cross = Math.max(3, Math.round(radius * 0.9));
+            ctx.beginPath();
+            ctx.moveTo(cx - cross, cy - cross);
+            ctx.lineTo(cx + cross, cy + cross);
+            ctx.moveTo(cx - cross, cy + cross);
+            ctx.lineTo(cx + cross, cy - cross);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    draw() {
+        let ctx = this.editor.ctx;
+        for (let point of this.positivePoints) {
+            this.drawPoint(ctx, point.x, point.y, '#33ff99', false);
+        }
+        for (let point of this.negativePoints) {
+            this.drawPoint(ctx, point.x, point.y, '#ff3355', true);
+        }
+    }
+
+    onContextMenu(e) {
+        e.preventDefault();
+        return true;
+    }
+
+    setActive() {
+        super.setActive();
+        if (!this.modelWarmed && !this.isWarmingUp && currentBackendFeatureSet.includes('sam2') && this.editor.getFinalImageData?.()) {
+            this.triggerWarmup();
+        }
+    }
+
+    triggerWarmup() {
+        this.isWarmingUp = true;
+        this.cursor = 'wait';
+        this.editor.canvas.style.cursor = 'wait';
+        this.configDiv.innerHTML = this.warmupHTML;
+        try {
+            let img = this.editor.getFinalImageData();
+            let genData = getGenInput();
+            genData['initimage'] = img;
+            genData['images'] = 1;
+            genData['prompt'] = '';
+            delete genData['batchsize'];
+            genData['donotsave'] = true;
+            let cx = Math.floor((this.editor.realWidth || 64) / 2);
+            let cy = Math.floor((this.editor.realHeight || 64) / 2);
+            genData['sampositivepoints'] = JSON.stringify([{ x: cx, y: cy }]);
+            makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
+                if (data.image || data.error) {
+                    this.modelWarmed = true;
+                    this.isWarmingUp = false;
+                    this.cursor = 'crosshair';
+                    this.editor.canvas.style.cursor = 'crosshair';
+                    this.showControls();
+                }
+            });
+        }
+        catch (e) {
+            this.modelWarmed = true;
+            this.isWarmingUp = false;
+            this.cursor = 'crosshair';
+            this.editor.canvas.style.cursor = 'crosshair';
+            this.showControls();
+        }
+    }
+
+    onMouseDown(e) {
+        if (this.isWarmingUp || (e.button != 0 && e.button != 2)) {
+            return;
+        }
+        this.editor.updateMousePosFrom(e);
+        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.round(mouseX);
+        mouseY = Math.round(mouseY);
+        if (mouseX < 0 || mouseY < 0 || mouseX >= this.editor.realWidth || mouseY >= this.editor.realHeight) {
+            return;
+        }
+        let point = { x: mouseX, y: mouseY };
+        if (e.button == 2) {
+            e.preventDefault();
+            this.negativePoints.push(point);
+        }
+        else {
+            this.positivePoints.push(point);
+        }
+        this.queueMaskUpdate();
+        this.editor.redraw();
+    }
+
+    queueMaskUpdate() {
+        if (!currentBackendFeatureSet.includes('sam2')) {
+            $('#sam2_installer').modal('show');
+            return;
+        }
+        if (this.positivePoints.length == 0) {
+            return;
+        }
+        if (this.maskRequestInFlight) {
+            this.pendingMaskUpdate = true;
+            return;
+        }
+        this.requestMaskUpdate();
+    }
+
+    finishMaskUpdate(requestId) {
+        if (requestId != this.activeRequestId) {
+            return;
+        }
+        this.maskRequestInFlight = false;
+        if (this.pendingMaskUpdate) {
+            this.pendingMaskUpdate = false;
+            this.requestMaskUpdate();
+        }
+    }
+
+    requestMaskUpdate() {
+        this.maskRequestInFlight = true;
+        let requestId = ++this.requestSerial;
+        this.activeRequestId = requestId;
+        let img = this.editor.getFinalImageData();
+        let genData = getGenInput();
+        genData['initimage'] = img;
+        genData['images'] = 1;
+        genData['prompt'] = '';
+        delete genData['batchsize'];
+        genData['donotsave'] = true;
+        genData['sampositivepoints'] = JSON.stringify(this.positivePoints);
+        if (this.negativePoints.length > 0) {
+            genData['samnegativepoints'] = JSON.stringify(this.negativePoints);
+        }
+        makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
+            if (requestId != this.activeRequestId || !data.image) {
+                return;
+            }
+            let newImg = new Image();
+            newImg.onload = () => {
+                if (requestId != this.activeRequestId) {
+                    return;
+                }
+                this.editor.applyMaskFromImage(newImg, true);
+                this.finishMaskUpdate(requestId);
+            };
+            newImg.src = data.image;
+        });
+    }
+}
+
+/**
+ * The SAM2 Bounding Box segmentation tool - drag to define a box and auto-generate a mask.
+ */
+class ImageEditorToolSam2BBox extends ImageEditorTool {
+    constructor(editor) {
+        super(editor, 'sam2bbox', 'rectangle', 'SAM2 BBox', 'Click and drag to create a bounding box. Release to generate mask.\nRequires SAM2 to be installed.', null);
+        this.cursor = 'crosshair';
+        this.bboxStartX = null;
+        this.bboxStartY = null;
+        this.bboxEndX = null;
+        this.bboxEndY = null;
+        this.isDrawing = false;
+        this.requestSerial = 0;
+        this.activeRequestId = 0;
+        this.maskRequestInFlight = false;
+        this.modelWarmed = false;
+        this.isWarmingUp = false;
+        this.controlsHTML = `
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <button class="basic-button id-clear-mask">Clear Mask</button>
+        </div>`;
+        this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
+        this.showControls();
+    }
+
+    showControls() {
+        this.configDiv.innerHTML = this.controlsHTML;
+        this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
+            let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
+            if (!maskLayer) {
+                return;
+            }
+            maskLayer.saveBeforeEdit();
+            maskLayer.ctx.clearRect(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
+            maskLayer.hasAnyContent = false;
+            this.editor.redraw();
+        });
+    }
+
+    draw() {
+        if (this.isDrawing && this.bboxStartX != null && this.bboxEndX != null) {
+            let ctx = this.editor.ctx;
+            let [x1, y1] = this.editor.imageCoordToCanvasCoord(this.bboxStartX, this.bboxStartY);
+            let [x2, y2] = this.editor.imageCoordToCanvasCoord(this.bboxEndX, this.bboxEndY);
+            let minX = Math.min(x1, x2);
+            let minY = Math.min(y1, y2);
+            let maxX = Math.max(x1, x2);
+            let maxY = Math.max(y1, y2);
+            ctx.save();
+            ctx.strokeStyle = '#33ff99';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(minX, minY, maxX - minX, maxY - minY);
+            ctx.restore();
+        }
+    }
+
+    setActive() {
+        super.setActive();
+        if (!this.modelWarmed && !this.isWarmingUp && currentBackendFeatureSet.includes('sam2') && this.editor.getFinalImageData?.()) {
+            this.triggerWarmup();
+        }
+    }
+
+    triggerWarmup() {
+        this.isWarmingUp = true;
+        this.cursor = 'wait';
+        this.editor.canvas.style.cursor = 'wait';
+        this.configDiv.innerHTML = this.warmupHTML;
+        try {
+            let img = this.editor.getFinalImageData();
+            let genData = getGenInput();
+            genData['initimage'] = img;
+            genData['images'] = 1;
+            genData['prompt'] = '';
+            delete genData['batchsize'];
+            genData['donotsave'] = true;
+            let cx = Math.floor((this.editor.realWidth || 64) / 2);
+            let cy = Math.floor((this.editor.realHeight || 64) / 2);
+            genData['sambbox'] = JSON.stringify([cx - 1, cy - 1, cx + 1, cy + 1]);
+            makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
+                if (data.image || data.error) {
+                    this.modelWarmed = true;
+                    this.isWarmingUp = false;
+                    this.cursor = 'crosshair';
+                    this.editor.canvas.style.cursor = 'crosshair';
+                    this.showControls();
+                }
+            });
+        }
+        catch (e) {
+            this.modelWarmed = true;
+            this.isWarmingUp = false;
+            this.cursor = 'crosshair';
+            this.editor.canvas.style.cursor = 'crosshair';
+            this.showControls();
+        }
+    }
+
+    onMouseDown(e) {
+        if (this.isWarmingUp || e.button != 0) {
+            return;
+        }
+        this.editor.updateMousePosFrom(e);
+        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.round(mouseX);
+        mouseY = Math.round(mouseY);
+        if (mouseX < 0 || mouseY < 0 || mouseX >= this.editor.realWidth || mouseY >= this.editor.realHeight) {
+            return;
+        }
+        this.isDrawing = true;
+        this.bboxStartX = mouseX;
+        this.bboxStartY = mouseY;
+        this.bboxEndX = mouseX;
+        this.bboxEndY = mouseY;
+    }
+
+    onMouseMove(e) {
+        if (!this.isDrawing) {
+            return;
+        }
+        this.editor.updateMousePosFrom(e);
+        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.max(0, Math.min(this.editor.realWidth - 1, Math.round(mouseX)));
+        mouseY = Math.max(0, Math.min(this.editor.realHeight - 1, Math.round(mouseY)));
+        this.bboxEndX = mouseX;
+        this.bboxEndY = mouseY;
+        this.editor.redraw();
+    }
+
+    onGlobalMouseUp(e) {
+        if (this.isWarmingUp || !this.isDrawing) {
+            return;
+        }
+        this.isDrawing = false;
+        this.requestMaskUpdate();
+    }
+
+    requestMaskUpdate() {
+        if (!currentBackendFeatureSet.includes('sam2')) {
+            $('#sam2_installer').modal('show');
+            return;
+        }
+        if (this.bboxStartX == null || this.bboxEndX == null) {
+            return;
+        }
+        this.maskRequestInFlight = true;
+        let requestId = ++this.requestSerial;
+        this.activeRequestId = requestId;
+        let img = this.editor.getFinalImageData();
+        let genData = getGenInput();
+        genData['initimage'] = img;
+        genData['images'] = 1;
+        genData['prompt'] = '';
+        delete genData['batchsize'];
+        genData['donotsave'] = true;
+        let minX = Math.min(this.bboxStartX, this.bboxEndX);
+        let minY = Math.min(this.bboxStartY, this.bboxEndY);
+        let maxX = Math.max(this.bboxStartX, this.bboxEndX);
+        let maxY = Math.max(this.bboxStartY, this.bboxEndY);
+        genData['sambbox'] = JSON.stringify([minX, minY, maxX, maxY]);
+        makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
+            if (requestId != this.activeRequestId) {
+                return;
+            }
+            if (!data.image) {
+                return;
+            }
+            let newImg = new Image();
+            newImg.onload = () => {
+                if (requestId != this.activeRequestId) {
+                    return;
+                }
+                this.editor.applyMaskFromImage(newImg, true);
+                this.maskRequestInFlight = false;
+            };
+            newImg.src = data.image;
+        });
+    }
+}
+
+/**
  * A single layer within an image editing interface.
  * This can be real (user-controlled) OR sub-layers (sometimes user-controlled) OR temporary buffers.
  */
@@ -1595,6 +1982,8 @@ class ImageEditor {
         this.addTool(new ImageEditorToolShape(this));
         this.pickerTool = new ImageEditorToolPicker(this, 'picker', 'paintbrush', 'Color Picker', 'Pick a color from the image.');
         this.addTool(this.pickerTool);
+        this.addTool(new ImageEditorToolSam2Points(this));
+        this.addTool(new ImageEditorToolSam2BBox(this));
         this.activateTool('brush');
         this.maxHistory = 15;
     }
@@ -1681,6 +2070,11 @@ class ImageEditor {
             e.stopPropagation();
         });
         canvas.addEventListener('drop', (e) => this.handleCanvasImageDrop(e));
+        canvas.addEventListener('contextmenu', (e) => {
+            if (this.activeTool && this.activeTool.onContextMenu(e)) {
+                e.preventDefault();
+            }
+        });
         this.ctx = canvas.getContext('2d');
         canvas.style.cursor = 'none';
         this.maskHelperCanvas = document.createElement('canvas');
@@ -2012,6 +2406,16 @@ class ImageEditor {
         this.addLayer(maskLayer);
         this.realWidth = img.naturalWidth;
         this.realHeight = img.naturalHeight;
+        if (this.tools['sam2points']) {
+            this.tools['sam2points'].positivePoints = [];
+            this.tools['sam2points'].negativePoints = [];
+        }
+        if (this.tools['sam2bbox']) {
+            this.tools['sam2bbox'].bboxStartX = null;
+            this.tools['sam2bbox'].bboxStartY = null;
+            this.tools['sam2bbox'].bboxEndX = null;
+            this.tools['sam2bbox'].bboxEndY = null;
+        }
         this.offsetX = 0
         this.offsetY = 0;
         if (this.active) {
@@ -2250,6 +2654,34 @@ class ImageEditor {
             }
         }
         return canvas.toDataURL(format);
+    }
+
+    applyMaskFromImage(img, replaceExisting = true) {
+        let maskLayer = this.activeLayer && this.activeLayer.isMask ? this.activeLayer : this.layers.find(layer => layer.isMask);
+        if (!maskLayer) {
+            maskLayer = new ImageEditorLayer(this, img.naturalWidth || img.width, img.naturalHeight || img.height);
+            maskLayer.isMask = true;
+            this.addLayer(maskLayer);
+        }
+        if (replaceExisting) {
+            maskLayer.saveBeforeEdit();
+            maskLayer.ctx.clearRect(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
+        }
+        maskLayer.ctx.drawImage(img, 0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
+        // Convert black pixels to transparent so only the white mask region is visible
+        let imageData = maskLayer.ctx.getImageData(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
+        let data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            let brightness = data[i] + data[i + 1] + data[i + 2];
+            if (brightness < 128) {
+                data[i + 3] = 0;
+            }
+        }
+        maskLayer.ctx.putImageData(imageData, 0, 0);
+        maskLayer.hasAnyContent = true;
+        this.setActiveLayer(maskLayer);
+        this.sortLayers();
+        this.redraw();
     }
 
     getFinalMaskData(format = 'image/png') {
