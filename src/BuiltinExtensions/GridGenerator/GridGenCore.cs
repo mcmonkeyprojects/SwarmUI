@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Core;
@@ -116,7 +116,7 @@ public partial class GridGenCore
 
         public string Title, Description;
 
-        public AxisValue(Grid grid, Axis axis, string key, string val)
+        public AxisValue(Grid grid, Axis axis, string key, string val, string title)
         {
             Axis = axis;
             Key = CleanID(key);
@@ -130,10 +130,7 @@ public partial class GridGenCore
             {
                 throw new SwarmReadableErrorException($"Invalid value '{key}': '{val}': not expected format");
             }
-            //halves[0] = grid.ProcVariables(halves[0]);
-            //halves[1] = grid.ProcVariables(halves[1]);
-            //halves[1] = ValidateSingleParam(halves[0], halves[1]);
-            Title = halves[1];
+            Title = title;
             Params[T2IParamTypes.CleanTypeName(halves[0])] = halves[1];
         }
     }
@@ -193,6 +190,7 @@ public partial class GridGenCore
             for (int i = 0; i < valuesList.Count; i++)
             {
                 string valStr = valuesList[i].Trim();
+                string rawValStr = valStr;
                 try
                 {
                     bool skip = valStr.StartsWith("SKIP:");
@@ -228,7 +226,7 @@ public partial class GridGenCore
                         key = $"{key}_2";
                     }
                     keys.Add(key);
-                    Values.Add(new AxisValue(grid, this, key, $"{id}={valStr}") { Skip = skip });
+                    Values.Add(new AxisValue(grid, this, key, $"{id}={valStr}", rawValStr) { Skip = skip });
                 }
                 catch (Exception ex)
                 {
