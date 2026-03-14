@@ -417,7 +417,7 @@ class UIImprovementHandler {
             }
             isDoingADrag = true;
             let files = this.getFileList(e.dataTransfer, e);
-            if (files.length > 0 && files.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length > 0) {
+            if (files.length > 0 && files.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/') || f.type == 'application/json').length > 0) {
                 let targets = document.getElementsByClassName('drag_image_target');
                 for (let target of targets) {
                     target.classList.add('drag_image_target_highlight');
