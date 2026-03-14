@@ -1334,7 +1334,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         try {
             let img = this.editor.getFinalImageData();
             let genData = getGenInput();
-            genData['sampointimage'] = img;
+            genData['initimage'] = img;
             genData['images'] = 1;
             genData['prompt'] = '';
             delete genData['batchsize'];
@@ -1416,7 +1416,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         this.activeRequestId = requestId;
         let img = this.editor.getFinalImageData();
         let genData = getGenInput();
-        genData['sampointimage'] = img;
+        genData['initimage'] = img;
         genData['images'] = 1;
         genData['prompt'] = '';
         delete genData['batchsize'];
@@ -1517,7 +1517,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         try {
             let img = this.editor.getFinalImageData();
             let genData = getGenInput();
-            genData['sampointimage'] = img;
+            genData['initimage'] = img;
             genData['images'] = 1;
             genData['prompt'] = '';
             delete genData['batchsize'];
@@ -1595,7 +1595,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         this.activeRequestId = requestId;
         let img = this.editor.getFinalImageData();
         let genData = getGenInput();
-        genData['sampointimage'] = img;
+        genData['initimage'] = img;
         genData['images'] = 1;
         genData['prompt'] = '';
         delete genData['batchsize'];

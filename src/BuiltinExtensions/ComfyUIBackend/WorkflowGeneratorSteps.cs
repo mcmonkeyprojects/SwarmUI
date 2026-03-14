@@ -1676,16 +1676,7 @@ public class WorkflowGeneratorSteps
             {
                 negCoords = negCoordsRaw;
             }
-            JArray imageNodeActual = null;
-            if (g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointImage, out Image img))
-            {
-                WGNodeData imageNode = g.LoadImage(img, "${sampointimage}", true);
-                imageNodeActual = imageNode.Path;
-            }
-            else if (g.BasicInputImage is not null)
-            {
-                imageNodeActual = g.BasicInputImage.Path;
-            }
+            JArray imageNodeActual = g.BasicInputImage?.Path;
             if (imageNodeActual is null)
             {
                 return;
@@ -1693,7 +1684,7 @@ public class WorkflowGeneratorSteps
             string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs());
             JObject segInputs = new()
             {
-                ["sam2_model"] = new JArray() { modelNode, 0 },
+                ["sam2_model"] = NodePath(modelNode, 0),
                 ["image"] = imageNodeActual,
                 ["keep_model_loaded"] = true,
                 ["coordinates_positive"] = coords
@@ -1705,13 +1696,13 @@ public class WorkflowGeneratorSteps
             string segNode = g.CreateNode("Sam2Segmentation", segInputs);
             string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
             {
-                ["mask"] = new JArray() { segNode, 0 },
+                ["mask"] = NodePath(segNode, 0),
                 ["fill_holes"] = true,
                 ["hole_kernel_size"] = 9
             });
             string maskNode = g.CreateNode("MaskToImage", new JObject()
             {
-                ["mask"] = new JArray() { postNode, 0 }
+                ["mask"] = NodePath(postNode, 0)
             });
             new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
             g.SkipFurtherSteps = true;
@@ -1722,16 +1713,7 @@ public class WorkflowGeneratorSteps
             {
                 return;
             }
-            JArray imageNodeActual = null;
-            if (g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointImage, out Image img))
-            {
-                WGNodeData imageNode = g.LoadImage(img, "${sampointimage}", true);
-                imageNodeActual = imageNode.Path;
-            }
-            else if (g.BasicInputImage is not null)
-            {
-                imageNodeActual = g.BasicInputImage.Path;
-            }
+            JArray imageNodeActual = g.BasicInputImage?.Path;
             if (imageNodeActual is null)
             {
                 return;
@@ -1743,21 +1725,21 @@ public class WorkflowGeneratorSteps
             });
             JObject segInputs = new()
             {
-                ["sam2_model"] = new JArray() { modelNode, 0 },
+                ["sam2_model"] = NodePath(modelNode, 0),
                 ["image"] = imageNodeActual,
                 ["keep_model_loaded"] = true,
-                ["bboxes"] = new JArray() { bboxNode, 0 }
+                ["bboxes"] = NodePath(bboxNode, 0)
             };
             string segNode = g.CreateNode("Sam2Segmentation", segInputs);
             string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
             {
-                ["mask"] = new JArray() { segNode, 0 },
+                ["mask"] = NodePath(segNode, 0),
                 ["fill_holes"] = true,
                 ["hole_kernel_size"] = 5
             });
             string maskNode = g.CreateNode("MaskToImage", new JObject()
             {
-                ["mask"] = new JArray() { postNode, 0 }
+                ["mask"] = NodePath(postNode, 0)
             });
             new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
             g.SkipFurtherSteps = true;

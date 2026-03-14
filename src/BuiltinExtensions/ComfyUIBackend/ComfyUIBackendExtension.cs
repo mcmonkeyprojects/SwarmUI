@@ -645,8 +645,6 @@ public class ComfyUIBackendExtension : Extension
 
     public static T2IParamGroup ComfyAdvancedGroup;
 
-    public static T2IRegisteredParam<Image> Sam2PointImage;
-
     public static T2IRegisteredParam<string> Sam2PointCoordsPositive, Sam2PointCoordsNegative, Sam2BBox, Sam2MaskPadding;
 
     /// <summary>Creates the standard input set for a DownloadAndLoadSAM2Model node.</summary>
@@ -664,9 +662,6 @@ public class ComfyUIBackendExtension : Extension
     /// <inheritdoc/>
     public override void OnInit()
     {
-        Sam2PointImage = T2IParamTypes.Register<Image>(new("SAM2 Point Image", "Internal: Base image used for SAM2 point masking.",
-            null, FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
-            ));
         Sam2PointCoordsPositive = T2IParamTypes.Register<string>(new("SAM2 Positive Points", "Internal: JSON list of positive point coordinates for SAM2 point masking.",
             "[]", FeatureFlag: "sam2", VisibleNormally: false, ExtraHidden: true, DoNotSave: true, DoNotPreview: true, AlwaysRetain: true
             ));
