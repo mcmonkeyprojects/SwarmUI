@@ -604,6 +604,15 @@ class VideoControls {
             this.video.muted = lastMuted;
         }
         this.updateIcons();
+        this.video.draggable = true;
+        this.video.addEventListener('dragstart', (e) => {
+            let src = this.video.currentSrc || this.video.src;
+            if (src) {
+                chromeIsDumbFileHack(e.dataTransfer.files[0], src);
+                e.dataTransfer.clearData();
+                e.dataTransfer.setData('text/uri-list', src);
+            }
+        });
     }
 
     /** Helper to format a time in seconds into a MM:SS string. */
