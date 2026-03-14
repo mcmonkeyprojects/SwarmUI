@@ -540,7 +540,7 @@ public class GridGeneratorExtension : Extension
                     {
                         if (text.Length > 500)
                         {
-                            text = text.Substring(0, 500) + "...";
+                            text = $"{text[..500]}...";
                         }
                         RichTextOptions rto = new(font) { WrappingLength = width, Origin = new(x, y) };
                         float lines = height / rawTextHeight;

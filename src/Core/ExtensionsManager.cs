@@ -155,7 +155,9 @@ public class ExtensionsManager
     {
         string mode = Program.IsDevMode ? "Debug" : "Release";
         string dllName = $"SwarmExtension{folder.AfterLast('/')}";
-        string target = $"./src/bin/extensions/{dllName}/{dllName}.dll";
+        string hash = (await Utilities.RunGitProcess("rev-parse HEAD", Path.GetFullPath(folder))).Trim();
+        hash = hash.Length >= 8 ? hash[0..8] : "unknown";
+        string target = $"./src/bin/extensions/{dllName}/{dllName}-{hash}.dll";
         // bin/obj shouldn't exist but sometimes are accidentally created. They will break things if they form, so get rid of them.
         if (Directory.Exists($"{folder}/bin"))
         {
@@ -171,7 +173,7 @@ public class ExtensionsManager
             return Assembly.LoadFile(Path.GetFullPath(target));
         }
         Logs.Debug($"Building extension project: {projFile}...");
-        string buildParam = $"-p:BaseIntermediateOutputPath={Path.GetFullPath($"./src/obj/extensions/{dllName}/")};TargetName={dllName}";
+        string buildParam = $"-p:BaseIntermediateOutputPath={Path.GetFullPath($"./src/obj/extensions/{dllName}/")};TargetName={dllName}-{hash}";
         string output = await Utilities.QuickRunProcess("dotnet", ["build", Path.GetFullPath(projFile), "-c", mode, "-o", Path.GetFullPath($"./src/bin/extensions/{dllName}/"), buildParam], Path.GetFullPath(folder));
         if (!File.Exists(target))
         {
