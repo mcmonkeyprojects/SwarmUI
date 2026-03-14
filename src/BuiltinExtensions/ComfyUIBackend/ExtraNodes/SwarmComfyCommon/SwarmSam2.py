@@ -28,7 +28,7 @@ def fill_mask_holes(mask: np.ndarray, kernel_size: int = 5) -> np.ndarray:
     return filled_mask
 
 
-class Sam2BBoxFromJson:
+class SwarmSam2BBoxFromJson:
     """Converts a JSON bounding box string '[x1,y1,x2,y2]' into a BBOX type."""
 
     @classmethod
@@ -81,11 +81,6 @@ class SwarmSam2MaskPostProcess:
 
 
 NODE_CLASS_MAPPINGS = {
-    "Sam2BBoxFromJson": Sam2BBoxFromJson,
+    "SwarmSam2BBoxFromJson": SwarmSam2BBoxFromJson,
     "SwarmSam2MaskPostProcess": SwarmSam2MaskPostProcess,
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "Sam2BBoxFromJson": "SAM2 BBox From JSON",
-    "SwarmSam2MaskPostProcess": "SAM2 Mask Post-Process (Fill Holes)",
 }

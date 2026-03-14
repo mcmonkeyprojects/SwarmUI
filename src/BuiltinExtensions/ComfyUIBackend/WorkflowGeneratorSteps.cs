@@ -1719,7 +1719,7 @@ public class WorkflowGeneratorSteps
                 return;
             }
             string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs());
-            string bboxNode = g.CreateNode("Sam2BBoxFromJson", new JObject()
+            string bboxNode = g.CreateNode("SwarmSam2BBoxFromJson", new JObject()
             {
                 ["bbox_json"] = bboxJson
             });
