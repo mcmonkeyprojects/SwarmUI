@@ -584,7 +584,7 @@ public class ComfyUIBackendExtension : Extension
                 {
                     ControlNetPreprocessors[key] = data;
                 }
-                else if (key.EndsWith("Preprocessor"))
+                else if (key.EndsWith("Preprocessor") && key != "MeshGraphormer+ImpactDetector-DepthMapPreprocessor")
                 {
                     ControlNetPreprocessors[key] = data;
                 }
