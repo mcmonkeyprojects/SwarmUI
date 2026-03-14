@@ -1106,6 +1106,23 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
     }
 }
 
+/** Clear all temporary parameter/group/etc. state data. */
+function clearParamStorage() {
+    for (let cookie of listCookies('lastparam_input_')) {
+        deleteCookie(cookie);
+    }
+    for (let cookie of listCookies('group_toggle_')) {
+        deleteCookie(cookie);
+    }
+    for (let cookie of listCookies('group_open_')) {
+        deleteCookie(cookie);
+    }
+    deleteCookie('selected_model');
+    localStorage.removeItem('display_advanced');
+    localStorage.removeItem('last_comfy_workflow_input');
+    localStorage.removeItem('current_presets');
+}
+
 function resetParamsToDefault(exclude = [], doDefaultPreset = true) {
     for (let cookie of listCookies('lastparam_')) {
         if (!exclude.includes(cookie.substring('lastparam_'.length))) {
