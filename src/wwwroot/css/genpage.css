@@ -721,6 +721,26 @@ body {
     border: 1px  solid var(--red) !important;
     box-shadow: 0px 0px 1px 1px var(--red) !important;
 }
+.setting-reset-to-default {
+    display: inline-block;
+    cursor: pointer;
+    margin-left: 0.1rem;
+    margin-right: 0.2rem;
+    opacity: 0.3;
+    vertical-align: top;
+}
+.setting-reset-to-default:hover {
+    color: var(--emphasis);
+    opacity: 1;
+}
+.setting-reset-nonvalid {
+    opacity: 0;
+    cursor: default;
+}
+.setting-reset-nonvalid:hover {
+    opacity: 0;
+    cursor: default;
+}
 .group-label {
     position: relative;
     left: -1rem;
