@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 using FreneticUtilities.FreneticExtensions;
 
@@ -30,7 +30,7 @@ public class Image : ImageFile
 
     /// <summary>Gets the correct mime type for this image, eg 'image/png'.</summary>
     [Obsolete("Use MediaType.MimeType instead")]
-    public string MimeType() => base.Type.MimeType;
+    public string MimeType() => Type.MimeType;
 
     /// <summary>Returns a metadata-format of the image.</summary>
     /// <param name="metadataText">Optional sub-metadata within.</param>

@@ -901,6 +901,9 @@ function getGenInput(input_overrides = {}, input_preoverrides = {}) {
         if (type.type == 'image') {
             extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
             extraMetadata[`${type.id}_resolution`] = elem.dataset.resolution;
+            if (elem.dataset.duration) {
+                extraMetadata[`${type.id}_duration`] = elem.dataset.duration;
+            }
         }
         else if (type.type == 'video') {
             extraMetadata[`${type.id}_filename`] = elem.dataset.filename;
