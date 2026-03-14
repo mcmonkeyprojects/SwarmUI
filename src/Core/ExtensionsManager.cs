@@ -62,7 +62,7 @@ public class ExtensionsManager
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
         string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
         extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
-        HashSet<string> disabledFolders = [.. Program.ServerSettings.Extensions.DisabledExtensions];
+        HashSet<string> disabledFolders = [.. Program.ServerSettings.DisabledExtensions];
         extras = [.. extras.Where(e => !disabledFolders.Contains(e.AfterLast('/')))];
         foreach (string deletable in deleteMe)
         {
@@ -280,13 +280,13 @@ public class ExtensionsManager
     /// <summary>Returns whether an extension folder is in the disabled list in settings.</summary>
     public bool IsDisabled(string folderName)
     {
-        return Program.ServerSettings.Extensions.DisabledExtensions.Contains(folderName);
+        return Program.ServerSettings.DisabledExtensions.Contains(folderName);
     }
 
     /// <summary>Returns disabled extensions for UI display.</summary>
     public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
     {
-        foreach (string folderName in Program.ServerSettings.Extensions.DisabledExtensions.OrderBy(e => e))
+        foreach (string folderName in Program.ServerSettings.DisabledExtensions.OrderBy(e => e))
         {
             ExtensionInfo info = KnownExtensions.FirstOrDefault(e => e.FolderName == folderName);
             info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", ["none"], folderName);
@@ -297,7 +297,7 @@ public class ExtensionsManager
     /// <summary>Removes an extension folder from the disabled list in settings.</summary>
     public bool RemoveDisabledExtensionSetting(string folderName)
     {
-        return Program.ServerSettings.Extensions.DisabledExtensions.Remove(folderName);
+        return Program.ServerSettings.DisabledExtensions.Remove(folderName);
     }
 
     /// <summary>Adds an extension folder to the disabled list in settings.</summary>
@@ -305,7 +305,7 @@ public class ExtensionsManager
     {
         if (!IsDisabled(folderName))
         {
-            Program.ServerSettings.Extensions.DisabledExtensions.Add(folderName);
+            Program.ServerSettings.DisabledExtensions.Add(folderName);
             return true;
         }
         return false;
