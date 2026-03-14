@@ -60,6 +60,7 @@ getRequiredElementById('usersettingstabbutton').addEventListener('click', () => 
     for (let key in apiHelpers) {
         apiHelpers[key].updateStatus();
     }
+    loadAuthTokens();
 });
 
 /** Central handler for user-edited parameters. */
@@ -381,6 +382,45 @@ async function doPasswordChangeSubmit() {
     }, 0, e => {
         resultArea.innerText = 'Error: ' + e;
         submitButton.disabled = false;
+    });
+}
+
+function loadAuthTokens() {
+    let container = document.getElementById('auth_tokens_list');
+    if (!container) {
+        return;
+    }
+    if (!permissions.hasPermission('read_user_settings')) {
+        container.innerHTML = '<p class="translate">You do not have permission to view auth tokens.</p>';
+        return;
+    }
+    genericRequest('ListMyAuthTokens', {}, data => {
+        let tokens = data.tokens;
+        if (!tokens || tokens.length == 0) {
+            container.innerHTML = '<p class="translate">No auth tokens found.</p>';
+            return;
+        }
+        let html = '<table class="simple-table"><tr><th class="translate">Created</th><th class="translate">Last Active</th><th class="translate">User-Agent</th><th class="translate">Origin Address</th><th class="translate">Actions</th></tr>';
+        for (let token of tokens) {
+            let created = token.created ? formatDateTime(new Date(token.created * 1000)) : 'Unknown';
+            let lastActive = token.last_active ? formatDateTime(new Date(token.last_active * 1000)) : 'Unknown';
+            let originAddress = escapeHtml(token.origin_address || 'unknown');
+            let ua = token.user_agent || 'unknown';
+            let uaSimple = ua.length > 60 ? ua.substring(0, 60) + '...' : ua;
+            let revokeBtn = token.is_current ? '(Current)' : permissions.hasPermission('edit_user_settings') ? `<button class="basic-button translate" onclick="revokeAuthToken('${escapeHtml(token.id)}')">Revoke</button>` : '';
+            html += `<tr><td>${escapeHtml(created)}</td><td>${escapeHtml(lastActive)}</td><td title="${escapeHtml(ua)}">${escapeHtml(uaSimple)}</td><td>${originAddress}</td><td>${revokeBtn}</td></tr>`;
+        }
+        html += '</table>';
+        container.innerHTML = html;
+    });
+}
+
+function revokeAuthToken(tokenId) {
+    if (!confirm('Are you sure you want to revoke this auth token? Any session using it will be disconnected.')) {
+        return;
+    }
+    genericRequest('RevokeMyAuthToken', { tokenId: tokenId }, data => {
+        loadAuthTokens();
     });
 }
 

@@ -15,7 +15,7 @@
     </li>
 </ul>
 <div class="tab-content scroll-within-tab">
-    <div class="tab-pane show active translate" id="user-info" role="tabpanel">
+    <div class="tab-pane show active" id="user-info" role="tabpanel">
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">User Account</div>
             <div class="card-body">
@@ -29,7 +29,7 @@
                     <br>
                     <br>
                     <button class="basic-button translate" id="logout_button" onclick="doUserLogout()">Logout</button>
-                    // TODO: Other user stuff here. List of tokens/sessions, etc.
+                    // TODO: Other user stuff here?
                     <button class="basic-button translate" id="change_password_button" onclick="$('#change_password_modal').modal('show')">Change Password</button>
                     <div id="impersonate_user_container" style="display:none">
                         <br>
@@ -53,6 +53,17 @@
                 <button type="button" class="btn btn-secondary basic-button translate" id="change_password_cancel_button" onclick="$('#change_password_modal').modal('hide')">Cancel</button>
             </div>
         @WebUtil.ModalFooter()
+        @if (Model.IsLoginEnabled)
+        {
+            <br>
+            <div class="card border-secondary mb-3 card-center-container">
+                <div class="card-header translate">Swarm Auth Tokens</div>
+                <div class="card-body">
+                    <p class="card-text translate">These are the active login sessions for your account.</p>
+                    <div class="auth-tokens-list" id="auth_tokens_list"><p class="translate">Loading...</p></div>
+                </div>
+            </div>
+        }
         <br>
         <div class="card border-secondary mb-3 card-center-container">
             <div class="card-header translate">API Keys</div>
