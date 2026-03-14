@@ -1264,10 +1264,8 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
     showControls() {
         this.configDiv.innerHTML = this.controlsHTML;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
-            // Clear points
             this.positivePoints = [];
             this.negativePoints = [];
-            // Clear mask layer
             let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
             if (maskLayer) {
                 maskLayer.saveBeforeEdit();
@@ -1351,7 +1349,8 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
                     this.showControls();
                 }
             });
-        } catch (e) {
+        }
+        catch (e) {
             this.modelWarmed = true;
             this.isWarmingUp = false;
             this.cursor = 'crosshair';
@@ -1361,8 +1360,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
     }
 
     onMouseDown(e) {
-        if (this.isWarmingUp) { return; }
-        if (e.button !== 0 && e.button !== 2) {
+        if (this.isWarmingUp || (e.button != 0 && e.button != 2)) {
             return;
         }
         this.editor.updateMousePosFrom(e);
@@ -1373,7 +1371,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
             return;
         }
         let point = { x: mouseX, y: mouseY };
-        if (e.button === 2) {
+        if (e.button == 2) {
             e.preventDefault();
             this.negativePoints.push(point);
         }
@@ -1389,7 +1387,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
             $('#sam2_installer').modal('show');
             return;
         }
-        if (this.positivePoints.length === 0) {
+        if (this.positivePoints.length == 0) {
             return;
         }
         if (this.maskRequestInFlight) {
@@ -1400,7 +1398,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
     }
 
     finishMaskUpdate(requestId) {
-        if (requestId !== this.activeRequestId) {
+        if (requestId != this.activeRequestId) {
             return;
         }
         this.maskRequestInFlight = false;
@@ -1426,15 +1424,12 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
             genData['samnegativepoints'] = JSON.stringify(this.negativePoints);
         }
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
-            if (requestId !== this.activeRequestId) {
-                return;
-            }
-            if (!data.image) {
+            if (requestId != this.activeRequestId || !data.image) {
                 return;
             }
             let newImg = new Image();
             newImg.onload = () => {
-                if (requestId !== this.activeRequestId) {
+                if (requestId != this.activeRequestId) {
                     return;
                 }
                 this.editor.applyMaskFromImage(newImg, true);
@@ -1485,7 +1480,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
     }
 
     draw() {
-        if (this.isDrawing && this.bboxStartX !== null && this.bboxEndX !== null) {
+        if (this.isDrawing && this.bboxStartX != null && this.bboxEndX != null) {
             let ctx = this.editor.ctx;
             let [x1, y1] = this.editor.imageCoordToCanvasCoord(this.bboxStartX, this.bboxStartY);
             let [x2, y2] = this.editor.imageCoordToCanvasCoord(this.bboxEndX, this.bboxEndY);
@@ -1534,7 +1529,8 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
                     this.showControls();
                 }
             });
-        } catch (e) {
+        }
+        catch (e) {
             this.modelWarmed = true;
             this.isWarmingUp = false;
             this.cursor = 'crosshair';
@@ -1544,8 +1540,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
     }
 
     onMouseDown(e) {
-        if (this.isWarmingUp) { return; }
-        if (e.button !== 0) {
+        if (this.isWarmingUp || e.button != 0) {
             return;
         }
         this.editor.updateMousePosFrom(e);
@@ -1563,23 +1558,24 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
     }
 
     onMouseMove(e) {
-        if (this.isDrawing) {
-            this.editor.updateMousePosFrom(e);
-            let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
-            mouseX = Math.max(0, Math.min(this.editor.realWidth - 1, Math.round(mouseX)));
-            mouseY = Math.max(0, Math.min(this.editor.realHeight - 1, Math.round(mouseY)));
-            this.bboxEndX = mouseX;
-            this.bboxEndY = mouseY;
-            this.editor.redraw();
+        if (!this.isDrawing) {
+            return;
         }
+        this.editor.updateMousePosFrom(e);
+        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
+        mouseX = Math.max(0, Math.min(this.editor.realWidth - 1, Math.round(mouseX)));
+        mouseY = Math.max(0, Math.min(this.editor.realHeight - 1, Math.round(mouseY)));
+        this.bboxEndX = mouseX;
+        this.bboxEndY = mouseY;
+        this.editor.redraw();
     }
 
     onMouseUp(e) {
-        if (this.isWarmingUp) { return; }
-        if (this.isDrawing) {
-            this.isDrawing = false;
-            this.requestMaskUpdate();
+        if (this.isWarmingUp || !this.isDrawing) {
+            return;
         }
+        this.isDrawing = false;
+        this.requestMaskUpdate();
     }
 
     requestMaskUpdate() {
@@ -1587,7 +1583,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
             $('#sam2_installer').modal('show');
             return;
         }
-        if (this.bboxStartX === null || this.bboxEndX === null) {
+        if (this.bboxStartX == null || this.bboxEndX == null) {
             return;
         }
         this.maskRequestInFlight = true;
@@ -1606,7 +1602,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         let maxY = Math.max(this.bboxStartY, this.bboxEndY);
         genData['sambbox'] = JSON.stringify([minX, minY, maxX, maxY]);
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
-            if (requestId !== this.activeRequestId) {
+            if (requestId != this.activeRequestId) {
                 return;
             }
             if (!data.image) {
@@ -1614,7 +1610,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
             }
             let newImg = new Image();
             newImg.onload = () => {
-                if (requestId !== this.activeRequestId) {
+                if (requestId != this.activeRequestId) {
                     return;
                 }
                 this.editor.applyMaskFromImage(newImg, true);
