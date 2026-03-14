@@ -1570,7 +1570,7 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         this.editor.redraw();
     }
 
-    onMouseUp(e) {
+    onGlobalMouseUp(e) {
         if (this.isWarmingUp || !this.isDrawing) {
             return;
         }
