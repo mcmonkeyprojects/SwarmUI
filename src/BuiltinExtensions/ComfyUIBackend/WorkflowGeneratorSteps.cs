@@ -1236,7 +1236,7 @@ public class WorkflowGeneratorSteps
                     ["vae"] = g.CurrentVae.Path
                 });
             }
-            else if (steps > 0 && endStep > startStep)
+            else if (steps > 0 && Math.Min(endStep, steps) > startStep)
             {
                 g.CurrentMedia = g.CurrentMedia.AsSamplingLatent(g.CurrentVae, g.CurrentAudioVae);
                 g.CreateKSampler(g.CurrentModel.Path, g.FinalPrompt, g.FinalNegativePrompt, g.CurrentMedia.Path, cfg, steps, startStep, endStep,
