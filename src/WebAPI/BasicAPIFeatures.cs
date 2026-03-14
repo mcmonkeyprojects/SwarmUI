@@ -48,6 +48,7 @@ public static class BasicAPIFeatures
         API.RegisterAPICall(GetAPIKeyStatus, false, Permissions.ReadUserSettings);
         API.RegisterAPICall(ListMyAuthTokens, false, Permissions.ReadUserSettings);
         API.RegisterAPICall(RevokeMyAuthToken, true, Permissions.EditUserSettings);
+        API.RegisterAPICall(CreateAuthToken, true, Permissions.EditUserSettings);
         T2IAPI.Register();
         ModelsAPI.Register();
         BackendAPI.Register();
@@ -780,6 +781,30 @@ public static class BasicAPIFeatures
             session.User.Save();
         }
         return new JObject() { ["success"] = true };
+    }
+
+    [API.APIDescription("User route to create a new auth token (login session) for the current user.\nOnly valid if authorization is enabled.",
+        """
+            "token": "useridhex.tokenid.validationtext"
+        """)]
+    public static async Task<JObject> CreateAuthToken(HttpContext context, Session session,
+        [API.APIParameter("A user-provided reason/label for this token, stored as the user-agent.")] string reason)
+    {
+        if (!Program.ServerSettings.UserAuthorization.AuthorizationRequired)
+        {
+            return new JObject() { ["error"] = "Authorization is not enabled." };
+        }
+        if (string.IsNullOrWhiteSpace(reason) || reason.Length > 500)
+        {
+            return new JObject() { ["error"] = "Reason must be between 1 and 500 characters." };
+        }
+        string ip = WebUtil.GetIPString(context);
+        (_, string rawToken) = session.User.CreateLoginSession(ip, reason);
+        if (rawToken is null)
+        {
+            return new JObject() { ["error"] = "Failed to create token." };
+        }
+        return new JObject() { ["token"] = rawToken };
     }
 
     public static HashSet<string> AcceptedAPIKeyTypes = ["stability_api", "civitai_api", "huggingface_api"];
