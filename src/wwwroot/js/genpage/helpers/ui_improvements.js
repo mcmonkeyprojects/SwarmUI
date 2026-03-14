@@ -426,7 +426,7 @@ class UIImprovementHandler {
             }
             isDoingADrag = true;
             let files = this.getFileList(e.dataTransfer, e);
-            if (files.length > 0 && files.filter(f => f.type.startsWith('image/')).length > 0) {
+            if (files.length > 0 && files.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/') || f.type == 'application/json').length > 0) {
                 let targets = document.getElementsByClassName('drag_image_target');
                 for (let target of targets) {
                     target.classList.add('drag_image_target_highlight');
@@ -613,6 +613,15 @@ class VideoControls {
             this.video.muted = lastMuted;
         }
         this.updateIcons();
+        this.video.draggable = true;
+        this.video.addEventListener('dragstart', (e) => {
+            let src = this.video.currentSrc || this.video.src;
+            if (src) {
+                chromeIsDumbFileHack(e.dataTransfer.files[0], src);
+                e.dataTransfer.clearData();
+                e.dataTransfer.setData('text/uri-list', src);
+            }
+        });
     }
 
     /** Helper to format a time in seconds into a MM:SS string. */

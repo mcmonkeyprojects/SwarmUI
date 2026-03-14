@@ -768,6 +768,26 @@ body {
     border: 1px  solid var(--red) !important;
     box-shadow: 0px 0px 1px 1px var(--red) !important;
 }
+.setting-reset-to-default {
+    display: inline-block;
+    cursor: pointer;
+    margin-left: 0.1rem;
+    margin-right: 0.2rem;
+    opacity: 0.3;
+    vertical-align: top;
+}
+.setting-reset-to-default:hover {
+    color: var(--emphasis);
+    opacity: 1;
+}
+.setting-reset-nonvalid {
+    opacity: 0;
+    cursor: default;
+}
+.setting-reset-nonvalid:hover {
+    opacity: 0;
+    cursor: default;
+}
 .group-label {
     position: relative;
     left: -1rem;
@@ -1099,12 +1119,10 @@ body {
     background-color: color-mix(in srgb, transparent 80%, var(--background));
     transition: background-color 0.2s ease-out;
 }
-
 .alt-prompt-image {
     max-height: 128px;
     margin-right: 1px;
 }
-
 .alt-prompt-image-container-remove-button {
     position: absolute;
     top: 2px;
@@ -1125,20 +1143,17 @@ body {
     border: 1px solid transparent;
     text-align: center;
 }
-
 .alt-prompt-image-container:hover .alt-prompt-image-container-remove-button {
     opacity: 1.0;
     background-color: color-mix(in srgb, transparent 50%, var(--background));
     border: 1px solid var(--red);
 }
-
 .alt-prompt-image-container-remove-button:hover {
     opacity: 1.0;
     background-color: color-mix(in srgb, var(--red) 70%, black) !important;
     border: 1px solid black;
     cursor: pointer;
 }
-
 .image-clear-button {
     vertical-align: middle;
     display: inline-block;
@@ -1934,5 +1949,9 @@ body {
 }
 .view_raw_header_modal_content {
     max-height: 70vh;
+    overflow: auto;
+}
+.auth-tokens-list {
+    max-height: 30rem;
     overflow: auto;
 }

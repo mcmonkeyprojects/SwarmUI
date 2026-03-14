@@ -1,3 +1,95 @@
+
+
+class AuthTokenHelper {
+
+    constructor() {
+        this.container = document.getElementById('auth_tokens_list');
+        if (!this.container) {
+            return;
+        }
+        this.createTokenReason = getRequiredElementById('create_token_reason');
+        this.createTokenConfirmButton = getRequiredElementById('create_token_confirm_button');
+        this.createTokenRawValue = getRequiredElementById('create_token_raw_value');
+        this.createTokenModal = $('#create_swarm_token_modal');
+        this.resultTokenModal = $('#created_token_result_modal');
+    }
+
+    loadAuthTokens() {
+        if (!this.container) {
+            return;
+        }
+        if (!permissions.hasPermission('read_user_settings')) {
+            this.container.innerHTML = '<p class="translate">You do not have permission to view auth tokens.</p>';
+            return;
+        }
+        genericRequest('ListMyAuthTokens', {}, data => {
+            let tokens = data.tokens;
+            if (!tokens || tokens.length == 0) {
+                this.container.innerHTML = '<p class="translate">No auth tokens found.</p>';
+                return;
+            }
+            tokens.sort((a, b) => b.last_active - a.last_active);
+            let html = '<table class="simple-table"><tr><th class="translate">Created</th><th class="translate">Last Active</th><th class="translate">User-Agent, Source, or Reason</th><th class="translate">Origin Address</th><th class="translate">Actions</th></tr>';
+            for (let token of tokens) {
+                let created = token.created ? formatDateTime(new Date(token.created * 1000)) : 'Unknown';
+                let lastActive = token.last_active ? formatDateTime(new Date(token.last_active * 1000)) : 'Unknown';
+                let originAddress = escapeHtml(token.origin_address || 'unknown');
+                let ua = token.user_agent || 'unknown';
+                let uaSimple = ua.length > 60 ? ua.substring(0, 60) + '...' : ua;
+                let revokeBtn = token.is_current ? '(Current)' : permissions.hasPermission('edit_user_settings') ? `<button class="basic-button translate" onclick="authTokenHelpers.revokeAuthToken('${escapeHtml(token.id)}')">Revoke</button>` : '';
+                html += `<tr><td>${escapeHtml(created)}</td><td>${escapeHtml(lastActive)}</td><td title="${escapeHtml(ua)}">${escapeHtml(uaSimple)}</td><td>${originAddress}</td><td>${revokeBtn}</td></tr>`;
+            }
+            html += '</table>';
+            this.container.innerHTML = html;
+        });
+    }
+
+    showCreateTokenModal() {
+        this.createTokenReason.value = '';
+        this.createTokenConfirmButton.disabled = true;
+        this.createTokenModal.modal('show');
+    }
+
+    onReasonInput() {
+        this.createTokenConfirmButton.disabled = !this.createTokenReason.value.trim();
+    }
+
+    hideCreateTokenModal() {
+        this.createTokenModal.modal('hide');
+    }
+
+    hideResultTokenModal() {
+        this.resultTokenModal.modal('hide');
+    }
+
+    doCreateAuthToken() {
+        let reason = this.createTokenReason.value.trim();
+        this.createTokenConfirmButton.disabled = true;
+        genericRequest('CreateAuthToken', { reason: reason }, data => {
+            this.createTokenModal.modal('hide');
+            this.createTokenRawValue.value = data.token;
+            this.resultTokenModal.modal('show');
+            this.loadAuthTokens();
+        });
+    }
+
+    copyTokenToClipboard() {
+        copyText(this.createTokenRawValue.value);
+        doNoticePopover('Copied!', 'notice-pop-green');
+    }
+    
+    revokeAuthToken(tokenId) {
+        if (!shiftMonitor && !confirm('Are you sure you want to revoke this auth token? Any session using it will be disconnected.')) {
+            return;
+        }
+        genericRequest('RevokeMyAuthToken', { tokenId: tokenId }, data => {
+            this.loadAuthTokens();
+        });
+    }
+}
+
+authTokenHelpers = new AuthTokenHelper();
+
 apiHelpers = {};
 
 class APIKeyHelper {
@@ -60,6 +152,7 @@ getRequiredElementById('usersettingstabbutton').addEventListener('click', () => 
     for (let key in apiHelpers) {
         apiHelpers[key].updateStatus();
     }
+    authTokenHelpers.loadAuthTokens();
 });
 
 /** Central handler for user-edited parameters. */
@@ -388,6 +481,7 @@ function doUserLogout() {
     if (!confirm('Are you sure you want to logout? This will close all current sessions originating from this browser.')) {
         return;
     }
+    clearParamStorage();
     genericRequest('Logout', {}, data => {
         window.location.href = 'Login';
     });

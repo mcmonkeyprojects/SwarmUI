@@ -455,6 +455,16 @@ function buttonsForImage(fullsrc, src, metadata, parsedMetadata = null) {
             }
         });
     }
+    if (!isDataImage) {
+        buttons.push({
+            label: 'Copy Path',
+            title: 'Copies the relative file path of this image to your clipboard.',
+            onclick: (e) => {
+                copyText(fullsrc);
+                doNoticePopover('Copied!', 'notice-pop-green');
+            }
+        });
+    }
     if (permissions.hasPermission('local_image_folder') && !isDataImage) {
         buttons.push({
             label: 'Open In Folder',

@@ -281,7 +281,7 @@
 }
 
 .input-group .auto-input-name {
-    margin-right: 10px;
+    margin-right: 4px;
     display: inline-flex;
     flex-direction: row-reverse;
     gap: 5px;

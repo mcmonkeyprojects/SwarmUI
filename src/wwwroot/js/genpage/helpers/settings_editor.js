@@ -100,6 +100,35 @@ function buildSettingsMenu(container, data, prefix, tracker) {
             elem.classList.add('setting-looks-wrong');
             elem.title = "This setting looks wrong. Double-check the docs in the '?' button.";
         }
+        let settingData = tracker.known[key];
+        if (settingData.default_value === undefined || settingData.default_value === null || settingData.is_secret) {
+            continue;
+        }
+        let autoInput = findParentOfClass(elem, 'auto-input');
+        let resetIcon = document.createElement('span');
+        resetIcon.className = 'setting-reset-to-default';
+        resetIcon.title = `Reset to default (${settingData.default_value})`;
+        resetIcon.innerHTML = '&#x21BA;';
+        resetIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (elem.type == 'checkbox') {
+                elem.checked = `${settingData.default_value}` == 'true';
+            }
+            else {
+                elem.value = settingData.default_value;
+            }
+            triggerChangeFor(elem);
+        });
+        let nameElem = autoInput.querySelector('.auto-input-name');
+        nameElem.parentElement.insertBefore(resetIcon, nameElem.nextSibling);
+        function updateResetIconVisibility() {
+            let val = elem.type == 'checkbox' ? elem.checked : elem.value;
+            resetIcon.classList.toggle('setting-reset-nonvalid', `${val}` == `${settingData.default_value}`);
+        }
+        updateResetIconVisibility();
+        elem.addEventListener('input', updateResetIconVisibility);
+        elem.addEventListener('change', updateResetIconVisibility);
     }
 }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net;
@@ -46,6 +46,9 @@ public class ComfyUser
     public bool WantsReserve = false;
 
     public JObject FeatureFlagReport = null;
+
+    /// <summary>Map of Swarm-generated prompt IDs to actual backend comfy prompt IDs, where remapping has occurred.</summary>
+    public ConcurrentDictionary<string, string> PromptIdMap = new();
 
     /// <summary>The user data socket.</summary>
     public WebSocket Socket;
@@ -191,6 +194,7 @@ public class ComfyUser
                     if (dataObj.TryGetValue("prompt_id", out JToken promptIdTok))
                     {
                         recvId ??= $"{promptIdTok}";
+                        PromptIdMap.TryAdd($"{promptId}", recvId);
                         if ($"{promptIdTok}" != recvId) // Shouldn't happen but check and skip to be safe
                         {
                             return;
@@ -212,9 +216,16 @@ public class ComfyUser
         };
         return (Utilities.RunCheckedTask(async () =>
         {
-            using Session.GenClaim claim = input.SourceSession.Claim(gens: 1);
-            // TODO: Handle errors?
-            await T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { });
+            try
+            {
+                using Session.GenClaim claim = input.SourceSession.Claim(gens: 1);
+                // TODO: Handle errors?
+                await T2IEngine.CreateImageTask(input, "0", claim, _ => { }, _ => { }, true, (_, _) => { });
+            }
+            finally
+            {
+                PromptIdMap.TryRemove($"{promptId}", out _);
+            }
         }), response);
     }
 

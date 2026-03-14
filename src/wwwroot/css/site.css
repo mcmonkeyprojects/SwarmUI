@@ -508,8 +508,11 @@ textarea, input, select {
 .input-group-content > div {
     padding: 5px;
     flex: 1 0 0;
-    min-width: 17rem;
+    min-width: calc(max(17rem, 50% - 10px));
  }
+ .input-group-content > div.input-group {
+    min-width: 70%;
+  }
 .input-group-header {
     position: relative;
     display: block;
@@ -700,6 +703,13 @@ textarea, input, select {
 }
 .disabled-input {
     opacity: 0.5;
+}
+.auto-input.preset-overridden {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.auto-input.preset-overridden input[type="range"] {
+    cursor: not-allowed;
 }
 .card-center-container {
     width: fit-content;

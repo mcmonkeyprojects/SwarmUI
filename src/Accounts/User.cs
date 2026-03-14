@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticToolkit;
+using FreneticUtilities.FreneticToolkit;
 using FreneticUtilities.FreneticDataSyntax;
 using LiteDB;
 using SwarmUI.Core;
@@ -521,13 +521,15 @@ public class User
         byte[] salt = RandomNumberGenerator.GetBytes(128 / 8);
         byte[] hashedText = KeyDerivation.Pbkdf2(password: validationText, salt: salt, prf: KeyDerivationPrf.HMACSHA256, iterationCount: 10, numBytesRequested: 256 / 8);
         string validationHashed = Utilities.BytesToHex(salt) + ":" + Utilities.BytesToHex(hashedText);
+        long nowUnix = DateTimeOffset.Now.ToUnixTimeSeconds();
         SessionHandler.LoginSession session = new()
         {
             ID = id,
             UserID = UserID,
             OriginAddress = ip,
             OriginUserAgent = userAgent,
-            LastActiveUnixTime = DateTimeOffset.Now.ToUnixTimeSeconds(),
+            CreatedUnixTime = nowUnix,
+            LastActiveUnixTime = nowUnix,
             ValidationHash = validationHashed
         };
         lock (SessionHandlerSource.DBLock)

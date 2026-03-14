@@ -511,6 +511,12 @@ public class WebServer
         return id is null ? null : Program.Sessions.GetUser(id);
     }
 
+    /// <summary>Returns the root folder for the user's output.</summary>
+    public static string GetUserOutputRoot(string user) => $"{Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath)}/{user}";
+
+    /// <summary>Returns the root folder for the user's output.</summary>
+    public static string GetUserOutputRoot(User user) => GetUserOutputRoot(user.UserID);
+
     /// <summary>Web route for viewing output images.</summary>
     public async Task ViewOutput(HttpContext context)
     {
@@ -537,7 +543,7 @@ public class WebServer
             await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("invalid or unauthorized", "invalid_user"));
             return;
         }
-        string root = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath);
+        string root = GetUserOutputRoot("");
         if (Program.ServerSettings.Paths.AppendUserNameToOutputPath)
         {
             if (isExact)
@@ -548,12 +554,12 @@ public class WebServer
                     await context.YieldJsonOutput(null, 400, Utilities.ErrorObj("unauthorized - you may not view other users' outputs", "unauthorized"));
                     return;
                 }
-                root = $"{root}/{forUser}";
+                root = GetUserOutputRoot(forUser);
                 path = newPath;
             }
             else
             {
-                root = $"{root}/{user.UserID}";
+                root = GetUserOutputRoot(user);
             }
         }
         (path, string consoleError, string userError) = CheckFilePath(root, path);

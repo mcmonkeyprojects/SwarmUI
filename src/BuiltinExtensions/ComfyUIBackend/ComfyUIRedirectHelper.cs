@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
@@ -405,7 +405,33 @@ public class ComfyUIRedirectHelper
                     Logs.Debug($"ComfyUI redirection failed - prompt json parse: {ex.ReadableString()}");
                 }
             }
-            else if (path == "queue" || path == "api/queue" || path == "interrupt" || path == "api/interrupt") // eg queue delete
+            else if (path == "interrupt" || path == "api/interrupt")
+            {
+                using MemoryStream memStream = new();
+                await context.Request.Body.CopyToAsync(memStream);
+                byte[] inputBytes = memStream.ToArray();
+                JObject interruptData = StringConversionHelper.UTF8Encoding.GetString(inputBytes).ParseToJson();
+                // TODO: Maybe a global map instead of this per-user hack?
+                string userPromptId = interruptData["prompt_id"]?.ToString();
+                string realPromptId = Users.Values.Select(u => u.PromptIdMap.TryGetValue(userPromptId, out string r) ? r : null).FirstOrDefault(r => r is not null);
+                if (realPromptId is not null)
+                {
+                    interruptData["prompt_id"] = realPromptId;
+                    inputBytes = Encoding.UTF8.GetBytes(interruptData.ToString(Newtonsoft.Json.Formatting.None));
+                }
+                List<Task<HttpResponseMessage>> tasks = [];
+                foreach (ComfyUIBackendExtension.ComfyBackendData back in allBackends)
+                {
+                    HttpRequestMessage dupRequest = new(new HttpMethod("POST"), $"{back.WebAddress}/{path}") { Content = new ByteArrayContent(inputBytes) };
+                    dupRequest.Content.Headers.Add("Content-Type", context.Request.ContentType ?? "application/json");
+                    tasks.Add(webClient.SendAsync(dupRequest));
+                }
+                await Task.WhenAll(tasks);
+                List<HttpResponseMessage> responses = [.. tasks.Select(t => t.Result)];
+                response = responses.FirstOrDefault(t => t.StatusCode == HttpStatusCode.OK);
+                response ??= responses.FirstOrDefault();
+            }
+            else if (path == "queue" || path == "api/queue") // eg queue delete
             {
                 List<Task<HttpResponseMessage>> tasks = [];
                 MemoryStream inputCopy = new();
