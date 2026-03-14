@@ -742,7 +742,7 @@ public static class AdminAPI
         }
         else
         {
-            Extension extension = Program.Extensions.Extensions.FirstOrDefault(e => string.Equals(e.ExtensionName, extensionName, StringComparison.OrdinalIgnoreCase));
+            Extension extension = Program.Extensions.Extensions.FirstOrDefault(e => e.ExtensionName == extensionName);
             if (extension is null)
             {
                 return new JObject() { ["error"] = "Unknown extension." };
@@ -753,16 +753,15 @@ public static class AdminAPI
             }
             if (!Program.Extensions.AddDisabledExtensionSetting(ExtensionsManager.GetFolderNameFromPath(extension.FilePath)))
             {
-                return new JObject() { ["error"] = "Unknown extension." };
+                return new JObject() { ["error"] = "Extension is already disabled." };
             }
         }
         Program.SaveSettingsFile();
-        File.WriteAllText("src/bin/must_rebuild", "yes");
         Logs.Debug($"User {session.User.UserID} {(enabled ? "enabled" : "disabled")} extension '{extensionName}'. Restart required to apply.");
         return new JObject() { ["success"] = true };
     }
 
-    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart. Does signal required rebuild.",
+    [API.APIDescription("Triggers an extension update for an installed extension. Does not trigger a restart.",
         """
             "success": true // or false if no update available
         """)]
@@ -797,16 +796,17 @@ public static class AdminAPI
         string folder = ext?.FilePath;
         if (folder is null)
         {
+            if (!Program.Extensions.RemoveDisabledExtensionSetting(extensionName))
+            {
+                return new JObject() { ["error"] = "Unknown extension." };
+            }
+            Program.SaveSettingsFile();
             folder = $"src/Extensions/{extensionName}/";
         }
-        string path = Path.GetFullPath(Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, folder));
+        string path = Path.GetFullPath($"{Environment.CurrentDirectory}/{folder}");
         if (!Directory.Exists(path))
         {
             return new JObject() { ["error"] = "Unknown extension." };
-        }
-        if (Program.Extensions.RemoveDisabledExtensionSetting(ExtensionsManager.GetFolderNameFromPath(folder)))
-        {
-            Program.SaveSettingsFile();
         }
         Logs.Debug($"Will clear out Extension path: {path}");
         try

@@ -222,7 +222,7 @@
                     <th>License</th>
                     <th>Actions</th>
                 </tr>
-                @foreach (Extension ext in Program.Extensions.Extensions.Where(e => !e.IsCore))
+                @foreach (Extension ext in Program.Extensions.Extensions.Where(e => !e.IsCore && !Program.Extensions.IsDisabled(ExtensionsManager.GetFolderNameFromPath(e.FilePath))))
                 {
                     <tr>
                         <td>@ext.ExtensionName</td>

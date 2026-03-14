@@ -277,6 +277,12 @@ public class ExtensionsManager
         return path?.Replace('\\', '/').TrimEnd('/').AfterLast('/') ?? "";
     }
 
+    /// <summary>Returns whether an extension folder is in the disabled list in settings.</summary>
+    public bool IsDisabled(string folderName)
+    {
+        return Program.ServerSettings.Extensions.DisabledExtensions.Contains(folderName);
+    }
+
     /// <summary>Returns disabled extensions for UI display.</summary>
     public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
     {
@@ -297,10 +303,11 @@ public class ExtensionsManager
     /// <summary>Adds an extension folder to the disabled list in settings.</summary>
     public bool AddDisabledExtensionSetting(string folderName)
     {
-        if (!Program.ServerSettings.Extensions.DisabledExtensions.Contains(folderName))
+        if (!IsDisabled(folderName))
         {
             Program.ServerSettings.Extensions.DisabledExtensions.Add(folderName);
+            return true;
         }
-        return true;
+        return false;
     }
 }
