@@ -1868,7 +1868,8 @@ class ImageEditorLayer {
     applyMaskFromImage(img) {
         this.saveBeforeEdit();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+        let [offsetX, offsetY] = this.getOffset();
+        this.ctx.drawImage(img, offsetX, offsetY, this.width, this.height, 0, 0, this.canvas.width, this.canvas.height);
         let imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
         let data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
