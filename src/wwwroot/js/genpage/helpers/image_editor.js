@@ -1473,7 +1473,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
  */
 class ImageEditorToolSam2BBox extends ImageEditorTool {
     constructor(editor) {
-        super(editor, 'sam2bbox', 'rectangle', 'SAM2 BBox', 'Click and drag to create a bounding box. Release to generate mask.\nRequires SAM2 to be installed.', null);
+        super(editor, 'sam2bbox', 'bbox', 'SAM2 BBox', 'Click and drag to create a bounding box. Release to generate mask.\nRequires SAM2 to be installed.', null);
         this.cursor = 'crosshair';
         this.bboxStartX = null;
         this.bboxStartY = null;
