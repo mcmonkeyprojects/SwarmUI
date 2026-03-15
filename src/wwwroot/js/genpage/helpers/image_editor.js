@@ -283,6 +283,13 @@ class ImageEditorHistoryEntry {
             this.data.layer.width = this.data.oldWidth;
             this.data.layer.height = this.data.oldHeight;
         }
+        else if (this.type == 'layer_add' && this.editor.layers.indexOf(this.data.layer) >= 0) {
+            this.editor.removeLayer(this.data.layer, true);
+        }
+        else if (this.type == 'layer_remove') {
+            // TODO: Reinsert at proper index
+            this.editor.addLayer(this.data.layer, true);
+        }
     }
 }
 
@@ -840,9 +847,12 @@ class ImageEditor {
         img.src = src;
     }
 
-    removeLayer(layer) {
+    removeLayer(layer, skipHistory = false) {
         let index = this.layers.indexOf(layer);
         if (index >= 0) {
+            if (!skipHistory) {
+                this.addHistoryEntry(new ImageEditorHistoryEntry(this, 'layer_remove', { layer: layer, index: index }));
+            }
             this.layers.splice(index, 1);
             this.canvasList.removeChild(layer.div);
             this.canvasList.removeChild(layer.menuPopover);
@@ -853,7 +863,7 @@ class ImageEditor {
         }
     }
 
-    addLayer(layer) {
+    addLayer(layer, skipHistory = false) {
         layer.id = this.totalLayersEver++;
         this.layers.push(layer);
         layer.div = createDiv(null, 'image_editor_layer_preview');
@@ -898,6 +908,9 @@ class ImageEditor {
         this.canvasList.insertBefore(layer.div, this.canvasList.firstChild);
         this.setActiveLayer(layer);
         this.sortLayers();
+        if (!skipHistory) {
+            this.addHistoryEntry(new ImageEditorHistoryEntry(this, 'layer_add', { layer: layer }));
+        }
     }
 
     sortLayers() {
@@ -918,12 +931,12 @@ class ImageEditor {
         let layer = new ImageEditorLayer(this, img.naturalWidth, img.naturalHeight);
         layer.ctx.drawImage(img, 0, 0);
         layer.hasAnyContent = true;
-        this.addLayer(layer);
+        this.addLayer(layer, true);
         let layer2 = new ImageEditorLayer(this, img.naturalWidth, img.naturalHeight);
-        this.addLayer(layer2);
+        this.addLayer(layer2, true);
         let maskLayer = new ImageEditorLayer(this, img.naturalWidth, img.naturalHeight);
         maskLayer.isMask = true;
-        this.addLayer(maskLayer);
+        this.addLayer(maskLayer, true);
         this.realWidth = img.naturalWidth;
         this.realHeight = img.naturalHeight;
         if (this.tools['sam2points']) {
