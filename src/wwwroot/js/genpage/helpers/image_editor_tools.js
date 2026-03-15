@@ -1347,11 +1347,14 @@ class ImageEditorToolSam2Base extends ImageEditorTool {
 
     /** Returns the image data and coordinate offset for SAM2 requests, cropped to the selection if active. */
     getImageForSam() {
+        let width, height;
         if (!this.editor.hasSelection) {
-            return { image: this.editor.getFinalImageData(), offsetX: 0, offsetY: 0 };
+            width = Math.round(this.editor.realWidth);
+            height = Math.round(this.editor.realHeight);
+            return { image: this.editor.getFinalImageData(), offsetX: 0, offsetY: 0, width, height };
         }
-        let width = Math.round(this.editor.selectWidth);
-        let height = Math.round(this.editor.selectHeight);
+        width = Math.round(this.editor.selectWidth);
+        height = Math.round(this.editor.selectHeight);
         let image = this.editor.getImageWithBounds(this.editor.selectX, this.editor.selectY, width, height);
         return { image: image, offsetX: this.editor.selectX, offsetY: this.editor.selectY, width: width, height: height };
     }
