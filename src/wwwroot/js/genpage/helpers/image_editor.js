@@ -6,6 +6,7 @@ class ImageEditorTool {
     constructor(editor, id, icon, name, description, hotkey = null) {
         this.editor = editor;
         this.isTempTool = false;
+        this.isMaskOnly = false;
         this.id = id;
         this.icon = icon;
         this.iconImg = new Image();
@@ -98,6 +99,16 @@ class ImageEditorTool {
 
     onContextMenu(e) {
         return false;
+    }
+
+    onLayerChanged(newLayer) {
+        if (this.isMaskOnly) {
+            let isMask = newLayer && newLayer.isMask;
+            this.div.style.display = isMask ? '' : 'none';
+            if (!isMask && this.active) {
+                this.editor.activateTool('brush');
+            }
+        }
     }
 }
 
@@ -1245,8 +1256,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
     constructor(editor) {
         super(editor, 'sam2points', 'crosshair', 'SAM2 Points', 'Left click to add positive points. Right click to add negative points.\nEach click regenerates the mask.\nRequires SAM2 to be installed.\nHotKey: Y', 'y');
         this.cursor = 'crosshair';
-        this.positivePoints = [];
-        this.negativePoints = [];
+        this.layerPoints = new Map();
         this.requestSerial = 0;
         this.activeRequestId = 0;
         this.maskRequestInFlight = false;
@@ -1259,13 +1269,27 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         </div>`;
         this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
         this.showControls();
+        this.isMaskOnly = true;
+        this.div.style.display = 'none';
+    }
+
+    getActivePoints() {
+        let layer = this.editor.activeLayer;
+        if (!layer || !layer.isMask) {
+            return { positive: [], negative: [] };
+        }
+        if (!this.layerPoints.has(layer.id)) {
+            this.layerPoints.set(layer.id, { positive: [], negative: [] });
+        }
+        return this.layerPoints.get(layer.id);
     }
 
     showControls() {
         this.configDiv.innerHTML = this.controlsHTML;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
-            this.positivePoints = [];
-            this.negativePoints = [];
+            let points = this.getActivePoints();
+            points.positive = [];
+            points.negative = [];
             let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
             if (maskLayer) {
                 maskLayer.saveBeforeEdit();
@@ -1304,10 +1328,11 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
 
     draw() {
         let ctx = this.editor.ctx;
-        for (let point of this.positivePoints) {
+        let points = this.getActivePoints();
+        for (let point of points.positive) {
             this.drawPoint(ctx, point.x, point.y, '#33ff99', false);
         }
-        for (let point of this.negativePoints) {
+        for (let point of points.negative) {
             this.drawPoint(ctx, point.x, point.y, '#ff3355', true);
         }
     }
@@ -1371,12 +1396,13 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
             return;
         }
         let point = { x: mouseX, y: mouseY };
+        let points = this.getActivePoints();
         if (e.button == 2) {
             e.preventDefault();
-            this.negativePoints.push(point);
+            points.negative.push(point);
         }
         else {
-            this.positivePoints.push(point);
+            points.positive.push(point);
         }
         this.queueMaskUpdate();
         this.editor.redraw();
@@ -1387,7 +1413,7 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
             $('#sam2_installer').modal('show');
             return;
         }
-        if (this.positivePoints.length == 0) {
+        if (this.getActivePoints().positive.length == 0) {
             return;
         }
         if (this.maskRequestInFlight) {
@@ -1419,9 +1445,10 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         genData['prompt'] = '';
         delete genData['batchsize'];
         genData['donotsave'] = true;
-        genData['sampositivepoints'] = JSON.stringify(this.positivePoints);
-        if (this.negativePoints.length > 0) {
-            genData['samnegativepoints'] = JSON.stringify(this.negativePoints);
+        let points = this.getActivePoints();
+        genData['sampositivepoints'] = JSON.stringify(points.positive);
+        if (points.negative.length > 0) {
+            genData['samnegativepoints'] = JSON.stringify(points.negative);
         }
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId != this.activeRequestId || !data.image) {
@@ -1432,7 +1459,8 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
                 if (requestId != this.activeRequestId) {
                     return;
                 }
-                this.editor.applyMaskFromImage(newImg, true);
+                this.editor.activeLayer.applyMaskFromImage(newImg);
+                this.editor.redraw();
                 this.finishMaskUpdate(requestId);
             };
             newImg.src = data.image;
@@ -1463,6 +1491,8 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         </div>`;
         this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
         this.showControls();
+        this.isMaskOnly = true;
+        this.div.style.display = 'none';
     }
 
     showControls() {
@@ -1613,8 +1643,9 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
                 if (requestId != this.activeRequestId) {
                     return;
                 }
-                this.editor.applyMaskFromImage(newImg, true);
                 this.maskRequestInFlight = false;
+                this.editor.activeLayer.applyMaskFromImage(newImg);
+                this.editor.redraw();
             };
             newImg.src = data.image;
         });
@@ -1836,6 +1867,22 @@ class ImageEditorLayer {
         }
     }
 
+    applyMaskFromImage(img) {
+        this.saveBeforeEdit();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+        let imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let data = imageData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            let brightness = data[i] + data[i + 1] + data[i + 2];
+            if (brightness < 128) {
+                data[i + 3] = 0;
+            }
+        }
+        this.ctx.putImageData(imageData, 0, 0);
+        this.hasAnyContent = true;
+    }
+
     saveBeforeEdit() {
         let oldCanvas = document.createElement('canvas');
         oldCanvas.width = this.canvas.width;
@@ -2036,6 +2083,9 @@ class ImageEditor {
         let newTool = this.tools[id];
         if (!newTool) {
             throw new Error(`Tool ${id} not found`);
+        }
+        if (newTool.div.style.display == 'none') {
+            return;
         }
         if (this.activeTool && !newTool.isTempTool) {
             this.activeTool.setInactive();
@@ -2289,6 +2339,9 @@ class ImageEditor {
         if (layer && layer.div) {
             layer.div.classList.add('image_editor_layer_preview-active');
         }
+        for (let tool of Object.values(this.tools)) {
+            tool.onLayerChanged(layer);
+        }
         this.redraw();
     }
 
@@ -2407,8 +2460,7 @@ class ImageEditor {
         this.realWidth = img.naturalWidth;
         this.realHeight = img.naturalHeight;
         if (this.tools['sam2points']) {
-            this.tools['sam2points'].positivePoints = [];
-            this.tools['sam2points'].negativePoints = [];
+            this.tools['sam2points'].layerPoints = new Map();
         }
         if (this.tools['sam2bbox']) {
             this.tools['sam2bbox'].bboxStartX = null;
@@ -2654,34 +2706,6 @@ class ImageEditor {
             }
         }
         return canvas.toDataURL(format);
-    }
-
-    applyMaskFromImage(img, replaceExisting = true) {
-        let maskLayer = this.activeLayer && this.activeLayer.isMask ? this.activeLayer : this.layers.find(layer => layer.isMask);
-        if (!maskLayer) {
-            maskLayer = new ImageEditorLayer(this, img.naturalWidth || img.width, img.naturalHeight || img.height);
-            maskLayer.isMask = true;
-            this.addLayer(maskLayer);
-        }
-        if (replaceExisting) {
-            maskLayer.saveBeforeEdit();
-            maskLayer.ctx.clearRect(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
-        }
-        maskLayer.ctx.drawImage(img, 0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
-        // Convert black pixels to transparent so only the white mask region is visible
-        let imageData = maskLayer.ctx.getImageData(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
-        let data = imageData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            let brightness = data[i] + data[i + 1] + data[i + 2];
-            if (brightness < 128) {
-                data[i + 3] = 0;
-            }
-        }
-        maskLayer.ctx.putImageData(imageData, 0, 0);
-        maskLayer.hasAnyContent = true;
-        this.setActiveLayer(maskLayer);
-        this.sortLayers();
-        this.redraw();
     }
 
     getFinalMaskData(format = 'image/png') {
