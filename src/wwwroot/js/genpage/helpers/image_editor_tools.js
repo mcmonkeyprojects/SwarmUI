@@ -847,6 +847,7 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         this.currentLayerY = 0;
         this.bufferLayer = null;
         this.hasDrawn = false;
+        this.fill = false;
         let shapeHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <label>Shape:&nbsp;</label>
@@ -854,6 +855,10 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
                 <option value="rectangle">Rectangle</option>
                 <option value="circle">Circle</option>
             </select>
+        </div>`;
+        let fillHTML = `
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <label><input type="checkbox" class="id-fill"> Fill</label>
         </div>`;
         let strokeHTML = `
         <div class="image-editor-tool-block id-stroke-block">
@@ -863,16 +868,23 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
                 <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
             </div>
         </div>`;
-        this.configDiv.innerHTML = this.getColorControlsHTML() + shapeHTML + strokeHTML;
+        this.configDiv.innerHTML = this.getColorControlsHTML() + shapeHTML + fillHTML + strokeHTML;
         this.wireColorControls();
         this.shapeSelect = this.configDiv.querySelector('.id-shape');
+        this.fillCheckbox = this.configDiv.querySelector('.id-fill');
         this.strokeNumber = this.configDiv.querySelector('.id-stroke1');
         this.strokeSelector = this.configDiv.querySelector('.id-stroke2');
         this.shapeSelect.addEventListener('change', () => {
             this.shape = this.shapeSelect.value;
             this.editor.redraw();
         });
-        enableSliderForBox(this.configDiv.querySelector('.id-stroke-block'));
+        this.fillCheckbox.addEventListener('change', () => {
+            this.fill = this.fillCheckbox.checked;
+            this.updateStrokeDisabled();
+            this.editor.redraw();
+        });
+        this.strokeBlock = this.configDiv.querySelector('.id-stroke-block');
+        enableSliderForBox(this.strokeBlock);
         this.strokeNumber.addEventListener('change', () => { this.onConfigChange(); });
     }
     
@@ -880,6 +892,15 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         this.color = this.colorText.value;
         this.strokeWidth = parseInt(this.strokeNumber.value);
         this.editor.redraw();
+    }
+
+    updateStrokeDisabled() {
+        this.strokeBlock.style.opacity = this.fill ? '0.5' : '';
+        this.strokeBlock.style.pointerEvents = this.fill ? 'none' : '';
+    }
+
+    getEffectiveStrokeWidth() {
+        return this.fill ? 1 : this.strokeWidth;
     }
 
     drawRectangleBorder(ctx, x, y, width, height, thickness) {
@@ -896,7 +917,7 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         }
     }
 
-    drawShapeToCanvas(ctx, type, x, y, width, height) {
+    drawShapeToCanvas(ctx, type, x, y, width, height, fill = false) {
         ctx.beginPath();
         if (type == 'rectangle') {
             ctx.rect(Math.round(x), Math.round(y), Math.round(width), Math.round(height));
@@ -904,6 +925,9 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         else if (type == 'circle') {
             let radius = Math.sqrt(width * width + height * height) / 2;
             ctx.arc(Math.round(x + width / 2), Math.round(y + height / 2), Math.round(radius), 0, 2 * Math.PI);
+        }
+        if (fill) {
+            ctx.fill();
         }
         ctx.stroke();
     }
@@ -934,15 +958,20 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         this.editor.ctx.save();
         this.editor.ctx.imageSmoothingEnabled = false;
         this.editor.ctx.setLineDash([]);
+        this.editor.ctx.fillStyle = this.color;
         if (this.shape == 'rectangle') {
-            let thickness = Math.max(1, Math.round(this.strokeWidth * this.editor.zoomLevel));
-            this.editor.ctx.fillStyle = this.color;
-            this.drawRectangleBorder(this.editor.ctx, Math.round(canvasX1), Math.round(canvasY1), Math.round(canvasWidth), Math.round(canvasHeight), thickness);
+            if (this.fill) {
+                this.editor.ctx.fillRect(Math.round(canvasX1), Math.round(canvasY1), Math.round(canvasWidth), Math.round(canvasHeight));
+            }
+            else {
+                let thickness = Math.max(1, Math.round(this.getEffectiveStrokeWidth() * this.editor.zoomLevel));
+                this.drawRectangleBorder(this.editor.ctx, Math.round(canvasX1), Math.round(canvasY1), Math.round(canvasWidth), Math.round(canvasHeight), thickness);
+            }
         }
         else {
             this.editor.ctx.strokeStyle = this.color;
-            this.editor.ctx.lineWidth = Math.max(1, Math.round(this.strokeWidth * this.editor.zoomLevel));
-            this.drawShapeToCanvas(this.editor.ctx, this.shape, canvasX1, canvasY1, canvasWidth, canvasHeight);
+            this.editor.ctx.lineWidth = Math.max(1, Math.round(this.getEffectiveStrokeWidth() * this.editor.zoomLevel));
+            this.drawShapeToCanvas(this.editor.ctx, this.shape, canvasX1, canvasY1, canvasWidth, canvasHeight, this.fill);
         }
         this.editor.ctx.restore();
     }
@@ -1093,15 +1122,20 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         this.bufferLayer.ctx.save();
         this.bufferLayer.ctx.imageSmoothingEnabled = false;
         this.bufferLayer.ctx.setLineDash([]);
+        this.bufferLayer.ctx.fillStyle = this.color;
         if (this.shape == 'rectangle') {
-            let thickness = Math.max(1, Math.round(this.strokeWidth));
-            this.bufferLayer.ctx.fillStyle = this.color;
-            this.drawRectangleBorder(this.bufferLayer.ctx, startX, startY, width, height, thickness);
+            if (this.fill) {
+                this.bufferLayer.ctx.fillRect(startX, startY, width, height);
+            }
+            else {
+                let thickness = Math.max(1, Math.round(this.getEffectiveStrokeWidth()));
+                this.drawRectangleBorder(this.bufferLayer.ctx, startX, startY, width, height, thickness);
+            }
         }
         else {
             this.bufferLayer.ctx.strokeStyle = this.color;
-            this.bufferLayer.ctx.lineWidth = Math.max(1, Math.round(this.strokeWidth));
-            this.drawShapeToCanvas(this.bufferLayer.ctx, this.shape, startX, startY, width, height);
+            this.bufferLayer.ctx.lineWidth = Math.max(1, Math.round(this.getEffectiveStrokeWidth()));
+            this.drawShapeToCanvas(this.bufferLayer.ctx, this.shape, startX, startY, width, height, this.fill);
         }
         this.bufferLayer.ctx.restore();
         this.bufferLayer.hasAnyContent = true;
