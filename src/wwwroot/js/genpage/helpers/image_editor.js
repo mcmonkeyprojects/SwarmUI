@@ -392,6 +392,10 @@ class ImageEditor {
         $('#image_editor_debug_modal').on('hidden.bs.modal', () => {
             document.getElementById('image_editor_debug_images').innerHTML = '';
         });
+        let pastebox = document.getElementById('image_editor_paste_pastebox');
+        if (pastebox) {
+            pastebox.onpaste = (e) => this.handlePasteModalPaste(e);
+        }
     }
 
     clearVars() {
@@ -509,12 +513,8 @@ class ImageEditor {
                 continue;
             }
             let reader = new FileReader();
-            reader.onload = (e) => {
-                let img = new Image();
-                img.onload = () => {
-                    this.addImageLayer(img);
-                };
-                img.src = e.target.result;
+            reader.onload = (ev) => {
+                this.addImageLayerFromClipboard(ev.target.result);
             };
             reader.readAsDataURL(file);
         }
@@ -552,6 +552,69 @@ class ImageEditor {
         return true;
     }
 
+    /**
+     * Handles paste in the fallback modal textbox: reads image from e.clipboardData and adds as layer.
+     */
+    handlePasteModalPaste(e) {
+        let items = (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData)) ? (e.clipboardData || e.originalEvent.clipboardData).items : null;
+        if (!items) {
+            return;
+        }
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind == 'file') {
+                let file = items[i].getAsFile();
+                if (file && file.type.startsWith('image/')) {
+                    e.preventDefault();
+                    let reader = new FileReader();
+                    reader.onload = (ev) => {
+                        this.addImageLayerFromClipboard(ev.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Pastes the selection from the clipboard to the image editor as a new image layer.
+     * No-op if the clipboard does not contain image data. Shows modal fallback when Clipboard API is unavailable.
+     */
+    pasteSelectionFromClipboard() {
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+            let box = document.getElementById('image_editor_paste_pastebox');
+            box.value = '';
+            $('#image_editor_paste_modal').modal('show');
+            box.focus();
+            return;
+        }
+        navigator.clipboard.read().then((items) => {
+            let found = false;
+            for (let item of items) {
+                for (let type of item.types) {
+                    if (type.startsWith('image/')) {
+                        found = true;
+                        item.getType(type).then((blob) => {
+                            let reader = new FileReader();
+                            reader.onload = (ev) => {
+                                this.addImageLayerFromClipboard(ev.target.result);
+                            };
+                            reader.readAsDataURL(blob);
+                        });
+                        return;
+                    }
+                }
+            }
+            if (!found) {
+                doNoticePopover('No image in clipboard', 'notice-pop-red');
+            }
+        });
+    }
+
+    activeElementIsAnInput() {
+        return document.activeElement.tagName == 'INPUT' || document.activeElement.tagName == 'TEXTAREA';
+    }
+
     onKeyDown(e) {
         if (e.key == 'Alt') {
             e.preventDefault();
@@ -561,9 +624,13 @@ class ImageEditor {
             e.preventDefault();
             this.undoOnce();
         }
-        if (e.ctrlKey && (e.key == 'c' || e.key == 'C') && (document.activeElement.tagName != 'INPUT' && document.activeElement.tagName != 'TEXTAREA') && this.activeTool && this.activeTool.id == 'select') {
+        if (e.ctrlKey && e.key == 'c' && !this.activeElementIsAnInput() && this.activeTool && this.activeTool.id == 'select') {
             this.copySelectionToClipboard(this.activeTool.copyMode == 'layer');
             e.preventDefault();
+        }
+        if (e.ctrlKey && e.key == 'v' && !this.activeElementIsAnInput()) {
+            e.preventDefault();
+            this.pasteSelectionFromClipboard();
         }
         if (!e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
             let toolId = this.toolHotkeys[e.key];
@@ -750,6 +817,23 @@ class ImageEditor {
         layer.ctx.drawImage(img, 0, 0);
         layer.hasAnyContent = true;
         this.addLayer(layer);
+        return layer;
+    }
+
+    /**
+     * Loads an image from a URL (data URL or object URL) and adds it as a new layer.
+     */
+    addImageLayerFromClipboard(src) {
+        let img = new Image();
+        img.onload = () => {
+            let layer = this.addImageLayer(img);
+            let [mouseX, mouseY] = this.canvasCoordToImageCoord(this.mouseX, this.mouseY);
+            layer.offsetX = mouseX - layer.width / 2;
+            layer.offsetY = mouseY - layer.height / 2;
+            this.activateTool('general');
+            this.redraw();
+        };
+        img.src = src;
     }
 
     removeLayer(layer) {

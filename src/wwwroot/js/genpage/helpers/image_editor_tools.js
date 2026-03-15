@@ -290,6 +290,9 @@ class ImageEditorToolOptions extends ImageEditorTool {
             { key: 'Copy Selection (Current Layer)', action: () => {
                 this.editor.copySelectionToClipboard(true);
             }},
+            { key: 'Paste Image as Layer', action: () => {
+                this.editor.pasteSelectionFromClipboard();
+            }},
         ];
     }
 
