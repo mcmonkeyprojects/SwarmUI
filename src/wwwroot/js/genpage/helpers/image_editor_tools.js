@@ -110,6 +110,34 @@ class ImageEditorTool {
             }
         }
     }
+
+    /** Returns the current selection rectangle in layer-local pixel coordinates, or null if no selection is active. */
+    getSelectionBoundsInLayer(layer) {
+        if (!this.editor.hasSelection) {
+            return null;
+        }
+        let [cx1, cy1] = this.editor.imageCoordToCanvasCoord(this.editor.selectX, this.editor.selectY);
+        let [lx1, ly1] = layer.canvasCoordToLayerCoord(cx1, cy1);
+        let [cx2, cy2] = this.editor.imageCoordToCanvasCoord(this.editor.selectX + this.editor.selectWidth, this.editor.selectY + this.editor.selectHeight);
+        let [lx2, ly2] = layer.canvasCoordToLayerCoord(cx2, cy2);
+        return {
+            minX: Math.round(Math.min(lx1, lx2)),
+            minY: Math.round(Math.min(ly1, ly2)),
+            maxX: Math.round(Math.max(lx1, lx2)),
+            maxY: Math.round(Math.max(ly1, ly2))
+        };
+    }
+
+    /** Applies the current selection as a clip rect on the given canvas context, in layer-local coordinates. No-op if no selection. */
+    applySelectionClip(ctx, layer) {
+        let bounds = this.getSelectionBoundsInLayer(layer);
+        if (!bounds) {
+            return;
+        }
+        ctx.beginPath();
+        ctx.rect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+        ctx.clip();
+    }
 }
 
 /**
@@ -671,6 +699,7 @@ class ImageEditorToolBrush extends ImageEditorToolWithColor {
         if (this.isEraser) {
             this.bufferLayer.globalCompositeOperation = 'destination-out';
         }
+        this.applySelectionClip(this.bufferLayer.ctx, target);
         target.childLayers.push(this.bufferLayer);
         this.brush(this.getForceFrom(e));
     }
@@ -755,6 +784,10 @@ class ImageEditorToolBucket extends ImageEditorToolWithColor {
         if (targetX < 0 || targetY < 0 || targetX >= layer.width || targetY >= layer.height) {
             return;
         }
+        let selBounds = this.getSelectionBoundsInLayer(layer);
+        if (selBounds && (targetX < selBounds.minX || targetY < selBounds.minY || targetX >= selBounds.maxX || targetY >= selBounds.maxY)) {
+            return;
+        }
         layer.saveBeforeEdit();
         layer.hasAnyContent = true;
         let canvas = layer.canvas;
@@ -782,6 +815,10 @@ class ImageEditorToolBucket extends ImageEditorToolWithColor {
         let rawData = imageData.data;
         let threshold = this.threshold;
         let newColor = [parseInt(this.color.substring(1, 3), 16), parseInt(this.color.substring(3, 5), 16), parseInt(this.color.substring(5, 7), 16)];
+        let boundsMinX = selBounds ? selBounds.minX : 0;
+        let boundsMinY = selBounds ? selBounds.minY : 0;
+        let boundsMaxX = selBounds ? Math.min(selBounds.maxX, width) : width;
+        let boundsMaxY = selBounds ? Math.min(selBounds.maxY, height) : height;
         function getPixelIndex(x, y) {
             return (y * width + x) * 4;
         }
@@ -804,7 +841,7 @@ class ImageEditorToolBucket extends ImageEditorToolWithColor {
             hits++;
         }
         function canInclude(x, y) {
-            return x >= 0 && y >= 0 && x < width && y < height && maskData[y * width + x] == 0 && isInRange(getColorAt(x, y));
+            return x >= boundsMinX && y >= boundsMinY && x < boundsMaxX && y < boundsMaxY && maskData[y * width + x] == 0 && isInRange(getColorAt(x, y));
         }
         let stack = [[targetX, targetY]];
         while (stack.length > 0) {
@@ -956,6 +993,13 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         let canvasWidth = canvasX2 - canvasX1;
         let canvasHeight = canvasY2 - canvasY1;
         this.editor.ctx.save();
+        if (this.editor.hasSelection) {
+            let [selX1, selY1] = this.editor.imageCoordToCanvasCoord(this.editor.selectX, this.editor.selectY);
+            let [selX2, selY2] = this.editor.imageCoordToCanvasCoord(this.editor.selectX + this.editor.selectWidth, this.editor.selectY + this.editor.selectHeight);
+            this.editor.ctx.beginPath();
+            this.editor.ctx.rect(selX1, selY1, selX2 - selX1, selY2 - selY1);
+            this.editor.ctx.clip();
+        }
         this.editor.ctx.imageSmoothingEnabled = false;
         this.editor.ctx.setLineDash([]);
         this.editor.ctx.fillStyle = this.color;
@@ -1120,6 +1164,7 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
             return;
         }
         this.bufferLayer.ctx.save();
+        this.applySelectionClip(this.bufferLayer.ctx, parent);
         this.bufferLayer.ctx.imageSmoothingEnabled = false;
         this.bufferLayer.ctx.setLineDash([]);
         this.bufferLayer.ctx.fillStyle = this.color;
@@ -1278,6 +1323,73 @@ class ImageEditorToolSam2Base extends ImageEditorTool {
         this.editor.canvas.style.cursor = 'crosshair';
         this.showControls();
     }
+
+    /** Returns the image data and coordinate offset for SAM2 requests, cropped to the selection if active. */
+    getImageForSam() {
+        if (!this.editor.hasSelection) {
+            return { image: this.editor.getFinalImageData(), offsetX: 0, offsetY: 0 };
+        }
+        let width = Math.round(this.editor.selectWidth);
+        let height = Math.round(this.editor.selectHeight);
+        let image = this.editor.getImageWithBounds(this.editor.selectX, this.editor.selectY, width, height);
+        return { image: image, offsetX: this.editor.selectX, offsetY: this.editor.selectY, width: width, height: height };
+    }
+
+    /** Returns the general mask request inputs for SAM2 requests, cropped to the selection if active. */
+    getGeneralMaskRequestInputs() {
+        let samInput = this.getImageForSam();
+        let genData = getGenInput();
+        genData['initimage'] = samInput.image;
+        genData['images'] = 1;
+        genData['prompt'] = '';
+        genData['width'] = samInput.width;
+        genData['height'] = samInput.height;
+        delete genData['rawresolution'];
+        delete genData['sidelength'];
+        delete genData['batchsize'];
+        genData['donotsave'] = true;
+        return [genData, samInput];
+    }
+
+    /** Applies a SAM2 mask result image to the active mask layer, handling selection cropping if active. */
+    applyMaskResult(maskImg) {
+        if (!this.editor.activeLayer || !this.editor.activeLayer.isMask) {
+            return;
+        }
+        if (!this.editor.hasSelection) {
+            this.editor.activeLayer.applyMaskFromImage(maskImg);
+        }
+        else {
+            let selX = Math.round(this.editor.selectX);
+            let selY = Math.round(this.editor.selectY);
+            let selW = Math.round(this.editor.selectWidth);
+            let selH = Math.round(this.editor.selectHeight);
+            let fullMask = document.createElement('canvas');
+            fullMask.width = this.editor.realWidth;
+            fullMask.height = this.editor.realHeight;
+            let fullCtx = fullMask.getContext('2d');
+            fullCtx.drawImage(maskImg, 0, 0, maskImg.width || selW, maskImg.height || selH, selX, selY, selW, selH);
+            this.editor.activeLayer.applyMaskFromImage(fullMask);
+        }
+        this.clipMaskToSelection();
+    }
+
+    /** Erases any mask pixels outside the current selection. No-op if no selection is active. */
+    clipMaskToSelection() {
+        let maskLayer = this.editor.activeLayer;
+        if (!maskLayer || !maskLayer.isMask) {
+            return;
+        }
+        let bounds = this.getSelectionBoundsInLayer(maskLayer);
+        if (!bounds) {
+            return;
+        }
+        maskLayer.ctx.save();
+        maskLayer.ctx.globalCompositeOperation = 'destination-in';
+        maskLayer.ctx.fillStyle = '#ffffff';
+        maskLayer.ctx.fillRect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+        maskLayer.ctx.restore();
+    }
 }
 
 /**
@@ -1377,6 +1489,13 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
         if (mouseX < 0 || mouseY < 0 || mouseX >= this.editor.realWidth || mouseY >= this.editor.realHeight) {
             return;
         }
+        if (this.editor.hasSelection) {
+            if (mouseX < this.editor.selectX || mouseY < this.editor.selectY
+                || mouseX >= this.editor.selectX + this.editor.selectWidth
+                || mouseY >= this.editor.selectY + this.editor.selectHeight) {
+                return;
+            }
+        }
         let points = this.getActivePoints();
         let oppositeList = e.button == 2 ? points.positive : points.negative;
         let canvasMouseX = this.editor.mouseX;
@@ -1438,17 +1557,13 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
         this.maskRequestInFlight = true;
         let requestId = ++this.requestSerial;
         this.activeRequestId = requestId;
-        let img = this.editor.getFinalImageData();
-        let genData = getGenInput();
-        genData['initimage'] = img;
-        genData['images'] = 1;
-        genData['prompt'] = '';
-        delete genData['batchsize'];
-        genData['donotsave'] = true;
+        let [genData, samInput] = this.getGeneralMaskRequestInputs();
         let points = this.getActivePoints();
-        genData['sampositivepoints'] = JSON.stringify(points.positive);
+        let offX = samInput.offsetX;
+        let offY = samInput.offsetY;
+        genData['sampositivepoints'] = JSON.stringify(points.positive.map(p => ({ x: p.x - offX, y: p.y - offY })));
         if (points.negative.length > 0) {
-            genData['samnegativepoints'] = JSON.stringify(points.negative);
+            genData['samnegativepoints'] = JSON.stringify(points.negative.map(p => ({ x: p.x - offX, y: p.y - offY })));
         }
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId != this.activeRequestId || !data.image) {
@@ -1463,7 +1578,7 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
                     this.finishMaskUpdate(requestId);
                     return;
                 }
-                this.editor.activeLayer.applyMaskFromImage(newImg);
+                this.applyMaskResult(newImg);
                 this.editor.redraw();
                 this.finishMaskUpdate(requestId);
             };
@@ -1552,21 +1667,23 @@ class ImageEditorToolSam2BBox extends ImageEditorToolSam2Base {
         this.maskRequestInFlight = true;
         let requestId = ++this.requestSerial;
         this.activeRequestId = requestId;
-        let img = this.editor.getFinalImageData();
-        let genData = getGenInput();
-        genData['initimage'] = img;
-        genData['images'] = 1;
-        genData['prompt'] = '';
-        delete genData['batchsize'];
-        genData['donotsave'] = true;
+        let [genData, samInput] = this.getGeneralMaskRequestInputs();
         let minX = Math.max(0, Math.min(this.bboxStartX, this.bboxEndX));
         let minY = Math.max(0, Math.min(this.bboxStartY, this.bboxEndY));
         let maxX = Math.min(this.editor.realWidth - 1, Math.max(this.bboxStartX, this.bboxEndX));
         let maxY = Math.min(this.editor.realHeight - 1, Math.max(this.bboxStartY, this.bboxEndY));
+        if (this.editor.hasSelection) {
+            minX = Math.max(minX, this.editor.selectX);
+            minY = Math.max(minY, this.editor.selectY);
+            maxX = Math.min(maxX, this.editor.selectX + this.editor.selectWidth);
+            maxY = Math.min(maxY, this.editor.selectY + this.editor.selectHeight);
+        }
         if (maxX <= minX || maxY <= minY) {
             return;
         }
-        genData['sambbox'] = JSON.stringify([minX, minY, maxX, maxY]);
+        let offX = samInput.offsetX;
+        let offY = samInput.offsetY;
+        genData['sambbox'] = JSON.stringify([minX - offX, minY - offY, maxX - offX, maxY - offY]);
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId != this.activeRequestId) {
                 return;
@@ -1583,7 +1700,7 @@ class ImageEditorToolSam2BBox extends ImageEditorToolSam2Base {
                 if (!this.editor.activeLayer || !this.editor.activeLayer.isMask) {
                     return;
                 }
-                this.editor.activeLayer.applyMaskFromImage(newImg);
+                this.applyMaskResult(newImg);
                 this.editor.redraw();
             };
             newImg.src = data.image;
