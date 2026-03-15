@@ -389,6 +389,9 @@ class ImageEditor {
         this.addTool(new ImageEditorToolSam2BBox(this));
         this.activateTool('brush');
         this.maxHistory = 15;
+        $('#image_editor_debug_modal').on('hidden.bs.modal', () => {
+            document.getElementById('image_editor_debug_images').innerHTML = '';
+        });
     }
 
     clearVars() {
@@ -1016,6 +1019,23 @@ class ImageEditor {
         this.ctx.restore();
     }
 
+    getImageWithBounds(x, y, width, height, format = 'image/png') {
+        x = Math.round(x);
+        y = Math.round(y);
+        width = Math.round(width);
+        height = Math.round(height);
+        let canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        let ctx = canvas.getContext('2d');
+        for (let layer of this.layers) {
+            if (!layer.isMask) {
+                layer.drawToBack(ctx, this.finalOffsetX - x, this.finalOffsetY - y, 1);
+            }
+        }
+        return canvas.toDataURL(format);
+    }
+
     getFinalImageData(format = 'image/png') {
         let canvas = document.createElement('canvas');
         canvas.width = this.realWidth;
@@ -1100,5 +1120,37 @@ class ImageEditor {
         ctx2.globalCompositeOperation = 'luminosity';
         ctx2.drawImage(canvas, 0, 0);
         return canvas2.toDataURL(format);
+    }
+
+    /** Shows a debug image in a stacking modal. Accepts a data URL, Image, or Canvas. */
+    showDebugImage(imageSource) {
+        let container = document.getElementById('image_editor_debug_images');
+        let modal = document.getElementById('image_editor_debug_modal');
+        let img = document.createElement('img');
+        img.style.maxWidth = '100%';
+        img.style.display = 'block';
+        img.style.marginBottom = '8px';
+        img.style.border = '1px solid var(--light-border)';
+        if (typeof imageSource == 'string') {
+            img.src = imageSource;
+        }
+        else if (imageSource instanceof HTMLCanvasElement) {
+            img.src = imageSource.toDataURL('image/png');
+        }
+        else if (imageSource instanceof Image) {
+            img.src = imageSource.src;
+        }
+        if (!modal.classList.contains('show')) {
+            container.innerHTML = '';
+            $(modal).modal('show');
+        }
+        container.appendChild(img);
+    }
+
+    /** Closes the debug image modal and clears its contents. */
+    closeDebugImages() {
+        let container = document.getElementById('image_editor_debug_images');
+        container.innerHTML = '';
+        $('#image_editor_debug_modal').modal('hide');
     }
 }
