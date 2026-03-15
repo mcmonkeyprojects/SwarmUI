@@ -19,7 +19,9 @@ Guide to the image editor tool system in `src/wwwroot/js/genpage/helpers/image_e
 
 - `ImageEditorTool` - Base class. Creates `this.div` (toolbar button) and `this.configDiv` (bottom bar config area) via `makeDivs()`. Has lifecycle methods: `setActive()`, `setInactive()`, `draw()`, mouse handlers, `onLayerChanged()`.
 - `ImageEditorTempTool` - Extends base. Overrides `makeDivs()` with a no-op, so `this.div` is **undefined**. Used for hidden sub-tools (e.g., the eyedropper color picker tool). Any code accessing `.div` on a tool must null-check for this case.
-- Concrete tools (e.g., `ImageEditorToolBrush`, `ImageEditorToolBucket`, `ImageEditorToolShape`) extend `ImageEditorTool`.
+- `ImageEditorToolWithColor` - Extends base. Adds color control support: `getColorControlsHTML()`, `wireColorControls()`, `setColor(col)`, and color-aware `onLayerChanged()` with dual mask/image color memory. Tools that need a color picker (Brush, Bucket, Shape) extend this.
+- `ImageEditorToolSam2Base` - Extends base. Shared SAM2 warmup/clear-mask/request-tracking logic. Subclasses override `addWarmupGenData(genData, cx, cy)` and optionally `onClearMask()`. SAM2Points and SAM2BBox extend this.
+- Concrete tools extend the appropriate base: `ImageEditorToolBrush`/`ImageEditorToolBucket`/`ImageEditorToolShape` extend `ImageEditorToolWithColor`; `ImageEditorToolSam2Points`/`ImageEditorToolSam2BBox` extend `ImageEditorToolSam2Base`; others extend `ImageEditorTool`.
 
 ### Tool Registration
 
@@ -34,12 +36,12 @@ Tools are registered in the `ImageEditor` constructor via `this.addTool(new Tool
 
 ### Color Controls Pattern
 
-Tools that use color (Brush, Bucket, Shape) share a common pattern:
+Tools that use color extend `ImageEditorToolWithColor`, which provides:
 
-1. **HTML**: A `.image-editor-tool-block` div containing a hex text input (`.id-col1`), a color swatch (`.id-col2`), and an eyedrop button (`.id-col3`).
-2. **Color picker**: Opened via `colorPickerHelper.open(anchor, color, onChange, grayscale)`. The singleton `colorPickerHelper` (from `color_picker.js`) handles all color selection UI.
+1. **`getColorControlsHTML()`**: Returns HTML for a `.image-editor-tool-block` div with hex text input (`.id-col1`), color swatch (`.id-col2`), and eyedrop button (`.id-col3`). Uses `this.color` for the default value.
+2. **`wireColorControls()`**: Call after setting `configDiv.innerHTML` to wire up the color picker, swatch click, and eyedropper button. Opens the picker via the singleton `colorPickerHelper` (from `color_picker.js`).
 3. **`setColor(col)`**: Updates `this.color`, the text input, and the swatch background.
-4. **Dual color memory**: `imageColor` and `maskColor` fields store separate colors for image vs mask layers. `onLayerChanged` swaps between them.
+4. **Dual color memory**: `imageColor` and `maskColor` fields store separate colors for image vs mask layers. The inherited `onLayerChanged` swaps between them (guarded by `this.colorText` existing, so tools like the eraser that skip `wireColorControls()` are unaffected).
 5. **Grayscale enforcement**: When on a mask layer, colors are compressed to grayscale via `colorPickerHelper.hexToGrayscale()`, and the picker opens in grayscale mode.
 
 ### Bottom Bar Config
@@ -54,4 +56,4 @@ Each tool's config UI is in `this.configDiv`, a flex row at the bottom of the ed
 - Use `createDiv()` from `util.js` for DOM creation.
 - Use theme CSS variables (`--popup-back`, `--light-border`, etc.) for styling.
 - Always null-check `.div` when working with tools that might be TempTools.
-- If adding color controls, follow the existing Brush/Bucket/Shape pattern with `colorPickerHelper` integration, dual color memory, and grayscale support.
+- If adding color controls, extend `ImageEditorToolWithColor`, pass the default color to `super()`, call `this.getColorControlsHTML()` when building config HTML, and call `this.wireColorControls()` after setting `configDiv.innerHTML`. The base class handles `setColor()`, `onLayerChanged()` color swapping, and grayscale enforcement automatically.

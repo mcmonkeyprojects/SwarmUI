@@ -140,6 +140,98 @@ class ImageEditorTempTool extends ImageEditorTool {
 }
 
 /**
+ * A middle-class for tools with color controls (color picker, swatch, eyedropper, mask/image color memory).
+ */
+class ImageEditorToolWithColor extends ImageEditorTool {
+    constructor(editor, id, icon, name, description, defaultColor = '#ffffff', hotkey = null) {
+        super(editor, id, icon, name, description, hotkey);
+        this.color = defaultColor;
+        this.imageColor = defaultColor;
+        this.maskColor = '#ffffff';
+    }
+
+    getColorControlsHTML() {
+        return `
+        <div class="image-editor-tool-block tool-block-nogrow">
+            <label>Color:&nbsp;</label>
+            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="${this.color}">
+            <div class="color-picker-swatch-inline id-col2" style="background-color:${this.color};" title="Open color picker"></div>
+            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
+        </div>`;
+    }
+
+    wireColorControls() {
+        this.colorText = this.configDiv.querySelector('.id-col1');
+        this.colorSelector = this.configDiv.querySelector('.id-col2');
+        this.colorPickButton = this.configDiv.querySelector('.id-col3');
+        this.colorText.readOnly = true;
+        this.colorText.style.cursor = 'pointer';
+        this.colorBlock = this.colorText.closest('.image-editor-tool-block');
+        let openPickerForThis = (focusHex) => {
+            if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
+                colorPickerHelper.close();
+            }
+            else {
+                let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
+                colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
+                    this.colorText.value = newColor;
+                    this.colorSelector.style.backgroundColor = newColor;
+                    this.onConfigChange();
+                }, isMask);
+                if (focusHex) {
+                    colorPickerHelper.focusHex();
+                }
+            }
+        };
+        this.colorText.addEventListener('click', () => {
+            openPickerForThis(true);
+        });
+        this.colorSelector.addEventListener('click', () => {
+            openPickerForThis(false);
+        });
+        this.colorPickButton.addEventListener('click', () => {
+            if (this.colorPickButton.classList.contains('interrupt-button')) {
+                this.colorPickButton.classList.remove('interrupt-button');
+                this.editor.activateTool(this.id);
+            }
+            else {
+                this.colorPickButton.classList.add('interrupt-button');
+                this.editor.pickerTool.toolFor = this;
+                this.editor.activateTool('picker');
+            }
+        });
+    }
+
+    setColor(col) {
+        this.color = col;
+        this.colorText.value = col;
+        this.colorSelector.style.backgroundColor = col;
+        this.colorPickButton.classList.remove('interrupt-button');
+    }
+
+    onLayerChanged(oldLayer, newLayer) {
+        super.onLayerChanged(oldLayer, newLayer);
+        if (!this.colorText) {
+            return;
+        }
+        let wasMask = oldLayer && oldLayer.isMask;
+        let isMask = newLayer && newLayer.isMask;
+        if (wasMask) {
+            this.maskColor = this.color;
+        }
+        else {
+            this.imageColor = this.color;
+        }
+        if (isMask) {
+            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
+        }
+        else {
+            this.setColor(this.imageColor);
+        }
+    }
+}
+
+/**
  * The special extra options tool.
  */
 class ImageEditorToolOptions extends ImageEditorTool {
@@ -531,24 +623,14 @@ class ImageEditorToolSelect extends ImageEditorTool {
 /**
  * The Paintbrush tool (also the base used for other brush-likes, such as the Eraser).
  */
-class ImageEditorToolBrush extends ImageEditorTool {
+class ImageEditorToolBrush extends ImageEditorToolWithColor {
     constructor(editor, id, icon, name, description, isEraser, hotkey = null) {
-        super(editor, id, icon, name, description, hotkey);
+        super(editor, id, icon, name, description, '#ffffff', hotkey);
         this.cursor = 'none';
-        this.color = '#ffffff';
-        this.imageColor = '#ffffff';
-        this.maskColor = '#ffffff';
         this.radius = 10;
         this.opacity = 1;
         this.brushing = false;
         this.isEraser = isEraser;
-        let colorHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <label>Color:&nbsp;</label>
-            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
-            <div class="color-picker-swatch-inline id-col2" style="background-color:#ffffff;" title="Open color picker"></div>
-            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
-        </div>`;
         let radiusHtml = `<div class="image-editor-tool-block id-rad-block">
                 <label>Radius:&nbsp;</label>
                 <input type="number" style="width: 40px;" class="auto-number id-rad1" min="1" max="1024" step="1" value="10">
@@ -567,46 +649,8 @@ class ImageEditorToolBrush extends ImageEditorTool {
             this.configDiv.innerHTML = radiusHtml + opacityHtml;
         }
         else {
-            this.configDiv.innerHTML = colorHTML + radiusHtml + opacityHtml;
-            this.colorText = this.configDiv.querySelector('.id-col1');
-            this.colorSelector = this.configDiv.querySelector('.id-col2');
-            this.colorPickButton = this.configDiv.querySelector('.id-col3');
-            this.colorText.readOnly = true;
-            this.colorText.style.cursor = 'pointer';
-            this.colorBlock = this.colorText.closest('.image-editor-tool-block');
-            let openPickerForThis = (focusHex) => {
-                if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
-                    colorPickerHelper.close();
-                }
-                else {
-                    let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
-                    colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
-                        this.colorText.value = newColor;
-                        this.colorSelector.style.backgroundColor = newColor;
-                        this.onConfigChange();
-                    }, isMask);
-                    if (focusHex) {
-                        colorPickerHelper.focusHex();
-                    }
-                }
-            };
-            this.colorText.addEventListener('click', () => {
-                openPickerForThis(true);
-            });
-            this.colorSelector.addEventListener('click', () => {
-                openPickerForThis(false);
-            });
-            this.colorPickButton.addEventListener('click', () => {
-                if (this.colorPickButton.classList.contains('interrupt-button')) {
-                    this.colorPickButton.classList.remove('interrupt-button');
-                    this.editor.activateTool(this.id);
-                }
-                else {
-                    this.colorPickButton.classList.add('interrupt-button');
-                    this.editor.pickerTool.toolFor = this;
-                    this.editor.activateTool('picker');
-                }
-            });
+            this.configDiv.innerHTML = this.getColorControlsHTML() + radiusHtml + opacityHtml;
+            this.wireColorControls();
         }
         enableSliderForBox(this.configDiv.querySelector('.id-rad-block'));
         enableSliderForBox(this.configDiv.querySelector('.id-opac-block'));
@@ -617,34 +661,6 @@ class ImageEditorToolBrush extends ImageEditorTool {
         this.radiusNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.opacityNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.lastTouch = null;
-    }
-
-    setColor(col) {
-        this.color = col;
-        this.colorText.value = col;
-        this.colorSelector.style.backgroundColor = col;
-        this.colorPickButton.classList.remove('interrupt-button');
-    }
-
-    onLayerChanged(oldLayer, newLayer) {
-        super.onLayerChanged(oldLayer, newLayer);
-        if (this.isEraser) {
-            return;
-        }
-        let wasMask = oldLayer && oldLayer.isMask;
-        let isMask = newLayer && newLayer.isMask;
-        if (wasMask) {
-            this.maskColor = this.color;
-        }
-        else {
-            this.imageColor = this.color;
-        }
-        if (isMask) {
-            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
-        }
-        else {
-            this.setColor(this.imageColor);
-        }
     }
 
     onConfigChange() {
@@ -672,7 +688,7 @@ class ImageEditorToolBrush extends ImageEditorTool {
     getForceFrom(e) {
         if (e.touches && e.touches.length > 0) {
             let touch = e.touches.item(0);
-            this.lastTouch = new Date().getTime();
+            this.lastTouch = Date.now();
             if (touch.force <= 0) {
                 return 1;
             }
@@ -686,9 +702,9 @@ class ImageEditorToolBrush extends ImageEditorTool {
             return;
         }
         if (e.touches) {
-            this.lastTouch = new Date().getTime();
+            this.lastTouch = Date.now();
         }
-        if (!e.touches && this.lastTouch && new Date().getTime() - this.lastTouch < 1000) {
+        if (!e.touches && this.lastTouch && Date.now() - this.lastTouch < 1000) {
             return;
         }
         this.brushing = true;
@@ -705,9 +721,9 @@ class ImageEditorToolBrush extends ImageEditorTool {
     onMouseMove(e) {
         if (this.brushing) {
             if (e.touches) {
-                this.lastTouch = new Date().getTime();
+                this.lastTouch = Date.now();
             }
-            if (!e.touches && this.lastTouch && new Date().getTime() - this.lastTouch < 1000) {
+            if (!e.touches && this.lastTouch && Date.now() - this.lastTouch < 1000) {
                 return;
             }
             this.brush(this.getForceFrom(e));
@@ -746,22 +762,12 @@ class ImageEditorToolBrush extends ImageEditorTool {
 /**
  * The Paint Bucket tool.
  */
-class ImageEditorToolBucket extends ImageEditorTool {
+class ImageEditorToolBucket extends ImageEditorToolWithColor {
     constructor(editor) {
-        super(editor, 'paintbucket', 'paintbucket', 'Paint Bucket', 'Fill an area with a color.\nHotKey: P', 'p');
+        super(editor, 'paintbucket', 'paintbucket', 'Paint Bucket', 'Fill an area with a color.\nHotKey: P', '#ffffff', 'p');
         this.cursor = 'crosshair';
-        this.color = '#ffffff';
-        this.imageColor = '#ffffff';
-        this.maskColor = '#ffffff';
         this.threshold = 10;
         this.opacity = 1;
-        let colorHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <label>Color:&nbsp;</label>
-            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
-            <div class="color-picker-swatch-inline id-col2" style="background-color:#ffffff;" title="Open color picker"></div>
-            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
-        </div>`;
         let thresholdHtml = `<div class="image-editor-tool-block id-thresh-block">
                 <label>Threshold:&nbsp;</label>
                 <input type="number" style="width: 40px;" class="auto-number id-thresh1" min="1" max="256" step="1" value="10">
@@ -769,76 +775,13 @@ class ImageEditorToolBucket extends ImageEditorTool {
                     <input type="range" style="flex-grow: 2" data-ispot="true" class="auto-slider-range id-thresh2" min="1" max="256" step="1" value="10" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
                 </div>
             </div>`;
-        this.configDiv.innerHTML = colorHTML + thresholdHtml;
-        this.colorText = this.configDiv.querySelector('.id-col1');
-        this.colorSelector = this.configDiv.querySelector('.id-col2');
-        this.colorPickButton = this.configDiv.querySelector('.id-col3');
-        this.colorText.readOnly = true;
-        this.colorText.style.cursor = 'pointer';
-        this.colorBlock = this.colorText.closest('.image-editor-tool-block');
-        let openPickerForThis = (focusHex) => {
-            if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
-                colorPickerHelper.close();
-            }
-            else {
-                let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
-                colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
-                    this.colorText.value = newColor;
-                    this.colorSelector.style.backgroundColor = newColor;
-                    this.onConfigChange();
-                }, isMask);
-                if (focusHex) {
-                    colorPickerHelper.focusHex();
-                }
-            }
-        };
-        this.colorText.addEventListener('click', () => {
-            openPickerForThis(true);
-        });
-        this.colorSelector.addEventListener('click', () => {
-            openPickerForThis(false);
-        });
-        this.colorPickButton.addEventListener('click', () => {
-            if (this.colorPickButton.classList.contains('interrupt-button')) {
-                this.colorPickButton.classList.remove('interrupt-button');
-                this.editor.activateTool(this.id);
-            }
-            else {
-                this.colorPickButton.classList.add('interrupt-button');
-                this.editor.pickerTool.toolFor = this;
-                this.editor.activateTool('picker');
-            }
-        });
+        this.configDiv.innerHTML = this.getColorControlsHTML() + thresholdHtml;
+        this.wireColorControls();
         enableSliderForBox(this.configDiv.querySelector('.id-thresh-block'));
         this.thresholdNumber = this.configDiv.querySelector('.id-thresh1');
         this.thresholdSelector = this.configDiv.querySelector('.id-thresh2');
         this.thresholdNumber.addEventListener('change', () => { this.onConfigChange(); });
         this.lastTouch = null;
-    }
-
-    setColor(col) {
-        this.color = col;
-        this.colorText.value = col;
-        this.colorSelector.style.backgroundColor = col;
-        this.colorPickButton.classList.remove('interrupt-button');
-    }
-
-    onLayerChanged(oldLayer, newLayer) {
-        super.onLayerChanged(oldLayer, newLayer);
-        let wasMask = oldLayer && oldLayer.isMask;
-        let isMask = newLayer && newLayer.isMask;
-        if (wasMask) {
-            this.maskColor = this.color;
-        }
-        else {
-            this.imageColor = this.color;
-        }
-        if (isMask) {
-            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
-        }
-        else {
-            this.setColor(this.imageColor);
-        }
     }
 
     onConfigChange() {
@@ -912,13 +855,11 @@ class ImageEditorToolBucket extends ImageEditorTool {
             if (!canInclude(x, y)) {
                 continue;
             }
-            if (isInRange(getColorAt(x, y))) {
-                setPixel(x, y);
-                if (canInclude(x - 1, y)) { stack.push([x - 1, y]); }
-                if (canInclude(x + 1, y)) { stack.push([x + 1, y]); }
-                if (canInclude(x, y - 1)) { stack.push([x, y - 1]); }
-                if (canInclude(x, y + 1)) { stack.push([x, y + 1]); }
-            }
+            setPixel(x, y);
+            if (canInclude(x - 1, y)) { stack.push([x - 1, y]); }
+            if (canInclude(x + 1, y)) { stack.push([x + 1, y]); }
+            if (canInclude(x, y - 1)) { stack.push([x, y - 1]); }
+            if (canInclude(x, y + 1)) { stack.push([x, y + 1]); }
         }
         ctx.putImageData(imageData, 0, 0);
         this.editor.markChanged();
@@ -932,13 +873,10 @@ class ImageEditorToolBucket extends ImageEditorTool {
 /**
  * The Shape tool.
  */
-class ImageEditorToolShape extends ImageEditorTool {
+class ImageEditorToolShape extends ImageEditorToolWithColor {
     constructor(editor) {
-        super(editor, 'shape', 'shape', 'Shape', 'Create basic colored shape outlines.\nClick and drag to draw a shape.\nHotKey: X', 'x');
+        super(editor, 'shape', 'shape', 'Shape', 'Create basic colored shape outlines.\nClick and drag to draw a shape.\nHotKey: X', '#ff0000', 'x');
         this.cursor = 'crosshair';
-        this.color = '#ff0000';
-        this.imageColor = '#ff0000';
-        this.maskColor = '#ffffff';
         this.strokeWidth = 4;
         this.shape = 'rectangle';
         this.isDrawing = false;
@@ -952,13 +890,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.currentLayerY = 0;
         this.bufferLayer = null;
         this.hasDrawn = false;
-        let colorHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <label>Color:&nbsp;</label>
-            <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ff0000">
-            <div class="color-picker-swatch-inline id-col2" style="background-color:#ff0000;" title="Open color picker"></div>
-            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
-        </div>`;
         let shapeHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <label>Shape:&nbsp;</label>
@@ -975,49 +906,11 @@ class ImageEditorToolShape extends ImageEditorTool {
                 <input type="range" style="flex-grow: 2" class="auto-slider-range id-stroke2" min="1" max="20" step="1" value="4" oninput="updateRangeStyle(arguments[0])" onchange="updateRangeStyle(arguments[0])">
             </div>
         </div>`;
-        this.configDiv.innerHTML = colorHTML + shapeHTML + strokeHTML;
-        this.colorText = this.configDiv.querySelector('.id-col1');
-        this.colorSelector = this.configDiv.querySelector('.id-col2');
-        this.colorPickButton = this.configDiv.querySelector('.id-col3');
+        this.configDiv.innerHTML = this.getColorControlsHTML() + shapeHTML + strokeHTML;
+        this.wireColorControls();
         this.shapeSelect = this.configDiv.querySelector('.id-shape');
         this.strokeNumber = this.configDiv.querySelector('.id-stroke1');
         this.strokeSelector = this.configDiv.querySelector('.id-stroke2');
-        this.colorText.readOnly = true;
-        this.colorText.style.cursor = 'pointer';
-        this.colorBlock = this.colorText.closest('.image-editor-tool-block');
-        let openPickerForThis = (focusHex) => {
-            if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
-                colorPickerHelper.close();
-            }
-            else {
-                let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
-                colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
-                    this.colorText.value = newColor;
-                    this.colorSelector.style.backgroundColor = newColor;
-                    this.onConfigChange();
-                }, isMask);
-                if (focusHex) {
-                    colorPickerHelper.focusHex();
-                }
-            }
-        };
-        this.colorText.addEventListener('click', () => {
-            openPickerForThis(true);
-        });
-        this.colorSelector.addEventListener('click', () => {
-            openPickerForThis(false);
-        });
-        this.colorPickButton.addEventListener('click', () => {
-            if (this.colorPickButton.classList.contains('interrupt-button')) {
-                this.colorPickButton.classList.remove('interrupt-button');
-                this.editor.activateTool(this.id);
-            }
-            else {
-                this.colorPickButton.classList.add('interrupt-button');
-                this.editor.pickerTool.toolFor = this;
-                this.editor.activateTool('picker');
-            }
-        });
         this.shapeSelect.addEventListener('change', () => {
             this.shape = this.shapeSelect.value;
             this.editor.redraw();
@@ -1026,31 +919,6 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.strokeNumber.addEventListener('change', () => { this.onConfigChange(); });
     }
     
-    setColor(col) {
-        this.color = col;
-        this.colorText.value = col;
-        this.colorSelector.style.backgroundColor = col;
-        this.colorPickButton.classList.remove('interrupt-button');
-    }
-
-    onLayerChanged(oldLayer, newLayer) {
-        super.onLayerChanged(oldLayer, newLayer);
-        let wasMask = oldLayer && oldLayer.isMask;
-        let isMask = newLayer && newLayer.isMask;
-        if (wasMask) {
-            this.maskColor = this.color;
-        }
-        else {
-            this.imageColor = this.color;
-        }
-        if (isMask) {
-            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
-        }
-        else {
-            this.setColor(this.imageColor);
-        }
-    }
-
     onConfigChange() {
         this.color = this.colorText.value;
         this.strokeWidth = parseInt(this.strokeNumber.value);
@@ -1196,10 +1064,7 @@ class ImageEditorToolShape extends ImageEditorTool {
         }
     }
     
-    onMouseMove(e) {
-        if (!this.isDrawing) {
-            return;
-        }
+    updateCurrentShapePosition() {
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         mouseX = Math.round(mouseX);
         mouseY = Math.round(mouseY);
@@ -1212,6 +1077,13 @@ class ImageEditorToolShape extends ImageEditorTool {
             this.currentLayerX = Math.round(layerX);
             this.currentLayerY = Math.round(layerY);
         }
+    }
+
+    onMouseMove(e) {
+        if (!this.isDrawing) {
+            return;
+        }
+        this.updateCurrentShapePosition();
         this.drawShape();
     }
 
@@ -1220,59 +1092,26 @@ class ImageEditorToolShape extends ImageEditorTool {
             return;
         }
         this.editor.updateMousePosFrom(e);
-        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
-        mouseX = Math.round(mouseX);
-        mouseY = Math.round(mouseY);
-        this.currentX = mouseX;
-        this.currentY = mouseY;
-        let target = this.editor.activeLayer;
-        if (target) {
-            let [canvasX, canvasY] = target.editor.imageCoordToCanvasCoord(mouseX, mouseY);
-            let [layerX, layerY] = target.canvasCoordToLayerCoord(canvasX, canvasY);
-            this.currentLayerX = Math.round(layerX);
-            this.currentLayerY = Math.round(layerY);
-        }
+        this.updateCurrentShapePosition();
         this.drawShape();
     }
-    
+
     onMouseUp(e) {
         if (e.button != 0 || !this.isDrawing) {
             return;
         }
-        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
-        mouseX = Math.round(mouseX);
-        mouseY = Math.round(mouseY);
-        this.currentX = mouseX;
-        this.currentY = mouseY;
-        let target = this.editor.activeLayer;
-        if (target) {
-            let [canvasX, canvasY] = target.editor.imageCoordToCanvasCoord(mouseX, mouseY);
-            let [layerX, layerY] = target.canvasCoordToLayerCoord(canvasX, canvasY);
-            this.currentLayerX = Math.round(layerX);
-            this.currentLayerY = Math.round(layerY);
-        }
+        this.updateCurrentShapePosition();
         this.finishDrawing();
     }
-    
+
     onGlobalMouseUp(e) {
         if (e.button != 0 || !this.isDrawing) {
             return;
         }
-        let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
-        mouseX = Math.round(mouseX);
-        mouseY = Math.round(mouseY);
-        this.currentX = mouseX;
-        this.currentY = mouseY;
-        let target = this.editor.activeLayer;
-        if (target) {
-            let [canvasX, canvasY] = target.editor.imageCoordToCanvasCoord(mouseX, mouseY);
-            let [layerX, layerY] = target.canvasCoordToLayerCoord(canvasX, canvasY);
-            this.currentLayerX = Math.round(layerX);
-            this.currentLayerY = Math.round(layerY);
-        }
+        this.updateCurrentShapePosition();
         this.finishDrawing();
     }
-    
+
     drawShape() {
         if (!this.isDrawing || !this.bufferLayer) {
             return;
@@ -1367,17 +1206,15 @@ class ImageEditorToolPicker extends ImageEditorTempTool {
 }
 
 /**
- * The SAM2 Point Segmentation tool - click to place positive/negative points and auto-generate a mask.
+ * Shared base class for SAM2-based mask tools (warmup, clear mask, request tracking).
  */
-class ImageEditorToolSam2Points extends ImageEditorTool {
-    constructor(editor) {
-        super(editor, 'sam2points', 'crosshair', 'SAM2 Points', 'Left click to add positive points. Right click to add negative points.\nEach click regenerates the mask.\nRequires SAM2 to be installed.\nHotKey: Y', 'y');
+class ImageEditorToolSam2Base extends ImageEditorTool {
+    constructor(editor, id, icon, name, description, hotkey = null) {
+        super(editor, id, icon, name, description, hotkey);
         this.cursor = 'crosshair';
-        this.layerPoints = new Map();
         this.requestSerial = 0;
         this.activeRequestId = 0;
         this.maskRequestInFlight = false;
-        this.pendingMaskUpdate = false;
         this.modelWarmed = false;
         this.isWarmingUp = false;
         this.controlsHTML = `
@@ -1388,6 +1225,78 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         this.showControls();
         this.isMaskOnly = true;
         this.div.style.display = 'none';
+    }
+
+    showControls() {
+        this.configDiv.innerHTML = this.controlsHTML;
+        this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
+            this.onClearMask();
+        });
+    }
+
+    onClearMask() {
+        let maskLayer = this.editor.activeLayer;
+        if (!maskLayer || !maskLayer.isMask) {
+            return;
+        }
+        maskLayer.clearToEmpty();
+        this.editor.redraw();
+    }
+
+    setActive() {
+        super.setActive();
+        if (!this.modelWarmed && !this.isWarmingUp && currentBackendFeatureSet.includes('sam2') && this.editor.getFinalImageData?.()) {
+            this.triggerWarmup();
+        }
+    }
+
+    addWarmupGenData(genData, cx, cy) {
+    }
+
+    triggerWarmup() {
+        this.isWarmingUp = true;
+        this.cursor = 'wait';
+        this.editor.canvas.style.cursor = 'wait';
+        this.configDiv.innerHTML = this.warmupHTML;
+        try {
+            let img = this.editor.getFinalImageData();
+            let genData = getGenInput();
+            genData['initimage'] = img;
+            genData['images'] = 1;
+            genData['prompt'] = '';
+            delete genData['batchsize'];
+            genData['donotsave'] = true;
+            let cx = Math.floor((this.editor.realWidth || 64) / 2);
+            let cy = Math.floor((this.editor.realHeight || 64) / 2);
+            this.addWarmupGenData(genData, cx, cy);
+            makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
+                if (data.image || data.error) {
+                    this.finishWarmup();
+                }
+            });
+        }
+        catch (e) {
+            this.finishWarmup();
+        }
+    }
+
+    finishWarmup() {
+        this.modelWarmed = true;
+        this.isWarmingUp = false;
+        this.cursor = 'crosshair';
+        this.editor.canvas.style.cursor = 'crosshair';
+        this.showControls();
+    }
+}
+
+/**
+ * The SAM2 Point Segmentation tool - click to place positive/negative points and auto-generate a mask.
+ */
+class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
+    constructor(editor) {
+        super(editor, 'sam2points', 'crosshair', 'SAM2 Points', 'Left click to add positive points. Right click to add negative points.\nEach click regenerates the mask.\nRequires SAM2 to be installed.\nHotKey: Y', 'y');
+        this.layerPoints = new Map();
+        this.pendingMaskUpdate = false;
     }
 
     getActivePoints() {
@@ -1412,18 +1321,15 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         this.editor.redraw();
     }
 
-    showControls() {
-        this.configDiv.innerHTML = this.controlsHTML;
-        this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
-            let maskLayer = this.editor.activeLayer;
-            if (!maskLayer || !maskLayer.isMask) {
-                return;
-            }
-            let points = this.getActivePoints();
-            points.positive = [];
-            points.negative = [];
-            this.clearMaskAndEndRequest();
-        });
+    onClearMask() {
+        let maskLayer = this.editor.activeLayer;
+        if (!maskLayer || !maskLayer.isMask) {
+            return;
+        }
+        let points = this.getActivePoints();
+        points.positive = [];
+        points.negative = [];
+        this.clearMaskAndEndRequest();
     }
 
     drawPoint(ctx, x, y, fillColor, showX) {
@@ -1465,46 +1371,8 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         return true;
     }
 
-    setActive() {
-        super.setActive();
-        if (!this.modelWarmed && !this.isWarmingUp && currentBackendFeatureSet.includes('sam2') && this.editor.getFinalImageData?.()) {
-            this.triggerWarmup();
-        }
-    }
-
-    triggerWarmup() {
-        this.isWarmingUp = true;
-        this.cursor = 'wait';
-        this.editor.canvas.style.cursor = 'wait';
-        this.configDiv.innerHTML = this.warmupHTML;
-        try {
-            let img = this.editor.getFinalImageData();
-            let genData = getGenInput();
-            genData['initimage'] = img;
-            genData['images'] = 1;
-            genData['prompt'] = '';
-            delete genData['batchsize'];
-            genData['donotsave'] = true;
-            let cx = Math.floor((this.editor.realWidth || 64) / 2);
-            let cy = Math.floor((this.editor.realHeight || 64) / 2);
-            genData['sampositivepoints'] = JSON.stringify([{ x: cx, y: cy }]);
-            makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
-                if (data.image || data.error) {
-                    this.modelWarmed = true;
-                    this.isWarmingUp = false;
-                    this.cursor = 'crosshair';
-                    this.editor.canvas.style.cursor = 'crosshair';
-                    this.showControls();
-                }
-            });
-        }
-        catch (e) {
-            this.modelWarmed = true;
-            this.isWarmingUp = false;
-            this.cursor = 'crosshair';
-            this.editor.canvas.style.cursor = 'crosshair';
-            this.showControls();
-        }
+    addWarmupGenData(genData, cx, cy) {
+        genData['sampositivepoints'] = JSON.stringify([{ x: cx, y: cy }]);
     }
 
     onMouseDown(e) {
@@ -1616,40 +1484,14 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
 /**
  * The SAM2 Bounding Box segmentation tool - drag to define a box and auto-generate a mask.
  */
-class ImageEditorToolSam2BBox extends ImageEditorTool {
+class ImageEditorToolSam2BBox extends ImageEditorToolSam2Base {
     constructor(editor) {
         super(editor, 'sam2bbox', 'bbox', 'SAM2 BBox', 'Click and drag to create a bounding box. Release to generate mask.\nRequires SAM2 to be installed.', null);
-        this.cursor = 'crosshair';
         this.bboxStartX = null;
         this.bboxStartY = null;
         this.bboxEndX = null;
         this.bboxEndY = null;
         this.isDrawing = false;
-        this.requestSerial = 0;
-        this.activeRequestId = 0;
-        this.maskRequestInFlight = false;
-        this.modelWarmed = false;
-        this.isWarmingUp = false;
-        this.controlsHTML = `
-        <div class="image-editor-tool-block tool-block-nogrow">
-            <button class="basic-button id-clear-mask">Clear Mask</button>
-        </div>`;
-        this.warmupHTML = `<div class="image-editor-tool-block tool-block-nogrow" style="opacity:0.8; font-style:italic;">Warming up SAM2 model...</div>`;
-        this.showControls();
-        this.isMaskOnly = true;
-        this.div.style.display = 'none';
-    }
-
-    showControls() {
-        this.configDiv.innerHTML = this.controlsHTML;
-        this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
-            let maskLayer = this.editor.activeLayer;
-            if (!maskLayer || !maskLayer.isMask) {
-                return;
-            }
-            maskLayer.clearToEmpty();
-            this.editor.redraw();
-        });
     }
 
     draw() {
@@ -1670,46 +1512,8 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         }
     }
 
-    setActive() {
-        super.setActive();
-        if (!this.modelWarmed && !this.isWarmingUp && currentBackendFeatureSet.includes('sam2') && this.editor.getFinalImageData?.()) {
-            this.triggerWarmup();
-        }
-    }
-
-    triggerWarmup() {
-        this.isWarmingUp = true;
-        this.cursor = 'wait';
-        this.editor.canvas.style.cursor = 'wait';
-        this.configDiv.innerHTML = this.warmupHTML;
-        try {
-            let img = this.editor.getFinalImageData();
-            let genData = getGenInput();
-            genData['initimage'] = img;
-            genData['images'] = 1;
-            genData['prompt'] = '';
-            delete genData['batchsize'];
-            genData['donotsave'] = true;
-            let cx = Math.floor((this.editor.realWidth || 64) / 2);
-            let cy = Math.floor((this.editor.realHeight || 64) / 2);
-            genData['sambbox'] = JSON.stringify([cx - 1, cy - 1, cx + 1, cy + 1]);
-            makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
-                if (data.image || data.error) {
-                    this.modelWarmed = true;
-                    this.isWarmingUp = false;
-                    this.cursor = 'crosshair';
-                    this.editor.canvas.style.cursor = 'crosshair';
-                    this.showControls();
-                }
-            });
-        }
-        catch (e) {
-            this.modelWarmed = true;
-            this.isWarmingUp = false;
-            this.cursor = 'crosshair';
-            this.editor.canvas.style.cursor = 'crosshair';
-            this.showControls();
-        }
+    addWarmupGenData(genData, cx, cy) {
+        genData['sambbox'] = JSON.stringify([cx - 1, cy - 1, cx + 1, cy + 1]);
     }
 
     onMouseDown(e) {
@@ -2630,36 +2434,26 @@ class ImageEditor {
     }
 
     doParamHides() {
-        let initImage = document.getElementById('input_initimage');
-        let maskImage = document.getElementById('input_maskimage');
-        if (initImage) {
-            initImage.dataset.has_data = 'true';
-            let parent = findParentOfClass(initImage, 'auto-input');
-            parent.style.display = 'none';
-            parent.dataset.visible_controlled = 'true';
-        }
-        if (maskImage) {
-            maskImage.dataset.has_data = 'true';
-            let parent = findParentOfClass(maskImage, 'auto-input');
-            parent.style.display = 'none';
-            parent.dataset.visible_controlled = 'true';
+        for (let paramId of ['input_initimage', 'input_maskimage']) {
+            let elem = document.getElementById(paramId);
+            if (elem) {
+                elem.dataset.has_data = 'true';
+                let parent = findParentOfClass(elem, 'auto-input');
+                parent.style.display = 'none';
+                parent.dataset.visible_controlled = 'true';
+            }
         }
     }
 
     unhideParams() {
-        let initImage = document.getElementById('input_initimage');
-        let maskImage = document.getElementById('input_maskimage');
-        if (initImage) {
-            delete initImage.dataset.has_data;
-            let parent = findParentOfClass(initImage, 'auto-input');
-            parent.style.display = '';
-            delete parent.dataset.visible_controlled;
-        }
-        if (maskImage) {
-            delete maskImage.dataset.has_data;
-            let parent = findParentOfClass(maskImage, 'auto-input');
-            parent.style.display = '';
-            delete parent.dataset.visible_controlled;
+        for (let paramId of ['input_initimage', 'input_maskimage']) {
+            let elem = document.getElementById(paramId);
+            if (elem) {
+                delete elem.dataset.has_data;
+                let parent = findParentOfClass(elem, 'auto-input');
+                parent.style.display = '';
+                delete parent.dataset.visible_controlled;
+            }
         }
     }
 
