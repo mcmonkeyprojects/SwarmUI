@@ -1952,6 +1952,7 @@ class ImageEditor {
         this.changeCount = 0;
         this.active = false;
         this.inputDiv = div;
+        this.inputDiv.tabIndex = -1;
         this.leftBar = createDiv(null, 'image_editor_leftbar');
         this.inputDiv.appendChild(this.leftBar);
         this.rightBar = createDiv(null, 'image_editor_rightbar');
@@ -2095,7 +2096,6 @@ class ImageEditor {
 
     createCanvas() {
         let canvas = document.createElement('canvas');
-        canvas.tabIndex = 1; // Force to be selectable
         canvas.className = 'image-editor-canvas';
         this.inputDiv.insertBefore(canvas, this.rightBar);
         this.canvas = canvas;
@@ -2110,8 +2110,8 @@ class ImageEditor {
         document.addEventListener('touchend', (e) => this.onGlobalMouseUp(e));
         canvas.addEventListener('touchend', (e) => this.onMouseUp(e));
         document.addEventListener('touchmove', (e) => this.onGlobalMouseMove(e));
-        canvas.addEventListener('keydown', (e) => this.onKeyDown(e));
-        canvas.addEventListener('keyup', (e) => this.onKeyUp(e));
+        this.inputDiv.addEventListener('keydown', (e) => this.onKeyDown(e));
+        this.inputDiv.addEventListener('keyup', (e) => this.onKeyUp(e));
         document.addEventListener('keydown', (e) => this.onGlobalKeyDown(e));
         document.addEventListener('keyup', (e) => this.onGlobalKeyUp(e));
         canvas.addEventListener('dragover', (e) => {

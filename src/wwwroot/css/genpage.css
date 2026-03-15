@@ -1214,6 +1214,7 @@ body {
 .image_editor_input {
     vertical-align: top;
     height: 100%;
+    outline: none;
 }
 .image_editor_leftbar {
     margin: 0;
