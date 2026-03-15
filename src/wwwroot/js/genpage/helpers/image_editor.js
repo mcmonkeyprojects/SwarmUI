@@ -1401,22 +1401,28 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         return this.layerPoints.get(layer.id);
     }
 
+    clearMaskAndEndRequest() {
+        let maskLayer = this.editor.activeLayer;
+        if (maskLayer && maskLayer.isMask) {
+            maskLayer.clearToEmpty();
+        }
+        this.activeRequestId = ++this.requestSerial;
+        this.maskRequestInFlight = false;
+        this.pendingMaskUpdate = false;
+        this.editor.redraw();
+    }
+
     showControls() {
         this.configDiv.innerHTML = this.controlsHTML;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
+            let maskLayer = this.editor.activeLayer;
+            if (!maskLayer || !maskLayer.isMask) {
+                return;
+            }
             let points = this.getActivePoints();
             points.positive = [];
             points.negative = [];
-            let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
-            if (maskLayer) {
-                maskLayer.saveBeforeEdit();
-                maskLayer.ctx.clearRect(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
-                maskLayer.hasAnyContent = false;
-            }
-            this.activeRequestId = ++this.requestSerial;
-            this.maskRequestInFlight = false;
-            this.pendingMaskUpdate = false;
-            this.editor.redraw();
+            this.clearMaskAndEndRequest();
         });
     }
 
@@ -1512,8 +1518,26 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
         if (mouseX < 0 || mouseY < 0 || mouseX >= this.editor.realWidth || mouseY >= this.editor.realHeight) {
             return;
         }
-        let point = { x: mouseX, y: mouseY };
         let points = this.getActivePoints();
+        let oppositeList = e.button == 2 ? points.positive : points.negative;
+        let canvasMouseX = this.editor.mouseX;
+        let canvasMouseY = this.editor.mouseY;
+        let nearIndex = oppositeList.findIndex(p => {
+            let [cx, cy] = this.editor.imageCoordToCanvasCoord(p.x, p.y);
+            return (cx - canvasMouseX) ** 2 + (cy - canvasMouseY) ** 2 < 100;
+        });
+        if (nearIndex >= 0) {
+            e.preventDefault();
+            oppositeList.splice(nearIndex, 1);
+            if (points.positive.length == 0) {
+                this.clearMaskAndEndRequest();
+            }
+            else {
+                this.queueMaskUpdate();
+            }
+            return;
+        }
+        let point = { x: mouseX, y: mouseY };
         if (e.button == 2) {
             e.preventDefault();
             points.negative.push(point);
@@ -1576,6 +1600,10 @@ class ImageEditorToolSam2Points extends ImageEditorTool {
                 if (requestId != this.activeRequestId) {
                     return;
                 }
+                if (!this.editor.activeLayer || !this.editor.activeLayer.isMask) {
+                    this.finishMaskUpdate(requestId);
+                    return;
+                }
                 this.editor.activeLayer.applyMaskFromImage(newImg);
                 this.editor.redraw();
                 this.finishMaskUpdate(requestId);
@@ -1615,13 +1643,11 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
     showControls() {
         this.configDiv.innerHTML = this.controlsHTML;
         this.configDiv.querySelector('.id-clear-mask').addEventListener('click', () => {
-            let maskLayer = this.editor.activeLayer && this.editor.activeLayer.isMask ? this.editor.activeLayer : this.editor.layers.find(layer => layer.isMask);
-            if (!maskLayer) {
+            let maskLayer = this.editor.activeLayer;
+            if (!maskLayer || !maskLayer.isMask) {
                 return;
             }
-            maskLayer.saveBeforeEdit();
-            maskLayer.ctx.clearRect(0, 0, maskLayer.canvas.width, maskLayer.canvas.height);
-            maskLayer.hasAnyContent = false;
+            maskLayer.clearToEmpty();
             this.editor.redraw();
         });
     }
@@ -1759,6 +1785,9 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
                     return;
                 }
                 this.maskRequestInFlight = false;
+                if (!this.editor.activeLayer || !this.editor.activeLayer.isMask) {
+                    return;
+                }
                 this.editor.activeLayer.applyMaskFromImage(newImg);
                 this.editor.redraw();
             };
@@ -1980,6 +2009,13 @@ class ImageEditorLayer {
             this.buffer = null;
             this.drawToBackDirect(ctx, offsetX, offsetY, zoom);
         }
+    }
+
+    /** Saves undo state, clears all content, and marks the layer as empty. */
+    clearToEmpty() {
+        this.saveBeforeEdit();
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.hasAnyContent = false;
     }
 
     applyMaskFromImage(img) {
