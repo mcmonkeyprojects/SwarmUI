@@ -96,7 +96,9 @@ Want to add a new theme or change an existing one?
 This is an AI project, so obviously we don't hate AI here. However, we also understand its limitations well, so we ask that you are reasonable about using of AI language models:
 - "Intelligent autocomplete" tools (Copilot, Cursor, etc.) are completely fine.
 - Asking a chatbot for tips or methods to use is fine. Double-check the accuracy of anything it claims before doing it.
-- "Hey ChatGPT write this code for me" or similar, is not okay.
+- "Hey ChatGPT write this code for me" or similar, is NEVER okay.
+- Agentic development tools are experimental, only very powerful ones well tuned to the codebase tend to get even close, and even then they require significant experienced human monitoring, and therefore are not permitted for external contribution.
+    - If you are able to make numerous contributions on your own and demonstrate capable understanding of the repo, you may request permission to use agents for contributing.
 - Broadly, make your own decisions about what to write and how to write it. The LLM can replace the keyboard clacking, and it can help you recall specific functions, but they tend to be quite bad at larger scale planning.
 - You are expected to understand every line of your own code submission. You may even be asked during PR review.
 - Especially double check that any LLM written code both (1) followed the usual formatting rules and (2) used relevant functions.
