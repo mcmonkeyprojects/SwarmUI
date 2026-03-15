@@ -113,7 +113,7 @@ Be aware all frontend code must be compatible with all common modern browsers (u
 
 Legacy existing code often is free-standing functions, but modern code should be contained to classes. Global/singleton code gets singleton classes, often of the form `class MyThingHelper { ... } myThingHelper = new MyThingHelper();`
 
-There are many utilities, especially in `utils.js` and `site.js`, always check if there's an appropriate function before reimplementing established behavior. If some reasonably common function is needed, do not implement it inline, add a utility function for it.
+There are many utilities, especially in `util.js` and `site.js`, always check if there's an appropriate function before reimplementing established behavior. If some reasonably common function is needed, do not implement it inline, add a utility function for it.
 
 ### Script Loading
 

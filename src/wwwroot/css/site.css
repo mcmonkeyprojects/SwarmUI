@@ -842,6 +842,10 @@ textarea, input, select {
     background-color: var(--notice-pop);
     color: var(--text);
 }
+.notice-pop-red {
+    background-color: var(--red);
+    color: var(--text);
+}
 .drag_image_target_highlight {
     box-shadow: inset 0 0 8px 2px var(--emphasis);
 }

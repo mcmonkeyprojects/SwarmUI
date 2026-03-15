@@ -475,6 +475,42 @@ function toDataURL(url, callback) {
     xhr.send();
 }
 
+/** Copies the image at the given URL (http(s) or data: URL) to the clipboard as image/png. */
+function copyImageToClipboard(url) {
+    if (!navigator.clipboard) {
+        let img = document.createElement('img');
+        img.src = url;
+        img.style.position = 'absolute';
+        img.style.opacity = '0';
+        img.style.left = '-999999px';
+        let focusedElement = document.activeElement;
+        document.body.appendChild(img);
+        let range = document.createRange();
+        range.selectNode(img);
+        let sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand('copy');
+        sel.removeAllRanges();
+        document.body.removeChild(img);
+        if (focusedElement) {
+            focusedElement.focus();
+        }
+        return;
+    }
+    let xhr = new XMLHttpRequest();
+    xhr.onload = function() {
+        let blob = xhr.response;
+        if (!blob) {
+            return;
+        }
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    };
+    xhr.open('GET', url);
+    xhr.responseType = 'blob';
+    xhr.send();
+}
+
 /** Returns the given value rounded to the nearest multiple of the given step. */
 function roundTo(val, step) {
     if (step == 0) {

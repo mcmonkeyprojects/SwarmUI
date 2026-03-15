@@ -284,6 +284,12 @@ class ImageEditorToolOptions extends ImageEditorTool {
                 link.download = 'mask.png';
                 link.click();
             }},
+            { key: 'Copy Selection (Final Image)', action: () => {
+                this.editor.copySelectionToClipboard(false);
+            }},
+            { key: 'Copy Selection (Current Layer)', action: () => {
+                this.editor.copySelectionToClipboard(true);
+            }},
         ];
     }
 
@@ -554,10 +560,22 @@ class ImageEditorToolMove extends ImageEditorTool {
 class ImageEditorToolSelect extends ImageEditorTool {
     constructor(editor) {
         super(editor, 'select', 'select', 'Select', 'Select a region of the image.\nHotKey: S', 's');
+        this.copyMode = 'final';
+        let copyDropdown = `<div class="image-editor-tool-block">
+            <label>Copy:&nbsp;</label>
+            <select class="id-copy-mode" style="width:120px;">
+                <option value="final">Final Image</option>
+                <option value="layer">Current Layer</option>
+            </select>
+        </div>`;
         let makeRegionButton = `<div class="image-editor-tool-block">
             <button class="basic-button id-make-region">Make Region</button>
         </div>`;
-        this.configDiv.innerHTML = makeRegionButton;
+        this.configDiv.innerHTML = copyDropdown + makeRegionButton;
+        this.copyModeSelect = this.configDiv.querySelector('.id-copy-mode');
+        this.copyModeSelect.addEventListener('change', () => {
+            this.copyMode = this.copyModeSelect.value;
+        });
         this.configDiv.querySelector('.id-make-region').addEventListener('click', () => {
             if (this.editor.hasSelection) {
                 // TODO: This should create a new pseudo-layer that highlights a simple box and render the region text inside of it

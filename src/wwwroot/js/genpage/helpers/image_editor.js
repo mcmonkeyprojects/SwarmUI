@@ -536,6 +536,22 @@ class ImageEditor {
         }
     }
 
+    /**
+     * Copies the current selection as image data to the clipboard. No-op if there's no selection.
+     * @param {boolean} currentLayerOnly - If true, copy only the active layer in the selection; if false, copy the full composited image.
+     * Returns true if the copy was initiated, false otherwise.
+     */
+    copySelectionToClipboard(currentLayerOnly = false) {
+        if (!this.hasSelection || this.selectWidth <= 0 || this.selectHeight <= 0 || (currentLayerOnly && !this.activeLayer)) {
+            doNoticePopover('No selection to copy!', 'notice-pop-red');
+            return false;
+        }
+        let layerOnly = currentLayerOnly ? this.activeLayer : null;
+        copyImageToClipboard(this.getImageWithBounds(this.selectX, this.selectY, this.selectWidth, this.selectHeight, 'image/png', layerOnly));
+        doNoticePopover('Copied!', 'notice-pop-green');
+        return true;
+    }
+
     onKeyDown(e) {
         if (e.key == 'Alt') {
             e.preventDefault();
@@ -544,6 +560,10 @@ class ImageEditor {
         if (e.ctrlKey && e.key == 'z') {
             e.preventDefault();
             this.undoOnce();
+        }
+        if (e.ctrlKey && (e.key == 'c' || e.key == 'C') && (document.activeElement.tagName != 'INPUT' && document.activeElement.tagName != 'TEXTAREA') && this.activeTool && this.activeTool.id == 'select') {
+            this.copySelectionToClipboard(this.activeTool.copyMode == 'layer');
+            e.preventDefault();
         }
         if (!e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
             let toolId = this.toolHotkeys[e.key];
@@ -1019,7 +1039,7 @@ class ImageEditor {
         this.ctx.restore();
     }
 
-    getImageWithBounds(x, y, width, height, format = 'image/png') {
+    getImageWithBounds(x, y, width, height, format = 'image/png', layerOnly = null) {
         x = Math.round(x);
         y = Math.round(y);
         width = Math.round(width);
@@ -1028,9 +1048,14 @@ class ImageEditor {
         canvas.width = width;
         canvas.height = height;
         let ctx = canvas.getContext('2d');
-        for (let layer of this.layers) {
-            if (!layer.isMask) {
-                layer.drawToBack(ctx, this.finalOffsetX - x, this.finalOffsetY - y, 1);
+        if (layerOnly != null) {
+            layerOnly.drawToBack(ctx, this.finalOffsetX - x, this.finalOffsetY - y, 1);
+        }
+        else {
+            for (let layer of this.layers) {
+                if (!layer.isMask) {
+                    layer.drawToBack(ctx, this.finalOffsetX - x, this.finalOffsetY - y, 1);
+                }
             }
         }
         return canvas.toDataURL(format);
