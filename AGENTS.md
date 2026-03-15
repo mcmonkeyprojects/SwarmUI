@@ -55,6 +55,16 @@ Detailed instructions for the agent.
 
 Agents never run their own builds, the user does it themselves. Agents may check automated linters.
 
+## Tests
+
+This repo is complex, and made of many interlinked parts not easily mockable, and heavily depends on slow expensive GPU operations.
+
+Automated tests are not currently used in this repo. Agents cannot run any form of testing. Developers must manually run the live software to verify things. Agents should do their best to logically validate through static analysis and step-by-step execution logic tracking before the developer spends time testing.
+
+## General Edit Strategy
+
+Seek to always make the minimum possible change necessary to achieve a goal. SwarmUI is complex, and every change has many possible side effects, so take care to contain your changes to as small of an area as possible.
+
 ## Project Structure
 
 This project contains multiple parts all in one repo. Please observe unique expectations for each section.
@@ -70,18 +80,49 @@ This project contains multiple parts all in one repo. Please observe unique expe
 - `src/wwwroot/css`: CSS stylesheets for the browser frontend.
 - `src/Pages`: `.cshtml` C# Razor Pages, HTML for the browser frontend.
 - `src/*.cs`: general C# main server code.
-- `src/BuiltInExtensions`: extensions to SwarmUI that are built in and part of the main repo.
+- `src/BuiltinExtensions`: extensions to SwarmUI that are built in and part of the main repo.
 - `src/Extensions`: externally downloaded extensions. If you are asked to work within an extension, contain your work only to that extension's folder. If you were not asked to work there, do not modify anything in the extensions folder.
 
 ## JavaScript Info
 
 This section applies to `src/wwwroot/js`, generally you also co-edit `src/Pages` and `src/wwwroot/css` at the same time.
 
+### Syntax
+
+- Keep it clean and proper
+- Mostly standard JavaScript syntax
+- Always `let`, never `var` or `const`
+- Avoid `===` or `!==` except where logically required
+- Always use full braced blocks, never inline if/etc. statements
+- `else {` goes on its own line, never do `} else {`
+- Functions should have `/** ... */` docs at the top
+- Use standard `for (...)` not `arr.forEach`
+- `async` functions should be used where appropriate (existing code underuses these currently, so take caution)
+
+### Structure
+
+Legacy existing code often is free-standing functions, but modern code should be contained to classes. Global/singleton code gets singleton classes, often of the form `class MyThingHelper { ... } myThingHelper = new MyThingHelper();`
+
+There are many utilities, especially in `utils.js` and `site.js`, always check if there's an appropriate function before reimplementing established behavior. If some reasonably common function is needed, do not implement it inline, add a utility function for it.
+
 (TODO: more javascript info)
 
 ## C# Info
 
 This section applies to the general `src/*.cs` files.
+
+### Syntax
+
+- Keep it clean and proper
+- Mostly standard C# syntax
+- Never use `var`, always explicit types
+- Always use full braced blocks, never inline if/etc. statements
+- We currently use C# 12 and dotnet 8
+- All fields should have `///` XML cs docs
+
+### Structure
+
+We have both many internal utilities, and rely on [FreneticUtilities](https://github.com/FreneticLLC/FreneticUtilities) for many additional common utilities. For example, we always use `ToLowerFast` from FreneticUtilities when lowercasing a string. Always check if there's an appropriate function before reimplementing established behavior.
 
 (TODO: more C# info)
 
@@ -92,5 +133,11 @@ This section applies to `src/BuiltinExtensions/ComfyUIBackend/ExtraNodes`.
 ### Comfy Upstream References
 
 You will want to reference the ComfyUI source code found in `dlbackend/`. Never edit these files, but they provide upstream source data and sample code that is highly relevant to the python code used in Swarm's python-based comfy nodes.
+
+### Syntax
+
+- Keep it clean and proper
+- Mostly standard python syntax
+- Most code is in comfy node formats, sometimes stray `def` functions
 
 (TODO: more python info)
