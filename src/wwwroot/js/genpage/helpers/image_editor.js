@@ -632,6 +632,10 @@ class ImageEditor {
             e.preventDefault();
             this.pasteSelectionFromClipboard();
         }
+        if (e.key == 'Delete' && !this.activeElementIsAnInput() && this.activeTool && this.activeTool.id == 'general' && this.activeLayer) {
+            e.preventDefault();
+            this.removeLayer(this.activeLayer);
+        }
         if (!e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
             let toolId = this.toolHotkeys[e.key];
             if (toolId) {
