@@ -51,6 +51,12 @@ Detailed instructions for the agent.
 - Use the ask questions tool if you need to clarify requirements with the user
 ```
 
+Be careful to not over-specialize these. For example, documentation about new API routes should not go into the specifics of any one API route that's implemented, just the general core.
+
+If the contents of a skill file become outdated due to updates to the relevant system, update the skill file.
+
+When starting a task, always check for if there are any relevant skill files to use.
+
 ## Building
 
 Agents never run their own builds, the user does it themselves. Agents may check automated linters.
@@ -106,6 +112,16 @@ Be aware all frontend code must be compatible with all common modern browsers (u
 Legacy existing code often is free-standing functions, but modern code should be contained to classes. Global/singleton code gets singleton classes, often of the form `class MyThingHelper { ... } myThingHelper = new MyThingHelper();`
 
 There are many utilities, especially in `utils.js` and `site.js`, always check if there's an appropriate function before reimplementing established behavior. If some reasonably common function is needed, do not implement it inline, add a utility function for it.
+
+### Script Loading
+
+New JS files intended to be used on the genpage exclusively must be added to `src/Pages/Text2Image.cshtml` in the `@section Scripts` block. Order matters: dependencies must load before dependents.
+
+### Key Utility Functions
+
+Before reimplementing common behavior, check these:
+- `createDiv(id, classes, html)` in `util.js` - DOM element creation
+- `escapeHtml(text)` in `util.js` - HTML escaping
 
 (TODO: more javascript info)
 

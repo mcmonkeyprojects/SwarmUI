@@ -101,7 +101,7 @@ class ImageEditorTool {
         return false;
     }
 
-    onLayerChanged(newLayer) {
+    onLayerChanged(oldLayer, newLayer) {
         if (this.isMaskOnly) {
             let isMask = newLayer && newLayer.isMask;
             this.div.style.display = isMask ? '' : 'none';
@@ -536,6 +536,8 @@ class ImageEditorToolBrush extends ImageEditorTool {
         super(editor, id, icon, name, description, hotkey);
         this.cursor = 'none';
         this.color = '#ffffff';
+        this.imageColor = '#ffffff';
+        this.maskColor = '#ffffff';
         this.radius = 10;
         this.opacity = 1;
         this.brushing = false;
@@ -544,8 +546,8 @@ class ImageEditorToolBrush extends ImageEditorTool {
         <div class="image-editor-tool-block tool-block-nogrow">
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
-            <input type="color" class="id-col2" value="#ffffff">
-            <button class="basic-button id-col3">Pick</button>
+            <div class="color-picker-swatch-inline id-col2" style="background-color:#ffffff;" title="Open color picker"></div>
+            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
         </div>`;
         let radiusHtml = `<div class="image-editor-tool-block id-rad-block">
                 <label>Radius:&nbsp;</label>
@@ -569,13 +571,30 @@ class ImageEditorToolBrush extends ImageEditorTool {
             this.colorText = this.configDiv.querySelector('.id-col1');
             this.colorSelector = this.configDiv.querySelector('.id-col2');
             this.colorPickButton = this.configDiv.querySelector('.id-col3');
-            this.colorText.addEventListener('input', () => {
-                this.colorSelector.value = this.colorText.value;
-                this.onConfigChange();
+            this.colorText.readOnly = true;
+            this.colorText.style.cursor = 'pointer';
+            this.colorBlock = this.colorText.closest('.image-editor-tool-block');
+            let openPickerForThis = (focusHex) => {
+                if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
+                    colorPickerHelper.close();
+                }
+                else {
+                    let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
+                    colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
+                        this.colorText.value = newColor;
+                        this.colorSelector.style.backgroundColor = newColor;
+                        this.onConfigChange();
+                    }, isMask);
+                    if (focusHex) {
+                        colorPickerHelper.focusHex();
+                    }
+                }
+            };
+            this.colorText.addEventListener('click', () => {
+                openPickerForThis(true);
             });
-            this.colorSelector.addEventListener('change', () => {
-                this.colorText.value = this.colorSelector.value;
-                this.onConfigChange();
+            this.colorSelector.addEventListener('click', () => {
+                openPickerForThis(false);
             });
             this.colorPickButton.addEventListener('click', () => {
                 if (this.colorPickButton.classList.contains('interrupt-button')) {
@@ -603,8 +622,29 @@ class ImageEditorToolBrush extends ImageEditorTool {
     setColor(col) {
         this.color = col;
         this.colorText.value = col;
-        this.colorSelector.value = col;
+        this.colorSelector.style.backgroundColor = col;
         this.colorPickButton.classList.remove('interrupt-button');
+    }
+
+    onLayerChanged(oldLayer, newLayer) {
+        super.onLayerChanged(oldLayer, newLayer);
+        if (this.isEraser) {
+            return;
+        }
+        let wasMask = oldLayer && oldLayer.isMask;
+        let isMask = newLayer && newLayer.isMask;
+        if (wasMask) {
+            this.maskColor = this.color;
+        }
+        else {
+            this.imageColor = this.color;
+        }
+        if (isMask) {
+            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
+        }
+        else {
+            this.setColor(this.imageColor);
+        }
     }
 
     onConfigChange() {
@@ -711,14 +751,16 @@ class ImageEditorToolBucket extends ImageEditorTool {
         super(editor, 'paintbucket', 'paintbucket', 'Paint Bucket', 'Fill an area with a color.\nHotKey: P', 'p');
         this.cursor = 'crosshair';
         this.color = '#ffffff';
+        this.imageColor = '#ffffff';
+        this.maskColor = '#ffffff';
         this.threshold = 10;
         this.opacity = 1;
         let colorHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ffffff">
-            <input type="color" class="id-col2" value="#ffffff">
-            <button class="basic-button id-col3">Pick</button>
+            <div class="color-picker-swatch-inline id-col2" style="background-color:#ffffff;" title="Open color picker"></div>
+            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
         </div>`;
         let thresholdHtml = `<div class="image-editor-tool-block id-thresh-block">
                 <label>Threshold:&nbsp;</label>
@@ -731,13 +773,30 @@ class ImageEditorToolBucket extends ImageEditorTool {
         this.colorText = this.configDiv.querySelector('.id-col1');
         this.colorSelector = this.configDiv.querySelector('.id-col2');
         this.colorPickButton = this.configDiv.querySelector('.id-col3');
-        this.colorText.addEventListener('input', () => {
-            this.colorSelector.value = this.colorText.value;
-            this.onConfigChange();
+        this.colorText.readOnly = true;
+        this.colorText.style.cursor = 'pointer';
+        this.colorBlock = this.colorText.closest('.image-editor-tool-block');
+        let openPickerForThis = (focusHex) => {
+            if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
+                colorPickerHelper.close();
+            }
+            else {
+                let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
+                colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
+                    this.colorText.value = newColor;
+                    this.colorSelector.style.backgroundColor = newColor;
+                    this.onConfigChange();
+                }, isMask);
+                if (focusHex) {
+                    colorPickerHelper.focusHex();
+                }
+            }
+        };
+        this.colorText.addEventListener('click', () => {
+            openPickerForThis(true);
         });
-        this.colorSelector.addEventListener('change', () => {
-            this.colorText.value = this.colorSelector.value;
-            this.onConfigChange();
+        this.colorSelector.addEventListener('click', () => {
+            openPickerForThis(false);
         });
         this.colorPickButton.addEventListener('click', () => {
             if (this.colorPickButton.classList.contains('interrupt-button')) {
@@ -760,8 +819,26 @@ class ImageEditorToolBucket extends ImageEditorTool {
     setColor(col) {
         this.color = col;
         this.colorText.value = col;
-        this.colorSelector.value = col;
+        this.colorSelector.style.backgroundColor = col;
         this.colorPickButton.classList.remove('interrupt-button');
+    }
+
+    onLayerChanged(oldLayer, newLayer) {
+        super.onLayerChanged(oldLayer, newLayer);
+        let wasMask = oldLayer && oldLayer.isMask;
+        let isMask = newLayer && newLayer.isMask;
+        if (wasMask) {
+            this.maskColor = this.color;
+        }
+        else {
+            this.imageColor = this.color;
+        }
+        if (isMask) {
+            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
+        }
+        else {
+            this.setColor(this.imageColor);
+        }
     }
 
     onConfigChange() {
@@ -860,6 +937,8 @@ class ImageEditorToolShape extends ImageEditorTool {
         super(editor, 'shape', 'shape', 'Shape', 'Create basic colored shape outlines.\nClick and drag to draw a shape.\nHotKey: X', 'x');
         this.cursor = 'crosshair';
         this.color = '#ff0000';
+        this.imageColor = '#ff0000';
+        this.maskColor = '#ffffff';
         this.strokeWidth = 4;
         this.shape = 'rectangle';
         this.isDrawing = false;
@@ -877,8 +956,8 @@ class ImageEditorToolShape extends ImageEditorTool {
         <div class="image-editor-tool-block tool-block-nogrow">
             <label>Color:&nbsp;</label>
             <input type="text" class="auto-number id-col1" style="width:75px;flex-grow:0;" value="#ff0000">
-            <input type="color" class="id-col2" value="#ff0000">
-            <button class="basic-button id-col3">Pick</button>
+            <div class="color-picker-swatch-inline id-col2" style="background-color:#ff0000;" title="Open color picker"></div>
+            <button class="basic-button color-picker-eyedrop-button id-col3" title="Pick color from canvas"></button>
         </div>`;
         let shapeHTML = `
         <div class="image-editor-tool-block tool-block-nogrow">
@@ -903,13 +982,30 @@ class ImageEditorToolShape extends ImageEditorTool {
         this.shapeSelect = this.configDiv.querySelector('.id-shape');
         this.strokeNumber = this.configDiv.querySelector('.id-stroke1');
         this.strokeSelector = this.configDiv.querySelector('.id-stroke2');
-        this.colorText.addEventListener('input', () => {
-            this.colorSelector.value = this.colorText.value;
-            this.onConfigChange();
+        this.colorText.readOnly = true;
+        this.colorText.style.cursor = 'pointer';
+        this.colorBlock = this.colorText.closest('.image-editor-tool-block');
+        let openPickerForThis = (focusHex) => {
+            if (colorPickerHelper.isOpen && colorPickerHelper.anchorElement == this.colorBlock) {
+                colorPickerHelper.close();
+            }
+            else {
+                let isMask = this.editor.activeLayer && this.editor.activeLayer.isMask;
+                colorPickerHelper.open(this.colorBlock, this.color, (newColor) => {
+                    this.colorText.value = newColor;
+                    this.colorSelector.style.backgroundColor = newColor;
+                    this.onConfigChange();
+                }, isMask);
+                if (focusHex) {
+                    colorPickerHelper.focusHex();
+                }
+            }
+        };
+        this.colorText.addEventListener('click', () => {
+            openPickerForThis(true);
         });
-        this.colorSelector.addEventListener('change', () => {
-            this.colorText.value = this.colorSelector.value;
-            this.onConfigChange();
+        this.colorSelector.addEventListener('click', () => {
+            openPickerForThis(false);
         });
         this.colorPickButton.addEventListener('click', () => {
             if (this.colorPickButton.classList.contains('interrupt-button')) {
@@ -933,10 +1029,28 @@ class ImageEditorToolShape extends ImageEditorTool {
     setColor(col) {
         this.color = col;
         this.colorText.value = col;
-        this.colorSelector.value = col;
+        this.colorSelector.style.backgroundColor = col;
         this.colorPickButton.classList.remove('interrupt-button');
     }
-    
+
+    onLayerChanged(oldLayer, newLayer) {
+        super.onLayerChanged(oldLayer, newLayer);
+        let wasMask = oldLayer && oldLayer.isMask;
+        let isMask = newLayer && newLayer.isMask;
+        if (wasMask) {
+            this.maskColor = this.color;
+        }
+        else {
+            this.imageColor = this.color;
+        }
+        if (isMask) {
+            this.setColor(colorPickerHelper.hexToGrayscale(this.maskColor));
+        }
+        else {
+            this.setColor(this.imageColor);
+        }
+    }
+
     onConfigChange() {
         this.color = this.colorText.value;
         this.strokeWidth = parseInt(this.strokeNumber.value);
@@ -1220,6 +1334,9 @@ class ImageEditorToolPicker extends ImageEditorTempTool {
     pickNow() {
         let imageData = this.editor.ctx.getImageData(this.editor.mouseX, this.editor.mouseY, 1, 1).data;
         this.color = `#${imageData[0].toString(16).padStart(2, '0')}${imageData[1].toString(16).padStart(2, '0')}${imageData[2].toString(16).padStart(2, '0')}`;
+        if (this.editor.activeLayer && this.editor.activeLayer.isMask) {
+            this.color = colorPickerHelper.hexToGrayscale(this.color);
+        }
         this.toolFor.setColor(this.color);
         this.editor.redraw();
     }
@@ -2084,7 +2201,7 @@ class ImageEditor {
         if (!newTool) {
             throw new Error(`Tool ${id} not found`);
         }
-        if (newTool.div.style.display == 'none') {
+        if (newTool.div && newTool.div.style.display == 'none') {
             return;
         }
         if (this.activeTool && !newTool.isTempTool) {
@@ -2334,12 +2451,13 @@ class ImageEditor {
         if (this.layers.indexOf(layer) == -1) {
             throw new Error(`layer not found, ${layer}`);
         }
+        let oldLayer = this.activeLayer;
         this.activeLayer = layer;
         if (layer && layer.div) {
             layer.div.classList.add('image_editor_layer_preview-active');
         }
         for (let tool of Object.values(this.tools)) {
-            tool.onLayerChanged(layer);
+            tool.onLayerChanged(oldLayer, layer);
         }
         this.redraw();
     }
