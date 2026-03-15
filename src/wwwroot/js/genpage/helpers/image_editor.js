@@ -1577,9 +1577,6 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
         mouseX = Math.round(mouseX);
         mouseY = Math.round(mouseY);
-        if (mouseX < 0 || mouseY < 0 || mouseX >= this.editor.realWidth || mouseY >= this.editor.realHeight) {
-            return;
-        }
         this.isDrawing = true;
         this.bboxStartX = mouseX;
         this.bboxStartY = mouseY;
@@ -1593,10 +1590,8 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         }
         this.editor.updateMousePosFrom(e);
         let [mouseX, mouseY] = this.editor.canvasCoordToImageCoord(this.editor.mouseX, this.editor.mouseY);
-        mouseX = Math.max(0, Math.min(this.editor.realWidth - 1, Math.round(mouseX)));
-        mouseY = Math.max(0, Math.min(this.editor.realHeight - 1, Math.round(mouseY)));
-        this.bboxEndX = mouseX;
-        this.bboxEndY = mouseY;
+        this.bboxEndX = Math.round(mouseX);
+        this.bboxEndY = Math.round(mouseY);
         this.editor.redraw();
     }
 
@@ -1626,10 +1621,13 @@ class ImageEditorToolSam2BBox extends ImageEditorTool {
         genData['prompt'] = '';
         delete genData['batchsize'];
         genData['donotsave'] = true;
-        let minX = Math.min(this.bboxStartX, this.bboxEndX);
-        let minY = Math.min(this.bboxStartY, this.bboxEndY);
-        let maxX = Math.max(this.bboxStartX, this.bboxEndX);
-        let maxY = Math.max(this.bboxStartY, this.bboxEndY);
+        let minX = Math.max(0, Math.min(this.bboxStartX, this.bboxEndX));
+        let minY = Math.max(0, Math.min(this.bboxStartY, this.bboxEndY));
+        let maxX = Math.min(this.editor.realWidth - 1, Math.max(this.bboxStartX, this.bboxEndX));
+        let maxY = Math.min(this.editor.realHeight - 1, Math.max(this.bboxStartY, this.bboxEndY));
+        if (maxX <= minX || maxY <= minY) {
+            return;
+        }
         genData['sambbox'] = JSON.stringify([minX, minY, maxX, maxY]);
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId != this.activeRequestId) {
