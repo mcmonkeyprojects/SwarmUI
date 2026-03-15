@@ -26,7 +26,7 @@ If a new understanding of core repository rules is learned during development, a
 
 ## Skill Files
 
-If you learn specific appropriate techniques for developing certain tasks within the repo, add it to `.agents/skills/` as (SKILLNAME).md, for example `.agents/skills/NEW_API_ROUTE.md`. Each file should be formatted like so:
+If you learn specific appropriate techniques for developing certain tasks within the repo, add it to `.agents/skills/(skill-name)/SKILL.md`, for example `.agents/skills/new-api-route/SKILL.md`. Each file should be formatted like so:
 
 ```md
 ---
@@ -50,6 +50,8 @@ Detailed instructions for the agent.
 - Best practices and patterns
 - Use the ask questions tool if you need to clarify requirements with the user
 ```
+
+Note: create the file directly, you do not need to execute a mkdir or anything.
 
 Be careful to not over-specialize these. For example, documentation about new API routes should not go into the specifics of any one API route that's implemented, just the general core.
 
