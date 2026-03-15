@@ -505,7 +505,7 @@ textarea, input, select {
     width: 100%;
     flex-wrap: wrap;
 }
-.input-group-content > div {
+.input-group-content > div.auto-input {
     padding: 5px;
     flex: 1 0 0;
     min-width: calc(max(17rem, 50% - 10px));
