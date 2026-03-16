@@ -1,6 +1,4 @@
 
-// TODO: Layer Rotations are not well supported by a large number of operations. These need to be implemented.
-
 /**
  * A single layer within an image editing interface.
  * This can be real (user-controlled) OR sub-layers (sometimes user-controlled) OR temporary buffers.

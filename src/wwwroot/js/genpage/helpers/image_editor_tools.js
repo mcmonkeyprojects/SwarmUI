@@ -113,18 +113,17 @@ class ImageEditorTool {
 
     /** Returns the current selection rectangle in layer-local pixel coordinates, or null if no selection is active. */
     getSelectionBoundsInLayer(layer) {
-        if (!this.editor.hasSelection) {
+        let quad = this.getSelectionQuadInLayer(layer);
+        if (!quad) {
             return null;
         }
-        let [cx1, cy1] = this.editor.imageCoordToCanvasCoord(this.editor.selectX, this.editor.selectY);
-        let [lx1, ly1] = layer.canvasCoordToLayerCoord(cx1, cy1);
-        let [cx2, cy2] = this.editor.imageCoordToCanvasCoord(this.editor.selectX + this.editor.selectWidth, this.editor.selectY + this.editor.selectHeight);
-        let [lx2, ly2] = layer.canvasCoordToLayerCoord(cx2, cy2);
+        let xs = quad.map(p => p[0]);
+        let ys = quad.map(p => p[1]);
         return {
-            minX: Math.round(Math.min(lx1, lx2)),
-            minY: Math.round(Math.min(ly1, ly2)),
-            maxX: Math.round(Math.max(lx1, lx2)),
-            maxY: Math.round(Math.max(ly1, ly2))
+            minX: Math.round(Math.min(...xs)),
+            minY: Math.round(Math.min(...ys)),
+            maxX: Math.round(Math.max(...xs)),
+            maxY: Math.round(Math.max(...ys))
         };
     }
 
@@ -846,17 +845,30 @@ class ImageEditorToolBucket extends ImageEditorToolWithColor {
         refImage.width = canvas.width;
         refImage.height = canvas.height;
         let refCtx = refImage.getContext('2d');
+        let offset = layer.getOffset();
+        let relWidth = layer.width / canvas.width;
+        let relHeight = layer.height / canvas.height;
+        let halfW = layer.width / 2;
+        let halfH = layer.height / 2;
+        let cosR = Math.cos(-layer.rotation);
+        let sinR = Math.sin(-layer.rotation);
+        refCtx.setTransform(
+            cosR / relWidth, sinR / relHeight,
+            -sinR / relWidth, cosR / relHeight,
+            (-cosR * halfW + sinR * halfH + halfW) / relWidth,
+            (-sinR * halfW - cosR * halfH + halfH) / relHeight
+        );
         for (let i = 0; i < this.editor.layers.length; i++) {
             let belowLayer = this.editor.layers[i];
             if (belowLayer.isMask) {
                 continue;
             }
-            let offset = layer.getOffset();
             belowLayer.drawToBack(refCtx, -offset[0], -offset[1], 1);
             if (belowLayer == layer) {
                 break;
             }
         }
+        refCtx.setTransform(1, 0, 0, 1, 0, 0);
         let refData = refCtx.getImageData(0, 0, refImage.width, refImage.height);
         let refRawData = refData.data;
         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -869,6 +881,23 @@ class ImageEditorToolBucket extends ImageEditorToolWithColor {
         let boundsMinY = selBounds ? selBounds.minY : 0;
         let boundsMaxX = selBounds ? Math.min(selBounds.maxX, width) : width;
         let boundsMaxY = selBounds ? Math.min(selBounds.maxY, height) : height;
+        let hasSelection = this.editor.hasSelection;
+        let selectX = this.editor.selectX;
+        let selectY = this.editor.selectY;
+        let selectW = this.editor.selectWidth;
+        let selectH = this.editor.selectHeight;
+        let selCX = layer.width / 2;
+        let selCY = layer.height / 2;
+        let selAngle = layer.rotation;
+        function layerPixelToImageCoord(x, y) {
+            let x2 = x * relWidth;
+            let y2 = y * relHeight;
+            let [x3, y3] = [x2 - selCX, y2 - selCY];
+            let [xr, yr] = [x3 * Math.cos(selAngle) - y3 * Math.sin(selAngle), x3 * Math.sin(selAngle) + y3 * Math.cos(selAngle)];
+            let ix = xr + selCX + offset[0];
+            let iy = yr + selCY + offset[1];
+            return [ix, iy];
+        }
         function getPixelIndex(x, y) {
             return (y * width + x) * 4;
         }
@@ -891,7 +920,16 @@ class ImageEditorToolBucket extends ImageEditorToolWithColor {
             hits++;
         }
         function canInclude(x, y) {
-            return x >= boundsMinX && y >= boundsMinY && x < boundsMaxX && y < boundsMaxY && maskData[y * width + x] == 0 && isInRange(getColorAt(x, y));
+            if (x < boundsMinX || y < boundsMinY || x >= boundsMaxX || y >= boundsMaxY || maskData[y * width + x] != 0) {
+                return false;
+            }
+            if (hasSelection) {
+                let imgPos = layerPixelToImageCoord(x, y);
+                if (imgPos[0] < selectX || imgPos[1] < selectY || imgPos[0] >= selectX + selectW || imgPos[1] >= selectY + selectH) {
+                    return false;
+                }
+            }
+            return isInRange(getColorAt(x, y));
         }
         let stack = [[targetX, targetY]];
         while (stack.length > 0) {
