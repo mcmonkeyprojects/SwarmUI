@@ -232,9 +232,33 @@ class ImageEditorLayer {
     applyMaskFromImage(img) {
         this.saveBeforeEdit();
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        let [offsetX, offsetY] = this.getOffset();
-        this.ctx.drawImage(img, offsetX, offsetY, this.width, this.height, 0, 0, this.canvas.width, this.canvas.height);
-        let imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        let imageData;
+        if (this.rotation == 0) {
+            let [offsetX, offsetY] = this.getOffset();
+            this.ctx.drawImage(img, offsetX, offsetY, this.width, this.height, 0, 0, this.canvas.width, this.canvas.height);
+            imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        }
+        else {
+            let tempCanvas = document.createElement('canvas');
+            tempCanvas.width = this.canvas.width;
+            tempCanvas.height = this.canvas.height;
+            let tempCtx = tempCanvas.getContext('2d');
+            let [offsetX, offsetY] = this.getOffset();
+            let relWidth = this.width / this.canvas.width;
+            let relHeight = this.height / this.canvas.height;
+            let cx = this.width / 2;
+            let cy = this.height / 2;
+            let cosR = Math.cos(-this.rotation);
+            let sinR = Math.sin(-this.rotation);
+            tempCtx.setTransform(
+                cosR / relWidth, sinR / relHeight,
+                -sinR / relWidth, cosR / relHeight,
+                (-cosR * (offsetX + cx) + sinR * (offsetY + cy) + cx) / relWidth,
+                (-sinR * (offsetX + cx) - cosR * (offsetY + cy) + cy) / relHeight
+            );
+            tempCtx.drawImage(img, 0, 0, img.width || this.editor.realWidth, img.height || this.editor.realHeight, 0, 0, this.editor.realWidth, this.editor.realHeight);
+            imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        }
         let data = imageData.data;
         for (let i = 0; i < data.length; i += 4) {
             let brightness = data[i] + data[i + 1] + data[i + 2];

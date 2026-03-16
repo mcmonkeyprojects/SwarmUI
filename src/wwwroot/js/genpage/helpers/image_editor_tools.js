@@ -1395,21 +1395,23 @@ class ImageEditorToolSam2Base extends ImageEditorTool {
         if (!this.editor.activeLayer || !this.editor.activeLayer.isMask) {
             return;
         }
-        if (!this.editor.hasSelection) {
-            this.editor.activeLayer.applyMaskFromImage(maskImg);
-        }
-        else {
+        let fullMask = document.createElement('canvas');
+        fullMask.width = this.editor.realWidth;
+        fullMask.height = this.editor.realHeight;
+        let fullCtx = fullMask.getContext('2d');
+        if (this.editor.hasSelection) {
             let selX = Math.round(this.editor.selectX);
             let selY = Math.round(this.editor.selectY);
             let selW = Math.round(this.editor.selectWidth);
             let selH = Math.round(this.editor.selectHeight);
-            let fullMask = document.createElement('canvas');
-            fullMask.width = this.editor.realWidth;
-            fullMask.height = this.editor.realHeight;
-            let fullCtx = fullMask.getContext('2d');
             fullCtx.drawImage(maskImg, 0, 0, maskImg.width || selW, maskImg.height || selH, selX, selY, selW, selH);
-            this.editor.activeLayer.applyMaskFromImage(fullMask);
         }
+        else {
+            let imgW = maskImg.width || this.editor.realWidth;
+            let imgH = maskImg.height || this.editor.realHeight;
+            fullCtx.drawImage(maskImg, 0, 0, imgW, imgH, 0, 0, this.editor.realWidth, this.editor.realHeight);
+        }
+        this.editor.activeLayer.applyMaskFromImage(fullMask);
         this.clipMaskToSelection();
     }
 
@@ -1419,14 +1421,30 @@ class ImageEditorToolSam2Base extends ImageEditorTool {
         if (!maskLayer || !maskLayer.isMask) {
             return;
         }
-        let bounds = this.getSelectionBoundsInLayer(maskLayer);
-        if (!bounds) {
+        if (!this.editor.hasSelection) {
             return;
         }
         maskLayer.ctx.save();
+        let [offsetX, offsetY] = maskLayer.getOffset();
+        let relWidth = maskLayer.width / maskLayer.canvas.width;
+        let relHeight = maskLayer.height / maskLayer.canvas.height;
+        let cx = maskLayer.width / 2;
+        let cy = maskLayer.height / 2;
+        let cosR = Math.cos(-maskLayer.rotation);
+        let sinR = Math.sin(-maskLayer.rotation);
+        maskLayer.ctx.setTransform(
+            cosR / relWidth, sinR / relHeight,
+            -sinR / relWidth, cosR / relHeight,
+            (-cosR * (offsetX + cx) + sinR * (offsetY + cy) + cx) / relWidth,
+            (-sinR * (offsetX + cx) - cosR * (offsetY + cy) + cy) / relHeight
+        );
         maskLayer.ctx.globalCompositeOperation = 'destination-in';
         maskLayer.ctx.fillStyle = '#ffffff';
-        maskLayer.ctx.fillRect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+        let selX = Math.round(this.editor.selectX);
+        let selY = Math.round(this.editor.selectY);
+        let selW = Math.round(this.editor.selectWidth);
+        let selH = Math.round(this.editor.selectHeight);
+        maskLayer.ctx.fillRect(selX, selY, selW, selH);
         maskLayer.ctx.restore();
     }
 }
