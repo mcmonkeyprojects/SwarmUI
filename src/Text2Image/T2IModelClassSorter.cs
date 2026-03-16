@@ -678,6 +678,10 @@ public class T2IModelClassSorter
         {
             return isChroma(h) && !isChromaRadiance(h);
         }});
+        Register(new() { ID = "chroma/lora", CompatClass = CompatChroma, Name = "Chroma LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return false;
+        }});
         Register(new() { ID = "chroma-radiance", CompatClass = CompatChromaRadiance, Name = "Chroma Radiance", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
             return isChroma(h) && isChromaRadiance(h);
