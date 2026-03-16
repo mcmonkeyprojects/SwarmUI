@@ -772,9 +772,16 @@ class ImageEditor {
         else {
             this.resize();
         }
+        if (!this.redrawInterval) {
+            this.redrawInterval = setInterval(() => this.redraw(), 250);
+        }
     }
 
     deactivate() {
+        if (this.redrawInterval) {
+            clearInterval(this.redrawInterval);
+            this.redrawInterval = null;
+        }
         if (this.onDeactivate) {
             this.onDeactivate();
         }
@@ -1072,12 +1079,19 @@ class ImageEditor {
         }
     }
 
-    drawSelectionBox(x, y, width, height, color, spacing, angle) {
+    drawSelectionBox(x, y, width, height, color, spacing, angle, offset = 0) {
         this.ctx.save();
-        this.ctx.strokeStyle = color;
         this.ctx.lineWidth = 1;
         this.ctx.beginPath();
         this.ctx.setLineDash([spacing, spacing]);
+        this.ctx.lineDashOffset = offset;
+        if (color == 'diff') {
+            this.ctx.globalCompositeOperation = 'difference';
+            this.ctx.strokeStyle = 'white';
+        }
+        else {
+            this.ctx.strokeStyle = color;
+        }
         this.ctx.translate(x + width / 2, y + height / 2);
         this.ctx.rotate(angle);
         this.ctx.moveTo(-width / 2 - 1, -height / 2 - 1);
@@ -1134,7 +1148,8 @@ class ImageEditor {
         this.drawSelectionBox(offsetX, offsetY, this.activeLayer.width * this.zoomLevel, this.activeLayer.height * this.zoomLevel, this.uiBorderColor, 8 * this.zoomLevel, this.activeLayer.rotation);
         if (this.hasSelection) {
             let [selectX, selectY] = this.imageCoordToCanvasCoord(this.selectX, this.selectY);
-            this.drawSelectionBox(selectX, selectY, this.selectWidth * this.zoomLevel, this.selectHeight * this.zoomLevel, this.uiColor, 8 * this.zoomLevel, 0);
+            let offset = (Math.floor(Date.now() / 250) % 4) * 4 * this.zoomLevel;
+            this.drawSelectionBox(selectX, selectY, this.selectWidth * this.zoomLevel, this.selectHeight * this.zoomLevel, 'diff', 8 * this.zoomLevel, 0, offset);
         }
         this.activeTool.draw();
         this.ctx.restore();

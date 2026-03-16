@@ -1422,6 +1422,7 @@ class ImageEditorToolSam2Base extends ImageEditorTool {
 class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
     constructor(editor) {
         super(editor, 'sam2points', 'crosshair', 'SAM2 Points', 'Left click to add positive points. Right click to add negative points.\nEach click regenerates the mask.\nRequires SAM2 to be installed.\nHotKey: Y', 'y');
+        // TODO: This map is a pretty iffy way to do things, probably stray persistence.
         this.layerPoints = new Map();
         this.pendingMaskUpdate = false;
     }
