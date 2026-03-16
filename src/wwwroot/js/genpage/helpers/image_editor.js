@@ -143,11 +143,17 @@ class ImageEditorLayer {
     }
 
     layerCoordToCanvasCoord(x, y) {
-        let [x2, y2] = this.editor.imageCoordToCanvasCoord(x, y);
         let [offsetX, offsetY] = this.getOffset();
         let relWidth = this.width / this.canvas.width;
         let relHeight = this.height / this.canvas.height;
-        [x2, y2] = [x2 * relWidth + offsetX, y2 * relHeight + offsetY];
+        let [x2, y2] = [x * relWidth, y * relHeight];
+        let angle = this.rotation;
+        let [cx, cy] = [this.width / 2, this.height / 2];
+        let [x3, y3] = [x2 - cx, y2 - cy];
+        [x3, y3] = [x3 * Math.cos(angle) - y3 * Math.sin(angle), x3 * Math.sin(angle) + y3 * Math.cos(angle)];
+        [x2, y2] = [x3 + cx, y3 + cy];
+        [x2, y2] = [x2 + offsetX, y2 + offsetY];
+        [x2, y2] = this.editor.imageCoordToCanvasCoord(x2, y2);
         return [x2, y2];
     }
 

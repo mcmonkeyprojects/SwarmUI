@@ -998,19 +998,17 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
         if (!target) {
             return;
         }
-        let startX = Math.min(this.startLayerX, this.currentLayerX);
-        let startY = Math.min(this.startLayerY, this.currentLayerY);
-        let endX = Math.max(this.startLayerX, this.currentLayerX);
-        let endY = Math.max(this.startLayerY, this.currentLayerY);
-        let width = endX - startX;
-        let height = endY - startY;
+        let imgStartX = Math.min(this.startX, this.currentX);
+        let imgStartY = Math.min(this.startY, this.currentY);
+        let imgEndX = Math.max(this.startX, this.currentX);
+        let imgEndY = Math.max(this.startY, this.currentY);
+        let width = imgEndX - imgStartX;
+        let height = imgEndY - imgStartY;
         if (width == 0 && height == 0) {
             return;
         }
-        let [canvasX1, canvasY1] = target.layerCoordToCanvasCoord(startX, startY);
-        let [canvasX2, canvasY2] = target.layerCoordToCanvasCoord(endX, endY);
-        let [imageX1, imageY1] = target.editor.canvasCoordToImageCoord(canvasX1, canvasY1);
-        let [imageX2, imageY2] = target.editor.canvasCoordToImageCoord(canvasX2, canvasY2);
+        let [canvasX1, canvasY1] = this.editor.imageCoordToCanvasCoord(imgStartX, imgStartY);
+        let [canvasX2, canvasY2] = this.editor.imageCoordToCanvasCoord(imgEndX, imgEndY);
         let canvasWidth = canvasX2 - canvasX1;
         let canvasHeight = canvasY2 - canvasY1;
         this.editor.ctx.save();
@@ -1172,10 +1170,10 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
             return;
         }
         this.bufferLayer.ctx.clearRect(0, 0, this.bufferLayer.canvas.width, this.bufferLayer.canvas.height);
-        let startX = Math.round(Math.min(this.startLayerX, this.currentLayerX));
-        let startY = Math.round(Math.min(this.startLayerY, this.currentLayerY));
-        let endX = Math.round(Math.max(this.startLayerX, this.currentLayerX));
-        let endY = Math.round(Math.max(this.startLayerY, this.currentLayerY));
+        let startX = Math.round(Math.min(this.startX, this.currentX));
+        let startY = Math.round(Math.min(this.startY, this.currentY));
+        let endX = Math.round(Math.max(this.startX, this.currentX));
+        let endY = Math.round(Math.max(this.startY, this.currentY));
         let width = endX - startX;
         let height = endY - startY;
         if (width == 0 && height == 0) {
@@ -1185,7 +1183,24 @@ class ImageEditorToolShape extends ImageEditorToolWithColor {
             return;
         }
         this.bufferLayer.ctx.save();
-        this.applySelectionClip(this.bufferLayer.ctx, parent);
+        let [offsetX, offsetY] = parent.getOffset();
+        let relWidth = parent.width / parent.canvas.width;
+        let relHeight = parent.height / parent.canvas.height;
+        let cx = parent.width / 2;
+        let cy = parent.height / 2;
+        let cosR = Math.cos(-parent.rotation);
+        let sinR = Math.sin(-parent.rotation);
+        this.bufferLayer.ctx.setTransform(
+            cosR / relWidth, sinR / relHeight,
+            -sinR / relWidth, cosR / relHeight,
+            (-cosR * (offsetX + cx) + sinR * (offsetY + cy) + cx) / relWidth,
+            (-sinR * (offsetX + cx) - cosR * (offsetY + cy) + cy) / relHeight
+        );
+        if (this.editor.hasSelection) {
+            this.bufferLayer.ctx.beginPath();
+            this.bufferLayer.ctx.rect(this.editor.selectX, this.editor.selectY, this.editor.selectWidth, this.editor.selectHeight);
+            this.bufferLayer.ctx.clip();
+        }
         this.bufferLayer.ctx.imageSmoothingEnabled = false;
         this.bufferLayer.ctx.setLineDash([]);
         this.bufferLayer.ctx.fillStyle = this.color;
