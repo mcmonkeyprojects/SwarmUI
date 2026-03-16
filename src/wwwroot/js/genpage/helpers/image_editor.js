@@ -1,4 +1,6 @@
 
+// TODO: Layer Rotations are not well supported by a large number of operations. These need to be implemented.
+
 /**
  * A single layer within an image editing interface.
  * This can be real (user-controlled) OR sub-layers (sometimes user-controlled) OR temporary buffers.
@@ -631,6 +633,7 @@ class ImageEditor {
             e.preventDefault();
             this.undoOnce();
         }
+        // TODO: Expose a keydown event to tools rather than this global handler only
         if (e.ctrlKey && e.key == 'c' && !this.activeElementIsAnInput() && this.activeTool && this.activeTool.id == 'select') {
             this.copySelectionToClipboard(this.activeTool.copyMode == 'layer');
             e.preventDefault();
@@ -639,9 +642,15 @@ class ImageEditor {
             e.preventDefault();
             this.pasteSelectionFromClipboard();
         }
-        if (e.key == 'Delete' && !this.activeElementIsAnInput() && this.activeTool && this.activeTool.id == 'general' && this.activeLayer) {
-            e.preventDefault();
-            this.removeLayer(this.activeLayer);
+        if (e.key == 'Delete' && !this.activeElementIsAnInput() && this.activeTool && this.activeLayer) {
+            if (this.activeTool.id == 'general') {
+                e.preventDefault();
+                this.removeLayer(this.activeLayer);
+            }
+            else if (this.activeTool.id == 'select') {
+                e.preventDefault();
+                this.clearSelectionOnLayer(this.activeLayer);
+            }
         }
         if (!e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey) {
             let toolId = this.toolHotkeys[e.key];
@@ -1261,6 +1270,32 @@ class ImageEditor {
         ctx2.globalCompositeOperation = 'luminosity';
         ctx2.drawImage(canvas, 0, 0);
         return canvas2.toDataURL(format);
+    }
+
+    clearSelectionOnLayer(layer) {
+        if (!this.hasSelection || this.selectWidth == 0 || this.selectHeight == 0) {
+            return;
+        }
+        let [cx1, cy1] = this.imageCoordToCanvasCoord(this.selectX, this.selectY);
+        let [lx1, ly1] = layer.canvasCoordToLayerCoord(cx1, cy1);
+        let [cx2, cy2] = this.imageCoordToCanvasCoord(this.selectX + this.selectWidth, this.selectY + this.selectHeight);
+        let [lx2, ly2] = layer.canvasCoordToLayerCoord(cx2, cy2);
+        let minX = Math.round(Math.min(lx1, lx2));
+        let minY = Math.round(Math.min(ly1, ly2));
+        let maxX = Math.round(Math.max(lx1, lx2));
+        let maxY = Math.round(Math.max(ly1, ly2));
+        minX = Math.max(0, Math.min(minX, layer.canvas.width));
+        minY = Math.max(0, Math.min(minY, layer.canvas.height));
+        maxX = Math.max(0, Math.min(maxX, layer.canvas.width));
+        maxY = Math.max(0, Math.min(maxY, layer.canvas.height));
+        let width = maxX - minX;
+        let height = maxY - minY;
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        layer.saveBeforeEdit();
+        layer.ctx.clearRect(minX, minY, width, height);
+        this.redraw();
     }
 
     /** Shows a debug image in a stacking modal. Accepts a data URL, Image, or Canvas. */
