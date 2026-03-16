@@ -128,14 +128,43 @@ class ImageEditorTool {
         };
     }
 
-    /** Applies the current selection as a clip rect on the given canvas context, in layer-local coordinates. No-op if no selection. */
+    /** Returns the current selection quadrilateral in layer-local pixel coordinates, or null if no selection is active. */
+    getSelectionQuadInLayer(layer) {
+        if (!this.editor.hasSelection) {
+            return null;
+        }
+        let x1 = this.editor.selectX;
+        let y1 = this.editor.selectY;
+        let x2 = this.editor.selectX + this.editor.selectWidth;
+        let y2 = this.editor.selectY + this.editor.selectHeight;
+        let corners = [
+            [x1, y1],
+            [x2, y1],
+            [x2, y2],
+            [x1, y2]
+        ];
+        let quad = [];
+        for (let i = 0; i < corners.length; i++) {
+            let [ix, iy] = corners[i];
+            let [cx, cy] = this.editor.imageCoordToCanvasCoord(ix, iy);
+            let [lx, ly] = layer.canvasCoordToLayerCoord(cx, cy);
+            quad.push([lx, ly]);
+        }
+        return quad;
+    }
+
+    /** Applies the current selection as a clip path on the given canvas context, in layer-local coordinates. No-op if no selection. */
     applySelectionClip(ctx, layer) {
-        let bounds = this.getSelectionBoundsInLayer(layer);
-        if (!bounds) {
+        let quad = this.getSelectionQuadInLayer(layer);
+        if (!quad) {
             return;
         }
         ctx.beginPath();
-        ctx.rect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, bounds.maxY - bounds.minY);
+        ctx.moveTo(quad[0][0], quad[0][1]);
+        for (let i = 1; i < quad.length; i++) {
+            ctx.lineTo(quad[i][0], quad[i][1]);
+        }
+        ctx.closePath();
         ctx.clip();
     }
 }
