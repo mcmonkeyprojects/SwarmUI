@@ -89,10 +89,10 @@ WildcardImporter:
     - tabs
     - ui
 
-PostRender:
-    author: HellerCommaA
-    description: Adds support for a variety of useful post-processing techniques - LUTs, film grain, vignette, blur, and more.
-    url: https://github.com/HellerCommaA/SwarmUI-PostRender
+PostRenderTorched:
+    author: Juan Treminio
+    description: Adds support for a variety of useful post-processing techniques - LUTs, film grain, vignette, blur, and more. Updated version of the original PostRender extension, uses Torch, up to 74% speedup compared to the original.
+    url: https://github.com/jtreminio/SwarmUI-PostRenderTorched
     license: MIT
     tags:
     - parameters
@@ -243,12 +243,3 @@ DownloaderHelper:
     license: MIT
     tags:
     - tools
-
-PostRenderTorched:
-    author: Juan Treminio
-    description: Updated version of the PostRender extension, uses Torch. Up to 74% speedup compared to the original. Adds support for a variety of useful post-processing techniques - LUTs, film grain, vignette, blur, and more.
-    url: https://github.com/jtreminio/SwarmUI-PostRenderTorched
-    license: MIT
-    tags:
-    - parameters
-    - nodes
