@@ -663,11 +663,33 @@ public static class AdminAPI
     {
         Logs.Warning($"User {session.User.UserID} requested update-and-restart.");
         string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
-        string pullResult = await Utilities.RunGitProcess("pull");
+
+        // Fetch from remote to ensure we have latest refs
+        Logs.Debug("Updater: fetching from origin...");
+        string fetchResult = await Utilities.RunGitProcess("fetch origin");
+        Logs.Debug($"Updater: fetch response: {fetchResult}");
+
+        // Explicitly checkout master to ensure we're on the right branch
+        Logs.Debug("Updater: checking out master branch...");
+        string checkoutResult = await Utilities.RunGitProcess("checkout master --force");
+        Logs.Debug($"Updater: checkout response: {checkoutResult}");
+
+        // Pull with autostash to handle any local changes
+        Logs.Debug("Updater: pulling with autostash...");
+        string pullResult = await Utilities.RunGitProcess("pull --autostash");
+        Logs.Debug($"Updater: pull response: {pullResult}");
+
+        // Handle various error cases
         if (pullResult.Contains("error: Your local changes to the following files would be overwritten by merge:"))
         {
             return new JObject() { ["error"] = "Git pull failed because you have local changes to source files.\nPlease remove them, or manually run 'git pull --autostash', or 'git fetch origin && git checkout -f master' in the SwarmUI folder." };
         }
+        if (pullResult.Contains("error") && !pullResult.Contains("fast-forward"))
+        {
+            Logs.Error($"Updater: Pull failed with error: {pullResult}");
+            return new JObject() { ["error"] = $"Git pull failed with error: {pullResult}" };
+        }
+
         string localHash = (await Utilities.RunGitProcess("rev-parse HEAD")).Trim();
         Logs.Debug($"Updater: prior hash was {priorHash}, new hash is {localHash}");
         long updates = localHash != priorHash ? 1 : 0;
@@ -683,7 +705,7 @@ public static class AdminAPI
                     string priorExtHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
                     await Utilities.RunGitProcess("pull", path);
                     string localExtHash = (await Utilities.RunGitProcess("rev-parse HEAD", path)).Trim();
-                    Logs.Debug($"Updater: prior hash for {ext.ExtensionName} was {priorHash}, new hash is {localHash}");
+                    Logs.Debug($"Updater: prior hash for {ext.ExtensionName} was {priorExtHash}, new hash is {localExtHash}");
                     if (priorExtHash != localExtHash)
                     {
                         Interlocked.Increment(ref updates);
