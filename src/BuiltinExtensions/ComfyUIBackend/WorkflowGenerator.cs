@@ -1452,30 +1452,22 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 97;
-                if (VideoEndFrame is not null)
+                string condNode = g.CreateNode("LTXVImgToVideo", new JObject()
                 {
-                    throw new SwarmReadableErrorException("LTX-V end-frame is TODO");
-                }
-                else
-                {
-                    string condNode = g.CreateNode("LTXVImgToVideo", new JObject()
-                    {
-                        ["positive"] = PosCond,
-                        ["negative"] = NegCond,
-                        ["vae"] = Vae.Path,
-                        ["image"] = origSrcImg.Path,
-                        ["width"] = Width,
-                        ["height"] = Height,
-                        ["length"] = Frames,
-                        ["batch_size"] = 1,
-                        ["image_noise_scale"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15),
-                        ["strength"] = 1
-                    });
-                    PosCond = [condNode, 0];
-                    NegCond = [condNode, 1];
-                    g.CurrentMedia = g.CurrentMedia.WithPath([condNode, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
-                }
-                DefaultCFG = 3;
+                    ["positive"] = PosCond,
+                    ["negative"] = NegCond,
+                    ["vae"] = Vae.Path,
+                    ["image"] = origSrcImg.Path,
+                    ["width"] = Width,
+                    ["height"] = Height,
+                    ["length"] = Frames,
+                    ["batch_size"] = 1,
+                    ["image_noise_scale"] = g.UserInput.Get(T2IParamTypes.VideoAugmentationLevel, 0.15),
+                    ["strength"] = 1
+                });
+                PosCond = [condNode, 0];
+                NegCond = [condNode, 1];
+                g.CurrentMedia = g.CurrentMedia.WithPath([condNode, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
                 string ltxvcond = g.CreateNode("LTXVConditioning", new JObject()
                 {
                     ["positive"] = PosCond,
@@ -1484,6 +1476,22 @@ public partial class WorkflowGenerator
                 });
                 PosCond = [ltxvcond, 0];
                 NegCond = [ltxvcond, 1];
+                if (VideoEndFrame is not null)
+                {
+                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    string addedGuide = g.CreateNode("LTXVAddGuide", new JObject()
+                    {
+                        ["positive"] = PosCond,
+                        ["negative"] = NegCond,
+                        ["vae"] = Vae.Path,
+                        ["latent"] = g.CurrentMedia.Path,
+                        ["image"] = endFrame.Path,
+                        ["frame_idx"] = -1,
+                        ["strength"] = 1
+                    });
+                    g.CurrentMedia = g.CurrentMedia.WithPath([addedGuide, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
+                }
+                DefaultCFG = 3;
                 HadSpecialCond = true;
                 DefaultSampler = "euler";
                 DefaultScheduler = "ltxv-image";
@@ -1492,37 +1500,29 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 97;
-                if (VideoEndFrame is not null)
+                string emptyLatent = g.CreateNode("EmptyLTXVLatentVideo", new JObject()
                 {
-                    throw new SwarmReadableErrorException("LTX-V2 end-frame is TODO");
-                }
-                else
+                    ["width"] = Width,
+                    ["height"] = Height,
+                    ["length"] = Frames,
+                    ["batch_size"] = 1
+                });
+                g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames, AttachedAudio = g.CurrentMedia?.AttachedAudio };
+                g.CurrentMedia = g.CurrentMedia.EnsureHasAudioIfNeeded(Vae, g.CurrentAudioVae);
+                string preproc = g.CreateNode("LTXVPreprocess", new JObject()
                 {
-                    string emptyLatent = g.CreateNode("EmptyLTXVLatentVideo", new JObject()
-                    {
-                        ["width"] = Width,
-                        ["height"] = Height,
-                        ["length"] = Frames,
-                        ["batch_size"] = 1
-                    });
-                    g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames, AttachedAudio = g.CurrentMedia?.AttachedAudio };
-                    g.CurrentMedia = g.CurrentMedia.EnsureHasAudioIfNeeded(Vae, g.CurrentAudioVae);
-                    string preproc = g.CreateNode("LTXVPreprocess", new JObject()
-                    {
-                        ["image"] = origSrcImg.Path,
-                        ["img_compression"] = 18
-                    });
-                    string latentOutNode = g.CreateNode("LTXVImgToVideoInplace", new JObject()
-                    {
-                        ["vae"] = Vae.Path,
-                        ["image"] = NodePath(preproc, 0),
-                        ["latent"] = NodePath(emptyLatent, 0),
-                        ["strength"] = 1.0,
-                        ["bypass"] = false
-                    });
-                    g.CurrentMedia = g.CurrentMedia.WithPath([latentOutNode, 0], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
-                }
-                DefaultCFG = 3;
+                    ["image"] = origSrcImg.Path,
+                    ["img_compression"] = 18
+                });
+                string latentOutNode = g.CreateNode("LTXVImgToVideoInplace", new JObject()
+                {
+                    ["vae"] = Vae.Path,
+                    ["image"] = NodePath(preproc, 0),
+                    ["latent"] = NodePath(emptyLatent, 0),
+                    ["strength"] = 1.0, // TODO: Configurable
+                    ["bypass"] = false
+                });
+                g.CurrentMedia = g.CurrentMedia.WithPath([latentOutNode, 0], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
                 string ltxvcond = g.CreateNode("LTXVConditioning", new JObject()
                 {
                     ["positive"] = PosCond,
@@ -1531,6 +1531,23 @@ public partial class WorkflowGenerator
                 });
                 PosCond = [ltxvcond, 0];
                 NegCond = [ltxvcond, 1];
+                if (VideoEndFrame is not null)
+                {
+                    WGNodeData endFrame = g.LoadImage(VideoEndFrame, "${videoendframe}", false);
+                    // TODO: Is this even correct for LTX-2? It works as intended, but it's kinda weird.
+                    string addedGuide = g.CreateNode("LTXVAddGuide", new JObject()
+                    {
+                        ["positive"] = PosCond,
+                        ["negative"] = NegCond,
+                        ["vae"] = Vae.Path,
+                        ["latent"] = g.CurrentMedia.Path,
+                        ["image"] = endFrame.Path,
+                        ["frame_idx"] = -1,
+                        ["strength"] = 1
+                    });
+                    g.CurrentMedia = g.CurrentMedia.WithPath([addedGuide, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
+                }
+                DefaultCFG = 3;
                 HadSpecialCond = true;
                 DefaultSampler = "euler";
                 DefaultScheduler = "normal";
