@@ -1489,6 +1489,8 @@ public partial class WorkflowGenerator
                         ["frame_idx"] = -1,
                         ["strength"] = 1
                     });
+                    PosCond = [addedGuide, 0];
+                    NegCond = [addedGuide, 1];
                     g.CurrentMedia = g.CurrentMedia.WithPath([addedGuide, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
                 }
                 DefaultCFG = 3;

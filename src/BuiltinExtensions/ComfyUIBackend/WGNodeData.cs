@@ -125,6 +125,19 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                     ["temporal_overlap"] = 4
                 }, id);
             }
+            // LTX-2 VAE is relatively fine, but gets intense. Adding some temporal tiling chills out the VRAM hit without visual difference, so on by default
+            else if ((Gen.IsLTXV2()) && UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
+            {
+                decoded = Gen.CreateNode("VAEDecodeTiled", new JObject()
+                {
+                    ["vae"] = vae.Path,
+                    ["samples"] = Path,
+                    ["tile_size"] = 2048,
+                    ["overlap"] = 256,
+                    ["temporal_size"] = 64,
+                    ["temporal_overlap"] = 16
+                }, id);
+            }
             else
             {
                 decoded = Gen.CreateNode("VAEDecode", new JObject()
