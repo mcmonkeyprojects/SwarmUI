@@ -10,7 +10,6 @@ using SwarmUI.Utils;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json.Linq;
-using System.IO;
 
 namespace SwarmUI.Text2Image;
 

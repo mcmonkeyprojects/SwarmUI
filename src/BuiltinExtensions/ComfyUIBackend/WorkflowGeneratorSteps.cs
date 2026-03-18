@@ -1414,7 +1414,7 @@ public class WorkflowGeneratorSteps
                 int height = (int)Math.Round(g.UserInput.GetImageHeight() * refineUpscale);
                 width = (width / 16) * 16; // avoid unworkable output sizes
                 height = (height / 16) * 16;
-                JArray model = g.FinalModel;
+                JArray model = g.CurrentModel.Path;
                 if (g.UserInput.TryGet(ComfyUIBackendExtension.RefinerHyperTile, out int tileSize))
                 {
                     string hyperTileNode = g.CreateNode("HyperTile", new JObject()
@@ -1436,10 +1436,10 @@ public class WorkflowGeneratorSteps
                 int refinerPassIndex = 0;
                 void runRefinerPass(string id)
                 {
-                    g.CreateKSampler(model, prompt, negPrompt, g.FinalSamples, cfg, steps, refinerStart, 10000,
+                    g.CreateKSampler(model, prompt, negPrompt, g.CurrentMedia.AsLatentImage(g.CurrentVae).Path, cfg, steps, refinerStart, 10000,
                         g.UserInput.Get(T2IParamTypes.Seed) + 1 + refinerPassIndex, false, refinerAddNoise, id: id, doTiled: g.UserInput.Get(T2IParamTypes.RefinerDoTiling, false),
                         explicitSampler: explicitSampler, explicitScheduler: explicitScheduler, sectionId: T2IParamInput.SectionID_Refiner);
-                    g.FinalSamples = [id, 0];
+                    g.CurrentMedia = g.CurrentMedia.WithPath([id, 0], WGNodeData.DT_LATENT_IMAGE);
                     refinerPassIndex++;
                 }
                 bool doPreUpscaleRefiner = doUspcale && refinerControl > 0 && g.UserInput.Get(T2IParamTypes.RefinerPassBeforeUpscale, false);
