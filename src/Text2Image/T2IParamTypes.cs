@@ -216,6 +216,15 @@ public class T2IParamTypes
     /// <summary>Map of all currently loaded types, by cleaned name.</summary>
     public static Dictionary<string, T2IParamType> Types = [];
 
+    /// <summary>Map of old parameter IDs to new parameter IDs, for parameters that were deleted, renamed, or consolidated. Avoid recursive remap entries. Do not remap parameters that are still registered.</summary>
+    public static Dictionary<string, string> ParameterRemaps = new()
+    {
+        ["saveintermediateimages"] = "outputintermediateimages", // v0.9.5
+        ["textvideofps"] = "videofps", // v0.9.7
+        ["textvideoboomerang"] = "videoboomerang", // v0.9.7
+        ["textvideoformat"] = "videoformat", // v0.9.7
+    };
+
     /// <summary>Helper to match valid text for use in a parameter type name.</summary>
     public static AsciiMatcher CleanTypeNameMatcher = new(AsciiMatcher.LowercaseLetters);
 
@@ -1169,10 +1178,6 @@ public class T2IParamTypes
     public static T2IParamType GetType(string name, T2IParamInput context)
     {
         name = CleanTypeName(name);
-        if (name == "saveintermediateimages") { name = "outputintermediateimages"; } // TODO: Temporary, renamed 0.9.5
-        else if (name == "textvideofps") { name = "videofps"; } // TODO: Temporary, 0.9.7 legacy "Text2Video FPS" separate param dropped
-        else if (name == "textvideoboomerang") { name = "videoboomerang"; }
-        else if (name == "textvideoformat") { name = "videoformat"; }
         T2IParamType result;
         foreach (Func<string, T2IParamInput, T2IParamType> provider in FakeTypeProviders)
         {
@@ -1186,6 +1191,10 @@ public class T2IParamTypes
         if (result is not null)
         {
             return result;
+        }
+        if (ParameterRemaps.TryGetValue(name, out string altName))
+        {
+            return GetType(altName, context);
         }
         return null;
     }

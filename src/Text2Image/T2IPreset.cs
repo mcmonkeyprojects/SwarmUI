@@ -1,4 +1,4 @@
-﻿using LiteDB;
+using LiteDB;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Utils;
 
@@ -27,6 +27,28 @@ public class T2IPreset
 
     /// <summary>Mapping of parameters to values.</summary>
     public Dictionary<string, string> ParamMap { get; set; } = [];
+
+    /// <summary>Clean data in this preset, such as legacy parameter mappings.</summary>
+    public void Clean()
+    {
+        foreach ((string key, string val) in ParamMap.ToArray())
+        {
+            if (T2IParamTypes.ParameterRemaps.TryGetValue(key, out string new_key))
+            {
+                ParamMap.Remove(key);
+                if (ParamMap.ContainsKey(new_key))
+                {
+                    Logs.Warning($"Preset '{ID}' by '{Author}' has both legacy and new keys for '{key} to '{new_key}', skipping remap.");
+                    continue;
+                }
+                else
+                {
+                    Logs.Verbose($"Remapping preset parameter '{key}' to '{new_key}' for preset '{ID}' created by '{Author}'");
+                    ParamMap[new_key] = val;
+                }
+            }
+        }
+    }
 
     /// <summary>Gets networkable data about this preset.</summary>
     public JObject NetData()
