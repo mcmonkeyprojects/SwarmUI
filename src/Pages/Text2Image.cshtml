@@ -39,6 +39,13 @@
             };
         </text>
     }
+    window.parameter_remaps = {};
+    @foreach ((string oldID, string newID) in T2IParamTypes.ParameterRemaps)
+    {
+        <text>
+            window.parameter_remaps["@oldID"] = "@newID";
+        </text>
+    }
 </script>
 
 <ul class="nav nav-tabs" role="tablist" id="toptablist">

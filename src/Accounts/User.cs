@@ -172,10 +172,18 @@ public class User
     /// <summary>Returns the user preset for the given name, or null if not found.</summary>
     public T2IPreset GetPreset(string name)
     {
+        T2IPreset preset;
         lock (SessionHandlerSource.DBLock)
         {
-            return SessionHandlerSource.T2IPresets.FindById($"{UserID}///{name.ToLowerFast()}");
+            preset = SessionHandlerSource.T2IPresets.FindById($"{UserID}///{name.ToLowerFast()}");
         }
+        if (preset is null)
+        {
+            return null;
+        }
+        // TODO: Running this on every get is excessive. Need some amount of versioning/resaving.
+        preset.Clean();
+        return preset;
     }
 
     /// <summary>Returns a list of all presets this user has saved.</summary>
@@ -193,6 +201,10 @@ public class User
                     presets.RemoveAll(p => p is null);
                     Data.Presets.RemoveAll(bad.Contains);
                     Save();
+                }
+                foreach (T2IPreset preset in presets)
+                {
+                    preset.Clean();
                 }
                 return presets;
             }
