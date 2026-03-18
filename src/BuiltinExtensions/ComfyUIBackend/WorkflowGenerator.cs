@@ -178,7 +178,7 @@ public partial class WorkflowGenerator
     /// <summary>If true, Differential Diffusion node has been attached to the current model.</summary>
     public bool IsDifferentialDiffusion = false;
 
-    /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double)"/> if used for the main image.</summary>
+    /// <summary>Outputs of <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double, int, int, double, bool)"/> if used for the main image.</summary>
     public ImageMaskCropData MaskShrunkInfo = new(null, null, null, null);
 
     /// <summary>Gets the current loaded model class.</summary>
@@ -509,7 +509,7 @@ public partial class WorkflowGenerator
         }
     }
 
-    /// <summary>For <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double, int, int, bool)"/>.</summary>
+    /// <summary>For <see cref="CreateImageMaskCrop(JArray, JArray, int, JArray, T2IModel, double, double, int, int, double, bool)"/>.</summary>
     public record class ImageMaskCropData(string BoundsNode, string CroppedMask, string MaskedLatent, string ScaledImage);
 
     /// <summary>Creates an automatic image mask-crop before sampling, to be followed by <see cref="RecompositeCropped(string, string, JArray, JArray)"/> after sampling.</summary>
@@ -520,8 +520,12 @@ public partial class WorkflowGenerator
     /// <param name="model">The model in use, for determining resolution.</param>
     /// <param name="threshold">Optional minimum value threshold.</param>
     /// <param name="thresholdMax">Optional maximum value of the threshold.</param>
+    /// <param name="scaleWidth">Optional override width for the internal scaling node.</param>
+    /// <param name="scaleHeight">Optional override height for the internal scaling node.</param>
+    /// <param name="scaleMegapixels">Optional override megapixel target. Only applies when width and height overrides are both unset.</param>
+    /// <param name="canShrink">Whether the internal scaling node can shrink.</param>
     /// <returns>(boundsNode, croppedMask, maskedLatent, scaledImage).</returns>
-    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1, int scaleWidth = 0, int scaleHeight = 0, bool canShrink = true)
+    public ImageMaskCropData CreateImageMaskCrop(JArray mask, JArray image, int growBy, JArray vae, T2IModel model, double threshold = 0.01, double thresholdMax = 1, int scaleWidth = 0, int scaleHeight = 0, double scaleMegapixels = 0, bool canShrink = true)
     {
         if (threshold > 0)
         {
@@ -563,11 +567,22 @@ public partial class WorkflowGenerator
         });
         int targetWidthAuto = isCustomRes ? targetX : model?.StandardWidth <= 0 ? UserInput.GetImageWidth() : model.StandardWidth;
         int targetHeightAuto = isCustomRes ? targetY : model?.StandardHeight <= 0 ? UserInput.GetImageHeight() : model.StandardHeight;
+        int resolvedScaleWidth = scaleWidth > 0 ? scaleWidth : targetWidthAuto;
+        int resolvedScaleHeight = scaleHeight > 0 ? scaleHeight : targetHeightAuto;
+        if (scaleMegapixels > 0 && scaleWidth <= 0 && scaleHeight <= 0)
+        {
+            double targetPixels = scaleMegapixels * 1024 * 1024;
+            double baseAspect = targetWidthAuto > 0 && targetHeightAuto > 0 ? targetWidthAuto / (double)targetHeightAuto : 1;
+            int mpWidth = (int)Math.Round(Math.Sqrt(targetPixels * baseAspect));
+            int mpHeight = (int)Math.Round(Math.Sqrt(targetPixels / baseAspect));
+            resolvedScaleWidth = Math.Clamp(mpWidth, 64, 8192);
+            resolvedScaleHeight = Math.Clamp(mpHeight, 64, 8192);
+        }
         string scaledImage = CreateNode("SwarmImageScaleForMP", new JObject()
         {
             ["image"] = NodePath(croppedImage, 0),
-            ["width"] = scaleWidth > 0 ? scaleWidth : targetWidthAuto,
-            ["height"] = scaleHeight > 0 ? scaleHeight : targetHeightAuto,
+            ["width"] = resolvedScaleWidth,
+            ["height"] = resolvedScaleHeight,
             ["can_shrink"] = canShrink
         });
         JArray encoded = DoMaskedVAEEncode(vae, [scaledImage, 0], [croppedMask, 0], null);
