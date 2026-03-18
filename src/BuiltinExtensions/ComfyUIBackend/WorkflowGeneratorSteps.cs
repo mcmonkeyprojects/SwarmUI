@@ -449,6 +449,7 @@ public class WorkflowGeneratorSteps
                         g.MaskShrunkInfo = g.CreateImageMaskCrop(g.FinalMask, g.BasicInputImage.Path, shrinkGrow, g.CurrentVae.Path, g.FinalLoadedModel,
                             scaleWidth: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPWidth, 0),
                             scaleHeight: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPHeight, 0),
+                            scaleMegapixels: g.UserInput.Get(T2IParamTypes.MaskShrinkGrowResolutionOverrideMP, 0.0),
                             canShrink: g.UserInput.Get(T2IParamTypes.InitImageScaleForMPCanShrink, true));
                         currentMask = [g.MaskShrunkInfo.CroppedMask, 0];
                         // TODO: proper width/height wrangling
