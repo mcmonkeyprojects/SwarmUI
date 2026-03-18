@@ -70,8 +70,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
     public static bool IsComfyModelFileEmitted = false;
 
-    /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards.</summary>
+    /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards. Can also have ';' separated list of additional paths to forward to the same folder name.</summary>
     public static List<string> FoldersToForwardInComfyPath = ["unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "tensorrt", "clipseg", "style_models", "latent_upscale_models"];
+
+    /// <summary>List of functions that modify the comfy paths YAML data. The simplest no-op impl is: <c>string MyFunc(string yaml) { return yaml; }</c></summary>
+    public static List<Func<string, string>> ModifyComfyYaml = [];
 
     /// <summary>Filepaths to where custom node packs for comfy can be found, such as extension dirs.</summary>
     public static List<string> CustomNodePaths = [];
@@ -296,7 +299,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 """;
                 foreach (string folder in FoldersToForwardInComfyPath)
                 {
-                    yaml += $"    {folder}: {buildSection(rootFixed, folder)}\n";
+                    yaml += $"    {folder.Before(';')}: {buildSection(rootFixed, folder)}\n";
                 }
                 yaml += "\n";
             }
@@ -309,6 +312,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0]));
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipFolder.Split(';')[0]));
             Directory.CreateDirectory($"{roots[0]}/upscale_models");
+            foreach (Func<string, string> yamlModifier in ModifyComfyYaml)
+            {
+                yaml = yamlModifier(yaml);
+            }
             File.WriteAllBytes($"{Program.DataDir}/comfy-auto-model.yaml", yaml.EncodeUTF8());
             IsComfyModelFileEmitted = true;
             AddLoadStatus($"Done emitting comfy model paths file.");
