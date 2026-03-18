@@ -257,6 +257,29 @@
     </div>
 @WebUtil.ModalFooter()
 
+<!-- =================================== Debug Modals =================================== -->
+
+@WebUtil.ModalHeader("image_editor_debug_modal", "Debug Images")
+    <div class="modal-body" style="max-height:70vh;overflow-y:auto;">
+        <div id="image_editor_debug_images"></div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#image_editor_debug_modal').modal('hide')">Close</button>
+    </div>
+@WebUtil.ModalFooter()
+@WebUtil.ModalHeader("image_editor_paste_modal", "Paste Image as Layer")
+    <div class="modal-body">
+        <span class="translate">Your browser has not allowed Swarm to directly access your clipboard. Instead, paste an image from your clipboard into the box below with CTRL+V to add it as a new layer.</span>
+        <br><br>
+        <label class="auto-file-input-label">
+            <input type="text" id="image_editor_paste_pastebox" class="auto-text auto-text-block" size="14" maxlength="0" placeholder="Ctrl+V: Paste Image" autocomplete="off" />
+        </label>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary basic-button translate" onclick="$('#image_editor_paste_modal').modal('hide')">Cancel</button>
+    </div>
+@WebUtil.ModalFooter()
+
 <!-- =================================== Preset Modals =================================== -->
 
 @WebUtil.ModalHeader("export_presets_modal", "Export Presets")

@@ -1204,6 +1204,87 @@ public class WorkflowGeneratorSteps
                 g.FinalTrimLatent = [vaceNode, 3];
             }
         }, -6);
+        #region SAM2 Masking
+        AddStep(g =>
+        {
+            if (!g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointCoordsPositive, out string coords) || string.IsNullOrWhiteSpace(coords) || coords == "[]")
+            {
+                return;
+            }
+            string negCoords = null;
+            if (g.UserInput.TryGet(ComfyUIBackendExtension.Sam2PointCoordsNegative, out string negCoordsRaw) && !string.IsNullOrWhiteSpace(negCoordsRaw) && negCoordsRaw != "[]")
+            {
+                negCoords = negCoordsRaw;
+            }
+            JArray imageNodeActual = g.BasicInputImage?.Path;
+            if (imageNodeActual is null)
+            {
+                return;
+            }
+            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs());
+            JObject segInputs = new()
+            {
+                ["sam2_model"] = NodePath(modelNode, 0),
+                ["image"] = imageNodeActual,
+                ["keep_model_loaded"] = true,
+                ["coordinates_positive"] = coords
+            };
+            if (negCoords is not null)
+            {
+                segInputs["coordinates_negative"] = negCoords;
+            }
+            string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+            string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
+            {
+                ["mask"] = NodePath(segNode, 0),
+                ["fill_holes"] = true,
+                ["hole_kernel_size"] = 9
+            });
+            string maskNode = g.CreateNode("MaskToImage", new JObject()
+            {
+                ["mask"] = NodePath(postNode, 0)
+            });
+            new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
+            g.SkipFurtherSteps = true;
+        }, -5.8);
+        AddStep(g =>
+        {
+            if (!g.UserInput.TryGet(ComfyUIBackendExtension.Sam2BBox, out string bboxJson) || string.IsNullOrWhiteSpace(bboxJson))
+            {
+                return;
+            }
+            JArray imageNodeActual = g.BasicInputImage?.Path;
+            if (imageNodeActual is null)
+            {
+                return;
+            }
+            string modelNode = g.CreateNode("DownloadAndLoadSAM2Model", ComfyUIBackendExtension.Sam2ModelInputs());
+            string bboxNode = g.CreateNode("SwarmSam2BBoxFromJson", new JObject()
+            {
+                ["bbox_json"] = bboxJson
+            });
+            JObject segInputs = new()
+            {
+                ["sam2_model"] = NodePath(modelNode, 0),
+                ["image"] = imageNodeActual,
+                ["keep_model_loaded"] = true,
+                ["bboxes"] = NodePath(bboxNode, 0)
+            };
+            string segNode = g.CreateNode("Sam2Segmentation", segInputs);
+            string postNode = g.CreateNode("SwarmSam2MaskPostProcess", new JObject()
+            {
+                ["mask"] = NodePath(segNode, 0),
+                ["fill_holes"] = true,
+                ["hole_kernel_size"] = 5
+            });
+            string maskNode = g.CreateNode("MaskToImage", new JObject()
+            {
+                ["mask"] = NodePath(postNode, 0)
+            });
+            new WGNodeData([maskNode, 0], g, WGNodeData.DT_IMAGE, g.CurrentCompat()).SaveOutput(null, null, "9");
+            g.SkipFurtherSteps = true;
+        }, -5.7);
+        #endregion
         #endregion
         #region Sampler
         AddStep(g =>

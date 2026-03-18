@@ -28,11 +28,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
         [ConfigComment("Whether the Comfy backend should automatically update itself during launch.\nYou can update every launch, never update automatically, or force-update (bypasses some common git issues).")]
         [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
-        public string AutoUpdate = "true";
+        public string AutoUpdate = "false";
 
         [ConfigComment("Whether the Comfy backend should automatically update nodes within Swarm's managed nodes folder.\nYou can update every launch, never update automatically, or force-update (bypasses some common git issues).")]
         [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
-        public string UpdateManagedNodes = "true";
+        public string UpdateManagedNodes = "false";
 
         [ConfigComment("Which version of the ComfyUI frontend to enable.\n'Latest' uses the latest version available (including dev commits).\n'None' uses whatever is baked into ComfyUI itself.\n'Latest Swarm Validated' uses the latest version that Swarm has been tested and confirmed to work with.\n'Legacy' uses the pre-September-2024 legacy UI.")]
         [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
@@ -70,8 +70,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
     public static bool IsComfyModelFileEmitted = false;
 
-    /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards.</summary>
+    /// <summary>Names of folders in comfy paths that should be blindly forwarded to correct for Comfy not properly propagating base_path without manual forwards. Can also have ';' separated list of additional paths to forward to the same folder name.</summary>
     public static List<string> FoldersToForwardInComfyPath = ["unet", "diffusion_models", "gligen", "ipadapter", "yolov8", "tensorrt", "clipseg", "style_models", "latent_upscale_models"];
+
+    /// <summary>List of functions that modify the comfy paths YAML data. The simplest no-op impl is: <c>string MyFunc(string yaml) { return yaml; }</c></summary>
+    public static List<Func<string, string>> ModifyComfyYaml = [];
 
     /// <summary>Filepaths to where custom node packs for comfy can be found, such as extension dirs.</summary>
     public static List<string> CustomNodePaths = [];
@@ -82,7 +85,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
         // Example: ["ComfyUI-TeaCache"] = "b3429ef3dea426d2f167e348b44cd2f5a3674e7d"
     };
 
-    public static string SwarmValidatedFrontendVersion = "1.41.19";
+    public static string SwarmValidatedFrontendVersion = "1.41.20";
 
     /// <summary>List of known required python packages, as pairs of strings: Item1 is the folder name within python packages to look for, Item2 is the pip install command.</summary>
     public static List<(string, string)> RequiredPythonPackages =
@@ -296,7 +299,7 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
                 """;
                 foreach (string folder in FoldersToForwardInComfyPath)
                 {
-                    yaml += $"    {folder}: {buildSection(rootFixed, folder)}\n";
+                    yaml += $"    {folder.Before(';')}: {buildSection(rootFixed, folder)}\n";
                 }
                 yaml += "\n";
             }
@@ -309,6 +312,10 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipVisionFolder.Split(';')[0]));
             Directory.CreateDirectory(Utilities.CombinePathWithAbsolute(roots[0], Program.ServerSettings.Paths.SDClipFolder.Split(';')[0]));
             Directory.CreateDirectory($"{roots[0]}/upscale_models");
+            foreach (Func<string, string> yamlModifier in ModifyComfyYaml)
+            {
+                yaml = yamlModifier(yaml);
+            }
             File.WriteAllBytes($"{Program.DataDir}/comfy-auto-model.yaml", yaml.EncodeUTF8());
             IsComfyModelFileEmitted = true;
             AddLoadStatus($"Done emitting comfy model paths file.");

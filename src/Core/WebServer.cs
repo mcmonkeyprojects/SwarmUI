@@ -512,7 +512,7 @@ public class WebServer
     }
 
     /// <summary>Returns the root folder for the user's output.</summary>
-    public static string GetUserOutputRoot(string user) => $"{Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath)}/{user}";
+    public static string GetUserOutputRoot(string user) => $"{Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, Program.ServerSettings.Paths.OutputPath)}/{user}".TrimEnd('/');
 
     /// <summary>Returns the root folder for the user's output.</summary>
     public static string GetUserOutputRoot(User user) => GetUserOutputRoot(user.UserID);

@@ -57,6 +57,20 @@ class ExtensionsManager {
             button.disabled = false;
         });
     }
+
+    setExtensionEnabled(extensionName, enabled, button) {
+        button.disabled = true;
+        button.parentElement.querySelectorAll('.installing_info').forEach(e => e.remove());
+        let infoDiv = createDiv(null, 'installing_info', (enabled ? 'Enabling' : 'Disabling') + ' (restart required)...');
+        button.parentElement.appendChild(infoDiv);
+        genericRequest('SetExtensionEnabled', {'extensionName': extensionName, 'enabled': enabled}, data => {
+            button.parentElement.innerHTML = (enabled ? 'Enabled' : 'Disabled') + ', restart to apply';
+            this.newInstallsCard.style.display = 'block';
+        }, 0, e => {
+            infoDiv.innerText = (enabled ? 'Failed to enable: ' : 'Failed to disable: ') + e;
+            button.disabled = false;
+        });
+    }
 }
 
 extensionsManager = new ExtensionsManager();
@@ -539,10 +553,41 @@ function shutdown_server() {
 }
 
 let checkingForUpdatesText = translatable("Checking for updates...");
-let updatesAvailableText = translatable("update(s) available for SwarmUI:");
-let extensionsAvailableText = translatable("extensions can be updated:");
+let updatesAvailableSwarmText = translatable("update(s) available for SwarmUI:");
+let updatesAvailableGenericText = translatable("update(s) available for:");
+let extensionsAvailableText = translatable("extension(s) can be updated:");
+let backendsAvailableText = translatable("backend(s) can be updated:");
 
 let hasEverCheckedForUpdates = false;
+
+function buildUpdateCheckRow(id, typeId, targetName, titleText, previewLines) {
+    let row = createDiv(null, 'update-check-row');
+    let checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    checkbox.className = 'form-check-input update-check-checkbox';
+    checkbox.id = id;
+    checkbox.dataset.updateType = typeId;
+    checkbox.dataset.updateName = targetName;
+    row.appendChild(checkbox);
+    let label = document.createElement('label');
+    label.htmlFor = id;
+    label.className = 'update-check-label';
+    let titleSpan = document.createElement('b');
+    titleSpan.innerText = titleText;
+    label.appendChild(titleSpan);
+    let preview = document.createElement('small');
+    preview.className = 'update-check-preview';
+    preview.innerText = '\n' + previewLines.map(line => {
+        if (line.length > 100) {
+            line = line.substring(0, 97) + '...';
+        }
+        return line;
+    }).join('\n');
+    label.appendChild(preview);
+    row.appendChild(label);
+    return row;
+}
 
 function check_for_updates() {
     if (!permissions.hasPermission('restart')) {
@@ -553,24 +598,51 @@ function check_for_updates() {
     noticeArea.innerText = checkingForUpdatesText.get();
     hasEverCheckedForUpdates = true;
     genericRequest('CheckForUpdates', {}, data => {
-        let text = '';
-        if (data.server_updates_count > 0) {
-            text += `${data.server_updates_count} ${updatesAvailableText.get()}\n"${data.server_updates_preview.join('",\n "')}"`;
+        noticeArea.innerHTML = '';
+        let hasAnyUpdates = false;
+        if (data.server.count > 0) {
+            hasAnyUpdates = true;
+            let row = buildUpdateCheckRow('update_check_server', 'server', 'server',
+                `${updatesAvailableSwarmText.get()} ${data.server.count}`, data.server.preview);
+            noticeArea.appendChild(row);
         }
-        if (data.extension_updates.length > 0) {
-            text += `\n${data.extension_updates.length} ${extensionsAvailableText.get()}\n"${data.extension_updates.join('",\n "')}"`;
+        let extensionNames = Object.keys(data.extensions);
+        let count = 0;
+        if (extensionNames.length > 0) {
+            hasAnyUpdates = true;
+            noticeArea.appendChild(createDiv(null, 'update-check-header', `${extensionNames.length} ${extensionsAvailableText.get()}`));
+            let extBlock = createDiv(null, 'update-check-block');
+            for (let ext of extensionNames) {
+                let elemId = `update_check_ext_${count++}`;
+                let row = buildUpdateCheckRow(elemId, 'extension', ext, `${data.extensions[ext].count} ${updatesAvailableGenericText.get()} ${ext}`, data.extensions[ext].preview);
+                extBlock.appendChild(row);
+            }
+            noticeArea.appendChild(extBlock);
         }
-        // TODO: Backend updates
+        let backendNames = Object.keys(data.backends);
+        if (backendNames.length > 0) {
+            hasAnyUpdates = true;
+            noticeArea.appendChild(createDiv(null, 'update-check-header', `${backendNames.length} ${backendsAvailableText.get()}`));
+            let backendBlock = createDiv(null, 'update-check-block');
+            for (let backend of backendNames) {
+                let elemId = `update_check_backend_${count++}`;
+                let row = buildUpdateCheckRow(elemId, 'backend', backend, `${data.backends[backend].count} ${updatesAvailableGenericText.get()} ${backend}`, data.backends[backend].preview);
+                backendBlock.appendChild(row);
+            }
+            noticeArea.appendChild(backendBlock);
+        }
+        let updateButton = getRequiredElementById('update_and_restart_button');
         updatesCard.classList.remove('border-secondary');
         updatesCard.classList.remove('border-success');
-        if (!text) {
-            text = 'No updates available';
+        if (!hasAnyUpdates) {
+            noticeArea.innerText = 'No updates available';
             updatesCard.classList.add('border-secondary');
+            updateButton.disabled = true;
         }
         else {
             updatesCard.classList.add('border-success');
+            updateButton.disabled = false;
         }
-        noticeArea.innerText = text.trim();
     }, 0, e => {
         noticeArea.innerText = e;
     });
@@ -580,11 +652,31 @@ let restartConfirmationText = translatable("Are you sure you want to update and 
 
 function update_and_restart_server() {
     let noticeArea = getRequiredElementById('update_server_notice_area');
-    let includeExtensions = getRequiredElementById('server_update_include_extensions').checked;
+    let noticeParent = getRequiredElementById('updates_available_notice_area');
+    let checkboxes = noticeParent.querySelectorAll('.update-check-checkbox');
+    let doUpdateServer = false;
+    let extensionsToUpdate = [];
+    let backendsToUpdate = [];
+    for (let checkbox of checkboxes) {
+        if (!checkbox.checked) {
+            continue;
+        }
+        if (checkbox.dataset.updateType == 'server') {
+            doUpdateServer = true;
+        }
+        else if (checkbox.dataset.updateType == 'extension') {
+            extensionsToUpdate.push(checkbox.dataset.updateName);
+        }
+        else if (checkbox.dataset.updateType == 'backend') {
+            backendsToUpdate.push(checkbox.dataset.updateName);
+        }
+    }
     noticeArea.style.display = 'block';
     if (confirm(restartConfirmationText.get())) {
         noticeArea.innerText = checkingForUpdatesText.get();
-        genericRequest('UpdateAndRestart', { 'updateExtensions': includeExtensions }, data => {
+        let aggressive = getRequiredElementById('server_update_aggressive').checked;
+        let force = getRequiredElementById('server_update_force_restart').checked;
+        genericRequest('UpdateAndRestart', { 'doUpdateServer': doUpdateServer, 'extensionsToUpdate': extensionsToUpdate, 'backendsToUpdate': backendsToUpdate, 'aggressive': aggressive, 'force': force }, data => {
             noticeArea.innerText = data.result;
         }, 0, e => {
             noticeArea.innerText = e;

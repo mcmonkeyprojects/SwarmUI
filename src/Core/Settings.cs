@@ -67,6 +67,10 @@ public class Settings : AutoConfiguration
     [ConfigComment("Settings related to server performance.")]
     public PerformanceData Performance = new();
 
+    [ConfigComment("List of disabled extension folder names.\nDisabled extensions remain installed on disk, but are not loaded at server startup.")]
+    [SettingHidden]
+    public List<string> DisabledExtensions = [];
+
     /// <summary>Settings related to Swarm server maintenance..</summary>
     public class ServerMaintenanceData : AutoConfiguration
     {

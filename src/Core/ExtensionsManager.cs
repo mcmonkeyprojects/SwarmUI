@@ -16,7 +16,7 @@ public class ExtensionsManager
     public HashSet<string> LoadedExtensionFolders = [];
 
     /// <summary>Simple holder of information about extensions available online.</summary>
-    public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string[] Tags, string FolderName)
+    public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string OldURL, string[] Tags, string[] FolderNames)
     {
     }
 
@@ -62,6 +62,8 @@ public class ExtensionsManager
         string[] extras = Directory.Exists("./src/Extensions") ? [.. Directory.EnumerateDirectories("./src/Extensions/").Select(s => "src/" + s.Replace('\\', '/').AfterLast("/src/"))] : [];
         string[] deleteMe = [.. extras.Where(e => e.TrimEnd('/').EndsWith(".delete"))];
         extras = [.. extras.Where(e => !e.TrimEnd('/').EndsWith(".delete") && !e.TrimEnd('/').EndsWith(".disable"))];
+        HashSet<string> disabledFolders = [.. Program.ServerSettings.DisabledExtensions];
+        extras = [.. extras.Where(e => !disabledFolders.Contains(e.AfterLast('/')))];
         foreach (string deletable in deleteMe)
         {
             try
@@ -139,7 +141,9 @@ public class ExtensionsManager
             {
                 FDSSection section = extensionsOutThere.GetSection(name);
                 string url = section.GetString("url");
-                KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
+                string oldUrl = section.GetString("old_url", "");
+                string[] folderNames = oldUrl.Length > 0 ? [url.AfterLast('/'), oldUrl.AfterLast('/')] : [url.AfterLast('/')];
+                KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, oldUrl, [.. section.GetStringList("tags")], folderNames));
             }
         }
         catch (Exception ex)
@@ -153,7 +157,9 @@ public class ExtensionsManager
     {
         string mode = Program.IsDevMode ? "Debug" : "Release";
         string dllName = $"SwarmExtension{folder.AfterLast('/')}";
-        string target = $"./src/bin/extensions/{dllName}/{dllName}.dll";
+        string hash = (await Utilities.RunGitProcess("rev-parse HEAD", Path.GetFullPath(folder))).Trim();
+        hash = hash.Length >= 8 ? hash[0..8] : "unknown";
+        string target = $"./src/bin/extensions/{dllName}/{dllName}-{hash}.dll";
         // bin/obj shouldn't exist but sometimes are accidentally created. They will break things if they form, so get rid of them.
         if (Directory.Exists($"{folder}/bin"))
         {
@@ -169,7 +175,7 @@ public class ExtensionsManager
             return Assembly.LoadFile(Path.GetFullPath(target));
         }
         Logs.Debug($"Building extension project: {projFile}...");
-        string buildParam = $"-p:BaseIntermediateOutputPath={Path.GetFullPath($"./src/obj/extensions/{dllName}/")};TargetName={dllName}";
+        string buildParam = $"-p:BaseIntermediateOutputPath={Path.GetFullPath($"./src/obj/extensions/{dllName}/")};TargetName={dllName}-{hash}";
         string output = await Utilities.QuickRunProcess("dotnet", ["build", Path.GetFullPath(projFile), "-c", mode, "-o", Path.GetFullPath($"./src/bin/extensions/{dllName}/"), buildParam], Path.GetFullPath(folder));
         if (!File.Exists(target))
         {
@@ -267,5 +273,45 @@ public class ExtensionsManager
     public T GetExtension<T>() where T : Extension
     {
         return Extensions.FirstOrDefault(e => e is T) as T;
+    }
+
+    /// <summary>Returns folder name from an extension path.</summary>
+    public static string GetFolderNameFromPath(string path)
+    {
+        return path?.Replace('\\', '/').TrimEnd('/').AfterLast('/') ?? "";
+    }
+
+    /// <summary>Returns whether an extension folder is in the disabled list in settings.</summary>
+    public bool IsDisabled(string folderName)
+    {
+        return Program.ServerSettings.DisabledExtensions.Contains(folderName);
+    }
+
+    /// <summary>Returns disabled extensions for UI display.</summary>
+    public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
+    {
+        foreach (string folderName in Program.ServerSettings.DisabledExtensions.OrderBy(e => e))
+        {
+            ExtensionInfo info = KnownExtensions.FirstOrDefault(e => e.FolderNames.Contains(folderName));
+            info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", "", ["none"], [folderName]);
+            yield return info;
+        }
+    }
+
+    /// <summary>Removes an extension folder from the disabled list in settings.</summary>
+    public bool RemoveDisabledExtensionSetting(string folderName)
+    {
+        return Program.ServerSettings.DisabledExtensions.Remove(folderName);
+    }
+
+    /// <summary>Adds an extension folder to the disabled list in settings.</summary>
+    public bool AddDisabledExtensionSetting(string folderName)
+    {
+        if (!IsDisabled(folderName))
+        {
+            Program.ServerSettings.DisabledExtensions.Add(folderName);
+            return true;
+        }
+        return false;
     }
 }

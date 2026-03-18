@@ -819,6 +819,13 @@ function copy_current_image_params() {
     let metadataFull = JSON.parse(readable);
     let metadata = metadataFull.sui_image_params;
     let extra = metadataFull.sui_extra_data || metadata;
+    for (let param of Object.keys(metadata)) {
+        let remapId = window.parameter_remaps[param];
+        if (remapId) {
+            metadata[remapId] = metadata[param];
+            delete metadata[param];
+        }
+    }
     if ('original_prompt' in extra) {
         metadata.prompt = extra.original_prompt;
     }
