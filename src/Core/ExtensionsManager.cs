@@ -16,7 +16,7 @@ public class ExtensionsManager
     public HashSet<string> LoadedExtensionFolders = [];
 
     /// <summary>Simple holder of information about extensions available online.</summary>
-    public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string[] Tags, string FolderName)
+    public record class ExtensionInfo(string Name, string Author, string License, string Description, string URL, string OldURL, string[] Tags, string[] FolderNames)
     {
     }
 
@@ -141,7 +141,9 @@ public class ExtensionsManager
             {
                 FDSSection section = extensionsOutThere.GetSection(name);
                 string url = section.GetString("url");
-                KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, [.. section.GetStringList("tags")], url.AfterLast('/')));
+                string oldUrl = section.GetString("old_url", "");
+                string[] folderNames = oldUrl.Length > 0 ? [url.AfterLast('/'), oldUrl.AfterLast('/')] : [url.AfterLast('/')];
+                KnownExtensions.Add(new ExtensionInfo(name, section.GetString("author"), section.GetString("license"), section.GetString("description"), url, oldUrl, [.. section.GetStringList("tags")], folderNames));
             }
         }
         catch (Exception ex)
@@ -290,8 +292,8 @@ public class ExtensionsManager
     {
         foreach (string folderName in Program.ServerSettings.DisabledExtensions.OrderBy(e => e))
         {
-            ExtensionInfo info = KnownExtensions.FirstOrDefault(e => e.FolderName == folderName);
-            info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", ["none"], folderName);
+            ExtensionInfo info = KnownExtensions.FirstOrDefault(e => e.FolderNames.Contains(folderName));
+            info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", "", ["none"], [folderName]);
             yield return info;
         }
     }

@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using SwarmUI.Utils;
 using System.IO;
 
@@ -102,7 +102,7 @@ public abstract class Extension
                 return;
             }
             ReadmeURL = url.Trim();
-            ExtensionsManager.ExtensionInfo relevantInfo = Program.Extensions.KnownExtensions.FirstOrDefault(e => e.URL == ReadmeURL);
+            ExtensionsManager.ExtensionInfo relevantInfo = Program.Extensions.KnownExtensions.FirstOrDefault(e => e.URL == ReadmeURL || e.OldURL == ReadmeURL);
             if (relevantInfo is not null)
             {
                 ExtensionAuthor = relevantInfo.Author;
