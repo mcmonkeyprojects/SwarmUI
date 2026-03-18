@@ -828,6 +828,96 @@ public class ComfyUIBackendExtension : Extension
         SwarmSwarmBackend.ValidityChecks[BackendApiType.ID] = (backend, input) => ComfyUIAPIAbstractBackend.TryIsValid(input, backend.ExtensionData.GetValueOrDefault("ComfyNodeTypes", null) as HashSet<string>);
         SwarmSwarmBackend.ValidityChecks[BackendSelfStartType.ID] = SwarmSwarmBackend.ValidityChecks[BackendApiType.ID];
         ComfyUIWebAPI.Register();
+        AdminAPI.CheckForBackendUpdates.Add(CheckForUpdates);
+        AdminAPI.DoBackendUpdates.Add(DoBackendUpdates);
+    }
+
+    /// <summary>Enumerates all folders that have a ComfyUI install managed by swarm.</summary>
+    public static IEnumerable<string> ComfyInstallDirs()
+    {
+        foreach (ComfyUISelfStartBackend backend in Program.Backends.EnumerateT2IBackends.Select(b => b.Backend as ComfyUISelfStartBackend).Where(b => b is not null).DistinctBy(b => b.Settings.StartScript))
+        {
+            string script = backend.Settings.StartScript;
+            if (string.IsNullOrWhiteSpace(script))
+            {
+                continue;
+            }
+            yield return Path.GetFullPath(Directory.GetParent(script).FullName);
+        }
+    }
+
+    public async Task CheckForUpdates(LockObject locker, JObject backendsData)
+    {
+        string[] folders = [.. ComfyInstallDirs()];
+        // TODO: is a bunch of git fetches in parallel a rate limit issue? GitHub seems pretty chill about a `fetch` call (vs API is strict limits).
+        List<Task> tasks = [];
+        foreach (string folder in folders)
+        {
+            tasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                JObject updates = await AdminAPI.GetUpdatesDataFor(folder, true);
+                if (updates is null)
+                {
+                    Logs.Debug($"Check for updates found no updates for ComfyUI install at {folder}");
+                    return;
+                }
+                string altName = folders.Length == 1 ? "ComfyUI" : $"ComfyUI In Folder: {folder.Replace('\\', '/')}";
+                lock (locker)
+                {
+                    backendsData[altName] = updates;
+                }
+                Logs.Debug($"Check for updates found {updates["count"]} updates for ComfyUI install at {folder}");
+            }));
+        }
+        await Task.WhenAll(tasks); // Intentional force order for Comfy folders to be before nodes
+        tasks = [];
+        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}/DLNodes"))
+        {
+            tasks.Add(Utilities.RunCheckedTask(async () =>
+            {
+                JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true);
+                if (nodeUpdates is null)
+                {
+                    Logs.Debug($"Check for updates found no updates for ComfyUI node at {folder}");
+                    return;
+                }
+                string nodeName = Path.GetFileName(folder);
+                lock (locker)
+                {
+                    backendsData[$"Comfy Node: {nodeName}"] = nodeUpdates;
+                }
+                Logs.Debug($"Check for updates found {nodeUpdates["count"]} updates for ComfyUI node at {folder}");
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    public async Task DoBackendUpdates(Action didWork, Action<string> didFail, bool aggressive, string[] toUpdate)
+    {
+        string[] folders = [.. ComfyInstallDirs()];
+        List<Task> tasks = [];
+        foreach (string folder in folders)
+        {
+            string altName = folders.Length == 1 ? "ComfyUI" : $"ComfyUI In Folder: {folder.Replace('\\', '/')}";
+            if (toUpdate.Contains(altName))
+            {
+                tasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail);
+                }));
+            }
+        }
+        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}/DLNodes"))
+        {
+            string nodeName = Path.GetFileName(folder);
+            if (toUpdate.Contains($"Comfy Node: {nodeName}"))
+            {
+                tasks.Add(Utilities.RunCheckedTask(async () =>
+                {
+                    await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail);
+                }));
+            }
+        }
     }
 
     public BackendHandler.BackendType BackendApiType, BackendSelfStartType;

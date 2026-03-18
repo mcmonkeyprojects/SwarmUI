@@ -1860,3 +1860,23 @@ body {
     max-height: 30rem;
     overflow: auto;
 }
+.update-check-block {
+    max-height: 25rem;
+    overflow: auto;
+}
+.update-check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+.update-check-row .update-check-checkbox {
+    margin-top: 0.3rem;
+    flex-shrink: 0;
+}
+.update-check-label {
+    white-space: pre-wrap;
+}
+.update-check-preview {
+    opacity: 0.75;
+}

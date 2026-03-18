@@ -118,11 +118,13 @@
                             <div>@(new HtmlString(Program.VersionUpdateMessageShort))</div>
                         }
                         <span id="updates_available_notice_area" style="white-space:pre-wrap">(Loading...)</span>
-                        <br><button class="basic-button translate" onclick="check_for_updates()">Check For Updates</button>
                         <hr>
-                        <input class="form-check-input" type="checkbox" id="server_update_include_extensions" checked> <label for="server_update_include_extensions" class="translate">Include Extensions</label>
-                        <br>
-                        <br><button class="basic-button danger-button translate" onclick="update_and_restart_server()">Update and Restart Server</button>
+                        <input class="form-check-input" type="checkbox" id="server_update_aggressive" autocomplete="off"> <label for="server_update_aggressive" class="translate">Aggressive Update</label>
+                        &emsp;
+                        <input class="form-check-input" type="checkbox" id="server_update_force_restart" autocomplete="off"> <label for="server_update_force_restart" class="translate">Force Restart</label>
+                        <br><br>
+                        <button class="basic-button translate" onclick="check_for_updates()">Check For Updates</button>
+                        <button class="basic-button danger-button translate" id="update_and_restart_button" onclick="update_and_restart_server()" disabled>Update and Restart Server</button>
                         <span id="update_server_notice_area"></span>
                     </span>
                 </div>

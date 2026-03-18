@@ -28,11 +28,11 @@ public class ComfyUISelfStartBackend : ComfyUIAPIAbstractBackend
 
         [ConfigComment("Whether the Comfy backend should automatically update itself during launch.\nYou can update every launch, never update automatically, or force-update (bypasses some common git issues).")]
         [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
-        public string AutoUpdate = "true";
+        public string AutoUpdate = "false";
 
         [ConfigComment("Whether the Comfy backend should automatically update nodes within Swarm's managed nodes folder.\nYou can update every launch, never update automatically, or force-update (bypasses some common git issues).")]
         [ManualSettingsOptions(Impl = null, Vals = ["true", "aggressive", "false"], ManualNames = ["Always Update", "Always Aggressively Update (Force-Update)", "Don't Update"])]
-        public string UpdateManagedNodes = "true";
+        public string UpdateManagedNodes = "false";
 
         [ConfigComment("Which version of the ComfyUI frontend to enable.\n'Latest' uses the latest version available (including dev commits).\n'None' uses whatever is baked into ComfyUI itself.\n'Latest Swarm Validated' uses the latest version that Swarm has been tested and confirmed to work with.\n'Legacy' uses the pre-September-2024 legacy UI.")]
         [ManualSettingsOptions(Impl = null, Vals = ["Latest", "None", "LatestSwarmValidated", "Legacy"], ManualNames = ["Latest", "None", "Latest Swarm Validated", "Legacy (Pre Sept 2024)"])]
