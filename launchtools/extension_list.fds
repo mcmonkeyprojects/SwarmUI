@@ -91,7 +91,7 @@ WildcardImporter:
 
 PostRenderTorched:
     author: Juan Treminio
-    description: Adds support for a variety of useful post-processing techniques - LUTs, film grain, vignette, blur, and more. Updated version of the original PostRender extension, uses Torch, up to 74% speedup compared to the original.
+    description: Adds support for a variety of useful post-processing techniques - LUTs, film grain, vignette, blur, and more. Updated version of the original PostRender extension, uses Torch, up to 74% speedup compared to the original. *Warning*: You must uninstall the old PostRender extension first before installing this one!
     url: https://github.com/jtreminio/SwarmUI-PostRenderTorched
     license: MIT
     tags:
