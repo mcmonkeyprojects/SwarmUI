@@ -34,6 +34,9 @@ public abstract class Extension
     /// <summary>If true, this extension is capable of automatic updates.</summary>
     public bool CanUpdate = false;
 
+    /// <summary>If true, this extension is installed from an old repo and can be replaced by a newer one.</summary>
+    public bool IsOldRepo = false;
+
     /// <summary>Tags for this extension.</summary>
     public string[] Tags = [];
 
@@ -109,6 +112,7 @@ public abstract class Extension
                 License = relevantInfo.License;
                 Description = relevantInfo.Description;
                 Tags = relevantInfo.Tags;
+                IsOldRepo = relevantInfo.OldURL == ReadmeURL;
             }
             string tagsRaw = await Utilities.RunGitProcess("show-ref --tags", FilePath);
             List<(string, string)> tags = [.. tagsRaw.Split('\n').Select(s => s.Trim().Split(' ')).Where(p => p.Length == 2).Select(pair => (pair[0], pair[1].After("refs/tags/")))];

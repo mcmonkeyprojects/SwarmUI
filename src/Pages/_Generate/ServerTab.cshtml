@@ -229,7 +229,13 @@
                         <td><code>@ext.Version</code></td>
                         <td>@ExtensionsManager.HtmlTags(ext.Tags)</td>
                         <td>@ext.ExtensionAuthor</td>
-                        <td>@ext.Description</td>
+                        <td>
+                            @ext.Description
+                            @if (ext.IsOldRepo)
+                            {
+                                <br><span class="translate modal_error_bottom">!! You have an old version of this extension installed. It has been replaced by a new repo. Please uninstall, restart, then reinstall. See the README for any extension-specific instructions. !!</span>
+                            }
+                        </td>
                         <td>@(ext.ReadmeURL == "" ? "(Missing)": new HtmlString($"<a target=\"_blank\" href=\"{ext.ReadmeURL}\">Here</a>"))</td>
                         <td class="@(ext.License == "MIT" ? "" : "ext-danger-license")">@ext.License</td>
                         <td>
