@@ -1,6 +1,31 @@
 I have made this fork to add some basic functionality to the ui.
 # Added Functionality
 
+## Added Inpainting and Image editing tab.
+
+<br/>
+
+The Image editing tools were a little....lacking, also a little smushed and felt cramped. I have added them to a seperate tab. (if you like the old way, it is still in place.) Under the new image editing tab a few new options have been added like saturation, light value, and Color blance for shadows, midtones, and highlights. These adjustments are per layer. This is very much a wip but I will try to avoid pushing anything that breaks the normal way of doing things. Many more changes are comming. I intent to turn this tab into a tool capable of getting most of the basic alterations that people normaly do all contained in one place so you dont need to open in krita, gimp, or photoshop just to finalize your edits. 
+
+<br/>
+
+Some of the things I will be adding are: 
+
+<br/>
+
+1. Luts
+2. Proper brushes with flow, scaling, transparancy, and potentialy presure controle.
+3. Better photo bashing tools for croping, rotating, fliping etc.
+4. Better path tools.
+5. Much more.
+
+<br/>
+
+<img width="2546" height="1423" alt="image" src="https://github.com/user-attachments/assets/d041eb2b-d39f-485b-b428-e87649201eee" />
+
+<br/>
+
+
 ## Added Save Image Option For Inpainting.
 
 <br/>
