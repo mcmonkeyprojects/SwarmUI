@@ -2700,11 +2700,28 @@ function sendImageEditingLayersToGenerateEditor() {
         showError('Cannot send image: Image Editing editor is unavailable.');
         return;
     }
+    let doTransfer = () => {
+        openGenerateTabEditorForEditorData(imageEditingTabEditor, 'Send Layers To Generate Editor');
+    };
     let generateTopTabButton = document.getElementById('text2imagetabbutton');
-    if (generateTopTabButton) {
-        generateTopTabButton.click();
+    if (!generateTopTabButton) {
+        doTransfer();
+        return;
     }
-    openGenerateTabEditorForEditorData(imageEditingTabEditor, 'Send Layers To Generate Editor');
+    if (!generateTopTabButton.classList.contains('active')) {
+        let eventNs = '.sendLayersToGenerateEditor';
+        let onShown = (e) => {
+            if (e.target.id != 'text2imagetabbutton') {
+                return;
+            }
+            $('#toptablist').off(`shown.bs.tab${eventNs}`, onShown);
+            doTransfer();
+        };
+        $('#toptablist').off(`shown.bs.tab${eventNs}`).on(`shown.bs.tab${eventNs}`, onShown);
+        generateTopTabButton.click();
+        return;
+    }
+    doTransfer();
 }
 
 imageEditingEnsureUiReady();
