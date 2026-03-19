@@ -2628,7 +2628,7 @@ function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send La
         inputAspectRatio.value = 'Custom';
         triggerChangeFor(inputAspectRatio);
     }
-    imageEditor.activate();
+    let wasActive = imageEditor.active;
     imageEditor.clearVars();
     imageEditor.clearLayers();
     imageEditor.realWidth = sourceEditor.realWidth;
@@ -2665,9 +2665,17 @@ function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send La
     if (activeLayerIndex >= 0 && activeLayerIndex < imageEditor.layers.length) {
         imageEditor.setActiveLayer(imageEditor.layers[activeLayerIndex]);
     }
+    if (!wasActive) {
+        imageEditor.activate();
+    }
+    else if (imageEditor.canvas) {
+        imageEditor.resize();
+    }
     imageEditor.offsetX = 0;
     imageEditor.offsetY = 0;
-    imageEditor.autoZoom();
+    if (imageEditor.canvas) {
+        imageEditor.autoZoom();
+    }
     imageEditor.redraw();
     return true;
 }
