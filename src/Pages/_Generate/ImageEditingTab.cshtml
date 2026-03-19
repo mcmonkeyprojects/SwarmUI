@@ -1,0 +1,190 @@
+@model GeneratePageModel
+
+<div class="imageediting_layout" style="line-height:1.5">
+    <div class="imageediting_sidebar imageediting_sidebar_left" id="imageediting_input_sidebar">
+        <ul class="nav nav-tabs" role="tablist" id="imageediting_inputsidebartabcollection">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Editing-Inputs-Tab" aria-selected="true" role="tab">Inputs</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="imageediting_inputsidebartab_content">
+            <div class="tab-pane show active genpage-bottom-tab" id="Image-Editing-Inputs-Tab" role="tabpanel">
+                <span class="interrupt_line"></span>
+                <div class="main_inputs_area_wrapper" id="imageediting_main_inputs_area_wrapper">
+                    <div class="imageediting_input_group">
+                        <div class="imageediting_section_header" id="imageediting_tools_header" onclick="imageEditingToggleInputSection('tools')">
+                            <span class="imageediting_section_header_title translate">Editor Tools</span>
+                            <span class="imageediting_section_header_state" id="imageediting_tools_toggle_state">-</span>
+                        </div>
+                        <div class="imageediting_buttons_grid" id="imageediting_tool_buttons"></div>
+                    </div>
+                    <div class="imageediting_input_group">
+                        <div class="imageediting_section_header" id="imageediting_actions_header" onclick="imageEditingToggleInputSection('actions')">
+                            <span class="imageediting_section_header_title translate">Editor Actions</span>
+                            <span class="imageediting_section_header_state" id="imageediting_actions_toggle_state">-</span>
+                        </div>
+                        <div class="imageediting_buttons_grid" id="imageediting_option_buttons"></div>
+                    </div>
+                    <div class="imageediting_input_group">
+                        <div class="imageediting_section_header" id="imageediting_layer_options_header" onclick="imageEditingToggleInputSection('layer_options')">
+                            <span class="imageediting_section_header_title translate">Layer Options</span>
+                            <span class="imageediting_section_header_state" id="imageediting_layer_options_toggle_state">-</span>
+                        </div>
+                        <div class="imageediting_layer_options_body" id="imageediting_layer_options_body">
+                            <div class="imageediting_layer_option_row">
+                                <label class="translate" for="imageediting_layer_opacity_slider">Layer Transparency</label>
+                                <span id="imageediting_layer_opacity_value">100%</span>
+                            </div>
+                            <div class="auto-slider-range-wrapper">
+                                <input type="range" class="auto-slider-range" id="imageediting_layer_opacity_slider" min="0" max="100" step="1" value="100" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                            </div>
+                            <div class="imageediting_layer_option_context" id="imageediting_layer_opacity_context">Active Layer: Image</div>
+                            <div class="imageediting_buttons_grid imageediting_layer_option_buttons" id="imageediting_layer_option_buttons">
+                                <button type="button" class="basic-button imageediting_option_button translate" id="imageediting_layer_delete_button">Delete Layer</button>
+                                <button type="button" class="basic-button imageediting_option_button translate" id="imageediting_layer_convert_to_image_button">Convert To Image Layer</button>
+                                <button type="button" class="basic-button imageediting_option_button translate" id="imageediting_layer_invert_mask_button">Invert Mask</button>
+                                <button type="button" class="basic-button imageediting_option_button translate" id="imageediting_layer_convert_to_mask_button">Convert To Mask Layer</button>
+                                <button type="button" class="basic-button imageediting_option_button translate" id="imageediting_layer_invert_colors_button">Invert Colors</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="imageediting_input_group">
+                        <div class="imageediting_section_header" id="imageediting_image_options_header" onclick="imageEditingToggleInputSection('image_options')">
+                            <span class="imageediting_section_header_title translate">Image Options</span>
+                            <span class="imageediting_section_header_state" id="imageediting_image_options_toggle_state">-</span>
+                        </div>
+                        <div class="imageediting_layer_options_body" id="imageediting_image_options_body">
+                            <div class="imageediting_layer_option_row">
+                                <label class="translate" for="imageediting_layer_saturation_slider">Saturation</label>
+                                <span id="imageediting_layer_saturation_value">100%</span>
+                            </div>
+                            <div class="auto-slider-range-wrapper">
+                                <input type="range" class="auto-slider-range" id="imageediting_layer_saturation_slider" min="0" max="200" step="1" value="100" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                            </div>
+                            <div class="imageediting_layer_option_context" id="imageediting_layer_saturation_context">Active Layer: Image</div>
+                            <div class="imageediting_layer_option_row imageediting_layer_option_row_spaced">
+                                <label class="translate" for="imageediting_layer_light_value_slider">Light Value</label>
+                                <span id="imageediting_layer_light_value_value">100%</span>
+                            </div>
+                            <div class="auto-slider-range-wrapper">
+                                <input type="range" class="auto-slider-range" id="imageediting_layer_light_value_slider" min="0" max="200" step="1" value="100" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                            </div>
+                            <div class="imageediting_layer_option_context" id="imageediting_layer_light_value_context">Active Layer: Image</div>
+                            <div class="imageediting_tone_balance_group">
+                                <div class="imageediting_tone_balance_title translate"><b>Color Balance (RGB)</b></div>
+                                <div class="imageediting_tone_balance_section">
+                                    <div class="imageediting_tone_balance_section_title translate">Shadows</div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_shadows_r_slider">R</label>
+                                        <span id="imageediting_tone_shadows_r_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_shadows_r_slider" data-range="shadows" data-channel="r" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_shadows_g_slider">G</label>
+                                        <span id="imageediting_tone_shadows_g_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_shadows_g_slider" data-range="shadows" data-channel="g" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_shadows_b_slider">B</label>
+                                        <span id="imageediting_tone_shadows_b_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_shadows_b_slider" data-range="shadows" data-channel="b" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                </div>
+                                <div class="imageediting_tone_balance_section">
+                                    <div class="imageediting_tone_balance_section_title translate">Midtones</div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_midtones_r_slider">R</label>
+                                        <span id="imageediting_tone_midtones_r_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_midtones_r_slider" data-range="midtones" data-channel="r" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_midtones_g_slider">G</label>
+                                        <span id="imageediting_tone_midtones_g_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_midtones_g_slider" data-range="midtones" data-channel="g" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_midtones_b_slider">B</label>
+                                        <span id="imageediting_tone_midtones_b_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_midtones_b_slider" data-range="midtones" data-channel="b" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                </div>
+                                <div class="imageediting_tone_balance_section">
+                                    <div class="imageediting_tone_balance_section_title translate">Highlights</div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_highlights_r_slider">R</label>
+                                        <span id="imageediting_tone_highlights_r_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_highlights_r_slider" data-range="highlights" data-channel="r" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_highlights_g_slider">G</label>
+                                        <span id="imageediting_tone_highlights_g_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_highlights_g_slider" data-range="highlights" data-channel="g" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                    <div class="imageediting_layer_option_row">
+                                        <label for="imageediting_tone_highlights_b_slider">B</label>
+                                        <span id="imageediting_tone_highlights_b_value">0%</span>
+                                    </div>
+                                    <div class="auto-slider-range-wrapper">
+                                        <input type="range" class="auto-slider-range imageediting_tone_balance_slider" id="imageediting_tone_highlights_b_slider" data-range="highlights" data-channel="b" min="-100" max="100" step="1" value="0" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+                                    </div>
+                                </div>
+                                <div class="imageediting_layer_option_context" id="imageediting_tone_balance_context">Active Layer: Image</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="imageediting_permanent_controls">
+                    <div class="translate"><b>Color Selector</b></div>
+                    <div class="image-editor-tool-block tool-block-nogrow imageediting_color_selector">
+                        <label>Color:&nbsp;</label>
+                        <input type="text" class="auto-number" style="width:75px;flex-grow:0;" value="#ffffff" id="imageediting_color_text">
+                        <div class="color-picker-swatch-inline" style="background-color:#ffffff;" id="imageediting_color_swatch"></div>
+                    </div>
+                    <div class="imageediting_inline_color_picker" id="imageediting_inline_color_picker"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="imageediting_splitter splitter-bar" id="imageediting_left_splitter"></div>
+    <div class="imageediting_main_image_area" id="imageediting_main_image_area">
+        <div class="imageediting_editor_container">
+            <div class="imageediting_zoom_controls">
+                <button class="basic-button" onclick="imageEditingZoomOut()" title="Zoom Out">-</button>
+                <button class="basic-button" onclick="imageEditingZoomReset()" title="Reset Zoom">Reset</button>
+                <button class="basic-button" onclick="imageEditingZoomIn()" title="Zoom In">+</button>
+                <span class="imageediting_zoom_level" id="imageediting_zoom_level">100%</span>
+            </div>
+            <div class="image_editor_input" id="imageediting_editor_area"></div>
+        </div>
+    </div>
+    <div class="imageediting_splitter splitter-bar" id="imageediting_right_splitter"></div>
+    <div class="imageediting_sidebar imageediting_sidebar_right" id="imageediting_editor_sidebar">
+        <ul class="nav nav-tabs" role="tablist" id="imageediting_editorsidebartabcollection">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active translate" data-bs-toggle="tab" href="#Image-Editing-Layers-Tab" aria-selected="true" role="tab">Options / Layers</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="imageediting_editorsidebartab_content">
+            <div class="tab-pane show active genpage-bottom-tab" id="Image-Editing-Layers-Tab" role="tabpanel">
+                <span class="interrupt_line"></span>
+                <div class="imageediting_editor_sidebar_content" id="imageediting_editor_sidebar_content"></div>
+            </div>
+        </div>
+    </div>
+</div>

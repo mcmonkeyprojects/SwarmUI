@@ -51,7 +51,7 @@
     font-weight: 700 !important;
 }
 
-.nav-tabs, #currentimagecontent, #inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar, .browser-folder-tree-container, .browser-fullcontent-container {
+.nav-tabs, #currentimagecontent, #inputsidebartab_content, #imageediting_inputsidebartab_content, #rightsidebarcontent, #t2i_bottom_bar, .browser-folder-tree-container, .browser-fullcontent-container {
     background-color: var(--background-panel);
     background-image: var(--noise-image);
 }

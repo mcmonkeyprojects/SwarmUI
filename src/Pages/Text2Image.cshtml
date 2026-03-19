@@ -55,6 +55,9 @@
     <li class="nav-item" role="presentation">
         <a class="nav-link active translate" data-bs-toggle="tab" href="#Text2Image" id="text2imagetabbutton" aria-selected="true" role="tab">Generate</a>
     </li>
+    <li class="nav-item" role="presentation">
+        <a class="nav-link translate" data-bs-toggle="tab" href="#ImageEditing" id="imageeditingtabbutton" aria-selected="false" tabindex="-1" role="tab">Image Editing</a>
+    </li>
     @WebServer.T2ITabHeader
     <li class="nav-item" role="presentation" data-requiredpermission="utilities_tab">
         <a class="nav-link translate" data-bs-toggle="tab" href="#utilities_tab" id="utilitiestabbutton" aria-selected="false" tabindex="-1" role="tab">Utilities</a>
@@ -75,6 +78,9 @@
     </div>
     <div class="tab-pane show active" style="line-height:0" id="Text2Image" role="tabpanel">
         @await Html.PartialAsync("_Generate/GenerateTab.cshtml", pageModel)
+    </div>
+    <div class="tab-pane tab-pane-vw tab-no-scroll" id="ImageEditing" role="tabpanel">
+        @await Html.PartialAsync("_Generate/ImageEditingTab.cshtml", pageModel)
     </div>
     @WebServer.T2ITabBody
     <div class="tab-pane tab-pane-vw tab-no-scroll" id="utilities_tab" role="tabpanel">
