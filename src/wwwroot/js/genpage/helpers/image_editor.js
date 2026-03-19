@@ -1305,6 +1305,15 @@ class ImageEditor {
                 layer.drawToBack(this.maskHelperCtx, this.offsetX, this.offsetY, this.zoomLevel);
             }
         }
+        if (!this.activeLayer) {
+            this.ctx.restore();
+            for (let tool of Object.values(this.tools)) {
+                if (tool.colorControl) {
+                    tool.colorControl.refreshFloatingPanel();
+                }
+            }
+            return;
+        }
         this.ctx.save();
         this.ctx.globalAlpha = this.activeLayer.isMask ? 0.8 : 0.3;
         this.ctx.globalCompositeOperation = 'luminosity';

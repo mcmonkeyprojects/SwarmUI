@@ -2556,7 +2556,7 @@ function imageEditingCloneToneBalance(toneBalance) {
 /**
  * Opens the Generate tab edit-image area with a provided image.
  */
-function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image') {
+function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image', retryCount = 0) {
     let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
     if (initImageGroupToggle) {
         initImageGroupToggle.checked = true;
@@ -2564,6 +2564,12 @@ function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image') {
     }
     let initImageParam = document.getElementById('input_initimage');
     if (!initImageParam) {
+        if (retryCount < 20) {
+            setTimeout(() => {
+                openGenerateTabEditorForImage(img, actionLabel, retryCount + 1);
+            }, 50);
+            return false;
+        }
         showError(`Cannot use "${actionLabel}": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.`);
         return false;
     }
@@ -2588,7 +2594,7 @@ function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image') {
 /**
  * Opens the Generate tab edit-image area with full editor layer data.
  */
-function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send Layers To Generate Editor') {
+function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send Layers To Generate Editor', retryCount = 0) {
     if (!sourceEditor || !sourceEditor.layers || sourceEditor.layers.length == 0) {
         showError(`Cannot use "${actionLabel}": no editor layers are available.`);
         return false;
@@ -2600,6 +2606,12 @@ function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send La
     }
     let initImageParam = document.getElementById('input_initimage');
     if (!initImageParam) {
+        if (retryCount < 20) {
+            setTimeout(() => {
+                openGenerateTabEditorForEditorData(sourceEditor, actionLabel, retryCount + 1);
+            }, 50);
+            return false;
+        }
         showError(`Cannot use "${actionLabel}": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.`);
         return false;
     }
@@ -2616,7 +2628,7 @@ function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send La
         inputAspectRatio.value = 'Custom';
         triggerChangeFor(inputAspectRatio);
     }
-    imageEditor.activate();
+    let wasActive = imageEditor.active;
     imageEditor.clearVars();
     imageEditor.clearLayers();
     imageEditor.realWidth = sourceEditor.realWidth;
@@ -2653,9 +2665,17 @@ function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send La
     if (activeLayerIndex >= 0 && activeLayerIndex < imageEditor.layers.length) {
         imageEditor.setActiveLayer(imageEditor.layers[activeLayerIndex]);
     }
+    if (!wasActive) {
+        imageEditor.activate();
+    }
+    else if (imageEditor.canvas) {
+        imageEditor.resize();
+    }
     imageEditor.offsetX = 0;
     imageEditor.offsetY = 0;
-    imageEditor.autoZoom();
+    if (imageEditor.canvas) {
+        imageEditor.autoZoom();
+    }
     imageEditor.redraw();
     return true;
 }
@@ -2700,11 +2720,28 @@ function sendImageEditingLayersToGenerateEditor() {
         showError('Cannot send image: Image Editing editor is unavailable.');
         return;
     }
+    let doTransfer = () => {
+        openGenerateTabEditorForEditorData(imageEditingTabEditor, 'Send Layers To Generate Editor');
+    };
     let generateTopTabButton = document.getElementById('text2imagetabbutton');
-    if (generateTopTabButton) {
-        generateTopTabButton.click();
+    if (!generateTopTabButton) {
+        doTransfer();
+        return;
     }
-    openGenerateTabEditorForEditorData(imageEditingTabEditor, 'Send Layers To Generate Editor');
+    if (!generateTopTabButton.classList.contains('active')) {
+        let eventNs = '.sendLayersToGenerateEditor';
+        let onShown = (e) => {
+            if (e.target.id != 'text2imagetabbutton') {
+                return;
+            }
+            $('#toptablist').off(`shown.bs.tab${eventNs}`, onShown);
+            doTransfer();
+        };
+        $('#toptablist').off(`shown.bs.tab${eventNs}`).on(`shown.bs.tab${eventNs}`, onShown);
+        generateTopTabButton.click();
+        return;
+    }
+    doTransfer();
 }
 
 imageEditingEnsureUiReady();
