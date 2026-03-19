@@ -2556,7 +2556,7 @@ function imageEditingCloneToneBalance(toneBalance) {
 /**
  * Opens the Generate tab edit-image area with a provided image.
  */
-function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image') {
+function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image', retryCount = 0) {
     let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
     if (initImageGroupToggle) {
         initImageGroupToggle.checked = true;
@@ -2564,6 +2564,12 @@ function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image') {
     }
     let initImageParam = document.getElementById('input_initimage');
     if (!initImageParam) {
+        if (retryCount < 20) {
+            setTimeout(() => {
+                openGenerateTabEditorForImage(img, actionLabel, retryCount + 1);
+            }, 50);
+            return false;
+        }
         showError(`Cannot use "${actionLabel}": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.`);
         return false;
     }
@@ -2588,7 +2594,7 @@ function openGenerateTabEditorForImage(img, actionLabel = 'Edit Image') {
 /**
  * Opens the Generate tab edit-image area with full editor layer data.
  */
-function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send Layers To Generate Editor') {
+function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send Layers To Generate Editor', retryCount = 0) {
     if (!sourceEditor || !sourceEditor.layers || sourceEditor.layers.length == 0) {
         showError(`Cannot use "${actionLabel}": no editor layers are available.`);
         return false;
@@ -2600,6 +2606,12 @@ function openGenerateTabEditorForEditorData(sourceEditor, actionLabel = 'Send La
     }
     let initImageParam = document.getElementById('input_initimage');
     if (!initImageParam) {
+        if (retryCount < 20) {
+            setTimeout(() => {
+                openGenerateTabEditorForEditorData(sourceEditor, actionLabel, retryCount + 1);
+            }, 50);
+            return false;
+        }
         showError(`Cannot use "${actionLabel}": Init Image parameter not found\nIf you have a custom workflow, deactivate it, or add an Init Image parameter.`);
         return false;
     }
