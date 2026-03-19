@@ -17,11 +17,101 @@ class ImageEditorLayer {
         this.offsetY = 0;
         this.rotation = 0;
         this.opacity = 1;
+        this.saturation = 1;
+        this.lightValue = 1;
+        this.toneBalance = {
+            shadows: { r: 0, g: 0, b: 0 },
+            midtones: { r: 0, g: 0, b: 0 },
+            highlights: { r: 0, g: 0, b: 0 }
+        };
+        this.toneBalanceCacheCanvas = null;
+        this.toneBalanceCacheKey = null;
         this.globalCompositeOperation = 'source-over';
         this.childLayers = [];
         this.buffer = null;
         this.isMask = false;
         this.hasAnyContent = false;
+    }
+
+    cloneToneBalance(toneBalance) {
+        let cloned = {
+            shadows: { r: 0, g: 0, b: 0 },
+            midtones: { r: 0, g: 0, b: 0 },
+            highlights: { r: 0, g: 0, b: 0 }
+        };
+        if (!toneBalance || typeof toneBalance != 'object') {
+            return cloned;
+        }
+        for (let range of ['shadows', 'midtones', 'highlights']) {
+            for (let channel of ['r', 'g', 'b']) {
+                let value = NaN;
+                if (toneBalance[range]) {
+                    value = parseFloat(toneBalance[range][channel]);
+                }
+                if (isNaN(value)) {
+                    value = 0;
+                }
+                cloned[range][channel] = Math.max(-1, Math.min(1, value));
+            }
+        }
+        return cloned;
+    }
+
+    ensureToneBalance() {
+        this.toneBalance = this.cloneToneBalance(this.toneBalance);
+    }
+
+    hasToneBalanceAdjustments() {
+        this.ensureToneBalance();
+        for (let range of ['shadows', 'midtones', 'highlights']) {
+            for (let channel of ['r', 'g', 'b']) {
+                if (Math.abs(this.toneBalance[range][channel]) > 0.0001) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    getToneBalancedSourceCanvas() {
+        this.ensureToneBalance();
+        let serial = this.editor ? this.editor.changeCount : 0;
+        let key = `${serial}|${this.canvas.width}x${this.canvas.height}|${this.toneBalance.shadows.r},${this.toneBalance.shadows.g},${this.toneBalance.shadows.b},${this.toneBalance.midtones.r},${this.toneBalance.midtones.g},${this.toneBalance.midtones.b},${this.toneBalance.highlights.r},${this.toneBalance.highlights.g},${this.toneBalance.highlights.b}`;
+        if (this.toneBalanceCacheCanvas && this.toneBalanceCacheKey == key) {
+            return this.toneBalanceCacheCanvas;
+        }
+        let tempCanvas = document.createElement('canvas');
+        tempCanvas.width = this.canvas.width;
+        tempCanvas.height = this.canvas.height;
+        let tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(this.canvas, 0, 0);
+        let imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+        let data = imageData.data;
+        let shadows = this.toneBalance.shadows;
+        let midtones = this.toneBalance.midtones;
+        let highlights = this.toneBalance.highlights;
+        for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] == 0) {
+                continue;
+            }
+            let r = data[i];
+            let g = data[i + 1];
+            let b = data[i + 2];
+            let luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+            let shadowWeight = Math.max(0, 1 - (luminance / 0.5));
+            let highlightWeight = Math.max(0, (luminance - 0.5) / 0.5);
+            let midtoneWeight = Math.max(0, 1 - Math.abs(luminance - 0.5) / 0.5);
+            let adjustR = 255 * (shadows.r * shadowWeight + midtones.r * midtoneWeight + highlights.r * highlightWeight);
+            let adjustG = 255 * (shadows.g * shadowWeight + midtones.g * midtoneWeight + highlights.g * highlightWeight);
+            let adjustB = 255 * (shadows.b * shadowWeight + midtones.b * midtoneWeight + highlights.b * highlightWeight);
+            data[i] = Math.max(0, Math.min(255, Math.round(r + adjustR)));
+            data[i + 1] = Math.max(0, Math.min(255, Math.round(g + adjustG)));
+            data[i + 2] = Math.max(0, Math.min(255, Math.round(b + adjustB)));
+        }
+        tempCtx.putImageData(imageData, 0, 0);
+        this.toneBalanceCacheCanvas = tempCanvas;
+        this.toneBalanceCacheKey = key;
+        return tempCanvas;
     }
 
     createButtons() {
@@ -180,7 +270,14 @@ class ImageEditorLayer {
         let [thisOffsetX, thisOffsetY] = this.getOffset();
         let x = offsetX + thisOffsetX;
         let y = offsetY + thisOffsetY;
+        let sourceCanvas = this.canvas;
+        if (this.hasToneBalanceAdjustments()) {
+            sourceCanvas = this.getToneBalancedSourceCanvas();
+        }
         ctx.globalAlpha = this.opacity;
+        let saturation = typeof this.saturation == 'number' ? this.saturation : 1;
+        let lightValue = typeof this.lightValue == 'number' ? this.lightValue : 1;
+        ctx.filter = `saturate(${Math.max(0, saturation)}) brightness(${Math.max(0, lightValue)})`;
         ctx.globalCompositeOperation = this.globalCompositeOperation;
         let [cx, cy] = [this.width / 2, this.height / 2];
         ctx.translate((x + cx) * zoom, (y + cy) * zoom);
@@ -188,7 +285,7 @@ class ImageEditorLayer {
         if (zoom > 5) {
             ctx.imageSmoothingEnabled = false;
         }
-        ctx.drawImage(this.canvas, -cx * zoom, -cy * zoom, this.width * zoom, this.height * zoom);
+        ctx.drawImage(sourceCanvas, -cx * zoom, -cy * zoom, this.width * zoom, this.height * zoom);
         ctx.restore();
     }
 
@@ -204,6 +301,9 @@ class ImageEditorLayer {
             this.buffer.offsetX = this.offsetX;
             this.buffer.offsetY = this.offsetY;
             this.buffer.opacity = this.opacity;
+            this.buffer.saturation = typeof this.saturation == 'number' ? this.saturation : 1;
+            this.buffer.lightValue = typeof this.lightValue == 'number' ? this.lightValue : 1;
+            this.buffer.toneBalance = this.cloneToneBalance(this.toneBalance);
             this.buffer.globalCompositeOperation = this.globalCompositeOperation;
             this.buffer.ctx.globalAlpha = 1;
             this.buffer.ctx.globalCompositeOperation = 'source-over';
@@ -344,6 +444,7 @@ class ImageEditor {
         this.onDeactivate = null;
         this.changeCount = 0;
         this.active = false;
+        this.rightResizeBar = null;
         this.inputDiv = div;
         this.inputDiv.tabIndex = -1;
         this.leftBar = createDiv(null, 'image_editor_leftbar');
@@ -497,7 +598,12 @@ class ImageEditor {
     createCanvas() {
         let canvas = document.createElement('canvas');
         canvas.className = 'image-editor-canvas';
-        this.inputDiv.insertBefore(canvas, this.rightBar);
+        if (this.rightBar.parentElement == this.inputDiv) {
+            this.inputDiv.insertBefore(canvas, this.rightBar);
+        }
+        else {
+            this.inputDiv.appendChild(canvas);
+        }
         this.canvas = canvas;
         canvas.addEventListener('wheel', (e) => this.onMouseWheel(e));
         document.addEventListener('mousedown', (e) => this.onGlobalMouseDown(e));
@@ -653,6 +759,9 @@ class ImageEditor {
     }
 
     onKeyDown(e) {
+        if (!this.active) {
+            return;
+        }
         if (e.key == 'Alt') {
             e.preventDefault();
             this.handleAltDown();
@@ -689,6 +798,9 @@ class ImageEditor {
     }
 
     onGlobalKeyDown(e) {
+        if (!this.active) {
+            return;
+        }
         if (e.key == 'Alt') {
             this.altDown = true;
         }
@@ -698,6 +810,9 @@ class ImageEditor {
     }
 
     onGlobalKeyUp(e) {
+        if (!this.active) {
+            return;
+        }
         if (e.key == 'Alt') {
             this.altDown = false;
             this.handleAltUp();
@@ -705,6 +820,9 @@ class ImageEditor {
     }
 
     onGlobalMouseDown(e) {
+        if (!this.active) {
+            return;
+        }
         this.updateMousePosFrom(e);
     }
 
@@ -743,6 +861,9 @@ class ImageEditor {
     }
 
     onGlobalMouseUp(e) {
+        if (!this.active) {
+            return;
+        }
         let wasDown = this.mouseDown;
         this.mouseDown = false;
         if (this.activeTool.onGlobalMouseUp(e) || wasDown) {
@@ -762,6 +883,9 @@ class ImageEditor {
     }
 
     onGlobalMouseMove(e) {
+        if (!this.active) {
+            return;
+        }
         this.updateMousePosFrom(e);
         let draw = false;
         if (this.isMouseInBox(0, 0, this.canvas.width, this.canvas.height)) {
@@ -1112,7 +1236,9 @@ class ImageEditor {
 
     resize() {
         if (this.canvas) {
-            this.canvas.width = Math.max(100, this.inputDiv.clientWidth - this.leftBar.clientWidth - this.rightBar.clientWidth - 1);
+            let rightBarWidth = this.rightBar && this.rightBar.parentElement == this.inputDiv ? this.rightBar.clientWidth : 0;
+            let rightResizeBarWidth = this.rightResizeBar && this.rightResizeBar.parentElement == this.inputDiv ? this.rightResizeBar.clientWidth : 0;
+            this.canvas.width = Math.max(100, this.inputDiv.clientWidth - this.leftBar.clientWidth - rightBarWidth - rightResizeBarWidth - 1);
             this.canvas.height = Math.max(100, this.inputDiv.clientHeight - this.bottomBar.clientHeight - 1);
             if (this.maskHelperCanvas) {
                 this.maskHelperCanvas.width = this.canvas.width;

@@ -197,6 +197,296 @@ body {
     overflow-y: auto;
     object-fit: contain;
 }
+.imageediting_editor_container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+#ImageEditing .imageediting_layout {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    white-space: nowrap;
+}
+#ImageEditing .imageediting_sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-width: 12rem;
+}
+#ImageEditing .imageediting_sidebar_left {
+    width: calc(28rem - 5px);
+    flex: 0 0 calc(28rem - 5px);
+}
+#ImageEditing .imageediting_sidebar_right {
+    width: 16rem;
+    flex: 0 0 16rem;
+}
+#ImageEditing #imageediting_inputsidebartab_content {
+    flex: 1;
+    min-height: 0;
+}
+#ImageEditing #imageediting_editorsidebartab_content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+#ImageEditing #Image-Editing-Inputs-Tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+#ImageEditing #Image-Editing-Layers-Tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+#ImageEditing #imageediting_main_inputs_area_wrapper {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+}
+#ImageEditing .imageediting_input_group {
+    margin-bottom: 0.75rem;
+}
+#ImageEditing .imageediting_input_group > div:first-child {
+    margin-bottom: 0.35rem;
+}
+#ImageEditing .imageediting_section_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0.45rem;
+    border: 1px solid var(--light-border);
+    border-radius: 0.4rem;
+    background-color: var(--button-background);
+    cursor: pointer;
+    user-select: none;
+}
+#ImageEditing .imageediting_section_header:hover {
+    background-color: var(--button-background-hover);
+}
+#ImageEditing #imageediting_tools_header {
+    background-color: color-mix(in srgb, var(--button-background) 72%, var(--green)) !important;
+    border-color: color-mix(in srgb, var(--light-border) 55%, var(--green)) !important;
+}
+#ImageEditing #imageediting_tools_header:hover {
+    background-color: color-mix(in srgb, var(--button-background-hover) 72%, var(--green)) !important;
+}
+#ImageEditing #imageediting_actions_header {
+    background-color: color-mix(in srgb, var(--button-background) 72%, var(--green)) !important;
+    border-color: color-mix(in srgb, var(--light-border) 55%, var(--green)) !important;
+}
+#ImageEditing #imageediting_actions_header:hover {
+    background-color: color-mix(in srgb, var(--button-background-hover) 72%, var(--green)) !important;
+}
+#ImageEditing #imageediting_layer_options_header {
+    background-color: color-mix(in srgb, var(--button-background) 72%, var(--green)) !important;
+    border-color: color-mix(in srgb, var(--light-border) 55%, var(--green)) !important;
+}
+#ImageEditing #imageediting_layer_options_header:hover {
+    background-color: color-mix(in srgb, var(--button-background-hover) 72%, var(--green)) !important;
+}
+#ImageEditing #imageediting_image_options_header {
+    background-color: color-mix(in srgb, var(--button-background) 72%, var(--green)) !important;
+    border-color: color-mix(in srgb, var(--light-border) 55%, var(--green)) !important;
+}
+#ImageEditing #imageediting_image_options_header:hover {
+    background-color: color-mix(in srgb, var(--button-background-hover) 72%, var(--green)) !important;
+}
+#ImageEditing .imageediting_section_header_title {
+    font-weight: 600;
+}
+#ImageEditing .imageediting_section_header_state {
+    min-width: 1ch;
+    text-align: center;
+    font-weight: 700;
+}
+#ImageEditing .imageediting_section_header_collapsed {
+    opacity: 0.9;
+}
+#ImageEditing .imageediting_buttons_grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+}
+#ImageEditing .imageediting_layer_options_body {
+    border: 1px solid var(--light-border);
+    border-radius: 0.4rem;
+    padding: 0.45rem 0.5rem;
+    background-color: var(--background-panel-subtle);
+}
+#ImageEditing .imageediting_layer_option_row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+}
+#ImageEditing .imageediting_layer_option_row_spaced {
+    margin-top: 0.45rem;
+}
+#ImageEditing #imageediting_layer_opacity_value {
+    min-width: 2.8rem;
+    text-align: right;
+}
+#ImageEditing .imageediting_layer_option_context {
+    margin-top: 0.35rem;
+    color: var(--text-soft);
+    font-size: 0.85rem;
+    white-space: normal;
+}
+#ImageEditing .imageediting_tone_balance_group {
+    margin-top: 0.6rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--light-border);
+}
+#ImageEditing .imageediting_tone_balance_title {
+    margin-bottom: 0.35rem;
+}
+#ImageEditing .imageediting_tone_balance_section {
+    margin-bottom: 0.45rem;
+}
+#ImageEditing .imageediting_tone_balance_section_title {
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+#ImageEditing .imageediting_layer_option_buttons {
+    margin-top: 0.5rem;
+}
+#ImageEditing #imageediting_layer_opacity_slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#ImageEditing #imageediting_layer_saturation_slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#ImageEditing #imageediting_layer_light_value_slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#ImageEditing .imageediting_tone_balance_slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+#ImageEditing .imageediting_tool_button,
+#ImageEditing .imageediting_option_button {
+    width: 100%;
+    text-align: left;
+    white-space: normal;
+    line-height: 1.2;
+    padding: 0.35rem 0.5rem;
+}
+#ImageEditing .imageediting_tool_button {
+    min-width: 8rem;
+}
+#ImageEditing .imageediting_tool_button_active {
+    background-color: var(--danger-button-background-hover);
+}
+#ImageEditing .imageediting_permanent_controls {
+    padding: 0.5rem;
+    border-top: 1px solid var(--light-border);
+    background-color: var(--background-panel);
+}
+#ImageEditing .imageediting_permanent_controls > div:first-child {
+    margin-bottom: 0.35rem;
+}
+#ImageEditing .imageediting_color_selector {
+    flex-grow: 0;
+    margin-bottom: 0.5rem;
+}
+#ImageEditing .imageediting_inline_color_picker .color-picker-inline {
+    position: relative;
+    left: auto;
+    top: auto;
+    z-index: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+#ImageEditing .imageediting_inline_color_picker .color-picker-inline .color-picker-slider-track-wrapper {
+    max-width: 100%;
+}
+#ImageEditing .imageediting_splitter {
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    touch-action: none;
+}
+#ImageEditing .imageediting_main_image_area {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+}
+#ImageEditing .imageediting_editor_sidebar_content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0.35rem;
+}
+#ImageEditing .imageediting_editor_sidebar_content .image_editor_rightbar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+#ImageEditing .imageediting_editor_sidebar_content .image_editor_newlayer_button {
+    width: calc(100% - 0.2rem);
+    margin-bottom: 0.35rem;
+    font-size: 11px;
+    line-height: 1.2;
+}
+#ImageEditing .imageediting_editor_sidebar_content .image_editor_canvaslist {
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    box-sizing: border-box;
+}
+#ImageEditing .imageediting_editor_sidebar_content .image_editor_layer_preview {
+    width: calc(100% - 0.1rem);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 0.4rem;
+}
+#ImageEditing .imageediting_editor_sidebar_content .image_editor_layer_preview canvas {
+    width: 100%;
+    height: 100%;
+}
+.imageediting_zoom_controls {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.5rem;
+}
+.imageediting_zoom_level {
+    margin-left: 0.25rem;
+    min-width: 3.5rem;
+    display: inline-block;
+}
+#imageediting_editor_area {
+    flex: 1;
+    min-height: 0;
+    background-color: var(--background-panel);
+}
+#imageediting_editor_area .imageediting-preview-image {
+    max-width: none;
+    max-height: none;
+}
+.imageediting_empty_hint {
+    opacity: 0.8;
+    white-space: normal;
+}
 .current-image-data {
     white-space: wrap;
     font-size: 80%;
