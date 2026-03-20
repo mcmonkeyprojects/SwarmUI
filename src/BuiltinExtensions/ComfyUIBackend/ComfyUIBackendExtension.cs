@@ -82,46 +82,46 @@ public class ComfyUIBackendExtension : Extension
         StyleSheetFiles.Add("Assets/comfy_workflow_editor.css");
         T2IParamTypes.FakeTypeProviders.Add(DynamicParamGenerator);
         // Temporary: remove old pycache files where we used to have python files, to prevent Comfy boot errors
-        Utilities.RemoveBadPycacheFrom($"{FilePath}/ExtraNodes");
-        Utilities.RemoveBadPycacheFrom($"{FilePath}/ExtraNodes/SwarmWebHelper");
+        Utilities.RemoveBadPycacheFrom($"{FilePath}ExtraNodes");
+        Utilities.RemoveBadPycacheFrom($"{FilePath}ExtraNodes/SwarmWebHelper");
         T2IAPI.AlwaysTopKeys.Add("comfyworkflowraw");
         T2IAPI.AlwaysTopKeys.Add("comfyworkflowparammetadata");
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI_IPAdapter_plus"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI_IPAdapter_plus"))
         {
             FeaturesSupported.UnionWith(["ipadapter", "cubiqipadapterunified"]);
             FeaturesDiscardIfNotFound.UnionWith(["ipadapter", "cubiqipadapterunified"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/comfyui_controlnet_aux"))
+        if (Directory.Exists($"{FilePath}DLNodes/comfyui_controlnet_aux"))
         {
             FeaturesSupported.UnionWith(["controlnetpreprocessors"]);
             FeaturesDiscardIfNotFound.UnionWith(["controlnetpreprocessors"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-Frame-Interpolation"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-Frame-Interpolation"))
         {
             FeaturesSupported.UnionWith(["frameinterps"]);
             FeaturesDiscardIfNotFound.UnionWith(["frameinterps"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-GIMM-VFI"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-GIMM-VFI"))
         {
             FeaturesSupported.UnionWith(["frameinterps_gimmvfi"]);
             FeaturesDiscardIfNotFound.UnionWith(["frameinterps_gimmvfi"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-segment-anything-2"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-segment-anything-2"))
         {
             FeaturesSupported.UnionWith(["sam2"]);
             FeaturesDiscardIfNotFound.UnionWith(["sam2"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI_bitsandbytes_NF4"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI_bitsandbytes_NF4"))
         {
             FeaturesSupported.UnionWith(["bnb_nf4"]);
             FeaturesDiscardIfNotFound.UnionWith(["bnb_nf4"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-GGUF"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-GGUF"))
         {
             FeaturesSupported.UnionWith(["gguf"]);
             FeaturesDiscardIfNotFound.UnionWith(["gguf"]);
         }
-        if (Directory.Exists($"{FilePath}/DLNodes/ComfyUI-TeaCache"))
+        if (Directory.Exists($"{FilePath}DLNodes/ComfyUI-TeaCache"))
         {
             FeaturesSupported.UnionWith(["teacache"]);
             FeaturesDiscardIfNotFound.UnionWith(["teacache"]);
@@ -297,8 +297,8 @@ public class ComfyUIBackendExtension : Extension
     public void LoadWorkflowFiles()
     {
         CustomWorkflows.Clear();
-        Directory.CreateDirectory($"{FilePath}/CustomWorkflows");
-        Directory.CreateDirectory($"{FilePath}/CustomWorkflows/Examples");
+        Directory.CreateDirectory($"{FilePath}CustomWorkflows");
+        Directory.CreateDirectory($"{FilePath}CustomWorkflows/Examples");
         string[] getCustomFlows(string path) => [.. Directory.EnumerateFiles($"{FilePath}/{path}", "*.*", new EnumerationOptions() { RecurseSubdirectories = true }).Select(f => f.Replace('\\', '/').After($"/{path}/")).Order()];
         ExampleWorkflowNames = getCustomFlows("ExampleWorkflows");
         string[] customFlows = getCustomFlows("CustomWorkflows");
@@ -307,7 +307,7 @@ public class ComfyUIBackendExtension : Extension
         {
             if (!customFlows.Contains($"Examples/{workflow}") && !customFlows.Contains($"Examples/{workflow}.deleted"))
             {
-                File.Copy($"{FilePath}/ExampleWorkflows/{workflow}", $"{FilePath}/CustomWorkflows/Examples/{workflow}");
+                File.Copy($"{FilePath}ExampleWorkflows/{workflow}", $"{FilePath}CustomWorkflows/Examples/{workflow}");
                 anyCopied = true;
             }
         }
@@ -871,7 +871,7 @@ public class ComfyUIBackendExtension : Extension
         }
         await Task.WhenAll(tasks); // Intentional force order for Comfy folders to be before nodes
         tasks = [];
-        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}/DLNodes"))
+        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}DLNodes"))
         {
             tasks.Add(Utilities.RunCheckedTask(async () =>
             {
@@ -907,7 +907,7 @@ public class ComfyUIBackendExtension : Extension
                 }));
             }
         }
-        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}/DLNodes"))
+        foreach (string folder in Directory.EnumerateDirectories($"{FilePath}DLNodes"))
         {
             string nodeName = Path.GetFileName(folder);
             if (toUpdate.Contains($"Comfy Node: {nodeName}"))

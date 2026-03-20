@@ -83,7 +83,7 @@ public abstract class Extension
             Logs.Verbose($"Don't populate metadata for core extension '{ExtensionName}'");
             return;
         }
-        if (!Directory.Exists($"{FilePath}/.git"))
+        if (!Directory.Exists($"{FilePath}.git"))
         {
             Logs.Warning($"Extension '{ExtensionName}' did not come from git. Cannot populate metadata.");
             return;

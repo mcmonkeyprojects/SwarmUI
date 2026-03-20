@@ -342,9 +342,9 @@ public class WebServer
                 string toRead = $"{e.FilePath}{file}";
                 ExtensionAssets.Add(fname, new(() => File.ReadAllBytes(toRead)));
             }
-            if (Directory.Exists($"{e.FilePath}/Tabs/Text2Image/"))
+            if (Directory.Exists($"{e.FilePath}Tabs/Text2Image/"))
             {
-                foreach (string file in Directory.EnumerateFiles($"{e.FilePath}/Tabs/Text2Image/", "*.html"))
+                foreach (string file in Directory.EnumerateFiles($"{e.FilePath}Tabs/Text2Image/", "*.html"))
                 {
                     string simpleName = file.AfterLast('/').BeforeLast('.');
                     string id = T2IParamTypes.CleanTypeName(simpleName);
