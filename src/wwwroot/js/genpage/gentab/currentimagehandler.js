@@ -611,20 +611,31 @@ function shiftToNextImagePreview(next = true, expand = false, isArrows = false) 
         if (newIndex == index) {
             return false;
         }
-        divs[newIndex].querySelector('img').click();
+        let target = divs[newIndex].querySelector('.image-block-img-inner');
+        if (!target) {
+            return false;
+        }
+        target.click();
         if (expand) {
-            divs[newIndex].querySelector('img').click();
+            target.click();
             imageFullView.showImage(currentImgSrc, currentMetadataVal, 'history');
             imageFullView.pasteState(expandedState);
         }
         return true;
     }
     let batch_area = getRequiredElementById('current_image_batch');
-    let imgs = [...batch_area.getElementsByTagName('img')].filter(i => findParentOfClass(i, 'image-block-placeholder') == null);
-    let index = imgs.findIndex(img => img.src == curImgElem.src);
+    let imgs = [...batch_area.getElementsByClassName('image-block-img-inner')].filter(i => findParentOfClass(i, 'image-block-placeholder') == null);
+    function getSrc(elem) {
+        if (elem.tagName == 'VIDEO') {
+            return elem.querySelector('source').src;
+        }
+        return elem.src;
+    }
+    let curImgSrc = getSrc(curImgElem);
+    let index = imgs.findIndex(img => getSrc(img) == curImgSrc);
     if (index == -1) {
-        let cleanSrc = (img) => img.src.length > 100 ? img.src.substring(0, 100) + '...' : img.src;
-        console.log(`Image preview shift failed as current image ${cleanSrc(curImgElem)} is not in batch area set ${imgs.map(cleanSrc)}`);
+        let cleanSrc = (src) => src.length > 200 ? src.substring(0, 200) + '...' : src;
+        console.log(`Image preview shift failed as current image ${cleanSrc(curImgSrc)} is not in batch area set [${imgs.map(getSrc).map(cleanSrc).join(', ')}]`);
         return false;
     }
     let newIndex = index + (next ? 1 : -1);
@@ -1242,6 +1253,7 @@ function appendImage(container, imageSrc, batchId, textPreview, metadata = '', t
         }
     });
     srcTarget.src = imageSrc;
+    img.classList.add('image-block-img-inner');
     div.appendChild(img);
     if (type == 'legacy') {
         let textBlock = createDiv(null, 'image-preview-text');
