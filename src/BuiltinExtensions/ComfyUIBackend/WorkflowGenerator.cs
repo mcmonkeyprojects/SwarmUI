@@ -2422,6 +2422,22 @@ public partial class WorkflowGenerator
 
     public record struct RegionHelper(JArray PartCond, JArray Mask);
 
+    public bool ShouldZeroNegative()
+    {
+        if (UserInput.Get(T2IParamTypes.ZeroNegative, false))
+        {
+            return true;
+        }
+        if (UserInput.Get(T2IParamTypes.ModelSpecificEnhancements, true))
+        {
+            if (IsAceStep15())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>Creates a "CLIPTextEncode" or equivalent node for the given input, applying prompt-given conditioning modifiers as relevant.</summary>
     public JArray CreateConditioning(string prompt, JArray clip, T2IModel model, bool isPositive, string firstId = null, bool isRefiner = false, bool isVideo = false, bool isVideoSwap = false)
     {
@@ -2444,7 +2460,7 @@ public partial class WorkflowGenerator
             globalPromptText = $"{globalPromptText} {regionalizer.BasePrompt}";
         }
         JArray globalCond = CreateConditioningLine(globalPromptText.Trim(), clip, model, isPositive, firstId);
-        if (!isPositive && string.IsNullOrWhiteSpace(prompt) && UserInput.Get(T2IParamTypes.ZeroNegative, false))
+        if (!isPositive && string.IsNullOrWhiteSpace(prompt) && ShouldZeroNegative())
         {
             string zeroed = CreateNode("ConditioningZeroOut", new JObject()
             {

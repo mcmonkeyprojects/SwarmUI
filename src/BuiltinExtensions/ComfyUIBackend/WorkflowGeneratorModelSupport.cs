@@ -883,6 +883,10 @@ public partial class WorkflowGenerator
                     {
                         dtype = "default";
                     }
+                    else if (IsAceStep15()) // ??
+                    {
+                        dtype = "default";
+                    }
                     else
                     {
                         dtype = "fp8_e4m3fn";

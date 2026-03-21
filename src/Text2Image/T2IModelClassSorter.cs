@@ -412,7 +412,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = CompatFlux, Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isFluxLora(h) && !isHyVid15Lora(h);
+            return isFluxLora(h) && !isHyVid15Lora(h) && !isFlux2KleinLora(h);
         }});
         Register(new() { ID = "Flux.1-dev/depth", CompatClass = CompatFlux, Name = "Flux.1 Depth", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
