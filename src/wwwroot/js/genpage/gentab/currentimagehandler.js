@@ -591,14 +591,14 @@ function copy_current_image_params() {
  */
 function shiftToNextImagePreview(next = true, expand = false, isArrows = false) {
     let curImgElem = currentImageHelper.getCurrentImage();
-    if (!curImgElem) {
+    if (!curImgElem || lastHistoryImageDiv == null || lastHistoryImageDiv.parentElement == null) {
         return false;
     }
     let doCycle = getUserSetting('ui.imageshiftingcycles', 'true');
     doCycle = doCycle == 'true' || (isArrows && doCycle == 'only_arrows');
     let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
     if (curImgElem.dataset.batch_id == 'history') {
-        let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block'));
+        let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block') || div.classList.contains('model-block'));
         let index = divs.findIndex(div => div == lastHistoryImageDiv);
         if (index == -1) {
             console.log(`Image preview shift failed as current image ${lastHistoryImage} is not in history area`);
@@ -1171,12 +1171,7 @@ function highlightSelectedImage(src) {
     let batchContainer = getRequiredElementById('current_image_batch');
     if (batchContainer) {
         for (let i of batchContainer.getElementsByClassName('image-block')) {
-            if (i.dataset.src == src) {
-                i.classList.add('image-block-current');
-            }
-            else {
-                i.classList.remove('image-block-current');
-            }
+            i.classList.toggle('image-block-current', i.dataset.src == src);
         }
     }
     let historyContainer = document.getElementById('imagehistorybrowser-content');
@@ -1186,12 +1181,10 @@ function highlightSelectedImage(src) {
             // History browser images may have data-src (if clicked) or just data-name (if not clicked yet)
             let historyImgSrc = i.dataset.src || i.dataset.name;
             let normalizedHistorySrc = historyImgSrc ? getImageFullSrc(historyImgSrc) : null;
-            if (normalizedHistorySrc && normalizedSrc == normalizedHistorySrc) {
-                i.classList.add('image-block-current');
-            }
-            else {
-                i.classList.remove('image-block-current');
-            }
+            i.classList.toggle('image-block-current', normalizedHistorySrc && normalizedSrc == normalizedHistorySrc);
+        }
+        for (let i of historyContainer.getElementsByClassName('model-block')) {
+            i.classList.toggle('model-selected', i.dataset.src == src);
         }
     }
 }
