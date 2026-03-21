@@ -591,13 +591,16 @@ function copy_current_image_params() {
  */
 function shiftToNextImagePreview(next = true, expand = false, isArrows = false) {
     let curImgElem = currentImageHelper.getCurrentImage();
-    if (!curImgElem || lastHistoryImageDiv == null || lastHistoryImageDiv.parentElement == null) {
+    if (!curImgElem) {
         return false;
     }
     let doCycle = getUserSetting('ui.imageshiftingcycles', 'true');
     doCycle = doCycle == 'true' || (isArrows && doCycle == 'only_arrows');
     let expandedState = imageFullView.isOpen() ? imageFullView.copyState() : {};
     if (curImgElem.dataset.batch_id == 'history') {
+        if (lastHistoryImageDiv == null || lastHistoryImageDiv.parentElement == null) {
+            return false;
+        }
         let divs = [...lastHistoryImageDiv.parentElement.children].filter(div => div.classList.contains('image-block') || div.classList.contains('model-block'));
         let index = divs.findIndex(div => div == lastHistoryImageDiv);
         if (index == -1) {
