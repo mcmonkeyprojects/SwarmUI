@@ -119,8 +119,9 @@ class SimpleTab {
                 this.imageElem.src = imgSrc;
             }
             else {
-                this.imageElemWrapper.innerHTML = `<audio class="simple_image_container_img" id="simple_image_container_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${imgSrc}"></audio>`;
+                this.imageElemWrapper.innerHTML = `<div class="audio-container simple_image_container_img" style="cursor:grab;max-width:100%;"><audio class="simple_image_container_img" id="simple_image_container_img" preload="metadata" src="${imgSrc}"></audio></div>`;
                 this.imageElem = this.imageElemWrapper.querySelector('#simple_image_container_img');
+                new AudioControls(this.imageElem);
             }
         }
         else {

@@ -11,7 +11,7 @@ class ImageFullViewHelper {
             if (e.target.tagName == 'BODY') {
                 return; // it's impossible on the genpage to actually click body, so this indicates a bugged click, so ignore it
             }
-            if (!this.noClose && this.modal.style.display == 'block' && !findParentOfClass(e.target, 'imageview_popup_modal_undertext') && !findParentOfClass(e.target, 'video-controls') && !findParentOfClass(e.target, 'image_fullview_extra_buttons')) {
+            if (!this.noClose && this.modal.style.display == 'block' && !findParentOfClass(e.target, 'imageview_popup_modal_undertext') && !findParentOfClass(e.target, 'video-controls') && !findParentOfClass(e.target, 'audio-controls') && !findParentOfClass(e.target, 'audio-waveform-wrap') && !findParentOfClass(e.target, 'image_fullview_extra_buttons')) {
                 this.close();
                 e.preventDefault();
                 e.stopPropagation();
@@ -45,6 +45,9 @@ class ImageFullViewHelper {
         if (container.classList.contains('video-container')) {
             return container.querySelector('video');
         }
+        if (container.classList.contains('audio-container')) {
+            return container.querySelector('audio');
+        }
         return container;
     }
 
@@ -67,7 +70,7 @@ class ImageFullViewHelper {
         if (e.button == 2) { // right-click
             return;
         }
-        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || findParentOfClass(e.target, 'video-controls') || e.ctrlKey || e.shiftKey) {
+        if (!findParentOfClass(e.target, 'imageview_modal_imagewrap') || findParentOfClass(e.target, 'video-controls') || findParentOfClass(e.target, 'audio-controls') || findParentOfClass(e.target, 'audio-waveform-wrap') || e.ctrlKey || e.shiftKey) {
             return;
         }
         this.lastMouseX = e.clientX;
@@ -249,7 +252,7 @@ class ImageFullViewHelper {
             imgHtml = `<div class="video-container imageview_popup_modal_img" id="imageview_popup_modal_img"><video class="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" autoplay loop muted onload="imageFullView.onImgLoad()"><source src="${encodedSrc}" type="${isVideo}"></video></div>`;
         }
         else if (isAudio) {
-            imgHtml = `<audio class="imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;object-fit:contain;" controls src="${encodedSrc}" onload="imageFullView.onImgLoad()"></audio>`;
+            imgHtml = `<div class="audio-container imageview_popup_modal_img" id="imageview_popup_modal_img" style="cursor:grab;max-width:100%;"><audio class="imageview_popup_modal_img" preload="metadata" src="${encodedSrc}" onloadedmetadata="imageFullView.onImgLoad()"></audio></div>`;
         }
         this.content.innerHTML = `
         <div class="modal-dialog" style="display:none">(click outside image to close)</div>
@@ -286,6 +289,9 @@ class ImageFullViewHelper {
         this.modalJq.modal('show');
         if (isVideo) {
             new VideoControls(this.getImg());
+        }
+        else if (isAudio) {
+            new AudioControls(this.getImg());
         }
         if (isVideo || isAudio) {
             let curImgElem = currentImageHelper.getCurrentImage();
@@ -370,6 +376,9 @@ class CurrentImageHelper {
             return null;
         }
         if (img.tagName == 'VIDEO' && img.parentElement.classList.contains('video-container')) {
+            return img.parentElement;
+        }
+        if (img.tagName == 'AUDIO' && img.parentElement.classList.contains('audio-container')) {
             return img.parentElement;
         }
         return img;
@@ -854,10 +863,11 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
     else if (isAudio) {
         curImg.innerHTML = '';
+        container = createDiv(null, 'audio-container current-image-img');
         img = document.createElement('audio');
-        img.controls = true;
+        img.preload = 'metadata';
         srcTarget = img;
-        container = img;
+        container.appendChild(img);
     }
     else {
         img = currentImageHelper.getCurrentImage();
@@ -879,7 +889,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             return [img.videoWidth, img.videoHeight];
         }
         else if (isAudio) {
-            return [200, 50];
+            return [320, 140];
         }
         else {
             return [img.naturalWidth, img.naturalHeight];
@@ -1149,6 +1159,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         curImg.appendChild(extrasWrapper);
         if (isVideo) {
             new VideoControls(img);
+        }
+        else if (isAudio) {
+            new AudioControls(img);
         }
     }
     highlightSelectedImage(src);

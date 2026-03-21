@@ -971,6 +971,77 @@ textarea, input, select {
     width: 0%;
     transition: width 0.1s linear;
 }
+.audio-container {
+    position: relative;
+    width: 90%;
+    max-width: 420px;
+    min-width: 220px;
+    display: inline-block;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+.audio-container > audio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+}
+.audio-waveform-wrap {
+    padding: 0;
+    cursor: pointer;
+    box-sizing: border-box;
+    touch-action: none;
+}
+.audio-waveform-canvas {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    vertical-align: top;
+}
+.audio-controls {
+    position: static;
+    background: rgba(30, 30, 30, 0.92);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-monospace);
+}
+.audio-controls button {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+}
+.audio-controls button:hover {
+    transform: scale(1.1);
+}
+.audio-controls button:active {
+    transform: scale(0.95);
+}
+.audio-time {
+    color: white;
+    font-size: 14px;
+    min-width: 45px;
+}
+.audio-toolbar-spacer {
+    flex: 1;
+    min-width: 8px;
+}
 
 
 

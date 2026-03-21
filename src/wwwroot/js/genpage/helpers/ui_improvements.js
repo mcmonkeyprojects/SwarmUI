@@ -288,6 +288,18 @@ class UIImprovementHandler {
                 this.videoControlDragging = null;
             }
         });
+        document.addEventListener('pointerup', () => {
+            if (this.videoControlDragging) {
+                this.videoControlDragging.isDragging = false;
+                this.videoControlDragging = null;
+            }
+        });
+        document.addEventListener('pointercancel', () => {
+            if (this.videoControlDragging) {
+                this.videoControlDragging.isDragging = false;
+                this.videoControlDragging = null;
+            }
+        });
         document.addEventListener('focusout', (e) => {
             if (e.target.tagName == 'TEXTAREA') {
                 this.lastSelectedTextbox = e.target;
@@ -705,6 +717,462 @@ class VideoControls {
             this.volumeBtn.textContent = '🔊';
         }
         if (this.video.paused) {
+            this.playBtn.textContent = '▶';
+        }
+        else {
+            this.playBtn.textContent = '⏸';
+        }
+    }
+}
+
+/** Helper class to inject custom JS audio controls (with waveform) on an 'audio' element. Expects audio inside an `.audio-container` parent. */
+class AudioControls {
+
+    constructor(audioElement) {
+        this.audio = audioElement;
+        this.isDragging = false;
+        this.peaks = null;
+        this.waveformFailed = false;
+        this.resizeObserver = null;
+        this.hoverFraction = null;
+        this.pointerIdForScrub = null;
+        this.progressRaf = null;
+        this.createControls();
+        this.loadWaveform();
+    }
+
+    /** Creates the controls UI and waveform canvas. */
+    createControls() {
+        let container = this.audio.parentElement;
+        this.waveformWrap = createDiv(null, 'audio-waveform-wrap', `
+            <canvas class="audio-waveform-canvas" width="400" height="72"></canvas>
+        `);
+        container.appendChild(this.waveformWrap);
+        this.canvas = this.waveformWrap.querySelector('.audio-waveform-canvas');
+        let controls = createDiv(null, 'audio-controls', `
+            <button data-action="play">▶</button>
+            <span class="audio-time">0:00</span>
+            <span class="audio-toolbar-spacer"></span>
+            <span class="audio-time audio-time-duration">0:00</span>
+            <button data-action="volume">🔊</button>
+            <div class="auto-slider-range-wrapper" style="${getRangeStyle(100, 0, 100)}; width: 80px;">
+                <input class="auto-slider-range" type="range" value="100" min="0" max="100" step="1" data-ispot="false" autocomplete="off" oninput="updateRangeStyle(this)" onchange="updateRangeStyle(this)">
+            </div>
+        `);
+        container.appendChild(controls);
+        this.controls = controls;
+        this.playBtn = controls.querySelector('[data-action="play"]');
+        this.volumeBtn = controls.querySelector('[data-action="volume"]');
+        this.currentTimeEl = controls.querySelectorAll('.audio-time')[0];
+        this.durationEl = controls.querySelector('.audio-time-duration');
+        this.volumeSlider = controls.querySelector('input[type="range"]');
+        this.volumeSlider.dataset.lastRealVolume = "100";
+        this.playBtn.addEventListener('click', () => this.togglePlay());
+        this.audio.addEventListener('loadedmetadata', () => this.updateDuration());
+        this.audio.addEventListener('seeked', () => this.refreshProgressDisplay());
+        this.audio.addEventListener('play', () => {
+            this.updateIcons();
+            this.startProgressAnimation();
+        });
+        this.audio.addEventListener('pause', () => {
+            this.updateIcons();
+            this.stopProgressAnimation();
+            this.refreshProgressDisplay();
+        });
+        this.audio.addEventListener('ended', () => {
+            this.updateIcons();
+            this.stopProgressAnimation();
+            this.refreshProgressDisplay();
+        });
+        this.waveformWrap.addEventListener('pointermove', (e) => {
+            if (this.isDragging) {
+                this.seekToClientX(e.clientX);
+                this.redrawWaveform();
+            }
+            else if (e.buttons == 0) {
+                this.setHoverFromClientX(e.clientX);
+            }
+        });
+        this.waveformWrap.addEventListener('pointerleave', () => {
+            if (!this.isDragging) {
+                this.hoverFraction = null;
+                this.redrawWaveform();
+            }
+        });
+        this.waveformWrap.addEventListener('pointerdown', (e) => {
+            if (e.button != 0) {
+                return;
+            }
+            e.preventDefault();
+            this.isDragging = true;
+            uiImprover.videoControlDragging = this;
+            this.pointerIdForScrub = e.pointerId;
+            try {
+                this.waveformWrap.setPointerCapture(e.pointerId);
+            }
+            catch (err) {
+            }
+            this.seekToClientX(e.clientX);
+            this.redrawWaveform();
+        });
+        this.waveformWrap.addEventListener('pointerup', (e) => {
+            if (e.pointerId != this.pointerIdForScrub) {
+                return;
+            }
+            try {
+                this.waveformWrap.releasePointerCapture(e.pointerId);
+            }
+            catch (err) {
+            }
+            this.finishScrubIfActive();
+        });
+        this.waveformWrap.addEventListener('pointercancel', (e) => {
+            if (e.pointerId != this.pointerIdForScrub) {
+                return;
+            }
+            try {
+                this.waveformWrap.releasePointerCapture(e.pointerId);
+            }
+            catch (err) {
+            }
+            this.finishScrubIfActive();
+        });
+        this.waveformWrap.addEventListener('lostpointercapture', () => {
+            this.finishScrubIfActive();
+        });
+        this.volumeSlider.addEventListener('input', (e) => this.setVolume(e));
+        this.volumeBtn.addEventListener('click', () => this.toggleMute());
+        let userSetting = typeof getUserSetting == 'function' ? getUserSetting('audio.videoaudiobehavior', 'last') : 'play';
+        if (userSetting == 'play') {
+            this.audio.muted = false;
+        }
+        else if (userSetting == 'silent') {
+            this.volumeSlider.value = 0;
+            this.volumeSlider.dataset.lastRealVolume = "0";
+            this.audio.volume = 0;
+            this.audio.muted = true;
+        }
+        else {
+            let lastVolume = localStorage.getItem('audiovolume_last') || "100";
+            let lastMuted = localStorage.getItem('audiovolume_lastmuted') == "true";
+            this.volumeSlider.value = lastMuted ? 0 : parseFloat(lastVolume);
+            this.volumeSlider.dataset.lastRealVolume = lastVolume;
+            this.audio.volume = parseFloat(lastVolume) / 100;
+            this.audio.muted = lastMuted;
+        }
+        this.updateIcons();
+        if (typeof ResizeObserver != 'undefined') {
+            this.resizeObserver = new ResizeObserver(() => this.redrawWaveform());
+            this.resizeObserver.observe(this.waveformWrap);
+        }
+    }
+
+    /** Fetches and decodes audio to build peak data for the waveform. */
+    loadWaveform() {
+        let src = this.audio.currentSrc || this.audio.src;
+        if (!src) {
+            this.waveformFailed = true;
+            this.redrawWaveform();
+            return;
+        }
+        let tryDecode = (arrayBuffer) => {
+            let Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) {
+                this.waveformFailed = true;
+                this.redrawWaveform();
+                return;
+            }
+            if (!this.audioContext) {
+                this.audioContext = new Ctx();
+            }
+            this.audioContext.decodeAudioData(arrayBuffer.slice(0), (buffer) => {
+                if (!this.audio.isConnected) {
+                    return;
+                }
+                this.buildPeaksFromBuffer(buffer);
+                this.redrawWaveform();
+            }, () => {
+                this.waveformFailed = true;
+                this.redrawWaveform();
+            });
+        };
+        fetch(src, { credentials: 'same-origin' }).then((r) => {
+            if (!r.ok) {
+                throw new Error('fetch failed');
+            }
+            return r.arrayBuffer();
+        }).then(tryDecode).catch(() => {
+            this.waveformFailed = true;
+            this.redrawWaveform();
+        });
+    }
+
+    /** Downsamples decoded PCM to peak envelopes for drawing. */
+    buildPeaksFromBuffer(buffer) {
+        let numChannels = buffer.numberOfChannels;
+        if (numChannels < 1) {
+            this.waveformFailed = true;
+            return;
+        }
+        let len = buffer.length;
+        let targetBars = 600;
+        let blockSize = Math.max(1, Math.floor(len / targetBars));
+        let numBars = Math.ceil(len / blockSize);
+        let peaks = [];
+        for (let i = 0; i < numBars; i++) {
+            let start = i * blockSize;
+            let end = Math.min(start + blockSize, len);
+            let peak = 0;
+            for (let c = 0; c < numChannels; c++) {
+                let data = buffer.getChannelData(c);
+                for (let s = start; s < end; s++) {
+                    let v = Math.abs(data[s]);
+                    if (v > peak) {
+                        peak = v;
+                    }
+                }
+            }
+            peaks.push(peak);
+        }
+        this.peaks = peaks;
+    }
+
+    /** Sizes the canvas to the wrapper and redraws peaks. */
+    redrawWaveform() {
+        if (!this.canvas || !this.waveformWrap) {
+            return;
+        }
+        let dpr = window.devicePixelRatio || 1;
+        let w = this.waveformWrap.clientWidth;
+        let h = 72;
+        if (w < 40) {
+            w = 400;
+        }
+        this.canvas.width = Math.floor(w * dpr);
+        this.canvas.height = Math.floor(h * dpr);
+        this.canvas.style.width = `${w}px`;
+        this.canvas.style.height = `${h}px`;
+        let ctx = this.canvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
+        let mid = h / 2;
+        let emphasis = getComputedStyle(document.documentElement).getPropertyValue('--emphasis').trim() || '#6cf';
+        let mutedColor = 'rgba(255, 255, 255, 0.28)';
+        let duration = this.audio.duration;
+        let progress = (duration && !isNaN(duration) && duration > 0) ? this.audio.currentTime / duration : 0;
+        let lineHalf = 0.5;
+        if (this.waveformFailed || !this.peaks || this.peaks.length == 0) {
+            ctx.fillStyle = mutedColor;
+            ctx.fillRect(0, mid - lineHalf, w, lineHalf * 2);
+            if (duration && !isNaN(duration) && duration > 0) {
+                ctx.fillStyle = emphasis;
+                ctx.fillRect(0, mid - lineHalf, w * progress, lineHalf * 2);
+            }
+            this.drawWaveformHoverLine(ctx, w, h);
+            return;
+        }
+        let n = this.peaks.length;
+        let maxPeak = 0.0001;
+        for (let i = 0; i < n; i++) {
+            if (this.peaks[i] > maxPeak) {
+                maxPeak = this.peaks[i];
+            }
+        }
+        ctx.fillStyle = mutedColor;
+        ctx.fillRect(0, mid - lineHalf, w, lineHalf * 2);
+        ctx.fillStyle = emphasis;
+        ctx.fillRect(0, mid - lineHalf, w * progress, lineHalf * 2);
+        let maxHalfAmp = h * 0.42;
+        let silenceRel = 0.018;
+        for (let i = 0; i < n; i++) {
+            let norm = this.peaks[i] / maxPeak;
+            if (norm < silenceRel) {
+                continue;
+            }
+            let halfAmp = norm * maxHalfAmp;
+            let x0 = Math.floor((i / n) * w);
+            let x1 = Math.ceil(((i + 1) / n) * w);
+            let barW = Math.max(1, x1 - x0);
+            let barCenter = (i + 0.5) / n;
+            let isPast = barCenter <= progress;
+            ctx.fillStyle = isPast ? emphasis : mutedColor;
+            ctx.fillRect(x0, mid - halfAmp, barW, halfAmp * 2);
+        }
+        this.drawWaveformHoverLine(ctx, w, h);
+    }
+
+    /** Draws a vertical line at the hover scrub position. */
+    drawWaveformHoverLine(ctx, w, h) {
+        if (this.hoverFraction == null || isNaN(this.hoverFraction)) {
+            return;
+        }
+        let x = this.hoverFraction * w;
+        if (x < 0 || x > w) {
+            return;
+        }
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, h);
+        ctx.stroke();
+    }
+
+    /** Updates hover position from a viewport X coordinate. */
+    setHoverFromClientX(clientX) {
+        let rect = this.waveformWrap.getBoundingClientRect();
+        if (rect.width <= 0) {
+            return;
+        }
+        let percent = (clientX - rect.left) / rect.width;
+        percent = Math.max(0, Math.min(1, percent));
+        this.hoverFraction = percent;
+        this.redrawWaveform();
+    }
+
+    /** Helper to format a time in seconds into a MM:SS string. */
+    formatTime(seconds) {
+        if (!isFinite(seconds) || isNaN(seconds)) {
+            return '0:00';
+        }
+        let mins = Math.floor(seconds / 60);
+        let secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    /** Toggles play/pause. */
+    togglePlay() {
+        if (this.audio.paused) {
+            this.audio.play();
+        }
+        else {
+            this.audio.pause();
+        }
+        this.updateIcons();
+    }
+
+    /** While playing, drives smooth time + waveform updates via requestAnimationFrame. */
+    startProgressAnimation() {
+        if (this.progressRaf != null) {
+            return;
+        }
+        let tick = () => {
+            if (!this.canvas || !this.canvas.isConnected) {
+                this.stopProgressAnimation();
+                return;
+            }
+            if (this.audio.paused) {
+                this.stopProgressAnimation();
+                return;
+            }
+            this.refreshProgressDisplay();
+            this.progressRaf = requestAnimationFrame(tick);
+        };
+        this.progressRaf = requestAnimationFrame(tick);
+    }
+
+    /** Stops the playback animation loop. */
+    stopProgressAnimation() {
+        if (this.progressRaf != null) {
+            cancelAnimationFrame(this.progressRaf);
+            this.progressRaf = null;
+        }
+    }
+
+    /** Updates the current-time label and redraws the waveform (playhead). */
+    refreshProgressDisplay() {
+        this.currentTimeEl.textContent = this.formatTime(this.audio.currentTime);
+        this.redrawWaveform();
+    }
+
+    /** Clears scrub-drag state (pointer + global handler may both call). */
+    finishScrubIfActive() {
+        if (!this.isDragging) {
+            return;
+        }
+        this.isDragging = false;
+        this.pointerIdForScrub = null;
+        if (uiImprover.videoControlDragging == this) {
+            uiImprover.videoControlDragging = null;
+        }
+        this.refreshProgressDisplay();
+    }
+
+    /** Updates duration label. */
+    updateDuration() {
+        this.durationEl.textContent = this.formatTime(this.audio.duration);
+    }
+
+    /** Seeks to the time under the given viewport X coordinate. */
+    seekToClientX(clientX) {
+        let rect = this.waveformWrap.getBoundingClientRect();
+        if (rect.width <= 0) {
+            return;
+        }
+        let percent = (clientX - rect.left) / rect.width;
+        percent = Math.max(0, Math.min(1, percent));
+        this.hoverFraction = percent;
+        let d = this.audio.duration;
+        if (d && !isNaN(d) && d > 0) {
+            this.audio.currentTime = percent * d;
+        }
+    }
+
+    /** Document-level mousemove while scrubbing (same hook as VideoControls). */
+    drag(e) {
+        if (!this.isDragging) {
+            return;
+        }
+        this.seekToClientX(e.clientX);
+        this.redrawWaveform();
+    }
+
+    /** Sets volume from the range input. */
+    setVolume(e) {
+        let volume = e.target.value / 100;
+        e.target.dataset.lastRealVolume = `${e.target.value}`;
+        this.audio.volume = volume;
+        this.audio.muted = volume < 0.001;
+        localStorage.setItem('audiovolume_last', `${e.target.value}`);
+        localStorage.setItem('audiovolume_lastmuted', `${this.audio.muted}`);
+        this.updateIcons();
+    }
+
+    /** Toggles mute. */
+    toggleMute() {
+        this.audio.muted = !this.audio.muted;
+        if (this.audio.muted) {
+            this.volumeSlider.value = 0;
+        }
+        else if (this.volumeSlider.dataset.lastRealVolume) {
+            this.audio.volume = parseFloat(this.volumeSlider.dataset.lastRealVolume) / 100;
+            if (this.audio.volume < 0.01) {
+                this.audio.volume = 0.5;
+            }
+        }
+        localStorage.setItem('audiovolume_lastmuted', `${this.audio.muted}`);
+        this.updateIcons();
+    }
+
+    /** Updates play and volume button icons and range fill. */
+    updateIcons() {
+        let volume = this.audio.muted ? 0 : this.audio.volume;
+        this.volumeSlider.value = volume * 100;
+        updateRangeStyle(this.volumeSlider);
+        if (volume == 0) {
+            this.volumeBtn.textContent = '🔇';
+        }
+        else if (volume < 0.5) {
+            this.volumeBtn.textContent = '🔉';
+        }
+        else {
+            this.volumeBtn.textContent = '🔊';
+        }
+        if (this.audio.paused) {
             this.playBtn.textContent = '▶';
         }
         else {
