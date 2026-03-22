@@ -17,6 +17,7 @@ dotnet build src/SwarmUI.csproj --configuration Debug -o src/bin/live_release
 # Default env configuration, gets overwritten by the C# code's settings handler
 $Env:ASPNETCORE_ENVIRONMENT = "Development"
 $Env:ASPNETCORE_URLS = "http://*:7801"
+$Env:DOTNET_CLI_UI_LANGUAGE = "en"
 
 # Actual runner.
 .\src\bin\live_release\SwarmUI.exe --environment dev @args
