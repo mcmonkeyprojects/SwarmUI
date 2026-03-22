@@ -27,6 +27,7 @@ Key feature targets not yet implemented:
 - Better mobile browser support
 - full detail "Current Model" display in UI, separate from the model selector (probably as a tab within the batch sidebar?)
 - LLM-assisted prompting (there's an extension for it, but LLM control should be natively supported)
+    - Built-in LLM backends include: Local LLaMA.cpp, Remote OpenAI API, and [MiniMax](https://platform.minimaxi.com) Cloud LLM (M2.7, M2.5, M2.5-highspeed)
 - convenient direct-distribution of Swarm as a program ([Tauri](https://tauri.app/), [Blazor Desktop](https://learn.microsoft.com/en-us/training/modules/build-blazor-hybrid/), or an Electron app?)
 
 # Donate

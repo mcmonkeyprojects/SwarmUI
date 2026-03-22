@@ -108,7 +108,7 @@ public class BackendHandler
     }
 
     /// <summary>Registered core backend types.</summary>
-    public BackendType SwarmBackendType, AutoScalingBackendType, LlamaSharpBackendType, SimpleRemoteLLMBackendType;
+    public BackendType SwarmBackendType, AutoScalingBackendType, LlamaSharpBackendType, SimpleRemoteLLMBackendType, MiniMaxLLMBackendType;
 
     public BackendHandler()
     {
@@ -116,6 +116,7 @@ public class BackendHandler
         AutoScalingBackendType = RegisterBackendType<AutoScalingBackend>("autoscalingbackend", "Auto Scaling Backend", "(Advanced users only) Automatically launch other instances of SwarmUI to serve as dynamic additional backends.", true, false);
         LlamaSharpBackendType = RegisterBackendType<LlamaSharpLLMBackend>("localllama", "Local LLaMA.cpp GGUF Backend", "(EXPERIMENTAL) Same-process local LLaMA GGUF LLM support.", true, false);
         SimpleRemoteLLMBackendType = RegisterBackendType<SimpleRemoteLLMBackend>("simpleremotellm", "Remote LLM (OpenAI API)", "(EXPERIMENTAL) Support for any OpenAI API compatible LLM provider.", true, false);
+        MiniMaxLLMBackendType = RegisterBackendType<MiniMaxLLMBackend>("minimax_llm", "MiniMax Cloud LLM", "MiniMax Cloud API LLM provider, supporting MiniMax-M2.7, MiniMax-M2.5, and MiniMax-M2.5-highspeed models. Get an API key at https://platform.minimaxi.com", true, false);
         Program.ModelRefreshEvent += () =>
         {
             List<Task> waitFor = [];
