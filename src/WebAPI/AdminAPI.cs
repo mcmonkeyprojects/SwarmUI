@@ -583,7 +583,15 @@ public static class AdminAPI
     public static async Task<JObject> GetUpdatesDataFor(string folder, bool nullOnNone)
     {
         await Utilities.RunGitProcess("fetch", folder);
-        string[] commits = (await Utilities.RunGitProcess("rev-list HEAD..origin", folder)).Trim().Replace("\r", "").Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        string commitRaw = (await Utilities.RunGitProcess("rev-list HEAD..origin", folder)).Trim().Replace("\r", "");
+        string[] commits;
+        if (commitRaw.StartsWith("fatal: "))
+        {
+            Logs.Error($"Git rev-list failed for folder '{folder}' with message: {commitRaw}");
+            commits = ["(unknown revisions, see error in logs. Use Aggressive Update to auto-resolve this issue.)"];
+            return new JObject() { ["count"] = 1, ["preview"] = JArray.FromObject(commits) };
+        }
+        commits = commitRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         int updatesCount = commits.Length;
         if (commits.Length > 6)
         {

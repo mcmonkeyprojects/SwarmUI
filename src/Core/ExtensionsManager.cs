@@ -302,7 +302,7 @@ public class ExtensionsManager
     /// <summary>Returns disabled extensions for UI display.</summary>
     public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
     {
-        foreach (string folderName in Program.ServerSettings.DisabledExtensions.OrderBy(e => e))
+        foreach (string folderName in Program.ServerSettings.DisabledExtensions.Order())
         {
             if (!Directory.Exists($"./src/Extensions/{folderName}"))
             {
