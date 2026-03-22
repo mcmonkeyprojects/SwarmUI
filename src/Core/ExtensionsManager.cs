@@ -287,11 +287,27 @@ public class ExtensionsManager
         return Program.ServerSettings.DisabledExtensions.Contains(folderName);
     }
 
+    /// <summary>Remove the disable from any extension not currently installed.</summary>
+    public void CleanDisabledExtensions()
+    {
+        foreach (string folderName in Program.ServerSettings.DisabledExtensions.ToArray())
+        {
+            if (!Directory.Exists($"./src/Extensions/{folderName}"))
+            {
+                Program.ServerSettings.DisabledExtensions.Remove(folderName);
+            }
+        }
+    }
+
     /// <summary>Returns disabled extensions for UI display.</summary>
     public IEnumerable<ExtensionInfo> GetDisabledExtensionsForUi()
     {
         foreach (string folderName in Program.ServerSettings.DisabledExtensions.OrderBy(e => e))
         {
+            if (!Directory.Exists($"./src/Extensions/{folderName}"))
+            {
+                continue;
+            }
             ExtensionInfo info = KnownExtensions.FirstOrDefault(e => e.FolderNames.Contains(folderName));
             info ??= new ExtensionInfo(folderName, "(Unknown)", "(Unknown)", "(Disabled - restart to load)", "", "", ["none"], [folderName]);
             yield return info;
@@ -307,6 +323,7 @@ public class ExtensionsManager
     /// <summary>Adds an extension folder to the disabled list in settings.</summary>
     public bool AddDisabledExtensionSetting(string folderName)
     {
+        CleanDisabledExtensions();
         if (!IsDisabled(folderName))
         {
             Program.ServerSettings.DisabledExtensions.Add(folderName);

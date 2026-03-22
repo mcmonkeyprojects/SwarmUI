@@ -817,18 +817,17 @@ public static class AdminAPI
         {
             return new JObject() { ["error"] = "Unknown extension." };
         }
-        string extensionsFolder = Utilities.CombinePathWithAbsolute(Environment.CurrentDirectory, "src/Extensions");
+        Program.Extensions.CleanDisabledExtensions();
         foreach (string folderName in ext.FolderNames)
         {
-            string folder = Utilities.CombinePathWithAbsolute(extensionsFolder, folderName);
-            if (Directory.Exists(folder))
+            if (Directory.Exists($"./src/Extensions/{folderName}"))
             {
                 return new JObject() { ["error"] = "Extension already installed." };
             }
             Program.Extensions.RemoveDisabledExtensionSetting(folderName);
         }
         Program.SaveSettingsFile();
-        await Utilities.RunGitProcess($"clone {ext.URL}", extensionsFolder);
+        await Utilities.RunGitProcess($"clone {ext.URL}", Path.GetFullPath("./src/Extensions"));
         return new JObject() { ["success"] = true };
     }
 
