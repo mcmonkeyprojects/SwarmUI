@@ -24,6 +24,8 @@ This file, [AGENTS.md](/AGENTS.md) should always be used as a key reference duri
 
 If a new understanding of core repository rules is learned during development, add it to this file. Make sure it is not duplicate or redundant with existing information.
 
+This document is exclusively for development of the core SwarmUI repo. It does not apply to development of extensions, and should not be considered when making changes exclusively to extensions in the `src/Extensions/` path.
+
 ## Skill Files
 
 If you learn specific appropriate techniques for developing certain tasks within the repo, add it to `.agents/skills/(skill-name)/SKILL.md`, for example `.agents/skills/new-api-route/SKILL.md`. Each file should be formatted like so:

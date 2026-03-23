@@ -702,7 +702,7 @@ public static class AdminAPI
     {
         string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD", folder)).Trim();
         string pullResult = await Utilities.RunGitProcess(aggressive ? "pull --autostash" : "pull", folder);
-        Logs.Verbose($"Git pull of {folder} says: {pullResult}");
+        Logs.Debug($"Git pull of {folder} says: {pullResult}");
         if (aggressive)
         {
             if (pullResult.Contains("There is no tracking information for the current branch") || pullResult.Contains("You are not currently on a branch"))
