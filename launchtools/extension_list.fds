@@ -244,3 +244,19 @@ DownloaderHelper:
     license: MIT
     tags:
     - tools
+
+VideoStages:
+    author: Juan Treminio
+    description: Allows adding multiple video stages to your workflows, as well as automatically using generate audio.
+    url: https://github.com/jtreminio/SwarmUI-VideoStages
+    license: MIT
+    tags:
+    - tools
+
+AceStepFun:
+    author: Juan Treminio
+    description: More advanced AceStep 1.5 text-to-audio support for SwarmUI. Works in tandem with the VideoStages to use AceStep audio in LTX2 videos.
+    url: https://github.com/jtreminio/SwarmUI-AceStepFun
+    license: MIT
+    tags:
+    - tools
