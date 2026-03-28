@@ -230,16 +230,16 @@ public class T2IParamTypes
 
     public static T2IParamDataType SharpTypeToDataType(Type t, bool hasValues)
     {
-        if (t == typeof(int) || t == typeof(long)) return T2IParamDataType.INTEGER;
-        if (t == typeof(float) || t == typeof(double)) return T2IParamDataType.DECIMAL;
-        if (t == typeof(bool)) return T2IParamDataType.BOOLEAN;
-        if (t == typeof(string)) return hasValues ? T2IParamDataType.DROPDOWN : T2IParamDataType.TEXT;
-        if (t.IsAssignableTo(typeof(ImageFile))) return T2IParamDataType.IMAGE;
-        if (t.IsAssignableTo(typeof(T2IModel))) return T2IParamDataType.MODEL;
-        if (t.IsAssignableTo(typeof(List<string>))) return T2IParamDataType.LIST;
-        if (t.IsAssignableTo(typeof(List<Image>))) return T2IParamDataType.IMAGE_LIST;
-        if (t.IsAssignableTo(typeof(AudioFile))) return T2IParamDataType.AUDIO;
-        if (t.IsAssignableTo(typeof(VideoFile))) return T2IParamDataType.VIDEO;
+        if (t == typeof(int) || t == typeof(long)) { return T2IParamDataType.INTEGER; }
+        if (t == typeof(float) || t == typeof(double)) { return T2IParamDataType.DECIMAL; }
+        if (t == typeof(bool)) { return T2IParamDataType.BOOLEAN; }
+        if (t == typeof(string)) { return hasValues ? T2IParamDataType.DROPDOWN : T2IParamDataType.TEXT; }
+        if (t.IsAssignableTo(typeof(ImageFile))) { return T2IParamDataType.IMAGE; }
+        if (t.IsAssignableTo(typeof(T2IModel))) { return T2IParamDataType.MODEL; }
+        if (t.IsAssignableTo(typeof(List<string>))) { return T2IParamDataType.LIST; }
+        if (t.IsAssignableTo(typeof(List<Image>))) { return T2IParamDataType.IMAGE_LIST; }
+        if (t.IsAssignableTo(typeof(AudioFile))) { return T2IParamDataType.AUDIO; }
+        if (t.IsAssignableTo(typeof(VideoFile))) { return T2IParamDataType.VIDEO; }
         return T2IParamDataType.UNSET;
     }
 

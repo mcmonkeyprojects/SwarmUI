@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using SwarmUI.Core;
@@ -69,7 +69,7 @@ public class UserImageHistoryHelper
         }
         else
         {
-            using var claim = FfmpegLock.LockWrite();
+            using ManyReadOneWriteLock.WriteClaim claim = FfmpegLock.LockWrite();
             await Utilities.QuickRunProcess(Utilities.FfmegLocation.Value, ["-i", file, "-vf", "select=eq(n\\,0)", "-q:v", "3", fullPathNoExt + ".swarmpreview.jpg"]);
             if (Program.ServerSettings.UI.AllowAnimatedPreviews)
             {

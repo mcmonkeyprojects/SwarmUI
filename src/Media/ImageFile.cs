@@ -1,4 +1,4 @@
-﻿using SwarmUI.Utils;
+using SwarmUI.Utils;
 using SixLabors.ImageSharp;
 using System.IO;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
@@ -202,11 +202,11 @@ public class ImageFile : MediaFile
                 return pngMetadata;
             }
             string output = null;
-            if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.Model, out var data) ?? false)
+            if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.Model, out IExifValue<string> data) ?? false)
             {
                 output = data.Value;
             }
-            if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.UserComment, out var data2) ?? false)
+            if (img.Metadata?.ExifProfile?.TryGetValue(ExifTag.UserComment, out IExifValue<EncodedString> data2) ?? false)
             {
                 output = data2.Value.Text;
             }

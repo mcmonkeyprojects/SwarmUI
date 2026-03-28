@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
@@ -1085,7 +1085,7 @@ public static class Utilities
         {
             IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
             List<string> result = [];
-            foreach (var ip in host.AddressList)
+            foreach (IPAddress ip in host.AddressList)
             {
                 if (ip.AddressFamily == AddressFamily.InterNetwork && !$"{ip}".EndsWith(".1"))
                 {

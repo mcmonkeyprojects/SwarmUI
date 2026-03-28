@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Media;
+namespace SwarmUI.Media;
 
 /// <summary>A media type is a specific media file type, such as 'png', 'mp4', etc.</summary>
 /// <param name="extension">The standard file extension for this media type (eg 'png').</param>
@@ -31,7 +31,7 @@ public class MediaType(string extension, string mimeType, MediaMetaType metaType
     /// <param name="defaultPresumption">Optionally, a fallback meta-type presumption.</param>
     public static MediaType GetByExtension(string extension, string mimePresumption = null, MediaMetaType defaultPresumption = null)
     {
-        if (TypesByExtension.TryGetValue(extension, out var type))
+        if (TypesByExtension.TryGetValue(extension, out MediaType type))
         {
             return type;
         }
@@ -47,7 +47,7 @@ public class MediaType(string extension, string mimeType, MediaMetaType metaType
     public static MediaType Register(MediaType type)
     {
         TypesByExtension[type.Extension] = type;
-        foreach (var alt in type.AltExtensions)
+        foreach (string alt in type.AltExtensions)
         {
             TypesByExtension[alt] = type;
         }
