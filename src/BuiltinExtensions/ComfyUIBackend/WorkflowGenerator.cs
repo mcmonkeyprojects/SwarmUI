@@ -1549,6 +1549,24 @@ public partial class WorkflowGenerator
                     });
                     g.CurrentMedia = g.CurrentMedia.WithPath([addedGuide, 2], WGNodeData.DT_LATENT_VIDEO, Model.Compat);
                 }
+                if (g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+                {
+                    string audioNode = g.CreateAudioLoadNode(audio, "${videoaudioinput}");
+                    string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
+                    {
+                        ["model"] = Model.Path,
+                        ["positive"] = PosCond,
+                        ["negative"] = NegCond,
+                        ["reference_audio"] = NodePath(audioNode, 0),
+                        ["audio_vae"] = g.CurrentAudioVae.Path,
+                        ["identity_guidance_scale"] = 3, // TODO: Param?
+                        ["start_percent"] = 0,
+                        ["end_percent"] = 1
+                    });
+                    Model = Model.WithPath([refNode, 0]);
+                    PosCond = [refNode, 1];
+                    NegCond = [refNode, 2];
+                }
                 DefaultCFG = 3;
                 HadSpecialCond = true;
                 DefaultSampler = "euler";

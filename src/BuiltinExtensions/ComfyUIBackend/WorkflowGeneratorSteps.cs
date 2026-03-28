@@ -1200,6 +1200,24 @@ public class WorkflowGeneratorSteps
                 g.CurrentMedia = new WGNodeData([vaceNode, 2], g, WGNodeData.DT_LATENT_VIDEO, g.CurrentCompat()) { Width = width, Height = height, Frames = frames };
                 g.FinalTrimLatent = [vaceNode, 3];
             }
+            if (g.IsLTXV2() && g.UserInput.TryGet(T2IParamTypes.VideoAudioReference, out AudioFile audio))
+            {
+                string audioNode = g.CreateAudioLoadNode(audio, "${videoaudioinput}");
+                string refNode = g.CreateNode("LTXVReferenceAudio", new JObject()
+                {
+                    ["model"] = g.CurrentModel.Path,
+                    ["positive"] = g.FinalPrompt,
+                    ["negative"] = g.FinalNegativePrompt,
+                    ["reference_audio"] = NodePath(audioNode, 0),
+                    ["audio_vae"] = g.CurrentAudioVae.Path,
+                    ["identity_guidance_scale"] = 3, // TODO: Param?
+                    ["start_percent"] = 0,
+                    ["end_percent"] = 1
+                });
+                g.CurrentModel = g.CurrentModel.WithPath([refNode, 0]);
+                g.FinalPrompt = [refNode, 1];
+                g.FinalNegativePrompt = [refNode, 2];
+            }
         }, -6);
         #region SAM2 Masking
         AddStep(g =>
@@ -2162,7 +2180,7 @@ public class WorkflowGeneratorSteps
     public static HashSet<string> AutoCleanupNodeTypes =
     [
         "VAEDecode", "VAEDecodeTiled", "VAEEncode", "CLIPTextEncode", "CLIPTextEncodeSDXL",
-        "LTXVAudioVAEDecode", "LTXVSeparateAVLatent", "LTXVConditioning", "LTXVEmptyLatentAudio", "LTXVConcatAVLatent",
+        "LTXVAudioVAEDecode", "LTXVSeparateAVLatent", "LTXVConditioning", "LTXVEmptyLatentAudio", "LTXVConcatAVLatent", "LTXVReferenceAudio",
         "SwarmCountFrames", "SwarmClipTextEncodeAdvanced"
     ];
 }
