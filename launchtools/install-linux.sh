@@ -26,10 +26,10 @@ wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
 chmod +x dotnet-install.sh
 cd ..
 
-# Note: installers who want to avoid home dir should define DOTNET_ROOT (uncomment line below).
-#export DOTNET_ROOT="$SCRIPT_DIR/.dotnet"
-./launchtools/dotnet-install.sh --channel 8.0 --runtime aspnetcore ${DOTNET_ROOT:+--install-dir "$DOTNET_ROOT"}
-./launchtools/dotnet-install.sh --channel 8.0 ${DOTNET_ROOT:+--install-dir "$DOTNET_ROOT"}
+# Note: installers who want to avoid home dir should define SWARM_DOTNET_ROOT (uncomment line below).
+#export SWARM_DOTNET_ROOT="$SCRIPT_DIR/.dotnet"
+./launchtools/dotnet-install.sh --channel 8.0 --runtime aspnetcore ${SWARM_DOTNET_ROOT:+--install-dir "$SWARM_DOTNET_ROOT"}
+./launchtools/dotnet-install.sh --channel 8.0 ${SWARM_DOTNET_ROOT:+--install-dir "$SWARM_DOTNET_ROOT"}
 
 rm ./launchtools/dotnet-install.sh
 
