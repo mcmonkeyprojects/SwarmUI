@@ -20,7 +20,7 @@ if [ -n "$SWARM_DOTNET_ROOT" ]; then
     export PATH="$SWARM_DOTNET_ROOT:$PATH"
 else
     ## Add default paths
-    export PATH="$SCRIPT_DIR/../../.dotnet:$SCRIPT_DIR/../.dotnet:$SCRIPT_DIR/.dotnet:$HOME/.dotnet:/usr/lib/dotnet:/usr/share/dotnet:$PATH"
+    export PATH="$SCRIPT_DIR/.dotnet:$SCRIPT_DIR/../.dotnet:$SCRIPT_DIR/../../.dotnet:$HOME/.dotnet:/usr/lib/dotnet:/usr/share/dotnet:$PATH"
 fi
 
 if ! command -v dotnet >/dev/null 2>&1; then
@@ -43,9 +43,9 @@ fi
 # Fallback to a list of expected locations it could also be in
 if [ -z "$DOTNET_ROOT" ]; then
     expected_location=(
-        "$SCRIPT_DIR/../../.dotnet" ## Directory immediately above project repo
-        "$SCRIPT_DIR/../.dotnet"    ## Directory in root of project repo
         "$SCRIPT_DIR/.dotnet"       ## Directory in "launchtools", with this script
+        "$SCRIPT_DIR/../.dotnet"    ## Directory in root of project repo
+        "$SCRIPT_DIR/../../.dotnet" ## Directory immediately above project repo
         "$HOME/.dotnet"
         "/usr/lib/dotnet"
         "/usr/share/dotnet"
