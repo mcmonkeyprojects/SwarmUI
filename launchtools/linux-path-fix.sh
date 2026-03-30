@@ -43,9 +43,9 @@ fi
 # Fallback to a list of expected locations it could also be in
 if [ -z "$DOTNET_ROOT" ]; then
     expected_location=(
-        "$SCRIPT_DIR/../../.dotnet"	## Directory immediately above project repo
-        "$SCRIPT_DIR/../.dotnet"	## Directory in root of project repo
-        "$SCRIPT_DIR/.dotnet"		## Directory in "launchtools", with this script
+        "$SCRIPT_DIR/../../.dotnet" ## Directory immediately above project repo
+        "$SCRIPT_DIR/../.dotnet"    ## Directory in root of project repo
+        "$SCRIPT_DIR/.dotnet"       ## Directory in "launchtools", with this script
         "$HOME/.dotnet"
         "/usr/lib/dotnet"
         "/usr/share/dotnet"
