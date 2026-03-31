@@ -911,7 +911,7 @@ body {
 }
 .browser-details-list-entry-text-separator {
     font-weight: bold;
-    color: #ffff55;
+    color: var(--text-strong);
 }
 .browser-details-list-entry img {
     max-height: 1.25rem;
