@@ -732,7 +732,7 @@ class ModelBrowserWrapper {
                 } });
             }
             let raw = model.data.raw;
-            detail_list.push(escapeHtml(raw).replaceAll('\n', '').replaceAll('<br>', ', '));
+            detail_list.push(escapeHtml(raw).trim().replaceAll('\n\n', '\n').replaceAll(/\n|<br>/gi, '<span class="browser-details-list-entry-text-separator">, </span>'));
             description = `<span class="wildcard_title">${escapeHtml(name)}</span><br>${escapeHtml(raw)}`;
             let match = wildcardHelpers.matchWildcard(this.promptBox.value, model.data.name);
             let isSelected = match && match.length > 0;
