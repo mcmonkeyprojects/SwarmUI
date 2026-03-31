@@ -909,6 +909,10 @@ body {
     cursor: pointer;
     vertical-align: top;
 }
+.browser-details-list-entry-text-separator {
+    font-weight: bold;
+    color: var(--text-strong);
+}
 .browser-details-list-entry img {
     max-height: 1.25rem;
     max-width: 1.25rem;
