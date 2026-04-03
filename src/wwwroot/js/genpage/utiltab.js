@@ -186,6 +186,7 @@ class ModelDownloaderUtil {
         this.hfPrefix = 'https://huggingface.co/';
         this.civitPrefix = 'https://civitai.com/';
         this.civitGreenPrefix = 'https://civitai.green/';
+        this.urlRequestId = 0;
     }
 
     buildFolderSelector(selector) {
@@ -243,7 +244,7 @@ class ModelDownloaderUtil {
         });
     }
 
-    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true) {
+    getCivitaiMetadata(id, versId, callback, identifier = '', validateSafe = true, delayedCallback = null) {
         let doError = (msg = null) => {
             callback(null, null, null, null, null, null, null, msg);
         }
@@ -254,7 +255,7 @@ class ModelDownloaderUtil {
                     doError();
                     return;
                 }
-                this.getCivitaiMetadata(rawData.modelId, versId, callback, identifier, validateSafe);
+                this.getCivitaiMetadata(rawData.modelId, versId, callback, identifier, validateSafe, delayedCallback);
             }, 0, () => {
                 doError();
             });
@@ -305,54 +306,71 @@ class ModelDownloaderUtil {
             if (rawData.type == 'ControlNet') { modelType = 'ControlNet'; }
             if (rawData.type == 'VAE') { modelType = 'VAE'; }
             let imgs = rawVersion.images ? rawVersion.images.filter(img => img.type == 'image') : [];
+            let imgUrls = imgs.map(img => img.url);
             let downloadUrl = file.downloadUrl;
             if (file.name.endsWith('.gguf')) {
                 downloadUrl += `#.gguf`;
             }
-            let applyMetadata = (img) => {
-                let url = versId ? `${this.civitPrefix}models/${id}?modelVersionId=${versId}` : `${this.civitPrefix}models/${id}`;
-                metadata = {
-                    'modelspec.title': `${rawData.name} - ${rawVersion.name}`,
-                    'modelspec.description': `From <a href="${url}" target="_blank">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
-                    'modelspec.date': rawVersion.createdAt,
-                };
-                if (rawData.creator) {
-                    metadata['modelspec.author'] = rawData.creator.username;
-                }
-                if (rawVersion.trainedWords) {
-                    metadata['modelspec.trigger_phrase'] = rawVersion.trainedWords.join("; ");
-                }
-                if (rawData.tags) {
-                    metadata['modelspec.tags'] = rawData.tags.join(", ");
-                }
-                if (img) {
-                    metadata['modelspec.thumbnail'] = img;
-                }
-                if (['Illustrious', 'Pony'].includes(rawVersion.baseModel)) {
-                    metadata['modelspec.usage_hint'] = rawVersion.baseModel;
-                }
-                callback(rawData, rawVersion, metadata, modelType, downloadUrl, img, imgs.map(x => x.url), null);
+            let url = versId ? `${this.civitPrefix}models/${id}?modelVersionId=${versId}` : `${this.civitPrefix}models/${id}`;
+            metadata = {
+                'modelspec.title': `${rawData.name} - ${rawVersion.name}`,
+                'modelspec.description': `From <a href="${url}" target="_blank">${url}</a>\n${rawVersion.description || ''}\n${rawData.description}\n`,
+                'modelspec.date': rawVersion.createdAt,
+            };
+            if (rawData.creator) {
+                metadata['modelspec.author'] = rawData.creator.username;
             }
-            if (imgs.length > 0) {
-                imageToData(imgs[0].url, img => applyMetadata(img), true);
+            if (rawVersion.trainedWords) {
+                metadata['modelspec.trigger_phrase'] = rawVersion.trainedWords.join("; ");
+            }
+            if (rawData.tags) {
+                metadata['modelspec.tags'] = rawData.tags.join(", ");
+            }
+            if (['Illustrious', 'Pony'].includes(rawVersion.baseModel)) {
+                metadata['modelspec.usage_hint'] = rawVersion.baseModel;
+            }
+            let metadataWithImage = (img) => {
+                if (img) {
+                    let metadataCopy = Object.assign({}, metadata);
+                    metadataCopy['modelspec.thumbnail'] = img;
+                    return metadataCopy;
+                }
+                return metadata;
+            }
+            let applyMetadata = (img) => {
+                callback(rawData, rawVersion, metadataWithImage(img), modelType, downloadUrl, img, imgUrls, null);
+            }
+            let applyWithOptionalDelay = (previewLoader) => {
+                if (delayedCallback) {
+                    callback(rawData, rawVersion, metadata, modelType, downloadUrl, null, imgUrls, null);
+                    previewLoader(img => delayedCallback(img, imgUrls));
+                }
+                else {
+                    previewLoader(applyMetadata);
+                }
+            }
+            if (imgUrls.length > 0) {
+                applyWithOptionalDelay(done => imageToData(imgUrls[0], done, true));
             }
             else {
                 let videos = rawVersion.images ? rawVersion.images.filter(img => img.type == 'video') : [];
                 if (videos && videos.length > 0) {
-                    let url = videos[0].url;
-                    let video = document.createElement('video');
-                    video.crossOrigin = 'Anonymous';
-                    video.onloadeddata = () => {
-                        let canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                        applyMetadata(canvas.toDataURL());
-                    };
-                    video.onerror = () => {
-                        applyMetadata('');
-                    };
-                    video.src = url;
+                    applyWithOptionalDelay(done => {
+                        let url = videos[0].url;
+                        let video = document.createElement('video');
+                        video.crossOrigin = 'Anonymous';
+                        video.onloadeddata = () => {
+                            let canvas = document.createElement('canvas');
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                            done(canvas.toDataURL());
+                        };
+                        video.onerror = () => {
+                            done('');
+                        };
+                        video.src = url;
+                    });
                 }
                 else {
                     applyMetadata('');
@@ -395,11 +413,71 @@ class ModelDownloaderUtil {
         return [null, null];
     }
 
+    applyCivitaiPreview(img, imgs, requestId) {
+        if (requestId != this.urlRequestId) {
+            return;
+        }
+        if (img) {
+            if (imgs.length > 0) {
+                imgs[0] = img;
+            }
+            this.metadataZone.dataset.image = img;
+            this.imageSide.innerHTML = `<img src="${img}"/>`;
+            if (imgs.length > 1) {
+                this.imageSide.innerHTML += `<br><div class="model_downloader_imageselector">
+                        <button class="image-select-prev basic-button">Previous</button>
+                        <button class="image-select-next basic-button">Next</button>
+                    </div>`;
+                let imgElem = this.imageSide.querySelector('img');
+                let prevButton = this.imageSide.querySelector('.image-select-prev');
+                let nextButton = this.imageSide.querySelector('.image-select-next');
+                let imgIndex = 0;
+                let updateImage = () => {
+                    if (requestId != this.urlRequestId) {
+                        return;
+                    }
+                    imgIndex = (imgIndex + imgs.length) % imgs.length;
+                    let ind = imgIndex;
+                    let url = imgs[imgIndex];
+                    if (url.startsWith('data:')) {
+                        this.metadataZone.dataset.image = url;
+                        imgElem.src = url;
+                    }
+                    else {
+                        imageToData(url, (img) => {
+                            if (!img) {
+                                return;
+                            }
+                            if (requestId != this.urlRequestId) {
+                                return;
+                            }
+                            imgs[ind] = img;
+                            if (imgIndex != ind) {
+                                return;
+                            }
+                            this.metadataZone.dataset.image = img;
+                            imgElem.src = img;
+                        }, true);
+                    }
+                };
+                prevButton.onclick = () => { imgIndex--; updateImage(); };
+                nextButton.onclick = () => { imgIndex++; updateImage(); };
+            }
+        }
+        else {
+            delete this.metadataZone.dataset.image;
+            this.imageSide.innerHTML = ``;
+        }
+    }
+
     urlInput() {
         this.metadataZone.innerHTML = '';
         this.metadataZone.dataset.raw = '';
+        delete this.metadataZone.dataset.image;
         this.imageSide.innerHTML = '';
         let url = this.url.value.trim();
+        this.urlRequestId++;
+        let requestId = this.urlRequestId;
         if (url.endsWith('.pt') || url.endsWith('.pth') || url.endsWith('.ckpt') || url.endsWith('.bin')) {
             this.urlStatusArea.innerText = "URL looks to be a pickle file, cannot download. Only safetensors can be auto-downloaded. Pickle files may contain malware.";
             this.button.disabled = true;
@@ -455,6 +533,9 @@ class ModelDownloaderUtil {
             }
             let loadMetadata = (id, versId) => {
                 this.getCivitaiMetadata(id, versId, (rawData, rawVersion, metadata, modelType, url, img, imgs, errMsg) => {
+                    if (requestId != this.urlRequestId) {
+                        return;
+                    }
                     if (!rawData) {
                         this.urlStatusArea.innerText = `URL appears to be a CivitAI link, but seems to not be valid. Please double-check the link. ${(errMsg ?? '')}`;
                         this.nameInput();
@@ -477,42 +558,9 @@ class ModelDownloaderUtil {
                         + (rawVersion.description ? `<br><b>Version description</b>: ${safeHtmlOnly(rawVersion.description)}` : '')
                         + (rawVersion.trainedWords ? `<br><b>Trained words</b>: ${escapeHtml(rawVersion.trainedWords.join("; "))}` : '');
                     this.metadataZone.dataset.raw = `${JSON.stringify(metadata, null, 2)}`;
-                    if (img) {
-                        this.metadataZone.dataset.image = img;
-                        this.imageSide.innerHTML = `<img src="${img}"/>`;
-                        if (imgs.length > 1) {
-                            this.imageSide.innerHTML += `<br><div class="model_downloader_imageselector">
-                                    <button class="image-select-prev basic-button">Previous</button>
-                                    <button class="image-select-next basic-button">Next</button>
-                                </div>`;
-                            let imgElem = this.imageSide.querySelector('img');
-                            let prevButton = this.imageSide.querySelector('.image-select-prev');
-                            let nextButton = this.imageSide.querySelector('.image-select-next');
-                            let imgIndex = 0;
-                            let updateImage = () => {
-                                imgIndex = (imgIndex + imgs.length) % imgs.length;
-                                let ind = imgIndex;
-                                let url = imgs[imgIndex];
-                                if (url.startsWith('data:')) {
-                                    this.metadataZone.dataset.image = url;
-                                    imgElem.src = url;
-                                }
-                                else {
-                                    imageToData(url, (img) => {
-                                        imgs[ind] = img;
-                                        this.metadataZone.dataset.image = img;
-                                        imgElem.src = img;
-                                    }, true);
-                                }
-                            };
-                            prevButton.onclick = () => { imgIndex--; updateImage(); };
-                            nextButton.onclick = () => { imgIndex++; updateImage(); };
-                        }
-                    }
-                    else {
-                        delete this.metadataZone.dataset.image;
-                        this.imageSide.innerHTML = ``;
-                    }
+                    this.applyCivitaiPreview(img, imgs, requestId);
+                }, '', true, (img, imgs) => {
+                    this.applyCivitaiPreview(img, imgs, requestId);
                 });
             }
             if (parts.length < 3) {
@@ -541,10 +589,16 @@ class ModelDownloaderUtil {
                 this.urlStatusArea.innerText = "URL appears to be a valid CivitAI model-version link. Resolving metadata...";
                 this.nameInput();
                 let onMetadataError = () => {
+                    if (requestId != this.urlRequestId) {
+                        return;
+                    }
                     this.urlStatusArea.innerText = "URL appears to be a CivitAI model-version link, but could not resolve model metadata from Civitai API.";
                     this.nameInput();
                 };
                 genericRequest('ForwardMetadataRequest', { 'url': `${this.civitPrefix}api/v1/model-versions/${versId}` }, (rawData) => {
+                    if (requestId != this.urlRequestId) {
+                        return;
+                    }
                     rawData = rawData.response;
                     if (!rawData || !rawData.modelId) {
                         onMetadataError();
