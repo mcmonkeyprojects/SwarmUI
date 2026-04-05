@@ -26,7 +26,7 @@ wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh
 chmod +x dotnet-install.sh
 cd ..
 
-# Note: manual installers that want to avoid home dir, add to both of the below lines: --install-dir "$SCRIPT_DIR/.dotnet"
+# Note: manual installers that want to avoid home dir, add to both of the below lines: --install-dir "$PWD/.dotnet"
 ./launchtools/dotnet-install.sh --channel 8.0 --runtime aspnetcore
 ./launchtools/dotnet-install.sh --channel 8.0
 
