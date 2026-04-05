@@ -580,11 +580,12 @@ public static class AdminAPI
         return new JObject() { ["users"] = list };
     }
 
-    public static async Task<JObject> GetUpdatesDataFor(string folder, bool nullOnNone, bool tryPatches = true)
+    public static async Task<JObject> GetUpdatesDataFor(string folder, bool nullOnNone, bool tryPatches = true, string headTarget = null)
     {
+        headTarget ??= "HEAD";
         string fetchResult = await Utilities.RunGitProcess("fetch", folder);
         Logs.Debug($"Git fetch of {folder} says: {fetchResult}");
-        string commitRaw = (await Utilities.RunGitProcess("rev-list HEAD..origin", folder)).Trim().Replace("\r", "");
+        string commitRaw = (await Utilities.RunGitProcess($"rev-list {headTarget}..origin", folder)).Trim().Replace("\r", "");
         string[] commits;
         if (commitRaw.StartsWith("fatal: "))
         {
@@ -593,7 +594,7 @@ public static class AdminAPI
             {
                 string autofixme = await Utilities.RunGitProcess("remote set-head origin --auto", folder);
                 Logs.Debug($"Autofix for git rev-list failure: {autofixme}");
-                return await GetUpdatesDataFor(folder, nullOnNone, false);
+                return await GetUpdatesDataFor(folder, nullOnNone, false, headTarget);
             }
             commits = ["(unknown revisions, see error in logs. Use Aggressive Update to auto-resolve most issues.)"];
             return new JObject() { ["count"] = 1, ["preview"] = JArray.FromObject(commits) };
@@ -705,9 +706,14 @@ public static class AdminAPI
         return result;
     }
 
-    public static async Task DoGitUpdate(string folder, bool aggressive, Action didWork, Action<string> didFail)
+    public static async Task DoGitUpdate(string folder, bool aggressive, Action didWork, Action<string> didFail, string targetCommit = null)
     {
         string priorHash = (await Utilities.RunGitProcess("rev-parse HEAD", folder)).Trim();
+        if (targetCommit is not null && priorHash == targetCommit)
+        {
+            Logs.Debug($"Already at target commit {targetCommit} for folder {folder}, skipping update.");
+            return;
+        }
         string pullResult = await Utilities.RunGitProcess(aggressive ? "pull --autostash" : "pull", folder);
         Logs.Debug($"Git pull of {folder} says: {pullResult}");
         if (aggressive)
@@ -746,6 +752,11 @@ public static class AdminAPI
                 didFail($"Update for folder '{folder}' failed: git aborted for an unknown reason. Check server logs for details.\nPlease swap to the master branch, or enable Aggressive Updates.");
                 return;
             }
+        }
+        if (targetCommit is not null)
+        {
+            string resetBack = await Utilities.RunGitProcess($"reset --hard {targetCommit}", folder);
+            Logs.Debug($"Reset back to target commit {targetCommit}: {resetBack}");
         }
         string localHash = (await Utilities.RunGitProcess("rev-parse HEAD", folder)).Trim();
         Logs.Debug($"Updater: prior hash was {priorHash}, new hash is {localHash}");
