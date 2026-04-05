@@ -788,6 +788,25 @@ function toggleStar(path, rawSrc) {
 
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
+let registeredMediaButtons = [];
+
+/** Registers a media button for extensions. 'mediaTypes' filters by type eg ['audio'], null means all. 'isDefault' promotes to visible (vs More dropdown). */
+function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false) {
+    if (!name || typeof name != 'string') {
+        console.warn(`registerMediaButton: 'name' must be a non-empty string, got '${name}'`);
+        return;
+    }
+    if (typeof action != 'function') {
+        console.warn(`registerMediaButton '${name}': 'action' must be a function, got '${typeof action}'`);
+        return;
+    }
+    if (mediaTypes != null && !Array.isArray(mediaTypes)) {
+        console.warn(`registerMediaButton '${name}': 'mediaTypes' must be an array or null, got '${typeof mediaTypes}'`);
+        return;
+    }
+    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault });
+}
+
 function getImageFullSrc(src) {
     if (src == null) {
         return null;
@@ -825,6 +844,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
     let isVideo = isVideoExt(src);
     let isAudio = isAudioExt(src);
+    let mediaType = isVideo ? 'video' : (isAudio ? 'audio' : 'image');
     if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
         let image = new Image();
         image.onload = () => {
@@ -926,7 +946,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let buttons = createDiv(null, 'current-image-buttons');
     let imagePathClean = getImageFullSrc(src);
     let buttonsChoice = getUserSetting('ButtonsUnderMainImages', '');
-    if (buttonsChoice == '') {
+    let isUsingDefaults = buttonsChoice == '';
+    if (isUsingDefaults) {
         buttonsChoice = defaultButtonChoices;
     }
     let buttonDefs = {};
@@ -939,17 +960,20 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         return normalized;
     }
-    function includeButton(name, action, extraClass = '', title = '') {
-        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title };
+    function includeButton(name, action, extraClass = '', title = '', mediaTypes = null) {
+        buttonDefs[normalizeButtonKey(name)] = { name, action, extraClass, title, mediaTypes };
     }
-    function includeLinkButton(name, href, isDownload = false, title = '') {
-        buttonDefs[normalizeButtonKey(name)] = { name, href, is_download: isDownload, title: title };
+    function includeLinkButton(name, href, isDownload = false, title = '', mediaTypes = null) {
+        buttonDefs[normalizeButtonKey(name)] = { name, href, is_download: isDownload, title, mediaTypes };
     }
     function renderButtonsFromDefs() {
         for (let key of buttonsChoiceOrdered) {
             let def = buttonDefs[key];
             if (def) {
                 delete buttonDefs[key];
+                if (def.mediaTypes && !def.mediaTypes.includes(mediaType)) {
+                    continue;
+                }
                 if (def.href) {
                     let link = document.createElement('a');
                     link.className = `basic-button${def.extraClass || ''}`;
@@ -967,6 +991,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             }
         }
         for (let def of Object.values(buttonDefs)) {
+            if (def.mediaTypes && !def.mediaTypes.includes(mediaType)) {
+                continue;
+            }
             if (def.href) {
                 subButtons.push({ key: def.name, href: def.href, is_download: def.is_download, title: def.title });
             }
@@ -980,6 +1007,16 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         let key = normalizeButtonKey(name);
         if (key) {
             buttonsChoiceOrdered.push(key);
+        }
+    }
+    if (isUsingDefaults) {
+        for (let reg of registeredMediaButtons) {
+            if (reg.isDefault) {
+                let key = normalizeButtonKey(reg.name);
+                if (key && !buttonsChoiceOrdered.includes(key)) {
+                    buttonsChoiceOrdered.push(key);
+                }
+            }
         }
     }
     let isDataImage = src.startsWith('data:');
@@ -1019,7 +1056,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 tmpImg.src = img.src;
             }
         }
-    }, '', 'Sets this image as the Init Image parameter input');
+    }, '', 'Sets this image as the Init Image parameter input', ['image']);
     includeButton('Use As Image Prompt', () => {
         let altPromptRegion = document.getElementById('alt_prompt_region');
         if (!altPromptRegion) {
@@ -1040,7 +1077,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             });
         };
         tmpImg.src = img.src;
-    }, '', 'Uses this image as an Image Prompt input');
+    }, '', 'Uses this image as an Image Prompt input', ['image']);
     includeButton('Edit Image', () => {
         let initImageGroupToggle = document.getElementById('input_group_content_initimage_toggle');
         if (initImageGroupToggle) {
@@ -1067,7 +1104,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         imageEditor.setBaseImage(img);
         imageEditor.activate();
-    }, '', 'Opens an Image Editor for this image');
+    }, '', 'Opens an Image Editor for this image', ['image']);
     includeButton('Upscale 2x', () => {
         toDataURL(img.src, (url => {
             let [width, height] = naturalDim();
@@ -1080,7 +1117,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             };
             mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
-    }, '', 'Runs an instant generation with this image as the input and scale doubled');
+    }, '', 'Runs an instant generation with this image as the input and scale doubled', ['image']);
     includeButton('Refine Image', () => {
         toDataURL(img.src, (url => {
             let input_overrides = {
@@ -1110,7 +1147,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 triggerChangeFor(togglerRefine);
             });
         }));
-    }, '', 'Runs an instant generation with Refine / Upscale turned on');
+    }, '', 'Runs an instant generation with Refine / Upscale turned on', ['image']);
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {
@@ -1147,6 +1184,9 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         else {
             includeButton(added.label, added.onclick, '', added.title);
         }
+    }
+    for (let reg of registeredMediaButtons) {
+        includeButton(reg.name, () => reg.action(src), '', reg.title, reg.mediaTypes);
     }
     renderButtonsFromDefs();
     quickAppendButton(buttons, 'More &#x2B9F;', (e, button) => {

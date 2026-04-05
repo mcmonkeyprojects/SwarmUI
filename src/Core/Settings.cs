@@ -509,7 +509,9 @@ public class Settings : AutoConfiguration
         public bool AutoSwapImagesIncludesFullView = false; // TODO: UserUI
 
         [ConfigComment("A list of what buttons to include directly under images in the main prompt area of the Generate tab.\nOther buttons will be moved into the 'More' dropdown.\nThis should be a comma separated list."
-            + "\nThe following options are available: \"Use As Init\", \"Use As Image Prompt\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"Download\" \"View In History\", \"Refine Image\", \"Copy Path\""
+            + "\nThe following options are available: \"Use As Init\", \"Use As Image Prompt\", \"Edit Image\", \"Upscale 2x\", \"Star\", \"Reuse Parameters\", \"Open In Folder\", \"Delete\", \"Download\", \"View In History\", \"Refine Image\", \"Copy Path\", \"Copy Raw Metadata\""
+            + "\nButtons like 'Edit Image' or 'Upscale 2x' only apply to images and will not show for audio or video files."
+            + "\nExtensions can add their own button names here too."
             + "\nThe default is blank, which currently implies 'Use As Init,Edit Image,Star,Reuse Parameters'")]
         public string ButtonsUnderMainImages = ""; // TODO: UserUI
 
