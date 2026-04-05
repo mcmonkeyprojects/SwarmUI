@@ -356,7 +356,13 @@ public class WGNodeData(JArray _path, WorkflowGenerator _gen, string _dataType, 
                 JArray target = AttachedAudio.Path;
                 if (AttachedAudio.IsRawMedia) // TODO: When is the correct case to do a solid mask on audio? Any raw audio is *probably* mask-worthy, but...??
                 {
-                    WGNodeData audioEncoded = AttachedAudio.EncodeToLatent(audioVae);
+                    string ensured = Gen.CreateNode("SwarmEnsureAudio", new JObject()
+                    {
+                        ["audio"] = AttachedAudio.Path,
+                        ["target_duration"] = 0.1
+                    });
+                    WGNodeData ensuredNode = AttachedAudio.WithPath([ensured, 0], DT_AUDIO);
+                    WGNodeData audioEncoded = ensuredNode.EncodeToLatent(audioVae);
                     string mask = Gen.CreateNode("SolidMask", new JObject()
                     {
                         ["value"] = 0,
