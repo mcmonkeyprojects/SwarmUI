@@ -1511,9 +1511,15 @@ public partial class WorkflowGenerator
                 });
                 g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames, AttachedAudio = g.CurrentMedia?.AttachedAudio };
                 g.CurrentMedia = g.CurrentMedia.EnsureHasAudioIfNeeded(Vae, g.CurrentAudioVae);
-                string preproc = g.CreateNode("LTXVPreprocess", new JObject()
+                string frameLimited = g.CreateNode("ImageFromBatch", new JObject()
                 {
                     ["image"] = origSrcImg.Path,
+                    ["batch_index"] = 0,
+                    ["length"] = Frames
+                });
+                string preproc = g.CreateNode("LTXVPreprocess", new JObject()
+                {
+                    ["image"] = NodePath(frameLimited, 0),
                     ["img_compression"] = 18
                 });
                 string latentOutNode = g.CreateNode("LTXVImgToVideoInplace", new JObject()
