@@ -1,0 +1,17 @@
+name: Basic C# Build And Checks
+
+on:
+    push:
+    pull_request:
+
+jobs:
+    build-and-check:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v6
+        - uses: actions/setup-dotnet@v5
+          with:
+            dotnet-version: '8.x'
+        - run: dotnet build SwarmUI.sln --configuration Release
+        - run: dotnet format --verify-no-changes
+        - run: dotnet format style --verify-no-changes
