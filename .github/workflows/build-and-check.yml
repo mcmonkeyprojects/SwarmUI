@@ -9,6 +9,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
         - uses: actions/checkout@v6
+          with:
+            fetch-depth: 0
+            fetch-tags: true
         - uses: actions/setup-dotnet@v5
           with:
             dotnet-version: '8.x'
@@ -20,6 +23,9 @@ jobs:
         runs-on: ubuntu-latest
         steps:
         - uses: actions/checkout@v6
+          with:
+            fetch-depth: 0
+            fetch-tags: true
         - uses: actions/setup-dotnet@v5
           with:
             dotnet-version: '8.x'
