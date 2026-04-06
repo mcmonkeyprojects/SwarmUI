@@ -10,3 +10,7 @@ csharp_prefer_braces = true:warning
 csharp_style_var_for_built_in_types = false:warning
 csharp_style_var_when_type_is_apparent = false:warning
 csharp_style_var_elsewhere = false:warning
+
+# Tell dotnet format to not touch this file, since it has an intentional manual format (and autoformat is gross)
+[**/T2IModelClassSorter.cs]
+generated_code = true
