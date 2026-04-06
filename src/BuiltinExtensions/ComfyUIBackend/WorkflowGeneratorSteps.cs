@@ -1539,7 +1539,7 @@ public class WorkflowGeneratorSteps
                     }
                     else
                     {
-                        throw new SwarmUserErrorException($"Cannot latent-upscale for {g.CurrentCompatClass()}");
+                        throw new SwarmUserErrorException($"Cannot latent-upscale with a model for {g.CurrentCompatClass()}, check your Refiner Upscale Method parameter");
                     }
                     g.CurrentMedia.Width = width;
                     g.CurrentMedia.Height = height;
@@ -1922,22 +1922,6 @@ public class WorkflowGeneratorSteps
                     }
                 }
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(g.CurrentVae);
-                void altLatent(ImageToVideoGenInfo genInfo)
-                {
-                    if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
-                    {
-                        string fromBatch = g.CreateNode("ImageFromBatch", new JObject()
-                        {
-                            ["image"] = g.CurrentMedia.Path,
-                            ["batch_index"] = 0,
-                            ["length"] = genInfo.Frames.Value
-                        });
-                        genInfo.StartStep = (int)Math.Floor(steps * (1 - v2vCreativity));
-                        g.CurrentMedia = g.CurrentMedia.WithPath([fromBatch, 0]);
-                        g.CurrentMedia.Frames = Math.Min(genInfo.Frames.Value, g.CurrentMedia.Frames ?? int.MaxValue);
-                        g.CurrentMedia = g.CurrentMedia.AsLatentImage(genInfo.Vae);
-                    }
-                }
                 ImageToVideoGenInfo genInfo = new()
                 {
                     Generator = g,
@@ -1953,12 +1937,15 @@ public class WorkflowGeneratorSteps
                     NegativePrompt = negPrompt,
                     Steps = steps,
                     Seed = seed,
-                    AltLatent = altLatent,
                     BatchIndex = batchInd,
                     BatchLen = batchLen,
                     ContextID = T2IParamInput.SectionID_Video,
                     VideoEndFrame = g.UserInput.Get(T2IParamTypes.VideoEndFrame, null)
                 };
+                if (g.UserInput.TryGet(T2IParamTypes.Video2VideoCreativity, out double v2vCreativity))
+                {
+                    genInfo.StartStep = (int)Math.Floor(steps * (1 - v2vCreativity));
+                }
                 g.CreateImageToVideo(genInfo);
                 g.CurrentMedia = g.CurrentMedia.AsRawImage(genInfo.Vae);
                 bool hasExtend = prompt.Contains("<extend:");
