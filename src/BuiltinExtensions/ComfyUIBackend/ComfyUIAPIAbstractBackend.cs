@@ -1,4 +1,4 @@
-﻿
+
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
@@ -517,7 +517,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     return;
                 }
             }
-            endloop:
+        endloop:
             JObject historyOut = await SendGet<JObject>($"history/{promptId}");
             if (!historyOut.Properties().IsEmpty())
             {
@@ -681,7 +681,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 string format = (outImage.TryGetValue("format", out JToken formatTok) ? formatTok.ToString() : "") ?? "";
                 MediaType type = metaType == MediaMetaType.Audio ? MediaType.AudioWav : MediaType.ImageJpg;
                 type = MediaType.GetByExtension(ext) ?? MediaType.TypesByMimeType.GetValueOrDefault(format) ?? type;
-                byte[] image = await(await HttpClient.GetAsync($"{APIAddress}/view?{url}", interrupt)).Content.ReadAsByteArrayAsync(interrupt);
+                byte[] image = await (await HttpClient.GetAsync($"{APIAddress}/view?{url}", interrupt)).Content.ReadAsByteArrayAsync(interrupt);
                 if (image is null || image.Length == 0)
                 {
                     Logs.Error($"Invalid/null/empty image data from ComfyUI server for '{fname}', under {outData.ToDenseDebugString()}");
@@ -780,7 +780,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         if (workflow is not null && !user_input.Get(T2IParamTypes.ControlNetPreviewOnly))
         {
             Logs.Verbose("Will fill a workflow...");
-            workflow = StringConversionHelper.QuickSimpleTagFiller(initImageFixer(workflow), "${", "}", (tag) => {
+            workflow = StringConversionHelper.QuickSimpleTagFiller(initImageFixer(workflow), "${", "}", (tag) =>
+            {
                 string fixedTag = Utilities.UnescapeJsonString(tag);
                 string tagName = fixedTag.BeforeAndAfter(':', out string defVal);
                 string tagBasic = tagName.BeforeAndAfter('+', out string tagExtra);
@@ -860,7 +861,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 filled ??= defVal;
                 if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
                 {
-                    Logs.Verbose($"Filled tag '{tag}' with '{(filled.Length > 512 ? $"{filled[..512]}...": filled)}'");
+                    Logs.Verbose($"Filled tag '{tag}' with '{(filled.Length > 512 ? $"{filled[..512]}..." : filled)}'");
                 }
                 return Utilities.EscapeJsonString(filled);
             }, false);

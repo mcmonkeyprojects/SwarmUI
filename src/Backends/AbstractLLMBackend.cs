@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using SwarmUI.LLMs;
 
 namespace SwarmUI.Backends;

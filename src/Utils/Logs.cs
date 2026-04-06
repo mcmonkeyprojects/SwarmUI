@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticToolkit;
+using FreneticUtilities.FreneticToolkit;
 using SwarmUI.Core;
 using System.IO;
 
@@ -98,7 +98,7 @@ public static class Logs
         }
     }
 
-    public enum LogLevel: int
+    public enum LogLevel : int
     {
         Verbose, Debug, Info, Init, Warning, Error, None
     }

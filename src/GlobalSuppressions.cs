@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 
 // From FrenUtil ref.
 [assembly: SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible", Justification = "Counter-productive to quality code")]

@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Core;
+namespace SwarmUI.Core;
 
 /// <summary>Handler for registries of installable features.</summary>
 public static class InstallableFeatures

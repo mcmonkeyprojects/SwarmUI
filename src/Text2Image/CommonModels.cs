@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using FreneticUtilities.FreneticExtensions;
 using SwarmUI.Core;
 using SwarmUI.Utils;

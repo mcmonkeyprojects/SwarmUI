@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Hardware.Info;
 using Newtonsoft.Json;
@@ -452,7 +452,8 @@ public static class NetworkBackendUtils
                     status = BackendStatus.ERRORED;
                     reviseStatus(status);
                 }
-            } : () =>
+            }
+            : () =>
             {
                 Logs.Error($"Self-Start {nameSimple} on port {port} failed. AutoRestart disabled, treating as fatal error.");
                 status = BackendStatus.ERRORED;

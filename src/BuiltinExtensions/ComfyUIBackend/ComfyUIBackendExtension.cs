@@ -444,7 +444,7 @@ public class ComfyUIBackendExtension : Extension
     }
 
     public static LockObject ValueAssignmentLocker = new();
-    
+
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 

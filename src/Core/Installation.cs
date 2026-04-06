@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Backends;
 using SwarmUI.Builtin_ComfyUIBackend;
@@ -115,7 +115,7 @@ public class Installation
             {
                 Directory.Move("dlbackend/tmpcomfy/ComfyUI_windows_portable_nightly_pytorch", "dlbackend/comfy");
             }
-        };
+        }
         try
         {
             moveFolder();
@@ -209,7 +209,7 @@ public class Installation
             gpu = mostVRAM.ID;
         }
         await Output("Enabling ComfyUI...");
-        Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim(), EnablePreviews = enablePreviews ? "true" : "false"});
+        Program.Backends.AddNewOfType(Program.Backends.BackendTypes["comfyui_selfstart"], new ComfyUISelfStartBackend.ComfyUISelfStartSettings() { StartScript = path, GPU_ID = $"{gpu}", ExtraArgs = extraArgs.Trim(), EnablePreviews = enablePreviews ? "true" : "false" });
     }
 
     /// <summary>Configure the backend during installation.</summary>

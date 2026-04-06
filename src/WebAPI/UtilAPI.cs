@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Backends;
@@ -51,7 +51,7 @@ public static class UtilAPI
         }
         catch (SwarmReadableErrorException ex)
         {
-            return (new JObject() { ["error"] = ex.Message },  null);
+            return (new JObject() { ["error"] = ex.Message }, null);
         }
     }
 

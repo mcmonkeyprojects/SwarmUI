@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -154,7 +154,7 @@ public class T2IParamInput
 
     /// <summary>Dense local time with incrementer.</summary>
     public int RequestRefTime;
-    
+
     /// <summary>If true, special early load has already ran.</summary>
     public bool EarlyLoadDone = false;
 
@@ -672,7 +672,7 @@ public class T2IParamInput
             RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
         }
     }
-    
+
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param, int sectionId = 0)
     {
