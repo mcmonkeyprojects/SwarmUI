@@ -761,26 +761,26 @@ public class Program
         WebServer.LogLevel = Enum.Parse<LogLevel>(GetCommandLineFlag("asp_loglevel", "warning"), true);
         SessionHandler.LocalUserID = GetCommandLineFlag("user_id", SessionHandler.LocalUserID);
         LockSettings = GetCommandLineFlagAsBool("lock_settings", false);
-        if (CommandLineFlags.ContainsKey("ngrok-path"))
+        if (CommandLineFlags.ContainsKey("ngrok_path"))
         {
             ProxyHandler = new()
             {
                 Name = "Ngrok",
-                Path = GetCommandLineFlag("ngrok-path", null),
-                Region = GetCommandLineFlag("proxy-region", null),
-                BasicAuth = GetCommandLineFlag("ngrok-basic-auth", null),
-                Args = GetCommandLineFlag("proxy-added-args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                Path = GetCommandLineFlag("ngrok_path", null),
+                Region = GetCommandLineFlag("proxy_region", null),
+                BasicAuth = GetCommandLineFlag("ngrok_basic_auth", null),
+                Args = GetCommandLineFlag("proxy_added_args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             };
         }
         string cloudflared = ServerSettings.Network.CloudflaredPath;
-        if (CommandLineFlags.ContainsKey("cloudflared-path") || !string.IsNullOrWhiteSpace(cloudflared))
+        if (CommandLineFlags.ContainsKey("cloudflared_path") || !string.IsNullOrWhiteSpace(cloudflared))
         {
             ProxyHandler = new()
             {
                 Name = "Cloudflare",
-                Path = GetCommandLineFlag("cloudflared-path", cloudflared).Trim('"'),
-                Region = GetCommandLineFlag("proxy-region", null),
-                Args = GetCommandLineFlag("proxy-added-args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                Path = GetCommandLineFlag("cloudflared_path", cloudflared).Trim('"'),
+                Region = GetCommandLineFlag("proxy_region", null),
+                Args = GetCommandLineFlag("proxy_added_args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             };
         }
         LaunchMode = GetCommandLineFlag("launch_mode", ServerSettings.LaunchMode);
@@ -790,7 +790,7 @@ public class Program
             TimeLastRemoteControlPing = Environment.TickCount64;
         }
         NoPersist = GetCommandLineFlagAsBool("no_persist", false);
-        IsCiTest = GetCommandLineFlagAsBool("ci-test", false);
+        IsCiTest = GetCommandLineFlagAsBool("ci_test", false);
     }
 
     /// <summary>Applies runtime-changable settings.</summary>
@@ -835,6 +835,7 @@ public class Program
                     value = "true";
                 }
             }
+            key = key.Replace('-', '_');
             if (CommandLineFlags.ContainsKey(key))
             {
                 throw new SwarmUserErrorException($"Error: Duplicate command line flag '{key}'");
@@ -884,14 +885,14 @@ public class Program
             Options:
               [--data_dir <path>] [--settings_file <path>] [--backends_file <path>] [--environment <Production/Development>]
               [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
-              [--user_id <username>] [--lock_settings <true/false>] [--ngrok-path <path>] [--cloudflared-path <path>]
-              [--proxy-region <region>] [--proxy-added-args <args>] [--ngrok-basic-auth <auth-info>]
-              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--ci-test <true/false>]
+              [--user_id <username>] [--lock_settings <true/false>] [--ngrok_path <path>] [--cloudflared_path <path>]
+              [--proxy_region <region>] [--proxy_added_args <args>] [--ngrok_basic_auth <auth-info>]
+              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--ci_test <true/false>]
               [--help <true/false>]
 
             Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
               - `settings_file`, `lock_settings`, `backends_file`, `loglevel` may be useful to advanced users will multiple instances.
-              - `cloudflared-path` is useful for remote tunnel users (eg colab).
+              - `cloudflared_path` is useful for remote tunnel users (eg colab).
               - `host`, `port`, and `launch_mode` may be useful in developmental usages where you need to quickly or automatically change network paths.
               - `require_control_within` is used for AutoScalingBackend especially.
 
