@@ -107,6 +107,9 @@ public class Program
     /// <summary>If true, user launched in dev build. If false, user launched in production mode.</summary>
     public static bool IsDevMode = false;
 
+    /// <summary>If true, Swarm has been launched in CI Test boot mode.</summary>
+    public static bool IsCiTest = false;
+
     /// <summary>Primary execution entry point.</summary>
     public static void Main(string[] args)
     {
@@ -358,6 +361,10 @@ public class Program
         }
         Task.Run(() =>
         {
+            if (IsCiTest)
+            {
+                return;
+            }
             Thread.Sleep(500);
             try
             {
@@ -411,6 +418,14 @@ public class Program
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HTTP_PROXY")))
         {
             Logs.Warning("You have the environment variable 'HTTP_PROXY' set. This may cause network issues. If Swarm cannot connect to its own backends, remove this env var.");
+        }
+        if (IsCiTest)
+        {
+            Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                Shutdown();
+            });
         }
         WebServer.WebApp.WaitForShutdown();
         Shutdown();
@@ -538,7 +553,11 @@ public class Program
         HasShutdown = true;
         Task waitShutdown = WebhookManager.SendWebhook("Shutdown", ServerSettings.WebHooks.ServerShutdownWebhook, ServerSettings.WebHooks.ServerShutdownWebhookData);
         Task.WaitAny(waitShutdown, Task.Delay(TimeSpan.FromMinutes(2)));
-        Environment.ExitCode = code;
+        if (code != 0)
+        {
+            Logs.Debug($"Shutdown requested with non-zero exit code {code}.");
+            Environment.ExitCode = code;
+        }
         Logs.Info("Shutting down...");
         PreShutdownEvent?.Invoke();
         GlobalCancelSource.Cancel();
@@ -771,6 +790,7 @@ public class Program
             TimeLastRemoteControlPing = Environment.TickCount64;
         }
         NoPersist = GetCommandLineFlagAsBool("no_persist", false);
+        IsCiTest = GetCommandLineFlagAsBool("ci-test", false);
     }
 
     /// <summary>Applies runtime-changable settings.</summary>
@@ -866,7 +886,8 @@ public class Program
               [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
               [--user_id <username>] [--lock_settings <true/false>] [--ngrok-path <path>] [--cloudflared-path <path>]
               [--proxy-region <region>] [--proxy-added-args <args>] [--ngrok-basic-auth <auth-info>]
-              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--help <true/false>]
+              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--ci-test <true/false>]
+              [--help <true/false>]
 
             Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
               - `settings_file`, `lock_settings`, `backends_file`, `loglevel` may be useful to advanced users will multiple instances.

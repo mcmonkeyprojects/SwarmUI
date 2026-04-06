@@ -140,6 +140,10 @@ public static class Logs
     public static void Error(string message)
     {
         LogWithColor(ConsoleColor.Black, ConsoleColor.Red, "Error", ConsoleColor.Black, ConsoleColor.Red, message, LogLevel.Error);
+        if (Program.IsCiTest)
+        {
+            Environment.ExitCode = 1;
+        }
     }
 
     public static void CriticalLoadError(string message)
