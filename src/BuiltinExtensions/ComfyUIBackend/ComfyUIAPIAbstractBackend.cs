@@ -36,7 +36,14 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 
     public string ModelFolderFormat = null;
 
-    public record class ReusableSocket(string ID, ClientWebSocket Socket);
+    public class ReusableSocket
+    {
+        public string ID;
+
+        public ClientWebSocket Socket;
+
+        public long LastUsed = Environment.TickCount64;
+    }
 
     public ConcurrentQueue<ReusableSocket> ReusableSockets = new();
 
@@ -243,6 +250,18 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             {
                 if (oldSocket.Socket.State == WebSocketState.Open)
                 {
+                    if (Environment.TickCount64 - oldSocket.LastUsed > TimeSpan.FromMinutes(30).TotalMilliseconds)
+                    {
+                        Logs.Verbose($"Old websocket expired (timeout, {TimeSpan.FromMilliseconds(Environment.TickCount64 - oldSocket.LastUsed)}), closing.");
+                        ReusableSocket finalCopy = oldSocket;
+                        _ = Utilities.RunCheckedTask(async () =>
+                        {
+                            using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromSeconds(5));
+                            await finalCopy.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
+                            finalCopy.Socket.Dispose();
+                        });
+                        continue;
+                    }
                     Logs.Verbose("Reuse existing websocket");
                     id = oldSocket.ID;
                     socket = oldSocket.Socket;
@@ -554,7 +573,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             if (!socket.CloseStatus.HasValue)
             {
-                ReusableSockets.Enqueue(new(id, socket));
+                ReusableSockets.Enqueue(new() { ID = id, Socket = socket });
             }
         }
     }
