@@ -1986,18 +1986,14 @@ public class WorkflowGeneratorSteps
         {
             WGNodeData ensureAttachedAudio(WGNodeData media)
             {
-                if (media?.AttachedAudio is null
-                    || media.AttachedAudio.DataType == WGNodeData.DT_AUDIO
-                    || g.CurrentAudioVae is null)
+                if (media?.AttachedAudio is null || media.AttachedAudio.DataType == WGNodeData.DT_AUDIO || g.CurrentAudioVae is null)
                 {
                     return media;
                 }
-
                 WGNodeData dup = media.Duplicate();
                 dup.AttachedAudio = media.AttachedAudio.DecodeLatents(g.CurrentAudioVae, true);
                 return dup;
             }
-
             WGNodeData appendAudio(WGNodeData combinedAudio, WGNodeData nextAudio)
             {
                 if (nextAudio is null)
@@ -2012,7 +2008,6 @@ public class WorkflowGeneratorSteps
                 {
                     return combinedAudio;
                 }
-
                 string concatNode = g.CreateNode("AudioConcat", new JObject()
                 {
                     ["audio1"] = combinedAudio.Path,
@@ -2021,7 +2016,6 @@ public class WorkflowGeneratorSteps
                 });
                 return combinedAudio.WithPath([concatNode, 0], WGNodeData.DT_AUDIO, combinedAudio.Compat ?? nextAudio.Compat);
             }
-
             string fullRawPrompt = g.UserInput.Get(T2IParamTypes.Prompt, "");
             if (fullRawPrompt.Contains("<extend:"))
             {
