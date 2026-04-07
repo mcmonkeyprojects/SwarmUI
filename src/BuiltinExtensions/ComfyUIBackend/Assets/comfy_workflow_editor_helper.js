@@ -26,7 +26,7 @@ let comfyHasTriedToLoad = false;
 
 let comfyAltSaveNodes = ['ADE_AnimateDiffCombine', 'VHS_VideoCombine', 'SaveAnimatedWEBP', 'SaveAnimatedPNG', 'SwarmSaveAnimatedWebpWS', 'SwarmSaveAnimationWS'];
 
-let swarmComfyInjectedHeaderSpacer = null, swarmComfySideToolbar = null, swarmComfySidePanel = null, swarmComfyBreadcrumbs = null;
+let swarmComfyInjectedHeaderSpacer = null, swarmComfySideToolbar = null, swarmComfySidePanel = null, swarmComfyBreadcrumbs = null, swarmComfySubGraphBar = null;
 
 let swarmComfyHasPinia = false;
 
@@ -156,6 +156,10 @@ function comfyFixMenuLocation() {
     swarmComfyBreadcrumbs = frame.contentWindow.document.querySelector('.p-breadcrumb-list');
     if (swarmComfyBreadcrumbs) {
         swarmComfyBreadcrumbs.style.paddingLeft = '250px';
+    }
+    swarmComfySubGraphBar = frame.contentWindow.document.querySelector('.subgraph-breadcrumb');
+    if (swarmComfySubGraphBar) {
+        swarmComfySubGraphBar.style.paddingLeft = '250px';
     }
     // Comfy frontend added an aggro warning if frontend isn't fully up to date, but Swarm keeps it behind because it so often breaks on latest
     // so let's de-aggro the message a bit.
@@ -1305,6 +1309,9 @@ function comfyToggleButtonsVisible() {
         if (swarmComfyBreadcrumbs) {
             swarmComfyBreadcrumbs.style.paddingLeft = '250px';
         }
+        if (swarmComfySubGraphBar) {
+            swarmComfySubGraphBar.style.paddingLeft = '250px';
+        }
         localStorage.removeItem('comfy_buttons_closed');
     }
     else {
@@ -1322,6 +1329,9 @@ function comfyToggleButtonsVisible() {
         }
         if (swarmComfyBreadcrumbs) {
             swarmComfyBreadcrumbs.style.paddingLeft = '0';
+        }
+        if (swarmComfySubGraphBar) {
+            swarmComfySubGraphBar.style.paddingLeft = '0';
         }
         localStorage.setItem('comfy_buttons_closed', 'true');
     }
