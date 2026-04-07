@@ -53,7 +53,7 @@ public static class NetworkBackendUtils
         }
         else if (content.Length == 0 && typeof(JType) == typeof(JObject))
         {
-            throw new SwarmReadableErrorException($"Server returned entirely empty response, something went wrong.");
+            throw new SwarmReadableErrorException($"Server returned entirely empty response, something went wrong. If this is a local backend connection, you may have a proxy configuration that is messing with localhost.");
         }
         try
         {
