@@ -1983,15 +1983,11 @@ public class WorkflowGeneratorSteps
             }
             WGNodeData appendAudio(WGNodeData combinedAudio, WGNodeData nextAudio)
             {
-                if (nextAudio is null)
-                {
-                    return combinedAudio;
-                }
                 if (combinedAudio is null)
                 {
                     return nextAudio;
                 }
-                if (combinedAudio.DataType != WGNodeData.DT_AUDIO || nextAudio.DataType != WGNodeData.DT_AUDIO)
+                if (nextAudio is null || combinedAudio.DataType != WGNodeData.DT_AUDIO || nextAudio.DataType != WGNodeData.DT_AUDIO)
                 {
                     return combinedAudio;
                 }
@@ -2015,7 +2011,6 @@ public class WorkflowGeneratorSteps
                 bool saveIntermediate = g.UserInput.Get(T2IParamTypes.OutputIntermediateImages, false);
                 T2IModel extendModel = g.UserInput.Get(T2IParamTypes.VideoExtendModel, null) ?? throw new SwarmUserErrorException("You have an '<extend:' block in your prompt, but you don't have a 'Video Extend Model' selected.");
                 PromptRegion regionalizer = new(fullRawPrompt);
-                List<JArray> vidChunks = [g.CurrentMedia.Path];
                 WGNodeData conjoinedLast = g.CurrentMedia;
                 WGNodeData conjoinedAudio = ensureAttachedAudio(conjoinedLast)?.AttachedAudio;
                 string getWidthNode = g.CreateNode("SwarmImageWidth", new JObject()
@@ -2091,7 +2086,6 @@ public class WorkflowGeneratorSteps
                         ["length"] = frames.Value - frameExtendOverlap
                     });
                     g.CurrentMedia = g.CurrentMedia.WithPath([cutNode, 0]);
-                    vidChunks.Add(g.CurrentMedia.Path);
                     conjoinedAudio = appendAudio(conjoinedAudio, stageWithAudio?.AttachedAudio);
                     string batchedNode = g.CreateNode("ImageBatch", new JObject()
                     {
