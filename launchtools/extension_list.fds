@@ -3,6 +3,7 @@
 # Author should be your name.
 # Description should be a short description of what the extension does.
 # URL should be a link to the GitHub repo. Do not use a sublink, do not end with '/'. This URL is used to git clone the repo.
+# If CI-Test is true, the extension will be downloaded and compile-checked for new Swarm commits.
 
 # License is the shortname of the license, (eg MIT, LGPL, ...).
 # If deciding on a license, MIT is strongly recommended.
@@ -29,6 +30,7 @@ FaceTools:
     description: Adds support for CodeFormer FaceRestore and ReActor.
     url: https://github.com/Quaggles/SwarmUI-FaceTools
     license: MIT
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -38,6 +40,7 @@ WaifuDiffusionV:
     description: Adds support for WaifuDiffusion-V-EDM sampling.
     url: https://github.com/waifu-diffusion/SwarmWaifuDiffusionV
     license: GPLv3
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -48,6 +51,7 @@ ComfyDeployBackend:
     description: Adds a ComfyDeploy ( https://www.comfydeploy.com/ ) backend.
     url: https://github.com/mcmonkey4eva/SwarmComfyDeployBackendExt
     license: MIT
+    ci-test: false
     tags:
     - paid
     - backend
@@ -58,6 +62,7 @@ MagicPrompt:
     description: Provides LLM (language model) usage inside SwarmUI to enhance your prompts.
     url: https://github.com/HartsyAI/SwarmUI-MagicPromptExtension
     license: MIT
+    ci-test: true
     tags:
     - tabs
     - ui
@@ -85,6 +90,7 @@ WildcardImporter:
     description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
     url: https://github.com/bman654/SwarmUI-WildcardImporter
     license: MIT
+    ci-test: true
     tags:
     - tabs
     - ui
@@ -95,6 +101,7 @@ PostRender:
     url: https://github.com/jtreminio/SwarmUI-PostRenderTorched
     old_url: https://github.com/HellerCommaA/SwarmUI-PostRender
     license: MIT
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -104,6 +111,7 @@ SkimmedCFG:
     description: Adds support for SkimmedCFG anti-burn allowing much higher CFG scales.
     url: https://github.com/Quaggles/SwarmUI-SkimmedCFG
     license: MIT
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -113,6 +121,7 @@ SkipLayerGuidance:
     description: Adds support for SLG (SD3.5M trick) and STG (LTX-Video trick) as a parameter group.
     url: https://github.com/mcmonkey4eva/SwarmSkipLayerGuidanceExtension
     license: MIT
+    ci-test: true
     tags:
     - parameters
 
@@ -130,6 +139,7 @@ AdaptiveProjectedGuidance:
     description: Adds support for Adaptive Projected Guidance, retain the quality-boosting advantages of CFG while enabling the use of higher guidance scales without oversaturation.
     url: https://github.com/Quaggles/SwarmUI-AdaptiveProjectedGuidance
     license: MIT
+    ci-test: true
     tags:
     - parameters
 
@@ -181,6 +191,7 @@ FrameSaver:
     description: Adds parameters to save the first and/or last frame of generated video.
     url: https://github.com/MathewTomberlin/FrameSaver
     license: MIT
+    ci-test: true
     tags:
     - parameters
 
@@ -189,6 +200,7 @@ VAEReflection:
     description: Adds support for using reflect padding mode in VAEs, fixing artifacts in the edges of images generated using a VAE trained with reflect padding.
     url: https://github.com/Jelosus2/comfyui-vae-reflection
     license: MIT
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -198,6 +210,7 @@ MoreThemes:
     description: Adds a variety of high-quality themes to SwarmUI
     url: https://github.com/mrblomblo/MoreThemes
     license: MIT
+    ci-test: true
     tags:
     - ui
 
@@ -215,6 +228,7 @@ SeedVR2Upscaler:
     description: Adds SeedVR2 AI upscaler with auto VRAM detection, quality presets, and 2-step upscaling for reduced artifacts.
     url: https://github.com/rlerdorf/SwarmUI-SeedVR2Upscaler
     license: MIT
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -224,6 +238,7 @@ Base2Edit:
     description: Edit an image in the refiner stage (with Edit models like Flux2), allowing you to generate and edit in a single generation.
     url: https://github.com/jtreminio/SwarmUI-Base2Edit
     license: MIT
+    ci-test: true
     tags:
     - parameters
     - nodes
@@ -250,6 +265,7 @@ VideoStages:
     description: Allows adding multiple video stages to your workflows, as well as automatically using generate audio.
     url: https://github.com/jtreminio/SwarmUI-VideoStages
     license: MIT
+    ci-test: true
     tags:
     - tools
 
@@ -258,5 +274,6 @@ AceStepFun:
     description: More advanced AceStep 1.5 text-to-audio support for SwarmUI. Works in tandem with the VideoStages to use AceStep audio in LTX2 videos.
     url: https://github.com/jtreminio/SwarmUI-AceStepFun
     license: MIT
+    ci-test: true
     tags:
     - tools

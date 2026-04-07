@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Media;
+namespace SwarmUI.Media;
 
 /// <summary>Base class, represents a single media data file.</summary>
 public class MediaFile

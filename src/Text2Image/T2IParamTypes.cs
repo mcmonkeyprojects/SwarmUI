@@ -245,7 +245,8 @@ public class T2IParamTypes
 
     public static Type DataTypeToSharpType(T2IParamDataType t)
     {
-        return t switch {
+        return t switch
+        {
             T2IParamDataType.INTEGER => typeof(long),
             T2IParamDataType.DECIMAL => typeof(double),
             T2IParamDataType.BOOLEAN => typeof(bool),

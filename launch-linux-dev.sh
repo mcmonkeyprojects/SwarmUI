@@ -23,6 +23,9 @@ export ASPNETCORE_URLS="http://*:7801"
 ./src/bin/live_release/SwarmUI "$@"
 
 # Exit code 42 means restart, anything else = don't.
-if [ $? == 42 ]; then
+exitcode=$?
+if [ $exitcode == 42 ]; then
     exec ./launch-linux-dev.sh "$@"
+elif [ $exitcode != 0 ]; then
+    exit $exitcode
 fi

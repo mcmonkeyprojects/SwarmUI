@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 
@@ -17,7 +17,7 @@ public class GeneratePageModel
     public bool IsLoginEnabled => Program.ServerSettings.UserAuthorization.AuthorizationRequired;
 
     public User User;
-    
+
     public GeneratePageModel(HttpContext context)
     {
         HttpContext = context;

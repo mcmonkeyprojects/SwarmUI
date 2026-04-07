@@ -327,13 +327,13 @@ public class WebServer
             foreach (string script in e.ScriptFiles)
             {
                 string fname = $"ExtensionFile/{e.ExtensionName}/{script}";
-                ExtensionSharedFiles.Add(fname, new (() => File.ReadAllText($"{e.FilePath}{script}")));
+                ExtensionSharedFiles.Add(fname, new(() => File.ReadAllText($"{e.FilePath}{script}")));
                 scripts.Append($"<script src=\"{fname}?vary={Utilities.VaryID}\"></script>\n");
             }
             foreach (string css in e.StyleSheetFiles)
             {
                 string fname = $"ExtensionFile/{e.ExtensionName}/{css}";
-                ExtensionSharedFiles.Add(fname, new (() => File.ReadAllText($"{e.FilePath}{css}")));
+                ExtensionSharedFiles.Add(fname, new(() => File.ReadAllText($"{e.FilePath}{css}")));
                 stylesheets.Append($"<link rel=\"stylesheet\" href=\"{fname}?vary={Utilities.VaryID}\" />");
             }
             foreach (string file in e.OtherAssets)

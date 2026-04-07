@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Hardware.Info;
 using Newtonsoft.Json;
@@ -53,7 +53,7 @@ public static class NetworkBackendUtils
         }
         else if (content.Length == 0 && typeof(JType) == typeof(JObject))
         {
-            throw new SwarmReadableErrorException($"Server returned entirely empty response, something went wrong.");
+            throw new SwarmReadableErrorException($"Server returned entirely empty response, something went wrong. If this is a local backend connection, you may have a proxy configuration that is messing with localhost.");
         }
         try
         {
@@ -452,7 +452,8 @@ public static class NetworkBackendUtils
                     status = BackendStatus.ERRORED;
                     reviseStatus(status);
                 }
-            } : () =>
+            }
+            : () =>
             {
                 Logs.Error($"Self-Start {nameSimple} on port {port} failed. AutoRestart disabled, treating as fatal error.");
                 status = BackendStatus.ERRORED;

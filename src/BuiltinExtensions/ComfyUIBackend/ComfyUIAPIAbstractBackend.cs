@@ -1,4 +1,4 @@
-﻿
+
 using FreneticUtilities.FreneticDataSyntax;
 using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
@@ -36,7 +36,14 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
 
     public string ModelFolderFormat = null;
 
-    public record class ReusableSocket(string ID, ClientWebSocket Socket);
+    public class ReusableSocket
+    {
+        public string ID;
+
+        public ClientWebSocket Socket;
+
+        public long LastUsed = Environment.TickCount64;
+    }
 
     public ConcurrentQueue<ReusableSocket> ReusableSockets = new();
 
@@ -243,6 +250,18 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
             {
                 if (oldSocket.Socket.State == WebSocketState.Open)
                 {
+                    if (Environment.TickCount64 - oldSocket.LastUsed > TimeSpan.FromMinutes(30).TotalMilliseconds)
+                    {
+                        Logs.Verbose($"Old websocket expired (timeout, {TimeSpan.FromMilliseconds(Environment.TickCount64 - oldSocket.LastUsed)}), closing.");
+                        ReusableSocket finalCopy = oldSocket;
+                        _ = Utilities.RunCheckedTask(async () =>
+                        {
+                            using CancellationTokenSource cancel = Utilities.TimedCancel(TimeSpan.FromSeconds(5));
+                            await finalCopy.Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, null, cancel.Token);
+                            finalCopy.Socket.Dispose();
+                        });
+                        continue;
+                    }
                     Logs.Verbose("Reuse existing websocket");
                     id = oldSocket.ID;
                     socket = oldSocket.Socket;
@@ -517,7 +536,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                     return;
                 }
             }
-            endloop:
+        endloop:
             JObject historyOut = await SendGet<JObject>($"history/{promptId}");
             if (!historyOut.Properties().IsEmpty())
             {
@@ -554,7 +573,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         {
             if (!socket.CloseStatus.HasValue)
             {
-                ReusableSockets.Enqueue(new(id, socket));
+                ReusableSockets.Enqueue(new() { ID = id, Socket = socket });
             }
         }
     }
@@ -681,7 +700,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 string format = (outImage.TryGetValue("format", out JToken formatTok) ? formatTok.ToString() : "") ?? "";
                 MediaType type = metaType == MediaMetaType.Audio ? MediaType.AudioWav : MediaType.ImageJpg;
                 type = MediaType.GetByExtension(ext) ?? MediaType.TypesByMimeType.GetValueOrDefault(format) ?? type;
-                byte[] image = await(await HttpClient.GetAsync($"{APIAddress}/view?{url}", interrupt)).Content.ReadAsByteArrayAsync(interrupt);
+                byte[] image = await (await HttpClient.GetAsync($"{APIAddress}/view?{url}", interrupt)).Content.ReadAsByteArrayAsync(interrupt);
                 if (image is null || image.Length == 0)
                 {
                     Logs.Error($"Invalid/null/empty image data from ComfyUI server for '{fname}', under {outData.ToDenseDebugString()}");
@@ -780,7 +799,8 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         if (workflow is not null && !user_input.Get(T2IParamTypes.ControlNetPreviewOnly))
         {
             Logs.Verbose("Will fill a workflow...");
-            workflow = StringConversionHelper.QuickSimpleTagFiller(initImageFixer(workflow), "${", "}", (tag) => {
+            workflow = StringConversionHelper.QuickSimpleTagFiller(initImageFixer(workflow), "${", "}", (tag) =>
+            {
                 string fixedTag = Utilities.UnescapeJsonString(tag);
                 string tagName = fixedTag.BeforeAndAfter(':', out string defVal);
                 string tagBasic = tagName.BeforeAndAfter('+', out string tagExtra);
@@ -860,7 +880,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
                 filled ??= defVal;
                 if (Logs.MinimumLevel <= Logs.LogLevel.Verbose)
                 {
-                    Logs.Verbose($"Filled tag '{tag}' with '{(filled.Length > 512 ? $"{filled[..512]}...": filled)}'");
+                    Logs.Verbose($"Filled tag '{tag}' with '{(filled.Length > 512 ? $"{filled[..512]}..." : filled)}'");
                 }
                 return Utilities.EscapeJsonString(filled);
             }, false);

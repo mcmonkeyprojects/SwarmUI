@@ -444,7 +444,7 @@ public class ComfyUIBackendExtension : Extension
     }
 
     public static LockObject ValueAssignmentLocker = new();
-    
+
     /// <summary>Add handlers here to do additional parsing of RawObjectInfo data.</summary>
     public static List<Action<JObject>> RawObjectInfoParsers = [];
 
@@ -875,7 +875,8 @@ public class ComfyUIBackendExtension : Extension
         {
             tasks.Add(Utilities.RunCheckedTask(async () =>
             {
-                JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true);
+                string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
+                JObject nodeUpdates = await AdminAPI.GetUpdatesDataFor(folder, true, headTarget: headTarget);
                 if (nodeUpdates is null)
                 {
                     Logs.Debug($"Check for updates found no updates for ComfyUI node at {folder}");
@@ -914,7 +915,8 @@ public class ComfyUIBackendExtension : Extension
             {
                 tasks.Add(Utilities.RunCheckedTask(async () =>
                 {
-                    await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail);
+                    string headTarget = ComfyUISelfStartBackend.ComfyNodeGitPins.TryGetValue(folder, out string pinCommit) ? pinCommit : null;
+                    await AdminAPI.DoGitUpdate(folder, aggressive, didWork, didFail, targetCommit: headTarget);
                 }));
             }
         }

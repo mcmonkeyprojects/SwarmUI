@@ -107,6 +107,12 @@ public class Program
     /// <summary>If true, user launched in dev build. If false, user launched in production mode.</summary>
     public static bool IsDevMode = false;
 
+    /// <summary>If true, Swarm has been launched in CI Test boot mode.</summary>
+    public static bool IsCiTest = false;
+
+    /// <summary>If true, Swarm has been launched in CI Test boot mode and should test extensions.</summary>
+    public static bool IsCiTestExtensions = false;
+
     /// <summary>Primary execution entry point.</summary>
     public static void Main(string[] args)
     {
@@ -358,6 +364,10 @@ public class Program
         }
         Task.Run(() =>
         {
+            if (IsCiTest)
+            {
+                return;
+            }
             Thread.Sleep(500);
             try
             {
@@ -411,6 +421,14 @@ public class Program
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HTTP_PROXY")))
         {
             Logs.Warning("You have the environment variable 'HTTP_PROXY' set. This may cause network issues. If Swarm cannot connect to its own backends, remove this env var.");
+        }
+        if (IsCiTest)
+        {
+            Task.Run(async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(3));
+                Shutdown();
+            });
         }
         WebServer.WebApp.WaitForShutdown();
         Shutdown();
@@ -538,7 +556,11 @@ public class Program
         HasShutdown = true;
         Task waitShutdown = WebhookManager.SendWebhook("Shutdown", ServerSettings.WebHooks.ServerShutdownWebhook, ServerSettings.WebHooks.ServerShutdownWebhookData);
         Task.WaitAny(waitShutdown, Task.Delay(TimeSpan.FromMinutes(2)));
-        Environment.ExitCode = code;
+        if (code != 0)
+        {
+            Logs.Debug($"Shutdown requested with non-zero exit code {code}.");
+            Environment.ExitCode = code;
+        }
         Logs.Info("Shutting down...");
         PreShutdownEvent?.Invoke();
         GlobalCancelSource.Cancel();
@@ -737,31 +759,31 @@ public class Program
         }
         if (NetworkBackendUtils.NextPort < 1000)
         {
-              Logs.Warning($"BackendStartingPort setting {NetworkBackendUtils.NextPort} is a low-range value (below 1000), which may cause it to conflict with the OS or other programs. You may want to change it.");
+            Logs.Warning($"BackendStartingPort setting {NetworkBackendUtils.NextPort} is a low-range value (below 1000), which may cause it to conflict with the OS or other programs. You may want to change it.");
         }
         WebServer.LogLevel = Enum.Parse<LogLevel>(GetCommandLineFlag("asp_loglevel", "warning"), true);
         SessionHandler.LocalUserID = GetCommandLineFlag("user_id", SessionHandler.LocalUserID);
         LockSettings = GetCommandLineFlagAsBool("lock_settings", false);
-        if (CommandLineFlags.ContainsKey("ngrok-path"))
+        if (CommandLineFlags.ContainsKey("ngrok_path"))
         {
             ProxyHandler = new()
             {
                 Name = "Ngrok",
-                Path = GetCommandLineFlag("ngrok-path", null),
-                Region = GetCommandLineFlag("proxy-region", null),
-                BasicAuth = GetCommandLineFlag("ngrok-basic-auth", null),
-                Args = GetCommandLineFlag("proxy-added-args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                Path = GetCommandLineFlag("ngrok_path", null),
+                Region = GetCommandLineFlag("proxy_region", null),
+                BasicAuth = GetCommandLineFlag("ngrok_basic_auth", null),
+                Args = GetCommandLineFlag("proxy_added_args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             };
         }
         string cloudflared = ServerSettings.Network.CloudflaredPath;
-        if (CommandLineFlags.ContainsKey("cloudflared-path") || !string.IsNullOrWhiteSpace(cloudflared))
+        if (CommandLineFlags.ContainsKey("cloudflared_path") || !string.IsNullOrWhiteSpace(cloudflared))
         {
             ProxyHandler = new()
             {
                 Name = "Cloudflare",
-                Path = GetCommandLineFlag("cloudflared-path", cloudflared).Trim('"'),
-                Region = GetCommandLineFlag("proxy-region", null),
-                Args = GetCommandLineFlag("proxy-added-args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                Path = GetCommandLineFlag("cloudflared_path", cloudflared).Trim('"'),
+                Region = GetCommandLineFlag("proxy_region", null),
+                Args = GetCommandLineFlag("proxy_added_args", ".")[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries)
             };
         }
         LaunchMode = GetCommandLineFlag("launch_mode", ServerSettings.LaunchMode);
@@ -771,6 +793,8 @@ public class Program
             TimeLastRemoteControlPing = Environment.TickCount64;
         }
         NoPersist = GetCommandLineFlagAsBool("no_persist", false);
+        IsCiTest = GetCommandLineFlagAsBool("ci_test", false);
+        IsCiTestExtensions = GetCommandLineFlagAsBool("ci_test_extensions", false);
     }
 
     /// <summary>Applies runtime-changable settings.</summary>
@@ -815,6 +839,7 @@ public class Program
                     value = "true";
                 }
             }
+            key = key.Replace('-', '_');
             if (CommandLineFlags.ContainsKey(key))
             {
                 throw new SwarmUserErrorException($"Error: Duplicate command line flag '{key}'");
@@ -864,13 +889,15 @@ public class Program
             Options:
               [--data_dir <path>] [--settings_file <path>] [--backends_file <path>] [--environment <Production/Development>]
               [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
-              [--user_id <username>] [--lock_settings <true/false>] [--ngrok-path <path>] [--cloudflared-path <path>]
-              [--proxy-region <region>] [--proxy-added-args <args>] [--ngrok-basic-auth <auth-info>]
-              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--help <true/false>]
+              [--user_id <username>] [--lock_settings <true/false>] [--ngrok_path <path>] [--cloudflared_path <path>]
+              [--proxy_region <region>] [--proxy_added_args <args>] [--ngrok_basic_auth <auth-info>]
+              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>]
+              [--ci_test <true/false>] [--ci_test_extensions <true/false>]
+              [--help <true/false>]
 
             Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
               - `settings_file`, `lock_settings`, `backends_file`, `loglevel` may be useful to advanced users will multiple instances.
-              - `cloudflared-path` is useful for remote tunnel users (eg colab).
+              - `cloudflared_path` is useful for remote tunnel users (eg colab).
               - `host`, `port`, and `launch_mode` may be useful in developmental usages where you need to quickly or automatically change network paths.
               - `require_control_within` is used for AutoScalingBackend especially.
 

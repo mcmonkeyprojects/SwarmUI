@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticToolkit;
+using FreneticUtilities.FreneticToolkit;
 using SwarmUI.Core;
 using System.Diagnostics;
 
@@ -56,7 +56,7 @@ public static class NvidiaUtil
                 }
                 if (Internal.LastResultCache is not null && Environment.TickCount64 < Internal.LastQueryTime + Program.ServerSettings.NvidiaQueryRateLimitMS)
                 {
-                      return Internal.LastResultCache;
+                    return Internal.LastResultCache;
                 }
                 ProcessStartInfo psi = new("nvidia-smi", "--query-gpu=gpu_name,driver_version,temperature.gpu,utilization.gpu,utilization.memory,memory.total,memory.free,memory.used --format=csv")
                 {

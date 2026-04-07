@@ -1418,7 +1418,6 @@ public partial class WorkflowGenerator
         public int Steps;
         public int StartStep = 0;
         public long Seed;
-        public Action<ImageToVideoGenInfo> AltLatent;
         public int BatchIndex = -1;
         public int BatchLen = -1;
         public bool HasMatchedModelData = false;
@@ -1430,6 +1429,24 @@ public partial class WorkflowGenerator
         public int ContextID = T2IParamInput.SectionID_Video;
         public Image VideoEndFrame = null;
         public JArray DoFirstFrameLatentSwap = null;
+        public bool HasFixedMediaLen = false;
+
+        public WGNodeData FixMediaLen()
+        {
+            if (HasFixedMediaLen)
+            {
+                return Generator.CurrentMedia;
+            }
+            HasFixedMediaLen = true;
+            string frameLimited = Generator.CreateNode("ImageFromBatch", new JObject()
+            {
+                ["image"] = Generator.CurrentMedia.Path,
+                ["batch_index"] = 0,
+                ["length"] = Frames
+            });
+            Generator.CurrentMedia = Generator.CurrentMedia.WithPath([frameLimited, 0]);
+            return Generator.CurrentMedia;
+        }
 
         public void PrepModelAndCond(WorkflowGenerator g)
         {
@@ -1452,6 +1469,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 97;
+                origSrcImg = FixMediaLen();
                 string condNode = g.CreateNode("LTXVImgToVideo", new JObject()
                 {
                     ["positive"] = PosCond,
@@ -1502,6 +1520,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 97;
+                origSrcImg = FixMediaLen();
                 string emptyLatent = g.CreateNode("EmptyLTXVLatentVideo", new JObject()
                 {
                     ["width"] = Width,
@@ -1511,15 +1530,9 @@ public partial class WorkflowGenerator
                 });
                 g.CurrentMedia = new WGNodeData([emptyLatent, 0], g, WGNodeData.DT_LATENT_VIDEO, Model.Compat) { Frames = Frames, AttachedAudio = g.CurrentMedia?.AttachedAudio };
                 g.CurrentMedia = g.CurrentMedia.EnsureHasAudioIfNeeded(Vae, g.CurrentAudioVae);
-                string frameLimited = g.CreateNode("ImageFromBatch", new JObject()
-                {
-                    ["image"] = origSrcImg.Path,
-                    ["batch_index"] = 0,
-                    ["length"] = Frames
-                });
                 string preproc = g.CreateNode("LTXVPreprocess", new JObject()
                 {
-                    ["image"] = NodePath(frameLimited, 0),
+                    ["image"] = origSrcImg.Path,
                     ["img_compression"] = 18
                 });
                 string latentOutNode = g.CreateNode("LTXVImgToVideoInplace", new JObject()
@@ -1582,6 +1595,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 121;
+                origSrcImg = FixMediaLen();
                 if (VideoEndFrame is not null)
                 {
                     throw new SwarmReadableErrorException("Cosmos end-frame is TODO");
@@ -1615,6 +1629,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 53;
+                origSrcImg = FixMediaLen();
                 string i2vnode = g.CreateNode("HunyuanImageToVideo", new JObject()
                 {
                     ["positive"] = PosCond,
@@ -1636,6 +1651,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 49;
+                origSrcImg = FixMediaLen();
                 string i2vnode = g.CreateNode("Kandinsky5ImageToVideo", new JObject()
                 {
                     ["positive"] = PosCond,
@@ -1659,6 +1675,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 73;
+                origSrcImg = FixMediaLen();
                 string targetName = "sigclip_vision_patch14_384.safetensors";
                 targetName = g.RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/HunyuanVideo_1.5_repackaged/resolve/main/split_files/clip_vision/sigclip_vision_patch14_384.safetensors", "1fee501deabac72f0ed17610307d7131e3e9d1e838d0363aa3c2b97a6e03fb33", T2IParamTypes.ClipVisionModel);
                 string clipLoader = g.CreateNode("CLIPVisionLoader", new JObject()
@@ -1696,6 +1713,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 73;
+                origSrcImg = FixMediaLen();
                 string latentNode = g.CreateNode("EmptyHunyuanLatentVideo", new JObject()
                 {
                     ["width"] = Width,
@@ -1721,6 +1739,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 49;
+                origSrcImg = FixMediaLen();
                 JArray imageIn = origSrcImg.Path;
                 if (BatchIndex != -1 && BatchLen != -1)
                 {
@@ -1787,6 +1806,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 24;
                 Frames ??= 81;
+                origSrcImg = FixMediaLen();
                 string targetName = "clip_vision_h.safetensors";
                 targetName = g.RequireVisionModel(targetName, "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors", "64a7ef761bfccbadbaa3da77366aac4185a6c58fa5de5f589b42a65bcc21f161", T2IParamTypes.ClipVisionModel);
                 string clipLoader = g.CreateNode("CLIPVisionLoader", new JObject()
@@ -1884,6 +1904,7 @@ public partial class WorkflowGenerator
             {
                 VideoFPS ??= 22;
                 Frames ??= 49;
+                origSrcImg = FixMediaLen();
                 JArray imageIn = origSrcImg.Path;
                 if (BatchIndex != -1 && BatchLen != -1)
                 {
@@ -1916,6 +1937,7 @@ public partial class WorkflowGenerator
                 DefaultCFG = 2.5;
                 DefaultSampler = "dpmpp_2m_sde_gpu";
                 DefaultScheduler = "karras";
+                origSrcImg = FixMediaLen();
                 JArray clipVision;
                 if (VideoModel.ModelClass?.ID.EndsWith("/tensorrt") ?? false)
                 {
@@ -1995,8 +2017,8 @@ public partial class WorkflowGenerator
             ["upscale_method"] = "lanczos",
             ["crop"] = "disabled"
         });
-        CurrentMedia = CurrentMedia.WithPath([scaled, 0]);
         // TODO: Update width/height properly
+        CurrentMedia = CurrentMedia.WithPath([scaled, 0]);
         foreach (Action<ImageToVideoGenInfo> altHandler in AltImageToVideoPreHandlers)
         {
             altHandler(genInfo);
@@ -2006,10 +2028,7 @@ public partial class WorkflowGenerator
         {
             genInfo.PrepModelAndCond(this);
             genInfo.PrepFullCond(this, srcImage);
-        }
-        if (genInfo.AltLatent is not null)
-        {
-            genInfo.AltLatent(genInfo);
+            genInfo.FixMediaLen();
         }
         genInfo.VideoCFG ??= genInfo.DefaultCFG;
         foreach (Action<ImageToVideoGenInfo> altHandler in AltImageToVideoPostHandlers)
@@ -2040,7 +2059,10 @@ public partial class WorkflowGenerator
             int steps = genInfo.Steps;
             genInfo.PosCond = CreateConditioning(genInfo.Prompt, clip.Path, swapModel, true, isVideo: true, isVideoSwap: true);
             genInfo.NegCond = CreateConditioning(genInfo.NegativePrompt, clip.Path, swapModel, false, isVideo: true, isVideoSwap: true);
+            genInfo.HasFixedMediaLen = false;
+            CurrentMedia = srcImage;
             genInfo.PrepFullCond(this, srcImage);
+            genInfo.FixMediaLen();
             explicitSampler = UserInput.Get(ComfyUIBackendExtension.SamplerParam, null, sectionId: T2IParamInput.SectionID_VideoSwap, includeBase: false) ?? explicitSampler;
             explicitScheduler = UserInput.Get(ComfyUIBackendExtension.SchedulerParam, null, sectionId: T2IParamInput.SectionID_VideoSwap, includeBase: false) ?? explicitScheduler;
             cfg = UserInput.GetNullable(T2IParamTypes.CFGScale, T2IParamInput.SectionID_VideoSwap, false) ?? cfg;
