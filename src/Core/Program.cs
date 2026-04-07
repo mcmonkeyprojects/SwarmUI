@@ -110,6 +110,9 @@ public class Program
     /// <summary>If true, Swarm has been launched in CI Test boot mode.</summary>
     public static bool IsCiTest = false;
 
+    /// <summary>If true, Swarm has been launched in CI Test boot mode and should test extensions.</summary>
+    public static bool IsCiTestExtensions = false;
+
     /// <summary>Primary execution entry point.</summary>
     public static void Main(string[] args)
     {
@@ -791,6 +794,7 @@ public class Program
         }
         NoPersist = GetCommandLineFlagAsBool("no_persist", false);
         IsCiTest = GetCommandLineFlagAsBool("ci_test", false);
+        IsCiTestExtensions = GetCommandLineFlagAsBool("ci_test_extensions", false);
     }
 
     /// <summary>Applies runtime-changable settings.</summary>
@@ -887,7 +891,8 @@ public class Program
               [--host <hostname>] [--port <port>] [--asp_loglevel <level>] [--loglevel <level>]
               [--user_id <username>] [--lock_settings <true/false>] [--ngrok_path <path>] [--cloudflared_path <path>]
               [--proxy_region <region>] [--proxy_added_args <args>] [--ngrok_basic_auth <auth-info>]
-              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>] [--ci_test <true/false>]
+              [--launch_mode <mode>] [--require_control_within <minutes>] [--no_persist <true/false>]
+              [--ci_test <true/false>] [--ci_test_extensions <true/false>]
               [--help <true/false>]
 
             Generally, CLI args are almost never used. When they are are, they usually fall into the following categories:
