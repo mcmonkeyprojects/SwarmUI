@@ -312,7 +312,14 @@ public class SessionHandler
         GenericSharedUser = GetUser("__shared");
         Utilities.RunCheckedTask(async () =>
         {
-            await Task.Delay(TimeSpan.FromSeconds(10), Program.GlobalProgramCancel);
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), Program.GlobalProgramCancel);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
             CleanOldSessions();
         });
     }
