@@ -790,21 +790,9 @@ defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
 let registeredMediaButtons = [];
 
-/** Registers a media button for extensions. 'mediaTypes' filters by type eg ['audio'], null means all. 'isDefault' promotes to visible (vs More dropdown). */
-function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false) {
-    if (!name || typeof name != 'string') {
-        console.warn(`registerMediaButton: 'name' must be a non-empty string, got '${name}'`);
-        return;
-    }
-    if (typeof action != 'function') {
-        console.warn(`registerMediaButton '${name}': 'action' must be a function, got '${typeof action}'`);
-        return;
-    }
-    if (mediaTypes != null && !Array.isArray(mediaTypes)) {
-        console.warn(`registerMediaButton '${name}': 'mediaTypes' must be an array or null, got '${typeof mediaTypes}'`);
-        return;
-    }
-    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault });
+/** Registers a media button for extensions. 'mediaTypes' filters by type eg ['audio'], null means all. 'isDefault' promotes to visible (vs More dropdown). 'showInHistory' controls whether button appears in the History panel. */
+function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false, showInHistory = true) {
+    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault, showInHistory });
 }
 
 function getImageFullSrc(src) {
@@ -844,7 +832,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     }
     let isVideo = isVideoExt(src);
     let isAudio = isAudioExt(src);
-    let mediaType = isVideo ? 'video' : (isAudio ? 'audio' : 'image');
+    let mediaType = getMediaType(src);
     if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
         let image = new Image();
         image.onload = () => {
@@ -1056,7 +1044,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 tmpImg.src = img.src;
             }
         }
-    }, '', 'Sets this image as the Init Image parameter input', ['image']);
+    }, '', 'Sets this image as the Init Image parameter input', ['image', 'video']);
     includeButton('Use As Image Prompt', () => {
         let altPromptRegion = document.getElementById('alt_prompt_region');
         if (!altPromptRegion) {
@@ -1117,7 +1105,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
             };
             mainGenHandler.doGenerate(input_overrides, { 'initimagecreativity': 0.4 });
         }));
-    }, '', 'Runs an instant generation with this image as the input and scale doubled', ['image']);
+    }, '', 'Runs an instant generation with this image as the input and scale doubled', ['image', 'video']);
     includeButton('Refine Image', () => {
         toDataURL(img.src, (url => {
             let input_overrides = {
@@ -1147,7 +1135,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
                 triggerChangeFor(togglerRefine);
             });
         }));
-    }, '', 'Runs an instant generation with Refine / Upscale turned on', ['image']);
+    }, '', 'Runs an instant generation with Refine / Upscale turned on');
     let metaParsed = { is_starred: false };
     if (metadata) {
         try {

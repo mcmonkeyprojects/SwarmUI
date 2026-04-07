@@ -141,7 +141,7 @@ function buttonsForImage(fullsrc, src, metadata) {
         });
     }
     for (let reg of registeredMediaButtons) {
-        if (!reg.mediaTypes || reg.mediaTypes.includes(mediaType)) {
+        if (reg.showInHistory && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
             buttons.push({
                 label: reg.name,
                 title: reg.title,
