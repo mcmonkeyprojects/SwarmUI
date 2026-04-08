@@ -830,10 +830,8 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         forceShowWelcomeMessage();
         return;
     }
-    let isVideo = isVideoExt(src);
-    let isAudio = isAudioExt(src);
     let mediaType = getMediaType(src);
-    if ((smoothAdd || !metadata) && canReparse && !isVideo && !isAudio) {
+    if ((smoothAdd || !metadata) && canReparse && mediaType == 'image') {
         let image = new Image();
         image.onload = () => {
             if (!metadata) {
@@ -859,7 +857,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     let img;
     let isReuse = false;
     let srcTarget;
-    if (isVideo) {
+    if (mediaType == 'video') {
         container = createDiv(null, 'video-container current-image-img');
         curImg.innerHTML = '';
         img = document.createElement('video');
@@ -868,11 +866,11 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         img.autoplay = true;
         let sourceObj = document.createElement('source');
         srcTarget = sourceObj;
-        sourceObj.type = isVideo;
+        sourceObj.type = isVideoExt(src);
         img.appendChild(sourceObj);
         container.appendChild(img);
     }
-    else if (isAudio) {
+    else if (mediaType == 'audio') {
         curImg.innerHTML = '';
         container = createDiv(null, 'audio-container current-image-img');
         img = document.createElement('audio');
@@ -896,10 +894,10 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         container = img;
     }
     function naturalDim() {
-        if (isVideo) {
+        if (mediaType == 'video') {
             return [img.videoWidth, img.videoHeight];
         }
-        else if (isAudio) {
+        else if (mediaType == 'audio') {
             return [320, 140];
         }
         else {
@@ -915,7 +913,7 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
         }
         alignImageDataFormat();
     }
-    if (isVideo || isAudio) {
+    if (mediaType == 'video' || mediaType == 'audio') {
         img.addEventListener('loadeddata', function() {
             if (img) {
                 img.onload();
@@ -1188,10 +1186,10 @@ function setCurrentImage(src, metadata = '', batchId = '', previewGrow = false, 
     if (!isReuse) {
         curImg.appendChild(container);
         curImg.appendChild(extrasWrapper);
-        if (isVideo) {
+        if (mediaType == 'video') {
             new VideoControls(img);
         }
-        else if (isAudio) {
+        else if (mediaType == 'audio') {
             new AudioControls(img);
         }
     }
