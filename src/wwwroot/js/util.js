@@ -1114,6 +1114,17 @@ function isAudioExt(filename) {
     return false;
 }
 
+/** Returns 'video', 'audio', or 'image' based on the file source. */
+function getMediaType(src) {
+    if (isVideoExt(src)) {
+        return 'video';
+    }
+    if (isAudioExt(src)) {
+        return 'audio';
+    }
+    return 'image';
+}
+
 /** 'string.split' with a count limit, and without the stupid misbehavior of the default JS 'string.split'. */
 function splitWithTail(str, splitter, limit) {
     let parts = str.split(splitter);

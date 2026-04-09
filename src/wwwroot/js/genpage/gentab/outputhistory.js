@@ -55,6 +55,7 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
 
 function buttonsForImage(fullsrc, src, metadata) {
     let isDataImage = src.startsWith('data:');
+    let mediaType = getMediaType(src);
     buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
         buttons.push({
@@ -138,6 +139,15 @@ function buttonsForImage(fullsrc, src, metadata) {
                 });
             }
         });
+    }
+    for (let reg of registeredMediaButtons) {
+        if (reg.showInHistory && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
+            buttons.push({
+                label: reg.name,
+                title: reg.title,
+                onclick: () => reg.action(src)
+            });
+        }
     }
     return buttons;
 }
