@@ -709,6 +709,7 @@ function alignImageDataFormat() {
     let curImg = getRequiredElementById('current_image');
     let img = currentImageHelper.getCurrentImage();
     if (!img) {
+        curImg.classList.remove('current_image_sideblock');
         return;
     }
     let curImgContainer = currentImageHelper.getCurrentImageContainer();
@@ -724,6 +725,7 @@ function alignImageDataFormat() {
     curImgContainer.style.maxWidth = `calc(min(100%, ${width}px))`;
     if ((remainingWidth > 30 * 16 && format == 'auto') || format == 'side') {
         curImg.classList.remove('current_image_small');
+        curImg.classList.add('current_image_sideblock');
         extrasWrapper.style.display = 'inline-block';
         extrasWrapper.classList.add('extras-wrapper-sideblock');
         curImgContainer.style.maxHeight = `calc(max(15rem, 100%))`;
@@ -739,6 +741,7 @@ function alignImageDataFormat() {
     }
     else {
         curImg.classList.add('current_image_small');
+        curImg.classList.remove('current_image_sideblock');
         extrasWrapper.style.width = '100%';
         extrasWrapper.style.maxWidth = `100%`;
         extrasWrapper.style.display = 'block';

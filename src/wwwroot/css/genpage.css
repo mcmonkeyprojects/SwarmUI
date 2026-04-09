@@ -208,6 +208,11 @@ body {
     object-fit: contain;
     object-position: top left;
 }
+.current_image_sideblock > .current-image-img {
+    position: sticky;
+    top: 0.5rem;
+    vertical-align: top;
+}
 .current_image_batch {
     display: inline-block;
     overflow-x: hidden;
