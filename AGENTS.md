@@ -93,6 +93,18 @@ This project contains multiple parts all in one repo. Please observe unique expe
 - `src/BuiltinExtensions`: extensions to SwarmUI that are built in and part of the main repo.
 - `src/Extensions`: externally downloaded extensions. If you are asked to work within an extension, contain your work only to that extension's folder. If you were not asked to work there, do not modify anything in the extensions folder.
 
+## CSS Info
+
+This section applies to `src/wwwroot/css`, generally you also co-edit `src/Pages` and `src/wwwroot/js` at the same time.
+
+Be aware all frontend code must be compatible with all common modern browsers (up to date Chrome, Firefox, Safari), and should function on modern mobile browsers too (Android Chrome, iOS Safari).
+
+### Syntax
+
+- Keep it clean and proper
+- Mostly standard CSS syntax
+- Always use class-name references with a `.`, never element-id references with a `#`
+
 ## JavaScript Info
 
 This section applies to `src/wwwroot/js`, generally you also co-edit `src/Pages` and `src/wwwroot/css` at the same time.

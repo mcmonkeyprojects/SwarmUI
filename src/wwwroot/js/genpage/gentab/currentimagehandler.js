@@ -788,13 +788,6 @@ function toggleStar(path, rawSrc) {
 
 defaultButtonChoices = 'Use As Init,Edit Image,Star,Reuse Parameters';
 
-let registeredMediaButtons = [];
-
-/** Registers a media button for extensions. 'mediaTypes' filters by type eg ['audio'], null means all. 'isDefault' promotes to visible (vs More dropdown). 'showInHistory' controls whether button appears in the History panel. */
-function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false, showInHistory = true) {
-    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault, showInHistory });
-}
-
 function getImageFullSrc(src) {
     if (src == null) {
         return null;
