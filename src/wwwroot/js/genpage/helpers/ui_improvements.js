@@ -435,11 +435,21 @@ class UIImprovementHandler {
                     target.classList.add('drag_image_target_highlight');
                 }
             }
+            if (files.length > 0 && files.filter(f => f.type.startsWith('audio/')).length > 0) {
+                let targets = document.getElementsByClassName('drag_audio_target');
+                for (let target of targets) {
+                    target.classList.add('drag_image_target_highlight');
+                }
+            }
         }, true);
         function clearDrag() {
             setTimeout(() => {
                 isDoingADrag = false;
                 let targets = document.getElementsByClassName('drag_image_target'); // intentionally don't search "_highlight" due to browse misbehavior
+                for (let target of targets) {
+                    target.classList.remove('drag_image_target_highlight');
+                }
+                targets = document.getElementsByClassName('drag_audio_target');
                 for (let target of targets) {
                     target.classList.remove('drag_image_target_highlight');
                 }

@@ -1250,9 +1250,8 @@ input[type="range"]::-moz-range-track {
     left: 0;
     opacity: 0 !important;
 }
-.auto-file:hover+.auto-file-input .basic-button {
-    background-color: var(--button-background-hover);
-    color: var(--button-foreground-hover);
+input[type="file"].auto-file {
+    cursor: initial;
 }
 .input-group .auto-file-label {
     display: block !important;
@@ -1274,4 +1273,34 @@ input[type="range"]::-moz-range-track {
     font-size: smaller;
     color: var(--text-soft);
     word-break: break-all;
+}
+#input_image_browser_modal {
+    z-index: 1100;
+}
+#input_image_browser_modal .modal-dialog {
+    max-width: 90vw;
+    width: 90vw;
+    height: 85vh;
+}
+#input_image_browser_modal .modal-content {
+    height: 100%;
+    width: 100%;
+}
+.input-image-browser-modal-body {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+.input-image-browser-upload-bar {
+    flex: 0 0 auto;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--bs-border-color-translucent, rgba(0, 0, 0, 0.175));
+}
+.input-image-browser-container {
+    flex: 1;
+    min-height: 0;
+    height: auto;
 }

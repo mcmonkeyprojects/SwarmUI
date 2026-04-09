@@ -1,4 +1,5 @@
 using FreneticUtilities.FreneticExtensions;
+using Newtonsoft.Json.Linq;
 using SwarmUI.Accounts;
 using SwarmUI.Core;
 using SwarmUI.Media;
@@ -148,11 +149,18 @@ public class T2IParamSet
             ValuesInput.Remove(param.ID);
             return;
         }
-        ImageFile imageFor(string val)
+        ImageFile imageFor(string val, bool canJson)
         {
             if (val.StartsWithFast("data:"))
             {
                 return ImageFile.FromDataString(val);
+            }
+            if (canJson && val.StartsWithFast('{'))
+            {
+                JObject parsed = val.ParseToJson();
+                ImageFile result = ImageFile.FromDataString(parsed["data"].ToString());
+                result.SourceFilePath = parsed["filename"].ToString();
+                return result;
             }
             return ImageFile.FromBase64(val, MediaType.ImagePng);
         }
@@ -162,6 +170,13 @@ public class T2IParamSet
             {
                 return AudioFile.FromDataString(val);
             }
+            if (val.StartsWithFast('{'))
+            {
+                JObject parsed = val.ParseToJson();
+                AudioFile result = AudioFile.FromDataString(parsed["data"].ToString());
+                result.SourceFilePath = parsed["filename"].ToString();
+                return result;
+            }
             return AudioFile.FromBase64(val, MediaType.AudioWav);
         }
         VideoFile videoFor(string val)
@@ -169,6 +184,13 @@ public class T2IParamSet
             if (val.StartsWithFast("data:"))
             {
                 return VideoFile.FromDataString(val);
+            }
+            if (val.StartsWithFast('{'))
+            {
+                JObject parsed = val.ParseToJson();
+                VideoFile result = VideoFile.FromDataString(parsed["data"].ToString());
+                result.SourceFilePath = parsed["filename"].ToString();
+                return result;
             }
             return VideoFile.FromBase64(val, MediaType.AudioWav);
         }
@@ -178,8 +200,8 @@ public class T2IParamSet
             T2IParamDataType.DECIMAL => param.SharpType == typeof(double) ? double.Parse(val) : float.Parse(val),
             T2IParamDataType.BOOLEAN => bool.Parse(val),
             T2IParamDataType.TEXT or T2IParamDataType.DROPDOWN => val,
-            T2IParamDataType.IMAGE => imageFor(val),
-            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v) as Image).ToList(),
+            T2IParamDataType.IMAGE => imageFor(val, true),
+            T2IParamDataType.IMAGE_LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : "|").Select(v => imageFor(v, false) as Image).ToList(),
             T2IParamDataType.MODEL => getModel(val),
             T2IParamDataType.LIST => val.Split(val.Contains("\n|||\n") ? "\n|||\n" : ",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
             T2IParamDataType.AUDIO => audioFor(val),

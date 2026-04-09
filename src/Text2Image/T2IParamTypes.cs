@@ -1072,7 +1072,7 @@ public class T2IParamTypes
                 }
                 if (val.StartsWith("inputs/") || val.StartsWith("raw/") || val.StartsWith("Starred/"))
                 {
-                    return FilePathToDataString(session, val, $"for param {type.Name}");
+                    return new JObject() { ["filename"] = val, ["data"] = FilePathToDataString(session, val, $"for param {type.Name}") }.ToString();
                 }
                 if (string.IsNullOrWhiteSpace(val))
                 {

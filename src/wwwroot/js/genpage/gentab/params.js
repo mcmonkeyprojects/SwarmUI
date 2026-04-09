@@ -93,7 +93,7 @@ let aspectRatios = [
 ];
 
 
-function getHtmlForParam(param, prefix) {
+function getHtmlForParam(param, prefix, isPreset = false) {
     try {
         let example = param.examples ? `<br><span class="translate">Examples</span>: <code>${param.examples.map(escapeHtmlNoBr).join(`</code>,&emsp;<code>`)}</code>` : '';
         let pop = param.no_popover ? '' : `<div class="sui-popover sui-info-popover" id="popover_${prefix}${param.id}"><b class="translate">${escapeHtmlNoBr(param.name)}</b> (${param.type}):<br><span class="translate slight-left-margin-block">${safeHtmlOnly(param.description)}</span>${example}</div>`;
@@ -162,13 +162,13 @@ function getHtmlForParam(param, prefix) {
                 return {html: makeDropdownInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, modelList, param.default, param.toggleable, !param.no_popover, modelAltNames, false) + pop,
                     runnable: () => autoSelectWidth(getRequiredElementById(`${prefix}${param.id}`))};
             case 'image':
-                return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+                return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
             case 'audio':
-                return {html: makeAudioInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+                return {html: makeAudioInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
             case 'video':
-                return {html: makeVideoInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+                return {html: makeVideoInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
             case 'image_list':
-                return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover) + pop};
+                return {html: makeImageInput(param.feature_flag, `${prefix}${param.id}`, param.id, param.name, param.description, param.toggleable, !param.no_popover, !isPreset) + pop};
         }
         console.log(`Cannot generate input for param ${param.id} of type ${param.type} - unknown type`);
         return null;
@@ -379,7 +379,7 @@ function genInputs(delay_final = false) {
                 if (isPrompt(param) ? isMain : true) {
                     let presetParam = JSON.parse(JSON.stringify(param));
                     presetParam.toggleable = true;
-                    let presetData = getHtmlForParam(presetParam, "preset_input_");
+                    let presetData = getHtmlForParam(presetParam, "preset_input_", true);
                     presetHtml += presetData.html;
                     if (presetData.runnable) {
                         runnables.push(presetData.runnable);
@@ -1078,8 +1078,20 @@ function setDirectParamValue(param, value, paramElem = null, forceDropdowns = fa
         $(paramElem).val(vals);
         $(paramElem).trigger('change');
     }
+    else if (param.type == "image_list") {
+        // List too messy for impl for now
+        return;
+    }
     else if (param.type == "image" || param.type == "image_list" || param.type == "audio" || param.type == "video") {
-        // do not edit raw data files directly, this will just misbehave
+        if (typeof value == 'string' && value.startsWith('inputs/')) {
+            let previewSrc = `${getImageOutPrefix()}/${value}`;
+            setMediaFileDirect(paramElem, previewSrc, param.type, value, value, () => {
+                paramElem.dataset.filedata = value;
+            });
+            return;
+        }
+        // do not edit raw data files directly (eg data URLs), this will just misbehave
+        return;
     }
     else if (paramElem.tagName == "SELECT") {
         if (![...paramElem.querySelectorAll('option')].map(o => o.value).includes(value)) {

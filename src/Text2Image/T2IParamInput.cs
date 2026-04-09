@@ -317,8 +317,12 @@ public class T2IParamInput
 
     public static JToken MetadatableToJTok(object val)
     {
-        if (val is MediaFile)
+        if (val is MediaFile mf)
         {
+            if (!string.IsNullOrEmpty(mf.SourceFilePath))
+            {
+                return JToken.FromObject(mf.SourceFilePath);
+            }
             return null;
         }
         if (val is string str)
