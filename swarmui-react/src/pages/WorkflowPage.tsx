@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     Box,
-    Button,
     Grid,
     Group,
     SegmentedControl,
@@ -20,7 +19,7 @@ import {
 import { ComfyUIView } from '../components/ComfyUIView';
 import { WizardWorkflow, getWizardTemplateMeta } from '../components/WizardWorkflow';
 import { PageScaffold } from '../components/layout/PageScaffold';
-import { ElevatedCard, SectionHero, StatusTimeline, SwarmBadge, type StatusTimelineStep } from '../components/ui';
+import { ElevatedCard, SectionHero, StatusTimeline, SwarmBadge, SwarmButton as Button, type StatusTimelineStep } from '../components/ui';
 import { useWorkflowWorkspaceStore, type WorkflowWorkspaceMode } from '../stores/workflowWorkspaceStore';
 import type { WorkflowRouteState } from '../stores/navigationStore';
 import { useNavigationStore } from '../stores/navigationStore';

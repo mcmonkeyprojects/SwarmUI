@@ -7,8 +7,6 @@ import {
     Stack,
     Image,
     Group,
-    ActionIcon,
-    Button,
     Paper,
     Text,
     ScrollArea,
@@ -29,6 +27,7 @@ import {
 } from '@tabler/icons-react';
 import type { ImageListItem } from '../api/types';
 import { getHistoryMetadataSummary, isImageMedia } from '../features/history/historyUtils';
+import { SwarmActionIcon as ActionIcon, SwarmButton as Button } from './ui';
 
 interface ImageDetailModalProps {
     /** The image to display (null to close modal) */

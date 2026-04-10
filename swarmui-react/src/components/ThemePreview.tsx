@@ -3,11 +3,14 @@ import { Box, Group, Stack, Text } from '@mantine/core';
 import {
     getThemePersonalityLabel,
     resolveThemeStyle,
+    type ThemeControlShape,
     type ThemePalette,
     type ThemeStyleFamily,
     type ThemeStyleMotif,
     type ThemeControlMode,
+    type ThemeIconShape,
     type ThemeIconMode,
+    type ThemeShapeOverrides,
     type ThemeSurfaceMode,
 } from '../store/themeStore';
 import { ThemePreviewFrame } from './ThemePreviewFrame';
@@ -27,6 +30,7 @@ function getContrastTextColor(hexColor: string): string {
 
 interface ThemePreviewProps {
     theme: ThemePalette;
+    styleOverride?: ThemeShapeOverrides;
 }
 
 const FAMILY_LABELS: Record<ThemeStyleFamily, string> = {
@@ -58,9 +62,21 @@ const ICON_LABELS: Record<ThemeIconMode, string> = {
     'glyph-outline': 'Glyph Icons',
 };
 
-export function ThemePreview({ theme }: ThemePreviewProps) {
+const BUTTON_SHAPE_LABELS: Record<ThemeControlShape, string> = {
+    rounded: 'Rounded',
+    pill: 'Pill',
+    square: 'Square',
+};
+
+const ICON_SHAPE_LABELS: Record<ThemeIconShape, string> = {
+    rounded: 'Rounded',
+    circle: 'Circle',
+    square: 'Square',
+};
+
+export function ThemePreview({ theme, styleOverride }: ThemePreviewProps) {
     const { colors } = theme;
-    const style = resolveThemeStyle(theme);
+    const style = resolveThemeStyle(theme, styleOverride);
     const personalityLabel = getThemePersonalityLabel(theme);
     const accent2 = colors.secondaryAccent || `color-mix(in srgb, ${colors.accent} 66%, ${colors.brand})`;
     const accent3 = colors.tertiaryAccent || `color-mix(in srgb, ${colors.success} 58%, ${colors.accent})`;
@@ -72,8 +88,8 @@ export function ThemePreview({ theme }: ThemePreviewProps) {
     const primaryButton = `linear-gradient(135deg, ${colors.brand}, color-mix(in srgb, ${colors.brand} 72%, ${colors.accent}))`;
     const secondaryButton = `linear-gradient(135deg, ${accent2}, ${accent3})`;
     const panelRadius = style.family === 'material' ? 9 : style.family === 'glyph' ? 4 : 6;
-    const controlRadius = style.controlMode === 'outlined' ? 4 : style.controlMode === 'filled' ? 7 : 4;
-    const tokenRadius = style.family === 'glyph' ? 2 : 999;
+    const controlRadius = style.controlShape === 'pill' ? 999 : style.controlShape === 'square' ? 4 : 8;
+    const iconRadius = style.iconShape === 'circle' ? 999 : style.iconShape === 'square' ? 3 : 6;
     const styleBadgeBg = style.family === 'glyph'
         ? `color-mix(in srgb, ${colors.accent} 16%, transparent)`
         : `color-mix(in srgb, ${colors.gray8} 78%, transparent)`;
@@ -277,9 +293,9 @@ export function ThemePreview({ theme }: ThemePreviewProps) {
                                         <Box
                                             key={`${color}-${idx}`}
                                             style={{
-                                                width: 9,
-                                                height: 9,
-                                                borderRadius: tokenRadius,
+                                                width: 12,
+                                                height: 12,
+                                                borderRadius: iconRadius,
                                                 background: color,
                                                 border: `1px solid color-mix(in srgb, ${colors.gray0} 10%, transparent)`,
                                             }}
@@ -326,9 +342,10 @@ export function ThemePreview({ theme }: ThemePreviewProps) {
 
                 <Group grow gap={4}>
                     {[
-                        { label: 'Surface', value: SURFACE_LABELS[style.surfaceMode] },
                         { label: 'Controls', value: CONTROL_LABELS[style.controlMode] },
                         { label: 'Icons', value: ICON_LABELS[style.iconMode] },
+                        { label: 'Buttons', value: BUTTON_SHAPE_LABELS[style.controlShape] },
+                        { label: 'Icon Shape', value: ICON_SHAPE_LABELS[style.iconShape] },
                     ].map((item) => (
                         <Box
                             key={item.label}

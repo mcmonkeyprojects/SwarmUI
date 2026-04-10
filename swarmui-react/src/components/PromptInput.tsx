@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { Textarea, TextInput, Text, Group, ActionIcon, Tooltip, Popover, Stack, Switch, Select, Loader, Chip, Badge } from '@mantine/core';
+import { Textarea, TextInput, Text, Group, Tooltip, Popover, Stack, Switch, Select, Loader, Chip, Badge } from '@mantine/core';
 import { IconSparkles, IconWand, IconClearAll, IconClipboard, IconTextCaption, IconArrowsUpDown, IconLanguage, IconSettings, IconBrain } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { getTokenWarning } from '../utils/tokenCounter';
@@ -16,6 +16,7 @@ import { ContextMenu, useContextMenu, type ContextMenuItem } from './ContextMenu
 import { usePromptEnhanceStore, PROMPT_STYLE_PRESETS } from '../stores/promptEnhanceStore';
 import { enhancePrompt as enhancePromptApi, probeAssistantConnection } from '../services/magicPromptService';
 import { useAssistantStore } from '../stores/assistantStore';
+import { SwarmActionIcon as ActionIcon } from './ui';
 import '../styles/autocomplete.css';
 
 interface PromptInputProps {

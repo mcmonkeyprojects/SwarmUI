@@ -3,7 +3,6 @@ import {
     Modal,
     Stack,
     Group,
-    Button,
     TextInput,
     SegmentedControl,
     Text,
@@ -19,6 +18,7 @@ import {
 } from '@tabler/icons-react';
 import type { GenerateParams } from '../api/types';
 import type { JobPriority } from '../stores/queue';
+import { SwarmButton as Button } from './ui';
 
 interface ScheduleJobModalProps {
     opened: boolean;

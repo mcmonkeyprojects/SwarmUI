@@ -13,8 +13,10 @@ import {
     THEME_PALETTES,
     resolveThemeStyle,
     type ThemeCategory,
+    type ThemeControlShape,
     type ThemePalette,
     type ThemeControlMode,
+    type ThemeIconShape,
     type ThemeStyleFamily,
     type ThemeStyleMotif,
     type ThemeSurfaceMode
@@ -91,6 +93,18 @@ const CONTROL_LABELS: Record<ThemeControlMode, string> = {
     default: 'Default',
     filled: 'Filled',
     outlined: 'Outlined',
+};
+
+const CONTROL_SHAPE_LABELS: Record<ThemeControlShape, string> = {
+    rounded: 'Rounded',
+    pill: 'Pill',
+    square: 'Square',
+};
+
+const ICON_SHAPE_LABELS: Record<ThemeIconShape, string> = {
+    rounded: 'Rounded',
+    circle: 'Circle',
+    square: 'Square',
 };
 
 const MOTION_PRESET_LABELS: Record<MotionPreset, string> = {
@@ -219,7 +233,17 @@ function MotionPreviewCard({
 }
 
 export function ThemeSelector({ compact = false }: ThemeSelectorProps) {
-    const { currentTheme, setTheme, customAccent, setCustomAccent, getAllThemes } = useThemeStore();
+    const {
+        currentTheme,
+        setTheme,
+        customAccent,
+        setCustomAccent,
+        controlShapeOverride,
+        iconShapeOverride,
+        setControlShapeOverride,
+        setIconShapeOverride,
+        getAllThemes,
+    } = useThemeStore();
     const {
         reducedMotion,
         speed,
@@ -260,6 +284,8 @@ export function ThemeSelector({ compact = false }: ThemeSelectorProps) {
     const displayColor = customAccent || currentThemeData?.colors.brand || THEME_PALETTES[0].colors.brand;
     const previewStyle = resolveThemeStyle(previewTheme);
     const previewThemePersonality = getThemePersonalityLabel(previewTheme);
+    const controlShapeValue = controlShapeOverride || 'theme';
+    const iconShapeValue = iconShapeOverride || 'theme';
     const accentSwatches = useMemo(
         () => Array.from(new Set(THEME_PALETTES.map((theme) => theme.colors.brand))).slice(0, 8),
         []
@@ -483,7 +509,13 @@ export function ThemeSelector({ compact = false }: ThemeSelectorProps) {
                                 }}
                             >
                                 <Stack gap="xs">
-                                    <ThemePreview theme={previewTheme} />
+                                    <ThemePreview
+                                        theme={previewTheme}
+                                        styleOverride={{
+                                            controlShape: controlShapeOverride,
+                                            iconShape: iconShapeOverride,
+                                        }}
+                                    />
                                     <Box
                                         className="surface-paper"
                                         style={{
@@ -508,6 +540,12 @@ export function ThemeSelector({ compact = false }: ThemeSelectorProps) {
                                                 </SwarmBadge>
                                                 <SwarmBadge size="xs" tone="secondary" emphasis="outline">
                                                     {CONTROL_LABELS[previewStyle.controlMode]}
+                                                </SwarmBadge>
+                                                <SwarmBadge size="xs" tone="secondary" emphasis="outline">
+                                                    {CONTROL_SHAPE_LABELS[controlShapeOverride || previewStyle.controlShape]}
+                                                </SwarmBadge>
+                                                <SwarmBadge size="xs" tone="secondary" emphasis="outline">
+                                                    {ICON_SHAPE_LABELS[iconShapeOverride || previewStyle.iconShape]}
                                                 </SwarmBadge>
                                             </Group>
                                             <Text size="xs" fw={600}>
@@ -588,6 +626,51 @@ export function ThemeSelector({ compact = false }: ThemeSelectorProps) {
                         </Popover.Target>
                         <Popover.Dropdown>
                             <Stack gap="md">
+                                <Text size="xs" fw={600} tt="uppercase">Control Shapes</Text>
+                                <Stack gap={4}>
+                                    <Text size="xs">Button Shape</Text>
+                                    <SwarmSegmentedControl
+                                        fullWidth
+                                        value={controlShapeValue}
+                                        onChange={(value) => {
+                                            if (value === 'theme') {
+                                                setControlShapeOverride(null);
+                                                return;
+                                            }
+                                            setControlShapeOverride(value as ThemeControlShape);
+                                        }}
+                                        data={[
+                                            { value: 'theme', label: 'Theme' },
+                                            { value: 'rounded', label: 'Round' },
+                                            { value: 'pill', label: 'Pill' },
+                                            { value: 'square', label: 'Square' },
+                                        ]}
+                                    />
+                                </Stack>
+
+                                <Stack gap={4}>
+                                    <Text size="xs">Icon Shape</Text>
+                                    <SwarmSegmentedControl
+                                        fullWidth
+                                        value={iconShapeValue}
+                                        onChange={(value) => {
+                                            if (value === 'theme') {
+                                                setIconShapeOverride(null);
+                                                return;
+                                            }
+                                            setIconShapeOverride(value as ThemeIconShape);
+                                        }}
+                                        data={[
+                                            { value: 'theme', label: 'Theme' },
+                                            { value: 'rounded', label: 'Round' },
+                                            { value: 'circle', label: 'Circle' },
+                                            { value: 'square', label: 'Square' },
+                                        ]}
+                                    />
+                                </Stack>
+
+                                <Divider />
+
                                 <Text size="xs" fw={600} tt="uppercase">Animation Settings</Text>
                                 <Stack gap={4}>
                                     <Text size="xs">Motion Preset</Text>
@@ -723,6 +806,8 @@ export function ThemeSelector({ compact = false }: ThemeSelectorProps) {
                                 <Group gap="xs">
                                     <SwarmBadge size="xs" tone="secondary" emphasis="soft">Theme: {currentThemeData?.name}</SwarmBadge>
                                     <SwarmBadge size="xs" tone="info" emphasis="soft">{MOTION_PRESET_LABELS[motionPreset]}</SwarmBadge>
+                                    <SwarmBadge size="xs" tone="secondary" emphasis="outline">Buttons: {CONTROL_SHAPE_LABELS[controlShapeOverride || previewStyle.controlShape]}</SwarmBadge>
+                                    <SwarmBadge size="xs" tone="secondary" emphasis="outline">Icons: {ICON_SHAPE_LABELS[iconShapeOverride || previewStyle.iconShape]}</SwarmBadge>
                                     {customAccent && <SwarmBadge size="xs" tone="info" emphasis="soft">Custom</SwarmBadge>}
                                     {!effectsEnabled && <SwarmBadge size="xs" tone="secondary" emphasis="outline">Effects Off</SwarmBadge>}
                                     {!pageTransitions && <SwarmBadge size="xs" tone="secondary" emphasis="outline">No Page FX</SwarmBadge>}

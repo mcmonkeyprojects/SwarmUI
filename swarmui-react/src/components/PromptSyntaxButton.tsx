@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import {
-    ActionIcon,
     Menu,
     Text,
     Badge,
@@ -15,6 +14,7 @@ import {
     type PromptSyntaxItem,
     type PromptSyntaxCategory,
 } from '../data/promptSyntaxData';
+import { SwarmActionIcon as ActionIcon } from './ui';
 
 interface PromptSyntaxButtonProps {
     /** Callback when syntax should be inserted */

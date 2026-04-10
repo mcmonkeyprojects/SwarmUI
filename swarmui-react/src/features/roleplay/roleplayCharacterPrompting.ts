@@ -3,38 +3,56 @@
  * Builds system prompts and personality blocks from character data.
  */
 import type {
-    RoleplayCharacter,
-    RoleplayPersonalityProfile,
-    RoleplayPromptStack,
-    RoleplayChatSession,
+  RoleplayCharacter,
+  RoleplayPersonalityProfile,
+  RoleplayPromptStack,
+  RoleplayChatSession,
 } from '../../types/roleplay';
+
+type EffectivePromptCharacterInput = Pick<
+  RoleplayCharacter,
+  'interactionStyle' | 'chatSystemPrompt' | 'roleplaySystemPrompt' | 'systemPrompt'
+> &
+  Partial<
+    Pick<RoleplayCharacter, 'personality' | 'personalityProfile' | 'description' | 'scenario'>
+  >;
 
 /** Create a default prompt stack for new sessions. */
 export function createDefaultPromptSet(): RoleplayPromptStack {
-    return {
-        mainPromptOverride: '',
-        authorNote: '',
-        postHistoryNote: '',
-        includePersona: true,
-        includeCharacterDefinition: true,
-        includeScenario: true,
-        includeExampleMessages: true,
-        includeMemory: true,
-        includeLore: true,
-    };
+  return {
+    mainPromptOverride: '',
+    authorNote: '',
+    postHistoryNote: '',
+    includePersona: true,
+    includeCharacterDefinition: true,
+    includeScenario: true,
+    includeExampleMessages: true,
+    includeMemory: true,
+    includeLore: true,
+  };
 }
 
 /** Create a blank personality profile for a new character. */
 export function createEmptyRoleplayPersonalityProfile(): RoleplayPersonalityProfile {
-    return {
-        coreTraits: '',
-        speakingStyle: '',
-        emotionalTone: '',
-        boundaries: '',
-        motivations: '',
-        relationshipToUser: '',
-        quirks: '',
-    };
+  return {
+    coreTraits: '',
+    speakingStyle: '',
+    emotionalTone: '',
+    boundaries: '',
+    motivations: '',
+    relationshipToUser: '',
+    quirks: '',
+  };
+}
+
+/** Ensure personality profiles remain safe across persisted schema changes. */
+export function normalizeRoleplayPersonalityProfile(
+  profile?: Partial<RoleplayPersonalityProfile> | null
+): RoleplayPersonalityProfile {
+  return {
+    ...createEmptyRoleplayPersonalityProfile(),
+    ...(profile ?? {}),
+  };
 }
 
 /**
@@ -42,29 +60,35 @@ export function createEmptyRoleplayPersonalityProfile(): RoleplayPersonalityProf
  * Used in the CharacterEditor to preview what the AI sees.
  */
 export function buildStructuredPersonalityBlock(
-    profile: RoleplayPersonalityProfile,
+  profile?: Partial<RoleplayPersonalityProfile> | null
 ): string {
-    const sections: string[] = [];
-    if (profile.coreTraits) sections.push(`Core traits: ${profile.coreTraits}`);
-    if (profile.speakingStyle) sections.push(`Speaking style: ${profile.speakingStyle}`);
-    if (profile.emotionalTone) sections.push(`Emotional tone: ${profile.emotionalTone}`);
-    if (profile.boundaries) sections.push(`Boundaries: ${profile.boundaries}`);
-    if (profile.motivations) sections.push(`Motivations: ${profile.motivations}`);
-    if (profile.relationshipToUser) sections.push(`Relationship to user: ${profile.relationshipToUser}`);
-    if (profile.quirks) sections.push(`Quirks: ${profile.quirks}`);
-    return sections.join('\n');
+  const normalizedProfile = normalizeRoleplayPersonalityProfile(profile);
+  const sections: string[] = [];
+  if (normalizedProfile.coreTraits) sections.push(`Core traits: ${normalizedProfile.coreTraits}`);
+  if (normalizedProfile.speakingStyle)
+    sections.push(`Speaking style: ${normalizedProfile.speakingStyle}`);
+  if (normalizedProfile.emotionalTone)
+    sections.push(`Emotional tone: ${normalizedProfile.emotionalTone}`);
+  if (normalizedProfile.boundaries) sections.push(`Boundaries: ${normalizedProfile.boundaries}`);
+  if (normalizedProfile.motivations) sections.push(`Motivations: ${normalizedProfile.motivations}`);
+  if (normalizedProfile.relationshipToUser) {
+    sections.push(`Relationship to user: ${normalizedProfile.relationshipToUser}`);
+  }
+  if (normalizedProfile.quirks) sections.push(`Quirks: ${normalizedProfile.quirks}`);
+  return sections.join('\n');
 }
 
 /**
  * Build a personality block from a character for injection into system prompts.
  */
 export function buildCharacterPersonalityBlock(
-    character: RoleplayCharacter,
+  character: Pick<RoleplayCharacter, 'personality'> &
+    Partial<Pick<RoleplayCharacter, 'personalityProfile'>>
 ): string {
-    if (character.personality) {
-        return character.personality;
-    }
-    return buildStructuredPersonalityBlock(character.personalityProfile);
+  if (character.personality) {
+    return character.personality;
+  }
+  return buildStructuredPersonalityBlock(character.personalityProfile);
 }
 
 /**
@@ -72,46 +96,16 @@ export function buildCharacterPersonalityBlock(
  * Applies the prompt stack overrides and includes character definition, scenario, etc.
  */
 export function getEffectiveSystemPrompt(
-    character: RoleplayCharacter,
-    session?: RoleplayChatSession | null,
+  character: EffectivePromptCharacterInput,
+  session?: RoleplayChatSession | null
 ): string {
-    const promptStack = session?.promptStack ?? createDefaultPromptSet();
+  const promptStack = session?.promptStack ?? createDefaultPromptSet();
 
-    if (promptStack.mainPromptOverride) {
-        return promptStack.mainPromptOverride;
-    }
+  if (promptStack.mainPromptOverride) {
+    return promptStack.mainPromptOverride;
+  }
 
-    const isChat = character.interactionStyle === 'personal-chat';
-    const basePrompt = isChat
-        ? character.chatSystemPrompt || character.systemPrompt
-        : character.roleplaySystemPrompt || character.systemPrompt;
-
-    const sections: string[] = [];
-
-    if (basePrompt) {
-        sections.push(basePrompt);
-    }
-
-    if (promptStack.includeCharacterDefinition && character.description) {
-        sections.push(`Character: ${character.description}`);
-    }
-
-    const personalityBlock = buildCharacterPersonalityBlock(character);
-    if (promptStack.includeCharacterDefinition && personalityBlock) {
-        sections.push(`Personality: ${personalityBlock}`);
-    }
-
-    if (promptStack.includeScenario && character.scenario) {
-        sections.push(`Scenario: ${character.scenario}`);
-    }
-
-    if (promptStack.includeMemory && session?.conversationSummary) {
-        sections.push(`Previous conversation summary: ${session.conversationSummary}`);
-    }
-
-    if (promptStack.authorNote) {
-        sections.push(`[Author note: ${promptStack.authorNote}]`);
-    }
-
-    return sections.join('\n\n');
+  return character.interactionStyle === 'personal-chat'
+    ? character.chatSystemPrompt || character.systemPrompt
+    : character.roleplaySystemPrompt || character.systemPrompt;
 }

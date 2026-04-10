@@ -8,11 +8,14 @@ import {
     type SwarmToneInput,
 } from './swarmTones';
 
+export type SwarmButtonShape = 'rounded' | 'pill' | 'square';
+
 export interface SwarmButtonProps
     extends Omit<ButtonProps, 'color' | 'variant'>,
         ElementProps<'button', keyof ButtonProps> {
     tone?: SwarmToneInput;
     emphasis?: SwarmEmphasis;
+    shape?: SwarmButtonShape;
     // Compatibility shim for one migration cycle.
     color?: string;
     variant?: ButtonProps['variant'];
@@ -23,6 +26,7 @@ export const SwarmButton = forwardRef<HTMLButtonElement, SwarmButtonProps>(funct
     {
         tone,
         emphasis,
+        shape,
         color,
         variant,
         className,
@@ -42,6 +46,7 @@ export const SwarmButton = forwardRef<HTMLButtonElement, SwarmButtonProps>(funct
             className={`swarm-button swarm-tone--${resolvedTone} swarm-emphasis--${resolvedEmphasis} ${className ?? ''}`.trim()}
             data-swarm-tone={resolvedTone}
             data-swarm-emphasis={resolvedEmphasis}
+            data-swarm-shape={shape}
         />
     );
 });

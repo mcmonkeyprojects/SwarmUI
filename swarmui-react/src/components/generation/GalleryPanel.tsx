@@ -5,7 +5,6 @@ import {
     Text,
     Group,
     Card,
-    ActionIcon,
     Divider,
     Image,
     SimpleGrid,
@@ -24,7 +23,7 @@ import { ImageLightbox } from '../ImageLightbox';
 import { VirtualGrid } from '../VirtualGrid';
 import { useDragReorder } from '../../hooks/useDragReorder';
 import { galleryItemVariants, fastStaggerContainer } from '../../utils/animations';
-import { SwarmActionIcon, SwarmBadge } from '../ui';
+import { SwarmActionIcon, SwarmActionIcon as ActionIcon, SwarmBadge } from '../ui';
 
 const LARGE_SESSION_THRESHOLD = 32;
 

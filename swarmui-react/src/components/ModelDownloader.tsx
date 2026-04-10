@@ -5,12 +5,10 @@ import {
   Group,
   Text,
   TextInput,
-  Button,
   Card,
   Select,
   Progress,
   Badge,
-  ActionIcon,
   Tooltip,
   Image,
   Box,
@@ -42,6 +40,7 @@ import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
 import { isTauri } from '@tauri-apps/api/core';
 import { open as openTauriDialog } from '@tauri-apps/plugin-dialog';
+import { SwarmActionIcon as ActionIcon, SwarmButton as Button } from './ui';
 
 // CivitAI prefixes
 const CIVITAI_PREFIX = 'https://civitai.com/';

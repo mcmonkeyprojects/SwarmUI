@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { Card, Title, Text, Stack, Button, Code, Group } from '@mantine/core';
+import { Card, Title, Text, Stack, Code, Group } from '@mantine/core';
 import { IconAlertTriangle, IconCopy, IconRefresh } from '@tabler/icons-react';
+import { SwarmButton as Button } from './ui';
 
 interface Props {
     children?: ReactNode;

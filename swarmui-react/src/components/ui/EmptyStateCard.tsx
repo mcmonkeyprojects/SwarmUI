@@ -1,5 +1,6 @@
-import { Button, Card, Group, Stack, Text } from '@mantine/core';
+import { Card, Group, Stack, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { SwarmButton as Button } from './SwarmButton';
 
 export interface EmptyStateCardProps {
     title: string;

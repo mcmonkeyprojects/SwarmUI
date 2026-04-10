@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
     Badge,
     Box,
-    Button,
     Card,
     Divider,
     FileButton,
@@ -38,7 +37,7 @@ import { useT2IParams } from '../hooks/useT2IParams';
 import { useGenerationStore } from '../store/generationStore';
 import { useQueueStore } from '../stores/queue';
 import { useWorkflowWorkspaceStore } from '../stores/workflowWorkspaceStore';
-import { ElevatedCard, SamplingSelect, StatusTimeline, SwarmBadge } from './ui';
+import { ElevatedCard, SamplingSelect, StatusTimeline, SwarmBadge, SwarmButton as Button } from './ui';
 import type { StatusTimelineStep } from './ui';
 
 type WizardTemplateId = 'text-to-image' | 'image-to-image' | 'upscale';

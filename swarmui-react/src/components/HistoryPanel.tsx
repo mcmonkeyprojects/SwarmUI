@@ -1,8 +1,9 @@
-import { Stack, Text, Group, Card, Image, Button, ActionIcon, ScrollArea, Badge, Tooltip } from '@mantine/core';
+import { Stack, Text, Group, Card, Image, ScrollArea, Badge, Tooltip } from '@mantine/core';
 import { IconTrash, IconPlayerPlay, IconTemplate } from '@tabler/icons-react';
 import { useHistoryStore } from '../stores/historyStore';
 import type { HistoryEntry } from '../stores/historyStore';
 import { notifications } from '@mantine/notifications';
+import { SwarmActionIcon as ActionIcon, SwarmButton as Button } from './ui';
 
 interface HistoryPanelProps {
     onLoad: (entry: HistoryEntry) => void;

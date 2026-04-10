@@ -11,7 +11,6 @@ import {
     Text,
     Group,
     Stack,
-    ActionIcon,
     Badge,
     Progress,
     Tooltip,
@@ -38,6 +37,7 @@ import {
     resetPerfDiagnostics,
     type PerfDiagnosticsSnapshot,
 } from '../../utils/perfDiagnostics';
+import { SwarmActionIcon as ActionIcon } from '../ui';
 
 const isDev = import.meta.env.DEV;
 

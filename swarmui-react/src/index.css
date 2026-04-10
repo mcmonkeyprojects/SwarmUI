@@ -22,7 +22,7 @@ body,
   overflow: hidden;
   background-color: var(--theme-surface-app, #0b0f14) !important;
   color: var(--theme-text-on-app, #ffffff) !important;
-  font-family: var(--theme-font-family, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-family: var(--theme-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
 }
 
 #root {
@@ -51,8 +51,8 @@ h6 {
 }
 
 /* Mantine Text with dimmed color - use theme gray (gray-2 for better readability) */
-.mantine-Text-root[data-c="dimmed"],
-[class*="dimmed"] {
+.mantine-Text-root[data-c='dimmed'],
+[class*='dimmed'] {
   color: var(--theme-text-secondary) !important;
 }
 
@@ -92,7 +92,8 @@ h6 {
   --app-toolbar-gap: 12px;
 
   /* === FONT SYSTEM === */
-  --font-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-primary:
+    'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-secondary: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, monospace;
   --font-heading: var(--font-primary);
 
@@ -119,7 +120,6 @@ h6 {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-
   /* Theme CSS variables - defaults (InvokeAI theme) */
   --theme-brand: #7c3aed;
   --theme-accent: #3b82f6;
@@ -131,7 +131,11 @@ h6 {
   --theme-error: #ef4444;
   --theme-surface-tint: rgba(124, 58, 237, 0.12);
   --theme-surface-tint-strength: 0.12;
-  --theme-panel-gradient: linear-gradient(180deg, color-mix(in srgb, #111827 92%, #7c3aed), #0b0f14);
+  --theme-panel-gradient: linear-gradient(
+    180deg,
+    color-mix(in srgb, #111827 92%, #7c3aed),
+    #0b0f14
+  );
   --theme-border-style: solid;
   --theme-border-width: 1px;
   --theme-stroke-style: standard;
@@ -170,6 +174,7 @@ h6 {
 
   /* UI Interaction Colors - defaults (computed from brand/accent) */
   --theme-selection-bg: color-mix(in srgb, var(--theme-brand) 25%, transparent);
+  --theme-selection-text: #ffffff;
   --theme-selection-border: var(--theme-brand);
   --theme-selected-surface: #2b2144;
   --theme-selected-surface-hover: #372a57;
@@ -200,7 +205,11 @@ h6 {
   --theme-syntax-comment: var(--theme-gray-4);
 
   /* Gradient accent */
-  --theme-brand-gradient: linear-gradient(135deg, var(--theme-brand), color-mix(in srgb, var(--theme-brand) 70%, var(--theme-accent)));
+  --theme-brand-gradient: linear-gradient(
+    135deg,
+    var(--theme-brand),
+    color-mix(in srgb, var(--theme-brand) 70%, var(--theme-accent))
+  );
   --theme-seed: 0;
   --theme-brand-soft: color-mix(in srgb, var(--theme-brand) 24%, transparent);
   --theme-accent-soft: color-mix(in srgb, var(--theme-accent) 22%, transparent);
@@ -212,7 +221,11 @@ h6 {
     radial-gradient(circle at 18% 12%, var(--theme-brand-soft), transparent 56%),
     radial-gradient(circle at 80% 8%, var(--theme-accent-soft), transparent 52%),
     radial-gradient(circle at 48% 78%, var(--theme-highlight-soft), transparent 60%);
-  --theme-interactive-gradient: linear-gradient(120deg, var(--theme-accent-soft), var(--theme-brand-soft));
+  --theme-interactive-gradient: linear-gradient(
+    120deg,
+    var(--theme-accent-soft),
+    var(--theme-brand-soft)
+  );
 
   /* Semantic colors */
   --theme-info: var(--theme-accent);
@@ -244,32 +257,60 @@ h6 {
   --theme-tone-secondary-border: color-mix(in srgb, var(--theme-gray-4) 65%, transparent);
   --theme-tone-secondary-text: var(--theme-gray-0);
   --theme-tone-secondary-glow: color-mix(in srgb, var(--theme-gray-4) 28%, transparent);
-  --theme-tone-success-bg: linear-gradient(135deg, var(--theme-success), color-mix(in srgb, var(--theme-success) 78%, black));
+  --theme-tone-success-bg: linear-gradient(
+    135deg,
+    var(--theme-success),
+    color-mix(in srgb, var(--theme-success) 78%, black)
+  );
   --theme-tone-success-soft: color-mix(in srgb, var(--theme-success) 24%, transparent);
   --theme-tone-success-border: color-mix(in srgb, var(--theme-success) 55%, transparent);
   --theme-tone-success-text: var(--theme-success-text, #ffffff);
   --theme-tone-success-glow: color-mix(in srgb, var(--theme-success) 40%, transparent);
-  --theme-tone-warning-bg: linear-gradient(135deg, var(--theme-warning), color-mix(in srgb, var(--theme-warning) 76%, black));
+  --theme-tone-warning-bg: linear-gradient(
+    135deg,
+    var(--theme-warning),
+    color-mix(in srgb, var(--theme-warning) 76%, black)
+  );
   --theme-tone-warning-soft: color-mix(in srgb, var(--theme-warning) 24%, transparent);
   --theme-tone-warning-border: color-mix(in srgb, var(--theme-warning) 55%, transparent);
   --theme-tone-warning-text: var(--theme-warning-text, #ffffff);
   --theme-tone-warning-glow: color-mix(in srgb, var(--theme-warning) 40%, transparent);
-  --theme-tone-danger-bg: linear-gradient(135deg, var(--theme-error), color-mix(in srgb, var(--theme-error) 78%, black));
+  --theme-tone-danger-bg: linear-gradient(
+    135deg,
+    var(--theme-error),
+    color-mix(in srgb, var(--theme-error) 78%, black)
+  );
   --theme-tone-danger-soft: color-mix(in srgb, var(--theme-error) 24%, transparent);
   --theme-tone-danger-border: color-mix(in srgb, var(--theme-error) 55%, transparent);
   --theme-tone-danger-text: var(--theme-error-text, #ffffff);
   --theme-tone-danger-glow: color-mix(in srgb, var(--theme-error) 40%, transparent);
-  --theme-tone-info-bg: linear-gradient(135deg, var(--theme-info), color-mix(in srgb, var(--theme-info) 78%, black));
+  --theme-tone-info-bg: linear-gradient(
+    135deg,
+    var(--theme-info),
+    color-mix(in srgb, var(--theme-info) 78%, black)
+  );
   --theme-tone-info-soft: color-mix(in srgb, var(--theme-info) 24%, transparent);
   --theme-tone-info-border: color-mix(in srgb, var(--theme-info) 55%, transparent);
   --theme-tone-info-text: var(--theme-brand-text, #ffffff);
   --theme-tone-info-glow: color-mix(in srgb, var(--theme-info) 40%, transparent);
   /* Progress theming */
-  --theme-progress-track-bg: linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-7)), color-mix(in srgb, var(--theme-gray-8) 84%, var(--theme-gray-7)));
+  --theme-progress-track-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-7)),
+    color-mix(in srgb, var(--theme-gray-8) 84%, var(--theme-gray-7))
+  );
   --theme-progress-track-border: color-mix(in srgb, var(--theme-gray-4) 62%, var(--theme-gray-5));
   --theme-progress-track-inset: color-mix(in srgb, var(--theme-gray-0) 10%, transparent);
-  --theme-progress-fill: linear-gradient(90deg, var(--theme-brand), color-mix(in srgb, var(--theme-brand) 62%, var(--theme-accent)));
-  --theme-progress-fill-complete: linear-gradient(90deg, var(--theme-success), color-mix(in srgb, var(--theme-success) 60%, var(--theme-accent)));
+  --theme-progress-fill: linear-gradient(
+    90deg,
+    var(--theme-brand),
+    color-mix(in srgb, var(--theme-brand) 62%, var(--theme-accent))
+  );
+  --theme-progress-fill-complete: linear-gradient(
+    90deg,
+    var(--theme-success),
+    color-mix(in srgb, var(--theme-success) 60%, var(--theme-accent))
+  );
   --theme-progress-glow: color-mix(in srgb, var(--theme-brand) 42%, transparent);
   --theme-progress-glow-complete: color-mix(in srgb, var(--theme-success) 42%, transparent);
   --theme-progress-stripe-a: color-mix(in srgb, var(--theme-brand) 82%, var(--theme-accent));
@@ -351,12 +392,33 @@ h6 {
 /* === TEXT SELECTION STYLING === */
 ::selection {
   background-color: var(--theme-selection-bg);
-  color: inherit;
+  color: var(--theme-selection-text);
 }
 
 ::-moz-selection {
   background-color: var(--theme-selection-bg);
-  color: inherit;
+  color: var(--theme-selection-text);
+}
+
+/* Prevent accidental theme-highlight selection on control-like surfaces */
+.swarm-control-no-select,
+.mantine-Accordion-control,
+.mantine-Checkbox-root,
+.mantine-Checkbox-body,
+.mantine-Checkbox-labelWrapper,
+.mantine-Checkbox-label,
+.mantine-Chip-label,
+.mantine-SegmentedControl-label,
+.mantine-Switch-root,
+.mantine-Switch-body,
+.mantine-Switch-label,
+.mantine-Tabs-tab,
+.swarm-action-icon,
+.swarm-badge,
+.swarm-button,
+.swarm-status-pill {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* === ANIMATION KEYFRAMES === */
@@ -499,7 +561,6 @@ h6 {
 
 /* Pulse for loading states */
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -512,7 +573,6 @@ h6 {
 
 /* Subtle glow for focus states */
 @keyframes subtleGlow {
-
   0%,
   100% {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-brand) 0%, transparent);
@@ -561,11 +621,15 @@ h6 {
 
 @keyframes ambientShift {
   0% {
-    background-position: 0 0, 0 0;
+    background-position:
+      0 0,
+      0 0;
   }
 
   100% {
-    background-position: 120px 60px, -100px -40px;
+    background-position:
+      120px 60px,
+      -100px -40px;
   }
 }
 
@@ -607,14 +671,16 @@ h6 {
 }
 
 .transition-colors {
-  transition: background-color var(--transition-duration) ease,
+  transition:
+    background-color var(--transition-duration) ease,
     border-color var(--transition-duration) ease,
     color var(--transition-duration) ease;
 }
 
 /* Panel transition for smooth collapse/expand */
 .panel-transition {
-  transition: width var(--animation-duration) var(--ease-out-expo),
+  transition:
+    width var(--animation-duration) var(--ease-out-expo),
     height var(--animation-duration) var(--ease-out-expo),
     min-width var(--animation-duration) var(--ease-out-expo),
     max-width var(--animation-duration) var(--ease-out-expo),
@@ -623,7 +689,6 @@ h6 {
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
@@ -632,7 +697,7 @@ h6 {
     transition-duration: 0.01ms !important;
   }
 
-  .fx-stagger>*,
+  .fx-stagger > *,
   .fx-reveal {
     animation: none !important;
     opacity: 1 !important;
@@ -702,73 +767,73 @@ h6 {
 }
 
 /* Data attribute for reduced motion from animationStore */
-[data-reduced-motion="true"] *,
-[data-reduced-motion="true"] *::before,
-[data-reduced-motion="true"] *::after {
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
 }
 
-[data-reduced-motion="true"] .fx-stagger>*,
-[data-reduced-motion="true"] .fx-reveal {
+[data-reduced-motion='true'] .fx-stagger > *,
+[data-reduced-motion='true'] .fx-reveal {
   animation: none !important;
   opacity: 1 !important;
   transform: none !important;
 }
 
-[data-reduced-motion="true"] .fx-hover-lift:hover {
+[data-reduced-motion='true'] .fx-hover-lift:hover {
   transform: none !important;
   box-shadow: inherit !important;
 }
 
-[data-effects="off"] .mantine-AppShell-main::before,
-[data-effects="off"] .mantine-AppShell-main::after,
-[data-effects="off"] .ui-hero::before,
-[data-effects="off"] .ui-hero::after {
+[data-effects='off'] .mantine-AppShell-main::before,
+[data-effects='off'] .mantine-AppShell-main::after,
+[data-effects='off'] .ui-hero::before,
+[data-effects='off'] .ui-hero::after {
   animation: none !important;
   opacity: 0 !important;
 }
 
-[data-effects="off"] .fx-gradient-sweep::after {
+[data-effects='off'] .fx-gradient-sweep::after {
   display: none !important;
 }
 
-[data-effects="off"] .fx-shimmer,
-[data-effects="off"] .fx-icon-float {
+[data-effects='off'] .fx-shimmer,
+[data-effects='off'] .fx-icon-float {
   animation: none !important;
 }
 
-[data-effects="off"] .fx-hover-lift:hover {
+[data-effects='off'] .fx-hover-lift:hover {
   transform: none !important;
 }
 
-[data-ambient-motion="off"] .mantine-AppShell-main::before,
-[data-ambient-motion="off"] .mantine-AppShell-main::after,
-[data-ambient-motion="off"] .ui-hero::before,
-[data-ambient-motion="off"] .ui-hero::after,
-[data-ambient-motion="off"] .fx-icon-float {
+[data-ambient-motion='off'] .mantine-AppShell-main::before,
+[data-ambient-motion='off'] .mantine-AppShell-main::after,
+[data-ambient-motion='off'] .ui-hero::before,
+[data-ambient-motion='off'] .ui-hero::after,
+[data-ambient-motion='off'] .fx-icon-float {
   animation: none !important;
 }
 
-[data-loading-animations="off"] .fx-shimmer {
+[data-loading-animations='off'] .fx-shimmer {
   animation: none !important;
   background-position: 0 0 !important;
 }
 
-[data-hover-lift="off"] .fx-hover-lift:hover,
-[data-hover-lift="off"] [data-hover-lift="true"]:hover {
+[data-hover-lift='off'] .fx-hover-lift:hover,
+[data-hover-lift='off'] [data-hover-lift='true']:hover {
   transform: none !important;
   box-shadow: inherit !important;
 }
 
-[data-theme-family="glyph"] {
+[data-theme-family='glyph'] {
   --theme-family-animation-curve: steps(6, end);
   --motion-reveal-distance: 10px;
   --motion-float-distance: 1px;
 }
 
-[data-theme-family="material"] {
+[data-theme-family='material'] {
   --theme-family-animation-curve: cubic-bezier(0.2, 0.85, 0.2, 1);
   --motion-reveal-distance: 6px;
   --motion-float-distance: 3px;
@@ -778,7 +843,9 @@ a {
   font-weight: 500;
   color: var(--theme-brand);
   text-decoration: none;
-  transition: color 150ms ease, text-decoration-color 150ms ease;
+  transition:
+    color 150ms ease,
+    text-decoration-color 150ms ease;
 }
 
 a:hover {
@@ -897,10 +964,21 @@ h1 {
   inset: 0;
   pointer-events: none;
   background-image:
-    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--theme-gray-0) 10%, transparent) 1px, transparent 0),
-    linear-gradient(120deg, color-mix(in srgb, var(--theme-accent-2) 9%, transparent), transparent 48%),
+    radial-gradient(
+      circle at 1px 1px,
+      color-mix(in srgb, var(--theme-gray-0) 10%, transparent) 1px,
+      transparent 0
+    ),
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--theme-accent-2) 9%, transparent),
+      transparent 48%
+    ),
     var(--theme-interactive-gradient);
-  background-size: 26px 26px, 100% 100%, 100% 100%;
+  background-size:
+    26px 26px,
+    100% 100%,
+    100% 100%;
   opacity: calc(0.35 * var(--effects-intensity));
   animation:
     ambientShift calc(34s * var(--motion-ambient-factor)) linear infinite,
@@ -908,7 +986,7 @@ h1 {
   z-index: 0;
 }
 
-.mantine-AppShell-main>* {
+.mantine-AppShell-main > * {
   position: relative;
   z-index: 1;
 }
@@ -922,7 +1000,11 @@ h1 {
 
 .mantine-AppShell-header {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 16%, transparent), transparent 72%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 16%, transparent),
+      transparent 72%
+    ),
     var(--theme-surface-header) !important;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5)) !important;
   box-shadow: 0 10px 28px color-mix(in srgb, black 22%, transparent);
@@ -936,7 +1018,11 @@ h1 {
 
 .surface-table {
   background-color: var(--theme-surface-panel) !important;
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 12%, transparent), transparent 64%);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-surface-tint) 12%, transparent),
+    transparent 64%
+  );
   border: var(--elevation-border-subtle);
 }
 
@@ -959,11 +1045,15 @@ h1 {
   background-color: var(--theme-surface-card) !important;
 }
 
-[data-theme-surface="tonal"] .surface-table,
-[data-theme-surface="tonal"] .surface-paper,
-[data-theme-surface="tonal"] .surface-raised {
+[data-theme-surface='tonal'] .surface-table,
+[data-theme-surface='tonal'] .surface-paper,
+[data-theme-surface='tonal'] .surface-raised {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 14%, transparent), transparent 70%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 14%, transparent),
+      transparent 70%
+    ),
     var(--theme-surface-card) !important;
   border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5)) !important;
   box-shadow:
@@ -971,12 +1061,16 @@ h1 {
     var(--elevation-shadow-sm);
 }
 
-[data-theme-surface="ornamented"] .surface-table,
-[data-theme-surface="ornamented"] .surface-paper,
-[data-theme-surface="ornamented"] .surface-raised {
+[data-theme-surface='ornamented'] .surface-table,
+[data-theme-surface='ornamented'] .surface-paper,
+[data-theme-surface='ornamented'] .surface-raised {
   background-color: var(--theme-surface-card) !important;
   background-image:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 16%, transparent), transparent 66%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 16%, transparent),
+      transparent 66%
+    ),
     var(--theme-motif-overlay-panel);
   border-color: color-mix(in srgb, var(--theme-accent-2) 28%, var(--theme-gray-5)) !important;
   box-shadow:
@@ -984,13 +1078,17 @@ h1 {
     var(--elevation-shadow-sm);
 }
 
-[data-theme-family="material"] .mantine-Card-root,
-[data-theme-family="material"] .mantine-Paper-root,
-[data-theme-family="material"] .mantine-Popover-dropdown,
-[data-theme-family="material"] .mantine-Accordion-item,
-[data-theme-family="material"] .mantine-Tabs-panel {
+[data-theme-family='material'] .mantine-Card-root,
+[data-theme-family='material'] .mantine-Paper-root,
+[data-theme-family='material'] .mantine-Popover-dropdown,
+[data-theme-family='material'] .mantine-Accordion-item,
+[data-theme-family='material'] .mantine-Tabs-panel {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 12%, transparent), transparent 70%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 12%, transparent),
+      transparent 70%
+    ),
     var(--theme-surface-card) !important;
   border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5)) !important;
   box-shadow:
@@ -998,62 +1096,74 @@ h1 {
     var(--elevation-shadow-sm) !important;
 }
 
-[data-theme-family="glyph"] .mantine-Card-root,
-[data-theme-family="glyph"] .mantine-Paper-root,
-[data-theme-family="glyph"] .mantine-Popover-dropdown,
-[data-theme-family="glyph"] .mantine-Accordion-item,
-[data-theme-family="glyph"] .mantine-Tabs-panel {
+[data-theme-family='glyph'] .mantine-Card-root,
+[data-theme-family='glyph'] .mantine-Paper-root,
+[data-theme-family='glyph'] .mantine-Popover-dropdown,
+[data-theme-family='glyph'] .mantine-Accordion-item,
+[data-theme-family='glyph'] .mantine-Tabs-panel {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 14%, transparent), transparent 68%),
-    var(--theme-motif-overlay-panel),
-    var(--theme-surface-card) !important;
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 14%, transparent),
+      transparent 68%
+    ),
+    var(--theme-motif-overlay-panel), var(--theme-surface-card) !important;
   border-color: color-mix(in srgb, var(--theme-accent-2) 28%, var(--theme-gray-5)) !important;
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-2) 12%, transparent),
     var(--elevation-shadow-sm) !important;
 }
 
-[data-theme-family="material"] .mantine-Input-input,
-[data-theme-family="material"] .mantine-Textarea-input,
-[data-theme-family="material"] .mantine-Combobox-dropdown,
-[data-theme-family="material"] .mantine-Tabs-tab {
+[data-theme-family='material'] .mantine-Input-input,
+[data-theme-family='material'] .mantine-Textarea-input,
+[data-theme-family='material'] .mantine-Combobox-dropdown,
+[data-theme-family='material'] .mantine-Tabs-tab {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 10%, transparent), transparent 76%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      transparent 76%
+    ),
     var(--theme-surface-input) !important;
   border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5)) !important;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 5%, transparent);
 }
 
-[data-theme-family="glyph"] .mantine-Input-input,
-[data-theme-family="glyph"] .mantine-Textarea-input,
-[data-theme-family="glyph"] .mantine-Combobox-dropdown,
-[data-theme-family="glyph"] .mantine-Tabs-tab {
+[data-theme-family='glyph'] .mantine-Input-input,
+[data-theme-family='glyph'] .mantine-Textarea-input,
+[data-theme-family='glyph'] .mantine-Combobox-dropdown,
+[data-theme-family='glyph'] .mantine-Tabs-tab {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 10%, transparent), transparent 74%),
-    var(--theme-motif-overlay-input),
-    var(--theme-surface-input) !important;
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 10%, transparent),
+      transparent 74%
+    ),
+    var(--theme-motif-overlay-input), var(--theme-surface-input) !important;
   border-color: color-mix(in srgb, var(--theme-accent-2) 24%, var(--theme-gray-5)) !important;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-2) 10%, transparent);
 }
 
 /* Inline style overrides for panels */
-[style*="invokeGray-8"] {
+[style*='invokeGray-8'] {
   background-color: var(--theme-gray-8) !important;
 }
 
-[style*="invokeGray-9"] {
+[style*='invokeGray-9'] {
   background-color: var(--theme-canvas-bg) !important;
 }
 
 /* Resize handles */
-[style*="col-resize"],
-[style*="row-resize"] {
+[style*='col-resize'],
+[style*='row-resize'] {
   background-color: var(--theme-gray-5) !important;
-  transition: background-color 150ms ease, width 150ms ease !important;
+  transition:
+    background-color 150ms ease,
+    width 150ms ease !important;
 }
 
-[style*="col-resize"]:hover,
-[style*="row-resize"]:hover {
+[style*='col-resize']:hover,
+[style*='row-resize']:hover {
   background-color: var(--theme-brand) !important;
 }
 
@@ -1062,9 +1172,14 @@ h1 {
   background-color: var(--theme-surface-card) !important;
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-gray-5) !important;
   border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 12%, transparent), transparent 68%);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-surface-tint) 12%, transparent),
+    transparent 68%
+  );
   box-shadow: 0 1px 3px var(--theme-shadow-color) !important;
-  transition: transform calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve),
+  transition:
+    transform calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve),
     box-shadow calc(120ms * var(--motion-factor)) ease,
     border-color calc(100ms * var(--motion-factor)) ease !important;
   /* GPU acceleration for smooth hover animations */
@@ -1087,29 +1202,45 @@ h1 {
 
 .swarm-contrast-panel {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 10%, transparent), transparent 74%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      transparent 74%
+    ),
     var(--theme-surface-card) !important;
   color: var(--theme-text-on-card) !important;
 }
 
 .swarm-contrast-bubble {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 9%, transparent), transparent 74%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 9%, transparent),
+      transparent 74%
+    ),
     var(--theme-surface-card) !important;
   border: 1px solid color-mix(in srgb, var(--theme-selected-border) 14%, var(--theme-gray-5)) !important;
   color: var(--theme-text-on-card) !important;
 }
 
-.swarm-contrast-bubble[data-role="assistant"] {
+.swarm-contrast-bubble[data-role='assistant'] {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 18%, transparent), transparent 68%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 18%, transparent),
+      transparent 68%
+    ),
     var(--theme-surface-raised) !important;
   border-color: color-mix(in srgb, var(--theme-selected-border) 38%, transparent) !important;
 }
 
-.swarm-selectable-card[data-selected="true"] {
+.swarm-selectable-card[data-selected='true'] {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-selected-border) 12%, transparent), transparent 72%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-selected-border) 12%, transparent),
+      transparent 72%
+    ),
     var(--theme-selected-surface) !important;
   border-color: var(--theme-selected-border) !important;
   box-shadow:
@@ -1118,18 +1249,22 @@ h1 {
   color: var(--theme-selected-text) !important;
 }
 
-.swarm-selectable-card[data-selected="true"] .mantine-Text-root,
-.swarm-selectable-card[data-selected="true"] .mantine-Badge-root,
-.swarm-selectable-card[data-selected="true"] .mantine-ActionIcon-root,
-.swarm-selectable-card[data-selected="true"] .mantine-InputWrapper-label,
-.swarm-selectable-card[data-selected="true"] .mantine-NumberInput-input,
-.swarm-selectable-card[data-selected="true"] .mantine-Checkbox-label {
+.swarm-selectable-card[data-selected='true'] .mantine-Text-root,
+.swarm-selectable-card[data-selected='true'] .mantine-Badge-root,
+.swarm-selectable-card[data-selected='true'] .mantine-ActionIcon-root,
+.swarm-selectable-card[data-selected='true'] .mantine-InputWrapper-label,
+.swarm-selectable-card[data-selected='true'] .mantine-NumberInput-input,
+.swarm-selectable-card[data-selected='true'] .mantine-Checkbox-label {
   color: var(--theme-selected-text) !important;
 }
 
-.swarm-selectable-card[data-selected="true"] .mantine-Text-root[data-c="dimmed"],
-.swarm-selectable-card[data-selected="true"] [class*="dimmed"] {
-  color: color-mix(in srgb, var(--theme-selected-text) 78%, var(--theme-selected-surface)) !important;
+.swarm-selectable-card[data-selected='true'] .mantine-Text-root[data-c='dimmed'],
+.swarm-selectable-card[data-selected='true'] [class*='dimmed'] {
+  color: color-mix(
+    in srgb,
+    var(--theme-selected-text) 78%,
+    var(--theme-selected-surface)
+  ) !important;
 }
 
 .swarm-selected-table-row td {
@@ -1143,49 +1278,80 @@ h1 {
   color: var(--theme-selected-text) !important;
 }
 
-.swarm-selected-table-row .mantine-Text-root[data-c="dimmed"],
-.swarm-selected-table-row [class*="dimmed"] {
-  color: color-mix(in srgb, var(--theme-selected-text) 78%, var(--theme-selected-surface)) !important;
+.swarm-selected-table-row .mantine-Text-root[data-c='dimmed'],
+.swarm-selected-table-row [class*='dimmed'] {
+  color: color-mix(
+    in srgb,
+    var(--theme-selected-text) 78%,
+    var(--theme-selected-surface)
+  ) !important;
 }
 
-.swarm-gallery-image-card[data-selected="true"]::before {
+.swarm-gallery-image-card[data-selected='true']::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-selected-border) 10%, transparent), transparent 72%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-selected-border) 10%, transparent),
+      transparent 72%
+    ),
     var(--theme-selected-scrim);
   z-index: 1;
 }
 
-.swarm-gallery-image-card[data-selected="true"] .mantine-Checkbox-root,
-.swarm-gallery-image-card[data-selected="true"] .mantine-Badge-root,
-.swarm-gallery-image-card[data-selected="true"] .mantine-ActionIcon-root {
+.swarm-gallery-image-card[data-selected='true'] .mantine-Checkbox-root,
+.swarm-gallery-image-card[data-selected='true'] .mantine-Badge-root,
+.swarm-gallery-image-card[data-selected='true'] .mantine-ActionIcon-root {
   position: relative;
   z-index: 2;
 }
 
 /* Shared surface polish for elevated containers */
-:is(.mantine-Card-root, .mantine-Paper-root, .mantine-Accordion-item, .mantine-Modal-content, .mantine-Drawer-content) {
+:is(
+  .mantine-Card-root,
+  .mantine-Paper-root,
+  .mantine-Accordion-item,
+  .mantine-Modal-content,
+  .mantine-Drawer-content
+) {
   position: relative;
   isolation: isolate;
 }
 
-:is(.mantine-Card-root, .mantine-Paper-root, .mantine-Accordion-item, .mantine-Modal-content, .mantine-Drawer-content)::after {
+:is(
+  .mantine-Card-root,
+  .mantine-Paper-root,
+  .mantine-Accordion-item,
+  .mantine-Modal-content,
+  .mantine-Drawer-content
+)::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(165deg, color-mix(in srgb, var(--theme-gray-0) 4%, transparent), transparent 48%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--theme-gray-0) 4%, transparent),
+      transparent 48%
+    ),
     radial-gradient(circle at 82% -8%, var(--theme-brand-soft), transparent 56%),
     radial-gradient(circle at 12% 100%, var(--theme-accent-soft), transparent 54%);
   opacity: calc(var(--theme-surface-overlay-opacity) * var(--effects-intensity));
   z-index: 0;
 }
 
-:is(.mantine-Card-root, .mantine-Paper-root, .mantine-Accordion-item, .mantine-Modal-content, .mantine-Drawer-content)>* {
+:is(
+    .mantine-Card-root,
+    .mantine-Paper-root,
+    .mantine-Accordion-item,
+    .mantine-Modal-content,
+    .mantine-Drawer-content
+  )
+  > * {
   position: relative;
   z-index: 1;
 }
@@ -1212,7 +1378,11 @@ hr,
 .mantine-MultiSelect-input,
 .mantine-PasswordInput-input {
   background-color: var(--theme-surface-input) !important;
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--theme-accent-soft) 10%, transparent), transparent 70%);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent-soft) 10%, transparent),
+    transparent 70%
+  );
   border-color: var(--theme-gray-5) !important;
   color: var(--theme-text-on-input) !important;
   transition:
@@ -1242,7 +1412,9 @@ hr,
 .mantine-Select-input:focus,
 .mantine-NumberInput-input:focus {
   border-color: var(--theme-brand) !important;
-  box-shadow: 0 0 0 1px var(--theme-brand), 0 0 0 4px var(--theme-brand-soft) !important;
+  box-shadow:
+    0 0 0 1px var(--theme-brand),
+    0 0 0 4px var(--theme-brand-soft) !important;
 }
 
 .mantine-Select-dropdown,
@@ -1250,7 +1422,11 @@ hr,
 .mantine-Autocomplete-dropdown,
 .mantine-Combobox-dropdown {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 12%, transparent), transparent 68%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 12%, transparent),
+      transparent 68%
+    ),
     var(--theme-surface-dropdown) !important;
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-gray-5) !important;
   box-shadow: var(--elevation-shadow-md) !important;
@@ -1303,8 +1479,13 @@ hr,
 }
 
 .mantine-Checkbox-input:checked {
-  background-color: var(--theme-brand) !important;
-  border-color: var(--theme-brand) !important;
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--theme-brand) 62%, var(--theme-gray-4)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 20%, transparent);
+}
+
+.mantine-Checkbox-icon {
+  color: var(--theme-brand) !important;
 }
 
 .mantine-Checkbox-label {
@@ -1314,8 +1495,12 @@ hr,
 /* === BUTTONS === */
 .mantine-Button-root {
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-gray-4) !important;
-  border-radius: calc(6px * var(--theme-radius-multiplier)) !important;
-  color: var(--theme-gray-0) !important;
+  border-radius: var(--theme-control-radius) !important;
+  background: var(--theme-control-neutral-bg) !important;
+  color: var(--theme-text-primary) !important;
+  box-shadow:
+    inset 0 1px 0 var(--theme-control-highlight),
+    var(--elevation-shadow-sm) !important;
   transition: all calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important;
   position: relative;
   isolation: isolate;
@@ -1331,31 +1516,35 @@ hr,
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-gray-0) 15%, transparent), transparent 48%),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-gray-0) 15%, transparent),
+      transparent 48%
+    ),
     radial-gradient(circle at 88% -12%, var(--theme-highlight-soft), transparent 58%);
   opacity: 0;
   transition: opacity calc(140ms * var(--motion-factor)) ease;
   z-index: 0;
 }
 
-.mantine-Button-root[data-variant="filled"],
-.mantine-Button-root[data-variant="light"],
-.mantine-Button-root[data-color*="Brand"],
-.mantine-Button-root[data-color*="brand"],
-.mantine-Button-root[data-color="invokeBrand"],
-[data-color="invokeBrand"],
-[style*="invokeBrand"],
-button[class*="invokeBrand"],
-.mantine-Button-root[class*="invokeBrand"] {
+.mantine-Button-root[data-variant='filled'],
+.mantine-Button-root[data-variant='light'],
+.mantine-Button-root[data-color*='Brand'],
+.mantine-Button-root[data-color*='brand'],
+.mantine-Button-root[data-color='invokeBrand'],
+[data-color='invokeBrand'],
+[style*='invokeBrand'],
+button[class*='invokeBrand'],
+.mantine-Button-root[class*='invokeBrand'] {
   background-color: var(--theme-brand) !important;
   border-color: var(--theme-brand) !important;
   color: var(--theme-brand-text, #ffffff) !important;
 }
 
-.mantine-Button-root[data-variant="filled"]:hover,
-.mantine-Button-root[data-variant="light"]:hover,
-.mantine-Button-root[data-color*="Brand"]:hover,
-.mantine-Button-root[data-color="invokeBrand"]:hover {
+.mantine-Button-root[data-variant='filled']:hover,
+.mantine-Button-root[data-variant='light']:hover,
+.mantine-Button-root[data-color*='Brand']:hover,
+.mantine-Button-root[data-color='invokeBrand']:hover {
   filter: brightness(1.06);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 6%, transparent),
@@ -1366,21 +1555,21 @@ button[class*="invokeBrand"],
   opacity: calc(0.9 * var(--effects-intensity));
 }
 
-.mantine-Button-root[data-variant="outline"] {
-  background-color: transparent !important;
-  border-color: var(--theme-gray-4) !important;
+.mantine-Button-root[data-variant='outline'] {
+  background: color-mix(in srgb, var(--theme-surface-card) 88%, transparent) !important;
+  border-color: var(--theme-control-border-strong) !important;
   color: var(--theme-text-primary) !important;
 }
 
-.mantine-Button-root[data-variant="subtle"] {
-  background-color: var(--theme-interactive-hover-surface) !important;
-  border: 1px solid color-mix(in srgb, var(--theme-gray-4) 28%, transparent) !important;
+.mantine-Button-root[data-variant='subtle'] {
+  background: color-mix(in srgb, var(--theme-brand-soft) 30%, var(--theme-surface-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-brand) 28%, transparent) !important;
   color: var(--theme-text-primary) !important;
 }
 
-.mantine-Button-root[data-variant="default"] {
-  background-color: var(--theme-surface-raised) !important;
-  border-color: var(--theme-gray-4) !important;
+.mantine-Button-root[data-variant='default'] {
+  background: var(--theme-control-neutral-bg) !important;
+  border-color: var(--theme-control-border-soft) !important;
   color: var(--theme-text-primary) !important;
 }
 
@@ -1394,44 +1583,52 @@ button[class*="invokeBrand"],
 
 /* === ACTION ICONS === */
 .mantine-ActionIcon-root {
-  border: 1px solid transparent !important;
+  border: 1px solid var(--theme-control-border-soft) !important;
+  border-radius: var(--theme-icon-radius) !important;
   color: var(--theme-text-primary) !important;
   transition: all 0.1s ease !important;
-  background-image: linear-gradient(150deg, color-mix(in srgb, var(--theme-brand-soft) 40%, transparent), transparent 58%);
+  background: var(--theme-control-neutral-bg) !important;
+  box-shadow:
+    inset 0 1px 0 var(--theme-control-highlight),
+    var(--elevation-shadow-sm) !important;
   /* GPU acceleration for smooth hover */
   transform: translateZ(0);
   will-change: transform, background-color;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
 
-.mantine-ActionIcon-root[data-variant="filled"] {
+.mantine-ActionIcon-root[data-variant='filled'] {
   background-color: var(--theme-brand) !important;
   border-color: var(--theme-brand) !important;
   color: var(--theme-gray-0) !important;
 }
 
-.mantine-ActionIcon-root[data-variant="default"] {
-  background-color: var(--theme-surface-raised) !important;
-  border-color: var(--theme-gray-4) !important;
+.mantine-ActionIcon-root[data-variant='default'] {
+  background: var(--theme-control-neutral-bg) !important;
+  border-color: var(--theme-control-border-soft) !important;
 }
 
-.mantine-ActionIcon-root[data-variant="light"] {
+.mantine-ActionIcon-root[data-variant='light'] {
   background-color: var(--theme-brand) !important;
   border-color: var(--theme-brand) !important;
   color: var(--theme-gray-0) !important;
 }
 
-.mantine-ActionIcon-root[data-variant="subtle"] {
-  background-color: var(--theme-interactive-hover-surface) !important;
-  border: 1px solid color-mix(in srgb, var(--theme-gray-4) 32%, transparent) !important;
+.mantine-ActionIcon-root[data-variant='subtle'] {
+  background: color-mix(in srgb, var(--theme-brand-soft) 30%, var(--theme-surface-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-brand) 30%, transparent) !important;
 }
 
 .mantine-ActionIcon-root:hover {
-  background-color: var(--theme-interactive-active-surface) !important;
+  background: var(--theme-control-neutral-bg-hover) !important;
+  border-color: var(--theme-control-border-strong) !important;
   color: var(--theme-interactive-text) !important;
 }
 
-.mantine-ActionIcon-root[data-variant="filled"]:hover,
-.mantine-ActionIcon-root[data-variant="light"]:hover {
+.mantine-ActionIcon-root[data-variant='filled']:hover,
+.mantine-ActionIcon-root[data-variant='light']:hover {
   background-color: var(--theme-brand) !important;
   filter: brightness(1.15);
 }
@@ -1512,19 +1709,24 @@ button[class*="invokeBrand"],
 .mantine-Switch-track {
   background-color: var(--theme-gray-6) !important;
   border-color: var(--theme-gray-5) !important;
-  transition: background-color 120ms ease, border-color 120ms ease !important;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease !important;
 }
 
-.mantine-Switch-track[data-checked="true"],
-.mantine-Switch-input:checked+.mantine-Switch-track {
-  background-color: var(--theme-brand) !important;
-  border-color: var(--theme-brand) !important;
+.mantine-Switch-track[data-checked='true'],
+.mantine-Switch-input:checked + .mantine-Switch-track {
+  background: transparent !important;
+  border-color: color-mix(in srgb, var(--theme-brand) 56%, var(--theme-gray-4)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 16%, transparent);
 }
 
 .mantine-Switch-thumb {
   background-color: var(--theme-gray-0) !important;
   border-color: var(--theme-gray-4) !important;
-  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), left 140ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  transition:
+    transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    left 140ms cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .mantine-Switch-label {
@@ -1539,9 +1741,14 @@ button[class*="invokeBrand"],
 }
 
 .mantine-Chip-label[data-checked] {
-  background-color: var(--theme-selected-surface) !important;
-  border-color: var(--theme-selected-border) !important;
+  background: transparent !important;
+  border-color: color-mix(
+    in srgb,
+    var(--theme-selected-border) 76%,
+    var(--theme-gray-4)
+  ) !important;
   color: var(--theme-selected-text) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-selected-border) 18%, transparent);
 }
 
 /* === PROGRESS === */
@@ -1564,14 +1771,13 @@ button[class*="invokeBrand"],
 }
 
 .swarm-progress-indeterminate .mantine-Progress-section {
-  background:
-    repeating-linear-gradient(
-      120deg,
-      var(--theme-progress-stripe-a) 0px,
-      var(--theme-progress-stripe-a) 14px,
-      var(--theme-progress-stripe-b) 14px,
-      var(--theme-progress-stripe-b) 28px
-    ) !important;
+  background: repeating-linear-gradient(
+    120deg,
+    var(--theme-progress-stripe-a) 0px,
+    var(--theme-progress-stripe-a) 14px,
+    var(--theme-progress-stripe-b) 14px,
+    var(--theme-progress-stripe-b) 28px
+  ) !important;
   background-size: 28px 100% !important;
   animation: swarm-progress-indeterminate-shift 800ms linear infinite;
 }
@@ -1590,19 +1796,23 @@ button[class*="invokeBrand"],
 .mantine-Badge-root {
   color: var(--theme-text-on-card) !important;
   background:
-    linear-gradient(150deg, color-mix(in srgb, var(--theme-accent-soft) 18%, transparent), transparent 74%),
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--theme-accent-soft) 18%, transparent),
+      transparent 74%
+    ),
     var(--theme-surface-raised) !important;
   border: 1px solid var(--theme-gray-5) !important;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 9%, transparent);
 }
 
-.mantine-Badge-root[data-variant="filled"] {
+.mantine-Badge-root[data-variant='filled'] {
   background: var(--theme-tone-primary-bg) !important;
   border-color: var(--theme-tone-primary-border) !important;
   color: var(--theme-tone-primary-text) !important;
 }
 
-.mantine-Badge-root[data-variant="light"] {
+.mantine-Badge-root[data-variant='light'] {
   background-color: var(--theme-interactive-hover-surface) !important;
   color: var(--theme-text-primary) !important;
   border-color: color-mix(in srgb, var(--theme-selected-border) 32%, transparent) !important;
@@ -1625,107 +1835,107 @@ button[class*="invokeBrand"],
   stroke-width: var(--theme-icon-stroke-width);
 }
 
-[data-theme-family="glyph"] .mantine-Title-root,
-[data-theme-family="glyph"] h1,
-[data-theme-family="glyph"] h2,
-[data-theme-family="glyph"] h3,
-[data-theme-family="glyph"] h4,
-[data-theme-family="glyph"] h5,
-[data-theme-family="glyph"] h6 {
+[data-theme-family='glyph'] .mantine-Title-root,
+[data-theme-family='glyph'] h1,
+[data-theme-family='glyph'] h2,
+[data-theme-family='glyph'] h3,
+[data-theme-family='glyph'] h4,
+[data-theme-family='glyph'] h5,
+[data-theme-family='glyph'] h6 {
   font-family: var(--font-heading);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-[data-theme-family="glyph"] .mantine-Button-root,
-[data-theme-family="glyph"] .swarm-button,
-[data-theme-family="glyph"] .mantine-Badge-root,
-[data-theme-family="glyph"] .swarm-badge,
-[data-theme-family="glyph"] .mantine-ActionIcon-root,
-[data-theme-family="glyph"] .swarm-action-icon {
+[data-theme-family='glyph'] .mantine-Button-root,
+[data-theme-family='glyph'] .swarm-button,
+[data-theme-family='glyph'] .mantine-Badge-root,
+[data-theme-family='glyph'] .swarm-badge,
+[data-theme-family='glyph'] .mantine-ActionIcon-root,
+[data-theme-family='glyph'] .swarm-action-icon {
   border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
 }
 
-[data-theme-family="glyph"] .mantine-Button-label,
-[data-theme-family="glyph"] .mantine-Badge-label,
-[data-theme-family="glyph"] .mantine-SegmentedControl-label,
-[data-theme-family="glyph"] .mantine-Tabs-tab,
-[data-theme-family="glyph"] .mantine-Accordion-control,
-[data-theme-family="glyph"] .swarm-button,
-[data-theme-family="glyph"] .swarm-badge,
-[data-theme-family="glyph"] .swarm-status-pill {
+[data-theme-family='glyph'] .mantine-Button-label,
+[data-theme-family='glyph'] .mantine-Badge-label,
+[data-theme-family='glyph'] .mantine-SegmentedControl-label,
+[data-theme-family='glyph'] .mantine-Tabs-tab,
+[data-theme-family='glyph'] .mantine-Accordion-control,
+[data-theme-family='glyph'] .swarm-button,
+[data-theme-family='glyph'] .swarm-badge,
+[data-theme-family='glyph'] .swarm-status-pill {
   font-family: 'Nothing NDot 57 Caps', var(--font-secondary);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-[data-theme-family="glyph"] .mantine-Button-root,
-[data-theme-family="glyph"] .swarm-button {
+[data-theme-family='glyph'] .mantine-Button-root,
+[data-theme-family='glyph'] .swarm-button {
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-2) 12%, transparent),
     var(--elevation-shadow-sm) !important;
 }
 
-[data-theme-family="glyph"] .mantine-Button-root svg,
-[data-theme-family="glyph"] .mantine-ActionIcon-root svg,
-[data-theme-family="glyph"] .mantine-Badge-root svg,
-[data-theme-family="glyph"] .swarm-button svg,
-[data-theme-family="glyph"] .swarm-action-icon svg,
-[data-theme-family="glyph"] .swarm-badge svg {
+[data-theme-family='glyph'] .mantine-Button-root svg,
+[data-theme-family='glyph'] .mantine-ActionIcon-root svg,
+[data-theme-family='glyph'] .mantine-Badge-root svg,
+[data-theme-family='glyph'] .swarm-button svg,
+[data-theme-family='glyph'] .swarm-action-icon svg,
+[data-theme-family='glyph'] .swarm-badge svg {
   stroke-linecap: square;
   stroke-linejoin: miter;
   shape-rendering: geometricPrecision;
 }
 
-[data-theme-family="material"] .mantine-Button-root,
-[data-theme-family="material"] .swarm-button {
+[data-theme-family='material'] .mantine-Button-root,
+[data-theme-family='material'] .swarm-button {
   border-radius: calc(16px * var(--theme-radius-multiplier)) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 8%, transparent),
     var(--elevation-shadow-sm) !important;
 }
 
-[data-theme-family="material"] .mantine-ActionIcon-root,
-[data-theme-family="material"] .swarm-action-icon {
+[data-theme-family='material'] .mantine-ActionIcon-root,
+[data-theme-family='material'] .swarm-action-icon {
   border-radius: 999px !important;
 }
 
-[data-theme-family="material"] .mantine-Badge-root,
-[data-theme-family="material"] .swarm-badge {
+[data-theme-family='material'] .mantine-Badge-root,
+[data-theme-family='material'] .swarm-badge {
   border-radius: calc(999px * var(--theme-radius-multiplier)) !important;
 }
 
-[data-theme-family="material"] .mantine-Button-label,
-[data-theme-family="material"] .mantine-Badge-label,
-[data-theme-family="material"] .mantine-SegmentedControl-label,
-[data-theme-family="material"] .mantine-Tabs-tab,
-[data-theme-family="material"] .mantine-Accordion-control,
-[data-theme-family="material"] .swarm-button,
-[data-theme-family="material"] .swarm-badge,
-[data-theme-family="material"] .swarm-status-pill {
+[data-theme-family='material'] .mantine-Button-label,
+[data-theme-family='material'] .mantine-Badge-label,
+[data-theme-family='material'] .mantine-SegmentedControl-label,
+[data-theme-family='material'] .mantine-Tabs-tab,
+[data-theme-family='material'] .mantine-Accordion-control,
+[data-theme-family='material'] .swarm-button,
+[data-theme-family='material'] .swarm-badge,
+[data-theme-family='material'] .swarm-status-pill {
   font-family: var(--font-heading);
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: none;
 }
 
-[data-theme-family="material"] .mantine-Button-root svg,
-[data-theme-family="material"] .mantine-ActionIcon-root svg,
-[data-theme-family="material"] .mantine-Badge-root svg,
-[data-theme-family="material"] .swarm-button svg,
-[data-theme-family="material"] .swarm-action-icon svg,
-[data-theme-family="material"] .swarm-badge svg {
+[data-theme-family='material'] .mantine-Button-root svg,
+[data-theme-family='material'] .mantine-ActionIcon-root svg,
+[data-theme-family='material'] .mantine-Badge-root svg,
+[data-theme-family='material'] .swarm-button svg,
+[data-theme-family='material'] .swarm-action-icon svg,
+[data-theme-family='material'] .swarm-badge svg {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-[data-theme-id="nothing-signal"] .mantine-Button-root,
-[data-theme-id="nothing-signal"] .swarm-button,
-[data-theme-id="nothing-signal"] .mantine-Badge-root,
-[data-theme-id="nothing-signal"] .swarm-badge,
-[data-theme-id="nothing-signal"] .mantine-ActionIcon-root,
-[data-theme-id="nothing-signal"] .swarm-action-icon {
+[data-theme-id='nothing-signal'] .mantine-Button-root,
+[data-theme-id='nothing-signal'] .swarm-button,
+[data-theme-id='nothing-signal'] .mantine-Badge-root,
+[data-theme-id='nothing-signal'] .swarm-badge,
+[data-theme-id='nothing-signal'] .mantine-ActionIcon-root,
+[data-theme-id='nothing-signal'] .swarm-action-icon {
   border-color: color-mix(in srgb, var(--theme-gray-0) 18%, transparent) !important;
 }
 
@@ -1736,12 +1946,12 @@ button[class*="invokeBrand"],
 }
 
 /* Muted/secondary text */
-.mantine-Text-root[data-c^="invokeGray"],
-.mantine-Text-root[data-c^="gray"],
-.mantine-Text-root[data-c^="dark"],
-[data-c*=".1"],
-[data-c*=".2"],
-[data-c*=".3"] {
+.mantine-Text-root[data-c^='invokeGray'],
+.mantine-Text-root[data-c^='gray'],
+.mantine-Text-root[data-c^='dark'],
+[data-c*='.1'],
+[data-c*='.2'],
+[data-c*='.3'] {
   color: var(--theme-text-secondary) !important;
 }
 
@@ -1787,7 +1997,10 @@ button[class*="invokeBrand"],
 .mantine-Menu-item {
   color: var(--theme-text-on-dropdown) !important;
   border-radius: calc(6px * var(--theme-radius-multiplier));
-  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease !important;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    transform 120ms ease !important;
 }
 
 .mantine-Menu-item:hover {
@@ -1800,7 +2013,9 @@ button[class*="invokeBrand"],
 .mantine-Autocomplete-option,
 .mantine-Combobox-option {
   border-radius: calc(6px * var(--theme-radius-multiplier));
-  transition: background-color 120ms ease, color 120ms ease !important;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease !important;
 }
 
 .mantine-Select-option[data-combobox-selected],
@@ -1818,13 +2033,17 @@ button[class*="invokeBrand"],
 .mantine-Tabs-tab {
   color: var(--theme-gray-2) !important;
   border-radius: calc(6px * var(--theme-radius-multiplier)) !important;
-  transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease !important;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease !important;
 }
 
 .mantine-Tabs-tab[data-active] {
   color: var(--theme-gray-0) !important;
-  border-color: var(--theme-brand) !important;
-  background-color: color-mix(in srgb, var(--theme-brand-soft) 55%, transparent) !important;
+  border-color: color-mix(in srgb, var(--theme-brand) 34%, var(--theme-gray-4)) !important;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 14%, transparent);
 }
 
 /* === ACCORDION - Nested Cards Style === */
@@ -1841,7 +2060,9 @@ button[class*="invokeBrand"],
   border-radius: 8px !important;
   box-shadow: var(--elevation-shadow-sm) !important;
   overflow: hidden;
-  transition: box-shadow 200ms ease, border-color 200ms ease !important;
+  transition:
+    box-shadow 200ms ease,
+    border-color 200ms ease !important;
 }
 
 .mantine-Accordion-item:hover {
@@ -2221,7 +2442,6 @@ body {
 
 /* === REDUCED MOTION SUPPORT === */
 @media (prefers-reduced-motion: reduce) {
-
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
@@ -2229,8 +2449,8 @@ body {
 }
 
 /* Data attribute control for programmatic reduced motion */
-[data-reduced-motion="true"] ::view-transition-old(*),
-[data-reduced-motion="true"] ::view-transition-new(*) {
+[data-reduced-motion='true'] ::view-transition-old(*),
+[data-reduced-motion='true'] ::view-transition-new(*) {
   animation: none !important;
 }
 
@@ -2242,7 +2462,9 @@ body {
   color: var(--theme-brand-text, #ffffff) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button::before {
@@ -2313,12 +2535,16 @@ body {
 /* === GLOW EFFECT FOR THEMED ELEMENTS === */
 /* Applied when theme has glowColor set */
 .glow-effect {
-  box-shadow: 0 0 20px var(--theme-glow-color-strong), 0 0 40px var(--theme-glow-color-strong);
+  box-shadow:
+    0 0 20px var(--theme-glow-color-strong),
+    0 0 40px var(--theme-glow-color-strong);
   transition: box-shadow var(--transition-duration) var(--theme-animation-curve);
 }
 
 .glow-effect:hover {
-  box-shadow: 0 0 30px var(--theme-glow-color-strong), 0 0 60px var(--theme-glow-color-strong);
+  box-shadow:
+    0 0 30px var(--theme-glow-color-strong),
+    0 0 60px var(--theme-glow-color-strong);
 }
 
 /* Gradient button with optional glow */
@@ -2327,17 +2553,25 @@ body {
 }
 
 .gradient-button.with-glow:hover {
-  box-shadow: var(--elevation-shadow-md), 0 0 25px var(--theme-glow-color-strong) !important;
+  box-shadow:
+    var(--elevation-shadow-md),
+    0 0 25px var(--theme-glow-color-strong) !important;
 }
 
 /* Gradient button - Success (green) */
 .gradient-button-success {
-  background: linear-gradient(135deg, var(--theme-success), color-mix(in srgb, var(--theme-success) 80%, black)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-success),
+    color-mix(in srgb, var(--theme-success) 80%, black)
+  ) !important;
   border: none !important;
   color: var(--theme-success-text) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button-success::before {
@@ -2362,12 +2596,18 @@ body {
 
 /* Gradient button - Danger (red) */
 .gradient-button-danger {
-  background: linear-gradient(135deg, var(--theme-error), color-mix(in srgb, var(--theme-error) 80%, black)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-error),
+    color-mix(in srgb, var(--theme-error) 80%, black)
+  ) !important;
   border: none !important;
   color: var(--theme-error-text) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button-danger::before {
@@ -2397,7 +2637,10 @@ body {
   color: var(--theme-gray-0) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease !important;
 }
 
 .gradient-button-secondary::before {
@@ -2423,12 +2666,18 @@ body {
 
 /* Gradient button - Info (blue) */
 .gradient-button-info {
-  background: linear-gradient(135deg, var(--theme-info), color-mix(in srgb, var(--theme-info) 80%, black)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-info),
+    color-mix(in srgb, var(--theme-info) 80%, black)
+  ) !important;
   border: none !important;
   color: var(--theme-brand-text, #fff) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button-info::before {
@@ -2453,12 +2702,18 @@ body {
 
 /* Gradient button - Warning (orange) */
 .gradient-button-warning {
-  background: linear-gradient(135deg, var(--theme-warning), color-mix(in srgb, var(--theme-warning) 80%, black)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--theme-warning),
+    color-mix(in srgb, var(--theme-warning) 80%, black)
+  ) !important;
   border: none !important;
   color: var(--theme-warning-text) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button-warning::before {
@@ -2488,7 +2743,9 @@ body {
   color: var(--theme-brand-text, #fff) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button-primary::before {
@@ -2515,13 +2772,16 @@ body {
 .gradient-button-outline {
   background: transparent !important;
   border: 2px solid transparent !important;
-  background-image: linear-gradient(var(--theme-gray-7), var(--theme-gray-7)), var(--theme-brand-gradient) !important;
+  background-image:
+    linear-gradient(var(--theme-gray-7), var(--theme-gray-7)), var(--theme-brand-gradient) !important;
   background-origin: border-box !important;
   background-clip: padding-box, border-box !important;
   color: var(--theme-gray-0) !important;
   position: relative;
   overflow: hidden;
-  transition: transform 150ms ease, box-shadow 150ms ease !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease !important;
 }
 
 .gradient-button-outline:hover {
@@ -2584,10 +2844,46 @@ body {
 .swarm-action-icon,
 .swarm-badge,
 .swarm-status-pill {
-  transition: box-shadow calc(140ms * var(--motion-factor)) var(--theme-family-animation-curve),
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    box-shadow calc(140ms * var(--motion-factor)) var(--theme-family-animation-curve),
     border-color calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve),
     background-color calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve),
-    color calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve);
+    color calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve),
+    filter calc(120ms * var(--motion-factor)) var(--theme-family-animation-curve);
+}
+
+.swarm-button::before,
+.swarm-action-icon::before,
+.swarm-badge::before,
+.swarm-status-pill::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-0) 8%, transparent),
+      transparent 46%
+    ),
+    radial-gradient(
+      circle at 90% -16%,
+      color-mix(in srgb, var(--swarm-tone-glow) 64%, transparent),
+      transparent 58%
+    );
+  opacity: 0.92;
+  z-index: 0;
+}
+
+.swarm-button .mantine-Button-label,
+.swarm-action-icon > *,
+.swarm-badge .mantine-Badge-label,
+.swarm-status-pill > * {
+  position: relative;
+  z-index: 1;
 }
 
 .swarm-button.swarm-emphasis--solid,
@@ -2597,25 +2893,34 @@ body {
   background: var(--swarm-tone-bg) !important;
   border: 1px solid color-mix(in srgb, var(--swarm-tone-border) 85%, transparent) !important;
   color: var(--swarm-tone-text) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 9%, transparent),
+    0 10px 22px color-mix(in srgb, var(--swarm-tone-glow) 26%, transparent) !important;
 }
 
 .swarm-button.swarm-emphasis--soft,
 .swarm-action-icon.swarm-emphasis--soft,
 .swarm-badge.swarm-emphasis--soft,
 .swarm-status-pill.swarm-emphasis--soft {
-  background: color-mix(in srgb, var(--swarm-tone-soft) 85%, transparent) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--swarm-tone-soft) 96%, var(--theme-surface-card)),
+    color-mix(in srgb, var(--swarm-tone-soft) 80%, var(--theme-surface-raised))
+  ) !important;
   border: 1px solid color-mix(in srgb, var(--swarm-tone-border) 82%, transparent) !important;
   color: var(--swarm-tone-text) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 8%, transparent),
+    0 8px 20px color-mix(in srgb, var(--swarm-tone-glow) 20%, transparent) !important;
 }
 
 .swarm-badge.swarm-badge--contrast-strong.swarm-emphasis--soft,
 .swarm-status-pill.swarm-badge--contrast-strong.swarm-emphasis--soft {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--swarm-tone-soft) 72%, var(--theme-gray-7)),
-      color-mix(in srgb, var(--swarm-tone-soft) 56%, var(--theme-gray-8))
-    ) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--swarm-tone-soft) 72%, var(--theme-gray-7)),
+    color-mix(in srgb, var(--swarm-tone-soft) 56%, var(--theme-gray-8))
+  ) !important;
   border-color: color-mix(in srgb, var(--swarm-tone-border) 94%, transparent) !important;
   color: color-mix(in srgb, var(--swarm-tone-text) 42%, var(--theme-gray-0)) !important;
   text-shadow: 0 1px 0 color-mix(in srgb, var(--theme-gray-9) 46%, transparent);
@@ -2633,17 +2938,18 @@ body {
 .swarm-action-icon.swarm-emphasis--outline,
 .swarm-badge.swarm-emphasis--outline,
 .swarm-status-pill.swarm-emphasis--outline {
-  background: transparent !important;
+  background: color-mix(in srgb, var(--swarm-tone-soft) 18%, var(--theme-surface-card)) !important;
   border: 1px solid color-mix(in srgb, var(--swarm-tone-border) 84%, transparent) !important;
   color: var(--swarm-tone-text) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--swarm-tone-border) 18%, transparent) !important;
 }
 
 .swarm-button.swarm-emphasis--ghost,
 .swarm-action-icon.swarm-emphasis--ghost,
 .swarm-badge.swarm-emphasis--ghost,
 .swarm-status-pill.swarm-emphasis--ghost {
-  background: color-mix(in srgb, var(--swarm-tone-soft) 22%, transparent) !important;
-  border: 1px solid color-mix(in srgb, var(--swarm-tone-border) 28%, transparent) !important;
+  background: color-mix(in srgb, var(--swarm-tone-soft) 28%, var(--theme-surface-card)) !important;
+  border: 1px solid color-mix(in srgb, var(--swarm-tone-border) 34%, transparent) !important;
   color: var(--swarm-tone-text) !important;
 }
 
@@ -2652,15 +2958,28 @@ body {
 .swarm-badge:hover,
 .swarm-status-pill:hover {
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 5%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--swarm-tone-border) 34%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 10%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--swarm-tone-border) 42%, transparent),
+    0 12px 26px color-mix(in srgb, var(--swarm-tone-glow) 18%, transparent);
+  filter: saturate(1.04) brightness(1.02);
+}
+
+.swarm-button:active,
+.swarm-action-icon:active,
+.swarm-badge:active,
+.swarm-status-pill:active {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 6%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--swarm-tone-border) 46%, transparent),
+    inset 0 -10px 18px color-mix(in srgb, var(--theme-gray-9) 18%, transparent);
+  filter: saturate(1.02) brightness(0.99);
 }
 
 .swarm-status-pill {
   border-radius: 999px !important;
 }
 
-[data-swarm-tone].swarm-switch .mantine-Switch-track[data-checked="true"],
+[data-swarm-tone].swarm-switch .mantine-Switch-track[data-checked='true'],
 [data-swarm-tone].swarm-switch .mantine-Switch-input:checked + .mantine-Switch-track {
   background-color: var(--swarm-tone-bg) !important;
   border-color: var(--swarm-tone-border) !important;
@@ -2726,56 +3045,117 @@ body {
   animation: subtleGlow 1.8s ease-in-out infinite;
 }
 
-[data-theme-control="filled"] .swarm-button.swarm-emphasis--soft,
-[data-theme-control="filled"] .swarm-action-icon.swarm-emphasis--soft,
-[data-theme-control="filled"] .swarm-badge.swarm-emphasis--soft,
-[data-theme-control="filled"] .swarm-status-pill.swarm-emphasis--soft {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--swarm-tone-soft) 68%, var(--theme-gray-7)), color-mix(in srgb, var(--swarm-tone-soft) 48%, var(--theme-gray-8))) !important;
+[data-theme-control='filled'] .swarm-button.swarm-emphasis--soft,
+[data-theme-control='filled'] .swarm-action-icon.swarm-emphasis--soft,
+[data-theme-control='filled'] .swarm-badge.swarm-emphasis--soft,
+[data-theme-control='filled'] .swarm-status-pill.swarm-emphasis--soft {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--swarm-tone-soft) 68%, var(--theme-gray-7)),
+    color-mix(in srgb, var(--swarm-tone-soft) 48%, var(--theme-gray-8))
+  ) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 5%, transparent),
     0 8px 20px color-mix(in srgb, var(--swarm-tone-glow) 34%, transparent);
 }
 
-[data-theme-control="filled"] .swarm-button.swarm-emphasis--ghost,
-[data-theme-control="filled"] .swarm-action-icon.swarm-emphasis--ghost,
-[data-theme-control="filled"] .swarm-badge.swarm-emphasis--ghost,
-[data-theme-control="filled"] .swarm-status-pill.swarm-emphasis--ghost {
-  background: color-mix(in srgb, var(--swarm-tone-soft) 42%, var(--theme-gray-7)) !important;
+[data-theme-control='filled'] .swarm-button.swarm-emphasis--ghost,
+[data-theme-control='filled'] .swarm-action-icon.swarm-emphasis--ghost,
+[data-theme-control='filled'] .swarm-badge.swarm-emphasis--ghost,
+[data-theme-control='filled'] .swarm-status-pill.swarm-emphasis--ghost {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--swarm-tone-soft) 54%, var(--theme-gray-7)),
+    color-mix(in srgb, var(--swarm-tone-soft) 42%, var(--theme-gray-8))
+  ) !important;
   border-color: color-mix(in srgb, var(--swarm-tone-border) 42%, transparent) !important;
 }
 
-[data-theme-control="outlined"] .swarm-button.swarm-emphasis--outline,
-[data-theme-control="outlined"] .swarm-action-icon.swarm-emphasis--outline,
-[data-theme-control="outlined"] .swarm-badge.swarm-emphasis--outline,
-[data-theme-control="outlined"] .swarm-status-pill.swarm-emphasis--outline,
-[data-theme-control="outlined"] .swarm-button.swarm-emphasis--ghost,
-[data-theme-control="outlined"] .swarm-action-icon.swarm-emphasis--ghost,
-[data-theme-control="outlined"] .swarm-badge.swarm-emphasis--ghost,
-[data-theme-control="outlined"] .swarm-status-pill.swarm-emphasis--ghost {
+[data-theme-control='outlined'] .swarm-button.swarm-emphasis--outline,
+[data-theme-control='outlined'] .swarm-action-icon.swarm-emphasis--outline,
+[data-theme-control='outlined'] .swarm-badge.swarm-emphasis--outline,
+[data-theme-control='outlined'] .swarm-status-pill.swarm-emphasis--outline,
+[data-theme-control='outlined'] .swarm-button.swarm-emphasis--ghost,
+[data-theme-control='outlined'] .swarm-action-icon.swarm-emphasis--ghost,
+[data-theme-control='outlined'] .swarm-badge.swarm-emphasis--ghost,
+[data-theme-control='outlined'] .swarm-status-pill.swarm-emphasis--ghost {
   background: color-mix(in srgb, var(--theme-gray-8) 44%, transparent) !important;
   border-color: color-mix(in srgb, var(--swarm-tone-border) 74%, transparent) !important;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--swarm-tone-border) 20%, transparent);
 }
 
-[data-theme-icon="badge"] .swarm-action-icon,
-[data-theme-icon="badge"] .swarm-badge {
+[data-theme-icon='badge'] .swarm-action-icon,
+[data-theme-icon='badge'] .swarm-badge {
   border-radius: calc(12px * var(--theme-radius-multiplier)) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 6%, transparent),
     var(--elevation-shadow-sm);
 }
 
-[data-theme-icon="glyph-outline"] .swarm-action-icon,
-[data-theme-icon="glyph-outline"] .swarm-badge {
+[data-theme-icon='glyph-outline'] .swarm-action-icon,
+[data-theme-icon='glyph-outline'] .swarm-badge {
   border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-2) 18%, transparent),
     var(--elevation-shadow-sm);
 }
 
-[data-theme-icon="glyph-outline"] .swarm-action-icon svg {
+[data-theme-icon='glyph-outline'] .swarm-action-icon svg {
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--theme-accent-2) 18%, transparent));
+}
+
+[data-theme-control-shape='rounded'] .mantine-Button-root,
+[data-theme-control-shape='rounded'] .swarm-button {
+  border-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+}
+
+[data-theme-control-shape='pill'] .mantine-Button-root,
+[data-theme-control-shape='pill'] .swarm-button {
+  border-radius: 999px !important;
+}
+
+[data-theme-control-shape='square'] .mantine-Button-root,
+[data-theme-control-shape='square'] .swarm-button {
+  border-radius: calc(7px * var(--theme-radius-multiplier)) !important;
+}
+
+[data-theme-icon-shape='rounded'] .mantine-ActionIcon-root,
+[data-theme-icon-shape='rounded'] .swarm-action-icon {
+  border-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+}
+
+[data-theme-icon-shape='circle'] .mantine-ActionIcon-root,
+[data-theme-icon-shape='circle'] .swarm-action-icon {
+  border-radius: 999px !important;
+}
+
+[data-theme-icon-shape='square'] .mantine-ActionIcon-root,
+[data-theme-icon-shape='square'] .swarm-action-icon {
+  border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
+}
+
+.swarm-button[data-swarm-shape='rounded'] {
+  border-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+}
+
+.swarm-button[data-swarm-shape='pill'] {
+  border-radius: 999px !important;
+}
+
+.swarm-button[data-swarm-shape='square'] {
+  border-radius: calc(7px * var(--theme-radius-multiplier)) !important;
+}
+
+.swarm-action-icon[data-swarm-shape='rounded'] {
+  border-radius: calc(12px * var(--theme-radius-multiplier)) !important;
+}
+
+.swarm-action-icon[data-swarm-shape='circle'] {
+  border-radius: 999px !important;
+}
+
+.swarm-action-icon[data-swarm-shape='square'] {
+  border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
 }
 
 /* === ANIMATION THEMING === */
@@ -2786,7 +3166,7 @@ body {
 }
 
 /* Conditional hover lift based on theme */
-[data-hover-lift="true"]:hover {
+[data-hover-lift='true']:hover {
   transform: translateY(calc(var(--theme-hover-lift-distance) * -1));
 }
 
@@ -2799,26 +3179,40 @@ body {
 
 /* === PHASE 3 MOTION/EFFECT UTILITIES === */
 .fx-reveal {
-  animation: fxReveal calc(360ms * var(--motion-page-factor)) var(--theme-family-animation-curve) both;
+  animation: fxReveal calc(360ms * var(--motion-page-factor)) var(--theme-family-animation-curve)
+    both;
 }
 
-.fx-stagger>* {
+.fx-stagger > * {
   opacity: 0;
   transform: translateY(var(--motion-reveal-distance));
-  animation: fxReveal calc(320ms * var(--motion-page-factor)) var(--theme-family-animation-curve) both;
+  animation: fxReveal calc(320ms * var(--motion-page-factor)) var(--theme-family-animation-curve)
+    both;
 }
 
-.fx-stagger>*:nth-child(1) { animation-delay: calc(0ms * var(--motion-page-factor)); }
+.fx-stagger > *:nth-child(1) {
+  animation-delay: calc(0ms * var(--motion-page-factor));
+}
 
-.fx-stagger>*:nth-child(2) { animation-delay: calc(55ms * var(--motion-page-factor)); }
+.fx-stagger > *:nth-child(2) {
+  animation-delay: calc(55ms * var(--motion-page-factor));
+}
 
-.fx-stagger>*:nth-child(3) { animation-delay: calc(110ms * var(--motion-page-factor)); }
+.fx-stagger > *:nth-child(3) {
+  animation-delay: calc(110ms * var(--motion-page-factor));
+}
 
-.fx-stagger>*:nth-child(4) { animation-delay: calc(165ms * var(--motion-page-factor)); }
+.fx-stagger > *:nth-child(4) {
+  animation-delay: calc(165ms * var(--motion-page-factor));
+}
 
-.fx-stagger>*:nth-child(5) { animation-delay: calc(220ms * var(--motion-page-factor)); }
+.fx-stagger > *:nth-child(5) {
+  animation-delay: calc(220ms * var(--motion-page-factor));
+}
 
-.fx-stagger>*:nth-child(6) { animation-delay: calc(275ms * var(--motion-page-factor)); }
+.fx-stagger > *:nth-child(6) {
+  animation-delay: calc(275ms * var(--motion-page-factor));
+}
 
 .fx-hover-lift {
   transition:
@@ -2829,7 +3223,10 @@ body {
 }
 
 .fx-hover-lift:hover {
-  transform: translateY(calc(var(--theme-hover-lift-distance) * var(--motion-hover-lift-scale) * -1)) scale(var(--hover-scale-effective));
+  transform: translateY(
+      calc(var(--theme-hover-lift-distance) * var(--motion-hover-lift-scale) * -1)
+    )
+    scale(var(--hover-scale-effective));
   box-shadow: var(--elevation-shadow-md);
 }
 
@@ -2843,10 +3240,12 @@ body {
   position: absolute;
   inset: -20%;
   pointer-events: none;
-  background: linear-gradient(120deg,
-      transparent 28%,
-      color-mix(in srgb, var(--theme-highlight-accent) 26%, transparent) 50%,
-      transparent 72%);
+  background: linear-gradient(
+    120deg,
+    transparent 28%,
+    color-mix(in srgb, var(--theme-highlight-accent) 26%, transparent) 50%,
+    transparent 72%
+  );
   transform: translateX(-130%);
   transition: transform calc(520ms * var(--motion-page-factor)) var(--theme-family-animation-curve);
 }
@@ -2856,10 +3255,12 @@ body {
 }
 
 .fx-shimmer {
-  background-image: linear-gradient(90deg,
-      color-mix(in srgb, var(--theme-gray-7) 70%, transparent) 25%,
-      color-mix(in srgb, var(--theme-gray-5) 35%, transparent) 50%,
-      color-mix(in srgb, var(--theme-gray-7) 70%, transparent) 75%);
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-gray-7) 70%, transparent) 25%,
+    color-mix(in srgb, var(--theme-gray-5) 35%, transparent) 50%,
+    color-mix(in srgb, var(--theme-gray-7) 70%, transparent) 75%
+  );
   background-size: 220% 100%;
   animation: shimmer calc(1.6s * var(--motion-loading-factor)) linear infinite;
 }
@@ -2881,7 +3282,12 @@ body {
 }
 
 .text-gradient-accent {
-  background: linear-gradient(135deg, var(--theme-accent), var(--theme-accent-2), var(--theme-accent-3));
+  background: linear-gradient(
+    135deg,
+    var(--theme-accent),
+    var(--theme-accent-2),
+    var(--theme-accent-3)
+  );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2927,15 +3333,23 @@ pre,
 }
 
 .panel-gradient-subtle {
-  background: linear-gradient(180deg,
-      color-mix(in srgb, var(--theme-brand) 5%, var(--theme-gray-8)),
-      var(--theme-gray-9));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-brand) 5%, var(--theme-gray-8)),
+    var(--theme-gray-9)
+  );
 }
 
 /* === THEMED SECTION DIVIDERS === */
 .divider-themed {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--theme-accent-2), var(--theme-highlight-accent), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--theme-accent-2),
+    var(--theme-highlight-accent),
+    transparent
+  );
   border: none;
   margin: 1rem 0;
 }
@@ -3037,7 +3451,6 @@ pre,
 }
 
 @keyframes icon-bounce {
-
   0%,
   100% {
     transform: translateY(0);
@@ -3049,7 +3462,6 @@ pre,
 }
 
 @keyframes icon-pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -3063,7 +3475,6 @@ pre,
 }
 
 @keyframes icon-shake {
-
   0%,
   100% {
     transform: translateX(0);
@@ -3095,7 +3506,7 @@ pre,
 }
 
 /* === CHECKBOX/SWITCH ANIMATIONS === */
-.mantine-Checkbox-input:checked+.mantine-Checkbox-icon {
+.mantine-Checkbox-input:checked + .mantine-Checkbox-icon {
   animation: icon-bounce 0.3s var(--ease-spring);
 }
 
@@ -3104,7 +3515,9 @@ pre,
 }
 
 .mantine-Switch-thumb {
-  transition: transform 0.2s var(--ease-spring), left 0.2s var(--ease-spring) !important;
+  transition:
+    transform 0.2s var(--ease-spring),
+    left 0.2s var(--ease-spring) !important;
 }
 
 /* === ACCORDION SPRING PHYSICS === */
@@ -3240,9 +3653,14 @@ pre,
 
 .surface-glass {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 45%, transparent), transparent 45%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 45%, transparent),
+      transparent 45%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 78%, transparent) !important;
-  border: var(--theme-border-width) var(--theme-border-style) color-mix(in srgb, var(--theme-gray-1) 20%, transparent) !important;
+  border: var(--theme-border-width) var(--theme-border-style)
+    color-mix(in srgb, var(--theme-gray-1) 20%, transparent) !important;
   backdrop-filter: blur(var(--theme-blur-strength));
   box-shadow: var(--elevation-shadow-sm);
 }
@@ -3250,12 +3668,19 @@ pre,
 .surface-gradient-border {
   position: relative;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 45%, transparent), transparent 55%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 45%, transparent),
+      transparent 55%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 85%, var(--theme-gray-9)) !important;
   border-radius: calc(12px * var(--theme-radius-multiplier));
   border: var(--theme-border-width) solid transparent !important;
   background-image:
-    linear-gradient(color-mix(in srgb, var(--theme-gray-8) 80%, var(--theme-gray-9)), color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9))),
+    linear-gradient(
+      color-mix(in srgb, var(--theme-gray-8) 80%, var(--theme-gray-9)),
+      color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9))
+    ),
     linear-gradient(130deg, var(--theme-accent-2), var(--theme-brand), var(--theme-accent-3));
   background-origin: border-box;
   background-clip: padding-box, border-box;
@@ -3268,9 +3693,14 @@ pre,
   overflow: hidden;
   padding: 14px;
   background:
-    linear-gradient(165deg, color-mix(in srgb, var(--theme-brand-soft) 24%, transparent), transparent 58%),
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--theme-brand-soft) 24%, transparent),
+      transparent 58%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 88%, transparent);
-  border: var(--theme-border-width) var(--theme-border-style) color-mix(in srgb, var(--theme-accent-2) 24%, transparent);
+  border: var(--theme-border-width) var(--theme-border-style)
+    color-mix(in srgb, var(--theme-accent-2) 24%, transparent);
   box-shadow: 0 14px 28px color-mix(in srgb, black 16%, transparent);
   backdrop-filter: blur(10px);
 }
@@ -3292,7 +3722,11 @@ pre,
   right: -72px;
   top: -140px;
   pointer-events: none;
-  background: radial-gradient(circle, color-mix(in srgb, var(--theme-accent-2) 35%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--theme-accent-2) 35%, transparent),
+    transparent 70%
+  );
   opacity: calc(0.48 * var(--effects-intensity));
   animation: ambientPulse calc(11s * var(--motion-ambient-factor)) ease-in-out infinite;
 }
@@ -3303,7 +3737,11 @@ pre,
 
 .ui-hero--subtle {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 12%, transparent), transparent 62%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 12%, transparent),
+      transparent 62%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 90%, transparent);
   border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5));
   box-shadow: 0 10px 20px color-mix(in srgb, black 12%, transparent);
@@ -3313,53 +3751,69 @@ pre,
   opacity: calc(0.24 * var(--effects-intensity));
 }
 
-[data-theme-family="material"] .surface-gradient-border {
+[data-theme-family='material'] .surface-gradient-border {
   background-image:
-    linear-gradient(color-mix(in srgb, var(--theme-gray-7) 84%, var(--theme-gray-8)), color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9))),
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-brand) 76%, var(--theme-accent-2)), color-mix(in srgb, var(--theme-accent) 68%, var(--theme-accent-3)));
+    linear-gradient(
+      color-mix(in srgb, var(--theme-gray-7) 84%, var(--theme-gray-8)),
+      color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9))
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-brand) 76%, var(--theme-accent-2)),
+      color-mix(in srgb, var(--theme-accent) 68%, var(--theme-accent-3))
+    );
 }
 
-[data-theme-family="material"] .ui-hero {
+[data-theme-family='material'] .ui-hero {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 30%, transparent), transparent 60%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-7) 90%, var(--theme-gray-8)), color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9)));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 30%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-7) 90%, var(--theme-gray-8)),
+      color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9))
+    );
   border-color: color-mix(in srgb, var(--theme-brand) 16%, var(--theme-gray-5));
 }
 
-[data-theme-family="material"] .ui-hero::before {
+[data-theme-family='material'] .ui-hero::before {
   opacity: calc(0.18 * var(--effects-intensity));
 }
 
-[data-theme-family="material"] .ui-hero::after {
+[data-theme-family='material'] .ui-hero::after {
   opacity: calc(0.42 * var(--effects-intensity));
   filter: blur(18px);
 }
 
-[data-theme-family="glyph"] .surface-gradient-border {
+[data-theme-family='glyph'] .surface-gradient-border {
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-2) 18%, transparent),
     var(--elevation-shadow-md);
 }
 
-[data-theme-family="glyph"] .ui-hero {
+[data-theme-family='glyph'] .ui-hero {
   border-color: color-mix(in srgb, var(--theme-accent-2) 44%, transparent);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-accent-2) 12%, transparent),
     var(--elevation-shadow-md);
 }
 
-[data-theme-family="glyph"] .ui-hero::before {
+[data-theme-family='glyph'] .ui-hero::before {
   background: var(--theme-motif-overlay-panel), var(--theme-mesh-overlay);
   opacity: calc(0.58 * var(--effects-intensity));
 }
 
-[data-theme-family="glyph"] .ui-hero::after {
+[data-theme-family='glyph'] .ui-hero::after {
   opacity: calc(0.58 * var(--effects-intensity));
 }
 
 .ui-callout {
   border-radius: calc(10px * var(--theme-radius-multiplier));
-  border: var(--theme-border-width) var(--theme-border-style) color-mix(in srgb, var(--theme-accent-3) 24%, transparent);
+  border: var(--theme-border-width) var(--theme-border-style)
+    color-mix(in srgb, var(--theme-accent-3) 24%, transparent);
   background: color-mix(in srgb, var(--theme-accent-3) 12%, transparent);
   padding: 8px 10px;
 }
@@ -3368,7 +3822,11 @@ pre,
 .ui-stat-tile {
   min-height: 106px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 30%, transparent), transparent 55%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 30%, transparent),
+      transparent 55%
+    ),
     var(--elevation-paper) !important;
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-gray-5) !important;
   border-radius: calc(10px * var(--theme-radius-multiplier)) !important;
@@ -3417,7 +3875,10 @@ pre,
 }
 
 .swarm-browser-item-card {
-  transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .swarm-browser-item-card:hover,
@@ -3487,7 +3948,11 @@ pre,
   border-radius: calc(10px * var(--theme-radius-multiplier));
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-border-subtle);
   background:
-    linear-gradient(140deg, color-mix(in srgb, var(--theme-accent-soft) 36%, transparent), transparent 66%),
+    linear-gradient(
+      140deg,
+      color-mix(in srgb, var(--theme-accent-soft) 36%, transparent),
+      transparent 66%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 88%, transparent);
   padding: 6px;
   box-shadow: var(--elevation-shadow-sm);
@@ -3504,7 +3969,11 @@ pre,
   border-radius: calc(12px * var(--theme-radius-multiplier));
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-border-subtle);
   background:
-    linear-gradient(170deg, color-mix(in srgb, var(--theme-success-soft) 38%, transparent), transparent 58%),
+    linear-gradient(
+      170deg,
+      color-mix(in srgb, var(--theme-success-soft) 38%, transparent),
+      transparent 58%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 90%, transparent);
   padding: 10px;
 }
@@ -3514,7 +3983,11 @@ pre,
   border-radius: calc(10px * var(--theme-radius-multiplier));
   border: var(--theme-border-width) var(--theme-border-style) var(--theme-border-subtle);
   background:
-    linear-gradient(130deg, color-mix(in srgb, var(--theme-brand-soft) 36%, transparent), transparent 72%),
+    linear-gradient(
+      130deg,
+      color-mix(in srgb, var(--theme-brand-soft) 36%, transparent),
+      transparent 72%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 90%, transparent);
 }
 
@@ -3606,33 +4079,36 @@ pre,
   min-width: 0;
 }
 
-.swarm-app-header[data-layout="full"] .swarm-app-header__nav {
+.swarm-app-header[data-layout='full'] .swarm-app-header__nav {
   max-width: 560px;
 }
 
-.swarm-app-header[data-layout="compact"] {
+.swarm-app-header[data-layout='compact'] {
   gap: 10px;
 }
 
-.swarm-app-header[data-layout="compact"] .swarm-app-header__nav {
+.swarm-app-header[data-layout='compact'] .swarm-app-header__nav {
   min-width: 380px;
 }
 
-.swarm-app-header[data-layout="condensed"] {
+.swarm-app-header[data-layout='condensed'] {
   gap: 8px;
 }
 
-.swarm-app-header[data-layout="condensed"] .swarm-app-header__title {
+.swarm-app-header[data-layout='condensed'] .swarm-app-header__title {
   font-size: 15px;
 }
 
-.swarm-app-header[data-layout="condensed"] .swarm-app-header__nav {
+.swarm-app-header[data-layout='condensed'] .swarm-app-header__nav {
   min-width: 340px;
 }
 
 .swarm-app-header-action {
   border: 1px solid transparent;
-  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .swarm-app-header-action.swarm-app-header-action--download:hover {
@@ -3674,8 +4150,16 @@ pre,
   gap: 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-brand) 12%, var(--theme-gray-5));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 10%, transparent), transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 94%, transparent), color-mix(in srgb, var(--theme-gray-8) 86%, transparent));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-8) 94%, transparent),
+      color-mix(in srgb, var(--theme-gray-8) 86%, transparent)
+    );
   backdrop-filter: blur(12px);
 }
 
@@ -3706,7 +4190,9 @@ pre,
   background-color: var(--theme-gray-7);
   border: 1px solid var(--theme-gray-5);
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 
 .swarm-theme-trigger:hover {
@@ -3727,7 +4213,9 @@ pre,
   padding: 8px 12px;
   width: 100%;
   border-left: 3px solid transparent;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 
 .swarm-theme-item:hover {
@@ -3735,7 +4223,11 @@ pre,
 }
 
 .swarm-theme-item--active {
-  background: linear-gradient(120deg, color-mix(in srgb, var(--theme-brand) 18%, var(--theme-gray-7)), var(--theme-gray-7));
+  background: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--theme-brand) 18%, var(--theme-gray-7)),
+    var(--theme-gray-7)
+  );
   border-left-color: var(--theme-brand);
 }
 
@@ -3890,7 +4382,7 @@ pre,
   white-space: nowrap;
 }
 
-.swarm-server-tabs .mantine-Tabs-tab[data-active="true"] {
+.swarm-server-tabs .mantine-Tabs-tab[data-active='true'] {
   color: var(--theme-text-primary);
   background: color-mix(in srgb, var(--theme-brand) 20%, var(--theme-gray-7));
   border: 1px solid color-mix(in srgb, var(--theme-brand) 45%, transparent);
@@ -3920,12 +4412,19 @@ pre,
 .swarm-gallery-image-card,
 .swarm-gallery-panel-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 10%, transparent), transparent 74%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      transparent 74%
+    ),
     var(--theme-surface-card);
 }
 
 .swarm-folder-tile {
-  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    transform 150ms ease;
 }
 
 .swarm-folder-tile:hover,
@@ -3948,7 +4447,7 @@ pre,
   scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
 }
 
-[data-mantine-color-scheme="light"] .swarm-server-page {
+[data-mantine-color-scheme='light'] .swarm-server-page {
   background-color: #fff !important;
 }
 
@@ -3994,10 +4493,11 @@ pre,
   padding-bottom: 20px;
   border-radius: calc(10px * var(--theme-radius-multiplier));
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 10%, transparent);
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, var(--theme-gray-8) 92%, black),
-      color-mix(in srgb, var(--theme-gray-9) 96%, black)) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 92%, black),
+    color-mix(in srgb, var(--theme-gray-9) 96%, black)
+  ) !important;
   background-color: var(--theme-gray-9, #0b0f14) !important;
   scrollbar-width: thin;
   scrollbar-color: var(--theme-scrollbar-thumb) var(--theme-scrollbar-track);
@@ -4051,19 +4551,35 @@ pre,
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--theme-brand) 24%, transparent) !important;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-2) 28%, transparent), transparent 34%),
-    radial-gradient(circle at bottom left, color-mix(in srgb, var(--theme-brand) 20%, transparent), transparent 40%),
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9)), color-mix(in srgb, var(--theme-gray-8) 84%, var(--theme-gray-9))) !important;
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--theme-accent-2) 28%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at bottom left,
+      color-mix(in srgb, var(--theme-brand) 20%, transparent),
+      transparent 40%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9)),
+      color-mix(in srgb, var(--theme-gray-8) 84%, var(--theme-gray-9))
+    ) !important;
 }
 
 .swarm-resource-hero::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -18% auto auto -8%;
   width: 220px;
   height: 220px;
   border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--theme-brand) 28%, transparent), transparent 72%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--theme-brand) 28%, transparent),
+    transparent 72%
+  );
   filter: blur(8px);
   opacity: 0.9;
   animation: swarm-resource-float 11s ease-in-out infinite;
@@ -4115,20 +4631,32 @@ pre,
 
 .swarm-resource-gpu-card::after,
 .swarm-resource-model-card::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(125deg, color-mix(in srgb, var(--theme-brand) 12%, transparent), transparent 42%);
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--theme-brand) 12%, transparent),
+    transparent 42%
+  );
   opacity: 0.9;
   pointer-events: none;
 }
 
 .swarm-resource-model-card--warm::after {
-  background: linear-gradient(125deg, color-mix(in srgb, var(--theme-warning) 18%, transparent), transparent 42%);
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--theme-warning) 18%, transparent),
+    transparent 42%
+  );
 }
 
 .swarm-resource-model-card--hot::after {
-  background: linear-gradient(125deg, color-mix(in srgb, var(--theme-error) 22%, transparent), transparent 42%);
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--theme-error) 22%, transparent),
+    transparent 42%
+  );
 }
 
 .swarm-resource-model-card__media {
@@ -4139,8 +4667,16 @@ pre,
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--theme-brand) 28%, transparent), transparent 36%),
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-gray-7) 90%, var(--theme-gray-8)), color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9)));
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--theme-brand) 28%, transparent),
+      transparent 36%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-gray-7) 90%, var(--theme-gray-8)),
+      color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9))
+    );
 }
 
 .swarm-resource-model-card__media-image {
@@ -4158,7 +4694,11 @@ pre,
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-9) 18%, transparent), color-mix(in srgb, var(--theme-gray-9) 72%, transparent)),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-9) 18%, transparent),
+      color-mix(in srgb, var(--theme-gray-9) 72%, transparent)
+    ),
     linear-gradient(90deg, color-mix(in srgb, var(--theme-brand) 26%, transparent), transparent 56%);
 }
 
@@ -4182,7 +4722,11 @@ pre,
   border-radius: calc(12px * var(--theme-radius-multiplier));
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 14%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-0) 3%, transparent), transparent 44%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-0) 3%, transparent),
+      transparent 44%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 88%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 4%, transparent);
 }
@@ -4194,7 +4738,11 @@ pre,
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 16%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-0) 4%, transparent), transparent 54%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-0) 4%, transparent),
+      transparent 54%
+    ),
     color-mix(in srgb, var(--theme-gray-9) 74%, var(--theme-gray-8));
 }
 
@@ -4202,7 +4750,10 @@ pre,
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: inherit;
-  transition: width 420ms ease, filter 220ms ease, box-shadow 220ms ease;
+  transition:
+    width 420ms ease,
+    filter 220ms ease,
+    box-shadow 220ms ease;
 }
 
 .swarm-resource-meter--cool .swarm-resource-meter__fill {
@@ -4211,12 +4762,20 @@ pre,
 }
 
 .swarm-resource-meter--warm .swarm-resource-meter__fill {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-warning) 84%, white), var(--theme-warning));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-warning) 84%, white),
+    var(--theme-warning)
+  );
   box-shadow: 0 0 18px color-mix(in srgb, var(--theme-warning) 34%, transparent);
 }
 
 .swarm-resource-meter--hot .swarm-resource-meter__fill {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-error) 76%, white), var(--theme-error));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-error) 76%, white),
+    var(--theme-error)
+  );
   box-shadow: 0 0 18px color-mix(in srgb, var(--theme-error) 36%, transparent);
 }
 
@@ -4233,7 +4792,11 @@ pre,
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-accent-2) 20%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-0) 3%, transparent), transparent 48%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-0) 3%, transparent),
+      transparent 48%
+    ),
     color-mix(in srgb, var(--theme-accent-soft) 20%, var(--theme-gray-8));
 }
 
@@ -4282,7 +4845,9 @@ pre,
 }
 
 .swarm-server-accordion .swarm-button.swarm-tone--brand.swarm-emphasis--solid {
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-brand) 56%, transparent), 0 8px 18px color-mix(in srgb, var(--theme-brand) 28%, transparent) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--theme-brand) 56%, transparent),
+    0 8px 18px color-mix(in srgb, var(--theme-brand) 28%, transparent) !important;
   background: color-mix(in srgb, var(--theme-brand) 34%, var(--theme-gray-7)) !important;
   border-color: color-mix(in srgb, var(--theme-brand) 62%, var(--theme-gray-4)) !important;
 }
@@ -4370,15 +4935,8 @@ pre,
   }
 }
 
-/* Admin toggle checkboxes: remove bright highlight treatment */
-.swarm-admin-toggles .mantine-Checkbox-root,
-.swarm-admin-toggles .mantine-Checkbox-body,
-.swarm-admin-toggles .mantine-Checkbox-labelWrapper {
-  background: transparent !important;
-}
-
+/* Admin toggle checkboxes: keep a muted checkbox tone */
 .swarm-admin-toggles .mantine-Checkbox-label {
-  background: transparent !important;
   color: var(--theme-gray-1) !important;
   font-weight: 500 !important;
   padding: 0 !important;
@@ -4396,16 +4954,31 @@ pre,
 
 /* Generate studio workspace */
 .generate-studio {
-  --studio-shell-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 94%, transparent), color-mix(in srgb, var(--theme-gray-9) 96%, transparent));
+  --studio-shell-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 94%, transparent),
+    color-mix(in srgb, var(--theme-gray-9) 96%, transparent)
+  );
   --studio-panel-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface-tint) 18%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-surface-tint) 18%, transparent),
+      transparent 42%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 90%, var(--theme-gray-9));
   --studio-quick-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent-soft) 18%, transparent), transparent 38%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent-soft) 18%, transparent),
+      transparent 38%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9));
   --studio-inspector-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 28%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 28%, transparent),
+      transparent 42%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 88%, var(--theme-gray-9));
   --studio-panel-border: color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
   --studio-panel-shadow: 0 18px 40px color-mix(in srgb, black 35%, transparent);
@@ -4419,8 +4992,16 @@ pre,
   gap: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand) 12%, transparent), transparent 32%),
-    radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent) 10%, transparent), transparent 28%),
+    radial-gradient(
+      circle at top left,
+      color-mix(in srgb, var(--theme-brand) 12%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--theme-accent) 10%, transparent),
+      transparent 28%
+    ),
     var(--theme-gray-9);
 }
 
@@ -4440,7 +5021,11 @@ pre,
 
 .generate-studio__sidebar-shell--supporting {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 8%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 8%, transparent),
+      transparent 42%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9));
   box-shadow: 0 12px 26px color-mix(in srgb, black 18%, transparent);
 }
@@ -4451,7 +5036,11 @@ pre,
 
 .generate-studio__gallery-shell--supporting {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 6%, transparent), transparent 54%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 6%, transparent),
+      transparent 54%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 94%, var(--theme-gray-9));
   box-shadow: 0 10px 20px color-mix(in srgb, black 14%, transparent);
 }
@@ -4479,14 +5068,20 @@ pre,
   margin-bottom: 4px;
   border-radius: calc(10px * var(--theme-radius-multiplier));
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 96%, transparent), color-mix(in srgb, var(--theme-gray-8) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 96%, transparent),
+    color-mix(in srgb, var(--theme-gray-8) 88%, transparent)
+  );
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 3%, transparent);
 }
 
 .generate-studio__section-shell-control:hover {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 12%, transparent), color-mix(in srgb, var(--theme-gray-8) 88%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-brand-soft) 12%, transparent),
+    color-mix(in srgb, var(--theme-gray-8) 88%, transparent)
+  );
 }
 
 .generate-studio__section-shell-control .mantine-Accordion-label {
@@ -4523,8 +5118,12 @@ pre,
   top: 0;
   z-index: 4;
   padding-bottom: 4px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 98%, transparent), color-mix(in srgb, var(--theme-gray-8) 86%, transparent) 78%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 98%, transparent),
+    color-mix(in srgb, var(--theme-gray-8) 86%, transparent) 78%,
+    transparent
+  );
 }
 
 .generate-studio__sidebar-hero,
@@ -4539,7 +5138,11 @@ pre,
 .generate-studio__essentials {
   border-color: color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 6%, transparent), transparent 30%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 6%, transparent),
+      transparent 30%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9));
 }
 
@@ -4554,7 +5157,11 @@ pre,
 .generate-studio__prompt-library-card--compact {
   border-color: color-mix(in srgb, var(--theme-gray-1) 10%, transparent) !important;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-1) 3%, transparent), transparent 44%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-1) 3%, transparent),
+      transparent 44%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 88%, var(--theme-gray-7)) !important;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 2%, transparent),
@@ -4614,20 +5221,28 @@ pre,
 .generate-studio__dimension-preview {
   box-shadow:
     0 0 12px rgba(var(--mantine-color-invokeBrand-6-rgb, 124, 58, 237), 0.16),
-    inset 0 1px 2px rgba(255,255,255,0.05);
+    inset 0 1px 2px rgba(255, 255, 255, 0.05);
 }
 
 .generate-studio__mode-hero,
 .generate-studio__mode-card {
   border-color: color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 8%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 8%, transparent),
+      transparent 42%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9));
 }
 
 .generate-studio__toggle-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 8%, transparent), transparent 48%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 8%, transparent),
+      transparent 48%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 90%, var(--theme-gray-9));
   border-color: color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
 }
@@ -4642,7 +5257,11 @@ pre,
 .generate-studio__core-generation-card {
   border-color: color-mix(in srgb, var(--theme-brand) 22%, var(--theme-gray-3));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 12%, transparent), transparent 48%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 12%, transparent),
+      transparent 48%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-7));
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 4%, transparent),
@@ -4681,15 +5300,24 @@ pre,
 }
 
 .generate-studio__inspector-card::before {
-  background: linear-gradient(90deg, var(--theme-brand), color-mix(in srgb, var(--theme-accent) 55%, transparent) 72%, transparent);
+  background: linear-gradient(
+    90deg,
+    var(--theme-brand),
+    color-mix(in srgb, var(--theme-accent) 55%, transparent) 72%,
+    transparent
+  );
 }
 
 .generate-studio__quick-access-header {
   margin: -2px -2px 8px;
   padding: 14px 14px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-accent) 18%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent-soft) 14%, transparent), color-mix(in srgb, var(--theme-gray-8) 20%, transparent) 84%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-accent-soft) 14%, transparent),
+    color-mix(in srgb, var(--theme-gray-8) 20%, transparent) 84%,
+    transparent
+  );
 }
 
 .generate-studio__section-body-header {
@@ -4756,28 +5384,38 @@ pre,
 
 .generate-studio__quick-access .mantine-Accordion-item {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent-soft) 18%, transparent), transparent 48%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent-soft) 18%, transparent),
+      transparent 48%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 90%, var(--theme-gray-7)) !important;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-gray-1) 6%, transparent);
 }
 
 .generate-studio__inspector .mantine-Accordion-item {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 24%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 24%, transparent),
+      transparent 42%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 88%, var(--theme-gray-7)) !important;
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 10%, transparent),
     0 8px 18px color-mix(in srgb, black 14%, transparent);
 }
 
-.generate-studio__quick-access .mantine-Accordion-item[data-active="true"],
-.generate-studio__inspector .mantine-Accordion-item[data-active="true"] {
+.generate-studio__quick-access .mantine-Accordion-item[data-active='true'],
+.generate-studio__inspector .mantine-Accordion-item[data-active='true'] {
   border-color: color-mix(in srgb, var(--theme-brand) 36%, var(--theme-gray-4)) !important;
 }
 
 .generate-studio__quick-access .mantine-Accordion-control,
 .generate-studio__inspector .mantine-Accordion-control {
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
 }
 
 .generate-studio__quick-access .mantine-Accordion-control:hover,
@@ -4808,8 +5446,12 @@ pre,
   margin: -2px -2px 0;
   padding: 14px 14px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--theme-brand) 24%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 98%, var(--theme-brand-soft)), color-mix(in srgb, var(--theme-gray-8) 90%, transparent) 82%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 98%, var(--theme-brand-soft)),
+    color-mix(in srgb, var(--theme-gray-8) 90%, transparent) 82%,
+    transparent
+  );
   backdrop-filter: blur(10px);
 }
 
@@ -4863,8 +5505,16 @@ pre,
   position: relative;
   border: 1px solid color-mix(in srgb, var(--theme-brand) 18%, var(--studio-panel-border));
   background:
-    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--theme-brand) 10%, transparent), transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 10%, transparent), transparent 38%),
+    radial-gradient(
+      circle at 50% 0%,
+      color-mix(in srgb, var(--theme-brand) 10%, transparent),
+      transparent 34%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      transparent 38%
+    ),
     color-mix(in srgb, var(--theme-gray-9) 96%, black);
   box-shadow:
     0 24px 50px color-mix(in srgb, black 32%, transparent),
@@ -4883,13 +5533,24 @@ pre,
 
 .generate-studio-canvas {
   background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--theme-brand) 12%, transparent), transparent 32%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-9) 94%, black), color-mix(in srgb, var(--theme-gray-8) 28%, black));
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--theme-brand) 12%, transparent),
+      transparent 32%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-9) 94%, black),
+      color-mix(in srgb, var(--theme-gray-8) 28%, black)
+    );
 }
 
 .generate-studio-canvas__toolbar {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 97%, transparent), color-mix(in srgb, var(--theme-gray-8) 90%, transparent));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 97%, transparent),
+    color-mix(in srgb, var(--theme-gray-8) 90%, transparent)
+  );
   backdrop-filter: blur(8px);
 }
 
@@ -4897,8 +5558,16 @@ pre,
   border: 1px solid color-mix(in srgb, var(--theme-gray-1) 12%, transparent);
   border-radius: calc(14px * var(--theme-radius-multiplier));
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-brand) 8%, transparent), transparent 30%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 52%, transparent), color-mix(in srgb, var(--theme-gray-9) 92%, black));
+    radial-gradient(
+      circle at 50% 18%,
+      color-mix(in srgb, var(--theme-brand) 8%, transparent),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-8) 52%, transparent),
+      color-mix(in srgb, var(--theme-gray-9) 92%, black)
+    );
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--theme-gray-0) 3%, transparent),
     0 20px 44px color-mix(in srgb, black 20%, transparent);
@@ -4906,8 +5575,16 @@ pre,
 
 .generate-studio-canvas__empty {
   background:
-    radial-gradient(circle at top, color-mix(in srgb, var(--theme-brand) 14%, transparent), transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 70%, transparent), color-mix(in srgb, var(--theme-gray-9) 94%, black)) !important;
+    radial-gradient(
+      circle at top,
+      color-mix(in srgb, var(--theme-brand) 14%, transparent),
+      transparent 28%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-8) 70%, transparent),
+      color-mix(in srgb, var(--theme-gray-9) 94%, black)
+    ) !important;
   border: 1px dashed color-mix(in srgb, var(--theme-brand) 24%, var(--theme-gray-4));
   border-radius: calc(14px * var(--theme-radius-multiplier));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-brand) 6%, transparent);
@@ -4916,8 +5593,16 @@ pre,
 .generate-workspace-bar {
   border-color: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-5));
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 10%, transparent), transparent 62%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 95%, transparent), color-mix(in srgb, var(--theme-gray-8) 88%, transparent));
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 10%, transparent),
+      transparent 62%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-gray-8) 95%, transparent),
+      color-mix(in srgb, var(--theme-gray-8) 88%, transparent)
+    );
   box-shadow: 0 12px 26px color-mix(in srgb, black 16%, transparent);
 }
 
@@ -4956,7 +5641,11 @@ pre,
 
 .swarm-gallery-panel-card {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-brand-soft) 6%, transparent), transparent 54%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-brand-soft) 6%, transparent),
+      transparent 54%
+    ),
     color-mix(in srgb, var(--theme-gray-8) 92%, var(--theme-gray-9));
   box-shadow: 0 8px 18px color-mix(in srgb, black 12%, transparent);
 }
@@ -4966,8 +5655,12 @@ pre,
   top: 0;
   z-index: 4;
   padding-bottom: 6px;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-gray-8) 98%, transparent), color-mix(in srgb, var(--theme-gray-8) 84%, transparent) 82%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-gray-8) 98%, transparent),
+    color-mix(in srgb, var(--theme-gray-8) 84%, transparent) 82%,
+    transparent
+  );
 }
 
 .generate-studio__gallery-shell--supporting .generate-studio-gallery__header {

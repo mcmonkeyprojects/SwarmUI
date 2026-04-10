@@ -3,8 +3,6 @@ import {
     Box,
     Stack,
     Group,
-    Button,
-    ActionIcon,
     Alert,
     SimpleGrid,
     TextInput,
@@ -40,7 +38,7 @@ import { swarmClient } from '../api/client';
 import type { ComfyWorkflowInfo } from '../api/types';
 import type { GenerateParams } from '../api/types';
 import { useGenerationStore } from '../store/generationStore';
-import { ElevatedCard, SwarmBadge } from './ui';
+import { ElevatedCard, SwarmActionIcon as ActionIcon, SwarmBadge, SwarmButton as Button } from './ui';
 import { useWorkflowWorkspaceStore } from '../stores/workflowWorkspaceStore';
 
 type ComfyRoutingMode = 'none' | 'all' | 'queue' | 'reserve';

@@ -6,9 +6,10 @@
  */
 
 import { memo, useState, useEffect } from 'react';
-import { Box, Button, Text, CloseButton, Group } from '@mantine/core';
+import { Box, Text, CloseButton, Group } from '@mantine/core';
 import { IconDownload } from '@tabler/icons-react';
 import { usePWA } from '../hooks/usePWA';
+import { SwarmButton as Button } from './ui';
 
 interface InstallPromptProps {
     /** Position of the prompt */

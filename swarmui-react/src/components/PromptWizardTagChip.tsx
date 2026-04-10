@@ -1,7 +1,18 @@
 import { memo, useCallback, useState, useMemo } from 'react';
-import { Group, UnstyledButton, Popover, Slider, NumberInput, Tooltip, Stack, Text } from '@mantine/core';
+import {
+  Group,
+  type MantineStyleProp,
+  UnstyledButton,
+  Popover,
+  Slider,
+  NumberInput,
+  Tooltip,
+  Stack,
+  Text,
+} from '@mantine/core';
 import { IconSparkles, IconAlertTriangle } from '@tabler/icons-react';
 import { SwarmBadge } from './ui';
+import type { SwarmEmphasis, SwarmTone } from './ui';
 
 interface PromptWizardTagChipProps {
   text: string;
@@ -38,16 +49,22 @@ export const PromptWizardTagChip = memo(function PromptWizardTagChip({
     setWeightPopoverOpen((o) => !o);
   }, []);
 
-  const handleSliderChange = useCallback((val: number) => {
-    onWeightChange?.(Math.round(val * 10) / 10);
-  }, [onWeightChange]);
+  const handleSliderChange = useCallback(
+    (val: number) => {
+      onWeightChange?.(Math.round(val * 10) / 10);
+    },
+    [onWeightChange]
+  );
 
-  const handleNumberChange = useCallback((val: string | number) => {
-    if (typeof val === 'number') {
-      const clamped = Math.max(0.1, Math.min(2.0, Math.round(val * 10) / 10));
-      onWeightChange?.(clamped);
-    }
-  }, [onWeightChange]);
+  const handleNumberChange = useCallback(
+    (val: string | number) => {
+      if (typeof val === 'number') {
+        const clamped = Math.max(0.1, Math.min(2.0, Math.round(val * 10) / 10));
+        onWeightChange?.(clamped);
+      }
+    },
+    [onWeightChange]
+  );
 
   // Build tooltip content
   const tooltipContent = useMemo(() => {
@@ -68,9 +85,15 @@ export const PromptWizardTagChip = memo(function PromptWizardTagChip({
   }, [aliases, negativeText, conflictTagNames, pairingTagNames]);
 
   // Determine styling based on conflict / pairing
-  let tone: any = selected ? 'primary' : 'secondary';
-  let emphasis: any = selected ? 'solid' : 'transparent';
-  let style: any = { cursor: 'pointer', userSelect: 'none', fontSize: '0.90rem', paddingInline: selected ? 8 : 14, paddingBlock: 4 };
+  let tone: SwarmTone = selected ? 'primary' : 'secondary';
+  let emphasis: SwarmEmphasis = selected ? 'solid' : 'ghost';
+  const style: MantineStyleProp = {
+    cursor: 'pointer',
+    userSelect: 'none',
+    fontSize: '0.90rem',
+    paddingInline: selected ? 8 : 14,
+    paddingBlock: 4,
+  };
 
   if (!selected && isConflict) {
     tone = 'danger';
@@ -90,7 +113,9 @@ export const PromptWizardTagChip = memo(function PromptWizardTagChip({
       size="lg"
       style={style}
       onClick={onToggle}
-      title={isConflict ? 'Conflicts with current selection' : isPairing ? 'Suggested pairing!' : ''}
+      title={
+        isConflict ? 'Conflicts with current selection' : isPairing ? 'Suggested pairing!' : ''
+      }
     >
       <Group gap={6} wrap="nowrap" align="center">
         {!selected && isPairing && <IconSparkles size={12} />}
@@ -109,6 +134,7 @@ export const PromptWizardTagChip = memo(function PromptWizardTagChip({
             <Popover.Target>
               <UnstyledButton
                 onClick={handleWeightClick}
+                className="swarm-control-no-select"
                 style={{
                   background: 'rgba(0,0,0,0.15)',
                   borderRadius: 8,
@@ -123,7 +149,9 @@ export const PromptWizardTagChip = memo(function PromptWizardTagChip({
             </Popover.Target>
             <Popover.Dropdown onClick={(e) => e.stopPropagation()} style={{ padding: 12 }}>
               <Stack gap="xs" style={{ width: 180 }}>
-                <Text size="xs" fw={600}>Tag Weight</Text>
+                <Text size="xs" fw={600}>
+                  Tag Weight
+                </Text>
                 <Slider
                   value={weight}
                   onChange={handleSliderChange}

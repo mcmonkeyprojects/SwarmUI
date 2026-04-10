@@ -1,6 +1,7 @@
 import { memo, useState, useEffect, useCallback } from 'react';
-import { Group, NumberInput, Text, Stack, ActionIcon, Tooltip } from '@mantine/core';
+import { Group, NumberInput, Text, Stack, Tooltip } from '@mantine/core';
 import { IconRefresh } from '@tabler/icons-react';
+import { SwarmActionIcon as ActionIcon } from './ui';
 
 interface SeedInputProps {
     /** Current seed value */

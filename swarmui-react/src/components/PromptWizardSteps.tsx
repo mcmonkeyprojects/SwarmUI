@@ -37,7 +37,11 @@ export const PromptWizardSteps = memo(function PromptWizardSteps({
             const isActive = meta.step === activeStep;
             const count = tagCountsByStep[meta.step] ?? 0;
             return (
-              <UnstyledButton key={meta.step} onClick={() => onStepClick(meta.step)}>
+              <UnstyledButton
+                key={meta.step}
+                className="swarm-control-no-select"
+                onClick={() => onStepClick(meta.step)}
+              >
                 <Box
                   style={{
                     display: 'flex',
@@ -45,19 +49,27 @@ export const PromptWizardSteps = memo(function PromptWizardSteps({
                     gap: 5,
                     padding: '6px 10px',
                     borderRadius: 'var(--mantine-radius-md)',
-                    background: isActive
-                      ? `color-mix(in srgb, var(--mantine-color-${meta.tone}-light) 75%, var(--elevation-raised))`
-                      : undefined,
+                    background: 'transparent',
                     border: isActive
-                      ? `1px solid color-mix(in srgb, var(--mantine-color-${meta.tone}-filled) 28%, var(--theme-gray-5))`
+                      ? `1px solid color-mix(in srgb, var(--mantine-color-${meta.tone}-filled) 22%, var(--theme-gray-4))`
                       : '1px solid transparent',
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  <Text size="xs" c={isActive ? `${meta.tone}.6` : 'dimmed'} fw={700}>{index + 1}</Text>
-                  <Text size="sm" fw={isActive ? 600 : 500}>{meta.label}</Text>
+                  <Text size="xs" c={isActive ? `${meta.tone}.6` : 'dimmed'} fw={700}>
+                    {index + 1}
+                  </Text>
+                  <Text size="sm" fw={isActive ? 600 : 500}>
+                    {meta.label}
+                  </Text>
                   {count > 0 && (
-                    <SwarmBadge tone={isActive ? meta.tone : 'primary'} emphasis="solid" size="sm">{count}</SwarmBadge>
+                    <SwarmBadge
+                      tone={isActive ? meta.tone : 'primary'}
+                      emphasis="outline"
+                      size="sm"
+                    >
+                      {count}
+                    </SwarmBadge>
                   )}
                 </Box>
               </UnstyledButton>
@@ -88,11 +100,16 @@ export const PromptWizardSteps = memo(function PromptWizardSteps({
           const count = tagCountsByStep[meta.step] ?? 0;
           const completion = completionByStep[meta.step] ?? 'empty';
           const completionTone =
-            completion === 'strong' ? 'success' : completion === 'started' ? meta.tone : 'secondary';
+            completion === 'strong'
+              ? 'success'
+              : completion === 'started'
+                ? meta.tone
+                : 'secondary';
 
           return (
             <Tooltip key={meta.step} label={meta.label} position="right" withArrow>
               <UnstyledButton
+                className="swarm-control-no-select"
                 onClick={() => onStepClick(meta.step)}
                 aria-label={`${meta.label} step`}
                 style={{ width: '100%' }}
@@ -101,22 +118,16 @@ export const PromptWizardSteps = memo(function PromptWizardSteps({
                   style={{
                     padding: '8px 4px',
                     borderRadius: 'var(--mantine-radius-md)',
-                    background: isActive
-                      ? `color-mix(in srgb, var(--mantine-color-${meta.tone}-light) 60%, transparent)`
-                      : 'transparent',
+                    background: 'transparent',
                     border: isActive
-                      ? `1px solid color-mix(in srgb, var(--mantine-color-${meta.tone}-filled) 30%, var(--mantine-color-default-border))`
+                      ? `1px solid color-mix(in srgb, var(--mantine-color-${meta.tone}-filled) 24%, var(--mantine-color-default-border))`
                       : '1px solid transparent',
                     textAlign: 'center',
                     transition: 'background 150ms ease',
                   }}
                 >
                   <Stack gap={2} align="center">
-                    <Text
-                      size="xs"
-                      fw={700}
-                      c={isActive ? `${meta.tone}.6` : 'dimmed'}
-                    >
+                    <Text size="xs" fw={700} c={isActive ? `${meta.tone}.6` : 'dimmed'}>
                       {index + 1}
                     </Text>
                     <Text
@@ -134,7 +145,11 @@ export const PromptWizardSteps = memo(function PromptWizardSteps({
                       {meta.label}
                     </Text>
                     {count > 0 ? (
-                      <SwarmBadge tone={isActive ? meta.tone : completionTone} emphasis="solid" size="sm">
+                      <SwarmBadge
+                        tone={isActive ? meta.tone : completionTone}
+                        emphasis="outline"
+                        size="sm"
+                      >
                         {count}
                       </SwarmBadge>
                     ) : (
@@ -143,9 +158,10 @@ export const PromptWizardSteps = memo(function PromptWizardSteps({
                           width: 6,
                           height: 6,
                           borderRadius: '50%',
-                          background: completion === 'empty'
-                            ? 'var(--mantine-color-default-border)'
-                            : `var(--mantine-color-${completionTone}-filled)`,
+                          background:
+                            completion === 'empty'
+                              ? 'var(--mantine-color-default-border)'
+                              : `var(--mantine-color-${completionTone}-filled)`,
                         }}
                       />
                     )}

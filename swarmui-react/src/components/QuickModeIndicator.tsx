@@ -6,10 +6,11 @@
  */
 
 import { memo, useMemo } from 'react';
-import { Badge, Tooltip, Group, ActionIcon } from '@mantine/core';
+import { Badge, Tooltip, Group } from '@mantine/core';
 import { IconBolt, IconRefresh } from '@tabler/icons-react';
 import { usePromptSimilarity } from '../hooks/usePromptSimilarity';
 import { usePromptCacheStore } from '../stores/promptCacheStore';
+import { SwarmActionIcon as ActionIcon } from './ui';
 
 // ============================================================================
 // Types

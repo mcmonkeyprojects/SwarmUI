@@ -23,11 +23,15 @@
 - [x] `src/components/ThemePreview.tsx` (uses shared frame)
 - [x] `src/components/ThemeSelector.tsx` (uses `ThemePreview`)
 - [x] `src/components/ThemeBuilder.tsx` (uses `ThemePreview`)
+- [x] `src/components/ThemeImporter.tsx` (shape-aware validation and import flow)
 
 ## Personality Complete Checklist
 - [x] Typography chosen for heading, UI, and mono stacks
 - [x] Surface language chosen (`gradient`, `tonal`, or `ornamented`)
 - [x] Control language chosen (`default`, `filled`, or `outlined`)
+- [x] Button and icon shape language chosen (`rounded`, `pill`, `square`, `circle`)
+- [x] Theme family defaults define control and icon shapes
+- [x] Runtime shape overrides persist and apply ahead of theme defaults
 - [x] Accent hierarchy defined (`brand`, secondary, tertiary, highlight)
 - [x] Motion profile chosen (`calm`, `standard`, or `energetic`)
 - [x] Contrast checked for dark mode and light-mode overrides where available
@@ -36,14 +40,17 @@
 - [x] High-visibility image/card/table selections use scrims or selected-surface tokens
 - [x] Contrast audit added for built-in themes across both color schemes
 
+## Button And Action Icon Coverage
+- [x] Generate and queue controls
+- [x] Model download and model/workflow browsing controls
+- [x] Comfy workflow and wizard workflow controls
+- [x] Image detail, history, and gallery action controls
+- [x] Roleplay editor, sidebar, chat, and control actions
+- [x] Theme selector, builder, importer, and preview controls
+- [x] Utility prompts, diagnostics, install, and scheduling controls
+
 ## Legacy CSS Tokenization
 - [x] `src/components/context-menu.css`
 - [x] `src/components/floating-window.css`
 - [x] `src/components/headless/headless-combobox.css`
 - [x] `src/components/headless/headless-dialog.css`
-
-## Remaining High-Impact Follow-up
-- [ ] Canvas/editor subsystem (`src/components/canvas/*`)
-- [ ] Generate page long-tail controls (`src/pages/GeneratePage/**`)
-- [ ] Misc utility panels (`src/components/*` not covered above)
-- [ ] Long-tail replacement of legacy `invokeGray` / `invokeBrand` hardcoding outside high-visibility surfaces

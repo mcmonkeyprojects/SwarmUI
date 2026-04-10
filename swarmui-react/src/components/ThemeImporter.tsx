@@ -1,13 +1,14 @@
 // ThemeImporter Component - Import themes from JSON
 import { useState } from 'react';
 import {
-    Modal, Stack, Button, Group, Textarea, FileButton,
+    Modal, Stack, Group, Textarea, FileButton,
     Text, Alert, Code
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconUpload, IconAlertCircle, IconCheck, IconFileUpload } from '@tabler/icons-react';
 import { useThemeStore } from '../store/themeStore';
 import { parseThemeJson, ensureUniqueId, sanitizeThemeId } from '../utils/themeValidation';
+import { SwarmButton } from './ui';
 
 interface ThemeImporterProps {
     opened: boolean;
@@ -89,7 +90,7 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                 message: 'Theme JSON pasted from clipboard',
                 color: 'blue',
             });
-        } catch (error) {
+        } catch {
             notifications.show({
                 title: 'Paste Failed',
                 message: 'Could not read from clipboard',
@@ -117,25 +118,27 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                         accept=".json,application/json"
                     >
                         {(props) => (
-                            <Button
+                            <SwarmButton
                                 {...props}
-                                variant="light"
+                                tone="secondary"
+                                emphasis="soft"
                                 leftSection={<IconFileUpload size={16} />}
                                 size="sm"
                             >
                                 Upload JSON File
-                            </Button>
+                            </SwarmButton>
                         )}
                     </FileButton>
 
-                    <Button
-                        variant="light"
+                    <SwarmButton
+                        tone="secondary"
+                        emphasis="soft"
                         leftSection={<IconUpload size={16} />}
                         size="sm"
                         onClick={handlePaste}
                     >
                         Paste from Clipboard
-                    </Button>
+                    </SwarmButton>
                 </Group>
 
                 {/* JSON Input */}
@@ -168,7 +171,7 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                         <Stack gap="xs">
                             {validationErrors.map((error, i) => (
                                 <Text key={i} size="xs">
-                                    • {error}
+                                    - {error}
                                 </Text>
                             ))}
                         </Stack>
@@ -178,18 +181,18 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                 {/* Format Hint */}
                 <Alert color="blue" variant="light" title="Required Format">
                     <Text size="xs">
-                        Theme JSON must include: <Code>id</Code>, <Code>name</Code>, <Code>category</Code>, and a <Code>colors</Code> object with all required color properties.
+                        Theme JSON must include <Code>id</Code>, <Code>name</Code>, <Code>category</Code>, and a <Code>colors</Code> object. Optional <Code>style</Code> fields can define control mode, icon mode, button shape, and icon shape.
                     </Text>
                 </Alert>
 
                 {/* Actions */}
                 <Group justify="flex-end" mt="md">
-                    <Button variant="subtle" onClick={onClose}>
+                    <SwarmButton tone="secondary" emphasis="ghost" onClick={onClose}>
                         Cancel
-                    </Button>
-                    <Button onClick={handleImport} leftSection={<IconUpload size={16} />}>
+                    </SwarmButton>
+                    <SwarmButton tone="primary" emphasis="solid" onClick={handleImport} leftSection={<IconUpload size={16} />}>
                         Import Theme
-                    </Button>
+                    </SwarmButton>
                 </Group>
             </Stack>
         </Modal>

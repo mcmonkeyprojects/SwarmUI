@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
   Accordion,
-  ActionIcon,
   Checkbox,
   Divider,
   FileButton,
@@ -34,6 +33,7 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useShallow } from 'zustand/react/shallow';
+import { SwarmActionIcon as ActionIcon } from '../../components/ui/SwarmActionIcon';
 import { SwarmButton } from '../../components/ui/SwarmButton';
 import { useRoleplayStore } from '../../stores/roleplayStore';
 import { useGenerationStore } from '../../store/generationStore';
@@ -62,6 +62,7 @@ import {
   createDefaultPromptSet,
   createEmptyRoleplayPersonalityProfile,
   getEffectiveSystemPrompt,
+  normalizeRoleplayPersonalityProfile,
 } from '../../features/roleplay/roleplayCharacterPrompting';
 import { createEmptyRoleplayMemoryState } from '../../features/roleplay/roleplayMemory';
 import { CharacterAvatar } from './CharacterAvatar';
@@ -126,8 +127,9 @@ function CharacterEditorForm({
   const initialInteractionStyle = character?.interactionStyle ?? DEFAULT_ROLEPLAY_INTERACTION_STYLE;
   const initialInteractionStyleConfig = getRoleplayInteractionStyleConfig(initialInteractionStyle);
   const defaultPromptSet = createDefaultPromptSet();
-  const initialPersonalityProfile =
-    character?.personalityProfile ?? createEmptyRoleplayPersonalityProfile();
+  const initialPersonalityProfile = normalizeRoleplayPersonalityProfile(
+    character?.personalityProfile ?? createEmptyRoleplayPersonalityProfile()
+  );
 
   // ── Character text fields ─────────────────────────────────────────────
   const [name, setName] = useState(character?.name ?? '');
@@ -866,7 +868,9 @@ function CharacterEditorForm({
                       const preset = PERSONALITY_PRESET_MAP.get(value);
                       if (!preset) return;
                       setPersonality(preset.personality);
-                      setPersonalityProfile(preset.personalityProfile);
+                      setPersonalityProfile(
+                        normalizeRoleplayPersonalityProfile(preset.personalityProfile)
+                      );
                     }}
                   />
                 </Group>

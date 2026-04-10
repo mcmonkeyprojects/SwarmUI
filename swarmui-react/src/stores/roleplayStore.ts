@@ -28,6 +28,7 @@ import {
   createDefaultPromptSet,
   createEmptyRoleplayPersonalityProfile,
   getEffectiveSystemPrompt,
+  normalizeRoleplayPersonalityProfile,
 } from '../features/roleplay/roleplayCharacterPrompting';
 import type { RoleplayBundleData } from '../features/roleplay/roleplayBundle';
 
@@ -54,6 +55,20 @@ function createDefaultModelCompatibilitySettings(): RoleplayModelCompatibilitySe
   };
 }
 
+function normalizeString(value: unknown, fallback: string = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function normalizeNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function normalizeStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+}
+
 function createDefaultPromptStack(): RoleplayPromptStack {
   return {
     mainPromptOverride: '',
@@ -68,58 +83,61 @@ function createDefaultPromptStack(): RoleplayPromptStack {
   };
 }
 
+function normalizeInteractionStyle(value: unknown): RoleplayCharacter['interactionStyle'] {
+  return value === 'personal-chat' || value === 'storyteller'
+    ? value
+    : LEGACY_ROLEPLAY_INTERACTION_STYLE;
+}
+
 function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharacter {
   const defaultPromptSet = createDefaultPromptSet();
   const now = Date.now();
-  const interactionStyle = character.interactionStyle ?? LEGACY_ROLEPLAY_INTERACTION_STYLE;
+  const interactionStyle = normalizeInteractionStyle(character.interactionStyle);
+  const legacySystemPrompt = normalizeString(character.systemPrompt);
   const chatSystemPrompt =
-    character.chatSystemPrompt ??
-    (interactionStyle === 'personal-chat'
-      ? character.systemPrompt
-      : defaultPromptSet.chatSystemPrompt) ??
+    normalizeString(character.chatSystemPrompt) ||
+    (interactionStyle === 'personal-chat' ? legacySystemPrompt : '') ||
     defaultPromptSet.chatSystemPrompt;
   const roleplaySystemPrompt =
-    character.roleplaySystemPrompt ??
-    (interactionStyle === 'storyteller'
-      ? character.systemPrompt
-      : defaultPromptSet.roleplaySystemPrompt) ??
+    normalizeString(character.roleplaySystemPrompt) ||
+    (interactionStyle === 'storyteller' ? legacySystemPrompt : '') ||
     defaultPromptSet.roleplaySystemPrompt;
 
   return {
     id: character.id,
-    name: character.name,
-    avatar: character.avatar ?? null,
+    name: normalizeString(character.name, 'Unnamed Character'),
+    avatar: normalizeNullableString(character.avatar),
     interactionStyle,
-    appearancePrompt: character.appearancePrompt ?? null,
-    imageModelId: character.imageModelId ?? null,
-    personalityProfile: character.personalityProfile ?? createEmptyRoleplayPersonalityProfile(),
-    personality: character.personality ?? '',
+    appearancePrompt: normalizeNullableString(character.appearancePrompt),
+    imageModelId: normalizeNullableString(character.imageModelId),
+    personalityProfile: normalizeRoleplayPersonalityProfile(character.personalityProfile),
+    personality: normalizeString(character.personality),
     systemPrompt: getEffectiveSystemPrompt({
       interactionStyle,
       chatSystemPrompt,
       roleplaySystemPrompt,
-      systemPrompt: character.systemPrompt ?? '',
+      systemPrompt: legacySystemPrompt,
     }),
     chatSystemPrompt,
     roleplaySystemPrompt,
-    openingChatMessage: character.openingChatMessage ?? '',
-    openingRoleplayMessage: character.openingRoleplayMessage ?? '',
-    alternateGreetings: character.alternateGreetings ?? [],
+    openingChatMessage: normalizeString(character.openingChatMessage),
+    openingRoleplayMessage: normalizeString(character.openingRoleplayMessage),
+    alternateGreetings: normalizeStringArray(character.alternateGreetings),
     sceneSuggestionPrompt:
-      character.sceneSuggestionPrompt ??
+      normalizeString(character.sceneSuggestionPrompt) ||
       getRoleplayInteractionStyleConfig(interactionStyle).sceneSuggestionPrompt,
-    description: character.description ?? '',
-    scenario: character.scenario ?? '',
-    exampleMessages: character.exampleMessages ?? '',
-    tags: character.tags ?? [],
-    creatorNotes: character.creatorNotes ?? '',
-    boundLorebookIds: character.boundLorebookIds ?? [],
-    characterLora: character.characterLora ?? null,
+    description: normalizeString(character.description),
+    scenario: normalizeString(character.scenario),
+    exampleMessages: normalizeString(character.exampleMessages),
+    tags: normalizeStringArray(character.tags),
+    creatorNotes: normalizeString(character.creatorNotes),
+    boundLorebookIds: normalizeStringArray(character.boundLorebookIds),
+    characterLora: normalizeNullableString(character.characterLora),
     characterLoraWeight: character.characterLoraWeight ?? 0.8,
     ipAdapterEnabled: character.ipAdapterEnabled ?? false,
-    ipAdapterModel: character.ipAdapterModel ?? 'faceid plus v2',
+    ipAdapterModel: normalizeString(character.ipAdapterModel, 'faceid plus v2'),
     ipAdapterWeight: character.ipAdapterWeight ?? 1.0,
-    conversationSummary: character.conversationSummary ?? '',
+    conversationSummary: normalizeString(character.conversationSummary),
     continuity: character.continuity ?? {
       relationshipSummary: '',
       currentLocation: '',
@@ -142,12 +160,12 @@ function normalizePersona(
   const now = Date.now();
   return {
     id: persona.id,
-    name: persona.name,
-    description: persona.description ?? '',
-    notes: persona.notes ?? '',
-    avatar: persona.avatar ?? null,
-    tags: persona.tags ?? [],
-    boundLorebookIds: persona.boundLorebookIds ?? [],
+    name: normalizeString(persona.name, 'Unnamed Persona'),
+    description: normalizeString(persona.description),
+    notes: normalizeString(persona.notes),
+    avatar: normalizeNullableString(persona.avatar),
+    tags: normalizeStringArray(persona.tags),
+    boundLorebookIds: normalizeStringArray(persona.boundLorebookIds),
     createdAt: persona.createdAt ?? now,
     updatedAt: persona.updatedAt ?? now,
   };
@@ -159,13 +177,13 @@ function normalizeLorebook(
   const now = Date.now();
   return {
     id: lorebook.id,
-    name: lorebook.name,
-    description: lorebook.description ?? '',
+    name: normalizeString(lorebook.name, 'Untitled Lorebook'),
+    description: normalizeString(lorebook.description),
     entries: (lorebook.entries ?? []).map((entry) => ({
       id: entry.id,
-      title: entry.title ?? '',
-      content: entry.content ?? '',
-      keywords: entry.keywords ?? [],
+      title: normalizeString(entry.title),
+      content: normalizeString(entry.content),
+      keywords: normalizeStringArray(entry.keywords),
       mode: entry.mode ?? 'keyword',
       enabled: entry.enabled ?? true,
       createdAt: entry.createdAt ?? now,
@@ -181,16 +199,44 @@ function normalizeSession(
 ): RoleplayChatSession {
   const now = Date.now();
   const emptyMemoryState = createEmptyRoleplayMemoryState();
+  const normalizedPromptStack = session.promptStack ?? {};
 
   return {
     id: session.id,
     characterId: session.characterId,
-    title: session.title ?? 'Main Chat',
-    activePersonaId: session.activePersonaId ?? DEFAULT_PERSONA_ID,
-    boundLorebookIds: session.boundLorebookIds ?? [],
+    title: normalizeString(session.title, 'Main Chat'),
+    activePersonaId: normalizeString(session.activePersonaId, DEFAULT_PERSONA_ID),
+    boundLorebookIds: normalizeStringArray(session.boundLorebookIds),
     promptStack: {
       ...createDefaultPromptStack(),
-      ...(session.promptStack ?? {}),
+      ...normalizedPromptStack,
+      mainPromptOverride: normalizeString(normalizedPromptStack.mainPromptOverride),
+      authorNote: normalizeString(normalizedPromptStack.authorNote),
+      postHistoryNote: normalizeString(normalizedPromptStack.postHistoryNote),
+      includePersona:
+        typeof normalizedPromptStack.includePersona === 'boolean'
+          ? normalizedPromptStack.includePersona
+          : true,
+      includeCharacterDefinition:
+        typeof normalizedPromptStack.includeCharacterDefinition === 'boolean'
+          ? normalizedPromptStack.includeCharacterDefinition
+          : true,
+      includeScenario:
+        typeof normalizedPromptStack.includeScenario === 'boolean'
+          ? normalizedPromptStack.includeScenario
+          : true,
+      includeExampleMessages:
+        typeof normalizedPromptStack.includeExampleMessages === 'boolean'
+          ? normalizedPromptStack.includeExampleMessages
+          : true,
+      includeMemory:
+        typeof normalizedPromptStack.includeMemory === 'boolean'
+          ? normalizedPromptStack.includeMemory
+          : true,
+      includeLore:
+        typeof normalizedPromptStack.includeLore === 'boolean'
+          ? normalizedPromptStack.includeLore
+          : true,
     },
     messages: session.messages ?? [],
     conversationSummary: session.conversationSummary ?? emptyMemoryState.conversationSummary,
@@ -402,6 +448,61 @@ function lorebookHasChanges(
     return true;
   }
   if (Object.hasOwn(updates, 'updatedAt') && updates.updatedAt !== lorebook.updatedAt) {
+    return true;
+  }
+  return false;
+}
+
+function promptStackHasChanges(
+  promptStack: RoleplayPromptStack,
+  updates: Partial<RoleplayPromptStack>
+): boolean {
+  if (
+    Object.hasOwn(updates, 'mainPromptOverride') &&
+    updates.mainPromptOverride !== promptStack.mainPromptOverride
+  ) {
+    return true;
+  }
+  if (Object.hasOwn(updates, 'authorNote') && updates.authorNote !== promptStack.authorNote) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'postHistoryNote') &&
+    updates.postHistoryNote !== promptStack.postHistoryNote
+  ) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'includePersona') &&
+    updates.includePersona !== promptStack.includePersona
+  ) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'includeCharacterDefinition') &&
+    updates.includeCharacterDefinition !== promptStack.includeCharacterDefinition
+  ) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'includeScenario') &&
+    updates.includeScenario !== promptStack.includeScenario
+  ) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'includeExampleMessages') &&
+    updates.includeExampleMessages !== promptStack.includeExampleMessages
+  ) {
+    return true;
+  }
+  if (
+    Object.hasOwn(updates, 'includeMemory') &&
+    updates.includeMemory !== promptStack.includeMemory
+  ) {
+    return true;
+  }
+  if (Object.hasOwn(updates, 'includeLore') && updates.includeLore !== promptStack.includeLore) {
     return true;
   }
   return false;
@@ -676,11 +777,15 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           }),
         setSessionActivePersona: (sessionId, personaId) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              activePersonaId: personaId,
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              session.activePersonaId === personaId
+                ? session
+                : {
+                    ...session,
+                    activePersonaId: personaId,
+                    updatedAt: Date.now(),
+                  }
+            ),
           })),
         addLorebook: (lorebook) =>
           set((state) => ({
@@ -823,22 +928,30 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
           }),
         updateSessionPromptStack: (sessionId, updates) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              promptStack: {
-                ...session.promptStack,
-                ...updates,
-              },
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              promptStackHasChanges(session.promptStack, updates)
+                ? {
+                    ...session,
+                    promptStack: {
+                      ...session.promptStack,
+                      ...updates,
+                    },
+                    updatedAt: Date.now(),
+                  }
+                : session
+            ),
           })),
         setSessionBoundLorebooks: (sessionId, lorebookIds) =>
           set((state) => ({
-            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) => ({
-              ...session,
-              boundLorebookIds: lorebookIds,
-              updatedAt: Date.now(),
-            })),
+            chatSessions: updateSessionInList(state.chatSessions, sessionId, (session) =>
+              areStringArraysEqual(session.boundLorebookIds, lorebookIds)
+                ? session
+                : {
+                    ...session,
+                    boundLorebookIds: lorebookIds,
+                    updatedAt: Date.now(),
+                  }
+            ),
           })),
         addMessage: (sessionId, message) =>
           set((state) => ({
@@ -1203,7 +1316,7 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
       }),
       {
         name: 'swarmui-roleplay-v2',
-        version: 10,
+        version: 11,
         migrate: (persistedState) => {
           const state = persistedState as LegacyRoleplayState;
           const normalizedCharacters =

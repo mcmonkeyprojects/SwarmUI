@@ -10,6 +10,8 @@ const VALID_STYLE_MOTIFS = ['none', 'dot-grid', 'glyph-field'] as const;
 const VALID_SURFACE_MODES = ['gradient', 'tonal', 'ornamented'] as const;
 const VALID_CONTROL_MODES = ['default', 'filled', 'outlined'] as const;
 const VALID_ICON_MODES = ['plain', 'badge', 'glyph-outline'] as const;
+const VALID_CONTROL_SHAPES = ['rounded', 'pill', 'square'] as const;
+const VALID_ICON_SHAPES = ['rounded', 'circle', 'square'] as const;
 
 /**
  * Validates if a string is a valid hex color
@@ -38,26 +40,36 @@ export function isValidColor(color: string): boolean {
 /**
  * Validates a theme palette object
  */
-export function validateTheme(theme: any): { valid: boolean; errors: string[] } {
+export function validateTheme(theme: unknown): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
+    if (typeof theme !== 'object' || theme === null) {
+        return {
+            valid: false,
+            errors: ['Theme must be an object']
+        };
+    }
+
+    const candidate = theme as Record<string, unknown>;
 
     // Check required fields
-    if (!theme.id || typeof theme.id !== 'string') {
+    if (!candidate.id || typeof candidate.id !== 'string') {
         errors.push('Theme must have a valid "id" string');
     }
 
-    if (!theme.name || typeof theme.name !== 'string') {
+    if (!candidate.name || typeof candidate.name !== 'string') {
         errors.push('Theme must have a valid "name" string');
     }
 
-    if (!theme.category || !VALID_CATEGORIES.includes(theme.category)) {
+    if (!candidate.category || !VALID_CATEGORIES.includes(candidate.category as ThemeCategory)) {
         errors.push(`Theme category must be one of: ${VALID_CATEGORIES.join(', ')}`);
     }
 
-    if (!theme.colors || typeof theme.colors !== 'object') {
+    if (!candidate.colors || typeof candidate.colors !== 'object') {
         errors.push('Theme must have a "colors" object');
         return { valid: false, errors };
     }
+
+    const colors = candidate.colors as Record<string, unknown>;
 
     // Check required colors
     const requiredColors = [
@@ -68,10 +80,10 @@ export function validateTheme(theme: any): { valid: boolean; errors: string[] } 
     ];
 
     for (const colorKey of requiredColors) {
-        const color = theme.colors[colorKey];
+        const color = colors[colorKey];
         if (!color) {
             errors.push(`Missing required color: "${colorKey}"`);
-        } else if (!isValidColor(color)) {
+        } else if (typeof color !== 'string' || !isValidColor(color)) {
             errors.push(`Invalid color format for "${colorKey}": ${color}`);
         }
     }
@@ -83,63 +95,79 @@ export function validateTheme(theme: any): { valid: boolean; errors: string[] } 
     ];
 
     for (const colorKey of optionalColors) {
-        const color = theme.colors[colorKey];
-        if (color && !isValidColor(color)) {
+        const color = colors[colorKey];
+        if (color && (typeof color !== 'string' || !isValidColor(color))) {
             errors.push(`Invalid color format for optional "${colorKey}": ${color}`);
         }
     }
 
-    if (theme.style !== undefined) {
-        if (typeof theme.style !== 'object' || theme.style === null) {
+    if (candidate.style !== undefined) {
+        if (typeof candidate.style !== 'object' || candidate.style === null) {
             errors.push('Theme "style" must be an object when provided');
         } else {
-            if (theme.style.family === undefined) {
+            const style = candidate.style as Record<string, unknown>;
+
+            if (style.family === undefined) {
                 errors.push('Theme style must include a "family" value');
             }
 
             if (
-                theme.style.family !== undefined
-                && !VALID_STYLE_FAMILIES.includes(theme.style.family)
+                style.family !== undefined
+                && !VALID_STYLE_FAMILIES.includes(style.family as typeof VALID_STYLE_FAMILIES[number])
             ) {
                 errors.push(`Theme style family must be one of: ${VALID_STYLE_FAMILIES.join(', ')}`);
             }
 
             if (
-                theme.style.motif !== undefined
-                && !VALID_STYLE_MOTIFS.includes(theme.style.motif)
+                style.motif !== undefined
+                && !VALID_STYLE_MOTIFS.includes(style.motif as typeof VALID_STYLE_MOTIFS[number])
             ) {
                 errors.push(`Theme style motif must be one of: ${VALID_STYLE_MOTIFS.join(', ')}`);
             }
 
             if (
-                theme.style.surfaceMode !== undefined
-                && !VALID_SURFACE_MODES.includes(theme.style.surfaceMode)
+                style.surfaceMode !== undefined
+                && !VALID_SURFACE_MODES.includes(style.surfaceMode as typeof VALID_SURFACE_MODES[number])
             ) {
                 errors.push(`Theme surface mode must be one of: ${VALID_SURFACE_MODES.join(', ')}`);
             }
 
             if (
-                theme.style.controlMode !== undefined
-                && !VALID_CONTROL_MODES.includes(theme.style.controlMode)
+                style.controlMode !== undefined
+                && !VALID_CONTROL_MODES.includes(style.controlMode as typeof VALID_CONTROL_MODES[number])
             ) {
                 errors.push(`Theme control mode must be one of: ${VALID_CONTROL_MODES.join(', ')}`);
             }
 
             if (
-                theme.style.iconMode !== undefined
-                && !VALID_ICON_MODES.includes(theme.style.iconMode)
+                style.iconMode !== undefined
+                && !VALID_ICON_MODES.includes(style.iconMode as typeof VALID_ICON_MODES[number])
             ) {
                 errors.push(`Theme icon mode must be one of: ${VALID_ICON_MODES.join(', ')}`);
             }
 
             if (
-                theme.style.motifIntensity !== undefined
-                && (typeof theme.style.motifIntensity !== 'number' || Number.isNaN(theme.style.motifIntensity))
+                style.controlShape !== undefined
+                && !VALID_CONTROL_SHAPES.includes(style.controlShape as typeof VALID_CONTROL_SHAPES[number])
+            ) {
+                errors.push(`Theme control shape must be one of: ${VALID_CONTROL_SHAPES.join(', ')}`);
+            }
+
+            if (
+                style.iconShape !== undefined
+                && !VALID_ICON_SHAPES.includes(style.iconShape as typeof VALID_ICON_SHAPES[number])
+            ) {
+                errors.push(`Theme icon shape must be one of: ${VALID_ICON_SHAPES.join(', ')}`);
+            }
+
+            if (
+                style.motifIntensity !== undefined
+                && (typeof style.motifIntensity !== 'number' || Number.isNaN(style.motifIntensity))
             ) {
                 errors.push('Theme motif intensity must be a number between 0 and 1');
             } else if (
-                typeof theme.style.motifIntensity === 'number'
-                && (theme.style.motifIntensity < 0 || theme.style.motifIntensity > 1)
+                typeof style.motifIntensity === 'number'
+                && (style.motifIntensity < 0 || style.motifIntensity > 1)
             ) {
                 errors.push('Theme motif intensity must be between 0 and 1');
             }

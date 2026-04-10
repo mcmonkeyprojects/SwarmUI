@@ -1,13 +1,24 @@
 // ThemeBuilder Component - Visual theme creator with live preview
 import { useState, useMemo } from 'react';
 import {
-    Modal, Stack, TextInput, Group, Button, ColorInput,
+    Modal, Stack, TextInput, Group, ColorInput,
     Select, Text, Accordion, Divider, Box, ScrollArea
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { IconDeviceFloppy, IconX, IconCopy, IconDownload } from '@tabler/icons-react';
-import { useThemeStore, THEME_PALETTES, type ThemePalette, type ThemeCategory } from '../store/themeStore';
+import {
+    resolveThemeStyle,
+    useThemeStore,
+    THEME_PALETTES,
+    type ThemeCategory,
+    type ThemeControlMode,
+    type ThemeControlShape,
+    type ThemeIconMode,
+    type ThemeIconShape,
+    type ThemePalette,
+} from '../store/themeStore';
 import { ThemePreview } from './ThemePreview';
+import { SwarmButton } from './ui';
 
 interface ThemeBuilderProps {
     opened: boolean;
@@ -49,15 +60,41 @@ const CATEGORY_OPTIONS = [
     { value: 'minimal', label: 'Minimal' },
 ] as const;
 
+const CONTROL_MODE_OPTIONS: { value: ThemeControlMode; label: string }[] = [
+    { value: 'default', label: 'Default Controls' },
+    { value: 'filled', label: 'Filled Controls' },
+    { value: 'outlined', label: 'Outlined Controls' },
+];
+
+const ICON_MODE_OPTIONS: { value: ThemeIconMode; label: string }[] = [
+    { value: 'plain', label: 'Plain Icons' },
+    { value: 'badge', label: 'Badge Icons' },
+    { value: 'glyph-outline', label: 'Glyph Outline Icons' },
+];
+
+const CONTROL_SHAPE_OPTIONS: { value: ThemeControlShape; label: string }[] = [
+    { value: 'rounded', label: 'Rounded Buttons' },
+    { value: 'pill', label: 'Pill Buttons' },
+    { value: 'square', label: 'Square Buttons' },
+];
+
+const ICON_SHAPE_OPTIONS: { value: ThemeIconShape; label: string }[] = [
+    { value: 'rounded', label: 'Rounded Icons' },
+    { value: 'circle', label: 'Circle Icons' },
+    { value: 'square', label: 'Square Icons' },
+];
+
 export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps) {
     const { customThemes, addCustomTheme, updateCustomTheme, exportTheme, getAllThemes } = useThemeStore();
 
     // Find existing theme if editing
     const existingTheme = editThemeId ? customThemes.find(t => t.id === editThemeId) : null;
+    const initialBaseThemeId = existingTheme?.id || 'dracula';
+    const initialBaseTheme = getAllThemes().find((theme) => theme.id === initialBaseThemeId) || THEME_PALETTES[0];
 
     const [themeName, setThemeName] = useState(existingTheme?.name || '');
     const [category, setCategory] = useState<ThemeCategory>(existingTheme?.category || 'custom');
-    const [baseTheme, setBaseTheme] = useState<string>(existingTheme?.id || 'dracula');
+    const [baseTheme, setBaseTheme] = useState<string>(initialBaseThemeId);
 
     // Color states
     const [brand, setBrand] = useState(existingTheme?.colors.brand || '#7c3aed');
@@ -85,7 +122,14 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
     const [fontFamily, setFontFamily] = useState(existingTheme?.colors.fontFamily || '');
     const [fontHeading, setFontHeading] = useState(existingTheme?.colors.fontHeading || '');
     const [fontMono, setFontMono] = useState(existingTheme?.colors.fontMono || '');
-    const [styleSeed, setStyleSeed] = useState<ThemePalette['style'] | undefined>(existingTheme?.style);
+    const [styleSeed, setStyleSeed] = useState<ThemePalette['style']>(resolveThemeStyle(existingTheme || initialBaseTheme));
+
+    const updateStyleSeed = (updates: Partial<NonNullable<ThemePalette['style']>>) => {
+        setStyleSeed((current) => ({
+            ...current,
+            ...updates,
+        }));
+    };
 
     // Load base theme colors when baseTheme changes
     const handleBaseThemeChange = (value: string | null) => {
@@ -116,7 +160,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
         setFontFamily(theme.colors.fontFamily || '');
         setFontHeading(theme.colors.fontHeading || '');
         setFontMono(theme.colors.fontMono || '');
-        setStyleSeed(theme.style);
+        setStyleSeed(resolveThemeStyle(theme));
     };
 
     // Build preview theme
@@ -151,7 +195,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
             id: editThemeId || 'preview',
             name: themeName || 'Preview',
             category,
-            ...(styleSeed ? { style: styleSeed } : {}),
+            style: styleSeed,
             colors
         };
     }, [themeName, category, brand, accent, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, success, warning, error, textPrimary, textSecondary, overlayColor, fontFamily, fontHeading, fontMono, styleSeed, editThemeId]);
@@ -198,7 +242,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
             id: themeId,
             name: themeName,
             category,
-            ...(styleSeed ? { style: styleSeed } : {}),
+            style: styleSeed,
             colors
         };
 
@@ -293,6 +337,61 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                                     searchable
                                 />
                             )}
+
+                            <Divider />
+
+                            <Text size="sm" fw={600}>Control Personality</Text>
+                            <Text size="xs" c="dimmed">
+                                These settings define the default control fill language and switchable button/icon shapes for this theme.
+                            </Text>
+                            <Select
+                                label="Control Mode"
+                                description="How standard buttons and badges are filled by default"
+                                data={CONTROL_MODE_OPTIONS}
+                                value={styleSeed.controlMode}
+                                onChange={(value) => {
+                                    if (!value) {
+                                        return;
+                                    }
+                                    updateStyleSeed({ controlMode: value as ThemeControlMode });
+                                }}
+                            />
+                            <Select
+                                label="Icon Mode"
+                                description="How icon buttons and badges are decorated"
+                                data={ICON_MODE_OPTIONS}
+                                value={styleSeed.iconMode}
+                                onChange={(value) => {
+                                    if (!value) {
+                                        return;
+                                    }
+                                    updateStyleSeed({ iconMode: value as ThemeIconMode });
+                                }}
+                            />
+                            <Select
+                                label="Button Shape"
+                                description="Default shape used by text-bearing buttons"
+                                data={CONTROL_SHAPE_OPTIONS}
+                                value={styleSeed.controlShape}
+                                onChange={(value) => {
+                                    if (!value) {
+                                        return;
+                                    }
+                                    updateStyleSeed({ controlShape: value as ThemeControlShape });
+                                }}
+                            />
+                            <Select
+                                label="Icon Shape"
+                                description="Default shape used by action icons"
+                                data={ICON_SHAPE_OPTIONS}
+                                value={styleSeed.iconShape}
+                                onChange={(value) => {
+                                    if (!value) {
+                                        return;
+                                    }
+                                    updateStyleSeed({ iconShape: value as ThemeIconShape });
+                                }}
+                            />
 
                             <Divider />
 
@@ -471,37 +570,42 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                     {/* Actions */}
                     <Group justify="space-between" mt="md" style={{ borderTop: '1px solid var(--theme-gray-5)', paddingTop: 12 }}>
                         <Group gap="xs">
-                            <Button
-                                variant="subtle"
+                            <SwarmButton
+                                tone="secondary"
+                                emphasis="ghost"
                                 size="xs"
                                 leftSection={<IconCopy size={14} />}
                                 onClick={handleExport}
                             >
                                 Copy JSON
-                            </Button>
-                            <Button
-                                variant="subtle"
+                            </SwarmButton>
+                            <SwarmButton
+                                tone="secondary"
+                                emphasis="ghost"
                                 size="xs"
                                 leftSection={<IconDownload size={14} />}
                                 onClick={handleDownload}
                             >
                                 Download
-                            </Button>
+                            </SwarmButton>
                         </Group>
                         <Group gap="xs">
-                            <Button
-                                variant="subtle"
+                            <SwarmButton
+                                tone="secondary"
+                                emphasis="ghost"
                                 onClick={onClose}
                                 leftSection={<IconX size={14} />}
                             >
                                 Cancel
-                            </Button>
-                            <Button
+                            </SwarmButton>
+                            <SwarmButton
+                                tone="primary"
+                                emphasis="solid"
                                 onClick={handleSave}
                                 leftSection={<IconDeviceFloppy size={14} />}
                             >
                                 {editThemeId ? 'Update' : 'Save'} Theme
-                            </Button>
+                            </SwarmButton>
                         </Group>
                     </Group>
                 </Stack>
@@ -512,7 +616,7 @@ export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps
                         <Text size="xs" fw={600} c="dimmed">Live Preview</Text>
                         <ThemePreview theme={previewTheme} />
                         <Text size="8px" c="dimmed" ta="center">
-                            Preview updates in real-time as you edit colors
+                            Preview updates in real-time as you edit colors, fills, and control shapes
                         </Text>
                     </Stack>
                 </Box>

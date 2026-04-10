@@ -2,7 +2,10 @@ import { memo, useMemo, useState } from 'react';
 import { Box, Group, Stack, Text, Tabs, UnstyledButton, Collapse, Paper } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconBulb } from '@tabler/icons-react';
 import { PromptWizardTagChip } from './PromptWizardTagChip';
-import { buildStepGuidance, buildNegativePairCandidates } from '../features/promptWizard/wizardInsights';
+import {
+  buildStepGuidance,
+  buildNegativePairCandidates,
+} from '../features/promptWizard/wizardInsights';
 import type { PromptTag, StepMeta } from '../features/promptWizard/types';
 
 interface PromptWizardSuggestionStripProps {
@@ -57,14 +60,19 @@ export const PromptWizardSuggestionStrip = memo(function PromptWizardSuggestionS
       {/* Header — always visible */}
       <UnstyledButton
         onClick={() => setCollapsed((c) => !c)}
+        className="swarm-control-no-select"
         style={{ width: '100%', padding: '8px 12px' }}
       >
         <Group justify="space-between" align="center">
           <Group gap="xs" align="center">
             {collapsed ? <IconChevronRight size={14} /> : <IconChevronDown size={14} />}
             <IconBulb size={14} style={{ color: `var(--mantine-color-${stepMeta.tone}-filled)` }} />
-            <Text size="xs" fw={600}>Suggestions</Text>
-            <Text size="xs" c="dimmed">{totalCount} tags</Text>
+            <Text size="xs" fw={600}>
+              Suggestions
+            </Text>
+            <Text size="xs" c="dimmed">
+              {totalCount} tags
+            </Text>
           </Group>
         </Group>
       </UnstyledButton>
@@ -89,7 +97,9 @@ export const PromptWizardSuggestionStrip = memo(function PromptWizardSuggestionS
             {suggestions.map((set) => (
               <Tabs.Panel key={set.title} value={set.title}>
                 <Stack gap={4}>
-                  <Text size="xs" c="dimmed">{set.description}</Text>
+                  <Text size="xs" c="dimmed">
+                    {set.description}
+                  </Text>
                   <Group gap={6}>
                     {set.tags.map((tag) => (
                       <PromptWizardTagChip
@@ -107,11 +117,14 @@ export const PromptWizardSuggestionStrip = memo(function PromptWizardSuggestionS
             {negativeCandidates.length > 0 && (
               <Tabs.Panel value="__negative_pairs">
                 <Stack gap={4}>
-                  <Text size="xs" c="dimmed">Click to add the negative counterpart for selected tags.</Text>
+                  <Text size="xs" c="dimmed">
+                    Click to add the negative counterpart for selected tags.
+                  </Text>
                   <Group gap={6}>
                     {negativeCandidates.map((tag) => (
                       <UnstyledButton
                         key={tag.id}
+                        className="swarm-control-no-select"
                         onClick={() => tag.negativeText && onAddNegativePair(tag.negativeText)}
                         style={{
                           padding: '4px 10px',
@@ -123,8 +136,13 @@ export const PromptWizardSuggestionStrip = memo(function PromptWizardSuggestionS
                         }}
                       >
                         <Text size="xs">
-                          <Text span fw={600}>{tag.text}</Text>
-                          <Text span c="dimmed"> → {tag.negativeText}</Text>
+                          <Text span fw={600}>
+                            {tag.text}
+                          </Text>
+                          <Text span c="dimmed">
+                            {' '}
+                            → {tag.negativeText}
+                          </Text>
                         </Text>
                       </UnstyledButton>
                     ))}

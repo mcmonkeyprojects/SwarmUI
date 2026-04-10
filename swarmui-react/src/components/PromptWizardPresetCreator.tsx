@@ -8,7 +8,13 @@ interface PromptWizardPresetCreatorProps {
   activeCategory: PresetCategory;
   selectedTagIds: string[];
   allTags: PromptTag[];
-  onSave: (preset: { name: string; description?: string; category: PresetCategory; tagIds: string[]; thumbnail?: string }) => void;
+  onSave: (preset: {
+    name: string;
+    description?: string;
+    category: PresetCategory;
+    tagIds: string[];
+    thumbnail?: string;
+  }) => void;
   onCancel: () => void;
   initialName?: string;
   initialDescription?: string;
@@ -31,7 +37,8 @@ export const PromptWizardPresetCreator = memo(function PromptWizardPresetCreator
   const [includedTagIds, setIncludedTagIds] = useState<Set<string>>(new Set(selectedTagIds));
 
   const selectedTags = useMemo(
-    () => selectedTagIds.map((id) => allTags.find((t) => t.id === id)).filter(Boolean) as PromptTag[],
+    () =>
+      selectedTagIds.map((id) => allTags.find((t) => t.id === id)).filter(Boolean) as PromptTag[],
     [selectedTagIds, allTags]
   );
 
@@ -59,12 +66,17 @@ export const PromptWizardPresetCreator = memo(function PromptWizardPresetCreator
     });
   }, [canSave, name, description, category, includedTagIds, onSave]);
 
-  const categoryData = PRESET_CATEGORIES.map((c) => ({ value: c, label: PRESET_CATEGORY_LABELS[c] }));
+  const categoryData = PRESET_CATEGORIES.map((c) => ({
+    value: c,
+    label: PRESET_CATEGORY_LABELS[c],
+  }));
 
   return (
     <Stack gap="md" p="md">
       <Group justify="space-between">
-        <Text fw={600} size="sm">Create New Preset</Text>
+        <Text fw={600} size="sm">
+          Create New Preset
+        </Text>
         <SwarmButton tone="secondary" emphasis="ghost" size="compact-xs" onClick={onCancel}>
           Cancel
         </SwarmButton>
@@ -96,15 +108,22 @@ export const PromptWizardPresetCreator = memo(function PromptWizardPresetCreator
       />
 
       <Stack gap="xs">
-        <Text size="sm" fw={500}>Include Tags ({includedTagIds.size} selected)</Text>
+        <Text size="sm" fw={500}>
+          Include Tags ({includedTagIds.size} selected)
+        </Text>
         {selectedTags.length === 0 ? (
           <Text size="xs" c="dimmed" ta="center" py="md">
-            No tags selected. Switch to Steps view and select some tags first, then come back here to save them as a preset.
+            No tags selected. Switch to Steps view and select some tags first, then come back here
+            to save them as a preset.
           </Text>
         ) : (
           <Group gap={6} wrap="wrap">
             {selectedTags.map((tag) => (
-              <UnstyledButton key={tag.id} onClick={() => toggleInclude(tag.id)}>
+              <UnstyledButton
+                key={tag.id}
+                className="swarm-control-no-select"
+                onClick={() => toggleInclude(tag.id)}
+              >
                 <SwarmBadge
                   tone={includedTagIds.has(tag.id) ? 'primary' : 'secondary'}
                   emphasis={includedTagIds.has(tag.id) ? 'solid' : 'ghost'}
@@ -121,7 +140,13 @@ export const PromptWizardPresetCreator = memo(function PromptWizardPresetCreator
         <SwarmButton tone="secondary" emphasis="ghost" size="compact-sm" onClick={onCancel}>
           Cancel
         </SwarmButton>
-        <SwarmButton tone="primary" emphasis="solid" size="compact-sm" onClick={handleSave} disabled={!canSave}>
+        <SwarmButton
+          tone="primary"
+          emphasis="solid"
+          size="compact-sm"
+          onClick={handleSave}
+          disabled={!canSave}
+        >
           Save Preset
         </SwarmButton>
       </Group>

@@ -6,7 +6,6 @@ import {
     Group,
     Text,
     Badge,
-    Button,
     Image,
     ScrollArea,
     Tooltip,
@@ -29,7 +28,7 @@ import {
 import { DetailedProgressBar } from './DetailedProgressBar';
 import { previewFadeVariants, livePreviewPulse } from '../../utils/animations';
 import type { GenerateParams } from '../../api/types';
-import { SwarmActionIcon } from '../ui';
+import { SwarmActionIcon, SwarmButton as Button } from '../ui';
 import { useCanvasWorkflowStore, type CanvasWorkflowStep } from '../../stores/canvasWorkflowStore';
 
 interface FavoriteImage {

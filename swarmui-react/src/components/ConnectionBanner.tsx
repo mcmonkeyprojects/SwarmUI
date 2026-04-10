@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Paper, Group, Text, Loader, ActionIcon, Transition } from '@mantine/core';
+import { Paper, Group, Text, Loader, Transition } from '@mantine/core';
 import { IconCheck, IconX, IconRefresh, IconWifiOff, IconAlertTriangle } from '@tabler/icons-react';
 import { useSessionStore } from '../stores/session';
 import { useWebSocketStore } from '../stores/websocketStore';
+import { SwarmActionIcon as ActionIcon } from './ui';
 
 type ConnectionState = 'connecting' | 'connected' | 'failed' | 'retrying' | 'degraded' | 'unhealthy';
 

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Accordion,
-  ActionIcon,
   Checkbox,
   FileButton,
   Group,
@@ -56,6 +55,7 @@ import {
 } from '../../services/roleplayChatService';
 import { useRoleplayStore } from '../../stores/roleplayStore';
 import { useGenerationStore } from '../../store/generationStore';
+import { SwarmActionIcon as ActionIcon } from '../../components/ui/SwarmActionIcon';
 import { ElevatedCard } from '../../components/ui/ElevatedCard';
 import { SwarmButton } from '../../components/ui/SwarmButton';
 import { LorebookManagerModal } from './LorebookManagerModal';
@@ -106,6 +106,21 @@ function modelNamesMatch(modelName: string, currentModel: string | null | undefi
     normalizedModel === `${normalizedCurrent}.safetensors` ||
     `${normalizedModel}.safetensors` === normalizedCurrent
   );
+}
+
+function areStringListsEqual(left: string[], right: string[]): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 interface ControlsPanelProps {
@@ -631,6 +646,12 @@ export function ControlsPanel({
     }
   };
 
+  const handleOpenSectionsChange = (nextSections: string[]) => {
+    setOpenSections((current) =>
+      areStringListsEqual(current, nextSections) ? current : nextSections
+    );
+  };
+
   const handleEjectImageModel = async () => {
     if (!effectiveModel || isEjectingImageModel) {
       return;
@@ -670,7 +691,7 @@ export function ControlsPanel({
           radius="sm"
           multiple
           value={openSections}
-          onChange={setOpenSections}
+          onChange={handleOpenSectionsChange}
         >
           <Accordion.Item value="connection">
             <Accordion.Control
