@@ -744,6 +744,18 @@ function readFileText(file, handler) {
     reader.readAsText(file);
 }
 
+/** Reads the given file as a data URL and passes the result to the given handler. Ignores null file inputs. */
+function readFileAsDataURL(file, handler) {
+    if (!file) {
+        return;
+    }
+    let reader = new FileReader();
+    reader.onload = (e) => {
+        handler(e.target.result);
+    };
+    reader.readAsDataURL(file);
+}
+
 /** Converts a number to a string of letters, where 1=a, 2=b, 3=c, ..., 26=aa, 27=ab, etc. */
 function numberToLetters(id) {
     if (id > 26) {
