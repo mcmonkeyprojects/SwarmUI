@@ -211,7 +211,6 @@ body {
 .current_image_sideblock > .current-image-img {
     position: sticky;
     top: 0px;
-    vertical-align: top;
 }
 .current_image_batch {
     display: inline-block;
