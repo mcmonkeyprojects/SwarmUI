@@ -348,18 +348,18 @@ class WildcardHelpers {
         }
         let prefix = promptBox.value.substring(0, cursorPos);
         let suffix = promptBox.value.substring(cursorPos);
-        let trimmed = prefix.trim();
+        let trimmed = trimSpaces(prefix);
         let match = this.matchWildcard(trimmed, model.name);
         if (match && match.length > 0) {
             let last = match[match.length - 1];
-            if (trimmed.endsWith(last.trim())) {
-                promptBox.value = (trimmed.substring(0, trimmed.length - last.length).trim() + ' ' + suffix).trim();
+            if (trimmed.endsWith(trimSpaces(last))) {
+                promptBox.value = (trimSpaces(trimmed.substring(0, trimmed.length - last.length)) + ' ' + suffix).trim();
                 triggerChangeFor(promptBox);
                 return;
             }
         }
         let wildcardText = `<wildcard:${model.name}>`;
-        promptBox.value = `${prefix.trim()} ${wildcardText} ${suffix.trim()}`.trim();
+        promptBox.value = `${trimSpaces(prefix)} ${wildcardText} ${trimSpaces(suffix)}`.trim();
         promptBox.selectionStart = cursorPos + wildcardText.length + 1;
         promptBox.selectionEnd = cursorPos + wildcardText.length + 1;
         promptBox.focus();
