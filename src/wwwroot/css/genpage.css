@@ -1113,7 +1113,7 @@ body {
     cursor: pointer;
 }
 .alt-prompt-image-container.image-drop-replace-target .alt-prompt-image {
-    outline: 2px solid var(--box-selected-border-stronger);
+    outline: 4px solid var(--emphasis);
     border-radius: 5px;
 }
 .image-clear-button {
