@@ -554,7 +554,9 @@ function imagePromptAddImage(file) {
     if (replaceTarget && !existingImage) {
         replaceTarget = null;
     }
-    readFileAsDataURL(file, (data) => {
+    let reader = new FileReader();
+    reader.onload = (e) => {
+        let data = e.target.result;
         if (replaceTarget && !replaceTarget.isConnected) {
             imagePromptAddImage(file);
             return;
@@ -587,7 +589,8 @@ function imagePromptAddImage(file) {
         clearButton.style.display = '';
         showRevisionInputs(true);
         genTabLayout.altPromptSizeHandle();
-    });
+    };
+    reader.readAsDataURL(file);
 }
 
 function imagePromptInputHandler() {
