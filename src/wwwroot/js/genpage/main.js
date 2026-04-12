@@ -537,7 +537,7 @@ function setPromptImageReplaceTarget(target) {
 }
 
 function getPromptImageDropReplaceTarget(e) {
-    if (!e || !e.dataTransfer || !e.target || !e.target.closest || uiImprover.getFileList(e.dataTransfer, e).length == 0) {
+    if (uiImprover.getFileList(e.dataTransfer, e).length == 0) {
         return null;
     }
     let target = e.target.closest('.alt-prompt-image-container');
