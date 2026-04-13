@@ -128,15 +128,20 @@ function interpretMetadata(metadata) {
 }
 
 function canvasReadBinaryAlpha(canvas, ctx, length) {
-    let data = '';
-    for (let x = 0; x < canvas.width; x++) {
-        for (let y = 0; y < canvas.height; y++) {
-            let pixel = ctx.getImageData(x, y, 1, 1).data;
-            data += (pixel[3] & 0x01) == 0 ? '0' : '1';
-            if (data.length >= length * 8) {
-                return data;
+    try {
+        let data = '';
+        for (let x = 0; x < canvas.width; x++) {
+            for (let y = 0; y < canvas.height; y++) {
+                let pixel = ctx.getImageData(x, y, 1, 1).data;
+                data += (pixel[3] & 0x01) == 0 ? '0' : '1';
+                if (data.length >= length * 8) {
+                    return data;
+                }
             }
         }
+    }
+    catch (e) {
+        console.error(`Error reading binary alpha: ${e}`);
     }
     return null;
 }
@@ -161,33 +166,42 @@ function parseMetadata(data, callback) {
         let img = new Image();
         img.src = data;
         img.onload = () => {
-            let canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            let ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            let alphaData = canvasReadBinaryAlpha(canvas, ctx, "stealth_pnginfo".length + 4);
-            let headerBytes = binaryStringToBytes(alphaData);
-            let headerType = new TextDecoder().decode(new Uint8Array(headerBytes.slice(0, "stealth_pnginfo".length)));
-            if (headerType == "stealth_pnginfo" || headerType == "stealth_pngcomp") {
-                let dataLengthBytes = headerBytes.slice("stealth_pnginfo".length);
-                let dataLength = bytesToInt32(dataLengthBytes) / 8;
-                let alphaContent = canvasReadBinaryAlpha(canvas, ctx, dataLength + "stealth_pnginfo".length + 4);
-                let metadataBytes = new Uint8Array(binaryStringToBytes(alphaContent).slice("stealth_pnginfo".length + 4));
-                if (headerType == "stealth_pngcomp") {
-                    ungzip(metadataBytes).then(decompressed => {
-                        let metadata = new TextDecoder().decode(decompressed);
+            try {
+                let canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                let ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                let alphaData = canvasReadBinaryAlpha(canvas, ctx, "stealth_pnginfo".length + 4);
+                let headerBytes = binaryStringToBytes(alphaData);
+                let headerType = new TextDecoder().decode(new Uint8Array(headerBytes.slice(0, "stealth_pnginfo".length)));
+                if (headerType == "stealth_pnginfo" || headerType == "stealth_pngcomp") {
+                    let dataLengthBytes = headerBytes.slice("stealth_pnginfo".length);
+                    let dataLength = bytesToInt32(dataLengthBytes) / 8;
+                    let alphaContent = canvasReadBinaryAlpha(canvas, ctx, dataLength + "stealth_pnginfo".length + 4);
+                    let metadataBytes = new Uint8Array(binaryStringToBytes(alphaContent).slice("stealth_pnginfo".length + 4));
+                    if (headerType == "stealth_pngcomp") {
+                        ungzip(metadataBytes).then(decompressed => {
+                            let metadata = new TextDecoder().decode(decompressed);
+                            metadata = interpretMetadata(metadata);
+                            callback(data, metadata);
+                        }).catch(err => {
+                            console.error(`Error unzipping metadata (stealth): ${err}`);
+                            callback(data, null);
+                        });
+                    }
+                    else {
+                        let metadata = new TextDecoder().decode(metadataBytes);
                         metadata = interpretMetadata(metadata);
                         callback(data, metadata);
-                    });
+                    }
                 }
                 else {
-                    let metadata = new TextDecoder().decode(metadataBytes);
-                    metadata = interpretMetadata(metadata);
-                    callback(data, metadata);
+                    callback(data, null);
                 }
             }
-            else {
+            catch (e) {
+                console.error(`Error parsing metadata (stealth): ${e}`);
                 callback(data, null);
             }
         };
@@ -210,6 +224,7 @@ function parseMetadata(data, callback) {
         metadata = interpretMetadata(metadata);
         callback(data, metadata);
     }).catch(err => {
+        console.error(`Error parsing metadata (exif): ${err}`);
         backupPlan();
     });
 }
