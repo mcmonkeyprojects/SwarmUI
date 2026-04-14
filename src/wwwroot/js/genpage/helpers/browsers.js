@@ -536,6 +536,7 @@ class GenPageBrowserClass {
                 div.addEventListener('mouseenter', () => div.title = stripHtmlToText(desc.description), { once: true });
             }
             div.dataset.name = file.name;
+            div.dataset.src = file.data.src;
             img.classList.add('lazyload');
             img.dataset.src = desc.image;
             if (desc.dragimage) {
