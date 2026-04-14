@@ -2,8 +2,8 @@
 let registeredMediaButtons = [];
 
 /** Registers a media button for extensions. 'mediaTypes' filters by type eg ['audio'], null means all. 'isDefault' promotes to visible (vs More dropdown). 'showInHistory' controls whether button appears in the History panel. */
-function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false, showInHistory = true, href = null, is_download = false) {
-    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault, showInHistory, href, is_download });
+function registerMediaButton(name, action, title = '', mediaTypes = null, isDefault = false, showInHistory = true, href = null, is_download = false, can_multi = false, multi_only = false) {
+    registeredMediaButtons.push({ name, action, title, mediaTypes, isDefault, showInHistory, href, is_download, can_multi, multi_only });
 }
 
 function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
@@ -60,18 +60,41 @@ function listOutputHistoryFolderAndFiles(path, isRefresh, callback, depth) {
     });
 }
 
-function buttonsForImage(fullsrc, src, metadata) {
+function buttonsForImage(fullsrc, src, metadata, isCurrentImage = false) {
     let isDataImage = src.startsWith('data:');
     let mediaType = getMediaType(src);
     buttons = [];
     if (permissions.hasPermission('user_star_images') && !isDataImage) {
+        let metaParsed = JSON.parse(metadata);
         buttons.push({
-            label: (metadata && JSON.parse(metadata).is_starred) ? 'Unstar' : 'Star',
+            label: (metadata && metaParsed.is_starred) ? 'Unstar' : 'Star',
             title: 'Star or unstar this image - starred images get moved to a separate folder and highlighted.',
-            className: (metadata && JSON.parse(metadata).is_starred) ? ' star-button button-starred-image' : ' star-button',
+            className: (metadata && metaParsed.is_starred) ? ' star-button button-starred-image' : ' star-button',
             onclick: (e) => {
                 toggleStar(fullsrc, src);
             }
+        });
+        buttons.push({
+            label: 'Enable Starred',
+            title: 'Marks all selected images as starred if they are not already',
+            onclick: (e) => {
+                if (!metaParsed.is_starred) {
+                    toggleStar(fullsrc, src);
+                }
+            },
+            can_multi: true,
+            multi_only: true
+        });
+        buttons.push({
+            label: 'Disabled Starred',
+            title: 'Marks all selected images as NOT starred if they are currently starred',
+            onclick: (e) => {
+                if (metaParsed.is_starred) {
+                    toggleStar(fullsrc, src);
+                }
+            },
+            can_multi: true,
+            multi_only: true
         });
     }
     if (metadata) {
@@ -109,6 +132,7 @@ function buttonsForImage(fullsrc, src, metadata) {
         href: escapeHtmlForUrl(src),
         is_download: true
     });
+    // TODO: Multi-compat Download (create a zip?)
     if (permissions.hasPermission('user_delete_image') && !isDataImage) {
         buttons.push({
             label: 'Delete',
@@ -144,16 +168,20 @@ function buttonsForImage(fullsrc, src, metadata) {
                         removeImageBlockFromBatch(div);
                     }
                 });
-            }
+            },
+            // TODO: Only ask once for the multi-set rather than once per each
+            can_multi: true
         });
     }
     for (let reg of registeredMediaButtons) {
-        if (reg.showInHistory && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
+        if ((isCurrentImage || reg.showInHistory) && (!reg.mediaTypes || reg.mediaTypes.includes(mediaType))) {
             buttons.push({
                 label: reg.name,
                 title: reg.title,
                 href: reg.href,
                 is_download: reg.is_download,
+                can_multi: reg.can_multi,
+                multi_only: reg.multi_only,
                 onclick: () => reg.action(src)
             });
         }

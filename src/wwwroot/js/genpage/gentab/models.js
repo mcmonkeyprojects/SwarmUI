@@ -694,9 +694,9 @@ class ModelBrowserWrapper {
         }
         else if (this.subType == 'Embedding') {
             buttons = [
-                { label: 'Add To Prompt', onclick: () => embedAddToPrompt(model.data, 'alt_prompt_textbox') },
-                { label: 'Add To Negative', onclick: () => embedAddToPrompt(model.data, 'alt_negativeprompt_textbox') },
-                { label: 'Remove All Usages', onclick: () => { embedClearFromPrompt(model.data, 'alt_prompt_textbox'); embedClearFromPrompt(model.data, 'alt_negativeprompt_textbox'); } }
+                { label: 'Add To Prompt', onclick: () => embedAddToPrompt(model.data, 'alt_prompt_textbox'), can_multi: true },
+                { label: 'Add To Negative', onclick: () => embedAddToPrompt(model.data, 'alt_negativeprompt_textbox'), can_multi: true },
+                { label: 'Remove All Usages', onclick: () => { embedClearFromPrompt(model.data, 'alt_prompt_textbox'); embedClearFromPrompt(model.data, 'alt_negativeprompt_textbox'); }, can_multi: true }
             ];
         }
         else if (this.subType == 'LoRA') {
@@ -708,7 +708,7 @@ class ModelBrowserWrapper {
                 }
                 promptBox.value += ` <lora:${name}>`;
                 triggerChangeFor(promptBox);
-            }}];
+            }, can_multi: true }];
         }
         let isStarred = this.isStarred(model.data.name);
         let starButton = { label: isStarred ? 'Unstar' : 'Star', onclick: () => { this.toggleStar(model.data.name); } };
@@ -719,7 +719,7 @@ class ModelBrowserWrapper {
             buttons = [starButton];
             if (permissions.hasPermission('edit_wildcards')) {
                 buttons.push({ label: 'Edit Wildcard', onclick: () => wildcardHelpers.editWildcard(model.data) });
-                buttons.push({ label: 'Duplicate Wildcard', onclick: () => wildcardHelpers.duplicateWildcard(model.data) });
+                buttons.push({ label: 'Duplicate Wildcard', onclick: () => wildcardHelpers.duplicateWildcard(model.data), can_multi: true });
             }
             buttons.push({ label: 'Test Wildcard', onclick: () => wildcardHelpers.testWildcard(model.data) });
             if (permissions.hasPermission('edit_wildcards')) {
@@ -729,7 +729,8 @@ class ModelBrowserWrapper {
                             wildcardsBrowser.browser.refresh();
                         });
                     }
-                } });
+                    // TODO: Only ask once for the multi-set rather than once per each
+                }, can_multi: true });
             }
             let raw = model.data.raw;
             detail_list.push(escapeHtml(raw).trim().replaceAll('\n', '').replaceAll('<br>', '<span class="browser-details-list-entry-text-separator">, </span>'));
@@ -783,7 +784,7 @@ class ModelBrowserWrapper {
                 buttons.push({ label: 'View Raw Header', onclick: () => viewRawHeader(model.data, this) });
             }
             if (model.data.local && permissions.hasPermission('delete_models')) {
-                buttons.push({ label: 'Delete Model', onclick: () => deleteModel(model.data, this) });
+                buttons.push({ label: 'Delete Model', onclick: () => deleteModel(model.data, this), can_multi: true });
             }
             if (model.data.local && permissions.hasPermission('delete_models')) {
                 buttons.push({ label: 'Rename Model', onclick: () => renameModel(model.data, this) });

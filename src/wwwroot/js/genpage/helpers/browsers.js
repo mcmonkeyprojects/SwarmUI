@@ -424,9 +424,10 @@ class GenPageBrowserClass {
             }
             let div = createDiv(null, `${desc.className}`);
             let popoverId = `${this.id}-${id}`;
-            if (desc.buttons.length > 0) {
+            let buttons = desc.buttons.filter(b => !b.multi_only);
+            if (buttons.length > 0) {
                 let menuDiv = createDiv(`popover_${popoverId}`, 'sui-popover sui_popover_model');
-                for (let button of desc.buttons) {
+                for (let button of buttons) {
                     let buttonElem;
                     if (button.href) {
                         buttonElem = document.createElement('a');
@@ -524,7 +525,7 @@ class GenPageBrowserClass {
                     div.appendChild(textBlock);
                 }
             }
-            if (desc.buttons.length > 0) {
+            if (buttons.length > 0) {
                 let menu = createDiv(null, 'model-block-menu-button');
                 menu.innerHTML = '&#x2630;';
                 menu.addEventListener('click', () => {
