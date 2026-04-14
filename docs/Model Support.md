@@ -18,6 +18,7 @@
 [Z-Image](#z-image) | S3-DiT | 2025 | Tongyi MAI (Alibaba) | 6B | No | Modern, Great Quality, lightweight |
 [Kandinsky 5](#kandinsky-5) | DiT | 2025 | Kandinsky Lab | 6B | No | Modern, Decent Quality |
 [Anima](#anima) | DiT | 2026 | Circlestone Labs | 2B | WTF | Modern, very small, decent for anime |
+[ERNIE](#ernie) | DiT | 2026 | Baidu | 8B | Minimal | Modern, intelligent, good quality, fast |
 
 Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure%20Model%20Support.md):
 
@@ -562,12 +563,17 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Sampler:** Defaults to `ER-SDE-Solver`, but all common samplers work. They officially recommend also trying out `Euler Ancestral` or `DPM++ 2M SDE`
     - **Scheduler:** Default is fine (`Simple`), or you can experiment at will. The model is adaptable.
 
-# Ernie
+# ERNIE
 
-- [Ernie and Ernie Turbo](<https://huggingface.co/baidu/ERNIE-Image-Turbo>) are supported in SwarmUI!
+![img](/docs/images/models/ernie.jpg)
+
+*(ERNIE Base, Steps=20, CFG=4)*
+
+- Baidu's [ERNIE Image](<https://huggingface.co/baidu/ERNIE-Image>) is supported in SwarmUI!
 - It is an 8B model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
-    - The "Turbo" model can be downloaded here [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
-    - Or the BF16 fat version [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
+    - The "Turbo" model (in fat BF16) can be downloaded here [Comfy-Org/ERNIE-Image - turbo](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
+    - Or the base version (in fat BF16) [Comfy-Org/ERNIE-Image - base](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
+    - FP8 links pending
     - Save in `diffusion_models`
 - Uses the Flux.2 VAE, will be downloaded and handled automatically
 - Uses the Ministral 3 3b text encoder, will be downloaded and handled automatically
@@ -575,9 +581,11 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
     - **Sampler:** Default is fine.
     - **Scheduler:** Default is fine.
-    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (eg 4 or 7)
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (around `4`)
     - **Steps:** For Turbo `8` is recommended. For Base, 20+ steps as normal.
     - **Resolution:** Side length `1024` is the standard.
+        - Down to 512 works still, up to 1536 is fine.
+        - Out of range doesn't corrupt immediately but will fail at composition.
 
 # Video Models
 
