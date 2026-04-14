@@ -1082,6 +1082,7 @@ body {
     position: relative;
     background-color: color-mix(in srgb, transparent 80%, var(--background));
     transition: background-color 0.2s ease-out;
+    margin: 0 2px;
 }
 .alt-prompt-image {
     max-height: 128px;
@@ -1117,6 +1118,10 @@ body {
     background-color: color-mix(in srgb, var(--red) 70%, black) !important;
     border: 1px solid black;
     cursor: pointer;
+}
+.alt-prompt-image-container.image-drop-replace-target .alt-prompt-image {
+    outline: 4px solid var(--emphasis);
+    border-radius: 5px;
 }
 .image-clear-button {
     vertical-align: middle;
