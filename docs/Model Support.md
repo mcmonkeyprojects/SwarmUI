@@ -566,7 +566,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
 
 - [Ernie and Ernie Turbo](<https://huggingface.co/baidu/ERNIE-Image-Turbo>) are supported in SwarmUI!
 - It is an 8B model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
-    - The "Turbo" model can be downloaded here [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors?download=true>)
+    - The "Turbo" model can be downloaded here [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
     - Or the BF16 fat version [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
     - Save in `diffusion_models`
 - Uses the Flux.2 VAE, will be downloaded and handled automatically
