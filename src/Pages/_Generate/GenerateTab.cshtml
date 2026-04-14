@@ -84,6 +84,18 @@
                                 </span>
                             </div>
                         </div>
+                        <div class="multiselect-tools-panel" id="multiselect_tools_panel">
+                            <div class="multiselect-tools-header">
+                                <span class="translate">Multi-Select</span>
+                                <div class="multiselect-tools-actions">
+                                    <button class="basic-button translate" type="button" onclick="clearMultiSelectSelection()">Clear</button>
+                                    <button class="basic-button translate" type="button" onclick="toggleMultiSelectMode()">Done</button>
+                                </div>
+                            </div>
+                            <div class="multiselect-tools-summary" id="multiselect_tools_summary"></div>
+                            <div class="multiselect-tools-hint" id="multiselect_tools_hint"></div>
+                            <div class="multiselect-tools-list" id="multiselect_tools_list"></div>
+                        </div>
                         <div id="current_image_batch" class="current_image_batch_core"></div>
                     </div>
                 </div>
@@ -140,6 +152,7 @@
             <div class="sui_popover_model_button translate" onclick="genTabLayout.resetLayout()">Reset Page Layout</div>
             <div class="sui_popover_model_button translate" onclick="refreshParameterValues(true)">Reload Parameter Values</div>
             <div class="sui_popover_model_button translate" onclick="resetParamsToDefault()">Reset Params to Default</div>
+            <div class="sui_popover_model_button translate" onclick="toggleMultiSelectMode()">Multi-Select</div>
             <div class="sui_popover_model_button translate" onclick="openEmptyEditor()">Open Empty Image Editor</div>
             <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt()">Interrupt Current Session</div>
             <div class="sui_popover_model_button translate" onclick="mainGenHandler.doInterrupt(true)">Interrupt All Sessions</div>
@@ -195,6 +208,19 @@
             <div class="image_fullview_modal_close">
                 <span id="image_fullview_modal_counter" class="image_fullview_modal_counter"></span>
                 <span class="text_button translate" onclick="imageFullView.close()">[Close]</span><br>
+            </div>
+        </div>
+        <div class="modal modal-fullscreen imageview_popup_modal_background" id="image_compare_modal" data-bs-keyboard="false">
+            <div class="modal-dialog" style="display:none"></div>
+            <div class="imageview_modal_inner_div image-compare-modal-inner">
+                <div class="imageview_modal_imagewrap image-compare-modal-imagewrap">
+                    <div class="image-compare-stage image-compare-stage-side" id="image_compare_stage"></div>
+                </div>
+                <div class="imageview_popup_modal_undertext image-compare-undertext">
+                    <div class="image_fullview_extra_buttons image-compare-controls">
+                        <div class="image-compare-mode-buttons" id="image_compare_mode_buttons"></div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="tab-pane genpage-bottom-tab" id="Presets-Tab" role="tabpanel">
