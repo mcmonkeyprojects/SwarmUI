@@ -277,3 +277,13 @@ AceStepFun:
     ci-test: true
     tags:
     - tools
+
+APIBackends:
+    author: Hartsy
+    description: Integration with commercial image/video generation APIs (OpenAI, BFL, Ideogram, Grok, Google, Fal.ai).
+    url: https://github.com/HartsyAI/SwarmUI-API-Backends
+    license: MIT
+    ci-test: true
+    tags:
+    - parameters
+    - backend
