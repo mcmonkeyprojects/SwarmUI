@@ -85,6 +85,16 @@ SDCppBackend:
     - backend
     - beta
 
+APIBackends:
+    author: Hartsy
+    description: Integration with commercial image/video generation APIs (OpenAI, BFL, Ideogram, Grok, Google, Fal.ai).
+    url: https://github.com/HartsyAI/SwarmUI-API-Backends
+    license: MIT
+    ci-test: true
+    tags:
+    - api
+    - backend
+
 WildcardImporter:
     author: spoomples+bman654
     description: Lets you import Wildcards from Auto1111-extension-syntax (SD Dynamic Prompts) YAML cards into Swarm's standardizable format.
@@ -278,12 +288,3 @@ AceStepFun:
     tags:
     - tools
 
-APIBackends:
-    author: Hartsy
-    description: Integration with commercial image/video generation APIs (OpenAI, BFL, Ideogram, Grok, Google, Fal.ai).
-    url: https://github.com/HartsyAI/SwarmUI-API-Backends
-    license: MIT
-    ci-test: true
-    tags:
-    - parameters
-    - backend
