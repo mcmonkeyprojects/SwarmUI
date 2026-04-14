@@ -63,6 +63,9 @@ public partial class WorkflowGenerator
     /// <summary>Returns true if the current model is any Black Forest Labs' Flux.2 variant.</summary>
     public bool IsAnyFlux2() => IsFlux2Dev() || IsFlux2Klein4B() || IsFlux2Klein9B();
 
+    /// <summary>Returns true if the current model is Ernie Image.</summary>
+    public bool IsErnie() => IsModelCompatClass(T2IModelClassSorter.CompatErnieImage);
+
     /// <summary>Returns true if the current model is AuraFlow.</summary>
     public bool IsAuraFlow() => IsModelCompatClass(T2IModelClassSorter.CompatAuraFlow);
 
@@ -263,7 +266,7 @@ public partial class WorkflowGenerator
                 ["width"] = width
             }, id));
         }
-        else if (IsAnyFlux2())
+        else if (IsAnyFlux2() || IsErnie())
         {
             return resultImage(CreateNode("EmptyFlux2LatentImage", new JObject()
             {
@@ -576,6 +579,11 @@ public partial class WorkflowGenerator
         public string GetMistralFlux2Model()
         {
             return RequireClipModel("mistral_3_small_flux2.safetensors", "https://huggingface.co/Comfy-Org/flux2-dev/resolve/main/split_files/text_encoders/mistral_3_small_flux2_fp4_mixed.safetensors", "1ee1ff334d78228d73049ef0ee4fcd21c1700536b5a45c06547af057f92463a7", T2IParamTypes.MistralModel);
+        }
+
+        public string GetMinistral3_3bModel()
+        {
+            return RequireClipModel("ministral-3-3b.safetensors", "https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/text_encoders/ministral-3-3b.safetensors", "49a750a128863854eac7d85e1a277a7b44bf6ec3646405b84686dfeeca3708ca", T2IParamTypes.MistralModel);
         }
 
         public string GetClipLModel()
@@ -1031,6 +1039,11 @@ public partial class WorkflowGenerator
                 });
                 LoadingModel = [kvcached, 0];
             }
+        }
+        else if (IsErnie())
+        {
+            helpers.LoadClip("flux2", helpers.GetMinistral3_3bModel());
+            helpers.DoVaeLoader(UserInput.SourceSession?.User?.Settings?.VAEs?.DefaultFlux2VAE, "flux-2", "flux2-vae");
         }
         else if (IsFlux() && (LoadingClip is null || LoadingVAE is null || UserInput.Get(T2IParamTypes.T5XXLModel) is not null || UserInput.Get(T2IParamTypes.ClipLModel) is not null))
         {

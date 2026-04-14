@@ -562,6 +562,23 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Sampler:** Defaults to `ER-SDE-Solver`, but all common samplers work. They officially recommend also trying out `Euler Ancestral` or `DPM++ 2M SDE`
     - **Scheduler:** Default is fine (`Simple`), or you can experiment at will. The model is adaptable.
 
+# Ernie
+
+- [Ernie and Ernie Turbo](<https://huggingface.co/baidu/ERNIE-Image-Turbo>) are supported in SwarmUI!
+- It is an 8B model, with both a strong base and an official turbo designed to run extremely fast while competing at the top level of image models
+    - The "Turbo" model can be downloaded here [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image-turbo.safetensors>)
+    - Or the BF16 fat version [Comfy-Org/ERNIE-Image](<https://huggingface.co/Comfy-Org/ERNIE-Image/resolve/main/diffusion_models/ernie-image.safetensors>)
+    - Save in `diffusion_models`
+- Uses the Flux.2 VAE, will be downloaded and handled automatically
+- Uses the Ministral 3 3b text encoder, will be downloaded and handled automatically
+- **Parameters:**
+    - **Prompt:** Supports general prompting in any format just fine. Speaks English and Chinese deeply.
+    - **Sampler:** Default is fine.
+    - **Scheduler:** Default is fine.
+    - **CFG Scale:** For Turbo, `1`, for base normal CFG ranges (eg 4 or 7)
+    - **Steps:** For Turbo `8` is recommended. For Base, 20+ steps as normal.
+    - **Resolution:** Side length `1024` is the standard.
+
 # Video Models
 
 - Video models are documented in [Video Model Support](/docs/Video%20Model%20Support.md).
