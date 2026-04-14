@@ -34,6 +34,8 @@ Old or bad options also tracked listed via [Obscure Model Support](/docs/Obscure
 [HiDream i1](/docs/Obscure%20Model%20Support.md#hidream-i1) | MMDiT | 2025 | HiDream AI (Vivago) | 17B | Minimal | Good Quality, lost community attention |
 [OmniGen 2](/docs/Obscure%20Model%20Support.md#omnigen-2) | MLLM | 2025 | VectorSpaceLab | 7B | No | Modern, Decent Quality, quickly outclassed |
 [Ovis](/docs/Obscure%20Model%20Support.md#ovis) | MMDiT | 2025 | AIDC-AI (Alibaba) | 7B | No | Passable quality, but outclassed on launch |
+[LongCat-Image](/docs/Obscure%20Model%20Support.md#longcat-image) | MMDiT | 2025 | LongCat | 6B | No | Passable quality, but outclassed on launch |
+[Zeta Chroma](/docs/Obscure%20Model%20Support.md#zeta-chroma) | Pixel S3-DiT | 2026 | Lodestone Rock | 6B | No | Modern, Pixel-space Z-Image variant |
 
 - **Architecture** is the fundamental machine learning structure used for the model, UNet's were used in the past but DiT (Diffusion Transformers) are the modern choice
 - **Scale** is how big the model is - "B" for "Billion", so for example "2B" means "Two billion parameters".
@@ -586,6 +588,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
     - **Resolution:** Side length `1024` is the standard.
         - Down to 512 works still, up to 1536 is fine.
         - Out of range doesn't corrupt immediately but will fail at composition.
+        - Prefers aspects from square to 16:9, gets funny in 21:9
 
 # Video Models
 
