@@ -7,6 +7,7 @@ class Permissions {
         setTimeout(() => {
             this.gather();
         }, 0);
+        document.addEventListener('show.bs.tab', (e) => this.onNavClick(e));
     }
 
     gather() {
@@ -35,6 +36,17 @@ class Permissions {
             else {
                 div.style.display = '';
             }
+        }
+    }
+
+    onNavClick(e) {
+        let navItem = findParentOfClass(e.target, 'nav-item');
+        if (!navItem) {
+            return;
+        }
+        let key = navItem.dataset.requiredpermission;
+        if (key && !this.hasPermission(key)) {
+            e.preventDefault();
         }
     }
 

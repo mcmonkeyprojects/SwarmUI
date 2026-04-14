@@ -288,6 +288,10 @@ function triggerChangeFor(elem) {
 
 function textPromptDoCount(elem, countElem = null, prefix = '') {
     let tokenCount = countElem ?? elem.parentElement.querySelector('.auto-input-prompt-tokencount');
+    if (!permissions.hasPermission('use_tokenizer')) {
+        tokenCount.innerText = '';
+        return;
+    }
     function countTokens() {
         elem.dataset.has_token_count_running = true;
         genericRequest('CountTokens', { text: elem.value, skipPromptSyntax: true }, data => {
