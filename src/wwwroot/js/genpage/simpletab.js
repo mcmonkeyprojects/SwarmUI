@@ -283,6 +283,10 @@ class SimpleTab {
         });
     }
 
+    doInterrupt() {
+        this.genHandler.doInterrupt();
+    }
+
     clearBatch() {
         this.batchArea.innerHTML = '';
         this.getHistoryFor(this.browser.selected).clear();

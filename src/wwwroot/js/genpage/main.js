@@ -80,6 +80,7 @@ function updateCurrentStatusDirect(data) {
         total = 0;
     }
     getRequiredElementById('alt_interrupt_button').classList.toggle('interrupt-button-none', total == 0);
+    getRequiredElementById('simple_interrupt_button').classList.toggle('interrupt-button-none', total == 0);
     let oldInterruptButton = document.getElementById('interrupt_button');
     if (oldInterruptButton) {
         oldInterruptButton.classList.toggle('interrupt-button-none', total == 0);
