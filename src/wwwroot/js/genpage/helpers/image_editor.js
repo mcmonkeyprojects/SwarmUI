@@ -726,7 +726,7 @@ class ImageEditor {
         if (this.altDown || e.button == 1) {
             this.handleAltDown();
         }
-        if (e.button == 2 && this.activeTool && !this.activeTool.onContextMenu(e)) {
+        if (e.button == 2 && this.activeTool && !this.activeTool.onRightMouseDown(e)) {
             this.handleAltDown();
         }
         this.mouseDown = true;

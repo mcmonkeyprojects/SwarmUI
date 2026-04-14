@@ -97,7 +97,7 @@ class ImageEditorTool {
         return false;
     }
 
-    onContextMenu(e) {
+    onRightMouseDown(e) {
         return false;
     }
 
@@ -1594,8 +1594,7 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
         }
     }
 
-    onContextMenu(e) {
-        e.preventDefault();
+    onRightMouseDown(e) {
         return true;
     }
 
