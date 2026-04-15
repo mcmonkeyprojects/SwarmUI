@@ -139,7 +139,7 @@ interface PresetLibraryState {
 }
 ```
 
-**Reset ownership**: `commitStaged` handles clearing the cart (`stagedWords`, `stagedFromPresetIds`, `wordContributors`). `resetEphemeral` handles clearing `searchQuery` plus the cart. The modal's `onClose` always calls `resetEphemeral`; Append/Replace commit first, then close (which calls `resetEphemeral` — a no-op for the already-empty cart but still clears search).
+**Reset ownership**: `commitStaged` handles clearing the cart (`stagedWords`, `stagedFromPresetIds`, `wordContributors`, and `displayByKey` — all four private/public cart slices reset as one unit, since stale `displayByKey` entries would otherwise leak across commits). `resetEphemeral` handles clearing `searchQuery` plus the cart (same four slices). The modal's `onClose` always calls `resetEphemeral`; Append/Replace commit first, then close (which calls `resetEphemeral` — a no-op for the already-empty cart but still clears search).
 
 ### Reference-counted staging
 
@@ -203,7 +203,7 @@ The store knows nothing about the Generate form, the prompt textarea, or Mantine
 - `unstageWord` with mixed case — `"Knight"` in the cart can be removed via `unstageWord("knight")` (normalize is the single key source)
 - `commitStaged` — returns joined string and empties the cart
 - Persistence — only `userPresets`, `activeCategory`, `showExplicit` survive reload
-- Migration (integration) — seed `localStorage['swarmui-prompt-wizard-v1']` with a fixture containing `userBrowserPresets`, seed `promptTags.json` via Vitest's module mock, call `migrateFromWizardStore()`, assert: migrated entries appear in `userPresets`, the old field is stripped from the wizard-store JSON, flag is set to `'done'`, second call is a no-op
+- Migration (integration) — seed `localStorage['swarmui-prompt-wizard-v1']` with a fixture containing `userBrowserPresets`, seed `promptTags.json` via Vitest's module mock, call `migrateFromWizardStore()`, assert: migrated entries appear in `userPresets`, the old field is stripped from the wizard-store JSON, `localStorage.getItem('swarmui:presetLibrary:migratedFromWizard:v1')` is strictly `=== 'done'` (not just truthy — this catches a regression where a future refactor accidentally stores a boolean or an object), second call is a no-op
 
 ---
 
@@ -562,7 +562,7 @@ Existing users have `userBrowserPresets` in localStorage under the wizard store'
 
 **Why deferred to first modal open (not store construction)**: the migration needs `promptTags.json` for the tag-id → word lookup, which is a ~MB JSON file we do not want bundled into the store's import graph. Using a dynamic `import()` matches the existing wizard's pattern in `PromptWizard.tsx:54` and keeps `promptTags.json` out of the preset library entry chunk unless migration actually runs. The flag check below is synchronous and cheap; the dynamic import only executes when legacy data is actually present.
 
-**Migration flag**: `swarmui:presetLibrary:migratedFromWizard:v1` (localStorage boolean). Once `'done'`, migration is never re-invoked.
+**Migration flag**: `swarmui:presetLibrary:migratedFromWizard:v1` (localStorage string marker — the value is literally the string `'done'`, not a JSON boolean). Once the stored value equals `'done'`, migration is never re-invoked. Any other value (including `null`, `undefined`, `'true'`, or an old flag from a botched run) is treated as "not yet migrated" and the action proceeds.
 
 **Wizard store key**: `swarmui-prompt-wizard-v1` (do not change — matches the existing persist config).
 
@@ -747,7 +747,7 @@ Update `partialize` to remove `userBrowserPresets`, `activePresetCategory`, `sho
 1. Delete the three deleted components as an atomic set — they reference each other, so removing them together avoids dangling imports: `PromptWizardBrowser.tsx`, `PromptWizardPresetCard.tsx`, `PromptWizardPresetCreator.tsx`.
 2. Clean `promptWizardStore.ts` (remove fields, actions, partialize entries).
 3. Clean `PromptWizardHeader.tsx` (remove props, segmented control).
-4. Clean `PromptWizard.tsx` (remove the view branch and loaders).
+4. Clean `PromptWizard.tsx` — remove the `activeView === 'presets'` branch, remove the `loadDefaultBrowserPresets` function and its `defaultBrowserPresetsPromise` cache, remove `defaultBrowserPresets` state + setter, remove the browser-presets entry from the loader `Promise.all([...])`, remove the `resetPresetBrowserEphemeral()` call from `handleClose`, and remove every destructured browser-preset field from the `usePromptWizardStore()` call. Unwrap the `activeView === 'steps' ? …` conditional.
 5. Remove the exports from `promptWizard/types.ts`.
 6. Delete `promptBrowserPresets.json`.
 
