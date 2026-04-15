@@ -103,18 +103,27 @@ interface PresetLibraryState {
 
   // === Ephemeral (reset on modal close) ===
   stagedWords: string[];              // the cart — words queued to apply, in insertion order
+                                      // values are the original human-cased strings (for display)
   stagedFromPresetIds: string[];      // which presets contributed to the cart (for card ✓ state)
   searchQuery: string;                // filters the card grid
 
   // === Actions: Staging cart ===
   stagePreset: (preset: LibraryPreset) => void;
   unstagePreset: (presetId: string) => void;
-  unstageWord: (word: string) => void;
-  clearStaged: () => void;
-  commitStaged: () => string;         // returns joined string, then clears the cart
+  unstageWord: (displayWord: string) => void;  // accepts the displayed (original-case) string
+  clearStaged: () => void;            // called by commitStaged and explicit Clear button
+  commitStaged: () => string;         // returns joined string, then calls clearStaged()
+
+  // === Actions: Migration ===
+  migrateFromWizardStore: () => Promise<void>;
+                                      // flag-gated, idempotent, called once on first modal open
+                                      // see Section 5.2
 
   // === Actions: CRUD for user presets ===
   addUserPreset: (preset: Omit<LibraryPreset, 'id' | 'isDefault' | 'createdAt' | 'updatedAt'>) => void;
+                                      // ID generated as `pl-user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+                                      // Name collisions across default + user presets are ALLOWED
+                                      // (uniqueness is by id, not name). No warning shown.
   updateUserPreset: (
     id: string,
     updates: Partial<Omit<LibraryPreset, 'id' | 'isDefault' | 'createdAt'>>,
@@ -126,27 +135,36 @@ interface PresetLibraryState {
   setShowExplicit: (show: boolean) => void;
   setSearchQuery: (query: string) => void;
   resetEphemeral: () => void;          // clears stagedWords, stagedFromPresetIds, searchQuery
+                                       // Called from modal onClose (both Cancel and the × button)
 }
 ```
 
+**Reset ownership**: `commitStaged` handles clearing the cart (`stagedWords`, `stagedFromPresetIds`, `wordContributors`). `resetEphemeral` handles clearing `searchQuery` plus the cart. The modal's `onClose` always calls `resetEphemeral`; Append/Replace commit first, then close (which calls `resetEphemeral` — a no-op for the already-empty cart but still clears search).
+
 ### Reference-counted staging
 
-The store internally maintains a word-to-preset-id reference count (private, not exposed via the store interface, not persisted):
+The store internally maintains two private slices alongside `stagedWords` (neither is exposed via the public interface, neither is persisted):
 
 ```typescript
 // private
-wordContributors: Record<string /* word.toLowerCase().trim() */, string[] /* presetIds */>
+wordContributors: Record<string /* normalized key */, string[] /* presetIds */>
+displayByKey: Record<string /* normalized key */, string /* original-case display */>
+
+// normalize is the single source of truth for key-space conversion
+const normalize = (word: string): string => word.toLowerCase().trim();
 ```
 
-- **`stagePreset(preset)`**: for each word in `preset.words`, push `preset.id` into `wordContributors[word]`. If the word isn't already in `stagedWords`, append it. If it is, don't duplicate. Also push `preset.id` into `stagedFromPresetIds` if not already present.
-- **`unstagePreset(presetId)`**: remove `presetId` from every contributor list. Any word whose contributor list is now empty is removed from `stagedWords`. Remove `presetId` from `stagedFromPresetIds`.
-- **`unstageWord(word)`**: remove `word` from `stagedWords` and clear its contributor list entirely. A preset remains in `stagedFromPresetIds` only if at least one of its contributed words is still in the cart.
+Every public action that touches words funnels through `normalize` when computing keys:
+
+- **`stagePreset(preset)`**: for each `word` in `preset.words`, compute `key = normalize(word)`. Push `preset.id` into `wordContributors[key]`. If `key` isn't already a tracked entry, append `word` (original case) to `stagedWords` and record `displayByKey[key] = word`. Duplicate words within the same preset dedupe naturally. Also push `preset.id` into `stagedFromPresetIds` if not already present.
+- **`unstagePreset(presetId)`**: remove `presetId` from every contributor list. Any `key` whose contributor list is now empty has its display string removed from `stagedWords` and its entries cleared from both `wordContributors` and `displayByKey`. Remove `presetId` from `stagedFromPresetIds`.
+- **`unstageWord(displayWord)`**: compute `key = normalize(displayWord)`, look up the display string via `displayByKey[key]` (for safety — callers should always pass the current display string from the cart), remove that display string from `stagedWords`, clear `wordContributors[key]` and `displayByKey[key]`. Any `presetId` that was the only remaining contributor via that key is dropped from `stagedFromPresetIds` if it no longer contributes to any cart word.
 
 This lets stacking behave intuitively: if `Heroic Knight` and `Sword Master` both contribute `sword`, removing `Heroic Knight` leaves `sword` in the cart because `Sword Master` still contributes it.
 
 ### Dedup rule
 
-Case-insensitive on `.trim()`. `"Knight"`, `"knight"`, and `"knight "` all collapse to one entry. The first-inserted casing wins in `stagedWords` (the cart displays the original human text).
+Case-insensitive on `.trim()`. `"Knight"`, `"knight"`, and `"knight "` all collapse to one normalized key. The first-inserted casing wins in `stagedWords` (the cart always displays the original human text). Chip click handlers pass the display string back to `unstageWord`, which re-normalizes internally.
 
 ### Persistence via `partialize`
 
@@ -178,11 +196,14 @@ The store knows nothing about the Generate form, the prompt textarea, or Mantine
 `presetLibraryStore.test.ts` covers:
 
 - `stagePreset` — cart contains expected words, no duplicates
+- `stagePreset` with 0 words (corrupt entry / user-created empty preset) — no-op, no crash
 - Stacking two presets with overlapping words — each word listed once, contributor map tracks both
 - `unstagePreset` of one of two overlapping presets — shared words remain
-- `unstageWord` — single word removed even when multiple contributors
+- `unstageWord` — single word removed even when multiple contributors contributed it; preset removed from `stagedFromPresetIds` only when it has no remaining cart contributions
+- `unstageWord` with mixed case — `"Knight"` in the cart can be removed via `unstageWord("knight")` (normalize is the single key source)
 - `commitStaged` — returns joined string and empties the cart
 - Persistence — only `userPresets`, `activeCategory`, `showExplicit` survive reload
+- Migration (integration) — seed `localStorage['swarmui-prompt-wizard-v1']` with a fixture containing `userBrowserPresets`, seed `promptTags.json` via Vitest's module mock, call `migrateFromWizardStore()`, assert: migrated entries appear in `userPresets`, the old field is stripped from the wizard-store JSON, flag is set to `'done'`, second call is a no-op
 
 ---
 
@@ -205,11 +226,12 @@ A sibling to the existing Prompt Wizard card — same visual weight, same size.
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **Icon**: `IconBooks` or `IconLibrary` from Tabler — distinct from the wizard's `IconSparkles`.
-- **Badge**: shows total preset count (defaults + user), in neutral `SwarmBadge tone="secondary"`. Flips to `tone="primary"` when `stagedWords.length > 0` and shows e.g. `3 staged`.
+- **Icon**: `IconBooks` or `IconLibrary` from Tabler — distinct from the wizard's `IconSparkles`. Decorative only; the Tabler icon renders as SVG with `aria-hidden` by default.
+- **Badge**: shows the total preset count (defaults + user), **always including explicit entries regardless of the `showExplicit` toggle** — the toggle is a visibility filter inside the modal, not a subset definition, and the count is a property of the underlying data. Neutral `SwarmBadge tone="secondary"`. Flips to `tone="primary"` when `stagedWords.length > 0` and shows e.g. `3 staged`.
 - **Typography**: identical to the wizard card (`Text fw={600} size="sm"` title, `size="xs" c="dimmed"` subtitle).
 - **States**: default / hover / focus-visible / pressed — all come from `ElevatedCard interactive`.
 - **Compact variant**: honors the same `compact` prop the wizard card accepts.
+- **Accessibility**: trigger card is a semantic `<button>` with `aria-label="Open Preset Library"`; emoji in the ASCII mockup above is purely illustrative for this doc, not rendered in the real UI (the Tabler icon replaces it).
 
 ### 3.2 Modal shell
 
@@ -242,6 +264,8 @@ Separate modal from the wizard's. Smaller footprint — no step rail, no profile
 ```
 
 Three fixed regions: **header (tabs + filters)**, **scrollable card grid (flex: 1)**, **sticky footer (staging strip + action bar)**. The staging strip is always visible when `stagedWords.length > 0`; it collapses to zero height when empty.
+
+**Header emoji in the ASCII art**: the `📚` characters in both the trigger card and modal header diagrams are illustrative for this design doc only. In the real UI, both renders use the Tabler `IconBooks` SVG (which carries no accessible name by default — the adjacent text `"Preset Library"` provides the accessible name).
 
 ### 3.3 Preset card
 
@@ -283,7 +307,15 @@ Mantine `SimpleGrid` with fixed `cols` breakpoints. Spacing `sm` (8px gap).
 
 ### 3.5 Category tabs
 
-Mantine `Tabs variant="outline"` as the existing browser used. All five tabs show; the `Explicit` tab is hidden when `showExplicit === false`. When explicit is hidden and the user had `explicit` active, fall back to `'characters'` in the click handler.
+Mantine `Tabs variant="outline"` as the existing browser used. All five tabs show; the `Explicit` tab is hidden when `showExplicit === false`.
+
+**Explicit-hidden fallback rule** (applied at every entry point that could leave `activeCategory === 'explicit'` while `showExplicit === false`):
+
+1. **Modal open** — in `PresetLibrary.tsx` `handleOpen`, if `activeCategory === 'explicit' && !showExplicit`, immediately dispatch `setActiveCategory('characters')` before rendering the tab row.
+2. **Show-Explicit toggle** — when the user flips the switch to off, if the current active category is `'explicit'`, dispatch `setActiveCategory('characters')` in the same action.
+3. **Store hydration** — guarded by the rule above because `handleOpen` runs after hydration.
+
+The fallback always targets `'characters'` (the first category). This is deterministic and matches the existing wizard-browser behavior.
 
 **Tab order**: Characters → Scenes → Styles → Perspectives → Explicit (same order as `PRESET_CATEGORIES`).
 
@@ -338,9 +370,9 @@ Replaces the card grid area when open (not a nested modal). Cancel returns to th
 3. **Category** — `Select` with the five categories, defaults to the currently active tab.
 4. **Thumbnail emoji** (optional) — `TextInput` capped at 2 characters, placeholder `"🐉"`.
 5. **Words** — the meat:
-   - **Free-text textarea** — multi-line. Words separated by commas or newlines; trailing whitespace trimmed. Live-preview chips below the textarea show the parsed word list, each with an × to remove.
-   - **"Pull from current prompt" button** — above the textarea. Reads the current prompt text (passed in via prop from `PromptSection`), splits on commas, trims whitespace, filters empties, populates the textarea. If the textarea already has contents, confirms before overwriting.
-6. **Save / Cancel** — right-aligned button pair. Save is disabled until name is non-empty and at least 1 word parses from the textarea.
+   - **Free-text textarea** — multi-line. Parsing: split on commas or newlines, `.trim()` each piece, drop empty strings. The parsed list is shown below the textarea as live-preview chips, each with an × to remove (which also edits the textarea text accordingly).
+   - **"Pull from current prompt" button** — above the textarea. Reads the current prompt text (passed in via prop from `PromptSection`), runs it through `stripManagedBlocks` (imported from `src/features/promptBuilder`) to drop any wizard-managed block, then applies the same parsing rule as the textarea (comma/newline split + trim + drop empties). Weighted syntax like `(knight:1.2)` and LoRA refs like `<lora:foo:0.8>` pass through as literal words — the user can remove them via the preview chips if they don't want them. If the textarea already has non-empty contents, shows a confirmation dialog ("Replace current words?") before overwriting.
+6. **Save / Cancel** — right-aligned button pair. Save is disabled until name is non-empty after trim AND at least 1 word parses from the textarea.
 
 **Edit mode**: when a preset is opened for editing, all fields prefill from the existing entry.
 
@@ -462,6 +494,8 @@ Two migrations and a wizard cleanup. Default-preset migration happens **once on 
 
 One-shot Node script. Runs locally during implementation, outputs `src/data/presetLibrary.json`, and the result is committed. No runtime cost, no bundle impact.
 
+**Working directory**: the script uses paths relative to `swarmui-react/` (the project root). Run from that directory: `cd swarmui-react && node scripts/convert-preset-library.mjs`.
+
 **Algorithm:**
 
 ```js
@@ -472,12 +506,18 @@ const tagLibrary = JSON.parse(readFileSync('src/data/promptTags.json', 'utf-8'))
 
 const tagById = new Map(tagLibrary.map(t => [t.id, t]));
 const missing = [];
+const suspicious = [];
 
 const newPresets = oldPresets.map(p => {
   const words = p.tagIds
     .map(id => {
       const tag = tagById.get(id);
       if (!tag) { missing.push({ preset: p.id, missingTag: id }); return null; }
+      // Sanity check: flag tag.text values that contain weight syntax or LoRA refs
+      // so a human can decide whether to pass them through literally.
+      if (/[()<>]|:\d/.test(tag.text)) {
+        suspicious.push({ preset: p.id, tag: tag.id, text: tag.text });
+      }
       return tag.text;
     })
     .filter(Boolean);
@@ -494,7 +534,14 @@ const newPresets = oldPresets.map(p => {
 });
 
 if (missing.length > 0) {
-  console.warn(`⚠ ${missing.length} tag IDs could not be resolved:`, missing);
+  console.warn(`⚠ ${missing.length} tag IDs could not be resolved:`);
+  missing.slice(0, 20).forEach(m => console.warn(`  ${m.preset} → ${m.missingTag}`));
+  if (missing.length > 20) console.warn(`  …and ${missing.length - 20} more`);
+}
+
+if (suspicious.length > 0) {
+  console.warn(`⚠ ${suspicious.length} tag.text values contain weight/LoRA syntax (review manually):`);
+  suspicious.slice(0, 10).forEach(s => console.warn(`  ${s.preset} → ${s.tag}: "${s.text}"`));
 }
 
 const validPresets = newPresets.filter(p => p.words.length > 0);
@@ -505,92 +552,114 @@ writeFileSync('src/data/presetLibrary.json', JSON.stringify(validPresets, null, 
 console.log(`✓ Wrote ${validPresets.length} presets to src/data/presetLibrary.json`);
 ```
 
-**Run command**: `node scripts/convert-preset-library.mjs`. Not added to `package.json` — it's a one-off.
+**Run command**: `cd swarmui-react && node scripts/convert-preset-library.mjs`. Not added to `package.json` — it's a one-off.
 
-**Manual review after running**: eyeball-spot-check 5–10 converted entries; skim the missing-tags warning list for anything suspicious. The old `promptBrowserPresets.json` file is deleted in the same PR after verification.
+**Manual review after running**: eyeball-spot-check 5–10 converted entries in `presetLibrary.json`; skim the missing-tags warning list for anything suspicious; inspect any entries flagged by the weight/LoRA sanity check. The old `promptBrowserPresets.json` file is deleted in Commit 2 after verification.
 
 ### 5.2 User-preset runtime migration
 
-Existing users have `userBrowserPresets` in localStorage under the wizard store's key. Those entries have `tagIds`, not `words`. We migrate them once, on first init of the new store.
+Existing users have `userBrowserPresets` in localStorage under the wizard store's key `'swarmui-prompt-wizard-v1'` (verified against `src/stores/promptWizardStore.ts:416`). Those entries have `tagIds`, not `words`. We migrate them once, on first open of the Preset Library modal.
 
-**Location**: module-scope helper in `src/stores/presetLibraryStore.ts`, called before the zustand state creator runs.
+**Why deferred to first modal open (not store construction)**: the migration needs `promptTags.json` for the tag-id → word lookup, which is a ~MB JSON file we do not want bundled into the store's import graph. Using a dynamic `import()` matches the existing wizard's pattern in `PromptWizard.tsx:54` and keeps `promptTags.json` out of the preset library entry chunk unless migration actually runs. The flag check below is synchronous and cheap; the dynamic import only executes when legacy data is actually present.
+
+**Migration flag**: `swarmui:presetLibrary:migratedFromWizard:v1` (localStorage boolean). Once `'done'`, migration is never re-invoked.
+
+**Wizard store key**: `swarmui-prompt-wizard-v1` (do not change — matches the existing persist config).
+
+**Note**: the existing wizard store has its own unrelated `migrationVersion` field that handles internal wizard schema migrations (see `promptWizardStore.ts:117,365,430`). The preset library migration is a separate one-off flag and the two systems do not interact.
+
+**Location**: an action on the new store, called exactly once from `PresetLibrary.tsx` during first modal open (not on every open — the action is idempotent and flag-gated, but we also guard the caller with an in-flight ref to avoid double-dispatch during React strict-mode double-mount).
 
 ```typescript
+// src/stores/presetLibraryStore.ts
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { LibraryPreset, PresetCategory } from '../features/presetLibrary/types';
+
 const MIGRATION_FLAG_KEY = 'swarmui:presetLibrary:migratedFromWizard:v1';
-const WIZARD_STORE_KEY = 'prompt-wizard-store'; // verify exact key at implementation time
+const WIZARD_STORE_KEY = 'swarmui-prompt-wizard-v1';
 
-function migrateFromWizardStore(): LibraryPreset[] {
-  if (localStorage.getItem(MIGRATION_FLAG_KEY) === 'done') return [];
-
-  try {
-    const raw = localStorage.getItem(WIZARD_STORE_KEY);
-    if (!raw) {
-      localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    const oldUserPresets: Array<{
-      id: string; name: string; category: PresetCategory;
-      tagIds: string[]; description?: string; thumbnail?: string;
-    }> = parsed?.state?.userBrowserPresets ?? [];
-
-    if (oldUserPresets.length === 0) {
-      localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
-      return [];
-    }
-
-    // The ONLY place the preset library touches promptTags.json.
-    // After migration, the tag library is never read again.
-    const tagJson = require('../data/promptTags.json') as Array<{ id: string; text: string }>;
-    const tagById = new Map(tagJson.map(t => [t.id, t.text]));
-
-    const migrated = oldUserPresets
-      .map(p => ({
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        words: p.tagIds.map(id => tagById.get(id)).filter((w): w is string => !!w),
-        description: p.description,
-        thumbnail: p.thumbnail,
-        isDefault: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      }))
-      .filter(p => p.words.length > 0);
-
-    // Strip the migrated field from the wizard store's persisted state
-    // so it doesn't rehydrate on next load.
-    if (parsed?.state?.userBrowserPresets) {
-      delete parsed.state.userBrowserPresets;
-      localStorage.setItem(WIZARD_STORE_KEY, JSON.stringify(parsed));
-    }
-
-    localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
-
-    if (migrated.length > 0) {
-      console.info(`[presetLibrary] Migrated ${migrated.length} user presets from wizard store`);
-    }
-
-    return migrated;
-  } catch (err) {
-    console.warn('[presetLibrary] Migration failed, starting with empty user presets:', err);
-    localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
-    return [];
-  }
-}
-```
-
-**Store wiring** — the migration baseline must survive initial persist hydration:
-
-```typescript
-const migratedUserPresets = migrateFromWizardStore();
+// ... state shape from section 2 above ...
 
 export const usePresetLibraryStore = create<PresetLibraryState>()(
   persist(
     (set, get) => ({
-      userPresets: migratedUserPresets,
-      // ... rest of state
+      userPresets: [],
+      activeCategory: 'characters',
+      showExplicit: false,
+      stagedWords: [],
+      stagedFromPresetIds: [],
+      searchQuery: '',
+      // ... other initial values ...
+
+      migrateFromWizardStore: async () => {
+        // Flag-gated: short-circuit for the 99% path.
+        if (localStorage.getItem(MIGRATION_FLAG_KEY) === 'done') return;
+
+        try {
+          const raw = localStorage.getItem(WIZARD_STORE_KEY);
+          if (!raw) {
+            localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
+            return;
+          }
+
+          const parsed = JSON.parse(raw);
+          const oldUserPresets: Array<{
+            id: string; name: string; category: PresetCategory;
+            tagIds: string[]; description?: string; thumbnail?: string;
+          }> = parsed?.state?.userBrowserPresets ?? [];
+
+          if (oldUserPresets.length === 0) {
+            localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
+            return;
+          }
+
+          // Dynamic import — the ONLY place the preset library touches promptTags.json.
+          // After this runs once (and the flag flips), the tag library is never loaded again.
+          const tagModule = await import('../data/promptTags.json');
+          const tagJson = tagModule.default as Array<{ id: string; text: string }>;
+          const tagById = new Map(tagJson.map(t => [t.id, t.text]));
+
+          const migrated: LibraryPreset[] = oldUserPresets
+            .map(p => ({
+              id: p.id,
+              name: p.name,
+              category: p.category,
+              words: p.tagIds.map(id => tagById.get(id)).filter((w): w is string => !!w),
+              description: p.description,
+              thumbnail: p.thumbnail,
+              isDefault: false as const,
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            }))
+            .filter(p => p.words.length > 0);
+
+          // Strip the migrated field from the wizard store's persisted state
+          // so it doesn't rehydrate on next load.
+          if (parsed?.state?.userBrowserPresets) {
+            delete parsed.state.userBrowserPresets;
+            localStorage.setItem(WIZARD_STORE_KEY, JSON.stringify(parsed));
+          }
+
+          // Merge with any user presets that already exist in the new store
+          // (shouldn't happen on first migration, but safe).
+          set((state) => ({
+            userPresets: [...state.userPresets, ...migrated],
+          }));
+
+          localStorage.setItem(MIGRATION_FLAG_KEY, 'done');
+
+          if (migrated.length > 0) {
+            console.info(`[presetLibrary] Migrated ${migrated.length} user presets from wizard store`);
+          }
+        } catch (err) {
+          console.warn('[presetLibrary] Migration failed, starting with empty user presets:', err);
+          localStorage.setItem(MIGRATION_FLAG_KEY, 'done'); // never retry a broken migration
+        }
+      },
+
+      // ... other actions ...
     }),
     {
       name: 'swarmui:presetLibrary:v1',
@@ -599,25 +668,38 @@ export const usePresetLibraryStore = create<PresetLibraryState>()(
         activeCategory: state.activeCategory,
         showExplicit: state.showExplicit,
       }),
-      merge: (persistedState, currentState) => {
-        const persisted = persistedState as Partial<PresetLibraryState> | undefined;
-        if (persisted?.userPresets && persisted.userPresets.length > 0) {
-          return { ...currentState, ...persisted };
-        }
-        return { ...currentState, ...(persisted ?? {}), userPresets: currentState.userPresets };
-      },
+      // No custom merge needed: since migration is deferred and runs AFTER hydration,
+      // zustand's default merge hydrates persisted state first, then the migration
+      // action (called on modal open) appends migrated entries via set(). Ordering is
+      // deterministic because modal-open is always after hydration.
     },
   ),
 );
 ```
 
-The custom `merge` matters: without it, zustand's default merge would overwrite the migrated baseline with an empty persisted-state value on first hydration.
+**Caller wiring** (`src/components/presetLibrary/PresetLibrary.tsx`):
 
-**Migration flag**: `swarmui:presetLibrary:migratedFromWizard:v1` — a tiny boolean. Once `'done'`, migration never re-runs even if it returned an empty list.
+```typescript
+const hasRunMigration = useRef(false);
 
-**Failure handling**: any JSON-parse or lookup failure logs a warning, marks the flag `'done'` (don't retry a broken migration), and starts with an empty list. No blocking UI.
+const handleOpen = useCallback(() => {
+  open();
+  if (!hasRunMigration.current) {
+    hasRunMigration.current = true;
+    migrateFromWizardStore(); // fire-and-forget; the action handles its own errors
+  }
+  // ... rest of open logic ...
+}, [open, migrateFromWizardStore]);
+```
 
-**Edge case — user never opened the old wizard preset view**: `userBrowserPresets` is absent or empty; migration returns `[]`, flag flips, done.
+The `useRef` guards against React strict-mode double-mount in development; the flag in localStorage guards against subsequent cold-start re-runs.
+
+**Failure handling**: any JSON-parse or lookup failure logs a warning, marks the flag `'done'` (don't retry a broken migration), and leaves `userPresets` as whatever it already was. No blocking UI.
+
+**Edge cases**:
+- **User never opened the old wizard preset view** — `userBrowserPresets` is absent or empty; action sets flag to `'done'` and returns with no state change.
+- **User has both legacy wizard presets and already-created new-store presets** — shouldn't happen in production (the new store doesn't exist until this feature ships), but the `set` is a concat, so both coexist without ID collision (legacy IDs are `browser-preset-...`, new IDs are `pl-user-...`).
+- **First open without internet / JSON fetch fails** — dynamic import is served from the bundle, not the network, so this is not a real failure mode in Vite's dev or production build. If the JSON chunk somehow fails to load, the catch block handles it gracefully.
 
 ### 5.3 Wizard cleanup — removals
 
@@ -660,25 +742,53 @@ Update `partialize` to remove `userBrowserPresets`, `activePresetCategory`, `sho
 
 - Remove `PresetCategory`, `PRESET_CATEGORIES`, `PRESET_CATEGORY_LABELS`, `BrowserPreset`. Any remaining wizard code that imported them will fail TypeScript — that's the point; fix each import at implementation time.
 
+**Delete ordering within Commit 2** (strict — each step must keep TypeScript green):
+
+1. Delete the three deleted components as an atomic set — they reference each other, so removing them together avoids dangling imports: `PromptWizardBrowser.tsx`, `PromptWizardPresetCard.tsx`, `PromptWizardPresetCreator.tsx`.
+2. Clean `promptWizardStore.ts` (remove fields, actions, partialize entries).
+3. Clean `PromptWizardHeader.tsx` (remove props, segmented control).
+4. Clean `PromptWizard.tsx` (remove the view branch and loaders).
+5. Remove the exports from `promptWizard/types.ts`.
+6. Delete `promptBrowserPresets.json`.
+
+Doing it in this order ensures no intermediate state has a dead import or a store destructure referencing a deleted field.
+
 ### 5.4 Implementation order
 
-1. Build all new `presetLibrary/` files; verify independently.
-2. Wire `<PresetLibrary>` into `PromptSection` as the sibling card.
-3. Run `convert-preset-library.mjs`; commit `presetLibrary.json`.
-4. Verify runtime migration locally against a fixture wizard-store.
-5. Delete the old wizard-integrated preset code in a single follow-up commit.
+All of this lands in a **single PR**, structured as two commits for reviewability:
 
-This lets the new feature ship and bake before the cleanup, keeping the "remove" commit clean and reviewable.
+**Commit 1 — "feat(preset-library): add standalone Preset Library feature":**
+1. Create `src/features/presetLibrary/` (types + staging helpers + helper tests).
+2. Create `src/stores/presetLibraryStore.ts` (store + migration action + store tests).
+3. Run `node scripts/convert-preset-library.mjs` from the `swarmui-react/` root; commit `src/data/presetLibrary.json`.
+4. Create all `src/components/presetLibrary/*.tsx` components and the CSS.
+5. Wire `<PresetLibrary>` into `PromptSection` as the sibling card.
+6. Verify runtime migration locally against a fixture wizard-store (save a copy of real localStorage and replay it).
+
+**Commit 2 — "refactor(prompt-wizard): remove browser preset toggle and legacy presets"** (strict delete-ordering matters — TypeScript must stay green after each step):
+1. Delete `src/components/PromptWizardBrowser.tsx`, `PromptWizardPresetCard.tsx`, `PromptWizardPresetCreator.tsx` (the three form an atomic set; removing them together avoids dangling imports).
+2. Remove browser-preset fields, actions, and `partialize` entries from `src/stores/promptWizardStore.ts`.
+3. Remove `activeView` / `onViewChange` props and the segmented control from `src/components/PromptWizardHeader.tsx`.
+4. Remove the `activeView === 'presets'` branch, the `loadDefaultBrowserPresets` loader, and all destructured browser-preset fields from `src/components/PromptWizard.tsx`.
+5. Remove `PresetCategory`, `PRESET_CATEGORIES`, `PRESET_CATEGORY_LABELS`, `BrowserPreset` exports from `src/features/promptWizard/types.ts` (any remaining importer will break TypeScript — that's the desired tripwire).
+6. Delete `src/data/promptBrowserPresets.json`.
+7. Run `tsc --noEmit` and `rg "promptBrowserPresets|BrowserPreset"` — both must return clean.
+
+The two-commit structure keeps the "add" and "remove" diffs separately reviewable while shipping them together — a reviewer can jump between commits without having to mentally subtract the cleanup from the feature.
+
+**Note on duplicate `PresetCategory` type during the overlap**: between the first and last step of Commit 2, both `src/features/presetLibrary/types.ts` and `src/features/promptWizard/types.ts` export identical `PresetCategory` / `PRESET_CATEGORIES` / `PRESET_CATEGORY_LABELS` names. This is intentional and safe — the two files are different module paths, so TypeScript treats them as distinct symbols, and the migration code in `presetLibraryStore.ts` imports from `../features/presetLibrary/types` only. The wizard store's legacy `BrowserPreset` reference lives alongside for one commit until Commit 2 removes it.
 
 ### 5.5 Risk review
 
 | Risk | Mitigation |
 |---|---|
-| Migration loses user presets if tag lookup fails | Script and runtime both log missing entries; failed presets are skipped, not silently emptied |
-| `userBrowserPresets` exists but user hasn't opened new feature yet | Migration runs unconditionally on first new-store init |
-| Stale migration flag from a botched attempt | Flag is versioned (`v1`); bump to `v2` to re-run |
-| Someone re-adds `BrowserPreset` to wizard types by mistake | Deletion happens in the same PR as the new feature; TypeScript catches drift |
-| Old `promptBrowserPresets.json` left behind | Explicit delete in the PR; verify `rg "promptBrowserPresets"` returns nothing |
+| Migration loses user presets if tag lookup fails | Conversion script and runtime migration both log missing entries; presets with zero resolved words are skipped, not silently emptied |
+| `userBrowserPresets` exists but user hasn't opened new feature yet | Migration action runs on first modal open; flag survives across sessions so it only runs once |
+| Stale migration flag from a botched attempt | Flag is versioned (`v1`); bump to `v2` to re-run — no in-place recovery attempted because a half-broken migration is more dangerous than starting empty |
+| Someone re-adds `BrowserPreset` to wizard types by mistake | Commit 2 deletes it; if a reviewer later restores it, TypeScript catches drift because nothing in the new code imports from `promptWizard/types` anymore |
+| Old `promptBrowserPresets.json` left behind | Commit 2 step 6 explicitly deletes it; step 7 verifies `rg "promptBrowserPresets"` returns nothing |
+| Dynamic import of `promptTags.json` fails on first migration | Caught by the try/catch in `migrateFromWizardStore`; flag flips to `'done'` and the user sees an empty Library on first open (their legacy presets are still safe in wizard-store localStorage, just not accessible until manual re-migration) |
+| Strict-mode double-mount triggers migration twice | `useRef` guard in `PresetLibrary.tsx` + localStorage flag make the action double-idempotent |
 
 ### 5.6 Manual QA checklist
 
