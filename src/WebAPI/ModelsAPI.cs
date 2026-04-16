@@ -606,8 +606,12 @@ public static class ModelsAPI
         }
         string originalUrl = url;
         url = url.Before('#');
-        Dictionary<string, string> headers = [];
         if (url.StartsWith("https://civitai.com/"))
+        {
+            url = $"https://civitai.red/{url["https://civitai.com/".Length..]}";
+        }
+        Dictionary<string, string> headers = [];
+        if (url.StartsWith("https://civitai.red/"))
         {
             string civitaiApiKey = session.User.GetGenericData("civitai_api", "key");
             if (!string.IsNullOrEmpty(civitaiApiKey))
@@ -757,7 +761,11 @@ public static class ModelsAPI
     [API.APIDescription("Forwards a metadata request, eg to civitai API.", "")]
     public static async Task<JObject> ForwardMetadataRequest(Session session, string url)
     {
-        if (!url.StartsWithFast("https://civitai.com/"))
+        if (url.StartsWithFast("https://civitai.com/"))
+        {
+            url = $"https://civitai.red/{url["https://civitai.com/".Length..]}";
+        }
+        if (!url.StartsWithFast("https://civitai.red/"))
         {
             return new JObject() { ["error"] = "Invalid URL." };
         }
