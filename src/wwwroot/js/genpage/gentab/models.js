@@ -161,11 +161,17 @@ function getCivitUrlGuessFor(model) {
     }
     let civitUrl = '';
     // (Hacky but we don't have a dedicated datastore for this, just included at the top of descriptions generally)
-    let civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.com/models/');
+    let civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.red/models/');
+    if (civitUrlStartIndex == -1) {
+        civitUrlStartIndex = model.description.indexOf('<a href="https://civitai.com/models/');
+    }
     if (civitUrlStartIndex != -1) {
         let end = model.description.indexOf('"', civitUrlStartIndex + '<a href="'.length);
         if (end != -1) {
             civitUrl = model.description.substring(civitUrlStartIndex + '<a href="'.length, end);
+            if (civitUrl.startsWith('https://civitai.com/')) {
+                civitUrl = `https://civitai.red/${civitUrl.substring('https://civitai.com/'.length)}`;
+            }
             if (!civitUrl.includes("?modelVersionId=") || civitUrl.length > 200 || civitUrl.includes("?modelVersionId=null")) {
                 console.log(`Invalid CivitAI URL (failed sanity check): ${civitUrl}`);
                 civitUrl = '';
