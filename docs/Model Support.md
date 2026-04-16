@@ -286,7 +286,7 @@ For upscaling with SD3, the `Refiner Do Tiling` parameter is highly recommended 
         - Select via the advanced `Mistral Model` parameter
 - **Parameters:**
     - **Prompt:** Prompting guide from the model creators here <https://docs.bfl.ai/guides/prompting_guide_flux2>
-        - Notably, they trained heavily on complex JSON structured prompts to allow for very complex scene control, though this is not required
+        - Their docs recommend a JSON structured prompting, but this does not seem all that much more useful in practice, and the JSON syntax in a prompt may trigger parsing issues
         - They used a powerful LLM for inputs, allow for multiple languages and a variety of ways of phrasing/formatting text to work out
     - **Resolution:** Flux2 supports just about any resolution you can think of, from 64x64 up to 4 megapixels (2048x2048)
     - **CFG Scale:** `1`
