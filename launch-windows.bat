@@ -48,7 +48,7 @@ if exist .\src\bin\must_rebuild (
 rem Build the program if it isn't already built
 if not exist src\bin\live_release\SwarmUI.exe (
     rem For some reason Microsoft's nonsense is missing the official nuget source? So forcibly add that to be safe.
-    dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source"
+    dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source" >nul 2>&1
 
     dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD2=%%i
