@@ -1,13 +1,27 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim
+FROM rocm/dev-ubuntu-24.04:7.2.2-complete
 
 ARG UID=1000
 
-# Install python
+# Install python3.12
 RUN apt update
-RUN apt install -y git wget build-essential python3.11 python3.11-venv python3.11-dev python3-pip ffmpeg
+RUN apt install -y git wget build-essential python3.12 python3.12-venv python3.12-dev python3-pip ffmpeg
 
 # Install dependencies for controlnet preprocessors
 RUN apt install -y libglib2.0-0 libgl1
+
+# Install ROCm
+RUN apt install -y rocm amdgpu-dkms amdgpu-dkms-firmware
+RUN apt install -y rocm-hip rocm-hip-sdk hipblas hipblas-dev
+RUN apt install -y hipfft-dev hipfft
+RUN apt install -y hipsolver hipsolver-dev
+RUN apt install -y ocl-icd-libopencl1 ocl-icd-opencl-dev opencl-c-headers opencl-clhpp-headers rocm-opencl rocm-opencl-dev
+
+# Set ROCm access
+RUN wget https://repo.radeon.com/amdgpu/30.30.1/ubuntu/pool/main/a/amdgpu-insecure-instinct-udev-rules/amdgpu-insecure-instinct-udev-rules_30.30.1.0-2303411.22.04_all.deb
+RUN apt install -y ./amdgpu-insecure-instinct-udev-rules_30.30.1.0-2303411.22.04_all.deb
+
+# Install DotNET8 and SDK
+RUN apt install -y dotnet8 dotnet-sdk-8.0
 
 # Copy swarm's files into the docker container
 COPY . ./SwarmUI
@@ -18,7 +32,11 @@ RUN chown -R $UID:$UID ./SwarmUI
 RUN git config --global --add safe.directory '*'
 
 # Ensure a user exists within docker for the given uid
+RUN deluser ubuntu
 RUN useradd -u $UID swarmui
+
+# Add user to groups
+RUN usermod -aG video,render,root swarmui
 
 # If built binaries were copied in, discard them, they are likely bad.
 # Build inside the container later (so eg extensions are included properly).
