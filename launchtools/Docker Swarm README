@@ -33,4 +33,4 @@ To get the GPU UUID, run "sudo rocm-smi --showuniqueid -d <device, normally 0 un
 
 5. Download the edited example-docker-compose.yml and either rename it to docker-compose.yml or edit the next command
 
-6. run 'sudo HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker stack deploy --compose-file launchtools/docker-compose.yml --detach=true swarmui' from the SwarmUI folder. Note: If you're using Portainer, the volumes will possibly appear blank. This is normal, it doesn't effect functionality. You must run this command on a cluster manager node, not a worker.
+6. run 'sudo HOST_UID="$(id -u)" HOST_GID="$(id -g)" docker stack deploy --compose-file launchtools/swarm-AMDGPU-docker-compose.yml --detach=true swarmui' from the SwarmUI folder. Note: If you're using Portainer, the volumes will possibly appear blank. This is normal, it doesn't effect functionality. You must run this command on a cluster manager node, not a worker.
