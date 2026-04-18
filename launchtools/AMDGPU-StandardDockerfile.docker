@@ -36,7 +36,7 @@ RUN deluser ubuntu
 RUN useradd -u $UID swarmui
 
 # Add user to groups
-RUN usermod -aG video,render,root swarmui
+RUN usermod -aG video,render swarmui
 
 # If built binaries were copied in, discard them, they are likely bad.
 # Build inside the container later (so eg extensions are included properly).
