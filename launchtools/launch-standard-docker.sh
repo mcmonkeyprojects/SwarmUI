@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
-
+GPU=="nvidia"
 # Note: This is an example file, do not edit `launch-standard-docker.sh`. Instead, duplicate the file and edit your duplicate.
 # `custom-launch-docker.sh` is reserved in gitignore for if you want to use that.
 
 # Run script automatically in Swarm's dir regardless of how it was triggered
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "$SCRIPT_DIR/.."
+if [[ "$1" == "amd" ]]
+then
+    GPU=="amd"
+    docker build --build-arg UID=$UID -f launchtools/AMDGPU-StandardDockerfile.docker -t swarmui .
+fi
 
-docker build --build-arg UID=$UID -f launchtools/StandardDockerfile.docker -t swarmui .
-
+if [[ "$1" == "nvidia" ]]
+then
+    docker build --build-arg UID=$UID -f launchtools/StandardDockerfile.docker -t swarmui .
+fi
 # Run this script with 'fixch' to run as root in the container and chown to the correct user
 SETUSER="--user $UID:$(id -g) --cap-drop=ALL"
 # TODO: Validate arg spacing handling
@@ -18,7 +25,6 @@ then
     SETUSER=""
     POSTARG="fixch $UID"
 fi
-
 # add "--network=host" if you want to access other services on the host network (eg a separated comfy instance)
 docker run -it \
     --rm \
