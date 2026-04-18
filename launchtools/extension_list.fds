@@ -179,9 +179,10 @@ TIPO:
     - nodes
 
 NegPip:
-    author: Hugs288
+    author: khanghy1000, orig. Hugs288
     description: Adds a parameter group for Negpip (allows for the use of negative weights in positive prompt, works even in non-CFG models).
-    url: https://github.com/Hugs288/NegPipforSwarmUI
+    url: https://github.com/khanghy1000/NegPipforSwarmUI
+    old_url: https://github.com/Hugs288/NegPipforSwarmUI
     license: MIT
     tags:
     - parameters
