@@ -4,7 +4,24 @@ ARG UID=1000
 
 # Install python
 RUN apt update
-RUN apt install -y git wget build-essential python3.11 python3.11-venv python3.11-dev python3-pip ffmpeg
+RUN apt install -y git wget build-essential python3.11 python3.11-venv python3.11-dev python3-pip ffmpeg gpg
+
+# Install ROCm keys
+RUN mkdir --parents --mode=0755 /etc/apt/keyrings
+RUN wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | gpg --dearmor | tee /etc/apt/keyrings/rocm.gpg > /dev/null
+
+# Install ROCm
+RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/7.2.2 jammy main">>/etc/apt/sources.list.d/rocm.list
+RUN echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/graphics/7.2.1/ubuntu jammy main">>/etc/apt/sources.list.d/rocm.list
+RUN echo "Package: *">>/etc/apt/preferences.d/rocm-pin-600
+RUN echo "Pin: release o=repo.radeon.com">>/etc/apt/preferences.d/rocm-pin-600
+RUN echo "Pin-Priority: 600">>/etc/apt/preferences.d/rocm-pin-600
+RUN apt update
+RUN apt install -y rocm
+
+# Set ROCm access to all users
+RUN wget https://repo.radeon.com/amdgpu/30.30.1/ubuntu/pool/main/a/amdgpu-insecure-instinct-udev-rules/amdgpu-insecure-instinct-udev-rules_30.30.1.0-2303411.22.04_all.deb
+RUN apt install -y ./amdgpu-insecure-instinct-udev-rules_30.30.1.0-2303411.22.04_all.deb
 
 # Install dependencies for controlnet preprocessors
 RUN apt install -y libglib2.0-0 libgl1
