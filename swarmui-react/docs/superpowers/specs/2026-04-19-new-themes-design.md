@@ -22,7 +22,10 @@ Add 24 new themes to the existing SwarmUI React frontend theme system across thr
   colors: {
     brand: string        // primary brand hex
     accent: string       // secondary accent hex
-    gray0–gray9: string  // 10-step scale (0=lightest text, 9=darkest bg)
+    // 10-step gray scale:
+    //   Dark mode:  gray9 = darkest bg, gray0 = lightest text
+    //   Light mode: gray9 = lightest bg, gray0 = darkest text (inverted)
+    gray0–gray9: string
     success: string
     warning: string
     error: string
@@ -33,6 +36,32 @@ Add 24 new themes to the existing SwarmUI React frontend theme system across thr
   style?: ThemeStyle     // family, motif, surfaceMode, controlMode, iconMode
 }
 ```
+
+### Default semantic colors
+
+Unless a theme specifies overrides (noted per-theme below), use these defaults:
+
+| Token | Default | Notes |
+|-------|---------|-------|
+| `success` | `#40C057` | Mantine green-6 |
+| `warning` | `#FAB005` | Mantine yellow-6 |
+| `error` | `#FA5252` | Mantine red-6 |
+
+### Per-theme semantic overrides
+
+| Theme | success | warning | error | Rationale |
+|-------|---------|---------|-------|-----------|
+| Bloodborne | `#D4A017` (amber) | `#C17F24` (dark amber) | `#8B0000` (blood red) | Horror palette — amber replaces green, blood red replaces alert red |
+| Cyberpunk 2077 | `#00D4FF` (cyan) | `#FCE300` (yellow) | `#FF2D55` (hot red) | Night City neon palette |
+| Stardew Valley | `#6AB04C` (leaf green) | `#F0A500` (harvest gold) | `#C0392B` (red) | Matches brand/accent for cohesion |
+| Solarized Dark | `#859900` (sol. green) | `#B58900` (sol. yellow) | `#DC322F` (sol. red) | Exact Solarized palette values |
+| Solarized Light | `#859900` (sol. green) | `#B58900` (sol. yellow) | `#DC322F` (sol. red) | Same as Solarized Dark |
+| Oxocarbon | `#42BE65` (IBM green-40) | `#F1C21B` (IBM yellow-30) | `#FA4D56` (IBM red-40) | Full IBM Carbon semantic tokens |
+| All others | default | default | default | Standard values |
+
+### Gray scale interpolation
+
+Interpolate the 10 steps (gray0–gray9) in **OKLCH color space** for perceptually even gradients. Straight sRGB interpolation produces muddy mid-tones on warm/cool tinted palettes.
 
 ---
 
@@ -249,9 +278,9 @@ Add 24 new themes to the existing SwarmUI React frontend theme system across thr
 - All 24 themes appended to `THEME_PALETTES` in `src/store/themeStore.ts`
 - Light mode themes (Gruvbox Light, Solarized Light) set `resolvedColorScheme: 'light'` via appropriate gray scale inversion (gray9 = lightest bg, gray0 = darkest text)
 - Cyberpunk 2077 uses `id: 'cyberpunk-2077'` to avoid collision with existing `cyberpunk` in the aesthetic category
-- Each theme fills the standard success/warning/error colors with sensible neutral values unless the theme character calls for specific ones
+- success/warning/error values: use the default table in the interface section; per-theme overrides are listed there
+- Gray scale: interpolate gray0–gray9 in OKLCH color space between the documented endpoints
 - No changes to UI components, routing, persistence, or validation logic — all handled by existing infrastructure
-- The full 10-step gray scales will be interpolated between gray9 and gray0 with perceptually even steps
 
 ## Files Changed
 
