@@ -28,7 +28,6 @@ body,
 #root {
   position: relative;
   isolation: isolate;
-  z-index: 1;
 }
 
 body::before,
