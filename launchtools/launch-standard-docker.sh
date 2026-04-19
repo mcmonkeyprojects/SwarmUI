@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Note: This is an example file, do not edit `launch-standard-docker.sh`. Instead, duplicate the file and edit your duplicate.
 # `custom-launch-docker.sh` is reserved in gitignore for if you want to use that.
 
@@ -7,8 +5,21 @@
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cd "$SCRIPT_DIR/.."
 
-docker build --build-arg UID=$UID -f launchtools/StandardDockerfile.docker -t swarmui .
+# Set default GPU
+GPU="nvidia"
 
+if [[ $1 == "amd" ]]
+then
+        GPU="rocm"
+        docker build --build-arg UID=$UID -f launchtools/AMDGPU-StandardDockerfile.docker -t swarmui-rocm .
+else
+        docker build --build-arg UID=$UID -f launchtools/StandardDockerfile.docker -t swarmui-nvidia .
+fi
+
+if [[ $1 != "fixch" ]]
+then
+        shift # Remove the GPU ID arg to prevent bugs
+fi
 # Run this script with 'fixch' to run as root in the container and chown to the correct user
 SETUSER="--user $UID:$(id -g) --cap-drop=ALL"
 POSTARG=("--forward_restart" "$@")
@@ -17,7 +28,6 @@ then
     SETUSER=""
     POSTARG=("fixch" "$UID")
 fi
-
 # add "--network=host" if you want to access other services on the host network (eg a separated comfy instance)
 docker run -it \
     --rm \
@@ -30,7 +40,7 @@ docker run -it \
     -v "$PWD/Models:/SwarmUI/Models" \
     -v "$PWD/Output:/SwarmUI/Output" \
     -v "$PWD/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/CustomWorkflows" \
-    --gpus=all -p 7801:7801 swarmui "${POSTARG[@]}"
+    --gpus=all -p 7801:7801 swarmui-"$GPU" "${POSTARG[@]}"
 
 if [ $? == 42 ]; then
     exec "$SCRIPT_DIR/launch-standard-docker.sh" "$@"
