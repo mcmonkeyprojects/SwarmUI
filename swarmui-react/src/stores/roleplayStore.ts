@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
+import { createIndexedDbStorage } from '../lib/indexedDbStorage';
 import type {
   ChatMessage,
   RoleplayCharacter,
@@ -25,7 +26,6 @@ import {
   createEmptyRoleplayMemoryState,
 } from '../features/roleplay/roleplayMemory';
 import {
-  createDefaultPromptSet,
   createEmptyRoleplayPersonalityProfile,
   getEffectiveSystemPrompt,
   normalizeRoleplayPersonalityProfile,
@@ -90,18 +90,15 @@ function normalizeInteractionStyle(value: unknown): RoleplayCharacter['interacti
 }
 
 function normalizeCharacter(character: LegacyRoleplayCharacter): RoleplayCharacter {
-  const defaultPromptSet = createDefaultPromptSet();
   const now = Date.now();
   const interactionStyle = normalizeInteractionStyle(character.interactionStyle);
   const legacySystemPrompt = normalizeString(character.systemPrompt);
   const chatSystemPrompt =
     normalizeString(character.chatSystemPrompt) ||
-    (interactionStyle === 'personal-chat' ? legacySystemPrompt : '') ||
-    defaultPromptSet.chatSystemPrompt;
+    (interactionStyle === 'personal-chat' ? legacySystemPrompt : '');
   const roleplaySystemPrompt =
     normalizeString(character.roleplaySystemPrompt) ||
-    (interactionStyle === 'storyteller' ? legacySystemPrompt : '') ||
-    defaultPromptSet.roleplaySystemPrompt;
+    (interactionStyle === 'storyteller' ? legacySystemPrompt : '');
 
   return {
     id: character.id,
@@ -199,7 +196,7 @@ function normalizeSession(
 ): RoleplayChatSession {
   const now = Date.now();
   const emptyMemoryState = createEmptyRoleplayMemoryState();
-  const normalizedPromptStack = session.promptStack ?? {};
+  const normalizedPromptStack = (session.promptStack ?? {}) as Partial<RoleplayPromptStack>;
 
   return {
     id: session.id,
@@ -317,8 +314,8 @@ const DEFAULT_CHARACTERS: RoleplayCharacter[] = [
     personality:
       'Warm, attentive, and personal. Talks directly to the user without narrating for them.',
     systemPrompt: defaultInteractionStyleConfig.systemPrompt,
-    chatSystemPrompt: createDefaultPromptSet().chatSystemPrompt,
-    roleplaySystemPrompt: createDefaultPromptSet().roleplaySystemPrompt,
+    chatSystemPrompt: '',
+    roleplaySystemPrompt: '',
     openingChatMessage: '',
     openingRoleplayMessage: '',
     sceneSuggestionPrompt: defaultInteractionStyleConfig.sceneSuggestionPrompt,
@@ -514,26 +511,20 @@ function remapIdsForImport(bundle: RoleplayBundleData, state: RoleplayStoreState
   const lorebookIdMap = new Map<string, string>();
   const sessionIdMap = new Map<string, string>();
   const takenCharacterIds = new Set(state.characters.map((character) => character.id));
-  const takenPersonaIds = new Set(state.personas.map((persona) => persona.id));
   const takenLorebookIds = new Set(state.lorebooks.map((lorebook) => lorebook.id));
   const takenSessionIds = new Set(state.chatSessions.map((session) => session.id));
 
-  for (const character of bundle.characters) {
+  for (const character of [bundle.character]) {
     const nextId = takenCharacterIds.has(character.id) ? crypto.randomUUID() : character.id;
     takenCharacterIds.add(nextId);
     characterIdMap.set(character.id, nextId);
   }
-  for (const persona of bundle.personas) {
-    const nextId = takenPersonaIds.has(persona.id) ? crypto.randomUUID() : persona.id;
-    takenPersonaIds.add(nextId);
-    personaIdMap.set(persona.id, nextId);
-  }
-  for (const lorebook of bundle.lorebooks) {
+  for (const lorebook of (bundle.lorebooks ?? [])) {
     const nextId = takenLorebookIds.has(lorebook.id) ? crypto.randomUUID() : lorebook.id;
     takenLorebookIds.add(nextId);
     lorebookIdMap.set(lorebook.id, nextId);
   }
-  for (const session of bundle.chatSessions) {
+  for (const session of (bundle.sessions ?? [])) {
     const nextId = takenSessionIds.has(session.id) ? crypto.randomUUID() : session.id;
     takenSessionIds.add(nextId);
     sessionIdMap.set(session.id, nextId);
@@ -1245,7 +1236,7 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
               bundle,
               state
             );
-            const importedCharacters = bundle.characters.map((character) =>
+            const importedCharacters = [bundle.character].map((character) =>
               normalizeCharacter({
                 ...character,
                 id: characterIdMap.get(character.id) ?? character.id,
@@ -1254,22 +1245,13 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
                 ),
               })
             );
-            const importedPersonas = bundle.personas.map((persona) =>
-              normalizePersona({
-                ...persona,
-                id: personaIdMap.get(persona.id) ?? persona.id,
-                boundLorebookIds: persona.boundLorebookIds.map(
-                  (lorebookId) => lorebookIdMap.get(lorebookId) ?? lorebookId
-                ),
-              })
-            );
-            const importedLorebooks = bundle.lorebooks.map((lorebook) =>
+            const importedLorebooks = (bundle.lorebooks ?? []).map((lorebook) =>
               normalizeLorebook({
                 ...lorebook,
                 id: lorebookIdMap.get(lorebook.id) ?? lorebook.id,
               })
             );
-            const importedSessions = bundle.chatSessions.map((session) =>
+            const importedSessions = (bundle.sessions ?? []).map((session) =>
               normalizeSession({
                 ...session,
                 id: sessionIdMap.get(session.id) ?? session.id,
@@ -1285,7 +1267,6 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
 
             return {
               characters: [...state.characters, ...importedCharacters],
-              personas: [...state.personas, ...importedPersonas],
               lorebooks: [...state.lorebooks, ...importedLorebooks],
               chatSessions: [...importedSessions, ...state.chatSessions],
               activeCharacterId: importedCharacters[0]?.id ?? state.activeCharacterId,
@@ -1316,6 +1297,7 @@ export const useRoleplayStore = create<RoleplayStoreState>()(
       }),
       {
         name: 'swarmui-roleplay-v2',
+        storage: createJSONStorage(() => createIndexedDbStorage('swarmui-roleplay')),
         version: 11,
         migrate: (persistedState) => {
           const state = persistedState as LegacyRoleplayState;

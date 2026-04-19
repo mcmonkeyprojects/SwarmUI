@@ -9,17 +9,13 @@ import {
     IconDotsVertical,
     IconDownload,
     IconLogout,
-    IconMoon,
     IconPower,
     IconReload,
     IconSearch,
-    IconSun,
 } from '@tabler/icons-react';
-import { ThemeSelector } from '../ThemeSelector';
+import { AppearanceTrigger } from '../AppearanceTrigger';
 import { QueueStatusBadge } from '../QueueStatusBadge';
-import { useThemeStore } from '../../store/themeStore';
 import type { AppPage } from '../../stores/navigationStore';
-import { useShallow } from 'zustand/react/shallow';
 import { SwarmActionIcon, SwarmSegmentedControl } from '../ui';
 
 interface AppHeaderProps {
@@ -32,28 +28,6 @@ interface AppHeaderProps {
     onLogout: () => void;
     onShutdown: () => void;
     onNavigateToQueue: () => void;
-}
-
-function LightDarkToggle() {
-    const { isLightMode, toggleLightMode } = useThemeStore(useShallow((state) => ({
-        isLightMode: state.isLightMode,
-        toggleLightMode: state.toggleLightMode,
-    })));
-
-    return (
-        <Tooltip label={isLightMode ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
-            <SwarmActionIcon
-                aria-label={isLightMode ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-                tone="secondary"
-                emphasis="ghost"
-                size="md"
-                onClick={toggleLightMode}
-                className="swarm-app-header-action swarm-app-header-action--theme"
-            >
-                {isLightMode ? <IconMoon size={18} /> : <IconSun size={18} />}
-            </SwarmActionIcon>
-        </Tooltip>
-    );
 }
 
 export function AppHeader({
@@ -114,8 +88,7 @@ export function AppHeader({
 
             <Group gap="xs" wrap="nowrap" className="swarm-app-header__actions">
                 <QueueStatusBadge compact onNavigateToQueue={onNavigateToQueue} />
-                <ThemeSelector compact={layoutMode !== 'full'} />
-                <LightDarkToggle />
+                <AppearanceTrigger />
 
                 {showOverflowActions ? (
                     <Menu position="bottom-end" shadow="md" withArrow>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
+import { createIndexedDbStorage } from '../lib/indexedDbStorage';
 
 export type GenerationDiagnosticStatus = 'running' | 'complete' | 'error' | 'interrupted';
 export type GenerationDiagnosticLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -456,6 +457,7 @@ export const useGenerationDiagnosticsStore = create<GenerationDiagnosticsState>(
             }),
             {
                 name: 'swarmui-generation-diagnostics-v1',
+                storage: createJSONStorage(() => createIndexedDbStorage('swarmui-generation-diagnostics')),
                 partialize: (state) => ({
                     entries: state.entries.slice(0, MAX_ENTRIES),
                 }),

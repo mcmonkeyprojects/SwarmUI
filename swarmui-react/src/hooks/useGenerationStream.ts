@@ -8,6 +8,7 @@
 import { useCallback } from 'react';
 import { useWebSocketStore } from '../stores/websocketStore';
 import type { GenerateParams } from '../api/types';
+import { useShallow } from 'zustand/react/shallow';
 
 export interface UseGenerationStreamResult {
     // State
@@ -46,7 +47,18 @@ export interface UseGenerationStreamResult {
  * ```
  */
 export function useGenerationStream(): UseGenerationStreamResult {
-    const generation = useWebSocketStore((state) => state.generation);
+    const generation = useWebSocketStore(
+        useShallow((state) => ({
+            isGenerating: state.generation.isGenerating,
+            progress: state.generation.progress,
+            currentStep: state.generation.currentStep,
+            totalSteps: state.generation.totalSteps,
+            previewImage: state.generation.previewImage,
+            images: state.generation.images,
+            error: state.generation.error,
+            startTime: state.generation.startTime,
+        }))
+    );
     const startGeneration = useWebSocketStore((state) => state.startGeneration);
     const stopGeneration = useWebSocketStore((state) => state.stopGeneration);
     const clearGeneration = useWebSocketStore((state) => state.clearGeneration);

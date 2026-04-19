@@ -6,7 +6,8 @@
  */
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
+import { createIndexedDbStorage } from '../lib/indexedDbStorage';
 
 // ============================================================================
 // Types
@@ -268,6 +269,7 @@ export const usePromptCacheStore = create<PromptCacheState & PromptCacheActions>
             }),
             {
                 name: 'swarmui-prompt-cache',
+                storage: createJSONStorage(() => createIndexedDbStorage('swarmui-prompt-cache')),
                 partialize: (state) => ({
                     entries: state.entries,
                     lastPromptHash: state.lastPromptHash,

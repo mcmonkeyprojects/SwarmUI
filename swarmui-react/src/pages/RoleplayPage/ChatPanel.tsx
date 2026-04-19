@@ -37,7 +37,7 @@ import {
   streamRoleplayChat,
 } from '../../services/roleplayChatService';
 import { useRoleplayStore } from '../../stores/roleplayStore';
-import type { ChatMessage, RoleplayCharacter } from '../../types/roleplay';
+import type { ChatMessage, RoleplayCharacter, RoleplayMemoryFact } from '../../types/roleplay';
 import { ElevatedCard } from '../../components/ui/ElevatedCard';
 import { SwarmButton } from '../../components/ui/SwarmButton';
 import { CharacterAvatar } from './CharacterAvatar';
@@ -238,7 +238,9 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
         sessionId,
         result.conversationSummary,
         result.continuity,
-        mergeGeneratedMemoryFacts(latestSession.memoryFacts, result.memoryFacts),
+        mergeGeneratedMemoryFacts(latestSession.memoryFacts, result.memoryFacts.map((text): RoleplayMemoryFact => ({
+          id: crypto.randomUUID(), text, pinned: false, createdAt: Date.now(), updatedAt: Date.now(),
+        }))),
         Date.now()
       );
     },
@@ -313,7 +315,7 @@ export function ChatPanel({ onRegenerateScene, onGenerateSceneWithPrompt }: Chat
       pendingMessages: baseMessages
         .filter((message) => message.role === 'user' || message.role === 'assistant')
         .map((message) => ({
-          role: message.role,
+          role: message.role as 'user' | 'assistant',
           content: message.content,
         })),
     });

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
     Box,
     Stack,
@@ -35,7 +36,7 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
-import type { ComfyWorkflowInfo } from '../api/types';
+import { queryKeys } from '../api/queryClient';
 import type { GenerateParams } from '../api/types';
 import { useGenerationStore } from '../store/generationStore';
 import { ElevatedCard, SwarmActionIcon as ActionIcon, SwarmBadge, SwarmButton as Button } from './ui';
@@ -163,8 +164,13 @@ export function ComfyUIView() {
     const [workflowDescription, setWorkflowDescription] = useState('');
 
     // Workflows list
-    const [workflows, setWorkflows] = useState<ComfyWorkflowInfo[]>([]);
-    const [loadingWorkflows, setLoadingWorkflows] = useState(false);
+    const workflowsQuery = useQuery({
+        queryKey: queryKeys.comfy.workflows(),
+        queryFn: () => swarmClient.listComfyWorkflows(),
+        staleTime: 5 * 60 * 1000,
+    });
+    const workflows = workflowsQuery.data ?? [];
+    const loadingWorkflows = workflowsQuery.isLoading || workflowsQuery.isFetching;
 
     // Get current generation params for Import from Generate
     const { params } = useGenerationStore();
@@ -178,27 +184,17 @@ export function ComfyUIView() {
         setIframeSrc(`${base}${separator}_ts=${Date.now()}`);
     };
 
-    // Load workflows list
     const loadWorkflowsList = async () => {
-        setLoadingWorkflows(true);
-        try {
-            const list = await swarmClient.listComfyWorkflows();
-            setWorkflows(list);
-        } catch (error) {
-            console.error('Failed to load workflows:', error);
+        const result = await workflowsQuery.refetch();
+        if (result.error) {
+            console.error('Failed to load workflows:', result.error);
             setLoadErrorMessage('Saved workflows could not be loaded. The backend may still be starting.');
-        } finally {
-            setLoadingWorkflows(false);
         }
     };
 
     useEffect(() => {
-        loadWorkflowsList();
-    }, []);
-
-    useEffect(() => {
         if (loadModalOpen) {
-            loadWorkflowsList();
+            void loadWorkflowsList();
         }
     }, [loadModalOpen]);
 
@@ -268,6 +264,8 @@ export function ComfyUIView() {
             if (!saveSucceeded) {
                 throw new Error('Workflow save was rejected by backend');
             }
+
+            await workflowsQuery.refetch();
 
             notifications.show({
                 title: 'Workflow Saved',

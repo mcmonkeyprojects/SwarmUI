@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
     Box,
     Grid,
@@ -72,8 +72,8 @@ interface WorkflowPageProps {
 
 export function WorkflowPage({ routeState }: WorkflowPageProps) {
     const { lastWorkflowMode, lastWizardTemplate, setLastWorkflowMode } = useWorkflowWorkspaceStore();
-    const [mode, setMode] = useState<WorkflowWorkspaceMode>(lastWorkflowMode);
     const navigateToWorkflows = useNavigationStore((state) => state.navigateToWorkflows);
+    const mode = routeState?.mode ?? lastWorkflowMode;
 
     const lastTemplateMeta = useMemo(
         () => (lastWizardTemplate ? getWizardTemplateMeta(lastWizardTemplate) : null),
@@ -81,20 +81,18 @@ export function WorkflowPage({ routeState }: WorkflowPageProps) {
     );
 
     const setActiveMode = (nextMode: WorkflowWorkspaceMode) => {
-        setMode(nextMode);
+        if (nextMode === mode) {
+            return;
+        }
         setLastWorkflowMode(nextMode);
+        navigateToWorkflows({ mode: nextMode });
     };
 
     useEffect(() => {
-        if (routeState?.mode && routeState.mode !== mode) {
-            setMode(routeState.mode);
+        if (routeState?.mode && routeState.mode !== lastWorkflowMode) {
             setLastWorkflowMode(routeState.mode);
         }
-    }, [mode, routeState?.mode, setLastWorkflowMode]);
-
-    useEffect(() => {
-        navigateToWorkflows({ mode });
-    }, [mode, navigateToWorkflows]);
+    }, [lastWorkflowMode, routeState?.mode, setLastWorkflowMode]);
 
     const activeDescriptor = WORKSPACE_DESCRIPTORS.find((item) => item.mode === mode) ?? WORKSPACE_DESCRIPTORS[0];
     const inactiveDescriptor = WORKSPACE_DESCRIPTORS.find((item) => item.mode !== mode) ?? WORKSPACE_DESCRIPTORS[1];

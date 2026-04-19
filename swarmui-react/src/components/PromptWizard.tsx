@@ -19,7 +19,6 @@ import { PromptWizardSidebar } from './PromptWizardSidebar';
 import { PromptWizardSteps } from './PromptWizardSteps';
 import { PromptWizardStepContent } from './PromptWizardStepContent';
 import { PromptWizardPreview } from './PromptWizardPreview';
-import { PromptWizardBrowser } from './PromptWizardBrowser';
 import { useResizablePanel } from '../hooks/useResizablePanel';
 import { usePromptWizardStore } from '../stores/promptWizardStore';
 import { normalizePromptTags } from '../features/promptWizard/normalizeTags';
@@ -32,12 +31,7 @@ import {
   buildStepSummaries,
   findNextIncompleteStep,
 } from '../features/promptWizard/wizardInsights';
-import type {
-  BuilderStep,
-  BrowserPreset,
-  PromptPreset,
-  PromptTag,
-} from '../features/promptWizard/types';
+import type { BuilderStep, PromptPreset, PromptTag } from '../features/promptWizard/types';
 
 interface PromptWizardProps {
   onApplyToPrompt?: (text: string, mode?: 'replace' | 'append') => void;
@@ -67,17 +61,6 @@ function loadDefaultPresets(): Promise<PromptPreset[]> {
   return defaultPresetsPromise;
 }
 
-let defaultBrowserPresetsPromise: Promise<BrowserPreset[]> | null = null;
-
-function loadDefaultBrowserPresets(): Promise<BrowserPreset[]> {
-  if (!defaultBrowserPresetsPromise) {
-    defaultBrowserPresetsPromise = import('../data/promptBrowserPresets.json').then(
-      (m) => m.default as BrowserPreset[]
-    );
-  }
-  return defaultBrowserPresetsPromise;
-}
-
 export const PromptWizard = memo(function PromptWizard({
   onApplyToPrompt,
   onApplyToNegative,
@@ -91,7 +74,6 @@ export const PromptWizard = memo(function PromptWizard({
   const [searchScope, setSearchScope] = useState<'global' | 'step'>('global');
   const [defaultTags, setDefaultTags] = useState<PromptTag[]>([]);
   const [defaultPresets, setDefaultPresets] = useState<PromptPreset[]>([]);
-  const [defaultBrowserPresets, setDefaultBrowserPresets] = useState<BrowserPreset[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const viewport = useViewportSize();
@@ -140,29 +122,16 @@ export const PromptWizard = memo(function PromptWizard({
     saveStateSnapshot,
     loadStateSnapshot,
     removeStateSnapshot,
-    userBrowserPresets,
-    activeView,
-    activePresetCategory,
-    presetSearchQuery,
-    setActiveView,
-    setActivePresetCategory,
-    setPresetSearchQuery,
-    resetPresetBrowserEphemeral,
-    applyBrowserPreset,
-    addBrowserPreset,
-    updateBrowserPreset,
-    removeBrowserPreset,
   } = usePromptWizardStore();
 
   const handleOpen = useCallback(() => {
     open();
     if (hasLoaded || isLoading) return;
     setIsLoading(true);
-    Promise.all([loadDefaultTags(), loadDefaultPresets(), loadDefaultBrowserPresets()])
-      .then(([tags, presets, browserPresets]) => {
+    Promise.all([loadDefaultTags(), loadDefaultPresets()])
+      .then(([tags, presets]) => {
         setDefaultTags(tags);
         setDefaultPresets(presets);
-        setDefaultBrowserPresets(browserPresets);
         setHasLoaded(true);
       })
       .catch(() => {
@@ -298,8 +267,7 @@ export const PromptWizard = memo(function PromptWizard({
 
   const handleClose = useCallback(() => {
     close();
-    resetPresetBrowserEphemeral();
-  }, [close, resetPresetBrowserEphemeral]);
+  }, [close]);
 
   const totalSelected = selectedTagIds.length;
   const stepMeta = getStepMeta(activeStep)!;
@@ -522,226 +490,175 @@ export const PromptWizard = memo(function PromptWizard({
               onOpenLibrary={sidebarHandlers.open}
               canvasVisible={canvasVisible}
               onToggleCanvas={toggleCanvas}
-              activeView={activeView}
-              onViewChange={setActiveView}
             />
 
-            {activeView === 'steps' ? (
-              <>
-                {/* When narrow, show horizontal step tabs */}
-                {isNarrow && (
-                  <PromptWizardSteps
-                    steps={orderedStepMeta}
-                    activeStep={activeStep}
-                    tagCountsByStep={tagCountsByStep}
-                    completionByStep={completionByStep}
-                    onStepClick={setActiveStep}
-                    horizontal
-                  />
-                )}
+            {/* When narrow, show horizontal step tabs */}
+            {isNarrow && (
+              <PromptWizardSteps
+                steps={orderedStepMeta}
+                activeStep={activeStep}
+                tagCountsByStep={tagCountsByStep}
+                completionByStep={completionByStep}
+                onStepClick={setActiveStep}
+                horizontal
+              />
+            )}
 
-                {/* Main 3-column body */}
+            {/* Main 3-column body */}
+            <Box
+              style={{
+                display: 'flex',
+                flex: 1,
+                minHeight: 0,
+                minWidth: 0,
+                overflow: 'hidden',
+                alignItems: 'stretch',
+              }}
+            >
+              {/* Column 1: Vertical step rail (hidden when narrow) */}
+              {!isNarrow && (
+                <PromptWizardSteps
+                  steps={orderedStepMeta}
+                  activeStep={activeStep}
+                  tagCountsByStep={tagCountsByStep}
+                  completionByStep={completionByStep}
+                  onStepClick={setActiveStep}
+                />
+              )}
+
+              {/* Column 2: Tag Palette */}
+              <Box
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  minHeight: 0,
+                  height: '100%',
+                  overflow: 'hidden',
+                }}
+              >
+                <PromptWizardStepContent
+                  stepMeta={stepMeta}
+                  tags={stepTags}
+                  allTags={allTags}
+                  selectedTagIds={selectedTagIdSet}
+                  manualNegativeTexts={manualNegativeTexts}
+                  searchQuery={searchQuery}
+                  onToggleTag={handleToggleTag}
+                  onAddNegativePair={toggleManualNegativeText}
+                  onFocusGroup={recordGroupFocus}
+                />
+              </Box>
+
+              {/* Column 3: Prompt Canvas (side panel when wide + visible, bottom strip otherwise) */}
+              {!isStackedCanvas && canvasVisible && (
                 <Box
                   style={{
-                    display: 'flex',
-                    flex: 1,
-                    minHeight: 0,
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    alignItems: 'stretch',
-                  }}
-                >
-                  {/* Column 1: Vertical step rail (hidden when narrow) */}
-                  {!isNarrow && (
-                    <PromptWizardSteps
-                      steps={orderedStepMeta}
-                      activeStep={activeStep}
-                      tagCountsByStep={tagCountsByStep}
-                      completionByStep={completionByStep}
-                      onStepClick={setActiveStep}
-                    />
-                  )}
-
-                  {/* Column 2: Tag Palette */}
-                  <Box
-                    style={{
-                      flex: 1,
-                      minWidth: 0,
-                      minHeight: 0,
-                      height: '100%',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <PromptWizardStepContent
-                      stepMeta={stepMeta}
-                      tags={stepTags}
-                      allTags={allTags}
-                      selectedTagIds={selectedTagIdSet}
-                      manualNegativeTexts={manualNegativeTexts}
-                      searchQuery={searchQuery}
-                      onToggleTag={handleToggleTag}
-                      onAddNegativePair={toggleManualNegativeText}
-                      onFocusGroup={recordGroupFocus}
-                    />
-                  </Box>
-
-                  {/* Column 3: Prompt Canvas (side panel when wide + visible, bottom strip otherwise) */}
-                  {!isStackedCanvas && canvasVisible && (
-                    <Box
-                      style={{
-                        width: 300,
-                        minWidth: 280,
-                        maxWidth: 340,
-                        height: '100%',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <PromptWizardPreview
-                        positivePreview={assembled.positive}
-                        negativePreview={mergedNegativePreview}
-                        positiveCount={selectedTags.length}
-                        negativeCount={
-                          mergedNegativePreview
-                            ? mergedNegativePreview
-                                .split(profile?.tagSeparator ?? ', ')
-                                .filter(Boolean).length
-                            : 0
-                        }
-                        explicitCount={explicitCount}
-                        profileName={profile?.name ?? 'Unknown'}
-                        profileStepSummary={profileStepSummary}
-                        healthIssues={promptHealth}
-                        onSendToGenerate={handleSendToGenerate}
-                        onAppendToGenerate={handleAppendToGenerate}
-                        onCopyPositive={handleCopyPositive}
-                        onCopyNegative={handleCopyNegative}
-                        onClear={clearSelections}
-                        hasSelection={totalSelected > 0}
-                        selectedTags={selectedTags}
-                        tagWeights={tagWeights}
-                        onDeselectTag={deselectTag}
-                        activeStep={activeStep}
-                        onJumpStep={setActiveStep}
-                      />
-                    </Box>
-                  )}
-                </Box>
-
-                {/* Footer: step nav */}
-                <Group
-                  justify="space-between"
-                  px="sm"
-                  py={6}
-                  style={{
-                    borderTop: '1px solid var(--mantine-color-default-border)',
+                    width: 300,
+                    minWidth: 280,
+                    maxWidth: 340,
+                    height: '100%',
                     flexShrink: 0,
                   }}
                 >
-                  <SwarmButton
-                    tone="secondary"
-                    emphasis="ghost"
-                    size="compact-sm"
-                    onClick={goToPrev}
-                    disabled={!canGoPrev}
-                  >
-                    Previous
-                  </SwarmButton>
-                  <Text size="xs" c="dimmed">
-                    {stepMeta.label} ({currentStepIndex + 1}/{profileStepOrder.length})
-                  </Text>
-                  <SwarmButton
-                    tone="secondary"
-                    emphasis="ghost"
-                    size="compact-sm"
-                    onClick={goToNext}
-                    disabled={!canGoNext}
-                  >
-                    Next
-                  </SwarmButton>
-                </Group>
-
-                {/* Bottom preview fallback when canvas is stacked (narrow view) or collapsed */}
-                {(isStackedCanvas || !canvasVisible) && (
-                  <Box
-                    style={{
-                      maxHeight: 200,
-                      flexShrink: 0,
-                      borderTop: '1px solid var(--mantine-color-default-border)',
-                    }}
-                  >
-                    <PromptWizardPreview
-                      positivePreview={assembled.positive}
-                      negativePreview={mergedNegativePreview}
-                      positiveCount={selectedTags.length}
-                      negativeCount={
-                        mergedNegativePreview
-                          ? mergedNegativePreview
-                              .split(profile?.tagSeparator ?? ', ')
-                              .filter(Boolean).length
-                          : 0
-                      }
-                      explicitCount={explicitCount}
-                      profileName={profile?.name ?? 'Unknown'}
-                      profileStepSummary={profileStepSummary}
-                      healthIssues={promptHealth}
-                      onSendToGenerate={handleSendToGenerate}
-                      onAppendToGenerate={handleAppendToGenerate}
-                      onCopyPositive={handleCopyPositive}
-                      onCopyNegative={handleCopyNegative}
-                      onClear={clearSelections}
-                      hasSelection={totalSelected > 0}
-                      selectedTags={selectedTags}
-                      tagWeights={tagWeights}
-                      onDeselectTag={deselectTag}
-                      activeStep={activeStep}
-                      onJumpStep={setActiveStep}
-                    />
-                  </Box>
-                )}
-              </>
-            ) : (
-              <>
-                {/* Preset Browser — replaces step rail + tag palette */}
-                <Box style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-                  <PromptWizardBrowser
-                    defaultPresets={defaultBrowserPresets}
-                    userPresets={userBrowserPresets}
-                    activeCategory={activePresetCategory}
-                    searchQuery={presetSearchQuery}
-                    selectedTagIds={selectedTagIds}
-                    allTags={allTags}
-                    onCategoryChange={setActivePresetCategory}
-                    onSearchChange={setPresetSearchQuery}
-                    onApplyPreset={applyBrowserPreset}
-                    onAddPreset={addBrowserPreset}
-                    onUpdatePreset={updateBrowserPreset}
-                    onRemovePreset={removeBrowserPreset}
+                  <PromptWizardPreview
+                    positivePreview={assembled.positive}
+                    negativePreview={mergedNegativePreview}
+                    positiveCount={selectedTags.length}
+                    negativeCount={
+                      mergedNegativePreview
+                        ? mergedNegativePreview.split(profile?.tagSeparator ?? ', ').filter(Boolean)
+                            .length
+                        : 0
+                    }
+                    explicitCount={explicitCount}
+                    profileName={profile?.name ?? 'Unknown'}
+                    profileStepSummary={profileStepSummary}
+                    healthIssues={promptHealth}
+                    onSendToGenerate={handleSendToGenerate}
+                    onAppendToGenerate={handleAppendToGenerate}
+                    onCopyPositive={handleCopyPositive}
+                    onCopyNegative={handleCopyNegative}
+                    onClear={clearSelections}
+                    hasSelection={totalSelected > 0}
+                    selectedTags={selectedTags}
+                    tagWeights={tagWeights}
+                    onDeselectTag={deselectTag}
+                    activeStep={activeStep}
+                    onJumpStep={setActiveStep}
                   />
                 </Box>
+              )}
+            </Box>
 
-                {/* Presets view footer */}
-                <Group
-                  justify="space-between"
-                  px="sm"
-                  py={6}
-                  style={{
-                    borderTop: '1px solid var(--mantine-color-default-border)',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Text size="xs" c="dimmed">
-                    {totalSelected} tags selected
-                  </Text>
-                  <SwarmButton
-                    tone="secondary"
-                    emphasis="ghost"
-                    size="compact-sm"
-                    onClick={() => setActiveView('steps')}
-                  >
-                    Switch to Steps
-                  </SwarmButton>
-                </Group>
-              </>
+            {/* Footer: step nav */}
+            <Group
+              justify="space-between"
+              px="sm"
+              py={6}
+              style={{
+                borderTop: '1px solid var(--mantine-color-default-border)',
+                flexShrink: 0,
+              }}
+            >
+              <SwarmButton
+                tone="secondary"
+                emphasis="ghost"
+                size="compact-sm"
+                onClick={goToPrev}
+                disabled={!canGoPrev}
+              >
+                Previous
+              </SwarmButton>
+              <Text size="xs" c="dimmed">
+                {stepMeta.label} ({currentStepIndex + 1}/{profileStepOrder.length})
+              </Text>
+              <SwarmButton
+                tone="secondary"
+                emphasis="ghost"
+                size="compact-sm"
+                onClick={goToNext}
+                disabled={!canGoNext}
+              >
+                Next
+              </SwarmButton>
+            </Group>
+
+            {/* Bottom preview fallback when canvas is stacked (narrow view) or collapsed */}
+            {(isStackedCanvas || !canvasVisible) && (
+              <Box
+                style={{
+                  maxHeight: 200,
+                  flexShrink: 0,
+                  borderTop: '1px solid var(--mantine-color-default-border)',
+                }}
+              >
+                <PromptWizardPreview
+                  positivePreview={assembled.positive}
+                  negativePreview={mergedNegativePreview}
+                  positiveCount={selectedTags.length}
+                  negativeCount={
+                    mergedNegativePreview
+                      ? mergedNegativePreview.split(profile?.tagSeparator ?? ', ').filter(Boolean)
+                          .length
+                      : 0
+                  }
+                  explicitCount={explicitCount}
+                  profileName={profile?.name ?? 'Unknown'}
+                  profileStepSummary={profileStepSummary}
+                  healthIssues={promptHealth}
+                  onSendToGenerate={handleSendToGenerate}
+                  onAppendToGenerate={handleAppendToGenerate}
+                  onCopyPositive={handleCopyPositive}
+                  onCopyNegative={handleCopyNegative}
+                  onClear={clearSelections}
+                  hasSelection={totalSelected > 0}
+                  selectedTags={selectedTags}
+                  tagWeights={tagWeights}
+                  onDeselectTag={deselectTag}
+                  activeStep={activeStep}
+                  onJumpStep={setActiveStep}
+                />
+              </Box>
             )}
 
             {/* Resize handles */}

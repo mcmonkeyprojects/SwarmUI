@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, type MouseEvent } from 'react';
+import { useState, useEffect, useMemo, type MouseEvent } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { logger } from '../utils/logger';
 import { Z_INDEX } from '../utils/zIndex';
@@ -31,6 +31,7 @@ import {
   IconRefresh,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useQuery } from '@tanstack/react-query';
 import { swarmClient } from '../api/client';
 import type { LoRA, LoRASelection } from '../api/types';
 import { LazyImage } from './LazyImage';
@@ -46,6 +47,7 @@ import {
 } from './browserThumbnailSizes';
 import { featureFlags } from '../config/featureFlags';
 import { useWorkerFilter } from '../hooks/useWorker';
+import { queryKeys } from '../api/queryClient';
 
 interface LoRABrowserProps {
   opened: boolean;
@@ -59,6 +61,35 @@ type ViewMode = 'cards' | 'list' | 'icons';
 type ModelFilter = 'all' | 'sdxl' | 'sd15' | 'pony' | 'flux' | 'illustrious' | 'other';
 
 const LORA_SEARCH_FIELDS: (keyof LoRA)[] = ['name', 'title', 'description', 'activationText', 'folder'];
+const LORA_BROWSER_VIEW_MODE_OPTIONS = [
+  {
+    value: 'cards',
+    label: (
+      <Center style={{ gap: 6 }}>
+        <IconLayoutGrid size={16} />
+        <span>Cards</span>
+      </Center>
+    ),
+  },
+  {
+    value: 'list',
+    label: (
+      <Center style={{ gap: 6 }}>
+        <IconLayoutList size={16} />
+        <span>List</span>
+      </Center>
+    ),
+  },
+  {
+    value: 'icons',
+    label: (
+      <Center style={{ gap: 6 }}>
+        <IconPhoto size={16} />
+        <span>Icons</span>
+      </Center>
+    ),
+  },
+] as const;
 
 // Detect model type from LoRA name/path
 function detectModelType(lora: LoRA): ModelFilter {
@@ -80,9 +111,6 @@ function extractActivationKeywords(text: string): string[] {
 }
 
 export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAddToPrompt }: LoRABrowserProps) {
-
-  const [loras, setLoras] = useState<LoRA[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 200);
   const [tempSelections, setTempSelections] = useState<LoRASelection[]>(selectedLoras);
@@ -92,34 +120,27 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
   const [detailLora, setDetailLora] = useState<LoRA | null>(null);
   const [modelFilter, setModelFilter] = useState<ModelFilter>('all');
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>(DEFAULT_THUMBNAIL_SIZE);
-
-  // Cache ref to avoid reloading
-  const lorasCacheRef = useRef<LoRA[] | null>(null);
+  const lorasQuery = useQuery({
+    queryKey: queryKeys.loras.list(),
+    queryFn: () => swarmClient.listLoRAs(),
+    staleTime: 5 * 60 * 1000,
+    enabled: opened,
+  });
+  const loras = lorasQuery.data ?? [];
+  const loading = opened && lorasQuery.isLoading && !lorasQuery.data;
 
   useEffect(() => {
     if (opened) {
-      // Use cached data if available for instant loading
-      if (lorasCacheRef.current && lorasCacheRef.current.length > 0) {
-        setLoras(lorasCacheRef.current);
-        setLoading(false);
-      } else {
-        loadLoras();
-      }
       setTempSelections(selectedLoras);
     }
   }, [opened, selectedLoras]);
 
-  // Note: debounce is handled by useDebounce hook above
-
   const loadLoras = async () => {
-    setLoading(true);
     try {
-      const loraList = await swarmClient.listLoRAs();
-      if (loraList.length > 0) {
-        logger.debug('[LoRABrowser] Total LoRAs:', loraList.length);
+      const result = await lorasQuery.refetch();
+      if (result.data && result.data.length > 0) {
+        logger.debug('[LoRABrowser] Total LoRAs:', result.data.length);
       }
-      lorasCacheRef.current = loraList; // Cache the results
-      setLoras(loraList);
     } catch (error) {
       console.error('Failed to load LoRAs:', error);
       notifications.show({
@@ -127,8 +148,6 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
         message: 'Failed to load LoRA list',
         color: 'red',
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -624,35 +643,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
             <SwarmSegmentedControl
               value={viewMode}
               onChange={(value) => setViewMode(value as ViewMode)}
-              data={[
-                {
-                  value: 'cards',
-                  label: (
-                    <Center style={{ gap: 6 }}>
-                      <IconLayoutGrid size={16} />
-                      <span>Cards</span>
-                    </Center>
-                  ),
-                },
-                {
-                  value: 'list',
-                  label: (
-                    <Center style={{ gap: 6 }}>
-                      <IconLayoutList size={16} />
-                      <span>List</span>
-                    </Center>
-                  ),
-                },
-                {
-                  value: 'icons',
-                  label: (
-                    <Center style={{ gap: 6 }}>
-                      <IconPhoto size={16} />
-                      <span>Icons</span>
-                    </Center>
-                  ),
-                },
-              ]}
+              data={LORA_BROWSER_VIEW_MODE_OPTIONS}
             />
             <NumberInput
               label="Folder Depth"
@@ -692,8 +683,7 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
               emphasis="soft"
               label="Refresh LoRA list"
               onClick={() => {
-                lorasCacheRef.current = null; // Clear cache
-                loadLoras();
+                void loadLoras();
               }}
               title="Refresh LoRAs"
             >
@@ -871,7 +861,6 @@ export function LoRABrowser({ opened, onClose, selectedLoras, onLoraChange, onAd
         modelName={detailLora?.name || ''}
         subtype="LoRA"
         onModelChanged={() => {
-          lorasCacheRef.current = null;
           void loadLoras();
         }}
         onAddTriggerToPrompt={onAddToPrompt}

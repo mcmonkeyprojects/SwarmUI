@@ -54,6 +54,7 @@ import {
   generateSceneDescription,
 } from '../../services/roleplayChatService';
 import { useRoleplayStore } from '../../stores/roleplayStore';
+import type { RoleplayMemoryFact } from '../../types/roleplay';
 import { useGenerationStore } from '../../store/generationStore';
 import { SwarmActionIcon as ActionIcon } from '../../components/ui/SwarmActionIcon';
 import { ElevatedCard } from '../../components/ui/ElevatedCard';
@@ -149,7 +150,6 @@ export function ControlsPanel({
   ]);
 
   const {
-    characters,
     personas,
     lorebooks,
     chatSessions,
@@ -198,7 +198,6 @@ export function ControlsPanel({
     importBundle,
   } = useRoleplayStore(
     useShallow((state) => ({
-      characters: state.characters,
       personas: state.personas,
       lorebooks: state.lorebooks,
       chatSessions: state.chatSessions,
@@ -566,7 +565,9 @@ export function ControlsPanel({
       activeSessionId,
       result.conversationSummary,
       result.continuity,
-      mergeGeneratedMemoryFacts(latestSession.memoryFacts, result.memoryFacts),
+      mergeGeneratedMemoryFacts(latestSession.memoryFacts, result.memoryFacts.map((text): RoleplayMemoryFact => ({
+        id: crypto.randomUUID(), text, pinned: false, createdAt: Date.now(), updatedAt: Date.now(),
+      }))),
       Date.now()
     );
   }, [
@@ -593,12 +594,9 @@ export function ControlsPanel({
   };
 
   const handleExportBundle = () => {
-    const bundle = createRoleplayBundle({
-      characters,
-      personas,
-      lorebooks,
-      chatSessions,
-    });
+    const activeChar = getActiveCharacter();
+    if (!activeChar) return;
+    const bundle = createRoleplayBundle(activeChar, chatSessions, lorebooks);
     downloadRoleplayBundle(bundle);
   };
 

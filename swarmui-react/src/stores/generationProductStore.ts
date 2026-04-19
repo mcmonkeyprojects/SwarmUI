@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { GenerateParams } from '../api/types';
+import { createIndexedDbStorage } from '../lib/indexedDbStorage';
 import type {
     GenerationComparison,
     GenerationIssue,
@@ -577,6 +578,7 @@ export const useGenerationProductStore = create<GenerationProductState>()(
         }),
         {
             name: 'swarmui-generation-product',
+            storage: createJSONStorage(() => createIndexedDbStorage('swarmui-generation-product')),
             version: 2,
             migrate: (persistedState: any, version: number) => {
                 const state = { ...persistedState };

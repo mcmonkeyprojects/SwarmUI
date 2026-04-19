@@ -5,12 +5,14 @@
  * Local state is only used for session gallery persistence and selection.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
+import { useShallow } from 'zustand/react/shallow';
 import { swarmClient } from '../api/client';
 import { logger } from '../utils/logger';
 import type { GenerateParams } from '../api/types';
-import { useSessionImages, useCanvasState, useGenerationStore } from '../store/generationStore';
+import { useSessionImages, useCanvasNavigationState, useGenerationStore } from '../store/generationStore';
+import { useAdaptiveAccentStore } from '../store/adaptiveAccentStore';
 import {
     summarizeDiagnosticValue,
     useGenerationDiagnosticsStore,
@@ -38,23 +40,8 @@ interface UseGenerationHandlersParams {
 
 interface UseGenerationHandlersReturn {
     generating: boolean;
-    hasProgressEvent: boolean;
-    progress: number;
-    statusText: string;
-    previewImage: string | null;
     generatedImages: string[];
     currentImageIndex: number;
-    startTime: number | null;
-    currentStep: number | null;
-    totalSteps: number | null;
-    stageLabel: string | null;
-    stageDetail: string | null;
-    stageIndex: number | null;
-    stageCount: number | null;
-    stagesRemaining: number | null;
-    stageTaskIndex: number | null;
-    stageTaskCount: number | null;
-    stageTasksRemaining: number | null;
     handleGenerate: (values: GenerateParams, options?: { forceEnableRefiner?: boolean }) => Promise<void>;
     handleInterrupt: () => Promise<void>;
     setCurrentImageIndex: (index: number) => void;
@@ -76,8 +63,6 @@ interface GenerationDebugContext {
     requestStartedAt: number;
 }
 
-type GenerationSnapshot = ReturnType<typeof useWebSocketStore.getState>['generation'];
-
 function createGenerationId(): string {
     return `gen_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -86,80 +71,6 @@ function summarizeRecord(record: Record<string, unknown>): Record<string, unknow
     return Object.fromEntries(
         Object.entries(record).map(([key, value]) => [key, summarizeDiagnosticValue(value)])
     );
-}
-
-function buildGenerationStageText(generation: {
-    currentBatch: number;
-    totalBatches: number;
-    stageLabel: string | null;
-    stageDetail: string | null;
-}): string {
-    const batchPrefix = generation.totalBatches > 1
-        ? `Image ${generation.currentBatch || 1}/${generation.totalBatches} | `
-        : '';
-    const label = generation.stageLabel || 'Generating';
-    const detail = generation.stageDetail && generation.stageDetail !== generation.stageLabel
-        ? ` | ${generation.stageDetail}`
-        : '';
-    return `${batchPrefix}${label}${detail}`;
-}
-
-function resolvePreviewAsset(previewImage: string | null): string | null {
-    if (!previewImage) {
-        return null;
-    }
-    if (previewImage.startsWith('data:') || previewImage.startsWith('http')) {
-        return previewImage;
-    }
-    return resolveAssetUrl(previewImage.startsWith('/') ? previewImage : `/${previewImage}`);
-}
-
-function buildGenerationStatusText(generation: GenerationSnapshot): string {
-    if (generation.error) {
-        return generation.images.length > 0
-            ? `Completed with warning: ${generation.error}. Diagnostics captured.`
-            : `Error: ${generation.error}. Diagnostics captured.`;
-    }
-
-    if (!generation.isGenerating) {
-        if (generation.phase === 'complete' && generation.images.length > 0) {
-            return 'Generation complete!';
-        }
-        return '';
-    }
-
-    if (!generation.hasProgressEvent) {
-        if (generation.phase === 'starting') {
-            return 'Starting generation request...';
-        }
-        if (generation.phase === 'connected' || generation.phase === 'waiting') {
-            return 'Connected to backend... preparing workflow';
-        }
-        if (generation.phase === 'image') {
-            return 'Receiving generated image output...';
-        }
-        return 'Starting generation... waiting for backend progress';
-    }
-
-    const step = generation.currentStep;
-    const total = generation.totalSteps;
-    const percent = Math.round(generation.progress);
-    const stageText = buildGenerationStageText(generation);
-    const batchPrefix = generation.totalBatches > 1
-        ? `Image ${generation.currentBatch || 1}/${generation.totalBatches} | `
-        : '';
-
-    if ((step ?? 0) <= 0) {
-        if (generation.stageLabel) {
-            return stageText;
-        }
-        return `Preparing workflow... ${batchPrefix}${percent}%`;
-    }
-
-    if (generation.stageLabel) {
-        return stageText;
-    }
-    return `Generating... ${batchPrefix}Step ${step}/${total || '?'} (${percent}%)`;
 }
 
 /**
@@ -171,7 +82,18 @@ export function useGenerationHandlers({
     featureToggles,
     mediaCapabilities,
 }: UseGenerationHandlersParams): UseGenerationHandlersReturn {
-    const wsGeneration = useWebSocketStore((state) => state.generation);
+    const wsGeneration = useWebSocketStore(
+        useShallow((state) => ({
+            isGenerating: state.generation.isGenerating,
+            generationId: state.generation.generationId,
+            phase: state.generation.phase,
+            images: state.generation.images,
+            requestId: state.generation.requestId,
+            error: state.generation.error,
+            errorId: state.generation.errorId,
+            errorData: state.generation.errorData,
+        }))
+    );
     const startGeneration = useWebSocketStore((state) => state.startGeneration);
     const stopGeneration = useWebSocketStore((state) => state.stopGeneration);
     const isInitialized = useWebSocketStore((state) => state.isInitialized);
@@ -191,13 +113,14 @@ export function useGenerationHandlers({
         setSessionImages: setGeneratedImages,
         removeSessionImage,
     } = useSessionImages();
+    const setAdaptiveAccentSourceImageUrl = useAdaptiveAccentStore((state) => state.setSourceImageUrl);
 
     const {
         currentImageIndex,
         setCurrentImageIndex,
         goToNextImage,
         goToPrevImage,
-    } = useCanvasState();
+    } = useCanvasNavigationState();
 
     const generatedImagesRef = useRef(generatedImages);
     useEffect(() => {
@@ -206,16 +129,6 @@ export function useGenerationHandlers({
 
     const { enableInitImage, enableRefiner, enableControlNet, enableVideo, enableVariation } = featureToggles;
     const addPromptToCache = usePromptCacheStore((state) => state.addEntry);
-
-    const previewImage = useMemo(
-        () => (wsGeneration.isGenerating ? resolvePreviewAsset(wsGeneration.previewImage) : null),
-        [wsGeneration.isGenerating, wsGeneration.previewImage]
-    );
-
-    const statusText = useMemo(
-        () => buildGenerationStatusText(wsGeneration),
-        [wsGeneration]
-    );
 
     const latestGeneratedImage = wsGeneration.images[wsGeneration.images.length - 1] ?? null;
 
@@ -232,7 +145,8 @@ export function useGenerationHandlers({
             setCurrentImageIndex(generatedImagesRef.current.length);
             addSessionImage(imagePath);
         }
-    }, [latestGeneratedImage, addSessionImage, setCurrentImageIndex]);
+        setAdaptiveAccentSourceImageUrl(imagePath);
+    }, [latestGeneratedImage, addSessionImage, setAdaptiveAccentSourceImageUrl, setCurrentImageIndex]);
 
     useEffect(() => {
         if (!wsGeneration.isGenerating && wsGeneration.phase === 'complete' && paramsRef.current) {
@@ -316,7 +230,6 @@ export function useGenerationHandlers({
                     debugContext: lastDebugContextRef.current,
                     requestId: wsGeneration.requestId,
                     imagesSeen: wsGeneration.images.length,
-                    progress: wsGeneration.progress,
                     phase: wsGeneration.phase,
                 });
             }
@@ -740,23 +653,8 @@ export function useGenerationHandlers({
 
     return {
         generating: wsGeneration.isGenerating,
-        hasProgressEvent: wsGeneration.hasProgressEvent,
-        progress: wsGeneration.progress,
-        statusText,
-        previewImage,
         generatedImages,
         currentImageIndex,
-        startTime: wsGeneration.startTime,
-        currentStep: wsGeneration.currentStep,
-        totalSteps: wsGeneration.totalSteps,
-        stageLabel: wsGeneration.stageLabel,
-        stageDetail: wsGeneration.stageDetail,
-        stageIndex: wsGeneration.stageIndex || null,
-        stageCount: wsGeneration.stageCount || null,
-        stagesRemaining: wsGeneration.stagesRemaining || null,
-        stageTaskIndex: wsGeneration.stageTaskIndex || null,
-        stageTaskCount: wsGeneration.stageTaskCount || null,
-        stageTasksRemaining: wsGeneration.stageTasksRemaining || null,
         handleGenerate,
         handleInterrupt,
         setCurrentImageIndex,

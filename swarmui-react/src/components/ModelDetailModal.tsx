@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
     Stack,
     Group,
@@ -13,13 +13,23 @@ import {
     Collapse,
     Badge,
     FileButton,
+    Alert,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconChevronDown, IconChevronUp, IconPhoto, IconTrash } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronUp, IconPhoto, IconRefresh, IconTrash } from '@tabler/icons-react';
 import { swarmClient } from '../api/client';
 import type { ModelDescription } from '../api/types';
 import { LazyImage } from './LazyImage';
 import { SwarmButton, SwarmBadge } from './ui';
+import {
+    type RemotePreviewCandidate,
+    type RemoteModelPreviewCacheEntry,
+    loadRemoteModelPreviewCache,
+    refreshRemoteModelPreviewCache,
+    resolveRemoteSourceForModel,
+    saveRemoteModelPreviewCache,
+    type ResolvedRemoteModelSource,
+} from '../lib/remoteModelPreviewCache';
 
 interface ModelDetailModalProps {
     opened: boolean;
@@ -40,6 +50,8 @@ export function ModelDetailModal({
     onAddTriggerToPrompt,
     extraTriggerKeywords = [],
 }: ModelDetailModalProps) {
+    const lastAutoLoadKeyRef = useRef<string | null>(null);
+    const missingPreviewProxyRouteRef = useRef(false);
     const [model, setModel] = useState<ModelDescription | null>(null);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -61,12 +73,16 @@ export function ModelDetailModal({
     const [showFullDescription, setShowFullDescription] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [showAdvancedEdit, setShowAdvancedEdit] = useState(false);
-    const [civitaiImages, setCivitaiImages] = useState<string[]>([]);
+    const [civitaiPreviewCandidates, setCivitaiPreviewCandidates] = useState<RemotePreviewCandidate[]>([]);
     const [selectedCivitaiImageIndex, setSelectedCivitaiImageIndex] = useState<number>(-1);
     const [loadingCivitaiImages, setLoadingCivitaiImages] = useState(false);
+    const [hydratingRemotePreviews, setHydratingRemotePreviews] = useState(false);
     const [convertingCivitaiImage, setConvertingCivitaiImage] = useState(false);
     const [civitaiImageError, setCivitaiImageError] = useState<string | null>(null);
     const [selectedCivitaiImageUrl, setSelectedCivitaiImageUrl] = useState<string | null>(null);
+    const [resolvedRemoteSource, setResolvedRemoteSource] = useState<ResolvedRemoteModelSource | null>(null);
+    const [remotePreviewStatus, setRemotePreviewStatus] = useState<string | null>(null);
+    const [remotePreviewDebugLog, setRemotePreviewDebugLog] = useState<string[]>([]);
 
     const sanitizeDescription = (input: string): string => {
         if (!input) return '';
@@ -93,20 +109,67 @@ export function ModelDetailModal({
             .filter((word) => word.length > 1);
     };
 
-    const getCivitaiSourceUrl = (input: string): string | null => {
-        const match = input.match(/https?:\/\/(?:www\.)?civitai\.com\/models\/\d+(?:\?modelVersionId=\d+)?/i);
-        return match ? match[0] : null;
-    };
+    const isUnknownApiRouteError = useCallback((value: string | null | undefined): boolean => {
+        return (value || '').toLowerCase().includes('unknown api route');
+    }, []);
+
+    const appendRemotePreviewLog = useCallback((level: 'debug' | 'warn' | 'error', message: string) => {
+        const stamp = new Date().toLocaleTimeString();
+        const line = `${stamp} [${level}] ${message}`;
+        if (level === 'error') {
+            console.error('[RemotePreview]', message);
+        } else if (level === 'warn') {
+            console.warn('[RemotePreview]', message);
+        } else {
+            console.debug('[RemotePreview]', message);
+        }
+        setRemotePreviewDebugLog((current) => [...current.slice(-11), line]);
+    }, []);
+
+    const withTimeout = useCallback(async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T | null> => {
+        return await new Promise<T | null>((resolve) => {
+            let settled = false;
+            const timeout = window.setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    appendRemotePreviewLog('warn', `${label} timed out after ${timeoutMs}ms`);
+                    resolve(null);
+                }
+            }, timeoutMs);
+            promise
+                .then((result) => {
+                    if (!settled) {
+                        settled = true;
+                        window.clearTimeout(timeout);
+                        resolve(result);
+                    }
+                })
+                .catch(() => {
+                    if (!settled) {
+                        settled = true;
+                        window.clearTimeout(timeout);
+                        resolve(null);
+                    }
+                });
+        });
+    }, [appendRemotePreviewLog]);
 
     const convertImageUrlToDataUrl = useCallback(async (imageUrl: string): Promise<string | null> => {
+        appendRemotePreviewLog('debug', `Starting image hydration for ${imageUrl}`);
         // Prefer backend proxy first (works in desktop/CSP environments and avoids CORS quirks).
-        try {
-            const proxied = await swarmClient.forwardMetadataImageRequest(imageUrl);
-            if (proxied && proxied.startsWith('data:image/')) {
-                return proxied;
-            }
-        } catch {
-            // Ignore proxy failures and continue with browser conversion fallbacks.
+        const proxied = await withTimeout(
+            swarmClient.forwardMetadataImageRequestDetailed(imageUrl),
+            15000,
+            `Backend image proxy for ${imageUrl}`
+        );
+        if (proxied?.image && proxied.image.startsWith('data:image/')) {
+            appendRemotePreviewLog('debug', `Backend image proxy succeeded for ${imageUrl}`);
+            return proxied.image;
+        }
+        appendRemotePreviewLog('warn', `Backend image proxy failed for ${imageUrl}: ${proxied?.error ?? 'unknown error'}`);
+        if (isUnknownApiRouteError(proxied?.error)) {
+            missingPreviewProxyRouteRef.current = true;
+            setCivitaiImageError('Server restart required: the running backend is missing the remote preview proxy API routes.');
         }
 
         const convertWithCanvas = async (): Promise<string | null> =>
@@ -145,18 +208,39 @@ export function ModelDetailModal({
                 image.src = imageUrl;
             });
 
-        const canvasResult = await convertWithCanvas();
+        const canvasResult = await withTimeout(convertWithCanvas(), 5000, `Canvas conversion for ${imageUrl}`);
         if (canvasResult) {
+            appendRemotePreviewLog('debug', `Canvas conversion succeeded for ${imageUrl}`);
             return canvasResult;
         }
+        appendRemotePreviewLog('warn', `Canvas conversion failed for ${imageUrl}`);
 
         try {
-            const response = await fetch(imageUrl, { mode: 'cors', credentials: 'omit' });
+            const controller = new AbortController();
+            const fetchTimeout = window.setTimeout(() => controller.abort(), 5000);
+            const response = await fetch(imageUrl, {
+                mode: 'cors',
+                credentials: 'omit',
+                signal: controller.signal,
+            }).finally(() => window.clearTimeout(fetchTimeout));
             if (!response.ok) {
-                const proxied = await swarmClient.forwardMetadataImageRequest(imageUrl);
-                return proxied;
+                appendRemotePreviewLog('warn', `Direct fetch for ${imageUrl} returned ${response.status} ${response.statusText}`);
+                const proxied = await withTimeout(
+                    swarmClient.forwardMetadataImageRequestDetailed(imageUrl),
+                    8000,
+                    `Fallback backend image proxy for ${imageUrl}`
+                );
+                if (!proxied?.image) {
+                    appendRemotePreviewLog('warn', `Fallback backend image proxy failed for ${imageUrl}: ${proxied?.error ?? 'unknown error'}`);
+                    if (isUnknownApiRouteError(proxied?.error)) {
+                        missingPreviewProxyRouteRef.current = true;
+                        setCivitaiImageError('Server restart required: the running backend is missing the remote preview proxy API routes.');
+                    }
+                }
+                return proxied?.image ?? null;
             }
             const blob = await response.blob();
+            appendRemotePreviewLog('debug', `Direct fetch succeeded for ${imageUrl} with blob type ${blob.type || 'unknown'}`);
             const browserData = await new Promise<string | null>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onloadend = () => {
@@ -167,87 +251,278 @@ export function ModelDetailModal({
                 reader.readAsDataURL(blob);
             });
             if (browserData) {
+                appendRemotePreviewLog('debug', `Browser FileReader conversion succeeded for ${imageUrl}`);
                 return browserData;
             }
-            return await swarmClient.forwardMetadataImageRequest(imageUrl);
-        } catch {
-            return await swarmClient.forwardMetadataImageRequest(imageUrl);
+            appendRemotePreviewLog('warn', `Browser FileReader conversion returned no image data for ${imageUrl}`);
+            const finalProxy = await withTimeout(
+                swarmClient.forwardMetadataImageRequestDetailed(imageUrl),
+                8000,
+                `Final backend image proxy for ${imageUrl}`
+            );
+            if (!finalProxy?.image) {
+                appendRemotePreviewLog('warn', `Final backend image proxy failed for ${imageUrl}: ${finalProxy?.error ?? 'unknown error'}`);
+                if (isUnknownApiRouteError(finalProxy?.error)) {
+                    missingPreviewProxyRouteRef.current = true;
+                    setCivitaiImageError('Server restart required: the running backend is missing the remote preview proxy API routes.');
+                }
+            }
+            return finalProxy?.image ?? null;
+        } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            appendRemotePreviewLog('warn', `Direct fetch path failed for ${imageUrl}: ${detail}`);
+            const finalProxy = await withTimeout(
+                swarmClient.forwardMetadataImageRequestDetailed(imageUrl),
+                8000,
+                `Final backend image proxy after fetch failure for ${imageUrl}`
+            );
+            if (!finalProxy?.image) {
+                appendRemotePreviewLog('warn', `Final backend image proxy after fetch failure failed for ${imageUrl}: ${finalProxy?.error ?? 'unknown error'}`);
+                if (isUnknownApiRouteError(finalProxy?.error)) {
+                    missingPreviewProxyRouteRef.current = true;
+                    setCivitaiImageError('Server restart required: the running backend is missing the remote preview proxy API routes.');
+                }
+            }
+            return finalProxy?.image ?? null;
         }
-    }, []);
+    }, [appendRemotePreviewLog, isUnknownApiRouteError, withTimeout]);
 
-    const loadCivitaiImages = useCallback(async (descriptionText: string, hash?: string) => {
+    const convertVideoUrlToDataUrl = useCallback(async (videoUrl: string): Promise<string | null> => {
+        appendRemotePreviewLog('debug', `Starting video preview extraction for ${videoUrl}`);
+        const result = await withTimeout(new Promise<string | null>((resolve) => {
+            const video = document.createElement('video');
+            video.crossOrigin = 'anonymous';
+            video.preload = 'metadata';
+            video.muted = true;
+            video.playsInline = true;
+
+            const cleanup = () => {
+                video.removeAttribute('src');
+                video.load();
+            };
+
+            video.onloadeddata = () => {
+                try {
+                    const width = video.videoWidth;
+                    const height = video.videoHeight;
+                    if (!width || !height) {
+                        cleanup();
+                        resolve(null);
+                        return;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const context = canvas.getContext('2d');
+                    if (!context) {
+                        cleanup();
+                        resolve(null);
+                        return;
+                    }
+                    context.drawImage(video, 0, 0, width, height);
+                    const result = canvas.toDataURL('image/jpeg');
+                    cleanup();
+                    resolve(result.startsWith('data:image/') ? result : null);
+                } catch {
+                    cleanup();
+                    resolve(null);
+                }
+            };
+
+            video.onerror = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            video.src = videoUrl;
+            video.load();
+        }), 6000, `Video preview extraction for ${videoUrl}`);
+        if (result) {
+            appendRemotePreviewLog('debug', `Video preview extraction succeeded for ${videoUrl}`);
+        } else {
+            appendRemotePreviewLog('warn', `Video preview extraction failed for ${videoUrl}`);
+        }
+        return result;
+    }, [appendRemotePreviewLog, withTimeout]);
+
+    const hydrateRemotePreviewCandidates = useCallback(async (candidateEntry: RemoteModelPreviewCacheEntry | null | undefined) => {
+        const previewCandidates = candidateEntry?.previewCandidates ?? [];
+        if (previewCandidates.length === 0) {
+            return;
+        }
+        if (!previewCandidates.some((candidate) => !candidate.displayUrl.startsWith('data:image/'))) {
+            appendRemotePreviewLog('debug', `Cached preview entry already hydrated with ${previewCandidates.length} image candidates`);
+            return;
+        }
+        appendRemotePreviewLog('debug', `Hydrating ${previewCandidates.length} cached preview candidates`);
+        setHydratingRemotePreviews(true);
+        try {
+            const hydratedResults = await Promise.all(
+                previewCandidates.map(async (candidate) => {
+                    if (candidate.displayUrl.startsWith('data:image/')) {
+                        return candidate;
+                    }
+                    if (candidate.kind === 'video') {
+                        const hydratedVideo = await convertVideoUrlToDataUrl(candidate.sourceUrl);
+                        return hydratedVideo && hydratedVideo.startsWith('data:image/')
+                            ? { ...candidate, displayUrl: hydratedVideo }
+                            : null;
+                    }
+                    const hydratedImage = await convertImageUrlToDataUrl(candidate.sourceUrl);
+                    return hydratedImage && hydratedImage.startsWith('data:image/')
+                        ? { ...candidate, displayUrl: hydratedImage }
+                        : null;
+                })
+            );
+            const hydratedCandidates = hydratedResults.filter((candidate): candidate is RemotePreviewCandidate => candidate !== null);
+            if (hydratedCandidates.length === 0) {
+                appendRemotePreviewLog('error', 'All cached preview candidate hydration attempts failed');
+                setCivitaiImageError((current) => current ?? 'Cached preview images could not be rendered locally. See diagnostics below and browser console logs.');
+                return;
+            }
+            appendRemotePreviewLog('debug', `Hydrated ${hydratedCandidates.length}/${previewCandidates.length} preview candidates successfully`);
+            setCivitaiPreviewCandidates(hydratedCandidates);
+            setSelectedCivitaiImageIndex((currentIndex) => {
+                if (currentIndex < 0) {
+                    return 0;
+                }
+                return Math.min(currentIndex, hydratedCandidates.length - 1);
+            });
+            if (candidateEntry?.cacheKey) {
+                await saveRemoteModelPreviewCache({
+                    ...candidateEntry,
+                    previewCandidates: hydratedCandidates,
+                    previewImageUrl: hydratedCandidates[0]?.sourceUrl ?? candidateEntry.previewImageUrl ?? null,
+                    previewImageData: hydratedCandidates[0]?.displayUrl ?? candidateEntry.previewImageData ?? null,
+                });
+                appendRemotePreviewLog('debug', `Saved ${hydratedCandidates.length} repaired preview candidates back to cache`);
+            }
+        } finally {
+            setHydratingRemotePreviews(false);
+        }
+    }, [appendRemotePreviewLog, convertImageUrlToDataUrl, convertVideoUrlToDataUrl]);
+
+    const applyCachedRemoteEntry = useCallback((candidateEntry: Awaited<ReturnType<typeof loadRemoteModelPreviewCache>>) => {
+        const previewCandidates = candidateEntry?.previewCandidates ?? [];
+        setCivitaiPreviewCandidates(previewCandidates);
+        setSelectedCivitaiImageIndex(previewCandidates.length > 0 ? 0 : -1);
+        if (previewCandidates.length === 0) {
+            setSelectedCivitaiImageUrl(null);
+        }
+        setRemotePreviewStatus(
+            candidateEntry
+                ? `Cached remote metadata refreshed ${new Date(candidateEntry.refreshedAt).toLocaleString()}.`
+                : null
+        );
+        if (candidateEntry?.previewCandidates?.length) {
+            void hydrateRemotePreviewCandidates(candidateEntry);
+        }
+    }, [hydrateRemotePreviewCandidates]);
+
+    const loadCachedRemotePreviews = useCallback(async (currentModel: ModelDescription) => {
         setLoadingCivitaiImages(true);
         setCivitaiImageError(null);
+        setRemotePreviewStatus(null);
+        setRemotePreviewDebugLog([]);
+        missingPreviewProxyRouteRef.current = false;
+        appendRemotePreviewLog('debug', `Loading cached remote previews for ${currentModel.name}`);
         try {
-            const normalizedHash = hash?.trim();
-            if (normalizedHash) {
-                const byHash = await swarmClient.forwardMetadataRequest(
-                    `https://civitai.com/api/v1/model-versions/by-hash/${encodeURIComponent(normalizedHash)}`
-                );
-                const hashImages = Array.isArray((byHash as { images?: Array<{ url?: string; type?: string }> })?.images)
-                    ? ((byHash as { images?: Array<{ url?: string; type?: string }> }).images ?? [])
-                        .filter((image) => image.type === 'image' && typeof image.url === 'string')
-                        .map((image) => image.url as string)
-                    : [];
-                if (hashImages.length > 0) {
-                    setCivitaiImages(hashImages);
-                    setSelectedCivitaiImageIndex(0);
-                    return;
-                }
+            const source = await resolveRemoteSourceForModel(swarmClient, currentModel, subtype, {
+                allowRemoteLookup: false,
+            });
+            setResolvedRemoteSource(source);
+            appendRemotePreviewLog('debug', `Resolved source type=${source.sourceType ?? 'unknown'} key=${source.cacheKey ?? 'none'}`);
+            const cacheEntry = await loadRemoteModelPreviewCache(source.cacheKey);
+            applyCachedRemoteEntry(cacheEntry);
+            if (!cacheEntry) {
+                appendRemotePreviewLog('warn', 'No cached remote preview entry was found');
+                setRemotePreviewStatus(source.cacheKey ? 'No cached remote previews yet.' : 'No remote source metadata found for this model.');
             }
-
-            const civitaiSource = getCivitaiSourceUrl(descriptionText);
-            if (!civitaiSource) {
-                setCivitaiImages([]);
-                return;
-            }
-            const parsed = new URL(civitaiSource);
-            const parts = parsed.pathname.split('/').filter(Boolean);
-            if (parts.length < 2 || parts[0] !== 'models') {
-                setCivitaiImages([]);
-                return;
-            }
-            const modelId = parts[1];
-            const modelVersionId = parsed.searchParams.get('modelVersionId');
-            const details = await swarmClient.forwardMetadataRequest(`https://civitai.com/api/v1/models/${modelId}`);
-            if (!details || details.error || !Array.isArray((details as { modelVersions?: unknown[] }).modelVersions)) {
-                setCivitaiImages([]);
-                return;
-            }
-            const modelVersions = (details as {
-                modelVersions: Array<{
-                    id?: number;
-                    images?: Array<{ url?: string; type?: string }>;
-                }>;
-            }).modelVersions;
-            let selectedVersion = modelVersions[0];
-            if (modelVersionId) {
-                const byId = modelVersions.find((version) => String(version.id ?? '') === modelVersionId);
-                if (byId) {
-                    selectedVersion = byId;
-                }
-            }
-            const versionImages = Array.isArray(selectedVersion?.images)
-                ? (selectedVersion.images ?? [])
-                    .filter((image) => image.type === 'image' && typeof image.url === 'string')
-                    .map((image) => image.url as string)
-                : [];
-            setCivitaiImages(versionImages);
-            setSelectedCivitaiImageIndex(versionImages.length > 0 ? 0 : -1);
-        } catch {
-            setCivitaiImageError('Unable to load CivitAI preview options');
-            setCivitaiImages([]);
+        } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            appendRemotePreviewLog('error', `Failed to load cached remote previews: ${detail}`);
+            setResolvedRemoteSource(null);
+            setCivitaiImageError('Unable to resolve cached remote preview options');
+            setCivitaiPreviewCandidates([]);
             setSelectedCivitaiImageIndex(-1);
         } finally {
             setLoadingCivitaiImages(false);
         }
-    }, []);
+    }, [appendRemotePreviewLog, applyCachedRemoteEntry, subtype]);
 
-    const loadModel = useCallback(async () => {
-        if (!modelName) return;
+    const handleRefreshRemotePreviews = useCallback(async () => {
+        if (!model) {
+            return;
+        }
+        setLoadingCivitaiImages(true);
+        setCivitaiImageError(null);
+        setRemotePreviewStatus(null);
+        setRemotePreviewDebugLog([]);
+        missingPreviewProxyRouteRef.current = false;
+        appendRemotePreviewLog('debug', `Refreshing remote previews for ${model.name}`);
+        let sourceForRefresh: ResolvedRemoteModelSource | null = null;
+        try {
+            const source = await resolveRemoteSourceForModel(swarmClient, model, subtype, {
+                allowRemoteLookup: true,
+            });
+            sourceForRefresh = source;
+            setResolvedRemoteSource(source);
+            appendRemotePreviewLog('debug', `Resolved refresh source type=${source.sourceType ?? 'unknown'} key=${source.cacheKey ?? 'none'}`);
+            if (!source.cacheKey) {
+                appendRemotePreviewLog('warn', 'Refresh aborted because no cache key/source identity was available');
+                setCivitaiImageError('No remote source metadata available for this model.');
+                setCivitaiPreviewCandidates([]);
+                setSelectedCivitaiImageIndex(-1);
+                return;
+            }
+            const refreshedEntry = await refreshRemoteModelPreviewCache(
+                swarmClient,
+                source,
+                {
+                    convertImageUrlToDataUrl,
+                    convertVideoUrlToDataUrl,
+                },
+                model.name
+            );
+            if (!refreshedEntry) {
+                appendRemotePreviewLog('warn', 'Remote refresh returned no data, falling back to cached entry');
+                const cachedEntry = await loadRemoteModelPreviewCache(source.cacheKey);
+                applyCachedRemoteEntry(cachedEntry);
+                setCivitaiImageError('Remote refresh failed. Using cached preview options if available.');
+                return;
+            }
+            applyCachedRemoteEntry(refreshedEntry);
+            appendRemotePreviewLog('debug', `Remote refresh returned ${refreshedEntry.previewCandidates.length} preview candidates`);
+            if (refreshedEntry.previewCandidates.length > 0) {
+                notifications.show({
+                    title: 'Remote Previews Updated',
+                    message: `Loaded ${refreshedEntry.previewCandidates.length} remote preview option${refreshedEntry.previewCandidates.length === 1 ? '' : 's'}.`,
+                    color: 'green',
+                });
+            } else {
+                setCivitaiImageError('Remote metadata refreshed, but no preview images were available for display.');
+                notifications.show({
+                    title: 'No Preview Images',
+                    message: 'Remote metadata refreshed, but no preview images were available for display.',
+                    color: 'yellow',
+                });
+            }
+        } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            appendRemotePreviewLog('error', `Remote refresh failed: ${detail}`);
+            const cacheEntry = await loadRemoteModelPreviewCache(sourceForRefresh?.cacheKey ?? resolvedRemoteSource?.cacheKey ?? null);
+            applyCachedRemoteEntry(cacheEntry);
+            setCivitaiImageError(`Remote refresh failed: ${detail}`);
+        } finally {
+            setLoadingCivitaiImages(false);
+        }
+    }, [appendRemotePreviewLog, applyCachedRemoteEntry, convertImageUrlToDataUrl, convertVideoUrlToDataUrl, model, resolvedRemoteSource, subtype]);
+
+    const loadModel = useCallback(async (requestedModelName: string, requestedSubtype: string) => {
+        if (!requestedModelName) return;
         setLoading(true);
         try {
-            const response = await swarmClient.describeModel(modelName, subtype);
+            const response = await swarmClient.describeModel(requestedModelName, requestedSubtype);
             if ('model' in response) {
                 const m = response.model;
                 const cleanedDescription = sanitizeDescription(m.description || '');
@@ -264,27 +539,34 @@ export function ModelDetailModal({
                 setPreviewImageData(m.preview_image || null);
                 setPreviewFileName(null);
                 setSelectedCivitaiImageUrl(null);
+                setResolvedRemoteSource(null);
                 setShowFullDescription(false);
                 setShowAdvanced(false);
                 setShowAdvancedEdit(false);
-                void loadCivitaiImages(cleanedDescription, m.hash);
+                void loadCachedRemotePreviews(m);
             } else {
                 notifications.show({ title: 'Error', message: response.error, color: 'red' });
-                onClose();
             }
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to load model details', color: 'red' });
         } finally {
             setLoading(false);
         }
-    }, [modelName, subtype, onClose, loadCivitaiImages]);
+    }, [loadCachedRemotePreviews]);
 
     useEffect(() => {
-        if (opened && modelName) {
-            setEditing(false);
-            loadModel();
+        if (!opened || !modelName) {
+            lastAutoLoadKeyRef.current = null;
+            return;
         }
-    }, [opened, modelName, loadModel]);
+        const loadKey = `${subtype}::${modelName}`;
+        if (lastAutoLoadKeyRef.current === loadKey) {
+            return;
+        }
+        lastAutoLoadKeyRef.current = loadKey;
+        setEditing(false);
+        void loadModel(modelName, subtype);
+    }, [opened, modelName, subtype, loadModel]);
 
     const handleSave = async () => {
         if (!model) return;
@@ -313,7 +595,8 @@ export function ModelDetailModal({
                 notifications.show({ title: 'Saved', message: 'Model metadata updated', color: 'green' });
                 setEditing(false);
                 onModelChanged?.();
-                await loadModel();
+                lastAutoLoadKeyRef.current = null;
+                await loadModel(modelName, subtype);
             }
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to save metadata', color: 'red' });
@@ -380,6 +663,7 @@ export function ModelDetailModal({
     const handleSavePreview = async () => {
         if (!model) return;
         setSavingPreview(true);
+        appendRemotePreviewLog('debug', `Saving preview image for ${modelName}`);
         try {
             let backendError: string | null = null;
             // If we have a CivitAI URL but previewImageData is NOT yet a data URI,
@@ -396,16 +680,20 @@ export function ModelDetailModal({
                         preview_image_metadata: null,
                     });
                     if (!previewByUrl?.error) {
+                        appendRemotePreviewLog('debug', `Server-side preview save succeeded for ${selectedCivitaiImageUrl}`);
                         notifications.show({ title: 'Saved', message: 'Preview image updated', color: 'green' });
                         setPreviewFileName(null);
                         setSelectedCivitaiImageUrl(null);
                         onModelChanged?.();
-                        await loadModel();
+                        lastAutoLoadKeyRef.current = null;
+                        await loadModel(modelName, subtype);
                         return;
                     }
                     backendError = previewByUrl.error;
+                    appendRemotePreviewLog('warn', `Server-side preview save failed: ${backendError}`);
                 } catch {
                     backendError = 'Network error contacting server';
+                    appendRemotePreviewLog('warn', 'Server-side preview save failed due to network error');
                 }
             }
 
@@ -420,6 +708,7 @@ export function ModelDetailModal({
                 const detail = backendError
                     ? `Server could not fetch the image: ${backendError}. If this is NSFW content, ensure your CivitAI API key is configured in User Settings.`
                     : 'Could not convert the selected preview image into a savable format.';
+                appendRemotePreviewLog('error', `Preview save aborted because no savable image data was available. ${detail}`);
                 notifications.show({
                     title: 'Save Failed',
                     message: detail,
@@ -448,40 +737,58 @@ export function ModelDetailModal({
                 subtype,
             });
             if (response.error) {
+                appendRemotePreviewLog('error', `EditModelMetadata failed while saving preview: ${response.error}`);
                 notifications.show({ title: 'Save Failed', message: response.error, color: 'red' });
                 return;
             }
+            appendRemotePreviewLog('debug', 'Preview image saved through EditModelMetadata');
             notifications.show({ title: 'Saved', message: 'Preview image updated', color: 'green' });
             setPreviewFileName(null);
             setSelectedCivitaiImageUrl(null);
             onModelChanged?.();
-            await loadModel();
+            lastAutoLoadKeyRef.current = null;
+            await loadModel(modelName, subtype);
         } catch {
+            appendRemotePreviewLog('error', 'Failed to save preview image due to unexpected client-side exception');
             notifications.show({ title: 'Error', message: 'Failed to save preview image', color: 'red' });
         } finally {
             setSavingPreview(false);
         }
     };
 
-    const handleSelectCivitaiPreview = async (imageUrl: string, index: number) => {
+    const handleSelectCivitaiPreview = async (candidate: RemotePreviewCandidate, index: number) => {
         setConvertingCivitaiImage(true);
         setSelectedCivitaiImageIndex(index);
-        setSelectedCivitaiImageUrl(imageUrl);
+        setSelectedCivitaiImageUrl(candidate.sourceUrl);
         setPreviewFileName(`CivitAI preview ${index + 1}`);
+        appendRemotePreviewLog('debug', `Selected preview candidate ${index + 1}: ${candidate.sourceUrl}`);
         try {
-            // Eagerly convert to data URI via backend proxy so Save has the data ready
-            const dataUri = await swarmClient.forwardMetadataImageRequest(imageUrl);
-            if (dataUri && dataUri.startsWith('data:image/')) {
-                setPreviewImageData(dataUri);
+            if (candidate.displayUrl.startsWith('data:image/')) {
+                setPreviewImageData(candidate.displayUrl);
+                appendRemotePreviewLog('debug', `Candidate ${index + 1} already had cached image data`);
                 notifications.show({ title: 'Preview Updated', message: 'Selected CivitAI preview image', color: 'green' });
             } else {
-                // Backend proxy failed; keep URL as fallback, Save will try again
-                setPreviewImageData(imageUrl);
-                notifications.show({ title: 'Preview Updated', message: 'Selected CivitAI preview image (server conversion pending)', color: 'blue' });
+                const proxyResult = await swarmClient.forwardMetadataImageRequestDetailed(candidate.sourceUrl);
+                if (proxyResult.image && proxyResult.image.startsWith('data:image/')) {
+                    setPreviewImageData(proxyResult.image);
+                    appendRemotePreviewLog('debug', `On-demand backend image proxy succeeded for candidate ${index + 1}`);
+                    notifications.show({ title: 'Preview Updated', message: 'Selected CivitAI preview image', color: 'green' });
+                } else {
+                    setPreviewImageData(candidate.sourceUrl);
+                    appendRemotePreviewLog('warn', `On-demand backend image proxy failed for candidate ${index + 1}: ${proxyResult.error ?? 'unknown error'}`);
+                    notifications.show({ title: 'Preview Updated', message: 'Selected CivitAI preview image (server conversion pending)', color: 'blue' });
+                }
             }
         } catch {
-            setPreviewImageData(imageUrl);
-            notifications.show({ title: 'Preview Updated', message: 'Selected CivitAI preview image (server conversion pending)', color: 'blue' });
+            if (candidate.displayUrl.startsWith('data:image/')) {
+                setPreviewImageData(candidate.displayUrl);
+                appendRemotePreviewLog('debug', `Candidate ${index + 1} fell back to cached image data after selection error`);
+                notifications.show({ title: 'Preview Updated', message: 'Selected cached preview image', color: 'green' });
+            } else {
+                setPreviewImageData(candidate.sourceUrl);
+                appendRemotePreviewLog('error', `Candidate ${index + 1} selection failed and no cached image data was available`);
+                notifications.show({ title: 'Preview Updated', message: 'Selected CivitAI preview image (server conversion pending)', color: 'blue' });
+            }
         } finally {
             setConvertingCivitaiImage(false);
         }
@@ -609,16 +916,55 @@ export function ModelDetailModal({
                                         Selected: {previewFileName}
                                     </Text>
                                 )}
-                                {loadingCivitaiImages && (
-                                    <Text size="xs" c="dimmed">Loading CivitAI preview options...</Text>
+                                <Group gap="xs">
+                                    <SwarmButton
+                                        tone="info"
+                                        emphasis="soft"
+                                        size="xs"
+                                        leftSection={<IconRefresh size={14} />}
+                                        loading={loadingCivitaiImages}
+                                        disabled={!model}
+                                        onClick={() => void handleRefreshRemotePreviews()}
+                                    >
+                                        Refresh Remote Previews
+                                    </SwarmButton>
+                                    {resolvedRemoteSource?.sourceType && (
+                                        <Text size="xs" c="dimmed">
+                                            Source: {resolvedRemoteSource.sourceType}
+                                        </Text>
+                                    )}
+                                </Group>
+                                {(loadingCivitaiImages || hydratingRemotePreviews) && (
+                                    <Text size="xs" c="dimmed">Loading cached remote preview options...</Text>
+                                )}
+                                {remotePreviewStatus && (
+                                    <Alert color="blue" variant="light" py={6}>
+                                        <Text size="xs">{remotePreviewStatus}</Text>
+                                    </Alert>
+                                )}
+                                {remotePreviewDebugLog.length > 0 && (
+                                    <Alert color="gray" variant="light" py={6}>
+                                        <Stack gap={4}>
+                                            <Text size="xs" fw={600}>Remote Preview Diagnostics</Text>
+                                            {remotePreviewDebugLog.slice(-12).map((line, index) => (
+                                                <Text
+                                                    key={`${line}-${index}`}
+                                                    size="xs"
+                                                    style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                                                >
+                                                    {line}
+                                                </Text>
+                                            ))}
+                                        </Stack>
+                                    </Alert>
                                 )}
                                 {civitaiImageError && (
                                     <Text size="xs" c="red">{civitaiImageError}</Text>
                                 )}
-                                {civitaiImages.length > 0 && (
+                                {civitaiPreviewCandidates.length > 0 && (
                                     <Stack gap={6}>
                                         <Text size="xs" c="dimmed">
-                                            CivitAI preview options (same source as Model Downloader)
+                                            Cached remote preview options (same source cache as Model Downloader)
                                         </Text>
                                         <Box
                                             style={{
@@ -629,12 +975,12 @@ export function ModelDetailModal({
                                             }}
                                         >
                                             <Group gap="xs" wrap="nowrap">
-                                                {civitaiImages.map((img, index) => (
+                                                {civitaiPreviewCandidates.map((candidate, index) => (
                                                     <Box
-                                                        key={`${img}-${index}`}
+                                                        key={`${candidate.id}-${index}`}
                                                         component="button"
                                                         type="button"
-                                                        onClick={() => void handleSelectCivitaiPreview(img, index)}
+                                                        onClick={() => void handleSelectCivitaiPreview(candidate, index)}
                                                         style={{
                                                             border:
                                                                 index === selectedCivitaiImageIndex
@@ -647,13 +993,31 @@ export function ModelDetailModal({
                                                             lineHeight: 0,
                                                         }}
                                                     >
-                                                        <LazyImage
-                                                            src={img}
-                                                            alt={`CivitAI preview ${index + 1}`}
-                                                            fit="cover"
-                                                            width={58}
-                                                            height={58}
-                                                        />
+                                                        {candidate.displayUrl.startsWith('data:image/') ? (
+                                                            <img
+                                                                src={candidate.displayUrl}
+                                                                alt={`CivitAI preview ${index + 1}`}
+                                                                style={{
+                                                                    width: 58,
+                                                                    height: 58,
+                                                                    objectFit: 'cover',
+                                                                    display: 'block',
+                                                                    borderRadius: 6,
+                                                                    backgroundColor: 'var(--theme-gray-6)',
+                                                                }}
+                                                            />
+                                                        ) : (
+                                                            <Center
+                                                                style={{
+                                                                    width: 58,
+                                                                    height: 58,
+                                                                    borderRadius: 6,
+                                                                    backgroundColor: 'var(--theme-gray-6)',
+                                                                }}
+                                                            >
+                                                                <Loader size="xs" />
+                                                            </Center>
+                                                        )}
                                                     </Box>
                                                 ))}
                                             </Group>

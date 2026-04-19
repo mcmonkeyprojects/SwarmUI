@@ -474,7 +474,7 @@ export function LorebookManagerModal({ opened, onClose }: LorebookManagerModalPr
                     {isNew ? 'Create' : 'Save'}
                   </SwarmButton>
                   {isDirty && (
-                    <SwarmButton tone="neutral" emphasis="ghost" onClick={handleRevert}>
+                    <SwarmButton emphasis="ghost" onClick={handleRevert}>
                       Revert
                     </SwarmButton>
                   )}

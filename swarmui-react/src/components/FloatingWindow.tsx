@@ -11,6 +11,7 @@ import { Paper, Group, Text, Box } from '@mantine/core';
 import { IconX, IconMaximize, IconMinimize } from '@tabler/icons-react';
 import { Z_INDEX } from '../utils/zIndex';
 import { SwarmActionIcon } from './ui';
+import { useDebugTrace } from '../utils/debugTrace';
 import './floating-window.css';
 
 export interface FloatingWindowProps {
@@ -74,6 +75,18 @@ export function FloatingWindow({
     const [preMaximizeState, setPreMaximizeState] = useState<{ size: Size; position: Position } | null>(null);
     const [isResizing, setIsResizing] = useState(false);
     const resizeRef = useRef<{ startX: number; startY: number; startWidth: number; startHeight: number; direction: string } | null>(null);
+
+    useDebugTrace(`FloatingWindow:${title}`, {
+        opened,
+        centered,
+        width: size.width,
+        height: size.height,
+        x: position.x,
+        y: position.y,
+        isMaximized,
+        isResizing,
+        hasPreMaximizeState: !!preMaximizeState,
+    });
 
     // Center window on open
     useEffect(() => {

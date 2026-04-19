@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo, useRef, useTransition } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
     Badge,
     Box,
@@ -24,7 +25,9 @@ import {
     IconTemperature,
 } from '@tabler/icons-react';
 import { swarmClient } from '../../api/client';
-import type { BackendStatus, ModelDescription, ServerResourceInfo } from '../../api/types';
+import { queryClient, queryKeys } from '../../api/queryClient';
+import { useBackends } from '../../hooks/useModels';
+import type { BackendStatus, ModelDescription } from '../../api/types';
 import { useSessionStore } from '../../stores/session';
 import { ProgressRingStat, StatTile, SwarmActionIcon, SwarmButton } from '../../components/ui';
 import { showError, showSuccess, showWarning } from '../../utils/notificationUtils';
@@ -202,93 +205,49 @@ interface LoadedModelCardData {
 
 export function ResourcesTab() {
     const isInitialized = useSessionStore((s) => s.isInitialized);
-    const [resources, setResources] = useState<ServerResourceInfo | null>(null);
-    const [loadedModels, setLoadedModels] = useState<ModelDescription[]>([]);
-    const [backendStatuses, setBackendStatuses] = useState<BackendStatus[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [autoRefresh, setAutoRefresh] = useState(true);
-    const [loadError, setLoadError] = useState<string | null>(null);
-    const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
     const [ejectingModels, setEjectingModels] = useState<Record<string, boolean>>({});
-    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const mountedRef = useRef(true);
-    const refreshingRef = useRef(false);
-    const [, startTransition] = useTransition();
+    const refreshInterval = autoRefresh ? 3000 : false;
 
-    const fetchSnapshot = useCallback(async (silent: boolean = false) => {
-        if (!isInitialized || refreshingRef.current) {
-            return;
-        }
-        refreshingRef.current = true;
-        if (!silent) {
-            setRefreshing(true);
-        }
+    const resourcesQuery = useQuery({
+        queryKey: queryKeys.server.resources(),
+        queryFn: () => swarmClient.getServerResourceInfo(),
+        enabled: isInitialized,
+        refetchInterval: refreshInterval,
+        refetchIntervalInBackground: false,
+    });
+    const loadedModelsQuery = useQuery({
+        queryKey: queryKeys.models.loaded(),
+        queryFn: () => swarmClient.listLoadedModels(),
+        enabled: isInitialized,
+        refetchInterval: refreshInterval,
+        refetchIntervalInBackground: false,
+    });
+    const backendsQuery = useBackends({ enabled: isInitialized, autoRefresh });
+
+    const resources = resourcesQuery.data ?? null;
+    const loadedModels = loadedModelsQuery.data ?? [];
+    const backendStatuses = backendsQuery.data ?? [];
+    const loading = resourcesQuery.isLoading || loadedModelsQuery.isLoading || backendsQuery.isLoading;
+    const refreshing = resourcesQuery.isFetching || loadedModelsQuery.isFetching || backendsQuery.isFetching;
+    const loadError = resourcesQuery.error || loadedModelsQuery.error || backendsQuery.error;
+
+    const fetchSnapshot = useCallback(async () => {
         try {
-            const [resourceInfo, currentLoadedModels, currentBackends] = await Promise.all([
-                swarmClient.getServerResourceInfo(),
-                swarmClient.listLoadedModels(),
-                swarmClient.listBackends({ fullData: true }),
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: queryKeys.server.resources(), refetchType: 'none' }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.models.loaded(), refetchType: 'none' }),
+                queryClient.invalidateQueries({ queryKey: queryKeys.backend.bootstrap, refetchType: 'none' }),
             ]);
-            if (!mountedRef.current) {
-                return;
-            }
-            startTransition(() => {
-                setResources(resourceInfo);
-                setLoadedModels(currentLoadedModels);
-                setBackendStatuses(currentBackends);
-                setLastUpdatedAt(Date.now());
-                setLoadError(null);
-            });
+            await Promise.all([
+                resourcesQuery.refetch(),
+                loadedModelsQuery.refetch(),
+                backendsQuery.refetch(),
+            ]);
         } catch {
-            if (!mountedRef.current) {
-                return;
-            }
-            if (!silent) {
-                setLoadError('Unable to refresh live server telemetry right now.');
-                showError('Resources refresh failed', 'Unable to load the current server performance snapshot.');
-            }
-        } finally {
-            if (mountedRef.current) {
-                setLoading(false);
-                if (!silent) {
-                    setRefreshing(false);
-                }
-            }
-            refreshingRef.current = false;
+            showError('Resources refresh failed', 'Unable to load the current server performance snapshot.');
         }
-    }, [isInitialized, startTransition]);
-
-    useEffect(() => {
-        mountedRef.current = true;
-        return () => {
-            mountedRef.current = false;
-        };
-    }, []);
-
-    useEffect(() => {
-        if (isInitialized) {
-            void fetchSnapshot();
-        }
-    }, [isInitialized, fetchSnapshot]);
-
-    useEffect(() => {
-        if (autoRefresh && isInitialized) {
-            intervalRef.current = setInterval(() => {
-                void fetchSnapshot(true);
-            }, 3000);
-            return () => {
-                if (intervalRef.current) {
-                    clearInterval(intervalRef.current);
-                }
-            };
-        }
-        return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }
-        };
-    }, [autoRefresh, isInitialized, fetchSnapshot]);
+    }, [backendsQuery, loadedModelsQuery, resourcesQuery]);
 
     const ramUsedPercent = resources?.system_ram.total
         ? (resources.system_ram.used / resources.system_ram.total) * 100
@@ -429,15 +388,13 @@ export function ResourcesTab() {
                     `No backend reported that it released ${pickModelTitle(card.model)}.`
                 );
             }
-            await fetchSnapshot(true);
+            await fetchSnapshot();
         } finally {
-            if (mountedRef.current) {
-                setEjectingModels((current) => {
-                    const updated = { ...current };
-                    delete updated[card.model.name];
-                    return updated;
-                });
-            }
+            setEjectingModels((current) => {
+                const updated = { ...current };
+                delete updated[card.model.name];
+                return updated;
+            });
         }
     }, [fetchSnapshot]);
 
@@ -529,12 +486,12 @@ export function ResourcesTab() {
                                 {activeModelHosts.length} active host backend{activeModelHosts.length === 1 ? '' : 's'}
                             </Badge>
                             <Badge variant="outline">
-                                {lastUpdatedAt ? 'Updated just now' : 'Waiting for first sample'}
+                                {resources ? 'Live snapshot ready' : 'Waiting for first sample'}
                             </Badge>
                         </Group>
                         {loadError && (
                             <Text size="xs" c="var(--theme-error)">
-                                {loadError}
+                                {loadError instanceof Error ? loadError.message : 'Unable to refresh live server telemetry right now.'}
                             </Text>
                         )}
                     </Stack>

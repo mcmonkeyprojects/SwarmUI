@@ -6,7 +6,8 @@
  */
 
 import { create } from 'zustand';
-import { persist, devtools } from 'zustand/middleware';
+import { persist, devtools, createJSONStorage } from 'zustand/middleware';
+import { createIndexedDbStorage } from '../lib/indexedDbStorage';
 import type {
     EntitiesState,
     EntityType,
@@ -293,6 +294,7 @@ export const useEntityStore = create<EntityStoreState & EntityStoreActions>()(
             }),
             {
                 name: 'swarmui-entities',
+                storage: createJSONStorage(() => createIndexedDbStorage('swarmui-entities')),
                 partialize: (state) => ({
                     entities: {
                         // Don't persist jobs that are in progress

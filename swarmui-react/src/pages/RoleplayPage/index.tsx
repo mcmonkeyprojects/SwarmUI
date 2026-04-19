@@ -9,16 +9,22 @@ import { ResizeHandle } from '../../components/ui/ResizeHandle';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
 import { useRoleplayStore } from '../../stores/roleplayStore';
 import { probeAssistantConnection } from '../../services/roleplayChatService';
+import { useNavigationStore, type RoleplayRouteState } from '../../stores/navigationStore';
 import { CharacterSidebar } from './CharacterSidebar';
 import { CharacterSelectionPanel } from './CharacterSelectionPanel';
 import { ChatPanel } from './ChatPanel';
 import { ControlsPanel } from './ControlsPanel';
 
-export function RoleplayPage() {
+interface RoleplayPageProps {
+    routeState?: RoleplayRouteState;
+}
+
+export function RoleplayPage({ routeState }: RoleplayPageProps) {
     const [controlsPanelOpen, setControlsPanelOpen] = useState(true);
     const [showCharacterPicker, setShowCharacterPicker] = useState(true);
     const generateSceneRef = useRef<(() => void) | null>(null);
     const generateSceneWithPromptRef = useRef<((prompt: string) => void) | null>(null);
+    const navigateToRoleplay = useNavigationStore((state) => state.navigateToRoleplay);
 
     const {
         activeCharacterId,
@@ -28,6 +34,7 @@ export function RoleplayPage() {
         setDetectedServerMode,
         setAvailableModels,
         setSelectedModelId,
+        setActiveCharacter,
     } = useRoleplayStore(
         useShallow((s) => ({
             activeCharacterId: s.activeCharacterId,
@@ -37,6 +44,7 @@ export function RoleplayPage() {
             setDetectedServerMode: s.setDetectedServerMode,
             setAvailableModels: s.setAvailableModels,
             setSelectedModelId: s.setSelectedModelId,
+            setActiveCharacter: s.setActiveCharacter,
         }))
     );
 
@@ -80,6 +88,18 @@ export function RoleplayPage() {
     useEffect(() => {
         probeConnection();
     }, [probeConnection]);
+
+    useEffect(() => {
+        if (!routeState?.characterId || routeState.characterId === activeCharacterId) {
+            return;
+        }
+        setActiveCharacter(routeState.characterId);
+        setShowCharacterPicker(false);
+    }, [activeCharacterId, routeState?.characterId, setActiveCharacter]);
+
+    useEffect(() => {
+        navigateToRoleplay({ characterId: activeCharacterId });
+    }, [activeCharacterId, navigateToRoleplay]);
 
     const isShowingCharacterPicker = showCharacterPicker || !activeCharacterId;
 

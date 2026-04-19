@@ -34,8 +34,13 @@
     will-change: transform, opacity;
 }
 
-.headless-dialog-content:focus {
-    outline: none;
+.headless-dialog-content:focus,
+.headless-dialog-content:focus-visible {
+    outline: 2px solid var(--theme-focus-ring);
+    outline-offset: 3px;
+    box-shadow:
+        0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 22%, transparent),
+        var(--elevation-shadow-lg);
 }
 
 /* Header */

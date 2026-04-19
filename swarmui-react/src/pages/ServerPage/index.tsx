@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import {
     Box,
     Tabs,
@@ -34,7 +34,7 @@ interface ServerPageProps {
 
 export function ServerPage({ routeState }: ServerPageProps) {
     const navigateToServer = useNavigationStore((state) => state.navigateToServer);
-    const [activeTab, setActiveTab] = useState<NonNullable<ServerRouteState['tab']>>(routeState?.tab || 'backends');
+    const activeTab = routeState?.tab || 'backends';
     const activeTabLabel = activeTab === 'backends'
         ? 'Backends'
         : activeTab === 'logs'
@@ -48,14 +48,10 @@ export function ServerPage({ routeState }: ServerPageProps) {
                     : 'Admin Tools';
 
     useEffect(() => {
-        if (routeState?.tab && routeState.tab !== activeTab) {
-            setActiveTab(routeState.tab);
+        if (!routeState?.tab) {
+            navigateToServer({ tab: 'backends' });
         }
-    }, [activeTab, routeState?.tab]);
-
-    useEffect(() => {
-        navigateToServer({ tab: activeTab as ServerRouteState['tab'] });
-    }, [activeTab, navigateToServer]);
+    }, [navigateToServer, routeState?.tab]);
 
     return (
         <PageScaffold
@@ -76,7 +72,12 @@ export function ServerPage({ routeState }: ServerPageProps) {
             <Box p="md" style={{ flex: 1, minHeight: 0 }}>
                 <Tabs
                     value={activeTab}
-                    onChange={(value) => setActiveTab((value || 'backends') as NonNullable<ServerRouteState['tab']>)}
+                    onChange={(value) => {
+                        const nextTab = (value || 'backends') as NonNullable<ServerRouteState['tab']>;
+                        if (nextTab !== activeTab) {
+                            navigateToServer({ tab: nextTab });
+                        }
+                    }}
                     keepMounted={false}
                     className="swarm-server-tabs"
                 >

@@ -1,0 +1,1796 @@
+[
+  {
+    "id": "pl-characters-beautiful-asian-girl",
+    "name": "Beautiful Asian Girl",
+    "words": [
+      "1girl",
+      "asian",
+      "beautiful",
+      "long hair",
+      "delicate features"
+    ]
+  },
+  {
+    "id": "pl-characters-slim-elf-girl",
+    "name": "Slim Elf Girl",
+    "words": [
+      "1girl",
+      "elf",
+      "slim",
+      "pointed ears",
+      "ethereal"
+    ]
+  },
+  {
+    "id": "pl-characters-anthro-wolf-girl",
+    "name": "Anthro Wolf Girl",
+    "words": [
+      "1girl",
+      "wolf ears",
+      "wolf tail",
+      "anthro",
+      "furry"
+    ]
+  },
+  {
+    "id": "pl-characters-fierce-dragon",
+    "name": "Fierce Dragon",
+    "words": [
+      "dragon",
+      "fierce",
+      "scales",
+      "wings",
+      "fire"
+    ]
+  },
+  {
+    "id": "pl-characters-heroic-knight",
+    "name": "Heroic Knight",
+    "words": [
+      "knight",
+      "armor",
+      "sword",
+      "heroic",
+      "shield"
+    ]
+  },
+  {
+    "id": "pl-characters-mysterious-mage",
+    "name": "Mysterious Mage",
+    "words": [
+      "mage",
+      "robes",
+      "magic",
+      "mysterious",
+      "staff"
+    ]
+  },
+  {
+    "id": "pl-characters-dark-sorceress",
+    "name": "Dark Sorceress",
+    "words": [
+      "sorceress",
+      "dark magic",
+      "black robes",
+      "glowing eyes"
+    ]
+  },
+  {
+    "id": "pl-characters-cute-catgirl",
+    "name": "Cute Catgirl",
+    "words": [
+      "1girl",
+      "cat ears",
+      "cat tail",
+      "cute",
+      "playful"
+    ]
+  },
+  {
+    "id": "pl-characters-royal-princess",
+    "name": "Royal Princess",
+    "words": [
+      "1girl",
+      "princess",
+      "royal gown",
+      "tiara",
+      "elegant"
+    ]
+  },
+  {
+    "id": "pl-characters-cyberpunk-hacker",
+    "name": "Cyberpunk Hacker",
+    "words": [
+      "hacker",
+      "cyberpunk",
+      "neon",
+      "goggles",
+      "tech"
+    ]
+  },
+  {
+    "id": "pl-characters-samurai-warrior",
+    "name": "Samurai Warrior",
+    "words": [
+      "samurai",
+      "katana",
+      "armor",
+      "japanese",
+      "warrior"
+    ]
+  },
+  {
+    "id": "pl-characters-angel",
+    "name": "Angel",
+    "words": [
+      "angel",
+      "wings",
+      "halo",
+      "divine",
+      "white robes"
+    ]
+  },
+  {
+    "id": "pl-characters-demon-girl",
+    "name": "Demon Girl",
+    "words": [
+      "1girl",
+      "demon",
+      "horns",
+      "dark wings",
+      "red eyes"
+    ]
+  },
+  {
+    "id": "pl-characters-school-girl",
+    "name": "School Girl",
+    "words": [
+      "1girl",
+      "school uniform",
+      "sailor uniform",
+      "young"
+    ]
+  },
+  {
+    "id": "pl-characters-vampire",
+    "name": "Vampire",
+    "words": [
+      "vampire",
+      "fangs",
+      "pale skin",
+      "red eyes",
+      "gothic"
+    ]
+  },
+  {
+    "id": "pl-scenes-castle-setting",
+    "name": "Castle Setting",
+    "words": [
+      "castle",
+      "medieval",
+      "stone walls",
+      "towers",
+      "banners"
+    ]
+  },
+  {
+    "id": "pl-scenes-night-club-scene",
+    "name": "Night Club Scene",
+    "words": [
+      "nightclub",
+      "neon lights",
+      "dance floor",
+      "dark",
+      "crowd"
+    ]
+  },
+  {
+    "id": "pl-scenes-rooftop-bar",
+    "name": "Rooftop Bar",
+    "words": [
+      "rooftop",
+      "bar",
+      "city skyline",
+      "evening",
+      "cocktails"
+    ]
+  },
+  {
+    "id": "pl-scenes-beach-sunset",
+    "name": "Beach Sunset",
+    "words": [
+      "beach",
+      "sunset",
+      "ocean",
+      "sand",
+      "golden hour"
+    ]
+  },
+  {
+    "id": "pl-scenes-water-bungalow-night",
+    "name": "Water Bungalow at Night",
+    "words": [
+      "overwater bungalow",
+      "night",
+      "stars",
+      "tropical",
+      "ocean"
+    ]
+  },
+  {
+    "id": "pl-scenes-bedroom-scene",
+    "name": "Bedroom Scene",
+    "words": [
+      "bedroom",
+      "bed",
+      "pillows",
+      "warm lighting",
+      "cozy"
+    ]
+  },
+  {
+    "id": "pl-scenes-apartment",
+    "name": "Apartment",
+    "words": [
+      "apartment",
+      "modern interior",
+      "window",
+      "urban"
+    ]
+  },
+  {
+    "id": "pl-scenes-library-setting",
+    "name": "Library Setting",
+    "words": [
+      "library",
+      "bookshelves",
+      "reading",
+      "quiet",
+      "wood"
+    ]
+  },
+  {
+    "id": "pl-scenes-cherry-blossom-garden",
+    "name": "Cherry Blossom Garden",
+    "words": [
+      "cherry blossoms",
+      "garden",
+      "petals",
+      "spring",
+      "japanese"
+    ]
+  },
+  {
+    "id": "pl-scenes-dark-forest",
+    "name": "Dark Forest",
+    "words": [
+      "dark forest",
+      "fog",
+      "twisted trees",
+      "eerie",
+      "moonlight"
+    ]
+  },
+  {
+    "id": "pl-scenes-space-station",
+    "name": "Space Station",
+    "words": [
+      "space station",
+      "sci-fi",
+      "stars",
+      "control panel",
+      "zero gravity"
+    ]
+  },
+  {
+    "id": "pl-scenes-medieval-tavern",
+    "name": "Medieval Tavern",
+    "words": [
+      "tavern",
+      "medieval",
+      "wood",
+      "candles",
+      "ale",
+      "fireplace"
+    ]
+  },
+  {
+    "id": "pl-scenes-hot-spring",
+    "name": "Hot Spring",
+    "words": [
+      "hot spring",
+      "steam",
+      "rocks",
+      "outdoor",
+      "onsen"
+    ]
+  },
+  {
+    "id": "pl-scenes-underwater-temple",
+    "name": "Underwater Temple",
+    "words": [
+      "underwater",
+      "temple",
+      "ruins",
+      "ocean",
+      "bioluminescent"
+    ]
+  },
+  {
+    "id": "pl-scenes-city-skyline-night",
+    "name": "City Skyline at Night",
+    "words": [
+      "city",
+      "skyline",
+      "night",
+      "lights",
+      "skyscrapers",
+      "urban"
+    ]
+  },
+  {
+    "id": "pl-styles-anime",
+    "name": "Anime",
+    "words": [
+      "anime style",
+      "anime art"
+    ]
+  },
+  {
+    "id": "pl-styles-realistic",
+    "name": "Realistic",
+    "words": [
+      "realistic",
+      "photorealistic",
+      "hyperrealistic"
+    ]
+  },
+  {
+    "id": "pl-styles-semi-realistic",
+    "name": "Semi-Realistic",
+    "words": [
+      "semi realistic",
+      "detailed",
+      "blend of anime and realism"
+    ]
+  },
+  {
+    "id": "pl-styles-low-light",
+    "name": "Low Light",
+    "words": [
+      "low light",
+      "dim",
+      "shadows",
+      "moody",
+      "dark"
+    ]
+  },
+  {
+    "id": "pl-styles-bright-light",
+    "name": "Bright Light",
+    "words": [
+      "bright",
+      "well lit",
+      "vivid",
+      "clean lighting"
+    ]
+  },
+  {
+    "id": "pl-styles-golden-glow",
+    "name": "Golden Glow",
+    "words": [
+      "golden hour",
+      "warm glow",
+      "golden light",
+      "soft"
+    ]
+  },
+  {
+    "id": "pl-styles-studio-ghibli",
+    "name": "Studio Ghibli",
+    "words": [
+      "studio ghibli style",
+      "ghibli",
+      "miyazaki",
+      "hand drawn",
+      "whimsical"
+    ]
+  },
+  {
+    "id": "pl-styles-chainsaw-man",
+    "name": "Chainsaw Man",
+    "words": [
+      "chainsaw man style",
+      "tatsuki fujimoto",
+      "gritty",
+      "horror manga"
+    ]
+  },
+  {
+    "id": "pl-styles-dark-souls-aesthetic",
+    "name": "Dark Souls Aesthetic",
+    "words": [
+      "dark souls",
+      "dark fantasy",
+      "grim",
+      "gothic",
+      "foreboding"
+    ]
+  },
+  {
+    "id": "pl-styles-pastel-soft",
+    "name": "Pastel Soft",
+    "words": [
+      "pastel colors",
+      "soft",
+      "dreamy",
+      "gentle",
+      "light"
+    ]
+  },
+  {
+    "id": "pl-styles-high-contrast-noir",
+    "name": "High Contrast Noir",
+    "words": [
+      "noir style",
+      "black and white",
+      "high contrast",
+      "shadows"
+    ]
+  },
+  {
+    "id": "pl-styles-vibrant-pop-art",
+    "name": "Vibrant Pop Art",
+    "words": [
+      "pop art",
+      "vibrant",
+      "bold colors",
+      "warhol",
+      "graphic"
+    ]
+  },
+  {
+    "id": "pl-perspectives-close-up-portrait",
+    "name": "Close-Up Portrait",
+    "words": [
+      "close up",
+      "portrait",
+      "face focus",
+      "head shot"
+    ]
+  },
+  {
+    "id": "pl-perspectives-full-body-shot",
+    "name": "Full Body Shot",
+    "words": [
+      "full body",
+      "standing",
+      "wide frame"
+    ]
+  },
+  {
+    "id": "pl-perspectives-dutch-angle",
+    "name": "Dutch Angle",
+    "words": [
+      "dutch angle",
+      "tilted camera",
+      "dynamic"
+    ]
+  },
+  {
+    "id": "pl-perspectives-birds-eye-view",
+    "name": "Bird's Eye View",
+    "words": [
+      "birds eye view",
+      "from above",
+      "overhead"
+    ]
+  },
+  {
+    "id": "pl-perspectives-worms-eye-view",
+    "name": "Worm's Eye View",
+    "words": [
+      "worms eye view",
+      "from below",
+      "looking up"
+    ]
+  },
+  {
+    "id": "pl-perspectives-over-the-shoulder",
+    "name": "Over the Shoulder",
+    "words": [
+      "over the shoulder",
+      "behind",
+      "depth"
+    ]
+  },
+  {
+    "id": "pl-perspectives-wide-establishing-shot",
+    "name": "Wide Establishing Shot",
+    "words": [
+      "wide shot",
+      "establishing shot",
+      "landscape",
+      "panoramic"
+    ]
+  },
+  {
+    "id": "pl-perspectives-dynamic-action-angle",
+    "name": "Dynamic Action Angle",
+    "words": [
+      "dynamic angle",
+      "action shot",
+      "motion blur"
+    ]
+  },
+  {
+    "id": "pl-perspectives-side-profile",
+    "name": "Side Profile",
+    "words": [
+      "side view",
+      "profile",
+      "silhouette"
+    ]
+  },
+  {
+    "id": "pl-perspectives-three-quarter-view",
+    "name": "Three-Quarter View",
+    "words": [
+      "three-quarter view",
+      "angled",
+      "natural pose"
+    ]
+  },
+  {
+    "id": "pl-explicit-lingerie",
+    "name": "Lingerie",
+    "words": [
+      "lingerie",
+      "lace",
+      "bra",
+      "panties",
+      "stockings"
+    ]
+  },
+  {
+    "id": "pl-explicit-nude-pose",
+    "name": "Nude Pose",
+    "words": [
+      "nude",
+      "naked",
+      "bare skin",
+      "exposed"
+    ]
+  },
+  {
+    "id": "pl-explicit-suggestive-position",
+    "name": "Suggestive Position",
+    "words": [
+      "suggestive",
+      "seductive",
+      "alluring",
+      "teasing"
+    ]
+  },
+  {
+    "id": "pl-explicit-dominant-pose",
+    "name": "Dominant Pose",
+    "words": [
+      "dominant",
+      "commanding",
+      "assertive",
+      "power pose"
+    ]
+  },
+  {
+    "id": "pl-explicit-submissive-pose",
+    "name": "Submissive Pose",
+    "words": [
+      "submissive",
+      "kneeling",
+      "yielding",
+      "shy"
+    ]
+  },
+  {
+    "id": "pl-explicit-bondage",
+    "name": "Bondage",
+    "words": [
+      "bondage",
+      "rope",
+      "tied",
+      "restrained",
+      "shibari"
+    ]
+  },
+  {
+    "id": "pl-explicit-riding",
+    "name": "Riding",
+    "words": [
+      "riding",
+      "cowgirl",
+      "straddling",
+      "on top"
+    ]
+  },
+  {
+    "id": "pl-explicit-missionary",
+    "name": "Missionary",
+    "words": [
+      "missionary",
+      "lying down",
+      "intimate"
+    ]
+  },
+  {
+    "id": "pl-explicit-doggy-style",
+    "name": "Doggy Style",
+    "words": [
+      "doggy style",
+      "from behind",
+      "bent over"
+    ]
+  },
+  {
+    "id": "pl-explicit-oral",
+    "name": "Oral",
+    "words": [
+      "oral",
+      "fellatio",
+      "licking",
+      "mouth"
+    ]
+  },
+  {
+    "id": "pl-explicit-provocative-outfit",
+    "name": "Provocative Outfit",
+    "words": [
+      "provocative",
+      "revealing",
+      "tight",
+      "short skirt",
+      "cleavage"
+    ]
+  },
+  {
+    "id": "pl-explicit-stripping",
+    "name": "Stripping",
+    "words": [
+      "stripping",
+      "undressing",
+      "removing clothes",
+      "tease"
+    ]
+  },
+  {
+    "id": "pl-characters-succubus",
+    "name": "Succubus / Demoness",
+    "words": [
+      "1girl",
+      "succubus",
+      "demon horns",
+      "revealing",
+      "seductive"
+    ]
+  },
+  {
+    "id": "pl-characters-bdsm-mistress",
+    "name": "BDSM Mistress",
+    "words": [
+      "1girl",
+      "leather",
+      "dominant",
+      "latex",
+      "whip"
+    ]
+  },
+  {
+    "id": "pl-characters-naughty-nurse",
+    "name": "Naughty Nurse",
+    "words": [
+      "1girl",
+      "nurse",
+      "suggestive",
+      "stockings",
+      "cleavage"
+    ]
+  },
+  {
+    "id": "pl-characters-french-maid",
+    "name": "French Maid",
+    "words": [
+      "1girl",
+      "french maid",
+      "maid headdress",
+      "frills",
+      "submissive"
+    ]
+  },
+  {
+    "id": "pl-characters-exotic-dancer",
+    "name": "Exotic Dancer",
+    "words": [
+      "1girl",
+      "stripper",
+      "minimal clothing",
+      "high heels",
+      "dancing"
+    ]
+  },
+  {
+    "id": "pl-characters-submissive-pet",
+    "name": "Submissive Pet",
+    "words": [
+      "1girl",
+      "collar",
+      "leash",
+      "crawling",
+      "submissive"
+    ]
+  },
+  {
+    "id": "pl-characters-temptress",
+    "name": "Temptress",
+    "words": [
+      "1girl",
+      "alluring",
+      "seductive gaze",
+      "sheer clothing",
+      "intimate"
+    ]
+  },
+  {
+    "id": "pl-scenes-bdsm-dungeon",
+    "name": "BDSM Dungeon",
+    "words": [
+      "dungeon",
+      "chains",
+      "stone walls",
+      "dim red lighting",
+      "restraints"
+    ]
+  },
+  {
+    "id": "pl-scenes-love-hotel",
+    "name": "Love Hotel Room",
+    "words": [
+      "love hotel",
+      "round bed",
+      "mirrors on ceiling",
+      "neon",
+      "intimate"
+    ]
+  },
+  {
+    "id": "pl-scenes-red-light-district",
+    "name": "Red Light District",
+    "words": [
+      "red light district",
+      "neon signs",
+      "rainy streets",
+      "seedy",
+      "urban"
+    ]
+  },
+  {
+    "id": "pl-scenes-luxurious-boudoir",
+    "name": "Luxurious Boudoir",
+    "words": [
+      "boudoir",
+      "silk sheets",
+      "velvet curtains",
+      "sultry lighting",
+      "elegant"
+    ]
+  },
+  {
+    "id": "pl-scenes-harem-tent",
+    "name": "Harem Tent",
+    "words": [
+      "tent",
+      "harem",
+      "silk pillows",
+      "incense smoke",
+      "sheer fabrics"
+    ]
+  },
+  {
+    "id": "pl-scenes-casting-couch",
+    "name": "Casting Couch",
+    "words": [
+      "minimalist room",
+      "black leather couch",
+      "studio lighting",
+      "camera",
+      "audition"
+    ]
+  },
+  {
+    "id": "pl-scenes-public-exhibitionist",
+    "name": "Public / Exhibitionist",
+    "words": [
+      "outdoor",
+      "public park",
+      "exhibitionism",
+      "night",
+      "risky"
+    ]
+  },
+  {
+    "id": "pl-styles-erotic-art",
+    "name": "Erotic Art / Pin-Up",
+    "words": [
+      "erotic art",
+      "pin up",
+      "vintage glamour",
+      "high contrast"
+    ]
+  },
+  {
+    "id": "pl-styles-hentai",
+    "name": "Hentai / Doujin Style",
+    "words": [
+      "hentai",
+      "doujin art",
+      "anime aesthetic",
+      "thick lines"
+    ]
+  },
+  {
+    "id": "pl-styles-high-gloss-wet",
+    "name": "High Gloss / Wet Look",
+    "words": [
+      "wet look",
+      "sweat",
+      "oiled skin",
+      "high gloss",
+      "reflections"
+    ]
+  },
+  {
+    "id": "pl-styles-boudoir-photography",
+    "name": "Boudoir Photography",
+    "words": [
+      "boudoir photography",
+      "soft focus",
+      "warm lighting",
+      "intense intimacy"
+    ]
+  },
+  {
+    "id": "pl-styles-dark-fantasy-erotica",
+    "name": "Dark Fantasy Erotica",
+    "words": [
+      "dark fantasy",
+      "erotic fantasy",
+      "gothic",
+      "grimdark"
+    ]
+  },
+  {
+    "id": "pl-styles-cyberpunk-sleaze",
+    "name": "Cyberpunk Sleaze",
+    "words": [
+      "cyberpunk",
+      "neon",
+      "synthetic skin",
+      "futuristic lingerie"
+    ]
+  },
+  {
+    "id": "pl-perspectives-pov",
+    "name": "POV (Point of View)",
+    "words": [
+      "pov",
+      "first person",
+      "reaching out",
+      "immersive"
+    ]
+  },
+  {
+    "id": "pl-perspectives-crotch-focus",
+    "name": "Crotch / Hip Focus",
+    "words": [
+      "macro",
+      "hip focus",
+      "thighs",
+      "crotch",
+      "close up body"
+    ]
+  },
+  {
+    "id": "pl-perspectives-cleavage-focus",
+    "name": "Cleavage / Chest Focus",
+    "words": [
+      "close up chest",
+      "cleavage",
+      "breasts",
+      "looking down"
+    ]
+  },
+  {
+    "id": "pl-perspectives-booty-focus",
+    "name": "Booty Focus / From Behind",
+    "words": [
+      "from behind",
+      "ass",
+      "booty",
+      "looking over shoulder",
+      "rear view"
+    ]
+  },
+  {
+    "id": "pl-perspectives-pantsu-shot",
+    "name": "Looking Up (Pantsu Shot)",
+    "words": [
+      "low angle",
+      "looking up skirt",
+      "panties",
+      "worms eye view"
+    ]
+  },
+  {
+    "id": "pl-perspectives-top-down-submissive",
+    "name": "Top-Down (Submissive View)",
+    "words": [
+      "high angle",
+      "looking down",
+      "birds eye view",
+      "submissive pose"
+    ]
+  },
+  {
+    "id": "pl-explicit-ahegao",
+    "name": "Ahegao / Climax Face",
+    "words": [
+      "ahegao",
+      "rolled back eyes",
+      "blushing",
+      "tongue out",
+      "climax"
+    ]
+  },
+  {
+    "id": "pl-explicit-toys",
+    "name": "Toys / Vibrator Use",
+    "words": [
+      "sex toys",
+      "vibrator",
+      "dildo",
+      "masturbation",
+      "butt plug"
+    ]
+  },
+  {
+    "id": "pl-explicit-tentacles",
+    "name": "Tentacle Interaction",
+    "words": [
+      "tentacles",
+      "tentacle wrapping",
+      "tentacle probing",
+      "slime",
+      "monster"
+    ]
+  },
+  {
+    "id": "pl-explicit-creampie",
+    "name": "Creampie / Aftermath",
+    "words": [
+      "creampie",
+      "messy",
+      "bodily fluids",
+      "breathless",
+      "aftermath"
+    ]
+  },
+  {
+    "id": "pl-explicit-facial",
+    "name": "Facial / Cumshot",
+    "words": [
+      "facial",
+      "cumshot",
+      "fluids on face",
+      "eyes closed",
+      "messy"
+    ]
+  },
+  {
+    "id": "pl-explicit-shibari",
+    "name": "Shibari / Intricate Rope Bondage",
+    "words": [
+      "shibari",
+      "rope bondage",
+      "suspension",
+      "red marks",
+      "intricate knots"
+    ]
+  },
+  {
+    "id": "pl-explicit-threesome",
+    "name": "Threesome / Group",
+    "words": [
+      "threesome",
+      "group sex",
+      "multiple bodies",
+      "multiple hands",
+      "sharing"
+    ]
+  },
+  {
+    "id": "pl-explicit-spanking",
+    "name": "Spanking / Impact Play",
+    "words": [
+      "spanking",
+      "impact play",
+      "red handprints",
+      "paddle",
+      "crying out"
+    ]
+  },
+  {
+    "id": "pl-explicit-anal",
+    "name": "Anal Sex",
+    "words": [
+      "anal sex",
+      "penetration",
+      "ass",
+      "from behind"
+    ]
+  },
+  {
+    "id": "pl-explicit-double-penetration",
+    "name": "Double Penetration",
+    "words": [
+      "double penetration",
+      "anal sex",
+      "vaginal sex",
+      "multiple bodies"
+    ]
+  },
+  {
+    "id": "pl-explicit-anal-toys",
+    "name": "Anal Toys / Plug",
+    "words": [
+      "butt plug",
+      "anal beads",
+      "sex toys",
+      "teasing"
+    ]
+  },
+  {
+    "id": "pl-explicit-gaping",
+    "name": "Gaping / Extreme Focus",
+    "words": [
+      "gaping",
+      "extreme close-up",
+      "ass",
+      "stretching"
+    ]
+  },
+  {
+    "id": "pl-perspectives-x-ray",
+    "name": "X-Ray / Cross-Section",
+    "words": [
+      "x ray",
+      "cross section",
+      "internal anatomy",
+      "penetration view"
+    ]
+  },
+  {
+    "id": "pl-perspectives-womb-view",
+    "name": "Womb / Internal View",
+    "words": [
+      "womb view",
+      "internal",
+      "cross section",
+      "extreme close-up"
+    ]
+  },
+  {
+    "id": "pl-perspectives-through-legs",
+    "name": "View Through Legs",
+    "words": [
+      "view through legs",
+      "between legs",
+      "low angle",
+      "creative framing"
+    ]
+  },
+  {
+    "id": "pl-perspectives-facesitting-pov",
+    "name": "Facesitting POV",
+    "words": [
+      "facesitting",
+      "worms eye view",
+      "crotch focus",
+      "looking up"
+    ]
+  },
+  {
+    "id": "pl-perspectives-oral-groin-pov",
+    "name": "Oral / Groin POV",
+    "words": [
+      "groin level shot",
+      "blowjob pov",
+      "first person",
+      "looking down"
+    ]
+  },
+  {
+    "id": "pl-perspectives-m-leg-spread",
+    "name": "M-Leg Spread Focus",
+    "words": [
+      "spread legs",
+      "m-legs",
+      "open legs",
+      "crotch focus",
+      "front view"
+    ]
+  },
+  {
+    "id": "pl-perspectives-reverse-cowgirl-pov",
+    "name": "Reverse Cowgirl POV",
+    "words": [
+      "reverse cowgirl pov",
+      "looking back",
+      "ass",
+      "first person"
+    ]
+  },
+  {
+    "id": "pl-characters-futa",
+    "name": "Futa / Hermaphrodite",
+    "words": [
+      "futa",
+      "hermaphrodite",
+      "mixed anatomy",
+      "1girl"
+    ]
+  },
+  {
+    "id": "pl-characters-milf",
+    "name": "Mature / MILF",
+    "words": [
+      "milf",
+      "mature female",
+      "curvy",
+      "older"
+    ]
+  },
+  {
+    "id": "pl-characters-muscle-girl",
+    "name": "Muscle Girl / Tomboy",
+    "words": [
+      "tomboy",
+      "muscular female",
+      "abs",
+      "fit"
+    ]
+  },
+  {
+    "id": "pl-characters-monster-girl",
+    "name": "Monster Girl",
+    "words": [
+      "monster girl",
+      "slime girl",
+      "lamia",
+      "arachne"
+    ]
+  },
+  {
+    "id": "pl-characters-corrupted-nun",
+    "name": "Corrupted Nun",
+    "words": [
+      "nun",
+      "habit",
+      "revealing nun",
+      "corrupted",
+      "sacred"
+    ]
+  },
+  {
+    "id": "pl-scenes-public-transport",
+    "name": "Public Transport / Train",
+    "words": [
+      "train",
+      "public transport",
+      "subway",
+      "chikan"
+    ]
+  },
+  {
+    "id": "pl-scenes-locker-room",
+    "name": "Locker Room / Showers",
+    "words": [
+      "locker room",
+      "public showers",
+      "tiles",
+      "steam"
+    ]
+  },
+  {
+    "id": "pl-scenes-mixed-bathhouse",
+    "name": "Mixed Bathhouse / Onsen",
+    "words": [
+      "bathhouse",
+      "mixed baths",
+      "japanese onsen",
+      "steam"
+    ]
+  },
+  {
+    "id": "pl-scenes-alleyway",
+    "name": "Alleyway / Backstreet",
+    "words": [
+      "alleyway",
+      "brick walls",
+      "urban decay",
+      "dark",
+      "night"
+    ]
+  },
+  {
+    "id": "pl-styles-3d-cgi-sfm",
+    "name": "3D CGI / SFM",
+    "words": [
+      "3d cgi",
+      "source filmmaker",
+      "blender",
+      "glossy"
+    ]
+  },
+  {
+    "id": "pl-styles-bara-muscle-art",
+    "name": "Bara / Muscle Art",
+    "words": [
+      "bara",
+      "muscular art",
+      "thick lines",
+      "homoerotic"
+    ]
+  },
+  {
+    "id": "pl-styles-retro-eroge",
+    "name": "Retro Eroge / Pixel Art",
+    "words": [
+      "eroge style",
+      "visual novel",
+      "pixel art",
+      "90s anime"
+    ]
+  },
+  {
+    "id": "pl-styles-renaissance-nude",
+    "name": "Renaissance Nude",
+    "words": [
+      "renaissance",
+      "oil painting",
+      "classicism",
+      "artistic nude"
+    ]
+  },
+  {
+    "id": "pl-perspectives-paizuri-pov",
+    "name": "Paizuri POV",
+    "words": [
+      "chest focus",
+      "looking down",
+      "breasts",
+      "first person"
+    ]
+  },
+  {
+    "id": "pl-perspectives-voyeur-keyhole",
+    "name": "Voyeur / Keyhole View",
+    "words": [
+      "voyeur",
+      "keyhole view",
+      "peeping",
+      "hidden camera"
+    ]
+  },
+  {
+    "id": "pl-perspectives-foot-stomping-pov",
+    "name": "Foot Focus / Stomping POV",
+    "words": [
+      "foot focus",
+      "feet",
+      "stomping",
+      "worms eye view"
+    ]
+  },
+  {
+    "id": "pl-perspectives-pinned-down-pov",
+    "name": "Pinned Down POV",
+    "words": [
+      "pinned down",
+      "looking up from floor",
+      "wrists held",
+      "submissive perspective"
+    ]
+  },
+  {
+    "id": "pl-explicit-titjob-paizuri",
+    "name": "Titjob / Paizuri",
+    "words": [
+      "titjob",
+      "paizuri",
+      "cleavage",
+      "breast smothering"
+    ]
+  },
+  {
+    "id": "pl-explicit-footjob",
+    "name": "Footjob / Feet Worship",
+    "words": [
+      "footjob",
+      "feet worship",
+      "barefoot",
+      "toes"
+    ]
+  },
+  {
+    "id": "pl-explicit-yuri-tribadism",
+    "name": "Yuri / Tribadism",
+    "words": [
+      "yuri",
+      "tribadism",
+      "scissoring",
+      "2girls",
+      "lesbian"
+    ]
+  },
+  {
+    "id": "pl-explicit-mind-break",
+    "name": "Mind Break / Hypnosis",
+    "words": [
+      "mind break",
+      "blank eyes",
+      "hypnosis",
+      "drooling",
+      "spirals in eyes"
+    ]
+  },
+  {
+    "id": "pl-explicit-gloryhole",
+    "name": "Gloryhole",
+    "words": [
+      "gloryhole",
+      "wall partition",
+      "anonymous",
+      "oral sex"
+    ]
+  },
+  {
+    "id": "pl-characters-handsome-man",
+    "name": "Handsome Man",
+    "words": [
+      "1boy",
+      "man",
+      "handsome",
+      "short hair",
+      "masculine"
+    ]
+  },
+  {
+    "id": "pl-characters-wise-wizard",
+    "name": "Wise Wizard",
+    "words": [
+      "wizard",
+      "old man",
+      "long beard",
+      "robes"
+    ]
+  },
+  {
+    "id": "pl-characters-cyberpunk-merc",
+    "name": "Cyberpunk Mercenary",
+    "words": [
+      "mercenary",
+      "cyberpunk",
+      "bionic arm",
+      "leather jacket",
+      "gun"
+    ]
+  },
+  {
+    "id": "pl-characters-space-marine",
+    "name": "Space Marine",
+    "words": [
+      "space marine",
+      "sci-fi",
+      "heavy armor",
+      "helmet"
+    ]
+  },
+  {
+    "id": "pl-characters-business",
+    "name": "Business Professional",
+    "words": [
+      "business suit",
+      "formal",
+      "tie",
+      "professional"
+    ]
+  },
+  {
+    "id": "pl-scenes-coffee-shop",
+    "name": "Cozy Coffee Shop",
+    "words": [
+      "cafe",
+      "coffee shop",
+      "cozy",
+      "indoor",
+      "warm lighting"
+    ]
+  },
+  {
+    "id": "pl-scenes-cyberpunk-boulevard",
+    "name": "Cyberpunk Boulevard",
+    "words": [
+      "cyberpunk city",
+      "neon signs",
+      "rainy",
+      "crowded street",
+      "night"
+    ]
+  },
+  {
+    "id": "pl-scenes-mountain-landscape",
+    "name": "Serene Mountains",
+    "words": [
+      "mountains",
+      "snow capped peaks",
+      "landscape",
+      "nature",
+      "serene"
+    ]
+  },
+  {
+    "id": "pl-scenes-sunlit-forest",
+    "name": "Sunlit Forest",
+    "words": [
+      "forest",
+      "sunlight through trees",
+      "nature",
+      "tranquil",
+      "foliage"
+    ]
+  },
+  {
+    "id": "pl-scenes-fantasy-bazaar",
+    "name": "Fantasy Bazaar",
+    "words": [
+      "marketplace",
+      "bazaar",
+      "fantasy",
+      "tents",
+      "crowd"
+    ]
+  },
+  {
+    "id": "pl-styles-vintage-film",
+    "name": "Vintage Analog Film",
+    "words": [
+      "analog photography",
+      "vintage",
+      "film grain",
+      "kodak portra"
+    ]
+  },
+  {
+    "id": "pl-styles-minimalist-vector",
+    "name": "Minimalist Vector Art",
+    "words": [
+      "vector art",
+      "minimalist",
+      "flat colors",
+      "clean lines"
+    ]
+  },
+  {
+    "id": "pl-styles-retrowave",
+    "name": "Synthwave / Retrowave",
+    "words": [
+      "synthwave",
+      "retrowave",
+      "80s aesthetic",
+      "neon",
+      "grid"
+    ]
+  },
+  {
+    "id": "pl-styles-watercolor-concept",
+    "name": "Watercolor Concept Art",
+    "words": [
+      "watercolor",
+      "concept art",
+      "fluid strokes",
+      "soft edges"
+    ]
+  },
+  {
+    "id": "pl-styles-noir-comic",
+    "name": "Noir Comic Book",
+    "words": [
+      "comic book",
+      "noir",
+      "ink drawing",
+      "heavy shadows"
+    ]
+  },
+  {
+    "id": "pl-perspectives-cinematic-ots",
+    "name": "Cinematic Over-the-Shoulder",
+    "words": [
+      "over the shoulder",
+      "cinematic",
+      "shallow depth of field",
+      "focus on background"
+    ]
+  },
+  {
+    "id": "pl-perspectives-hero-shot",
+    "name": "Hero Shot / Low Angle",
+    "words": [
+      "low angle",
+      "hero shot",
+      "epic",
+      "looking up"
+    ]
+  },
+  {
+    "id": "pl-perspectives-macro-detail",
+    "name": "Macro / Extreme Close-Up",
+    "words": [
+      "macro",
+      "extreme close-up",
+      "detailed texture",
+      "depth of field"
+    ]
+  },
+  {
+    "id": "pl-perspectives-symmetrical-wes",
+    "name": "Symmetrical Centered",
+    "words": [
+      "symmetrical composition",
+      "centered",
+      "front view",
+      "wes anderson"
+    ]
+  },
+  {
+    "id": "pl-styles-masterpiece",
+    "name": "Masterpiece Quality",
+    "words": [
+      "masterpiece",
+      "best quality",
+      "highly detailed",
+      "ultra detailed"
+    ]
+  },
+  {
+    "id": "pl-styles-cinematic-render",
+    "name": "Cinematic Rendering",
+    "words": [
+      "cinematic lighting",
+      "intricate details",
+      "sharp focus",
+      "volumetric lighting",
+      "dramatic shadows"
+    ]
+  },
+  {
+    "id": "pl-styles-photoreal-textures",
+    "name": "Photorealistic Textures",
+    "words": [
+      "photorealistic",
+      "raw photo",
+      "skin texture",
+      "8k uhd",
+      "hyperrealistic"
+    ]
+  },
+  {
+    "id": "pl-styles-vibrant-colors",
+    "name": "Vibrant / Saturated",
+    "words": [
+      "vibrant colors",
+      "colorful",
+      "rich saturation",
+      "dynamic lighting"
+    ]
+  },
+  {
+    "id": "pl-styles-ethereal-glow",
+    "name": "Ethereal Glow",
+    "words": [
+      "soft lighting",
+      "ethereal",
+      "bloom",
+      "glowing",
+      "dreamy"
+    ]
+  },
+  {
+    "id": "pl-scenes-intricate-background",
+    "name": "Intricate Background",
+    "words": [
+      "detailed background",
+      "intricate environment",
+      "scenery",
+      "filled background"
+    ]
+  },
+  {
+    "id": "pl-scenes-bokeh-blur",
+    "name": "Bokeh / Blur Focus",
+    "words": [
+      "depth of field",
+      "bokeh",
+      "blurred background",
+      "focus on subject"
+    ]
+  },
+  {
+    "id": "pl-scenes-atmospheric-particles",
+    "name": "Atmospheric Particles",
+    "words": [
+      "floating particles",
+      "dust motes",
+      "sparks",
+      "light rays"
+    ]
+  },
+  {
+    "id": "pl-scenes-lush-flora",
+    "name": "Lush Nature Flora",
+    "words": [
+      "lush vegetation",
+      "overgrown",
+      "detailed plants",
+      "vibrant foliage",
+      "nature"
+    ]
+  },
+  {
+    "id": "pl-characters-catgirl",
+    "name": "Catgirl / Nekomimi",
+    "words": [
+      "catgirl",
+      "nekomimi",
+      "animal ears",
+      "cat tail",
+      "fang"
+    ]
+  },
+  {
+    "id": "pl-characters-foxgirl",
+    "name": "Foxgirl / Kitsune",
+    "words": [
+      "foxgirl",
+      "kitsune",
+      "fox ears",
+      "multiple tails"
+    ]
+  },
+  {
+    "id": "pl-characters-bunnygirl",
+    "name": "Bunnygirl / Usagimimi",
+    "words": [
+      "bunny girl",
+      "rabbit ears",
+      "fluffy tail"
+    ]
+  },
+  {
+    "id": "pl-characters-wolfgirl",
+    "name": "Wolfgirl / Ookami",
+    "words": [
+      "wolfgirl",
+      "wolf ears",
+      "fluffy tail",
+      "wild"
+    ]
+  },
+  {
+    "id": "pl-characters-dragon-girl",
+    "name": "Dragon Girl / Ryu",
+    "words": [
+      "dragon girl",
+      "horns",
+      "dragon tail",
+      "scales",
+      "mythical"
+    ]
+  },
+  {
+    "id": "pl-characters-furry-full",
+    "name": "Furry / Anthro (Full)",
+    "words": [
+      "furry",
+      "anthro",
+      "fur",
+      "animal snout",
+      "paws"
+    ]
+  },
+  {
+    "id": "pl-characters-princess",
+    "name": "Princess / Royalty",
+    "words": [
+      "princess",
+      "tiara",
+      "elegant dress",
+      "jewelry",
+      "regal"
+    ]
+  },
+  {
+    "id": "pl-characters-goth-girl",
+    "name": "Goth Girl / Emo",
+    "words": [
+      "goth",
+      "black makeup",
+      "choker",
+      "fishnets",
+      "dark"
+    ]
+  },
+  {
+    "id": "pl-characters-office-lady",
+    "name": "Office Lady / OL",
+    "words": [
+      "office lady",
+      "business suit",
+      "pencil skirt",
+      "glasses",
+      "professional"
+    ]
+  },
+  {
+    "id": "pl-characters-amazonian",
+    "name": "Amazonian / Barbarian",
+    "words": [
+      "barbarian",
+      "amazonian",
+      "muscular female",
+      "tribal tattoos",
+      "fur armor"
+    ]
+  },
+  {
+    "id": "pl-characters-magical-girl",
+    "name": "Magical Girl / Mahou Shoujo",
+    "words": [
+      "magical girl",
+      "frilled dress",
+      "ribbons",
+      "magic wand",
+      "sparkling"
+    ]
+  },
+  {
+    "id": "pl-characters-gyaru",
+    "name": "Gyaru / Tanned",
+    "words": [
+      "gyaru",
+      "dark skin",
+      "tanned",
+      "blonde hair",
+      "heavy makeup"
+    ]
+  },
+  {
+    "id": "pl-characters-cyber-geisha",
+    "name": "Cyber Geisha",
+    "words": [
+      "geisha",
+      "cyberpunk",
+      "futuristic kimono",
+      "glowing tattoos",
+      "cybernetics"
+    ]
+  }
+]

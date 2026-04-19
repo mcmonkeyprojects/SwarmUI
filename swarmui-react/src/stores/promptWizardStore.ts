@@ -7,8 +7,6 @@ import type {
   PromptBundle,
   PromptRecipe,
   PromptWizardStateSnapshot,
-  BrowserPreset,
-  PresetCategory,
 } from '../features/promptWizard/types';
 import { DEFAULT_PROFILE_ID } from '../features/promptWizard/profiles';
 
@@ -28,13 +26,6 @@ interface PromptWizardStore {
   savedRecipes: PromptRecipe[];
   savedStates: PromptWizardStateSnapshot[];
   migrationVersion: number;
-
-  // Browser presets
-  userBrowserPresets: BrowserPreset[];
-  activeView: 'steps' | 'presets';
-  activePresetCategory: PresetCategory;
-  presetSearchQuery: string;
-  showExplicitPresets: boolean;
 
   // Tag selection
   toggleTag: (tagId: string) => void;
@@ -70,23 +61,14 @@ interface PromptWizardStore {
   saveRecipe: (recipe: Omit<PromptRecipe, 'id' | 'createdAt' | 'updatedAt'>) => void;
   applyRecipe: (recipeId: string, mode?: 'merge' | 'replace') => void;
   removeRecipe: (recipeId: string) => void;
-  saveStateSnapshot: (snapshot: Omit<PromptWizardStateSnapshot, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  saveStateSnapshot: (
+    snapshot: Omit<PromptWizardStateSnapshot, 'id' | 'createdAt' | 'updatedAt'>
+  ) => void;
   loadStateSnapshot: (snapshotId: string) => void;
   removeStateSnapshot: (snapshotId: string) => void;
 
   // Migration
   setMigrationVersion: (version: number) => void;
-
-  // Browser preset actions
-  setActiveView: (view: 'steps' | 'presets') => void;
-  setActivePresetCategory: (category: PresetCategory) => void;
-  setPresetSearchQuery: (query: string) => void;
-  resetPresetBrowserEphemeral: () => void;
-  applyBrowserPreset: (tagIds: string[]) => void;
-  addBrowserPreset: (preset: Omit<BrowserPreset, 'id' | 'isDefault'>) => void;
-  updateBrowserPreset: (presetId: string, updates: Partial<Pick<BrowserPreset, 'name' | 'description' | 'category' | 'tagIds' | 'thumbnail'>>) => void;
-  removeBrowserPreset: (presetId: string) => void;
-  setShowExplicitPresets: (show: boolean) => void;
 }
 
 function uniqueStrings(values: string[]): string[] {
@@ -115,11 +97,6 @@ export const usePromptWizardStore = create<PromptWizardStore>()(
         savedRecipes: [],
         savedStates: [],
         migrationVersion: 0,
-        userBrowserPresets: [],
-        activeView: 'steps' as const,
-        activePresetCategory: 'characters' as PresetCategory,
-        presetSearchQuery: '',
-        showExplicitPresets: false,
 
         toggleTag: (tagId) => {
           set((state) => {
@@ -147,18 +124,18 @@ export const usePromptWizardStore = create<PromptWizardStore>()(
 
         deselectTag: (tagId) => {
           set((state) => {
-             const newWeights = { ...state.tagWeights };
-             delete newWeights[tagId];
-             return {
-                selectedTagIds: state.selectedTagIds.filter((id) => id !== tagId),
-                tagWeights: newWeights,
-             };
+            const newWeights = { ...state.tagWeights };
+            delete newWeights[tagId];
+            return {
+              selectedTagIds: state.selectedTagIds.filter((id) => id !== tagId),
+              tagWeights: newWeights,
+            };
           });
         },
 
         setTagWeight: (tagId, weight) => {
           set((state) => ({
-             tagWeights: { ...state.tagWeights, [tagId]: weight },
+            tagWeights: { ...state.tagWeights, [tagId]: weight },
           }));
         },
 
@@ -275,9 +252,10 @@ export const usePromptWizardStore = create<PromptWizardStore>()(
               return state;
             }
             return {
-              selectedTagIds: mode === 'replace'
-                ? uniqueStrings(bundle.tagIds)
-                : uniqueStrings([...state.selectedTagIds, ...bundle.tagIds]),
+              selectedTagIds:
+                mode === 'replace'
+                  ? uniqueStrings(bundle.tagIds)
+                  : uniqueStrings([...state.selectedTagIds, ...bundle.tagIds]),
             };
           });
         },
@@ -310,9 +288,10 @@ export const usePromptWizardStore = create<PromptWizardStore>()(
               return state;
             }
             return {
-              selectedTagIds: mode === 'replace'
-                ? uniqueStrings(recipe.tagIds)
-                : uniqueStrings([...state.selectedTagIds, ...recipe.tagIds]),
+              selectedTagIds:
+                mode === 'replace'
+                  ? uniqueStrings(recipe.tagIds)
+                  : uniqueStrings([...state.selectedTagIds, ...recipe.tagIds]),
               activeProfileId: recipe.profileId,
             };
           });
@@ -364,53 +343,6 @@ export const usePromptWizardStore = create<PromptWizardStore>()(
         setMigrationVersion: (version) => {
           set({ migrationVersion: version });
         },
-
-        setActiveView: (view) => {
-          set({ activeView: view });
-        },
-
-        setActivePresetCategory: (category) => {
-          set({ activePresetCategory: category });
-        },
-
-        setPresetSearchQuery: (query) => {
-          set({ presetSearchQuery: query });
-        },
-
-        resetPresetBrowserEphemeral: () => {
-          set({ activeView: 'steps' as const, presetSearchQuery: '' });
-        },
-
-        applyBrowserPreset: (tagIds) => {
-          set((state) => ({
-            selectedTagIds: uniqueStrings([...state.selectedTagIds, ...tagIds]),
-          }));
-        },
-
-        addBrowserPreset: (preset) => {
-          const id = `browser-preset-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-          set((state) => ({
-            userBrowserPresets: [...state.userBrowserPresets, { ...preset, id, isDefault: false }],
-          }));
-        },
-
-        updateBrowserPreset: (presetId, updates) => {
-          set((state) => ({
-            userBrowserPresets: state.userBrowserPresets.map((p) =>
-              p.id === presetId ? { ...p, ...updates } : p
-            ),
-          }));
-        },
-
-        removeBrowserPreset: (presetId) => {
-          set((state) => ({
-            userBrowserPresets: state.userBrowserPresets.filter((p) => p.id !== presetId),
-          }));
-        },
-
-        setShowExplicitPresets: (show) => {
-          set({ showExplicitPresets: show });
-        },
       }),
       {
         name: 'swarmui-prompt-wizard-v1',
@@ -428,9 +360,6 @@ export const usePromptWizardStore = create<PromptWizardStore>()(
           savedRecipes: state.savedRecipes,
           savedStates: state.savedStates,
           migrationVersion: state.migrationVersion,
-          userBrowserPresets: state.userBrowserPresets,
-          activePresetCategory: state.activePresetCategory,
-          showExplicitPresets: state.showExplicitPresets,
         }),
       }
     ),

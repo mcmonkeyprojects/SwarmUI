@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
+import { queryClient, queryKeys } from '../api/queryClient';
 import { extractRelativePath } from '../utils/imageUtils';
 import type { ImageListItem } from '../api/types';
 import { logger } from '../utils/logger';
@@ -37,98 +39,102 @@ export function useImageActions(
     options: UseImageActionsOptions = {}
 ): UseImageActionsReturn {
     const { onStarToggled, onDeleted, onFolderOpened, onImageAdded } = options;
-    const [loading, setLoading] = useState(false);
+    const invalidateImages = async () => {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
+    };
 
-    const toggleStar = async (image: ImageListItem) => {
-        setLoading(true);
-        try {
-            // Extract relative path from full URL for API
+    const toggleStarMutation = useMutation({
+        mutationFn: async (image: ImageListItem) => {
             const relativePath = extractRelativePath(image.src);
             logger.debug('[useImageActions] Toggling star for:', relativePath);
             await swarmClient.toggleImageStar(relativePath);
-            const newStarred = !image.starred;
-
+            return { image, newStarred: !image.starred };
+        },
+        onSuccess: async ({ image, newStarred }) => {
+            await invalidateImages();
             notifications.show({
                 title: newStarred ? 'Starred' : 'Unstarred',
                 message: 'Image updated',
                 color: 'blue',
             });
-
             onStarToggled?.(image, newStarred);
-        } catch (error) {
+        },
+        onError: (error) => {
             console.error('Failed to toggle star:', error);
             notifications.show({
                 title: 'Error',
                 message: 'Failed to update image',
                 color: 'red',
             });
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+    });
 
-    const deleteImage = async (image: ImageListItem) => {
-        setLoading(true);
-        try {
-            // Extract relative path from full URL for API
+    const deleteImageMutation = useMutation({
+        mutationFn: async (image: ImageListItem) => {
             const relativePath = extractRelativePath(image.src);
             logger.debug('[useImageActions] Deleting image:', relativePath);
             await swarmClient.deleteImage(relativePath);
-
+            return image;
+        },
+        onSuccess: async (image) => {
+            await invalidateImages();
             notifications.show({
                 title: 'Deleted',
                 message: 'Image removed',
                 color: 'green',
             });
-
             onDeleted?.(image);
-        } catch (error) {
+        },
+        onError: (error) => {
             console.error('Failed to delete image:', error);
             notifications.show({
                 title: 'Error',
                 message: 'Failed to delete image',
                 color: 'red',
             });
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+    });
 
-    const openFolder = async (imagePath: string) => {
-        setLoading(true);
-        try {
+    const openFolderMutation = useMutation({
+        mutationFn: async (imagePath: string) => {
             const relativePath = extractRelativePath(imagePath);
             logger.debug('[useImageActions] Opening folder for:', relativePath);
-            const result = await swarmClient.openImageFolder(relativePath);
+            return swarmClient.openImageFolder(relativePath);
+        },
+        onSuccess: (result) => {
             if (result.error) {
                 notifications.show({
                     title: 'Error',
                     message: result.error,
                     color: 'red',
                 });
-            } else {
-                notifications.show({
-                    title: 'Folder Opened',
-                    message: 'Image folder opened in file explorer',
-                    color: 'blue',
-                });
+                return;
             }
+            notifications.show({
+                title: 'Folder Opened',
+                message: 'Image folder opened in file explorer',
+                color: 'blue',
+            });
             onFolderOpened?.();
-        } catch (error) {
+        },
+        onError: (error) => {
             console.error('Failed to open image folder:', error);
             notifications.show({
                 title: 'Error',
                 message: 'Failed to open image folder',
                 color: 'red',
             });
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+    });
 
-    const addImageToHistory = async (file: File, params: Record<string, unknown> = {}) => {
-        setLoading(true);
-        try {
+    const addImageToHistoryMutation = useMutation({
+        mutationFn: async ({
+            file,
+            params,
+        }: {
+            file: File;
+            params: Record<string, unknown>;
+        }) => {
             const dataUrl = await new Promise<string>((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result as string);
@@ -138,7 +144,10 @@ export function useImageActions(
 
             logger.debug('[useImageActions] Adding image to history:', file.name);
             const result = await swarmClient.addImageToHistory(dataUrl, params);
-
+            return { file, result };
+        },
+        onSuccess: async ({ result }) => {
+            await invalidateImages();
             if (result.images && result.images.length > 0) {
                 notifications.show({
                     title: 'Image Imported',
@@ -147,16 +156,45 @@ export function useImageActions(
                 });
                 onImageAdded?.(result.images[0].image);
             }
-        } catch (error) {
+        },
+        onError: (error) => {
             console.error('Failed to add image to history:', error);
             notifications.show({
                 title: 'Error',
                 message: 'Failed to import image',
                 color: 'red',
             });
-        } finally {
-            setLoading(false);
-        }
+        },
+    });
+
+    const loading = useMemo(
+        () =>
+            toggleStarMutation.isPending ||
+            deleteImageMutation.isPending ||
+            openFolderMutation.isPending ||
+            addImageToHistoryMutation.isPending,
+        [
+            toggleStarMutation.isPending,
+            deleteImageMutation.isPending,
+            openFolderMutation.isPending,
+            addImageToHistoryMutation.isPending,
+        ]
+    );
+
+    const toggleStar = async (image: ImageListItem) => {
+        await toggleStarMutation.mutateAsync(image);
+    };
+
+    const deleteImage = async (image: ImageListItem) => {
+        await deleteImageMutation.mutateAsync(image);
+    };
+
+    const openFolder = async (imagePath: string) => {
+        await openFolderMutation.mutateAsync(imagePath);
+    };
+
+    const addImageToHistory = async (file: File, params: Record<string, unknown> = {}) => {
+        await addImageToHistoryMutation.mutateAsync({ file, params });
     };
 
     return { toggleStar, deleteImage, openFolder, addImageToHistory, loading };

@@ -59,7 +59,6 @@ import {
 } from '../../data/roleplayInteractionStyles';
 import {
   buildStructuredPersonalityBlock,
-  createDefaultPromptSet,
   createEmptyRoleplayPersonalityProfile,
   getEffectiveSystemPrompt,
   normalizeRoleplayPersonalityProfile,
@@ -126,7 +125,6 @@ function CharacterEditorForm({
   const isEditing = character !== null;
   const initialInteractionStyle = character?.interactionStyle ?? DEFAULT_ROLEPLAY_INTERACTION_STYLE;
   const initialInteractionStyleConfig = getRoleplayInteractionStyleConfig(initialInteractionStyle);
-  const defaultPromptSet = createDefaultPromptSet();
   const initialPersonalityProfile = normalizeRoleplayPersonalityProfile(
     character?.personalityProfile ?? createEmptyRoleplayPersonalityProfile()
   );
@@ -138,10 +136,10 @@ function CharacterEditorForm({
   const [personality, setPersonality] = useState(character?.personality ?? '');
   const [personalityProfile, setPersonalityProfile] = useState(initialPersonalityProfile);
   const [chatSystemPrompt, setChatSystemPrompt] = useState(
-    character?.chatSystemPrompt ?? defaultPromptSet.chatSystemPrompt
+    character?.chatSystemPrompt ?? ''
   );
   const [roleplaySystemPrompt, setRoleplaySystemPrompt] = useState(
-    character?.roleplaySystemPrompt ?? defaultPromptSet.roleplaySystemPrompt
+    character?.roleplaySystemPrompt ?? ''
   );
   const [openingChatMessage, setOpeningChatMessage] = useState(character?.openingChatMessage ?? '');
   const [openingRoleplayMessage, setOpeningRoleplayMessage] = useState(
@@ -700,10 +698,7 @@ function CharacterEditorForm({
                 <ActionIcon
                   variant="default"
                   size="md"
-                  component="a"
-                  href={currentPortrait!}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={() => window.open(currentPortrait!, '_blank', 'noopener,noreferrer')}
                 >
                   <IconPhoto size={14} />
                 </ActionIcon>

@@ -63,6 +63,7 @@ function resetStore(): void {
       currentBatch: 0,
       totalBatches: 1,
       previewImage: null,
+      previewRevision: 0,
       images: [],
       error: null,
       errorId: null,

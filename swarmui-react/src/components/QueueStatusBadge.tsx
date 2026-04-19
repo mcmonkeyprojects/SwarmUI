@@ -29,7 +29,12 @@ export function QueueStatusBadge({ compact = false, onNavigateToQueue }: QueueSt
             runnerStatus: state.runnerStatus,
         }))
     );
-    const wsGeneration = useWebSocketStore((state) => state.generation);
+    const { isGenerating, progress } = useWebSocketStore(
+        useShallow((state) => ({
+            isGenerating: state.generation.isGenerating,
+            progress: state.generation.progress,
+        }))
+    );
     const effectiveProcessing = featureFlags.queueRunnerV2
         ? runnerStatus === 'running' || runnerStatus === 'paused' || runnerStatus === 'stopping'
         : isProcessing;
@@ -39,8 +44,8 @@ export function QueueStatusBadge({ compact = false, onNavigateToQueue }: QueueSt
     const generatingJob = jobs.find((j) => j.status === 'generating');
     const liveProgress = generatingJob
         ? (generatingJob.progress || 0)
-        : wsGeneration.isGenerating
-            ? wsGeneration.progress
+        : isGenerating
+            ? progress
             : null;
     const completedCount = jobs.filter((j) => j.status === 'completed').length;
     const totalJobs = jobs.length;
@@ -49,7 +54,7 @@ export function QueueStatusBadge({ compact = false, onNavigateToQueue }: QueueSt
         onNavigateToQueue?.();
     };
 
-    if (totalJobs === 0 && !wsGeneration.isGenerating) {
+    if (totalJobs === 0 && !isGenerating) {
         if (compact) return null;
         return (
             <Tooltip label="Queue is empty">
@@ -70,7 +75,7 @@ export function QueueStatusBadge({ compact = false, onNavigateToQueue }: QueueSt
         badgeTone = 'warning';
     } else if (effectiveProcessing && generatingJob) {
         badgeTone = 'info';
-    } else if (wsGeneration.isGenerating) {
+    } else if (isGenerating) {
         badgeTone = 'info';
     } else if (pendingCount > 0) {
         badgeTone = 'info';
@@ -94,8 +99,8 @@ export function QueueStatusBadge({ compact = false, onNavigateToQueue }: QueueSt
             <Indicator
                 label={pendingCount > 0 ? pendingCount : undefined}
                 size={pendingCount > 9 ? 18 : 16}
-                processing={(effectiveProcessing && !effectivePaused) || wsGeneration.isGenerating}
-                disabled={pendingCount === 0 && !effectiveProcessing && !wsGeneration.isGenerating}
+                processing={(effectiveProcessing && !effectivePaused) || isGenerating}
+                disabled={pendingCount === 0 && !effectiveProcessing && !isGenerating}
                 styles={{
                     indicator: {
                         backgroundColor: TONE_INDICATOR_COLORS[badgeTone],

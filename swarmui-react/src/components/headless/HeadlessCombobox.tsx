@@ -59,7 +59,7 @@ export function HeadlessCombobox({
     disabled = false,
     style,
 }: HeadlessComboboxProps) {
-    const [inputValue, setInputValue] = useState('');
+    const [searchValue, setSearchValue] = useState('');
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Find selected option
@@ -70,14 +70,14 @@ export function HeadlessCombobox({
 
     // Filter options based on input
     const filteredOptions = useMemo(() => {
-        if (!searchable || !inputValue) return options;
-        const lower = inputValue.toLowerCase();
+        if (!searchable || !searchValue) return options;
+        const lower = searchValue.toLowerCase();
         return options.filter(
             (opt) =>
                 opt.label.toLowerCase().includes(lower) ||
                 opt.value.toLowerCase().includes(lower)
         );
-    }, [options, inputValue, searchable]);
+    }, [options, searchValue, searchable]);
 
     // Group options
     const groupedOptions = useMemo(() => {
@@ -103,18 +103,16 @@ export function HeadlessCombobox({
         closeMenu,
     } = useCombobox({
         items: filteredOptions,
-        inputValue: searchable ? inputValue : selectedOption?.label || '',
         selectedItem: selectedOption,
         itemToString: (item) => item?.label || '',
         onInputValueChange: ({ inputValue: newValue }) => {
             if (searchable) {
-                setInputValue(newValue || '');
+                setSearchValue(newValue || '');
             }
         },
         onSelectedItemChange: ({ selectedItem }) => {
             onChange(selectedItem?.value || null);
-            setInputValue('');
-            closeMenu();
+            setSearchValue('');
         },
         stateReducer: (_state, actionAndChanges) => {
             const { changes, type } = actionAndChanges;
@@ -124,12 +122,11 @@ export function HeadlessCombobox({
                     return {
                         ...changes,
                         isOpen: false,
-                        inputValue: '',
                     };
                 case useCombobox.stateChangeTypes.InputBlur:
                     return {
                         ...changes,
-                        inputValue: '',
+                        isOpen: false,
                     };
                 default:
                     return changes;
@@ -137,19 +134,12 @@ export function HeadlessCombobox({
         },
     });
 
-    // Display value: show selected option label when not searching
-    const displayValue = useMemo(() => {
-        if (isOpen && searchable && inputValue) {
-            return inputValue;
-        }
-        return selectedOption?.label || '';
-    }, [isOpen, searchable, inputValue, selectedOption]);
-
     // Handle clear
     const handleClear = (e: React.MouseEvent) => {
         e.stopPropagation();
         onChange(null);
-        setInputValue('');
+        setSearchValue('');
+        closeMenu();
     };
 
     // Flatten items for rendering with group headers
@@ -176,11 +166,21 @@ export function HeadlessCombobox({
                 <TextInput
                     {...getInputProps({
                         ref: inputRef,
-                        onFocus: () => openMenu(),
-                        onClick: () => openMenu(),
+                        onFocus: () => {
+                            if (searchable) {
+                                setSearchValue('');
+                            }
+                            openMenu();
+                        },
+                        onClick: () => {
+                            if (searchable && !isOpen) {
+                                setSearchValue('');
+                            }
+                            openMenu();
+                        },
                         onBlur: () => {
                             if (!searchable) {
-                                setInputValue('');
+                                setSearchValue('');
                             }
                         }
                     })}
@@ -206,69 +206,64 @@ export function HeadlessCombobox({
                             />
                         </div>
                     }
-                    value={displayValue}
                     readOnly={!searchable}
                     disabled={disabled}
-                    onChange={(e) => {
-                        if (searchable) {
-                            setInputValue(e.currentTarget.value);
-                        }
-                    }}
                 />
             </div>
 
             {/* Dropdown */}
-            <Paper
-                {...getMenuProps()}
-                shadow="md"
-                withBorder
-                className={`headless-combobox-dropdown ${isOpen && filteredOptions.length > 0 ? 'open' : ''}`}
-                style={{
-                    zIndex,
-                    maxHeight: maxDropdownHeight,
-                }}
-            >
-                <ScrollArea.Autosize mah={maxDropdownHeight}>
-                    <Stack gap={0}>
-                        {flatItems.map((item) => {
-                            if (item.type === 'group') {
+            {isOpen && (
+                <Paper
+                    {...getMenuProps()}
+                    shadow="md"
+                    withBorder
+                    className="headless-combobox-dropdown open"
+                    style={{
+                        zIndex,
+                    }}
+                >
+                    <ScrollArea h={Math.min(maxDropdownHeight, 240)} mah={maxDropdownHeight}>
+                        <Stack gap={0}>
+                            {flatItems.map((item) => {
+                                if (item.type === 'group') {
+                                    return (
+                                        <Text
+                                            key={`group-${item.data}`}
+                                            size="xs"
+                                            c="dimmed"
+                                            fw={600}
+                                            p="xs"
+                                            style={{ textTransform: 'uppercase' }}
+                                        >
+                                            {item.data as string}
+                                        </Text>
+                                    );
+                                }
+
+                                const option = item.data as ComboboxOption;
+                                const isSelected = option.value === value;
+                                const isHighlighted = item.index === highlightedIndex;
+
                                 return (
-                                    <Text
-                                        key={`group-${item.data}`}
-                                        size="xs"
-                                        c="dimmed"
-                                        fw={600}
-                                        p="xs"
-                                        style={{ textTransform: 'uppercase' }}
+                                    <Box
+                                        key={option.value}
+                                        {...getItemProps({ item: option, index: item.index! })}
+                                        className={`headless-combobox-item ${isHighlighted ? 'highlighted' : ''} ${isSelected ? 'selected' : ''}`}
                                     >
-                                        {item.data as string}
-                                    </Text>
+                                        <Text size="sm">{option.label}</Text>
+                                        {isSelected && <IconCheck size={14} />}
+                                    </Box>
                                 );
-                            }
-
-                            const option = item.data as ComboboxOption;
-                            const isSelected = option.value === value;
-                            const isHighlighted = item.index === highlightedIndex;
-
-                            return (
-                                <Box
-                                    key={option.value}
-                                    {...getItemProps({ item: option, index: item.index! })}
-                                    className={`headless-combobox-item ${isHighlighted ? 'highlighted' : ''} ${isSelected ? 'selected' : ''}`}
-                                >
-                                    <Text size="sm">{option.label}</Text>
-                                    {isSelected && <IconCheck size={14} />}
-                                </Box>
-                            );
-                        })}
-                        {filteredOptions.length === 0 && (
-                            <Text size="sm" c="dimmed" p="md" ta="center">
-                                No options found
-                            </Text>
-                        )}
-                    </Stack>
-                </ScrollArea.Autosize>
-            </Paper>
+                            })}
+                            {filteredOptions.length === 0 && (
+                                <Text size="sm" c="dimmed" p="md" ta="center">
+                                    No options found
+                                </Text>
+                            )}
+                        </Stack>
+                    </ScrollArea>
+                </Paper>
+            )}
         </div>
     );
 }

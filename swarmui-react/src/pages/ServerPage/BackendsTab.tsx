@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
     Stack,
     Group,
@@ -10,6 +10,7 @@ import {
     Modal,
     Select,
 } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 import {
     IconRefresh,
     IconPlus,
@@ -20,7 +21,9 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../../api/client';
-import type { BackendDetail, BackendType } from '../../api/types';
+import { queryClient, queryKeys } from '../../api/queryClient';
+import { useBackends } from '../../hooks/useModels';
+import type { BackendDetail } from '../../api/types';
 import { useSessionStore } from '../../stores/session';
 import { SwarmButton, SwarmActionIcon } from '../../components/ui';
 
@@ -37,9 +40,6 @@ function statusColor(status: string): string {
 
 export function BackendsTab() {
     const isInitialized = useSessionStore((s) => s.isInitialized);
-    const [backends, setBackends] = useState<BackendDetail[]>([]);
-    const [backendTypes, setBackendTypes] = useState<BackendType[]>([]);
-    const [loading, setLoading] = useState(true);
     const [addModalOpen, setAddModalOpen] = useState(false);
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [addLoading, setAddLoading] = useState(false);
@@ -48,57 +48,45 @@ export function BackendsTab() {
     const [restartLoading, setRestartLoading] = useState(false);
     const [freeMemLoading, setFreeMemLoading] = useState(false);
 
-    const loadBackends = useCallback(async () => {
-        if (!isInitialized) return;
-        setLoading(true);
-        try {
-            const list = await swarmClient.listBackends();
-            setBackends(
-                list.map((backend) => ({
-                    ...(backend as unknown as BackendDetail),
-                    id:
-                        typeof backend.id === 'number'
-                            ? backend.id
-                            : Number.isNaN(Number(backend.id))
-                            ? backend.id
-                            : Number(backend.id),
-                    features: Array.isArray((backend as unknown as BackendDetail).features)
-                        ? (backend as unknown as BackendDetail).features
-                        : [],
-                    enabled: (backend as unknown as BackendDetail).enabled ?? true,
-                    title: (backend as unknown as BackendDetail).title || String(backend.id),
-                    max_usages: (backend as unknown as BackendDetail).max_usages ?? 0,
-                }))
-            );
-        } catch {
-            notifications.show({ title: 'Error', message: 'Failed to load backends', color: 'red' });
-        } finally {
-            setLoading(false);
-        }
-    }, [isInitialized]);
+    const backendsQuery = useBackends({ enabled: isInitialized });
+    const backendTypesQuery = useQuery({
+        queryKey: queryKeys.server.backendTypes(),
+        queryFn: () => swarmClient.listBackendTypes(),
+        enabled: isInitialized,
+        staleTime: 10 * 60 * 1000,
+    });
 
-    const loadBackendTypes = useCallback(async () => {
-        if (!isInitialized) return;
-        try {
-            const types = await swarmClient.listBackendTypes();
-            setBackendTypes(types);
-        } catch {
-            // Non-critical
-        }
-    }, [isInitialized]);
+    const backends = useMemo<BackendDetail[]>(() => {
+        return (backendsQuery.data ?? []).map((backend) => ({
+            ...(backend as unknown as BackendDetail),
+            id:
+                typeof backend.id === 'number'
+                    ? backend.id
+                    : Number.isNaN(Number(backend.id))
+                        ? backend.id
+                        : Number(backend.id),
+            features: Array.isArray((backend as unknown as BackendDetail).features)
+                ? (backend as unknown as BackendDetail).features
+                : [],
+            enabled: (backend as unknown as BackendDetail).enabled ?? true,
+            title: (backend as unknown as BackendDetail).title || String(backend.id),
+            max_usages: (backend as unknown as BackendDetail).max_usages ?? 0,
+        }));
+    }, [backendsQuery.data]);
 
-    useEffect(() => {
-        if (isInitialized) {
-            loadBackends();
-            loadBackendTypes();
-        }
-    }, [isInitialized, loadBackends, loadBackendTypes]);
+    const backendTypes = backendTypesQuery.data ?? [];
+    const loading = backendsQuery.isLoading || backendTypesQuery.isLoading;
+
+    const refreshBackends = useCallback(async () => {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.backend.bootstrap });
+        await Promise.all([backendsQuery.refetch(), backendTypesQuery.refetch()]);
+    }, [backendsQuery, backendTypesQuery]);
 
     const handleToggle = async (id: number | string, currentEnabled: boolean) => {
         try {
             await swarmClient.toggleBackend(id, !currentEnabled);
             notifications.show({ title: 'Success', message: `Backend ${!currentEnabled ? 'enabled' : 'disabled'}`, color: 'green' });
-            loadBackends();
+            await refreshBackends();
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to toggle backend', color: 'red' });
         }
@@ -109,7 +97,7 @@ export function BackendsTab() {
         try {
             const response = await swarmClient.restartBackends();
             notifications.show({ title: 'Restarted', message: response.result || 'Backends restarted', color: 'green' });
-            loadBackends();
+            await refreshBackends();
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to restart backends', color: 'red' });
         } finally {
@@ -140,7 +128,7 @@ export function BackendsTab() {
                 notifications.show({ title: 'Added', message: 'New backend added', color: 'green' });
                 setAddModalOpen(false);
                 setSelectedType(null);
-                loadBackends();
+                await refreshBackends();
             }
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to add backend', color: 'red' });
@@ -156,7 +144,7 @@ export function BackendsTab() {
             await swarmClient.deleteBackend(deleteId);
             notifications.show({ title: 'Deleted', message: 'Backend removed', color: 'green' });
             setDeleteId(null);
-            loadBackends();
+            await refreshBackends();
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to delete backend', color: 'red' });
         } finally {
@@ -211,7 +199,7 @@ export function BackendsTab() {
                     tone="secondary"
                     emphasis="soft"
                     label="Refresh backend list"
-                    onClick={loadBackends}
+                    onClick={() => void refreshBackends()}
                 >
                     <IconRefresh size={18} />
                 </SwarmActionIcon>

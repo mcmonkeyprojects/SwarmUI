@@ -21,7 +21,8 @@
 ## Theme Preview Standard
 - [x] `src/components/ThemePreviewFrame.tsx`
 - [x] `src/components/ThemePreview.tsx` (uses shared frame)
-- [x] `src/components/ThemeSelector.tsx` (uses `ThemePreview`)
+- [x] `src/components/AppearanceModal.tsx` (uses `ThemePreview` for curated cards)
+- [x] `src/components/ThemeCatalogBrowser.tsx` (uses `ThemePreview` for advanced catalog)
 - [x] `src/components/ThemeBuilder.tsx` (uses `ThemePreview`)
 - [x] `src/components/ThemeImporter.tsx` (shape-aware validation and import flow)
 

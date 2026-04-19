@@ -6,7 +6,7 @@
  */
 
 import { queryClient, queryKeys } from '../api/queryClient';
-import { swarmClient } from '../api/client';
+import { swarmBackendAdapter } from '../api/backendAdapter';
 
 let hasPreloaded = false;
 
@@ -22,13 +22,8 @@ export async function preloadCriticalData(): Promise<void> {
 
     Promise.all([
         queryClient.prefetchQuery({
-            queryKey: queryKeys.models.list('Stable-Diffusion'),
-            queryFn: () => swarmClient.listModels('', 'Stable-Diffusion'),
-            staleTime: 300000, // 5 min
-        }).catch(() => { }),
-        queryClient.prefetchQuery({
-            queryKey: queryKeys.vaes.list(),
-            queryFn: () => swarmClient.listVAEs(),
+            queryKey: queryKeys.backend.bootstrap,
+            queryFn: () => swarmBackendAdapter.getBootstrap('startup'),
             staleTime: 300000,
         }).catch(() => { }),
     ]).then(() => {

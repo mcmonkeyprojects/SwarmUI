@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
+import { createIndexedDbStorage } from '../lib/indexedDbStorage';
 import type {
   BuilderRegionRule,
   BuilderSegmentRule,
@@ -257,6 +258,7 @@ export const usePromptBuilderStore = create<PromptBuilderStore>()(
       }),
       {
         name: 'swarmui-prompt-builder-storage',
+        storage: createJSONStorage(() => createIndexedDbStorage('swarmui-prompt-builder')),
         partialize: (state) => ({
           regions: state.regions,
           segments: state.segments,

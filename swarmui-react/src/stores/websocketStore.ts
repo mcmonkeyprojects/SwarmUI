@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { GenerateParams } from '../api/types';
+import { swarmBackendAdapter } from '../api/backendAdapter';
 import { swarmClient } from '../api/client';
 import { featureFlags } from '../config/featureFlags';
 import { logger } from '../utils/logger';
@@ -47,6 +48,7 @@ export interface GenerationState {
     currentBatch: number;
     totalBatches: number;
     previewImage: string | null;
+    previewRevision: number;
     images: string[];
     error: string | null;
     errorId: string | null;
@@ -159,6 +161,7 @@ const initialGenerationState: GenerationState = {
     currentBatch: 0,
     totalBatches: 1,
     previewImage: null,
+    previewRevision: 0,
     images: [],
     error: null,
     errorId: null,
@@ -199,7 +202,7 @@ const initialState: WebSocketStoreState = {
 };
 
 const PROGRESS_UPDATE_MIN_INTERVAL_MS = 50;
-const PREVIEW_UPDATE_MIN_INTERVAL_MS = 250;
+const PREVIEW_UPDATE_MIN_INTERVAL_MS = 100;
 const IS_TEST_ENV = import.meta.env.MODE === 'test';
 
 /**
@@ -243,6 +246,19 @@ function isMissingModelGenerationError(error: string | undefined, errorId: strin
     return error.trim().toLowerCase().startsWith('no model input given');
 }
 
+function buildPreviewEventSignature(data: GenerationProgressData): string {
+    return [
+        data.previewImage || '',
+        data.batch,
+        data.batchTotal,
+        data.stageId || '',
+        data.stageTaskIndex ?? -1,
+        data.currentStep,
+        data.totalSteps,
+        Math.round(data.overallPercent * 100) / 100,
+    ].join('|');
+}
+
 // ============================================================================
 // Store
 // ============================================================================
@@ -256,10 +272,12 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
             let lastPreviewCommitAt = 0;
             let lastPreviewSignature: string | null = null;
             let pendingPreviewData: GenerationProgressData | null = null;
+            let pendingPreviewSignature: string | null = null;
             let previewTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
             const resetPreviewBuffer = () => {
                 pendingPreviewData = null;
+                pendingPreviewSignature = null;
                 lastPreviewSignature = null;
                 lastPreviewCommitAt = 0;
                 if (previewTimeoutId !== null) {
@@ -268,14 +286,16 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                 }
             };
 
-            const flushPreviewUpdate = (force = false) => {
+            const flushPreviewUpdate = () => {
                 if (!pendingPreviewData?.previewImage) {
                     return;
                 }
 
                 const data = pendingPreviewData;
                 const nextPreview = data.previewImage ?? null;
+                const nextPreviewSignature = pendingPreviewSignature;
                 pendingPreviewData = null;
+                pendingPreviewSignature = null;
 
                 set((state) => {
                     if (isStaleGenerationEvent(state.generation.generationId, data.generationId)) {
@@ -284,20 +304,18 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     if (state.generation.requestId && data.requestId && state.generation.requestId !== data.requestId) {
                         return {};
                     }
-                    if (!force && state.generation.previewImage === nextPreview) {
-                        return {};
-                    }
                     return {
                         generation: {
                             ...state.generation,
                             previewImage: nextPreview,
+                            previewRevision: state.generation.previewRevision + 1,
                             lastEventAt: Date.now(),
                         },
                     };
                 });
 
                 lastPreviewCommitAt = performance.now();
-                lastPreviewSignature = nextPreview;
+                lastPreviewSignature = nextPreviewSignature;
             };
 
             const schedulePreviewUpdate = (data: GenerationProgressData, force = false) => {
@@ -305,11 +323,13 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                     return;
                 }
 
-                if (data.previewImage === lastPreviewSignature) {
+                const nextPreviewSignature = buildPreviewEventSignature(data);
+                if (nextPreviewSignature === lastPreviewSignature || nextPreviewSignature === pendingPreviewSignature) {
                     return;
                 }
 
                 pendingPreviewData = data;
+                pendingPreviewSignature = nextPreviewSignature;
 
                 if (previewTimeoutId !== null) {
                     clearTimeout(previewTimeoutId);
@@ -318,7 +338,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
 
                 const elapsed = performance.now() - lastPreviewCommitAt;
                 if (force || elapsed >= PREVIEW_UPDATE_MIN_INTERVAL_MS) {
-                    flushPreviewUpdate(force);
+                    flushPreviewUpdate();
                     return;
                 }
 
@@ -408,6 +428,7 @@ export const useWebSocketStore = create<WebSocketStoreState & WebSocketStoreActi
                         }
                         : undefined,
                 });
+                swarmBackendAdapter.attachWebSocketManager(manager);
                 const diagnostics = useGenerationDiagnosticsStore.getState();
 
                 // Subscribe to generation events

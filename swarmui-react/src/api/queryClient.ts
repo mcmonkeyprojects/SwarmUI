@@ -37,11 +37,17 @@ export const queryClient = new QueryClient({
  * Query key factory for consistent cache keys
  */
 export const queryKeys = {
+    backend: {
+        bootstrap: ['backend', 'bootstrap'] as const,
+    },
+
     // Models
     models: {
         all: ['models'] as const,
         list: (subtype: string) => ['models', 'list', subtype] as const,
         detail: (name: string) => ['models', 'detail', name] as const,
+        browser: (path: string, subtype: string) => ['models', 'browser', path, subtype] as const,
+        loaded: () => ['models', 'loaded'] as const,
     },
 
     // LoRAs
@@ -70,6 +76,12 @@ export const queryKeys = {
         history: (path: string) => ['images', 'history', path] as const,
     },
 
+    // Presets
+    presets: {
+        all: ['presets'] as const,
+        list: () => ['presets', 'list'] as const,
+    },
+
     // ControlNets
     controlnets: {
         all: ['controlnets'] as const,
@@ -86,6 +98,20 @@ export const queryKeys = {
     embeddings: {
         all: ['embeddings'] as const,
         list: () => ['embeddings', 'list'] as const,
+        browser: () => ['embeddings', 'browser'] as const,
+    },
+
+    // Model downloader
+    modelDownloader: {
+        all: ['model-downloader'] as const,
+        candidates: (modelType: string) => ['model-downloader', 'candidates', modelType] as const,
+        subfolders: (modelType: string, rootFolder: string) =>
+            ['model-downloader', 'subfolders', modelType, rootFolder] as const,
+    },
+
+    // Comfy
+    comfy: {
+        workflows: () => ['comfy', 'workflows'] as const,
     },
 
     // Wildcards
@@ -98,5 +124,7 @@ export const queryKeys = {
     server: {
         info: ['server', 'info'] as const,
         status: ['server', 'status'] as const,
+        resources: () => ['server', 'resources'] as const,
+        backendTypes: () => ['server', 'backend-types'] as const,
     },
 };

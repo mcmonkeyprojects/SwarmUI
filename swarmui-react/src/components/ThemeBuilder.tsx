@@ -1,54 +1,17 @@
-// ThemeBuilder Component - Visual theme creator with live preview
-import { useState, useMemo } from 'react';
-import {
-    Modal, Stack, TextInput, Group, ColorInput,
-    Select, Text, Accordion, Divider, Box, ScrollArea
-} from '@mantine/core';
+import { useMemo, useState } from 'react';
+import { Accordion, Box, ColorInput, Divider, Group, Modal, NumberInput, ScrollArea, Select, Stack, Text, Textarea, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconDeviceFloppy, IconX, IconCopy, IconDownload } from '@tabler/icons-react';
-import {
-    resolveThemeStyle,
-    useThemeStore,
-    THEME_PALETTES,
-    type ThemeCategory,
-    type ThemeControlMode,
-    type ThemeControlShape,
-    type ThemeIconMode,
-    type ThemeIconShape,
-    type ThemePalette,
-} from '../store/themeStore';
+import { IconCopy, IconDeviceFloppy, IconDownload, IconX } from '@tabler/icons-react';
+import { THEME_PALETTES, resolveThemeStyle, type ThemeCategory, type ThemeControlMode, type ThemeControlShape, type ThemeIconMode, type ThemeIconShape, type ThemeOverlayBlend, type ThemePalette, useThemeStore } from '../store/themeStore';
+import { sanitizeThemeId } from '../utils/themeValidation';
 import { ThemePreview } from './ThemePreview';
-import { SwarmButton } from './ui';
+import { SwarmButton, SwarmSwitch } from './ui';
 
-interface ThemeBuilderProps {
-    opened: boolean;
-    onClose: () => void;
-    editThemeId?: string; // If provided, edit existing custom theme
-}
-
-const REQUIRED_COLORS = [
-    { key: 'brand', label: 'Brand Color', description: 'Primary brand/accent color' },
-    { key: 'accent', label: 'Accent Color', description: 'Secondary accent for highlights' },
-] as const;
-
-const GRAYSCALE_COLORS = [
-    { key: 'gray0', label: 'Gray 0', description: 'Primary text (lightest in dark mode)' },
-    { key: 'gray1', label: 'Gray 1', description: 'Secondary text' },
-    { key: 'gray2', label: 'Gray 2', description: 'Tertiary text' },
-    { key: 'gray3', label: 'Gray 3', description: 'Disabled/placeholder text' },
-    { key: 'gray4', label: 'Gray 4', description: 'Border (lighter)' },
-    { key: 'gray5', label: 'Gray 5', description: 'Border (darker)' },
-    { key: 'gray6', label: 'Gray 6', description: 'Hover background' },
-    { key: 'gray7', label: 'Gray 7', description: 'Card/panel background' },
-    { key: 'gray8', label: 'Gray 8', description: 'Secondary background' },
-    { key: 'gray9', label: 'Gray 9', description: 'Main background (darkest)' },
-] as const;
-
-const SEMANTIC_COLORS = [
-    { key: 'success', label: 'Success', description: 'Success states and messages' },
-    { key: 'warning', label: 'Warning', description: 'Warning states and messages' },
-    { key: 'error', label: 'Error', description: 'Error states and messages' },
-] as const;
+interface ThemeBuilderProps { opened: boolean; onClose: () => void; editThemeId?: string; }
+type ThemeEffectsBlock = { noiseIntensity?: number; scanlineIntensity?: number; meshIntensity?: number; meshAnimated?: boolean; overlayBlend?: ThemeOverlayBlend; };
+type ThemeAdaptiveBlock = { imageReactiveStrength?: number; timeOfDayStrength?: number; contrastGuard?: boolean; };
+type ThemeMetaBlock = { themeSet?: string; pairedModeThemeId?: string; recommendationIds?: string[]; tags?: string[]; };
+type ExtendedThemePalette = ThemePalette & { effects?: ThemeEffectsBlock; adaptive?: ThemeAdaptiveBlock; meta?: ThemeMetaBlock; };
 
 const CATEGORY_OPTIONS = [
     { value: 'custom', label: 'Custom' },
@@ -57,569 +20,221 @@ const CATEGORY_OPTIONS = [
     { value: 'editor', label: 'Editor & IDE' },
     { value: 'app', label: 'App' },
     { value: 'aesthetic', label: 'Aesthetic' },
+    { value: 'art', label: 'Art' },
+    { value: 'film', label: 'Film' },
+    { value: 'music', label: 'Music' },
+    { value: 'nature', label: 'Nature' },
     { value: 'minimal', label: 'Minimal' },
 ] as const;
 
-const CONTROL_MODE_OPTIONS: { value: ThemeControlMode; label: string }[] = [
-    { value: 'default', label: 'Default Controls' },
-    { value: 'filled', label: 'Filled Controls' },
-    { value: 'outlined', label: 'Outlined Controls' },
-];
+const CONTROL_MODE_OPTIONS = [{ value: 'default', label: 'Default' }, { value: 'filled', label: 'Filled' }, { value: 'outlined', label: 'Outlined' }];
+const ICON_MODE_OPTIONS = [{ value: 'plain', label: 'Plain' }, { value: 'badge', label: 'Badge' }, { value: 'glyph-outline', label: 'Glyph Outline' }];
+const CONTROL_SHAPE_OPTIONS = [{ value: 'rounded', label: 'Rounded' }, { value: 'pill', label: 'Pill' }, { value: 'square', label: 'Square' }];
+const ICON_SHAPE_OPTIONS = [{ value: 'rounded', label: 'Rounded' }, { value: 'circle', label: 'Circle' }, { value: 'square', label: 'Square' }];
+const BLEND_OPTIONS = [{ value: 'normal', label: 'Normal' }, { value: 'overlay', label: 'Overlay' }, { value: 'soft-light', label: 'Soft Light' }, { value: 'screen', label: 'Screen' }, { value: 'multiply', label: 'Multiply' }];
 
-const ICON_MODE_OPTIONS: { value: ThemeIconMode; label: string }[] = [
-    { value: 'plain', label: 'Plain Icons' },
-    { value: 'badge', label: 'Badge Icons' },
-    { value: 'glyph-outline', label: 'Glyph Outline Icons' },
-];
+const csv = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean);
+const joinCsv = (value?: string[]) => value?.join(', ') || '';
+const downloadText = (name: string, text: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+};
 
-const CONTROL_SHAPE_OPTIONS: { value: ThemeControlShape; label: string }[] = [
-    { value: 'rounded', label: 'Rounded Buttons' },
-    { value: 'pill', label: 'Pill Buttons' },
-    { value: 'square', label: 'Square Buttons' },
-];
-
-const ICON_SHAPE_OPTIONS: { value: ThemeIconShape; label: string }[] = [
-    { value: 'rounded', label: 'Rounded Icons' },
-    { value: 'circle', label: 'Circle Icons' },
-    { value: 'square', label: 'Square Icons' },
-];
+function buildCss(theme: ExtendedThemePalette): string {
+    const lines = ['/* theme export */', ':root {'];
+    const vars: Array<[string, string | number | undefined]> = [
+        ['--theme-brand', theme.colors.brand], ['--theme-accent', theme.colors.accent], ['--theme-gray-0', theme.colors.gray0], ['--theme-gray-1', theme.colors.gray1],
+        ['--theme-gray-2', theme.colors.gray2], ['--theme-gray-3', theme.colors.gray3], ['--theme-gray-4', theme.colors.gray4], ['--theme-gray-5', theme.colors.gray5],
+        ['--theme-gray-6', theme.colors.gray6], ['--theme-gray-7', theme.colors.gray7], ['--theme-gray-8', theme.colors.gray8], ['--theme-gray-9', theme.colors.gray9],
+        ['--theme-success', theme.colors.success], ['--theme-warning', theme.colors.warning], ['--theme-error', theme.colors.error], ['--theme-font-family', theme.colors.fontFamily],
+        ['--theme-font-heading', theme.colors.fontHeading], ['--theme-font-mono', theme.colors.fontMono], ['--theme-text-primary', theme.colors.textPrimary],
+        ['--theme-text-secondary', theme.colors.textSecondary], ['--theme-overlay-color', theme.colors.overlayColor], ['--theme-surface-tint', theme.colors.surfaceTint],
+        ['--theme-surface-tint-strength', theme.colors.surfaceTintStrength], ['--theme-panel-gradient', theme.colors.panelGradient], ['--theme-border-style', theme.colors.borderStyle],
+        ['--theme-border-width', theme.colors.borderWidth], ['--theme-secondary-accent', theme.colors.secondaryAccent], ['--theme-tertiary-accent', theme.colors.tertiaryAccent],
+        ['--theme-highlight-accent', theme.colors.highlightAccent],
+    ];
+    for (const [key, value] of vars) if (value !== undefined && value !== '') lines.push(`  ${key}: ${value};`);
+    if (theme.effects) {
+        if (theme.effects.noiseIntensity !== undefined) lines.push(`  --theme-effects-noise-intensity: ${theme.effects.noiseIntensity};`);
+        if (theme.effects.scanlineIntensity !== undefined) lines.push(`  --theme-effects-scanline-intensity: ${theme.effects.scanlineIntensity};`);
+        if (theme.effects.meshIntensity !== undefined) lines.push(`  --theme-effects-mesh-intensity: ${theme.effects.meshIntensity};`);
+        if (theme.effects.meshAnimated !== undefined) lines.push(`  --theme-effects-mesh-animated: ${theme.effects.meshAnimated ? 1 : 0};`);
+        if (theme.effects.overlayBlend) lines.push(`  --theme-effects-overlay-blend: ${theme.effects.overlayBlend};`);
+    }
+    if (theme.adaptive) {
+        if (theme.adaptive.imageReactiveStrength !== undefined) lines.push(`  --theme-adaptive-image-reactive-strength: ${theme.adaptive.imageReactiveStrength};`);
+        if (theme.adaptive.timeOfDayStrength !== undefined) lines.push(`  --theme-adaptive-time-of-day-strength: ${theme.adaptive.timeOfDayStrength};`);
+        if (theme.adaptive.contrastGuard !== undefined) lines.push(`  --theme-adaptive-contrast-guard: ${theme.adaptive.contrastGuard ? 1 : 0};`);
+    }
+    if (theme.meta) {
+        if (theme.meta.themeSet) lines.push(`  --theme-meta-theme-set: ${theme.meta.themeSet};`);
+        if (theme.meta.pairedModeThemeId) lines.push(`  --theme-meta-paired-theme-id: ${theme.meta.pairedModeThemeId};`);
+        if (theme.meta.recommendationIds?.length) lines.push(`  --theme-meta-recommendation-ids: ${theme.meta.recommendationIds.join(', ')};`);
+        if (theme.meta.tags?.length) lines.push(`  --theme-meta-tags: ${theme.meta.tags.join(', ')};`);
+    }
+    lines.push('}');
+    return `${lines.join('\n')}\n`;
+}
 
 export function ThemeBuilder({ opened, onClose, editThemeId }: ThemeBuilderProps) {
-    const { customThemes, addCustomTheme, updateCustomTheme, exportTheme, getAllThemes } = useThemeStore();
+    const { customThemes, addCustomTheme, updateCustomTheme, getAllThemes } = useThemeStore();
+    const existing = editThemeId ? (customThemes.find((theme) => theme.id === editThemeId) as ExtendedThemePalette | undefined) : undefined;
+    const baseTheme = (getAllThemes().find((theme) => theme.id === (existing?.id || 'dracula')) || THEME_PALETTES[0]) as ExtendedThemePalette;
+    const [themeName, setThemeName] = useState(existing?.name || '');
+    const [category, setCategory] = useState<ThemeCategory>(existing?.category || 'custom');
+    const [baseThemeId, setBaseThemeId] = useState(existing?.id || baseTheme.id);
+    const [brand, setBrand] = useState(existing?.colors.brand || baseTheme.colors.brand);
+    const [accent, setAccent] = useState(existing?.colors.accent || baseTheme.colors.accent);
+    const [gray0, setGray0] = useState(existing?.colors.gray0 || baseTheme.colors.gray0);
+    const [gray1, setGray1] = useState(existing?.colors.gray1 || baseTheme.colors.gray1);
+    const [gray2, setGray2] = useState(existing?.colors.gray2 || baseTheme.colors.gray2);
+    const [gray3, setGray3] = useState(existing?.colors.gray3 || baseTheme.colors.gray3);
+    const [gray4, setGray4] = useState(existing?.colors.gray4 || baseTheme.colors.gray4);
+    const [gray5, setGray5] = useState(existing?.colors.gray5 || baseTheme.colors.gray5);
+    const [gray6, setGray6] = useState(existing?.colors.gray6 || baseTheme.colors.gray6);
+    const [gray7, setGray7] = useState(existing?.colors.gray7 || baseTheme.colors.gray7);
+    const [gray8, setGray8] = useState(existing?.colors.gray8 || baseTheme.colors.gray8);
+    const [gray9, setGray9] = useState(existing?.colors.gray9 || baseTheme.colors.gray9);
+    const [success, setSuccess] = useState(existing?.colors.success || baseTheme.colors.success);
+    const [warning, setWarning] = useState(existing?.colors.warning || baseTheme.colors.warning);
+    const [error, setError] = useState(existing?.colors.error || baseTheme.colors.error);
+    const [textPrimary, setTextPrimary] = useState(existing?.colors.textPrimary || '');
+    const [textSecondary, setTextSecondary] = useState(existing?.colors.textSecondary || '');
+    const [overlayColor, setOverlayColor] = useState(existing?.colors.overlayColor || '');
+    const [fontFamily, setFontFamily] = useState(existing?.colors.fontFamily || '');
+    const [fontHeading, setFontHeading] = useState(existing?.colors.fontHeading || '');
+    const [fontMono, setFontMono] = useState(existing?.colors.fontMono || '');
+    const [styleSeed, setStyleSeed] = useState(resolveThemeStyle(existing || baseTheme));
+    const [noiseIntensity, setNoiseIntensity] = useState<number | ''>(existing?.effects?.noiseIntensity ?? '');
+    const [scanlineIntensity, setScanlineIntensity] = useState<number | ''>(existing?.effects?.scanlineIntensity ?? '');
+    const [meshIntensity, setMeshIntensity] = useState<number | ''>(existing?.effects?.meshIntensity ?? '');
+    const [meshAnimated, setMeshAnimated] = useState(existing?.effects?.meshAnimated ?? false);
+    const [overlayBlend, setOverlayBlend] = useState(existing?.effects?.overlayBlend || 'normal');
+    const [imageReactiveStrength, setImageReactiveStrength] = useState<number | ''>(existing?.adaptive?.imageReactiveStrength ?? '');
+    const [timeOfDayStrength, setTimeOfDayStrength] = useState<number | ''>(existing?.adaptive?.timeOfDayStrength ?? '');
+    const [contrastGuard, setContrastGuard] = useState(existing?.adaptive?.contrastGuard ?? true);
+    const [themeSet, setThemeSet] = useState(existing?.meta?.themeSet || '');
+    const [pairedModeThemeId, setPairedModeThemeId] = useState(existing?.meta?.pairedModeThemeId || '');
+    const [recommendationIds, setRecommendationIds] = useState(joinCsv(existing?.meta?.recommendationIds));
+    const [tags, setTags] = useState(joinCsv(existing?.meta?.tags));
+    const themeOptions = useMemo(() => getAllThemes().map((theme) => ({ value: theme.id, label: `${theme.name} (${theme.id})` })), [getAllThemes]);
 
-    // Find existing theme if editing
-    const existingTheme = editThemeId ? customThemes.find(t => t.id === editThemeId) : null;
-    const initialBaseThemeId = existingTheme?.id || 'dracula';
-    const initialBaseTheme = getAllThemes().find((theme) => theme.id === initialBaseThemeId) || THEME_PALETTES[0];
-
-    const [themeName, setThemeName] = useState(existingTheme?.name || '');
-    const [category, setCategory] = useState<ThemeCategory>(existingTheme?.category || 'custom');
-    const [baseTheme, setBaseTheme] = useState<string>(initialBaseThemeId);
-
-    // Color states
-    const [brand, setBrand] = useState(existingTheme?.colors.brand || '#7c3aed');
-    const [accent, setAccent] = useState(existingTheme?.colors.accent || '#a78bfa');
-
-    const [gray0, setGray0] = useState(existingTheme?.colors.gray0 || '#f8fafc');
-    const [gray1, setGray1] = useState(existingTheme?.colors.gray1 || '#e2e8f0');
-    const [gray2, setGray2] = useState(existingTheme?.colors.gray2 || '#cbd5e1');
-    const [gray3, setGray3] = useState(existingTheme?.colors.gray3 || '#94a3b8');
-    const [gray4, setGray4] = useState(existingTheme?.colors.gray4 || '#64748b');
-    const [gray5, setGray5] = useState(existingTheme?.colors.gray5 || '#475569');
-    const [gray6, setGray6] = useState(existingTheme?.colors.gray6 || '#334155');
-    const [gray7, setGray7] = useState(existingTheme?.colors.gray7 || '#1e293b');
-    const [gray8, setGray8] = useState(existingTheme?.colors.gray8 || '#0f172a');
-    const [gray9, setGray9] = useState(existingTheme?.colors.gray9 || '#020617');
-
-    const [success, setSuccess] = useState(existingTheme?.colors.success || '#22c55e');
-    const [warning, setWarning] = useState(existingTheme?.colors.warning || '#f59e0b');
-    const [error, setError] = useState(existingTheme?.colors.error || '#ef4444');
-
-    // Phase 5: Additional tokens (optional)
-    const [textPrimary, setTextPrimary] = useState(existingTheme?.colors.textPrimary || '');
-    const [textSecondary, setTextSecondary] = useState(existingTheme?.colors.textSecondary || '');
-    const [overlayColor, setOverlayColor] = useState(existingTheme?.colors.overlayColor || '');
-    const [fontFamily, setFontFamily] = useState(existingTheme?.colors.fontFamily || '');
-    const [fontHeading, setFontHeading] = useState(existingTheme?.colors.fontHeading || '');
-    const [fontMono, setFontMono] = useState(existingTheme?.colors.fontMono || '');
-    const [styleSeed, setStyleSeed] = useState<ThemePalette['style']>(resolveThemeStyle(existingTheme || initialBaseTheme));
-
-    const updateStyleSeed = (updates: Partial<NonNullable<ThemePalette['style']>>) => {
-        setStyleSeed((current) => ({
-            ...current,
-            ...updates,
-        }));
+    const applyBaseTheme = (theme: ExtendedThemePalette) => {
+        if (existing) return;
+        setBrand(theme.colors.brand); setAccent(theme.colors.accent); setGray0(theme.colors.gray0); setGray1(theme.colors.gray1);
+        setGray2(theme.colors.gray2); setGray3(theme.colors.gray3); setGray4(theme.colors.gray4); setGray5(theme.colors.gray5);
+        setGray6(theme.colors.gray6); setGray7(theme.colors.gray7); setGray8(theme.colors.gray8); setGray9(theme.colors.gray9);
+        setSuccess(theme.colors.success); setWarning(theme.colors.warning); setError(theme.colors.error); setTextPrimary(theme.colors.textPrimary || '');
+        setTextSecondary(theme.colors.textSecondary || ''); setOverlayColor(theme.colors.overlayColor || ''); setFontFamily(theme.colors.fontFamily || '');
+        setFontHeading(theme.colors.fontHeading || ''); setFontMono(theme.colors.fontMono || ''); setStyleSeed(resolveThemeStyle(theme));
+        setNoiseIntensity(theme.effects?.noiseIntensity ?? ''); setScanlineIntensity(theme.effects?.scanlineIntensity ?? '');
+        setMeshIntensity(theme.effects?.meshIntensity ?? ''); setMeshAnimated(theme.effects?.meshAnimated ?? false); setOverlayBlend(theme.effects?.overlayBlend || 'normal');
+        setImageReactiveStrength(theme.adaptive?.imageReactiveStrength ?? ''); setTimeOfDayStrength(theme.adaptive?.timeOfDayStrength ?? '');
+        setContrastGuard(theme.adaptive?.contrastGuard ?? true); setThemeSet(theme.meta?.themeSet || ''); setPairedModeThemeId(theme.meta?.pairedModeThemeId || '');
+        setRecommendationIds(joinCsv(theme.meta?.recommendationIds)); setTags(joinCsv(theme.meta?.tags));
     };
 
-    // Load base theme colors when baseTheme changes
-    const handleBaseThemeChange = (value: string | null) => {
-        if (!value) return;
-        setBaseTheme(value);
-
-        const theme = getAllThemes().find(t => t.id === value);
-        if (!theme) return;
-
-        // Don't override if editing existing theme
-        if (existingTheme) return;
-
-        setBrand(theme.colors.brand);
-        setAccent(theme.colors.accent);
-        setGray0(theme.colors.gray0);
-        setGray1(theme.colors.gray1);
-        setGray2(theme.colors.gray2);
-        setGray3(theme.colors.gray3);
-        setGray4(theme.colors.gray4);
-        setGray5(theme.colors.gray5);
-        setGray6(theme.colors.gray6);
-        setGray7(theme.colors.gray7);
-        setGray8(theme.colors.gray8);
-        setGray9(theme.colors.gray9);
-        setSuccess(theme.colors.success);
-        setWarning(theme.colors.warning);
-        setError(theme.colors.error);
-        setFontFamily(theme.colors.fontFamily || '');
-        setFontHeading(theme.colors.fontHeading || '');
-        setFontMono(theme.colors.fontMono || '');
-        setStyleSeed(resolveThemeStyle(theme));
-    };
-
-    // Build preview theme
-    const previewTheme: ThemePalette = useMemo(() => {
-        const colors: ThemePalette['colors'] = {
-            brand,
-            accent,
-            gray0,
-            gray1,
-            gray2,
-            gray3,
-            gray4,
-            gray5,
-            gray6,
-            gray7,
-            gray8,
-            gray9,
-            success,
-            warning,
-            error,
-        };
-
-        // Add optional Phase 5 properties if provided
+    const makeTheme = (id: string): ExtendedThemePalette => {
+        const effects: ThemeEffectsBlock = {};
+        if (noiseIntensity !== '') effects.noiseIntensity = noiseIntensity;
+        if (scanlineIntensity !== '') effects.scanlineIntensity = scanlineIntensity;
+        if (meshIntensity !== '') effects.meshIntensity = meshIntensity;
+        if (meshAnimated) effects.meshAnimated = true;
+        if (overlayBlend && overlayBlend !== 'normal') effects.overlayBlend = overlayBlend as ThemeOverlayBlend;
+        const adaptive: ThemeAdaptiveBlock = {};
+        if (imageReactiveStrength !== '') adaptive.imageReactiveStrength = imageReactiveStrength;
+        if (timeOfDayStrength !== '') adaptive.timeOfDayStrength = timeOfDayStrength;
+        if (!contrastGuard) adaptive.contrastGuard = false;
+        const meta: ThemeMetaBlock = {};
+        if (themeSet.trim()) meta.themeSet = themeSet.trim();
+        if (pairedModeThemeId.trim()) meta.pairedModeThemeId = pairedModeThemeId.trim();
+        if (csv(recommendationIds).length) meta.recommendationIds = csv(recommendationIds);
+        if (csv(tags).length) meta.tags = csv(tags);
+        const colors: ExtendedThemePalette['colors'] = { brand, accent, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, success, warning, error };
         if (textPrimary) colors.textPrimary = textPrimary;
         if (textSecondary) colors.textSecondary = textSecondary;
         if (overlayColor) colors.overlayColor = overlayColor;
         if (fontFamily) colors.fontFamily = fontFamily;
         if (fontHeading) colors.fontHeading = fontHeading;
         if (fontMono) colors.fontMono = fontMono;
+        return { id, name: themeName || 'Preview', category, style: styleSeed, colors, ...(Object.keys(effects).length ? { effects } : {}), ...(Object.keys(adaptive).length ? { adaptive } : {}), ...(Object.keys(meta).length ? { meta } : {}) };
+    };
 
-        return {
-            id: editThemeId || 'preview',
-            name: themeName || 'Preview',
-            category,
-            style: styleSeed,
-            colors
-        };
-    }, [themeName, category, brand, accent, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, success, warning, error, textPrimary, textSecondary, overlayColor, fontFamily, fontHeading, fontMono, styleSeed, editThemeId]);
-
+    const previewTheme = useMemo(() => makeTheme(editThemeId || 'preview'), [accent, brand, category, contrastGuard, editThemeId, fontFamily, fontHeading, fontMono, gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9, imageReactiveStrength, meshAnimated, meshIntensity, noiseIntensity, overlayBlend, overlayColor, pairedModeThemeId, recommendationIds, scanlineIntensity, styleSeed, tags, success, themeName, themeSet, textPrimary, textSecondary, timeOfDayStrength, warning, error]);
+    const handleBaseThemeChange = (value: string | null) => { if (!value) return; setBaseThemeId(value); const theme = getAllThemes().find((item) => item.id === value) as ExtendedThemePalette | undefined; if (theme) applyBaseTheme(theme); };
     const handleSave = () => {
-        if (!themeName.trim()) {
-            notifications.show({
-                title: 'Validation Error',
-                message: 'Please enter a theme name',
-                color: 'red',
-            });
-            return;
-        }
-
-        const themeId = editThemeId || `custom-${themeName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`;
-
-        const colors: ThemePalette['colors'] = {
-            brand,
-            accent,
-            gray0,
-            gray1,
-            gray2,
-            gray3,
-            gray4,
-            gray5,
-            gray6,
-            gray7,
-            gray8,
-            gray9,
-            success,
-            warning,
-            error,
-        };
-
-        // Add optional Phase 5 properties if provided
-        if (textPrimary) colors.textPrimary = textPrimary;
-        if (textSecondary) colors.textSecondary = textSecondary;
-        if (overlayColor) colors.overlayColor = overlayColor;
-        if (fontFamily) colors.fontFamily = fontFamily;
-        if (fontHeading) colors.fontHeading = fontHeading;
-        if (fontMono) colors.fontMono = fontMono;
-
-        const newTheme: ThemePalette = {
-            id: themeId,
-            name: themeName,
-            category,
-            style: styleSeed,
-            colors
-        };
-
-        if (editThemeId) {
-            updateCustomTheme(editThemeId, newTheme);
-            notifications.show({
-                title: 'Theme Updated',
-                message: `"${themeName}" has been updated`,
-                color: 'green',
-            });
-        } else {
-            addCustomTheme(newTheme);
-            notifications.show({
-                title: 'Theme Created',
-                message: `"${themeName}" has been saved`,
-                color: 'green',
-            });
-        }
-
+        if (!themeName.trim()) return void notifications.show({ title: 'Validation Error', message: 'Please enter a theme name', color: 'red' });
+        const id = editThemeId || `custom-${sanitizeThemeId(themeName)}-${Date.now()}`; const theme = makeTheme(id);
+        if (editThemeId) { updateCustomTheme(editThemeId, theme as ThemePalette); notifications.show({ title: 'Theme Updated', message: `"${themeName}" has been updated`, color: 'green' }); }
+        else { addCustomTheme(theme as ThemePalette); notifications.show({ title: 'Theme Created', message: `"${themeName}" has been saved`, color: 'green' }); }
         onClose();
     };
-
-    const handleExport = () => {
-        const json = exportTheme(previewTheme.id);
-        navigator.clipboard.writeText(json);
-
-        notifications.show({
-            title: 'Exported',
-            message: 'Theme JSON copied to clipboard',
-            color: 'blue',
-            icon: <IconCopy size={16} />,
-        });
-    };
-
-    const handleDownload = () => {
-        const json = exportTheme(previewTheme.id);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${themeName || 'theme'}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        notifications.show({
-            title: 'Downloaded',
-            message: `${themeName || 'theme'}.json saved`,
-            color: 'blue',
-            icon: <IconDownload size={16} />,
-        });
-    };
+    const exportJson = () => { const text = JSON.stringify(makeTheme(editThemeId || `custom-${sanitizeThemeId(themeName || 'theme')}`), null, 2); navigator.clipboard.writeText(text); notifications.show({ title: 'Exported', message: 'Theme JSON copied to clipboard', color: 'blue', icon: <IconCopy size={16} /> }); };
+    const downloadJson = () => { const id = editThemeId || `custom-${sanitizeThemeId(themeName || 'theme')}`; downloadText(`${sanitizeThemeId(themeName || 'theme') || 'theme'}.json`, JSON.stringify(makeTheme(id), null, 2), 'application/json'); notifications.show({ title: 'Downloaded', message: `${themeName || 'theme'}.json saved`, color: 'blue', icon: <IconDownload size={16} /> }); };
+    const copyCss = () => { navigator.clipboard.writeText(buildCss(makeTheme(editThemeId || `custom-${sanitizeThemeId(themeName || 'theme')}`))); notifications.show({ title: 'Copied', message: 'Theme CSS copied to clipboard', color: 'blue', icon: <IconCopy size={16} /> }); };
+    const downloadCss = () => { const id = editThemeId || `custom-${sanitizeThemeId(themeName || 'theme')}`; downloadText(`${sanitizeThemeId(themeName || 'theme') || 'theme'}.css`, buildCss(makeTheme(id)), 'text/css'); notifications.show({ title: 'Downloaded', message: `${themeName || 'theme'}.css saved`, color: 'blue', icon: <IconDownload size={16} /> }); };
 
     return (
-        <Modal
-            opened={opened}
-            onClose={onClose}
-            title={editThemeId ? 'Edit Custom Theme' : 'Create Custom Theme'}
-            size="xl"
-            styles={{
-                body: { maxHeight: '70vh', overflow: 'hidden' },
-                header: { borderBottom: '1px solid var(--theme-gray-5)' }
-            }}
-        >
+        <Modal opened={opened} onClose={onClose} title={editThemeId ? 'Edit Custom Theme' : 'Create Custom Theme'} size="xl" styles={{ body: { maxHeight: '70vh', overflow: 'hidden' }, header: { borderBottom: '1px solid var(--theme-gray-5)' } }}>
             <Group align="flex-start" gap="md" style={{ height: '100%' }}>
-                {/* Left: Form */}
                 <Stack style={{ flex: '1 1 60%', minWidth: 0 }} gap="md">
                     <ScrollArea h="calc(70vh - 120px)" type="auto">
                         <Stack gap="md" pr="sm">
-                            {/* Basic Info */}
-                            <TextInput
-                                label="Theme Name"
-                                placeholder="My Awesome Theme"
-                                value={themeName}
-                                onChange={(e) => setThemeName(e.currentTarget.value)}
-                                required
-                            />
-
-                            <Select
-                                label="Category"
-                                data={CATEGORY_OPTIONS}
-                                value={category}
-                                onChange={(v) => setCategory((v as ThemeCategory) || 'custom')}
-                            />
-
-                            {!editThemeId && (
-                                <Select
-                                    label="Base Theme"
-                                    description="Start with colors from an existing theme"
-                                    data={THEME_PALETTES.map(t => ({ value: t.id, label: t.name }))}
-                                    value={baseTheme}
-                                    onChange={handleBaseThemeChange}
-                                    searchable
-                                />
-                            )}
-
+                            <TextInput label="Theme Name" placeholder="My Awesome Theme" value={themeName} onChange={(e) => setThemeName(e.currentTarget.value)} required />
+                            <Select label="Category" data={CATEGORY_OPTIONS} value={category} onChange={(v) => setCategory((v as ThemeCategory) || 'custom')} />
+                            {!editThemeId && <Select label="Base Theme" description="Start with colors from an existing theme" data={THEME_PALETTES.map((t) => ({ value: t.id, label: t.name }))} value={baseThemeId} onChange={handleBaseThemeChange} searchable />}
                             <Divider />
-
                             <Text size="sm" fw={600}>Control Personality</Text>
-                            <Text size="xs" c="dimmed">
-                                These settings define the default control fill language and switchable button/icon shapes for this theme.
-                            </Text>
-                            <Select
-                                label="Control Mode"
-                                description="How standard buttons and badges are filled by default"
-                                data={CONTROL_MODE_OPTIONS}
-                                value={styleSeed.controlMode}
-                                onChange={(value) => {
-                                    if (!value) {
-                                        return;
-                                    }
-                                    updateStyleSeed({ controlMode: value as ThemeControlMode });
-                                }}
-                            />
-                            <Select
-                                label="Icon Mode"
-                                description="How icon buttons and badges are decorated"
-                                data={ICON_MODE_OPTIONS}
-                                value={styleSeed.iconMode}
-                                onChange={(value) => {
-                                    if (!value) {
-                                        return;
-                                    }
-                                    updateStyleSeed({ iconMode: value as ThemeIconMode });
-                                }}
-                            />
-                            <Select
-                                label="Button Shape"
-                                description="Default shape used by text-bearing buttons"
-                                data={CONTROL_SHAPE_OPTIONS}
-                                value={styleSeed.controlShape}
-                                onChange={(value) => {
-                                    if (!value) {
-                                        return;
-                                    }
-                                    updateStyleSeed({ controlShape: value as ThemeControlShape });
-                                }}
-                            />
-                            <Select
-                                label="Icon Shape"
-                                description="Default shape used by action icons"
-                                data={ICON_SHAPE_OPTIONS}
-                                value={styleSeed.iconShape}
-                                onChange={(value) => {
-                                    if (!value) {
-                                        return;
-                                    }
-                                    updateStyleSeed({ iconShape: value as ThemeIconShape });
-                                }}
-                            />
-
+                            <Text size="xs" c="dimmed">Default control fills plus button and icon shapes.</Text>
+                            <Select label="Control Mode" data={CONTROL_MODE_OPTIONS} value={styleSeed.controlMode} onChange={(v) => v && setStyleSeed((s) => ({ ...s, controlMode: v as ThemeControlMode }))} />
+                            <Select label="Icon Mode" data={ICON_MODE_OPTIONS} value={styleSeed.iconMode} onChange={(v) => v && setStyleSeed((s) => ({ ...s, iconMode: v as ThemeIconMode }))} />
+                            <Select label="Button Shape" data={CONTROL_SHAPE_OPTIONS} value={styleSeed.controlShape} onChange={(v) => v && setStyleSeed((s) => ({ ...s, controlShape: v as ThemeControlShape }))} />
+                            <Select label="Icon Shape" data={ICON_SHAPE_OPTIONS} value={styleSeed.iconShape} onChange={(v) => v && setStyleSeed((s) => ({ ...s, iconShape: v as ThemeIconShape }))} />
                             <Divider />
-
-                            {/* Primary Colors */}
                             <Text size="sm" fw={600}>Primary Colors</Text>
-                            {REQUIRED_COLORS.map(({ key, label, description }) => (
-                                <ColorInput
-                                    key={key}
-                                    label={label}
-                                    description={description}
-                                    value={key === 'brand' ? brand : accent}
-                                    onChange={key === 'brand' ? setBrand : setAccent}
-                                    format="hex"
-                                    swatches={['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']}
-                                />
-                            ))}
-
+                            <ColorInput label="Brand Color" value={brand} onChange={setBrand} format="hex" swatches={['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']} />
+                            <ColorInput label="Accent Color" value={accent} onChange={setAccent} format="hex" swatches={['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899']} />
                             <Divider />
-
-                            {/* Grayscale Gradient */}
-                            <Group justify="space-between">
-                                <Text size="sm" fw={600}>Grayscale Palette</Text>
-                                <Text size="xs" c="dimmed">(Light → Dark)</Text>
-                            </Group>
-
-                            {/* Visual gradient strip */}
-                            <Group gap={2}>
-                                {[gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9].map((color, i) => (
-                                    <Box
-                                        key={i}
-                                        style={{
-                                            flex: 1,
-                                            height: 24,
-                                            backgroundColor: color,
-                                            border: '1px solid var(--theme-gray-5)',
-                                            borderRadius: i === 0 ? '4px 0 0 4px' : i === 9 ? '0 4px 4px 0' : 0
-                                        }}
-                                    />
-                                ))}
-                            </Group>
-
-                            <Accordion variant="contained">
-                                <Accordion.Item value="grayscale">
-                                    <Accordion.Control>
-                                        <Text size="xs">Edit Individual Grays</Text>
-                                    </Accordion.Control>
-                                    <Accordion.Panel>
-                                        <Stack gap="sm">
-                                            {GRAYSCALE_COLORS.map(({ key, label, description }) => {
-                                                const setters = [setGray0, setGray1, setGray2, setGray3, setGray4, setGray5, setGray6, setGray7, setGray8, setGray9];
-                                                const values = [gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9];
-                                                const index = parseInt(key.replace('gray', ''));
-
-                                                return (
-                                                    <ColorInput
-                                                        key={key}
-                                                        label={label}
-                                                        description={description}
-                                                        value={values[index]}
-                                                        onChange={setters[index]}
-                                                        format="hex"
-                                                        size="xs"
-                                                    />
-                                                );
-                                            })}
-                                        </Stack>
-                                    </Accordion.Panel>
-                                </Accordion.Item>
-                            </Accordion>
-
+                            <Text size="sm" fw={600}>Grayscale Palette</Text>
+                            <Group gap={2}>{[gray0, gray1, gray2, gray3, gray4, gray5, gray6, gray7, gray8, gray9].map((color, index) => <Box key={index} style={{ flex: 1, height: 24, backgroundColor: color, border: '1px solid var(--theme-gray-5)', borderRadius: index === 0 ? '4px 0 0 4px' : index === 9 ? '0 4px 4px 0' : 0 }} />)}</Group>
+                            <Accordion variant="contained"><Accordion.Item value="grays"><Accordion.Control><Text size="xs">Edit Individual Grays</Text></Accordion.Control><Accordion.Panel><Stack gap="sm">{[['Gray 0', gray0, setGray0], ['Gray 1', gray1, setGray1], ['Gray 2', gray2, setGray2], ['Gray 3', gray3, setGray3], ['Gray 4', gray4, setGray4], ['Gray 5', gray5, setGray5], ['Gray 6', gray6, setGray6], ['Gray 7', gray7, setGray7], ['Gray 8', gray8, setGray8], ['Gray 9', gray9, setGray9]].map(([label, value, setter]) => <ColorInput key={label as string} label={label as string} value={value as string} onChange={setter as (value: string) => void} format="hex" size="xs" />)}</Stack></Accordion.Panel></Accordion.Item></Accordion>
                             <Divider />
-
-                            {/* Semantic Colors */}
                             <Text size="sm" fw={600}>Semantic Colors</Text>
-                            {SEMANTIC_COLORS.map(({ key, label, description }) => {
-                                const value = key === 'success' ? success : key === 'warning' ? warning : error;
-                                const setter = key === 'success' ? setSuccess : key === 'warning' ? setWarning : setError;
-
-                                return (
-                                    <ColorInput
-                                        key={key}
-                                        label={label}
-                                        description={description}
-                                        value={value}
-                                        onChange={setter}
-                                        format="hex"
-                                        swatches={
-                                            key === 'success' ? ['#22c55e', '#10b981', '#059669'] :
-                                            key === 'warning' ? ['#f59e0b', '#f97316', '#eab308'] :
-                                            ['#ef4444', '#dc2626', '#b91c1c']
-                                        }
-                                    />
-                                );
-                            })}
-
+                            <ColorInput label="Success" value={success} onChange={setSuccess} format="hex" />
+                            <ColorInput label="Warning" value={warning} onChange={setWarning} format="hex" />
+                            <ColorInput label="Error" value={error} onChange={setError} format="hex" />
                             <Divider />
-
-                            {/* Advanced Options (Phase 5) */}
-                            <Accordion variant="contained">
-                                <Accordion.Item value="advanced">
-                                    <Accordion.Control>
-                                        <Text size="xs" fw={600}>Advanced Options (Optional)</Text>
-                                    </Accordion.Control>
-                                    <Accordion.Panel>
-                                        <Stack gap="sm">
-                                            <Text size="xs" c="dimmed">
-                                                These optional settings provide fine-grained control over typography and visual effects
-                                            </Text>
-
-                                            {/* Text Hierarchy */}
-                                            <ColorInput
-                                                label="Primary Text Color"
-                                                description="Override default text color (fallback: gray0)"
-                                                value={textPrimary}
-                                                onChange={setTextPrimary}
-                                                format="hex"
-                                                size="xs"
-                                                placeholder="Leave empty for default"
-                                            />
-
-                                            <ColorInput
-                                                label="Secondary Text Color"
-                                                description="Override secondary/subdued text (fallback: gray2)"
-                                                value={textSecondary}
-                                                onChange={setTextSecondary}
-                                                format="hex"
-                                                size="xs"
-                                                placeholder="Leave empty for default"
-                                            />
-
-                                            {/* Overlay Color */}
-                                            <ColorInput
-                                                label="Overlay/Backdrop Color"
-                                                description="Color for modal overlays and backdrops (supports rgba)"
-                                                value={overlayColor}
-                                                onChange={setOverlayColor}
-                                                format="rgba"
-                                                size="xs"
-                                                placeholder="Leave empty for default"
-                                            />
-
-                                            {/* Font Family */}
-                                            <TextInput
-                                                label="Custom Font Family"
-                                                description='e.g., "Inter, system-ui, sans-serif"'
-                                                value={fontFamily}
-                                                onChange={(e) => setFontFamily(e.currentTarget.value)}
-                                                size="xs"
-                                                placeholder="Leave empty for system fonts"
-                                            />
-
-                                            <TextInput
-                                                label="Heading Font Family"
-                                                description='e.g., "Sora, Inter, sans-serif"'
-                                                value={fontHeading}
-                                                onChange={(e) => setFontHeading(e.currentTarget.value)}
-                                                size="xs"
-                                                placeholder="Leave empty to reuse primary font"
-                                            />
-
-                                            <TextInput
-                                                label="Monospace Font Family"
-                                                description='e.g., "JetBrains Mono, Consolas, monospace"'
-                                                value={fontMono}
-                                                onChange={(e) => setFontMono(e.currentTarget.value)}
-                                                size="xs"
-                                                placeholder="Leave empty for default mono stack"
-                                            />
-                                        </Stack>
-                                    </Accordion.Panel>
-                                </Accordion.Item>
-                            </Accordion>
+                            <Text size="sm" fw={600}>Effects</Text>
+                            <NumberInput label="Noise Intensity" value={noiseIntensity} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setNoiseIntensity(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
+                            <NumberInput label="Scanline Intensity" value={scanlineIntensity} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setScanlineIntensity(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
+                            <NumberInput label="Mesh Intensity" value={meshIntensity} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setMeshIntensity(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
+                            <Group justify="space-between"><Stack gap={2}><Text size="sm" fw={500}>Animate Mesh</Text><Text size="xs" c="dimmed">Enable motion for energetic themes.</Text></Stack><SwarmSwitch checked={meshAnimated} onChange={(e) => setMeshAnimated(e.currentTarget.checked)} /></Group>
+                            <Select label="Overlay Blend Mode" data={BLEND_OPTIONS} value={overlayBlend} onChange={(v) => setOverlayBlend((v || 'normal') as ThemeOverlayBlend)} />
+                            <Divider />
+                            <Text size="sm" fw={600}>Adaptive</Text>
+                            <NumberInput label="Image Reactive Strength" value={imageReactiveStrength} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setImageReactiveStrength(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
+                            <NumberInput label="Follow-Sun Strength" value={timeOfDayStrength} min={0} max={1} step={0.05} decimalScale={2}onChange={(value) => setTimeOfDayStrength(typeof value === 'number' ? value : value === '' ? '' : Number(value))} />
+                            <Group justify="space-between"><Stack gap={2}><Text size="sm" fw={500}>Contrast Guard</Text><Text size="xs" c="dimmed">Bias derived accents toward WCAG-safe contrast.</Text></Stack><SwarmSwitch checked={contrastGuard} onChange={(e) => setContrastGuard(e.currentTarget.checked)} /></Group>
+                            <Divider />
+                            <Text size="sm" fw={600}>Metadata</Text>
+                            <TextInput label="Theme Set" value={themeSet} onChange={(e) => setThemeSet(e.currentTarget.value)} placeholder="catppuccin, solarized, bauhaus" />
+                            <Select label="Paired Theme ID" value={pairedModeThemeId} onChange={(v) => setPairedModeThemeId(v || '')} data={themeOptions} searchable clearable />
+                            <Textarea label="Recommendation IDs" value={recommendationIds} onChange={(e) => setRecommendationIds(e.currentTarget.value)} minRows={2} autosize placeholder="dracula, nord, catppuccin-mocha" />
+                            <Textarea label="Tags" value={tags} onChange={(e) => setTags(e.currentTarget.value)} minRows={2} autosize placeholder="cinematic, warm, minimal" />
+                            <Divider />
+                            <Accordion variant="contained"><Accordion.Item value="typography"><Accordion.Control><Text size="xs" fw={600}>Advanced Typography & Surface Tokens</Text></Accordion.Control><Accordion.Panel><Stack gap="sm"><ColorInput label="Primary Text Color" value={textPrimary} onChange={setTextPrimary} format="hex" size="xs" placeholder="Leave empty for default" /><ColorInput label="Secondary Text Color" value={textSecondary} onChange={setTextSecondary} format="hex" size="xs" placeholder="Leave empty for default" /><ColorInput label="Overlay/Backdrop Color" value={overlayColor} onChange={setOverlayColor} format="rgba" size="xs" placeholder="Leave empty for default" /><TextInput label="Custom Font Family" value={fontFamily} onChange={(e) => setFontFamily(e.currentTarget.value)} size="xs" placeholder='e.g. "Inter, system-ui, sans-serif"' /><TextInput label="Heading Font Family" value={fontHeading} onChange={(e) => setFontHeading(e.currentTarget.value)} size="xs" placeholder='e.g. "Sora, Inter, sans-serif"' /><TextInput label="Monospace Font Family" value={fontMono} onChange={(e) => setFontMono(e.currentTarget.value)} size="xs" placeholder='e.g. "JetBrains Mono, Consolas, monospace"' /></Stack></Accordion.Panel></Accordion.Item></Accordion>
                         </Stack>
                     </ScrollArea>
-
-                    {/* Actions */}
                     <Group justify="space-between" mt="md" style={{ borderTop: '1px solid var(--theme-gray-5)', paddingTop: 12 }}>
-                        <Group gap="xs">
-                            <SwarmButton
-                                tone="secondary"
-                                emphasis="ghost"
-                                size="xs"
-                                leftSection={<IconCopy size={14} />}
-                                onClick={handleExport}
-                            >
-                                Copy JSON
-                            </SwarmButton>
-                            <SwarmButton
-                                tone="secondary"
-                                emphasis="ghost"
-                                size="xs"
-                                leftSection={<IconDownload size={14} />}
-                                onClick={handleDownload}
-                            >
-                                Download
-                            </SwarmButton>
-                        </Group>
-                        <Group gap="xs">
-                            <SwarmButton
-                                tone="secondary"
-                                emphasis="ghost"
-                                onClick={onClose}
-                                leftSection={<IconX size={14} />}
-                            >
-                                Cancel
-                            </SwarmButton>
-                            <SwarmButton
-                                tone="primary"
-                                emphasis="solid"
-                                onClick={handleSave}
-                                leftSection={<IconDeviceFloppy size={14} />}
-                            >
-                                {editThemeId ? 'Update' : 'Save'} Theme
-                            </SwarmButton>
-                        </Group>
+                        <Group gap="xs"><SwarmButton tone="secondary" emphasis="ghost" size="xs" leftSection={<IconCopy size={14} />} onClick={exportJson}>Copy JSON</SwarmButton><SwarmButton tone="secondary" emphasis="ghost" size="xs" leftSection={<IconDownload size={14} />} onClick={downloadJson}>Download JSON</SwarmButton><SwarmButton tone="secondary" emphasis="ghost" size="xs" leftSection={<IconCopy size={14} />} onClick={copyCss}>Copy CSS</SwarmButton><SwarmButton tone="secondary" emphasis="ghost" size="xs" leftSection={<IconDownload size={14} />} onClick={downloadCss}>Download CSS</SwarmButton></Group>
+                        <Group gap="xs"><SwarmButton tone="secondary" emphasis="ghost" onClick={onClose} leftSection={<IconX size={14} />}>Cancel</SwarmButton><SwarmButton tone="primary" emphasis="solid" onClick={handleSave} leftSection={<IconDeviceFloppy size={14} />}>{editThemeId ? 'Update' : 'Save'} Theme</SwarmButton></Group>
                     </Group>
                 </Stack>
-
-                {/* Right: Live Preview */}
-                <Box style={{ flex: '0 0 200px' }}>
-                    <Stack gap="xs">
-                        <Text size="xs" fw={600} c="dimmed">Live Preview</Text>
-                        <ThemePreview theme={previewTheme} />
-                        <Text size="8px" c="dimmed" ta="center">
-                            Preview updates in real-time as you edit colors, fills, and control shapes
-                        </Text>
-                    </Stack>
-                </Box>
+                <Box style={{ flex: '0 0 220px' }}><Stack gap="xs"><Text size="xs" fw={600} c="dimmed">Live Preview</Text><ThemePreview theme={previewTheme} /><Text size="8px" c="dimmed" ta="center">Preview updates in real time as you edit colors, effects, adaptive values, metadata, and control shapes.</Text></Stack></Box>
             </Group>
         </Modal>
     );

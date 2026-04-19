@@ -1,13 +1,19 @@
-// ThemeImporter Component - Import themes from JSON
-import { useState } from 'react';
+// ThemeImporter Component - Import themes from JSON.
+import { useMemo, useState } from 'react';
 import {
-    Modal, Stack, Group, Textarea, FileButton,
-    Text, Alert, Code
+    Alert,
+    Code,
+    FileButton,
+    Group,
+    Modal,
+    Stack,
+    Text,
+    Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconUpload, IconAlertCircle, IconCheck, IconFileUpload } from '@tabler/icons-react';
-import { useThemeStore } from '../store/themeStore';
-import { parseThemeJson, ensureUniqueId, sanitizeThemeId } from '../utils/themeValidation';
+import { IconAlertCircle, IconCheck, IconFileUpload, IconUpload } from '@tabler/icons-react';
+import { useThemeStore, type ThemePalette } from '../store/themeStore';
+import { ensureUniqueId, parseThemeJson, sanitizeThemeId } from '../utils/themeValidation';
 import { SwarmButton } from './ui';
 
 interface ThemeImporterProps {
@@ -15,10 +21,57 @@ interface ThemeImporterProps {
     onClose: () => void;
 }
 
+type ImportedTheme = ThemePalette & {
+    effects?: {
+        noiseIntensity?: number;
+        scanlineIntensity?: number;
+        meshIntensity?: number;
+        meshAnimated?: boolean;
+        overlayBlend?: string;
+    };
+    adaptive?: {
+        imageReactiveStrength?: number;
+        timeOfDayStrength?: number;
+        contrastGuard?: boolean;
+    };
+    meta?: {
+        themeSet?: string;
+        pairedModeThemeId?: string;
+        recommendationIds?: string[];
+        tags?: string[];
+    };
+};
+
+function listOptionalBlocks(theme: ImportedTheme): string[] {
+    const blocks: string[] = [];
+    if (theme.effects) blocks.push('effects');
+    if (theme.adaptive) blocks.push('adaptive');
+    if (theme.meta) blocks.push('meta');
+    return blocks;
+}
+
 export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
     const { getAllThemes, importTheme } = useThemeStore();
     const [jsonInput, setJsonInput] = useState('');
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+    const parsedPreview = useMemo(() => {
+        if (!jsonInput.trim()) {
+            return null;
+        }
+        const parsed = parseThemeJson(jsonInput);
+        if (!parsed.success || !parsed.theme) {
+            return null;
+        }
+        return parsed.theme as ImportedTheme;
+    }, [jsonInput]);
+
+    const importedBlocks = useMemo(() => {
+        if (!parsedPreview) {
+            return [];
+        }
+        return listOptionalBlocks(parsedPreview);
+    }, [parsedPreview]);
 
     const handleImport = () => {
         if (!jsonInput.trim()) {
@@ -33,19 +86,17 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
             return;
         }
 
-        // Ensure unique ID
-        const existingIds = getAllThemes().map(t => t.id);
-        const sanitizedId = sanitizeThemeId(result.theme.name);
+        const existingIds = getAllThemes().map((theme) => theme.id);
+        const themeData = result.theme as ImportedTheme;
+        const sanitizedId = sanitizeThemeId(themeData.name);
         const uniqueId = ensureUniqueId(`custom-${sanitizedId}`, existingIds);
 
-        // Update theme with unique ID and ensure category is 'custom'
-        const themeToImport = {
-            ...result.theme,
+        const themeToImport: ImportedTheme = {
+            ...themeData,
             id: uniqueId,
-            category: 'custom' as const
+            category: 'custom',
         };
 
-        // Import using store method
         const importResult = importTheme(JSON.stringify(themeToImport));
 
         if (importResult.success) {
@@ -59,17 +110,20 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
             setJsonInput('');
             setValidationErrors([]);
             onClose();
-        } else {
-            setValidationErrors([importResult.error || 'Import failed']);
+            return;
         }
+
+        setValidationErrors([importResult.error || 'Import failed']);
     };
 
     const handleFileUpload = (file: File | null) => {
-        if (!file) return;
+        if (!file) {
+            return;
+        }
 
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const content = e.target?.result as string;
+        reader.onload = (event) => {
+            const content = event.target?.result as string;
             setJsonInput(content);
             setValidationErrors([]);
         };
@@ -100,23 +154,15 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
     };
 
     return (
-        <Modal
-            opened={opened}
-            onClose={onClose}
-            title="Import Custom Theme"
-            size="lg"
-        >
+        <Modal opened={opened} onClose={onClose} title="Import Custom Theme" size="lg">
             <Stack gap="md">
                 <Text size="sm" c="dimmed">
-                    Import a theme by pasting JSON or uploading a .json file
+                    Import a theme by pasting JSON or uploading a `.json` file. Optional `effects`, `adaptive`, and
+                    `meta` blocks are preserved as long as the required theme fields are present.
                 </Text>
 
-                {/* File Upload */}
                 <Group>
-                    <FileButton
-                        onChange={handleFileUpload}
-                        accept=".json,application/json"
-                    >
+                    <FileButton onChange={handleFileUpload} accept=".json,application/json">
                         {(props) => (
                             <SwarmButton
                                 {...props}
@@ -141,13 +187,12 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                     </SwarmButton>
                 </Group>
 
-                {/* JSON Input */}
                 <Textarea
                     label="Theme JSON"
-                    placeholder={`{\n  "id": "my-theme",\n  "name": "My Theme",\n  "category": "custom",\n  "colors": {\n    "brand": "#7c3aed",\n    ...\n  }\n}`}
+                    placeholder={`{\n  "id": "my-theme",\n  "name": "My Theme",\n  "category": "custom",\n  "colors": {\n    "brand": "#7c3aed",\n    ...\n  },\n  "effects": {\n    "noiseIntensity": 0.15\n  }\n}`}
                     value={jsonInput}
-                    onChange={(e) => {
-                        setJsonInput(e.currentTarget.value);
+                    onChange={(event) => {
+                        setJsonInput(event.currentTarget.value);
                         setValidationErrors([]);
                     }}
                     minRows={12}
@@ -155,22 +200,16 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                     styles={{
                         input: {
                             fontFamily: 'monospace',
-                            fontSize: '12px'
-                        }
+                            fontSize: '12px',
+                        },
                     }}
                 />
 
-                {/* Validation Errors */}
                 {validationErrors.length > 0 && (
-                    <Alert
-                        icon={<IconAlertCircle size={16} />}
-                        title="Validation Errors"
-                        color="red"
-                        variant="light"
-                    >
+                    <Alert icon={<IconAlertCircle size={16} />} title="Validation Errors" color="red" variant="light">
                         <Stack gap="xs">
-                            {validationErrors.map((error, i) => (
-                                <Text key={i} size="xs">
+                            {validationErrors.map((error, index) => (
+                                <Text key={index} size="xs">
                                     - {error}
                                 </Text>
                             ))}
@@ -178,19 +217,32 @@ export function ThemeImporter({ opened, onClose }: ThemeImporterProps) {
                     </Alert>
                 )}
 
-                {/* Format Hint */}
+                {parsedPreview && importedBlocks.length > 0 && (
+                    <Alert title="Optional blocks detected" color="blue" variant="light">
+                        <Text size="xs">
+                            This import includes {importedBlocks.join(', ')}. They will be kept on import.
+                        </Text>
+                    </Alert>
+                )}
+
                 <Alert color="blue" variant="light" title="Required Format">
                     <Text size="xs">
-                        Theme JSON must include <Code>id</Code>, <Code>name</Code>, <Code>category</Code>, and a <Code>colors</Code> object. Optional <Code>style</Code> fields can define control mode, icon mode, button shape, and icon shape.
+                        Theme JSON must include <Code>id</Code>, <Code>name</Code>, <Code>category</Code>, and a
+                        <Code>colors</Code> object. Optional <Code>style</Code>, <Code>effects</Code>,
+                        <Code>adaptive</Code>, and <Code>meta</Code> blocks are supported.
                     </Text>
                 </Alert>
 
-                {/* Actions */}
                 <Group justify="flex-end" mt="md">
                     <SwarmButton tone="secondary" emphasis="ghost" onClick={onClose}>
                         Cancel
                     </SwarmButton>
-                    <SwarmButton tone="primary" emphasis="solid" onClick={handleImport} leftSection={<IconUpload size={16} />}>
+                    <SwarmButton
+                        tone="primary"
+                        emphasis="solid"
+                        onClick={handleImport}
+                        leftSection={<IconUpload size={16} />}
+                    >
                         Import Theme
                     </SwarmButton>
                 </Group>

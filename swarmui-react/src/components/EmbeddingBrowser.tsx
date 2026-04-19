@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type MouseEvent } from 'react';
+import { useState, useCallback, useMemo, type MouseEvent } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { Z_INDEX } from '../utils/zIndex';
 import {
@@ -30,6 +30,7 @@ import {
     IconX,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useQuery } from '@tanstack/react-query';
 import { swarmClient } from '../api/client';
 import type { Model } from '../api/types';
 import { FloatingWindow } from './FloatingWindow';
@@ -46,6 +47,7 @@ import {
 } from './browserThumbnailSizes';
 import { featureFlags } from '../config/featureFlags';
 import { useWorkerFilter } from '../hooks/useWorker';
+import { queryKeys } from '../api/queryClient';
 
 export type EmbeddingTargetField = 'prompt' | 'negativeprompt';
 export type EmbeddingInsertMode = 'smart' | EmbeddingTargetField;
@@ -65,6 +67,16 @@ interface EmbeddingBrowserProps {
 type ViewMode = 'cards' | 'list' | 'icons';
 
 const EMBEDDING_SEARCH_FIELDS: (keyof Model)[] = ['name', 'title', 'description', 'architecture'];
+const EMBEDDING_BROWSER_VIEW_MODE_OPTIONS = [
+    { value: 'cards', label: <IconLayoutGrid size={14} /> },
+    { value: 'list', label: <IconLayoutList size={14} /> },
+    { value: 'icons', label: <IconPhoto size={14} /> },
+] as const;
+const EMBEDDING_INSERT_MODE_OPTIONS = [
+    { value: 'smart', label: 'Smart' },
+    { value: 'prompt', label: 'Positive' },
+    { value: 'negativeprompt', label: 'Negative' },
+] as const;
 
 function getPreviewUrl(model: Model): string | null {
     const rawPreview = (model.preview_image || model.preview) as string | undefined;
@@ -93,19 +105,23 @@ function sanitizeSnippet(input?: string): string {
 }
 
 export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: EmbeddingBrowserProps) {
-    const [embeddings, setEmbeddings] = useState<Model[]>([]);
-    const [apiFolders, setApiFolders] = useState<string[]>([]);
     const [selectedFolder, setSelectedFolder] = useState<string>('all');
     const [folderDepth, setFolderDepth] = useState<number>(1);
-    const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<ViewMode>('cards');
     const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>(DEFAULT_THUMBNAIL_SIZE);
     const [insertMode, setInsertMode] = useState<EmbeddingInsertMode>('smart');
     const [detailEmbeddingName, setDetailEmbeddingName] = useState('');
     const [detailModalOpen, setDetailModalOpen] = useState(false);
-    const embeddingsCacheRef = useRef<Model[] | null>(null);
-    const foldersCacheRef = useRef<string[] | null>(null);
+    const embeddingsQuery = useQuery({
+        queryKey: queryKeys.embeddings.browser(),
+        queryFn: () => swarmClient.listEmbeddingsWithFolders(),
+        staleTime: 5 * 60 * 1000,
+        enabled: opened,
+    });
+    const embeddings = embeddingsQuery.data?.files ?? [];
+    const apiFolders = embeddingsQuery.data?.folders ?? [];
+    const loading = opened && embeddingsQuery.isLoading && !embeddingsQuery.data;
 
     const normalizePath = useCallback((path: string): string => path.replace(/\\/g, '/'), []);
     const getFolder = useCallback((path: string) => {
@@ -116,34 +132,15 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
         return '';
     }, [normalizePath]);
 
-    useEffect(() => {
-        if (opened) {
-            if (embeddingsCacheRef.current && foldersCacheRef.current) {
-                setEmbeddings(embeddingsCacheRef.current);
-                setApiFolders(foldersCacheRef.current);
-                setLoading(false);
-            } else {
-                void loadEmbeddings();
-            }
-        }
-    }, [opened]);
-
     const loadEmbeddings = async () => {
-        setLoading(true);
         try {
-            const result = await swarmClient.listEmbeddingsWithFolders();
-            embeddingsCacheRef.current = result.files;
-            foldersCacheRef.current = result.folders;
-            setEmbeddings(result.files);
-            setApiFolders(result.folders);
+            await embeddingsQuery.refetch();
         } catch {
             notifications.show({
                 title: 'Error',
                 message: 'Failed to load embeddings',
                 color: 'red',
             });
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -584,20 +581,12 @@ export function EmbeddingBrowser({ opened, onClose, onSelectEmbedding }: Embeddi
                             <SwarmSegmentedControl
                                 value={viewMode}
                                 onChange={(value) => setViewMode(value as ViewMode)}
-                                data={[
-                                    { value: 'cards', label: <IconLayoutGrid size={14} /> },
-                                    { value: 'list', label: <IconLayoutList size={14} /> },
-                                    { value: 'icons', label: <IconPhoto size={14} /> },
-                                ]}
+                                data={EMBEDDING_BROWSER_VIEW_MODE_OPTIONS}
                             />
                             <SwarmSegmentedControl
                                 value={insertMode}
                                 onChange={(value) => setInsertMode(value as EmbeddingInsertMode)}
-                                data={[
-                                    { value: 'smart', label: 'Smart' },
-                                    { value: 'prompt', label: 'Positive' },
-                                    { value: 'negativeprompt', label: 'Negative' },
-                                ]}
+                                data={EMBEDDING_INSERT_MODE_OPTIONS}
                             />
                             <SwarmSegmentedControl
                                 value={thumbnailSize}

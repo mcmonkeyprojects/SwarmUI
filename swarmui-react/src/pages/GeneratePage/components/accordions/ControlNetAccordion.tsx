@@ -72,12 +72,37 @@ const CONTROL_NET_SLOTS: ControlNetSlotConfig[] = [
     },
 ];
 
+export const PREPROCESSOR_OPTIONS = [
+    { value: '', label: 'Auto (let backend choose)' },
+    { value: 'None', label: 'None' },
+    { value: 'Canny', label: 'Canny Edge' },
+    { value: 'DepthMiDaS', label: 'Depth (MiDaS)' },
+    { value: 'DepthZoe', label: 'Depth (ZoeDepth)' },
+    { value: 'NormalBAE', label: 'Normal (BAE)' },
+    { value: 'LineartCoarse', label: 'Lineart Coarse' },
+    { value: 'LineartFine', label: 'Lineart Fine' },
+    { value: 'LineartAnime', label: 'Lineart Anime' },
+    { value: 'Scribble', label: 'Scribble' },
+    { value: 'HED', label: 'HED Soft Edge' },
+    { value: 'MLSD', label: 'MLSD Lines' },
+    { value: 'Shuffle', label: 'Shuffle' },
+    { value: 'SDPoseDrawKeypoints', label: 'Pose (Draw Keypoints)' },
+    { value: 'SDPoseFaceBBoxes', label: 'Pose (Face BBoxes)' },
+    { value: 'SDPoseKeypointExtractor', label: 'Pose (Keypoint Extractor)' },
+    { value: 'CropByBBoxes', label: 'Crop by BBoxes' },
+    { value: 'MediaPipeFace', label: 'MediaPipe Face' },
+    { value: 'Segment', label: 'Segmentation' },
+    { value: 'Recolor', label: 'Recolor' },
+    { value: 'Reference', label: 'Reference' },
+];
+
 export interface ControlNetAccordionProps {
     form: UseFormReturnType<GenerateParams>;
     enabled: boolean;
     onToggle: (enabled: boolean) => void;
     controlNetOptions: { value: string; label: string }[];
     loadingControlNets: boolean;
+    onRefreshModels?: () => void;
 }
 
 /**

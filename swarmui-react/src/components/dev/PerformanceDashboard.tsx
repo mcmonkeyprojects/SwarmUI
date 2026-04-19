@@ -236,6 +236,65 @@ function StoresSection() {
     );
 }
 
+function PreviewSection() {
+    const recentMetrics = usePerformanceStore((state) => state.recentMetrics);
+
+    const previewStats = useMemo(() => ([
+        {
+            name: 'Preview commits',
+            stats: profiler.getStats('ws:preview-commit'),
+        },
+        {
+            name: 'Preview drops',
+            stats: profiler.getStats('ws:preview-drop'),
+        },
+    ]), [recentMetrics]);
+
+    const recentPreviewMetrics = useMemo(() => {
+        return recentMetrics
+            .filter((metric) => metric.name.startsWith('ws:preview-'))
+            .slice(-10)
+            .reverse();
+    }, [recentMetrics]);
+
+    return (
+        <Stack gap="xs">
+            <Text size="xs" fw={600}>Live Preview</Text>
+            {previewStats.map(({ name, stats }) => (
+                <MetricRow
+                    key={name}
+                    name={name}
+                    value={stats?.count || 0}
+                    subValue={stats ? `avg ${stats.avg.toFixed(2)}ms` : undefined}
+                    status={!stats ? 'good' : stats.avg > 16 ? 'warning' : 'good'}
+                />
+            ))}
+
+            {recentPreviewMetrics.length > 0 ? (
+                <>
+                    <Divider />
+                    <ScrollArea h={120}>
+                        <Stack gap={2}>
+                            {recentPreviewMetrics.map((metric, index) => (
+                                <Group key={`${metric.name}-${metric.timestamp}-${index}`} justify="space-between" gap="xs" wrap="nowrap">
+                                    <Text size="xs" c="dimmed" lineClamp={1} style={{ flex: 1 }}>
+                                        {metric.name.replace('ws:', '')}
+                                    </Text>
+                                    <Badge size="xs" variant="light">
+                                        {metric.duration.toFixed(2)}ms
+                                    </Badge>
+                                </Group>
+                            ))}
+                        </Stack>
+                    </ScrollArea>
+                </>
+            ) : (
+                <Text size="xs" c="dimmed">No preview metrics recorded yet</Text>
+            )}
+        </Stack>
+    );
+}
+
 function RecentMetricsSection() {
     const recentMetrics = usePerformanceStore((state) => state.recentMetrics);
 
@@ -479,6 +538,9 @@ export function PerformanceDashboard() {
                         <Tabs.Tab value="stores" leftSection={<IconDatabase size={12} />}>
                             <Text size="xs">Store</Text>
                         </Tabs.Tab>
+                        <Tabs.Tab value="preview" leftSection={<IconActivity size={12} />}>
+                            <Text size="xs">Preview</Text>
+                        </Tabs.Tab>
                         <Tabs.Tab value="diag" leftSection={<IconActivity size={12} />}>
                             <Text size="xs">Diag</Text>
                         </Tabs.Tab>
@@ -498,6 +560,10 @@ export function PerformanceDashboard() {
 
                     <Tabs.Panel value="stores" pt="xs">
                         <StoresSection />
+                    </Tabs.Panel>
+
+                    <Tabs.Panel value="preview" pt="xs">
+                        <PreviewSection />
                     </Tabs.Panel>
 
                     <Tabs.Panel value="diag" pt="xs">

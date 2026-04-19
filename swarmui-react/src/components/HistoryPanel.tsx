@@ -1,9 +1,10 @@
-import { Stack, Text, Group, Card, Image, ScrollArea, Badge, Tooltip } from '@mantine/core';
+import { Stack, Text, Group, Card, ScrollArea, Badge, Tooltip } from '@mantine/core';
 import { IconTrash, IconPlayerPlay, IconTemplate } from '@tabler/icons-react';
 import { useHistoryStore } from '../stores/historyStore';
 import type { HistoryEntry } from '../stores/historyStore';
 import { notifications } from '@mantine/notifications';
 import { SwarmActionIcon as ActionIcon, SwarmButton as Button } from './ui';
+import { LazyImage } from './LazyImage';
 
 interface HistoryPanelProps {
     onLoad: (entry: HistoryEntry) => void;
@@ -46,14 +47,14 @@ export function HistoryPanel({ onLoad }: HistoryPanelProps) {
                             <Group align="flex-start" wrap="nowrap">
                                 {/* Thumbnail */}
                                 {entry.imagePaths && entry.imagePaths.length > 0 && (
-                                    <Image
+                                    <LazyImage
                                         src={entry.imagePaths[0]}
-                                        w={80}
-                                        h={80}
+                                        width={80}
+                                        height={80}
                                         radius="sm"
                                         fit="cover"
-                                        fallbackSrc="https://placehold.co/80x80?text=No+Img"
                                         alt="Generation Result"
+                                        rootMargin="50px"
                                     />
                                 )}
 

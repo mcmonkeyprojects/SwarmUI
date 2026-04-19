@@ -80,7 +80,7 @@ export const VideoSidebar = memo(function VideoSidebar({
     loadingModels,
     loadingModel,
     onModelSelect,
-    modelMediaCapabilities,
+    modelMediaCapabilities: _modelMediaCapabilities,
     generating,
     onStop,
     onOpenSchedule,

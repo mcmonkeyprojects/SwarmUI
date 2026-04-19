@@ -80,6 +80,12 @@
     transition: background-color 0.1s ease;
 }
 
+.autocomplete-item:focus-visible {
+    outline: 2px solid var(--theme-focus-ring);
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-focus-ring) 50%, transparent);
+}
+
 .autocomplete-item:hover,
 .autocomplete-item.selected {
     background-color: var(--mantine-color-blue-light);

@@ -8,12 +8,12 @@ describe('PREPROCESSOR_OPTIONS', () => {
     });
 
     it('includes None as an explicit option', () => {
-        const none = PREPROCESSOR_OPTIONS.find((o) => o.value === 'None');
+        const none = PREPROCESSOR_OPTIONS.find((o: { value: string; label: string }) => o.value === 'None');
         expect(none).toBeDefined();
     });
 
     it('includes all expected backend preprocessor values', () => {
-        const values = PREPROCESSOR_OPTIONS.map((o) => o.value);
+        const values = PREPROCESSOR_OPTIONS.map((o: { value: string; label: string }) => o.value);
         expect(values).toContain('Canny');
         expect(values).toContain('SDPoseDrawKeypoints');
         expect(values).toContain('SDPoseFaceBBoxes');
@@ -22,7 +22,7 @@ describe('PREPROCESSOR_OPTIONS', () => {
     });
 
     it('has no duplicate values', () => {
-        const values = PREPROCESSOR_OPTIONS.map((o) => o.value);
+        const values = PREPROCESSOR_OPTIONS.map((o: { value: string; label: string }) => o.value);
         expect(new Set(values).size).toBe(values.length);
     });
 });

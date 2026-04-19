@@ -40,9 +40,8 @@ import { useCanvasWorkflowStore } from '../../stores/canvasWorkflowStore';
 import { useKeyboardShortcuts, KEYBOARD_SHORTCUTS } from '../../hooks/useKeyboardShortcuts';
 import { useGenerationHandlers } from '../../hooks/useGenerationHandlers';
 import { useResizablePanel } from '../../hooks/useResizablePanel';
+import { useRenderProfiler } from '../../hooks/useRenderProfiler';
 import { ResizeHandle, SwarmActionIcon, SwarmBadge, SwarmButton } from '../../components/ui';
-import { CanvasPanel } from '../../components/generation/CanvasPanel';
-import { GalleryPanel } from '../../components/generation/GalleryPanel';
 import { QueueStatusBadge } from '../../components/QueueStatusBadge';
 import { usePromptBuilderStore } from '../../stores/promptBuilderStore';
 import {
@@ -57,9 +56,6 @@ import {
     useParameterForm,
 } from './hooks';
 import { useAllModelData } from '../../hooks/useModels';
-import { WorkspaceSidebar } from './components/WorkspaceSidebar';
-import { WorkspaceModeDeck } from './components/WorkspaceModeDeck';
-import { VideoSidebar } from './components/VideoSidebar';
 import { useWebSocketStore } from '../../stores/websocketStore';
 import { DEFAULT_FORM_VALUES } from './hooks/useParameterForm';
 import { getModelMediaCapabilities } from '../../utils/modelCapabilities';
@@ -98,6 +94,21 @@ const GenerateAssistantPanel = lazy(() =>
 const ImageComparison = lazy(() =>
     import('../../components/ImageComparison').then((module) => ({ default: module.ImageComparison }))
 );
+const WorkspaceSidebar = lazy(() =>
+    import('./components/WorkspaceSidebar').then((module) => ({ default: module.WorkspaceSidebar }))
+);
+const WorkspaceModeDeck = lazy(() =>
+    import('./components/WorkspaceModeDeck').then((module) => ({ default: module.WorkspaceModeDeck }))
+);
+const VideoSidebar = lazy(() =>
+    import('./components/VideoSidebar').then((module) => ({ default: module.VideoSidebar }))
+);
+const LiveGenerationCanvasStage = lazy(() =>
+    import('./components/LiveGenerationCanvasStage').then((module) => ({ default: module.LiveGenerationCanvasStage }))
+);
+const GalleryPanel = lazy(() =>
+    import('../../components/generation/GalleryPanel').then((module) => ({ default: module.GalleryPanel }))
+);
 
 const ModalLoader = () => (
     <Box style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 200 }}>
@@ -105,11 +116,43 @@ const ModalLoader = () => (
     </Box>
 );
 
+const WorkspaceShellLoader = memo(function WorkspaceShellLoader() {
+    return (
+        <Box
+            style={{
+                minHeight: 320,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}
+        >
+            <Loader size="lg" />
+        </Box>
+    );
+});
+
+const PanelLoader = memo(function PanelLoader() {
+    return (
+        <Box
+            style={{
+                minHeight: 240,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+            }}
+        >
+            <Loader size="md" />
+        </Box>
+    );
+});
+
 interface GeneratePageProps {
     routeState?: GenerateRouteState;
 }
 
 export const GeneratePage = memo(function GeneratePage({ routeState }: GeneratePageProps) {
+    useRenderProfiler('GeneratePage');
+
     const { activeLoras, setLoras } = useActiveLoras();
     const { wildcardText, setWildcardText } = useActiveWildcards();
     const { batchOutputFolder, setBatchOutputFolder, clearBatchOutputFolder } = useBatchOutputFolder();
@@ -131,7 +174,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
 
     const { addFavorite, removeFavorite, isFavorite } = useFavoritesStore();
     const diagnosticEntries = useGenerationDiagnosticsStore((state) => state.entries);
-    const { addJob: addQueueJob } = useQueueStore();
+    const addQueueJob = useQueueStore((state) => state.addJob);
     const pendingCanvasGenerateRequest = useCanvasWorkflowStore((state) => state.pendingGenerateRequest);
     const awaitingCanvasResult = useCanvasWorkflowStore((state) => state.awaitingResult);
     const awaitingCanvasImageCount = useCanvasWorkflowStore((state) => state.awaitingResultImageCount);
@@ -147,6 +190,8 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
     const dataLoaders = useAllModelData({ autoRefreshBackends: isGeneratePageActive });
     const modals = useModalState();
     const paramForm = useParameterForm();
+    const latestFormValuesRef = useRef(paramForm.form.values);
+    latestFormValuesRef.current = paramForm.form.values;
     const workspaceLayout = useGenerateWorkspaceLayout();
     const workspaceActions = useGenerateWorkspaceActions();
     const assistantPanelOpen = useAssistantStore((state) => state.panelOpen);
@@ -210,10 +255,6 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
 
     const {
         generating,
-        hasProgressEvent,
-        progress,
-        statusText,
-        previewImage,
         generatedImages,
         currentImageIndex,
         handleGenerate,
@@ -223,16 +264,6 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         goToPrevImage,
         setGeneratedImages,
         removeSessionImage,
-        startTime,
-        currentStep,
-        totalSteps,
-        stageLabel,
-        stageIndex,
-        stageCount,
-        stagesRemaining,
-        stageTaskIndex,
-        stageTaskCount,
-        stageTasksRemaining,
     } = useGenerationHandlers({
         featureToggles: {
             enableInitImage,
@@ -243,6 +274,15 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
         },
         mediaCapabilities: modelMediaCapabilities,
     });
+
+    const getCanvasActionContext = useCallback(() => {
+        const values = latestFormValuesRef.current;
+        return {
+            prompt: values.prompt || '',
+            model: typeof values.model === 'string' ? values.model : undefined,
+            generationParams: values,
+        };
+    }, []);
 
     const [presetName, setPresetName] = useState('');
     const [presetDescription, setPresetDescription] = useState('');
@@ -694,6 +734,9 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
             : currentMode === 'video'
                 ? 'Focused video generation with text-to-video and image-to-video controls.'
                 : 'Full studio workspace with the canvas leading and support tools around it.';
+    const stageHeaderCopy = generating
+        ? 'Generation in progress. Live preview and detailed status are shown on the canvas.'
+        : modeStageCopy;
 
     useEffect(() => {
         if (!routeState?.mode) {
@@ -904,132 +947,134 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 maxWidth: resolvedSidebarWidth,
                             }}
                         >
-                            {currentMode === 'video' ? (
-                                <VideoSidebar
-                                    form={paramForm.form}
-                                    onGenerate={handleGenerateWithBuilder}
-                                    models={dataLoaders.models}
-                                    loadingModels={dataLoaders.loadingModels}
-                                    loadingModel={paramForm.loadingModel}
-                                    onModelSelect={paramForm.handleModelSelect}
-                                    modelMediaCapabilities={modelMediaCapabilities}
-                                    generating={generating}
-                                    onStop={handleInterrupt}
-                                    onOpenSchedule={modals.openScheduleModal}
-                                    onOpenHistory={modals.openHistoryDrawer}
-                                    initImagePreview={
-                                        paramForm.form.values.initimage || paramForm.initImagePreview || null
-                                    }
-                                    onInitImageUpload={paramForm.handleInitImageUpload}
-                                    onClearInitImage={paramForm.clearInitImage}
-                                    activeLoras={activeLoras}
-                                    onLoraChange={paramForm.handleLoraChange}
-                                    onOpenLoraBrowser={modals.openLoraModal}
-                                />
-                            ) : usesAdvancedRail ? (
-                                <WorkspaceSidebar
-                                    form={paramForm.form}
-                                    onGenerate={handleGenerateWithBuilder}
-                                    onResetWorkspace={handleResetWorkspace}
-                                    presets={paramForm.presets || []}
-                                    onLoadPreset={paramForm.handleLoadPreset}
-                                    onOpenSaveModal={modals.openSavePresetModal}
-                                    onDeletePreset={paramForm.handleDeletePreset}
-                                    onDuplicatePreset={paramForm.handleDuplicatePreset}
-                                    onOpenHistory={modals.openHistoryDrawer}
-                                    backends={dataLoaders.backends}
-                                    backendOptions={dataLoaders.backendOptions}
-                                    selectedBackend={selectedBackend}
-                                    onBackendChange={setSelectedBackend}
-                                    loadingBackends={dataLoaders.loadingBackends}
-                                    activeLoras={activeLoras}
-                                    onLoraChange={paramForm.handleLoraChange}
-                                    onOpenLoraBrowser={modals.openLoraModal}
-                                    onOpenEmbeddingBrowser={modals.openEmbeddingModal}
-                                    onOpenModelBrowser={modals.openModelBrowser}
-                                    generating={generating}
-                                    onStop={handleInterrupt}
-                                    onOpenSchedule={modals.openScheduleModal}
-                                    onGenerateAndUpscale={handleGenerateAndUpscale}
-                                    enableRefiner={enableRefiner}
-                                    setEnableRefiner={setEnableRefiner}
-                                    enableInitImage={enableInitImage}
-                                    setEnableInitImage={setEnableInitImage}
-                                    initImagePreview={paramForm.form.values.initimage || paramForm.initImagePreview}
-                                    onInitImageUpload={paramForm.handleInitImageUpload}
-                                    onClearInitImage={paramForm.clearInitImage}
-                                    enableVariation={enableVariation}
-                                    setEnableVariation={setEnableVariation}
-                                    enableControlNet={enableControlNet}
-                                    setEnableControlNet={setEnableControlNet}
-                                    enableVideo={enableVideo}
-                                    setEnableVideo={setEnableVideo}
-                                    modelMediaCapabilities={modelMediaCapabilities}
-                                    models={dataLoaders.models}
-                                    loadingModels={dataLoaders.loadingModels}
-                                    loadingModel={paramForm.loadingModel}
-                                    onModelSelect={paramForm.handleModelSelect}
-                                    vaeOptions={dataLoaders.vaeOptions}
-                                    loadingVAEs={dataLoaders.loadingVAEs}
-                                    controlNetOptions={dataLoaders.controlNetOptions}
-                                    loadingControlNets={dataLoaders.loadingControlNets}
-                                    onRefreshControlNets={dataLoaders.loadControlNets}
-                                    upscaleModels={dataLoaders.upscaleModels}
-                                    embeddingOptions={dataLoaders.embeddingOptions}
-                                      wildcardOptions={dataLoaders.wildcardOptions}
-                                      wildcardText={wildcardText}
-                                      onWildcardTextChange={setWildcardText}
-                                      batchOutputFolder={batchOutputFolder}
-                                      onBatchOutputFolderChange={setBatchOutputFolder}
-                                      onClearBatchOutputFolder={clearBatchOutputFolder}
-                                      quickModules={workspaceLayout.openQuickModules}
-                                      onQuickModulesChange={workspaceActions.setOpenQuickModules}
-                                    inspectorSections={workspaceLayout.openInspectorSections}
-                                    onInspectorSectionsChange={workspaceActions.setOpenInspectorSections}
-                                    lastInspectorJumpTarget={workspaceLayout.lastInspectorJumpTarget}
-                                    onLastInspectorJumpTargetChange={workspaceActions.setLastInspectorJumpTarget}
-                                />
-                            ) : (
-                                <WorkspaceModeDeck
-                                    mode={currentMode as Extract<GenerateWorkspaceMode, 'quick' | 'guided'>}
-                                    form={paramForm.form}
-                                    onGenerate={handleGenerateWithBuilder}
-                                    backends={dataLoaders.backends}
-                                    backendOptions={dataLoaders.backendOptions}
-                                    selectedBackend={selectedBackend}
-                                    onBackendChange={setSelectedBackend}
-                                    loadingBackends={dataLoaders.loadingBackends}
-                                    models={dataLoaders.models}
-                                    loadingModels={dataLoaders.loadingModels}
-                                    loadingModel={paramForm.loadingModel}
-                                    onModelSelect={paramForm.handleModelSelect}
-                                    generating={generating}
-                                    onStop={handleInterrupt}
-                                    onOpenSchedule={modals.openScheduleModal}
-                                    onGenerateAndUpscale={handleGenerateAndUpscale}
-                                    onOpenHistory={modals.openHistoryDrawer}
-                                    onOpenModelBrowser={modals.openModelBrowser}
-                                    onOpenLoraBrowser={modals.openLoraModal}
-                                      onOpenEmbeddingBrowser={modals.openEmbeddingModal}
-                                      onPromoteWorkflow={handlePromoteToWorkflow}
-                                      batchOutputFolder={batchOutputFolder}
-                                      onBatchOutputFolderChange={setBatchOutputFolder}
-                                      onClearBatchOutputFolder={clearBatchOutputFolder}
-                                      enableRefiner={enableRefiner}
-                                    setEnableRefiner={setEnableRefiner}
-                                    enableInitImage={enableInitImage}
-                                    setEnableInitImage={setEnableInitImage}
-                                    enableVariation={enableVariation}
-                                    setEnableVariation={setEnableVariation}
-                                    enableControlNet={enableControlNet}
-                                    setEnableControlNet={setEnableControlNet}
-                                    enableVideo={enableVideo}
-                                    setEnableVideo={setEnableVideo}
-                                    modelMediaCapabilities={modelMediaCapabilities}
-                                    activeRecipe={activeRecipe}
-                                    issues={issues}
-                                />
-                            )}
+                            <Suspense fallback={<WorkspaceShellLoader />}>
+                                {currentMode === 'video' ? (
+                                    <VideoSidebar
+                                        form={paramForm.form}
+                                        onGenerate={handleGenerateWithBuilder}
+                                        models={dataLoaders.models}
+                                        loadingModels={dataLoaders.loadingModels}
+                                        loadingModel={paramForm.loadingModel}
+                                        onModelSelect={paramForm.handleModelSelect}
+                                        modelMediaCapabilities={modelMediaCapabilities}
+                                        generating={generating}
+                                        onStop={handleInterrupt}
+                                        onOpenSchedule={modals.openScheduleModal}
+                                        onOpenHistory={modals.openHistoryDrawer}
+                                        initImagePreview={
+                                            paramForm.form.values.initimage || paramForm.initImagePreview || null
+                                        }
+                                        onInitImageUpload={paramForm.handleInitImageUpload}
+                                        onClearInitImage={paramForm.clearInitImage}
+                                        activeLoras={activeLoras}
+                                        onLoraChange={paramForm.handleLoraChange}
+                                        onOpenLoraBrowser={modals.openLoraModal}
+                                    />
+                                ) : usesAdvancedRail ? (
+                                    <WorkspaceSidebar
+                                        form={paramForm.form}
+                                        onGenerate={handleGenerateWithBuilder}
+                                        onResetWorkspace={handleResetWorkspace}
+                                        presets={paramForm.presets || []}
+                                        onLoadPreset={paramForm.handleLoadPreset}
+                                        onOpenSaveModal={modals.openSavePresetModal}
+                                        onDeletePreset={paramForm.handleDeletePreset}
+                                        onDuplicatePreset={paramForm.handleDuplicatePreset}
+                                        onOpenHistory={modals.openHistoryDrawer}
+                                        backends={dataLoaders.backends}
+                                        backendOptions={dataLoaders.backendOptions}
+                                        selectedBackend={selectedBackend}
+                                        onBackendChange={setSelectedBackend}
+                                        loadingBackends={dataLoaders.loadingBackends}
+                                        activeLoras={activeLoras}
+                                        onLoraChange={paramForm.handleLoraChange}
+                                        onOpenLoraBrowser={modals.openLoraModal}
+                                        onOpenEmbeddingBrowser={modals.openEmbeddingModal}
+                                        onOpenModelBrowser={modals.openModelBrowser}
+                                        generating={generating}
+                                        onStop={handleInterrupt}
+                                        onOpenSchedule={modals.openScheduleModal}
+                                        onGenerateAndUpscale={handleGenerateAndUpscale}
+                                        enableRefiner={enableRefiner}
+                                        setEnableRefiner={setEnableRefiner}
+                                        enableInitImage={enableInitImage}
+                                        setEnableInitImage={setEnableInitImage}
+                                        initImagePreview={paramForm.form.values.initimage || paramForm.initImagePreview}
+                                        onInitImageUpload={paramForm.handleInitImageUpload}
+                                        onClearInitImage={paramForm.clearInitImage}
+                                        enableVariation={enableVariation}
+                                        setEnableVariation={setEnableVariation}
+                                        enableControlNet={enableControlNet}
+                                        setEnableControlNet={setEnableControlNet}
+                                        enableVideo={enableVideo}
+                                        setEnableVideo={setEnableVideo}
+                                        modelMediaCapabilities={modelMediaCapabilities}
+                                        models={dataLoaders.models}
+                                        loadingModels={dataLoaders.loadingModels}
+                                        loadingModel={paramForm.loadingModel}
+                                        onModelSelect={paramForm.handleModelSelect}
+                                        vaeOptions={dataLoaders.vaeOptions}
+                                        loadingVAEs={dataLoaders.loadingVAEs}
+                                        controlNetOptions={dataLoaders.controlNetOptions}
+                                        loadingControlNets={dataLoaders.loadingControlNets}
+                                        onRefreshControlNets={dataLoaders.loadControlNets}
+                                        upscaleModels={dataLoaders.upscaleModels}
+                                        embeddingOptions={dataLoaders.embeddingOptions}
+                                        wildcardOptions={dataLoaders.wildcardOptions}
+                                        wildcardText={wildcardText}
+                                        onWildcardTextChange={setWildcardText}
+                                        batchOutputFolder={batchOutputFolder}
+                                        onBatchOutputFolderChange={setBatchOutputFolder}
+                                        onClearBatchOutputFolder={clearBatchOutputFolder}
+                                        quickModules={workspaceLayout.openQuickModules}
+                                        onQuickModulesChange={workspaceActions.setOpenQuickModules}
+                                        inspectorSections={workspaceLayout.openInspectorSections}
+                                        onInspectorSectionsChange={workspaceActions.setOpenInspectorSections}
+                                        lastInspectorJumpTarget={workspaceLayout.lastInspectorJumpTarget}
+                                        onLastInspectorJumpTargetChange={workspaceActions.setLastInspectorJumpTarget}
+                                    />
+                                ) : (
+                                    <WorkspaceModeDeck
+                                        mode={currentMode as Extract<GenerateWorkspaceMode, 'quick' | 'guided'>}
+                                        form={paramForm.form}
+                                        onGenerate={handleGenerateWithBuilder}
+                                        backends={dataLoaders.backends}
+                                        backendOptions={dataLoaders.backendOptions}
+                                        selectedBackend={selectedBackend}
+                                        onBackendChange={setSelectedBackend}
+                                        loadingBackends={dataLoaders.loadingBackends}
+                                        models={dataLoaders.models}
+                                        loadingModels={dataLoaders.loadingModels}
+                                        loadingModel={paramForm.loadingModel}
+                                        onModelSelect={paramForm.handleModelSelect}
+                                        generating={generating}
+                                        onStop={handleInterrupt}
+                                        onOpenSchedule={modals.openScheduleModal}
+                                        onGenerateAndUpscale={handleGenerateAndUpscale}
+                                        onOpenHistory={modals.openHistoryDrawer}
+                                        onOpenModelBrowser={modals.openModelBrowser}
+                                        onOpenLoraBrowser={modals.openLoraModal}
+                                        onOpenEmbeddingBrowser={modals.openEmbeddingModal}
+                                        onPromoteWorkflow={handlePromoteToWorkflow}
+                                        batchOutputFolder={batchOutputFolder}
+                                        onBatchOutputFolderChange={setBatchOutputFolder}
+                                        onClearBatchOutputFolder={clearBatchOutputFolder}
+                                        enableRefiner={enableRefiner}
+                                        setEnableRefiner={setEnableRefiner}
+                                        enableInitImage={enableInitImage}
+                                        setEnableInitImage={setEnableInitImage}
+                                        enableVariation={enableVariation}
+                                        setEnableVariation={setEnableVariation}
+                                        enableControlNet={enableControlNet}
+                                        setEnableControlNet={setEnableControlNet}
+                                        enableVideo={enableVideo}
+                                        setEnableVideo={setEnableVideo}
+                                        modelMediaCapabilities={modelMediaCapabilities}
+                                        activeRecipe={activeRecipe}
+                                        issues={issues}
+                                    />
+                                )}
+                            </Suspense>
                         </Box>
                         {!isStacked && usesAdvancedRail && (
                             <ResizeHandle
@@ -1075,7 +1120,7 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                     {paramForm.form.values.model || 'No model selected yet'}
                                 </Text>
                                 <Text size="xs" c="var(--theme-text-secondary)">
-                                    {statusText || modeStageCopy}
+                                    {stageHeaderCopy}
                                 </Text>
                             </Stack>
 
@@ -1168,39 +1213,23 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     </Box>
 
                     <Box className="generate-studio__stage-body">
-                        <CanvasPanel
-                            generating={generating}
-                            progress={progress}
-                            hasProgressEvent={hasProgressEvent}
-                            statusText={statusText}
-                            totalSteps={totalSteps}
-                            currentStep={currentStep}
-                            stageLabel={stageLabel}
-                            stageIndex={stageIndex}
-                            stageCount={stageCount}
-                            stagesRemaining={stagesRemaining}
-                            stageTaskIndex={stageTaskIndex}
-                            stageTaskCount={stageTaskCount}
-                            stageTasksRemaining={stageTasksRemaining}
-                            startTime={startTime}
-                            previewImage={previewImage}
-                            selectedImage={generatedImages[currentImageIndex] || null}
-                            totalImages={generatedImages.length}
-                            currentImageIndex={currentImageIndex}
-                            onPrevImage={goToPrevImage}
-                            onNextImage={goToNextImage}
-                            isFavorite={isFavorite}
-                            onAddFavorite={addFavorite}
-                            onRemoveFavorite={removeFavorite}
-                            onShowShortcuts={modals.openShortcutsModal}
-                            onShowDiagnostics={() => setDiagnosticsModalOpen(true)}
-                            hasDiagnosticIssue={hasDiagnosticIssue}
-                            prompt={paramForm.form.values.prompt}
-                            model={paramForm.form.values.model}
-                            generationParams={paramForm.form.values}
-                            showWorkspaceTools={false}
-                            initImagePreview={enableInitImage ? (paramForm.form.values.initimage || paramForm.initImagePreview) : null}
-                        />
+                        <Suspense fallback={<PanelLoader />}>
+                            <LiveGenerationCanvasStage
+                                selectedImage={generatedImages[currentImageIndex] || null}
+                                totalImages={generatedImages.length}
+                                currentImageIndex={currentImageIndex}
+                                onPrevImage={goToPrevImage}
+                                onNextImage={goToNextImage}
+                                isFavorite={isFavorite}
+                                onAddFavorite={addFavorite}
+                                onRemoveFavorite={removeFavorite}
+                                onShowShortcuts={modals.openShortcutsModal}
+                                onShowDiagnostics={() => setDiagnosticsModalOpen(true)}
+                                hasDiagnosticIssue={hasDiagnosticIssue}
+                                getImageActionContext={getCanvasActionContext}
+                                showWorkspaceTools={false}
+                            />
+                        </Suspense>
                     </Box>
                 </Box>
 
@@ -1220,17 +1249,19 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                                 maxWidth: workspaceLayout.galleryWidth,
                             }}
                         >
-                            <GalleryPanel
-                                generatedImages={generatedImages}
-                                previewImage={selectedGalleryImage}
-                                generating={generating}
-                                density={workspaceLayout.galleryDensity}
-                                onDensityChange={workspaceActions.setGalleryDensity}
-                                onSelectImage={handleSelectGalleryImage}
-                                onDeleteImage={handleDeleteGalleryImage}
-                                onReorderImages={handleReorderGalleryImages}
-                                onUseAsInitImage={handleUseAsInitImage}
-                            />
+                            <Suspense fallback={<PanelLoader />}>
+                                <GalleryPanel
+                                    generatedImages={generatedImages}
+                                    previewImage={selectedGalleryImage}
+                                    generating={generating}
+                                    density={workspaceLayout.galleryDensity}
+                                    onDensityChange={workspaceActions.setGalleryDensity}
+                                    onSelectImage={handleSelectGalleryImage}
+                                    onDeleteImage={handleDeleteGalleryImage}
+                                    onReorderImages={handleReorderGalleryImages}
+                                    onUseAsInitImage={handleUseAsInitImage}
+                                />
+                            </Suspense>
                         </Box>
                     </>
                 )}
@@ -1247,17 +1278,19 @@ export const GeneratePage = memo(function GeneratePage({ routeState }: GenerateP
                     overlayProps={{ backgroundOpacity: 0.5, blur: 6 }}
                 >
                     <Box className="generate-studio__gallery-drawer-body">
-                        <GalleryPanel
-                            generatedImages={generatedImages}
-                            previewImage={selectedGalleryImage}
-                            generating={generating}
-                            density={workspaceLayout.galleryDensity}
-                            onDensityChange={workspaceActions.setGalleryDensity}
-                            onSelectImage={handleSelectGalleryImage}
-                            onDeleteImage={handleDeleteGalleryImage}
-                            onReorderImages={handleReorderGalleryImages}
-                            onUseAsInitImage={handleUseAsInitImage}
-                        />
+                        <Suspense fallback={<PanelLoader />}>
+                            <GalleryPanel
+                                generatedImages={generatedImages}
+                                previewImage={selectedGalleryImage}
+                                generating={generating}
+                                density={workspaceLayout.galleryDensity}
+                                onDensityChange={workspaceActions.setGalleryDensity}
+                                onSelectImage={handleSelectGalleryImage}
+                                onDeleteImage={handleDeleteGalleryImage}
+                                onReorderImages={handleReorderGalleryImages}
+                                onUseAsInitImage={handleUseAsInitImage}
+                            />
+                        </Suspense>
                     </Box>
                 </Drawer>
             )}

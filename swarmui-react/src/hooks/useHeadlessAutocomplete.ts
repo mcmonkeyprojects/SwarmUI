@@ -13,7 +13,7 @@ import {
     type SortMode,
     type MatchMode,
 } from '../stores/autoCompleteStore';
-import { swarmClient } from '../api/client';
+import { useBackendAutocompletions } from './useBackendBootstrap';
 
 export interface UseHeadlessAutocompleteOptions {
     /** Whether autocomplete is enabled */
@@ -76,23 +76,32 @@ export function useHeadlessAutocomplete(options: UseHeadlessAutocompleteOptions 
     const isLoaded = useAutoCompleteStore((state) => state.isLoaded);
     const search = useAutoCompleteStore((state) => state.search);
     const storeLoad = useAutoCompleteStore((state) => state.loadAutocompletions);
+    const autocompletionsQuery = useBackendAutocompletions({ enabled });
 
-    // Load autocompletions from backend
     const loadAutocompletions = useCallback(async () => {
         if (isLoaded || loadingRef.current) return;
         loadingRef.current = true;
 
         try {
-            const userData = (await swarmClient.getMyUserData()) as any;
-            if (userData?.autocompletions) {
-                storeLoad(userData.autocompletions);
+            const result = await autocompletionsQuery.refetch();
+            const snapshot = result.data as { userData?: { autocompletions?: string[] } } | undefined;
+            const autocompletions = snapshot?.userData?.autocompletions ?? [];
+            if (autocompletions.length > 0) {
+                storeLoad(autocompletions);
             }
         } catch (error) {
             console.error('[useHeadlessAutocomplete] Failed to load autocompletions:', error);
         } finally {
             loadingRef.current = false;
         }
-    }, [isLoaded, storeLoad]);
+    }, [autocompletionsQuery, isLoaded, storeLoad]);
+
+    useEffect(() => {
+        if (!enabled || isLoaded || !autocompletionsQuery.data || autocompletionsQuery.data.length === 0) {
+            return;
+        }
+        storeLoad(autocompletionsQuery.data);
+    }, [autocompletionsQuery.data, enabled, isLoaded, storeLoad]);
 
     // Auto-load on mount if not loaded
     useEffect(() => {

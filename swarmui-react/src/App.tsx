@@ -1,13 +1,14 @@
-import { useEffect, Suspense, lazy, useState } from 'react';
+import { useEffect, Suspense, lazy, useState, type ReactNode } from 'react';
 import { MantineProvider, AppShell, Loader, Center } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { notifications } from '@mantine/notifications';
 import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './api/queryClient';
+import { queryClient, queryKeys } from './api/queryClient';
 import { ConnectionBanner } from './components/ConnectionBanner';
 import { prefetchRoute } from './components/PrefetchLink';
 import { preloadCriticalData } from './utils/preloadCriticalData';
 import { swarmClient } from './api/client';
+import { swarmBackendAdapter } from './api/backendAdapter';
 import { useSessionStore } from './stores/session';
 import { useShallow } from 'zustand/react/shallow';
 const GeneratePage = lazy(() => import('./pages/GeneratePage').then(module => ({ default: module.GeneratePage })));
@@ -27,9 +28,10 @@ const PerformanceDashboard = lazy(() => import('./components/dev/PerformanceDash
 import { theme } from './theme';
 import { InstallPrompt, UpdateNotification } from './components/InstallPrompt';
 import { initializeTheme, useThemeStore } from './store/themeStore';
+import { useAdaptiveAccentPipeline } from './hooks/useAdaptiveAccentPipeline';
 import { initializeAnimationSettings } from './store/animationStore';
 import { useViewTransition } from './hooks/useViewTransition';
-import { useNavigationStore, type AppPage } from './stores/navigationStore';
+import { useNavigationStore, type AppPage, type AppRoute } from './stores/navigationStore';
 import { AppHeader } from './components/layout/AppHeader';
 import { useCanvasWorkflowStore } from './stores/canvasWorkflowStore';
 import { usePromptCacheStore } from './stores/promptCacheStore';
@@ -65,18 +67,13 @@ function shouldSkipStartupPrefetch(): boolean {
   return connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g';
 }
 
-// CSS transition wrapper component - replaces Framer Motion AnimatePresence
-function PageTransition({
-  show,
+function PageFrame({
+  pageKey,
   children,
-  pageKey
 }: {
-  show: boolean;
-  children: React.ReactNode;
   pageKey: string;
+  children: ReactNode;
 }) {
-  if (!show) return null;
-
   return (
     <div
       key={pageKey}
@@ -88,8 +85,78 @@ function PageTransition({
   );
 }
 
+function PageLoader() {
+  return (
+    <Center h="100%">
+      <Loader size="lg" />
+    </Center>
+  );
+}
+
+function AppRouteOutlet({
+  currentPage,
+  route,
+}: {
+  currentPage: AppPage;
+  route: AppRoute;
+}) {
+  switch (currentPage) {
+    case 'generate':
+      return (
+        <Suspense fallback={<GeneratePageSkeleton />}>
+          <PageFrame pageKey="generate">
+            <GeneratePage routeState={route.generate} />
+          </PageFrame>
+        </Suspense>
+      );
+    case 'history':
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <PageFrame pageKey="history">
+            <HistoryPage routeState={route.history} />
+          </PageFrame>
+        </Suspense>
+      );
+    case 'queue':
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <PageFrame pageKey="queue">
+            <QueuePage routeState={route.queue} />
+          </PageFrame>
+        </Suspense>
+      );
+    case 'workflows':
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <PageFrame pageKey="workflows">
+            <WorkflowPage routeState={route.workflows} />
+          </PageFrame>
+        </Suspense>
+      );
+    case 'server':
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <PageFrame pageKey="server">
+            <ServerPage routeState={route.server} />
+          </PageFrame>
+        </Suspense>
+      );
+    case 'roleplay':
+      return (
+        <Suspense fallback={<PageLoader />}>
+          <PageFrame pageKey="roleplay">
+            <RoleplayPage routeState={route.roleplay} />
+          </PageFrame>
+        </Suspense>
+      );
+    default:
+      return null;
+  }
+}
+
 function AppContent() {
-  const { currentPage, setCurrentPage, syncFromLocation } = useNavigationStore(useShallow((state) => ({
+  const { route, currentPage, setCurrentPage, syncFromLocation } = useNavigationStore(useShallow((state) => ({
+    route: state.route,
     currentPage: state.currentPage,
     setCurrentPage: state.setCurrentPage,
     syncFromLocation: state.syncFromLocation,
@@ -102,11 +169,11 @@ function AppContent() {
   const isCanvasWorkflowActive = useCanvasWorkflowStore((state) => state.isOpen || state.upscalerOpen);
 
   // Get theme store state and sync function
-  const { _hasHydrated, syncThemeCSS, currentTheme, isLightMode, customAccent } = useThemeStore(useShallow((state) => ({
+  const { _hasHydrated, syncThemeCSS, currentTheme, resolvedColorScheme, customAccent } = useThemeStore(useShallow((state) => ({
     _hasHydrated: state._hasHydrated,
     syncThemeCSS: state.syncThemeCSS,
     currentTheme: state.currentTheme,
-    isLightMode: state.isLightMode,
+    resolvedColorScheme: state.resolvedColorScheme,
     customAccent: state.customAccent,
   })));
 
@@ -121,7 +188,10 @@ function AppContent() {
   // Also sync when theme values change (for good measure)
   useEffect(() => {
     syncThemeCSS();
-  }, [currentTheme, isLightMode, customAccent, syncThemeCSS]);
+  }, [currentTheme, resolvedColorScheme, customAccent, syncThemeCSS]);
+
+  // Keep the transient adaptive accent layered on top of the base theme.
+  useAdaptiveAccentPipeline();
 
   // Preload only Generate-adjacent data on idle to keep startup responsive.
   useEffect(() => {
@@ -250,6 +320,23 @@ function AppContent() {
   }, [syncFromLocation]);
 
   useEffect(() => {
+    return swarmBackendAdapter.subscribe((event) => {
+      if (event.type !== 'bootstrap:refreshed') {
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.models.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.backends.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.vaes.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.controlnets.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.embeddings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.wildcards.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.server.status });
+      queryClient.invalidateQueries({ queryKey: queryKeys.server.info });
+    });
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -296,64 +383,27 @@ function AppContent() {
         </AppShell.Header>
 
         <AppShell.Main>
-          {/* GeneratePage: Keep-Alive Pattern - stays mounted to preserve state and avoid re-initialization */}
-          <div
-            style={{
-              display: currentPage === 'generate' ? 'block' : 'none',
-              height: '100%',
-            }}
-          >
-            <Suspense fallback={<GeneratePageSkeleton />}>
-              <GeneratePage />
-            </Suspense>
-          </div>
-
-          {/* Other pages: CSS transition rendering (replaced AnimatePresence) */}
-          <Suspense fallback={
-            <Center h="100%">
-              <Loader size="lg" />
-            </Center>
-          }>
-            <PageTransition show={currentPage === 'history'} pageKey="history">
-              <HistoryPage />
-            </PageTransition>
-            <PageTransition show={currentPage === 'queue'} pageKey="queue">
-              <QueuePage />
-            </PageTransition>
-            <PageTransition show={currentPage === 'workflows'} pageKey="workflows">
-              <WorkflowPage />
-            </PageTransition>
-            <PageTransition show={currentPage === 'server'} pageKey="server">
-              <ServerPage />
-            </PageTransition>
-            <PageTransition show={currentPage === 'roleplay'} pageKey="roleplay">
-              <RoleplayPage />
-            </PageTransition>
-          </Suspense>
+          <AppRouteOutlet currentPage={currentPage} route={route} />
         </AppShell.Main>
       </AppShell>
 
-      {commandPaletteOpen && (
-        <Suspense fallback={null}>
-          <CommandPalette
-            opened={commandPaletteOpen}
-            onClose={() => setCommandPaletteOpen(false)}
-            onOpenAssetCatalog={() => {
-              setCommandPaletteOpen(false);
-              setAssetCatalogOpen(true);
-            }}
-          />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <CommandPalette
+          opened={commandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onOpenAssetCatalog={() => {
+            setCommandPaletteOpen(false);
+            setAssetCatalogOpen(true);
+          }}
+        />
+      </Suspense>
 
-      {assetCatalogOpen && (
-        <Suspense fallback={null}>
-          <AssetCatalogModal
-            opened={assetCatalogOpen}
-            onClose={() => setAssetCatalogOpen(false)}
-          />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <AssetCatalogModal
+          opened={assetCatalogOpen}
+          onClose={() => setAssetCatalogOpen(false)}
+        />
+      </Suspense>
 
       {/* Performance Dashboard - development only */}
       {import.meta.env.DEV && (
@@ -368,27 +418,25 @@ function AppContent() {
         </Suspense>
       )}
 
-      {modelDownloaderOpen && (
-        <Suspense fallback={null}>
-          <ModelDownloader
-            opened={modelDownloaderOpen}
-            onClose={() => setModelDownloaderOpen(false)}
-          />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <ModelDownloader
+          opened={modelDownloaderOpen}
+          onClose={() => setModelDownloaderOpen(false)}
+        />
+      </Suspense>
     </>
   );
 }
 
 function App() {
-  const isLightMode = useThemeStore((state) => state.isLightMode);
+  const resolvedColorScheme = useThemeStore((state) => state.resolvedColorScheme);
 
   return (
     <QueryClientProvider client={queryClient}>
       <MantineProvider
         theme={theme}
         defaultColorScheme="dark"
-        forceColorScheme={isLightMode ? 'light' : 'dark'}
+        forceColorScheme={resolvedColorScheme}
       >
         <Notifications
           position="bottom-right"

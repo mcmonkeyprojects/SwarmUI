@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { swarmClient } from '../api/client';
 import { queryKeys } from '../api/queryClient';
+import { useBackendBootstrap } from './useBackendBootstrap';
+import type { BackendBootstrapSnapshot, Model, VAEModel } from '../api/types';
 
 interface ModelQueryOptions {
     enabled?: boolean;
@@ -11,28 +13,32 @@ interface BackendQueryOptions extends ModelQueryOptions {
     autoRefresh?: boolean;
 }
 
+function selectModelCatalog(data: BackendBootstrapSnapshot | undefined, subtype: string): Model[] {
+    return (data?.modelCatalog?.[subtype] as Model[] | undefined) ?? [];
+}
+
 /**
  * Hook to fetch and cache Stable Diffusion models
  */
 export function useModels(subtype: string = 'Stable-Diffusion', options: ModelQueryOptions = {}) {
-    return useQuery({
-        queryKey: queryKeys.models.list(subtype),
-        queryFn: () => swarmClient.listModels('', subtype),
-        staleTime: 10 * 60 * 1000, // Models change infrequently
-        enabled: options.enabled ?? true,
-    });
+    const bootstrap = useBackendBootstrap(options);
+
+    return {
+        ...bootstrap,
+        data: selectModelCatalog(bootstrap.data, subtype),
+    };
 }
 
 /**
  * Hook to fetch and cache VAE models
  */
 export function useVAEs(options: ModelQueryOptions = {}) {
-    return useQuery({
-        queryKey: queryKeys.vaes.list(),
-        queryFn: () => swarmClient.listVAEs(),
-        staleTime: 10 * 60 * 1000,
-        enabled: options.enabled ?? true,
-    });
+    const bootstrap = useBackendBootstrap(options);
+
+    return {
+        ...bootstrap,
+        data: (bootstrap.data?.modelCatalog?.VAE as VAEModel[] | undefined) ?? [],
+    };
 }
 
 /**
@@ -51,14 +57,12 @@ export function useLoRAs(options: ModelQueryOptions = {}) {
  * Hook to fetch and cache backends
  */
 export function useBackends(options: BackendQueryOptions = {}) {
-    return useQuery({
-        queryKey: queryKeys.backends.list(),
-        queryFn: () => swarmClient.listBackends(),
-        staleTime: 30 * 1000, // Backends status can change frequently
-        enabled: options.enabled ?? true,
-        refetchInterval: options.autoRefresh ? 30 * 1000 : false,
-        refetchIntervalInBackground: false,
-    });
+    const bootstrap = useBackendBootstrap(options);
+
+    return {
+        ...bootstrap,
+        data: bootstrap.data?.backendStatus ?? [],
+    };
 }
 
 /**

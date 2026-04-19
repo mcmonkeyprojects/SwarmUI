@@ -9,6 +9,10 @@ export type ThemeCategory =
   | 'color-scheme' // Nord, Dracula, Catppuccin, Gruvbox, etc.
   | 'aesthetic' // Cyberpunk, Synthwave, etc.
   | 'game' // Elden Ring, Dark Souls, etc.
+  | 'art' // Bauhaus, Art Deco, Brutalist, etc.
+  | 'film' // Blade Runner 2049, Arrival, etc.
+  | 'music' // Vaporwave, Lo-Fi, Daft Punk, etc.
+  | 'nature' // Ocean, Arctic, Autumn, etc.
   | 'minimal' // Monochrome, High Contrast
   | 'custom'; // User-created themes
 
@@ -23,6 +27,7 @@ export type ThemeControlMode = 'default' | 'filled' | 'outlined';
 export type ThemeIconMode = 'plain' | 'badge' | 'glyph-outline';
 export type ThemeControlShape = 'rounded' | 'pill' | 'square';
 export type ThemeIconShape = 'rounded' | 'circle' | 'square';
+export type ThemeOverlayBlend = 'normal' | 'screen' | 'overlay' | 'soft-light' | 'multiply';
 
 export interface ThemeStyle {
   family: ThemeStyleFamily;
@@ -40,11 +45,35 @@ export interface ThemeShapeOverrides {
   iconShape?: ThemeIconShape | null;
 }
 
+export interface ThemeEffects {
+  noiseIntensity?: number;
+  scanlineIntensity?: number;
+  meshIntensity?: number;
+  meshAnimated?: boolean;
+  overlayBlend?: ThemeOverlayBlend;
+}
+
+export interface ThemeAdaptiveSettings {
+  imageReactiveStrength?: number;
+  timeOfDayStrength?: number;
+  contrastGuard?: boolean;
+}
+
+export interface ThemeMetadata {
+  themeSet?: string;
+  pairedModeThemeId?: string;
+  recommendationIds?: string[];
+  tags?: string[];
+}
+
 export interface ThemePalette {
   id: string;
   name: string;
   category: ThemeCategory;
   style?: ThemeStyle;
+  effects?: ThemeEffects;
+  adaptive?: ThemeAdaptiveSettings;
+  meta?: ThemeMetadata;
   colors: {
     // Primary brand color
     brand: string;
@@ -3629,6 +3658,437 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       error: '#FA5252',
     },
   },
+  {
+    id: 'bauhaus',
+    name: 'Bauhaus',
+    category: 'art',
+    meta: {
+      themeSet: 'atelier-pair',
+      pairedModeThemeId: 'art-deco',
+      recommendationIds: ['de-stijl', 'wes-anderson', 'arctic'],
+      tags: ['geometric', 'primary', 'gallery', 'light'],
+    },
+    colors: {
+      brand: '#d72638',
+      gray0: '#202124',
+      gray1: '#35363a',
+      gray2: '#585b63',
+      gray3: '#797c84',
+      gray4: '#a8acb5',
+      gray5: '#d5d8df',
+      gray6: '#e6e8ec',
+      gray7: '#f0f1f4',
+      gray8: '#f7f7f9',
+      gray9: '#fcfbf7',
+      accent: '#0b57d0',
+      success: '#2b9348',
+      warning: '#ffb703',
+      error: '#d90429',
+      lightGray0: '#202124',
+      lightGray1: '#35363a',
+      lightGray2: '#585b63',
+      lightGray3: '#797c84',
+      lightGray4: '#a8acb5',
+      lightGray5: '#d5d8df',
+      lightGray6: '#e6e8ec',
+      lightGray7: '#f0f1f4',
+      lightGray8: '#f7f7f9',
+      lightGray9: '#fcfbf7',
+    },
+  },
+  {
+    id: 'art-deco',
+    name: 'Art Deco',
+    category: 'art',
+    meta: {
+      themeSet: 'atelier-pair',
+      pairedModeThemeId: 'bauhaus',
+      recommendationIds: ['daft-punk', 'arrival', 'brutalist-web'],
+      tags: ['ornamental', 'gold', 'noir', 'dark'],
+    },
+    colors: {
+      brand: '#d4af37',
+      gray0: '#f7f0d0',
+      gray1: '#e6d5a0',
+      gray2: '#cbb57a',
+      gray3: '#9b8b66',
+      gray4: '#675c4c',
+      gray5: '#40382f',
+      gray6: '#2a251f',
+      gray7: '#1d1a17',
+      gray8: '#12110f',
+      gray9: '#090908',
+      accent: '#4aa3a1',
+      success: '#4caf50',
+      warning: '#f4b942',
+      error: '#ef5350',
+    },
+  },
+  {
+    id: 'brutalist-web',
+    name: 'Brutalist Web',
+    category: 'art',
+    meta: {
+      recommendationIds: ['bauhaus', 'art-deco', 'arrival'],
+      tags: ['raw', 'concrete', 'editorial', 'high-contrast'],
+    },
+    colors: {
+      brand: '#111111',
+      gray0: '#f4f4f4',
+      gray1: '#dadada',
+      gray2: '#b7b7b7',
+      gray3: '#8f8f8f',
+      gray4: '#6a6a6a',
+      gray5: '#4e4e4e',
+      gray6: '#393939',
+      gray7: '#2a2a2a',
+      gray8: '#1a1a1a',
+      gray9: '#101010',
+      accent: '#f15a24',
+      success: '#48b04d',
+      warning: '#ffd166',
+      error: '#ef476f',
+      lightGray0: '#111111',
+      lightGray1: '#2a2a2a',
+      lightGray2: '#393939',
+      lightGray3: '#4e4e4e',
+      lightGray4: '#6a6a6a',
+      lightGray5: '#8f8f8f',
+      lightGray6: '#b7b7b7',
+      lightGray7: '#dadada',
+      lightGray8: '#efefef',
+      lightGray9: '#f7f7f7',
+    },
+    style: {
+      family: 'classic',
+      controlShape: 'square',
+      iconShape: 'square',
+    },
+  },
+  {
+    id: 'de-stijl',
+    name: 'De Stijl',
+    category: 'art',
+    meta: {
+      recommendationIds: ['bauhaus', 'wes-anderson', 'arctic'],
+      tags: ['primary', 'grid', 'light', 'modernist'],
+    },
+    colors: {
+      brand: '#c1121f',
+      gray0: '#1f2933',
+      gray1: '#2f3b47',
+      gray2: '#4f5d6b',
+      gray3: '#6f7f8f',
+      gray4: '#98a5b3',
+      gray5: '#c6d0da',
+      gray6: '#dfe5eb',
+      gray7: '#edf1f4',
+      gray8: '#f7f8fa',
+      gray9: '#fdfcf8',
+      accent: '#005bbb',
+      success: '#2b9348',
+      warning: '#f4d35e',
+      error: '#d62839',
+      lightGray0: '#1f2933',
+      lightGray1: '#2f3b47',
+      lightGray2: '#4f5d6b',
+      lightGray3: '#6f7f8f',
+      lightGray4: '#98a5b3',
+      lightGray5: '#c6d0da',
+      lightGray6: '#dfe5eb',
+      lightGray7: '#edf1f4',
+      lightGray8: '#f7f8fa',
+      lightGray9: '#fdfcf8',
+    },
+  },
+  {
+    id: 'blade-runner-2049',
+    name: 'Blade Runner 2049',
+    category: 'film',
+    meta: {
+      recommendationIds: ['tron-legacy', 'arrival', 'deep-ocean'],
+      tags: ['cinematic', 'neon', 'dystopia', 'dark'],
+    },
+    colors: {
+      brand: '#f48c06',
+      gray0: '#f5d6b2',
+      gray1: '#dcb788',
+      gray2: '#b99368',
+      gray3: '#927455',
+      gray4: '#685444',
+      gray5: '#4e4039',
+      gray6: '#382d2a',
+      gray7: '#271e21',
+      gray8: '#16171f',
+      gray9: '#0b0d12',
+      accent: '#36c9da',
+      success: '#4ecdc4',
+      warning: '#ffb703',
+      error: '#ef476f',
+    },
+  },
+  {
+    id: 'arrival',
+    name: 'Arrival',
+    category: 'film',
+    meta: {
+      themeSet: 'cinema-duo',
+      pairedModeThemeId: 'wes-anderson',
+      recommendationIds: ['blade-runner-2049', 'deep-ocean', 'art-deco'],
+      tags: ['mist', 'slate', 'cinematic', 'dark'],
+    },
+    colors: {
+      brand: '#d4a373',
+      gray0: '#e6e0db',
+      gray1: '#c8c2bd',
+      gray2: '#aaa4a0',
+      gray3: '#88837f',
+      gray4: '#64605c',
+      gray5: '#47433f',
+      gray6: '#34312f',
+      gray7: '#262427',
+      gray8: '#1a1b21',
+      gray9: '#101218',
+      accent: '#7fb7be',
+      success: '#6ab187',
+      warning: '#edc988',
+      error: '#d96c75',
+    },
+  },
+  {
+    id: 'wes-anderson',
+    name: 'Wes Anderson',
+    category: 'film',
+    meta: {
+      themeSet: 'cinema-duo',
+      pairedModeThemeId: 'arrival',
+      recommendationIds: ['bauhaus', 'de-stijl', 'arctic'],
+      tags: ['pastel', 'symmetry', 'light', 'cinematic'],
+    },
+    colors: {
+      brand: '#d9777f',
+      gray0: '#433a38',
+      gray1: '#5c4f4d',
+      gray2: '#766563',
+      gray3: '#93827f',
+      gray4: '#b8a9a2',
+      gray5: '#d9cdc4',
+      gray6: '#eadfd5',
+      gray7: '#f3ebe4',
+      gray8: '#fbf5ef',
+      gray9: '#fffaf6',
+      accent: '#f2c57c',
+      success: '#7fb069',
+      warning: '#f4a261',
+      error: '#d1495b',
+      lightGray0: '#433a38',
+      lightGray1: '#5c4f4d',
+      lightGray2: '#766563',
+      lightGray3: '#93827f',
+      lightGray4: '#b8a9a2',
+      lightGray5: '#d9cdc4',
+      lightGray6: '#eadfd5',
+      lightGray7: '#f3ebe4',
+      lightGray8: '#fbf5ef',
+      lightGray9: '#fffaf6',
+    },
+  },
+  {
+    id: 'tron-legacy',
+    name: 'Tron Legacy',
+    category: 'film',
+    meta: {
+      recommendationIds: ['blade-runner-2049', 'cyberpunk', 'deep-ocean'],
+      tags: ['grid', 'electric', 'neon', 'dark'],
+    },
+    colors: {
+      brand: '#00d9ff',
+      gray0: '#d7f8ff',
+      gray1: '#a6ecff',
+      gray2: '#78d6f5',
+      gray3: '#4bb3cf',
+      gray4: '#37798c',
+      gray5: '#2a4f59',
+      gray6: '#173239',
+      gray7: '#0d2026',
+      gray8: '#08131a',
+      gray9: '#04090d',
+      accent: '#4dd2ff',
+      success: '#5fffb0',
+      warning: '#ffd166',
+      error: '#ff5d8f',
+    },
+  },
+  {
+    id: 'vaporwave',
+    name: 'Vaporwave',
+    category: 'music',
+    meta: {
+      recommendationIds: ['lofi-hiphop', 'daft-punk', 'synthwave'],
+      tags: ['retro', 'pink', 'purple', 'dark'],
+    },
+    colors: {
+      brand: '#ff71ce',
+      gray0: '#f7d7ff',
+      gray1: '#e2b6f2',
+      gray2: '#c892db',
+      gray3: '#a96ec1',
+      gray4: '#7f5195',
+      gray5: '#563866',
+      gray6: '#392546',
+      gray7: '#26172e',
+      gray8: '#160d1f',
+      gray9: '#0c0713',
+      accent: '#01cdfe',
+      success: '#72f1b8',
+      warning: '#f9f871',
+      error: '#ff5c8a',
+    },
+  },
+  {
+    id: 'lofi-hiphop',
+    name: 'Lo-Fi Hip Hop',
+    category: 'music',
+    meta: {
+      recommendationIds: ['vaporwave', 'autumn-leaves', 'deep-ocean'],
+      tags: ['warm', 'dusty', 'night', 'dark'],
+    },
+    colors: {
+      brand: '#c97b63',
+      gray0: '#f0dfd5',
+      gray1: '#d6bead',
+      gray2: '#b99986',
+      gray3: '#946f5f',
+      gray4: '#6b5247',
+      gray5: '#4f3c35',
+      gray6: '#382b28',
+      gray7: '#261f20',
+      gray8: '#181518',
+      gray9: '#0f0d10',
+      accent: '#7c9d96',
+      success: '#84a98c',
+      warning: '#efc46b',
+      error: '#c1666b',
+    },
+  },
+  {
+    id: 'daft-punk',
+    name: 'Daft Punk',
+    category: 'music',
+    meta: {
+      recommendationIds: ['art-deco', 'tron-legacy', 'vaporwave'],
+      tags: ['metallic', 'gold', 'club', 'dark'],
+    },
+    colors: {
+      brand: '#f7c948',
+      gray0: '#f7f1dc',
+      gray1: '#ddd2b0',
+      gray2: '#bea875',
+      gray3: '#927f54',
+      gray4: '#685d41',
+      gray5: '#4d4633',
+      gray6: '#363122',
+      gray7: '#262217',
+      gray8: '#141311',
+      gray9: '#090909',
+      accent: '#c0d6df',
+      success: '#7bd389',
+      warning: '#ffd166',
+      error: '#ef476f',
+    },
+  },
+  {
+    id: 'deep-ocean',
+    name: 'Deep Ocean',
+    category: 'nature',
+    meta: {
+      themeSet: 'ocean-pair',
+      pairedModeThemeId: 'arctic',
+      recommendationIds: ['arctic', 'blade-runner-2049', 'arrival'],
+      tags: ['bioluminescent', 'cool', 'dark', 'ocean'],
+    },
+    colors: {
+      brand: '#00b4d8',
+      gray0: '#ddfaff',
+      gray1: '#b8e8f1',
+      gray2: '#8cc8d8',
+      gray3: '#5c9aae',
+      gray4: '#3d6e82',
+      gray5: '#284d60',
+      gray6: '#173543',
+      gray7: '#10252f',
+      gray8: '#09161e',
+      gray9: '#040b12',
+      accent: '#4ef0c0',
+      success: '#70e000',
+      warning: '#ffd166',
+      error: '#ef476f',
+    },
+  },
+  {
+    id: 'autumn-leaves',
+    name: 'Autumn Leaves',
+    category: 'nature',
+    meta: {
+      recommendationIds: ['lofi-hiphop', 'bauhaus', 'arctic'],
+      tags: ['earthy', 'warm', 'forest', 'dark'],
+    },
+    colors: {
+      brand: '#c65d2e',
+      gray0: '#f3e5d8',
+      gray1: '#ddc6b0',
+      gray2: '#c4a387',
+      gray3: '#9c7a61',
+      gray4: '#745845',
+      gray5: '#563f32',
+      gray6: '#3d2d24',
+      gray7: '#2c211d',
+      gray8: '#1a1513',
+      gray9: '#0f0c0b',
+      accent: '#889c5b',
+      success: '#84a98c',
+      warning: '#f6bd60',
+      error: '#d1495b',
+    },
+  },
+  {
+    id: 'arctic',
+    name: 'Arctic',
+    category: 'nature',
+    meta: {
+      themeSet: 'ocean-pair',
+      pairedModeThemeId: 'deep-ocean',
+      recommendationIds: ['deep-ocean', 'wes-anderson', 'de-stijl'],
+      tags: ['ice', 'aurora', 'light', 'nature'],
+    },
+    colors: {
+      brand: '#7bdff2',
+      gray0: '#27404f',
+      gray1: '#355362',
+      gray2: '#4b6a79',
+      gray3: '#688491',
+      gray4: '#8aa4af',
+      gray5: '#b7cad3',
+      gray6: '#d7e3e9',
+      gray7: '#ebf2f6',
+      gray8: '#f6fafc',
+      gray9: '#fcfeff',
+      accent: '#b2a4ff',
+      success: '#70c1b3',
+      warning: '#ffd166',
+      error: '#ef476f',
+      lightGray0: '#27404f',
+      lightGray1: '#355362',
+      lightGray2: '#4b6a79',
+      lightGray3: '#688491',
+      lightGray4: '#8aa4af',
+      lightGray5: '#b7cad3',
+      lightGray6: '#d7e3e9',
+      lightGray7: '#ebf2f6',
+      lightGray8: '#f6fafc',
+      lightGray9: '#fcfeff',
+    },
+  },
 ];
 
 const THEME_FONT_STACKS: Record<
@@ -3782,7 +4242,13 @@ function getThemePersonality(theme: ThemePalette): ThemePersonality {
   if (theme.category === 'editor' || theme.category === 'app') {
     return 'studio';
   }
-  if (theme.category === 'aesthetic' || theme.category === 'game') {
+  if (
+    theme.category === 'aesthetic' ||
+    theme.category === 'game' ||
+    theme.category === 'film' ||
+    theme.category === 'music' ||
+    theme.category === 'art'
+  ) {
     return 'ornamental';
   }
   return 'editorial';
@@ -3959,6 +4425,39 @@ function applyBuiltInThemePersonality(theme: ThemePalette): ThemePalette {
     ...override?.colors,
     ...theme.colors,
   };
+  const mergedEffects: ThemeEffects = {
+    noiseIntensity:
+      theme.effects?.noiseIntensity ??
+      (theme.category === 'film'
+        ? 0.18
+        : theme.category === 'music'
+          ? 0.12
+          : mergedStyle.family === 'glyph'
+            ? 0.14
+            : 0.05),
+    scanlineIntensity:
+      theme.effects?.scanlineIntensity ??
+      (mergedStyle.family === 'glyph' || theme.category === 'film' || theme.category === 'music'
+        ? 0.1
+        : 0),
+    meshIntensity:
+      theme.effects?.meshIntensity ??
+      (mergedColors.motionProfile === 'energetic' ? 0.9 : mergedColors.motionProfile === 'calm' ? 0.58 : 0.74),
+    meshAnimated: theme.effects?.meshAnimated ?? mergedColors.motionProfile === 'energetic',
+    overlayBlend:
+      theme.effects?.overlayBlend ?? (mergedStyle.family === 'glyph' ? 'screen' : 'soft-light'),
+  };
+  const mergedAdaptive: ThemeAdaptiveSettings = {
+    imageReactiveStrength: theme.adaptive?.imageReactiveStrength ?? 0.24,
+    timeOfDayStrength: theme.adaptive?.timeOfDayStrength ?? 0.12,
+    contrastGuard: theme.adaptive?.contrastGuard ?? true,
+  };
+  const mergedMeta: ThemeMetadata = {
+    recommendationIds: theme.meta?.recommendationIds || [],
+    tags: theme.meta?.tags || [],
+    themeSet: theme.meta?.themeSet,
+    pairedModeThemeId: theme.meta?.pairedModeThemeId,
+  };
 
   if (mergedStyle.family === 'glyph') {
     mergedStyle.motifIntensity = clamp(
@@ -3988,6 +4487,9 @@ function applyBuiltInThemePersonality(theme: ThemePalette): ThemePalette {
   return {
     ...theme,
     style: mergedStyle,
+    effects: mergedEffects,
+    adaptive: mergedAdaptive,
+    meta: mergedMeta,
     colors: mergedColors,
   };
 }
@@ -4041,6 +4543,14 @@ function resolveActiveThemeId(
   return resolveScheme(mode) === 'light' ? lightThemeId : darkThemeId;
 }
 
+function getThemeById(themeId: string, customThemes: ThemePalette[] = []): ThemePalette {
+  return [...THEME_PALETTES, ...customThemes].find((theme) => theme.id === themeId) || THEME_PALETTES[0];
+}
+
+function getDaySeed(date: Date = new Date()): number {
+  return Number(`${date.getFullYear()}${date.getMonth() + 1}${date.getDate()}`);
+}
+
 interface ThemeStore {
   /** Persisted: how the active scheme is chosen — explicit light, explicit dark, or follow OS. */
   themeMode: ThemeMode;
@@ -4057,9 +4567,13 @@ interface ThemeStore {
    */
   currentTheme: string;
   customAccent: string | null;
+  adaptiveAccent: string | null;
+  adaptiveImageAccentEnabled: boolean;
+  followSunEnabled: boolean;
   controlShapeOverride: ThemeControlShape | null;
   iconShapeOverride: ThemeIconShape | null;
   customThemes: ThemePalette[];
+  visitedThemeIds: string[];
   _hasHydrated: boolean;
   /** New canonical setters. */
   setThemeMode: (mode: ThemeMode) => void;
@@ -4079,8 +4593,16 @@ interface ThemeStore {
   /** Internal: update resolvedColorScheme when the OS preference changes (system mode only). */
   _handleSystemSchemeChange: (scheme: ResolvedColorScheme) => void;
   setCustomAccent: (color: string | null) => void;
+  setAdaptiveAccent: (color: string | null) => void;
+  setAdaptiveImageAccentEnabled: (enabled: boolean) => void;
+  setFollowSunEnabled: (enabled: boolean) => void;
   setControlShapeOverride: (shape: ThemeControlShape | null) => void;
   setIconShapeOverride: (shape: ThemeIconShape | null) => void;
+  markThemeVisited: (themeId: string) => void;
+  getThemeRecommendations: (themeId: string) => ThemePalette[];
+  getThemeOfDay: () => ThemePalette;
+  getSurpriseTheme: (scheme: ResolvedColorScheme, excludeThemeIds?: string[]) => ThemePalette;
+  applyThemePair: (themeId: string, targetScheme?: ResolvedColorScheme) => void;
   getTheme: () => ThemePalette;
   syncThemeCSS: () => void;
   setHasHydrated: (hydrated: boolean) => void;
@@ -4089,6 +4611,7 @@ interface ThemeStore {
   updateCustomTheme: (themeId: string, updates: Partial<ThemePalette>) => void;
   deleteCustomTheme: (themeId: string) => void;
   exportTheme: (themeId: string) => string;
+  exportThemeCss: (themeId: string, scheme?: ResolvedColorScheme) => string;
   importTheme: (json: string) => { success: boolean; theme?: ThemePalette; error?: string };
   getAllThemes: () => ThemePalette[];
 }
@@ -4106,9 +4629,13 @@ export const useThemeStore = create<ThemeStore>()(
         currentTheme:
           INITIAL_RESOLVED_SCHEME === 'light' ? DEFAULT_LIGHT_THEME_ID : DEFAULT_DARK_THEME_ID,
         customAccent: null,
+        adaptiveAccent: null,
+        adaptiveImageAccentEnabled: false,
+        followSunEnabled: false,
         controlShapeOverride: null,
         iconShapeOverride: null,
         customThemes: [],
+        visitedThemeIds: [],
         _hasHydrated: false,
 
         getAllThemes: () => {
@@ -4130,6 +4657,7 @@ export const useThemeStore = create<ThemeStore>()(
             controlShape: get().controlShapeOverride,
             iconShape: get().iconShapeOverride,
           });
+          get().markThemeVisited(nextThemeId);
         },
 
         setThemeForScheme: (scheme: ResolvedColorScheme, themeId: string) => {
@@ -4149,6 +4677,7 @@ export const useThemeStore = create<ThemeStore>()(
               iconShape: get().iconShapeOverride,
             });
           }
+          get().markThemeVisited(themeId);
         },
 
         setTheme: (themeId: string) => {
@@ -4189,6 +4718,21 @@ export const useThemeStore = create<ThemeStore>()(
           });
         },
 
+        setAdaptiveAccent: (color: string | null) => {
+          set({ adaptiveAccent: color });
+          get().syncThemeCSS();
+        },
+
+        setAdaptiveImageAccentEnabled: (enabled: boolean) => {
+          set({ adaptiveImageAccentEnabled: enabled });
+          get().syncThemeCSS();
+        },
+
+        setFollowSunEnabled: (enabled: boolean) => {
+          set({ followSunEnabled: enabled });
+          get().syncThemeCSS();
+        },
+
         setControlShapeOverride: (shape: ThemeControlShape | null) => {
           set({ controlShapeOverride: shape });
           const { currentTheme, resolvedColorScheme } = get();
@@ -4209,6 +4753,74 @@ export const useThemeStore = create<ThemeStore>()(
             controlShape: get().controlShapeOverride,
             iconShape: shape,
           });
+        },
+
+        markThemeVisited: (themeId: string) => {
+          const visited = get().visitedThemeIds;
+          if (visited.includes(themeId)) {
+            return;
+          }
+          set({ visitedThemeIds: [...visited, themeId] });
+        },
+
+        getThemeRecommendations: (themeId: string) => {
+          const allThemes = get().getAllThemes();
+          const theme = allThemes.find((candidate) => candidate.id === themeId);
+          if (!theme) {
+            return [];
+          }
+          const explicitIds = theme.meta?.recommendationIds || [];
+          const explicitThemes = explicitIds
+            .map((id) => allThemes.find((candidate) => candidate.id === id))
+            .filter((candidate): candidate is ThemePalette => Boolean(candidate));
+          if (explicitThemes.length > 0) {
+            return explicitThemes;
+          }
+          const themeSet = theme.meta?.themeSet;
+          const tagSet = new Set(theme.meta?.tags || []);
+          return allThemes
+            .filter((candidate) => {
+              if (candidate.id === themeId) {
+                return false;
+              }
+              if (themeSet && candidate.meta?.themeSet === themeSet) {
+                return true;
+              }
+              const candidateTags = candidate.meta?.tags || [];
+              return candidateTags.some((tag) => tagSet.has(tag));
+            })
+            .slice(0, 4);
+        },
+
+        getThemeOfDay: () => {
+          const allThemes = get().getAllThemes().filter((theme) => theme.category !== 'custom');
+          if (allThemes.length === 0) {
+            return THEME_PALETTES[0];
+          }
+          const seed = getDaySeed();
+          return allThemes[seed % allThemes.length];
+        },
+
+        getSurpriseTheme: (scheme: ResolvedColorScheme, excludeThemeIds: string[] = []) => {
+          const allThemes = get().getAllThemes().filter((theme) => theme.category !== 'custom');
+          const currentThemeId = scheme === 'light' ? get().lightThemeId : get().darkThemeId;
+          const exclusions = new Set([currentThemeId, ...excludeThemeIds]);
+          const unvisited = allThemes.filter((theme) => !get().visitedThemeIds.includes(theme.id));
+          const primaryPool = unvisited.filter((theme) => !exclusions.has(theme.id));
+          const secondaryPool = allThemes.filter((theme) => !exclusions.has(theme.id));
+          const pool = primaryPool.length > 0 ? primaryPool : secondaryPool.length > 0 ? secondaryPool : allThemes;
+          return pool[(Date.now() + getDaySeed()) % pool.length];
+        },
+
+        applyThemePair: (themeId: string, targetScheme?: ResolvedColorScheme) => {
+          const theme = getThemeById(themeId, get().customThemes);
+          const scheme = targetScheme || get().resolvedColorScheme;
+          const oppositeScheme: ResolvedColorScheme = scheme === 'light' ? 'dark' : 'light';
+          const pairedThemeId = theme.meta?.pairedModeThemeId;
+          get().setThemeForScheme(scheme, theme.id);
+          if (pairedThemeId) {
+            get().setThemeForScheme(oppositeScheme, pairedThemeId);
+          }
         },
 
         getTheme: () => {
@@ -4284,6 +4896,19 @@ export const useThemeStore = create<ThemeStore>()(
           return JSON.stringify(theme, null, 2);
         },
 
+        exportThemeCss: (themeId: string, scheme?: ResolvedColorScheme) => {
+          const { customThemes, resolvedColorScheme, customAccent, controlShapeOverride, iconShapeOverride } = get();
+          const theme = getThemeById(themeId, customThemes);
+          return buildThemeCssExport(theme, {
+            isLightMode: (scheme || resolvedColorScheme) === 'light',
+            customAccent,
+            shapeOverrides: {
+              controlShape: controlShapeOverride,
+              iconShape: iconShapeOverride,
+            },
+          });
+        },
+
         importTheme: (json: string) => {
           try {
             const parsed = JSON.parse(json);
@@ -4332,7 +4957,7 @@ export const useThemeStore = create<ThemeStore>()(
     ),
     {
       name: 'swarmui-theme',
-      version: 4,
+      version: 5,
       // Explicit storage configuration
       storage: {
         getItem: (name) => {
@@ -4347,8 +4972,8 @@ export const useThemeStore = create<ThemeStore>()(
         removeItem: (name) => localStorage.removeItem(name),
       },
       // Migration for older versions
-      migrate: (persistedState: Record<string, unknown>, version: number) => {
-        let migratedState = persistedState;
+      migrate: (persistedState: unknown, version: number) => {
+        let migratedState = persistedState as Record<string, unknown>;
         if (version < 2) {
           migratedState = { ...migratedState, customThemes: [] };
         }
@@ -4380,6 +5005,14 @@ export const useThemeStore = create<ThemeStore>()(
           // Drop the now-defunct flag so it doesn't shadow new state on reload.
           delete (migratedState as Record<string, unknown>).isLightMode;
         }
+        if (version < 5) {
+          migratedState = {
+            ...migratedState,
+            adaptiveImageAccentEnabled: false,
+            followSunEnabled: false,
+            visitedThemeIds: [],
+          };
+        }
         return migratedState;
       },
       // Re-apply theme CSS after hydration from localStorage.
@@ -4408,10 +5041,13 @@ export const useThemeStore = create<ThemeStore>()(
           lightThemeId: state.lightThemeId,
           darkThemeId: state.darkThemeId,
           customAccent: state.customAccent,
+          adaptiveImageAccentEnabled: state.adaptiveImageAccentEnabled,
+          followSunEnabled: state.followSunEnabled,
           controlShapeOverride: state.controlShapeOverride,
           iconShapeOverride: state.iconShapeOverride,
           customThemes: state.customThemes,
-        }) as unknown as ThemeStore,
+          visitedThemeIds: state.visitedThemeIds,
+        }) as Record<string, unknown>,
     }
   )
 );
@@ -4738,6 +5374,133 @@ function getContrastTextColor(hexColor: string): string {
   return whiteContrast >= blackContrast ? '#ffffff' : '#000000';
 }
 
+function applyTimeOfDayShift(hexColor: string, strength: number, now: Date = new Date()): string {
+  const clampedStrength = clamp(strength, 0, 1);
+  if (clampedStrength <= 0.001) {
+    return normalizeHexColor(hexColor, '#ffffff');
+  }
+
+  const hour = now.getHours() + now.getMinutes() / 60;
+  const warmWeight = clamp(Math.cos(((hour - 6) / 24) * Math.PI * 2) * -0.5 + 0.5, 0, 1);
+  const coolWeight = clamp(Math.cos(((hour - 18) / 24) * Math.PI * 2) * -0.5 + 0.5, 0, 1);
+  const warmed = mixHexColors('#ffb36b', hexColor, 0.22 * clampedStrength * warmWeight);
+  return mixHexColors('#6bc7ff', warmed, 0.18 * clampedStrength * coolWeight);
+}
+
+function srgbToOklch(rgb: RgbColor): { l: number; c: number; h: number } {
+  const toLinear = (value: number) => {
+    const normalized = value / 255;
+    if (normalized <= 0.04045) {
+      return normalized / 12.92;
+    }
+    return ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+
+  const r = toLinear(rgb.r);
+  const g = toLinear(rgb.g);
+  const b = toLinear(rgb.b);
+
+  const l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
+  const m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
+  const s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
+
+  const lCbrt = Math.cbrt(l);
+  const mCbrt = Math.cbrt(m);
+  const sCbrt = Math.cbrt(s);
+
+  const lightness = 0.2104542553 * lCbrt + 0.793617785 * mCbrt - 0.0040720468 * sCbrt;
+  const a = 1.9779984951 * lCbrt - 2.428592205 * mCbrt + 0.4505937099 * sCbrt;
+  const bChannel = 0.0259040371 * lCbrt + 0.7827717662 * mCbrt - 0.808675766 * sCbrt;
+  const chroma = Math.sqrt(a * a + bChannel * bChannel);
+  let hue = (Math.atan2(bChannel, a) * 180) / Math.PI;
+  if (hue < 0) {
+    hue += 360;
+  }
+
+  return {
+    l: lightness,
+    c: chroma,
+    h: hue,
+  };
+}
+
+function colorToOklchString(color: string, fallback: string): string {
+  const rgb = tryParseCssColorToRgb(color) || hexToRgb(normalizeHexColor(fallback, '#ffffff'));
+  const oklch = srgbToOklch(rgb);
+  return `oklch(${oklch.l.toFixed(4)} ${oklch.c.toFixed(4)} ${oklch.h.toFixed(2)})`;
+}
+
+interface ThemeFontRegistryEntry {
+  family: string;
+  source: string;
+  descriptors?: FontFaceDescriptors;
+}
+
+const THEME_FONT_REGISTRY: ThemeFontRegistryEntry[] = [
+  {
+    family: 'Nothing NType 82',
+    source: 'url(/fonts/nothing/NType82-Regular.otf)',
+  },
+  {
+    family: 'Nothing NType 82 Headline',
+    source: 'url(/fonts/nothing/NType82-Headline.otf)',
+  },
+  {
+    family: 'Nothing NType 82 Mono',
+    source: 'url(/fonts/nothing/NType82Mono-Regular.otf)',
+  },
+  {
+    family: 'Nothing NDot 57',
+    source: 'url(/fonts/nothing/Ndot57-Regular.otf)',
+  },
+];
+
+const loadedThemeFonts = new Set<string>();
+
+function ensureThemeFontsLoaded(theme: ThemePalette): void {
+  if (typeof window === 'undefined' || typeof FontFace === 'undefined' || !document.fonts) {
+    return;
+  }
+
+  const requestedFamilies = [theme.colors.fontFamily, theme.colors.fontHeading, theme.colors.fontMono]
+    .filter((value): value is string => Boolean(value))
+    .flatMap((value) =>
+      value
+        .split(',')
+        .map((family) => family.trim().replace(/^['"]|['"]$/g, ''))
+        .filter(Boolean)
+    );
+
+  for (const requestedFamily of requestedFamilies) {
+    const registryEntry = THEME_FONT_REGISTRY.find((entry) => entry.family === requestedFamily);
+    if (!registryEntry || loadedThemeFonts.has(registryEntry.family)) {
+      continue;
+    }
+    loadedThemeFonts.add(registryEntry.family);
+    const fontFace = new FontFace(
+      registryEntry.family,
+      registryEntry.source,
+      registryEntry.descriptors || {}
+    );
+    fontFace
+      .load()
+      .then((loadedFace) => {
+        document.fonts.add(loadedFace);
+      })
+      .catch(() => {
+        loadedThemeFonts.delete(registryEntry.family);
+      });
+  }
+}
+
+interface ThemeCssTarget {
+  style: {
+    setProperty: (name: string, value: string) => void;
+    getPropertyValue: (name: string) => string;
+  };
+  setAttribute: (name: string, value: string) => void;
+}
+
 interface ThemeVisualProfile {
   motionProfile: ThemeMotionProfile;
   radiusScale: ThemeRadiusScale;
@@ -4823,6 +5586,54 @@ const THEME_CATEGORY_PROFILES: Record<ThemeCategory, ThemeVisualProfile> = {
     glowStrength: 1,
     shadowIntensity: 1.18,
     highlightWeight: 54,
+  },
+  art: {
+    motionProfile: 'calm',
+    radiusScale: 'comfortable',
+    strokeStyle: 'standard',
+    shadowDepth: 'normal',
+    borderStyle: 'solid',
+    surfaceTintStrength: 0.12,
+    blurStrength: 2,
+    glowStrength: 0.34,
+    shadowIntensity: 0.94,
+    highlightWeight: 42,
+  },
+  film: {
+    motionProfile: 'energetic',
+    radiusScale: 'comfortable',
+    strokeStyle: 'bold',
+    shadowDepth: 'dramatic',
+    borderStyle: 'double',
+    surfaceTintStrength: 0.16,
+    blurStrength: 8,
+    glowStrength: 0.82,
+    shadowIntensity: 1.16,
+    highlightWeight: 52,
+  },
+  music: {
+    motionProfile: 'energetic',
+    radiusScale: 'rounded',
+    strokeStyle: 'bold',
+    shadowDepth: 'dramatic',
+    borderStyle: 'solid',
+    surfaceTintStrength: 0.18,
+    blurStrength: 8,
+    glowStrength: 0.92,
+    shadowIntensity: 1.08,
+    highlightWeight: 54,
+  },
+  nature: {
+    motionProfile: 'calm',
+    radiusScale: 'comfortable',
+    strokeStyle: 'subtle',
+    shadowDepth: 'soft',
+    borderStyle: 'solid',
+    surfaceTintStrength: 0.11,
+    blurStrength: 3,
+    glowStrength: 0.42,
+    shadowIntensity: 0.9,
+    highlightWeight: 40,
   },
   minimal: {
     motionProfile: 'calm',
@@ -4949,12 +5760,24 @@ export function applyThemeToCSS(
   theme: ThemePalette,
   isLightMode: boolean = false,
   customAccent: string | null = null,
-  shapeOverrides: ThemeShapeOverrides = {}
+  shapeOverrides: ThemeShapeOverrides = {},
+  target: ThemeCssTarget = document.documentElement as unknown as ThemeCssTarget
 ) {
-  const root = document.documentElement;
+  const root = target;
   const profile = getVisualProfile(theme);
   const style = resolveThemeStyle(theme, shapeOverrides);
   const themeSeed = hashThemeId(theme.id);
+  const themeState = typeof useThemeStore.getState === 'function' ? useThemeStore.getState() : null;
+  const now = new Date();
+  const contrastGuardEnabled = theme.adaptive?.contrastGuard ?? theme.category !== 'custom';
+  const adaptiveAccentStrength =
+    themeState?.adaptiveImageAccentEnabled && theme.adaptive?.imageReactiveStrength
+      ? clamp(theme.adaptive.imageReactiveStrength, 0, 1)
+      : 0;
+  const followSunStrength =
+    themeState?.followSunEnabled && theme.adaptive?.timeOfDayStrength
+      ? clamp(theme.adaptive.timeOfDayStrength, 0, 1)
+      : 0;
 
   root.setAttribute('data-theme-id', theme.id);
   root.setAttribute('data-theme-category', theme.category);
@@ -4968,7 +5791,18 @@ export function applyThemeToCSS(
   root.setAttribute('data-mantine-color-scheme', isLightMode ? 'light' : 'dark');
 
   // Determine the effective brand color
-  const effectiveBrand = customAccent || theme.colors.brand;
+  const customBrand = customAccent || theme.colors.brand;
+  const adaptiveAccent = normalizeHexColor(themeState?.adaptiveAccent, customBrand);
+  const imageReactiveBrand =
+    adaptiveAccentStrength > 0
+      ? mixHexColors(adaptiveAccent, customBrand, adaptiveAccentStrength)
+      : customBrand;
+  let effectiveBrand = applyTimeOfDayShift(imageReactiveBrand, followSunStrength, now);
+  const accentBase =
+    adaptiveAccentStrength > 0
+      ? mixHexColors(adaptiveAccent, theme.colors.accent, adaptiveAccentStrength * 0.7)
+      : theme.colors.accent;
+  let effectiveAccent = applyTimeOfDayShift(accentBase, followSunStrength, now);
   const surfaceTintStrength = clamp(
     theme.colors.surfaceTintStrength ?? profile.surfaceTintStrength,
     0.04,
@@ -5014,6 +5848,10 @@ export function applyThemeToCSS(
     theme.colors.cardBg,
     mixHexColors(gray7, panelSurface, isLightMode ? 0.34 : 0.42)
   );
+  if (contrastGuardEnabled) {
+    effectiveBrand = ensureNonTextContrast(effectiveBrand, [appSurface, panelSurface, cardSurface], 3.0);
+    effectiveAccent = ensureNonTextContrast(effectiveAccent, [appSurface, panelSurface, cardSurface], 3.0);
+  }
   const raisedSurface = normalizeHexColor(
     theme.colors.raisedBg,
     mixHexColors(gray6, cardSurface, isLightMode ? 0.2 : 0.24)
@@ -5105,7 +5943,7 @@ export function applyThemeToCSS(
   );
   const interactiveHoverSurface = normalizeHexColor(
     theme.colors.interactiveHoverBg,
-    mixHexColors(theme.colors.accent, cardSurface, isLightMode ? 0.14 : 0.2)
+    mixHexColors(effectiveAccent, cardSurface, isLightMode ? 0.14 : 0.2)
   );
   const interactiveActiveSurface = normalizeHexColor(
     theme.colors.interactiveActiveBg,
@@ -5138,10 +5976,10 @@ export function applyThemeToCSS(
   );
   const secondaryAccent =
     theme.colors.secondaryAccent ||
-    `color-mix(in srgb, ${theme.colors.accent} ${64 + (themeSeed % 12)}%, ${effectiveBrand})`;
+    `color-mix(in srgb, ${effectiveAccent} ${64 + (themeSeed % 12)}%, ${effectiveBrand})`;
   const tertiaryAccent =
     theme.colors.tertiaryAccent ||
-    `color-mix(in srgb, ${theme.colors.success} ${52 + (themeSeed % 12)}%, ${theme.colors.accent})`;
+    `color-mix(in srgb, ${theme.colors.success} ${52 + (themeSeed % 12)}%, ${effectiveAccent})`;
   const highlightAccent =
     theme.colors.highlightAccent ||
     `color-mix(in srgb, ${theme.colors.warning} ${profile.highlightWeight}%, ${effectiveBrand})`;
@@ -5149,12 +5987,12 @@ export function applyThemeToCSS(
   const panelBlend = 80 + (themeSeed % 14);
   const panelGradient =
     theme.colors.panelGradient ||
-    `linear-gradient(${panelAngle}deg, color-mix(in srgb, ${gray8} ${panelBlend}%, ${effectiveBrand}), color-mix(in srgb, ${gray9} 92%, ${theme.colors.accent}))`;
+    `linear-gradient(${panelAngle}deg, color-mix(in srgb, ${gray8} ${panelBlend}%, ${effectiveBrand}), color-mix(in srgb, ${gray9} 92%, ${effectiveAccent}))`;
   const brandGradient =
     theme.colors.brandGradient ||
-    `linear-gradient(${124 + (themeSeed % 42)}deg, ${effectiveBrand}, color-mix(in srgb, ${effectiveBrand} 70%, ${theme.colors.accent}))`;
+    `linear-gradient(${124 + (themeSeed % 42)}deg, ${effectiveBrand}, color-mix(in srgb, ${effectiveBrand} 70%, ${effectiveAccent}))`;
   const brandSoft = `color-mix(in srgb, ${effectiveBrand} 24%, transparent)`;
-  const accentSoft = `color-mix(in srgb, ${theme.colors.accent} 22%, transparent)`;
+  const accentSoft = `color-mix(in srgb, ${effectiveAccent} 22%, transparent)`;
   const successSoft = `color-mix(in srgb, ${theme.colors.success} 24%, transparent)`;
   const warningSoft = `color-mix(in srgb, ${theme.colors.warning} 24%, transparent)`;
   const errorSoft = `color-mix(in srgb, ${theme.colors.error} 24%, transparent)`;
@@ -5191,6 +6029,25 @@ export function applyThemeToCSS(
     style.family === 'glyph' ? 0.14 : 0.22
   );
   const interactiveGradient = `linear-gradient(${92 + (themeSeed % 60)}deg, color-mix(in srgb, ${secondaryAccent} 36%, transparent), color-mix(in srgb, ${tertiaryAccent} 32%, transparent))`;
+  const meshOpacity = clamp(
+    theme.effects?.meshIntensity ?? (motionProfile === 'energetic' ? 0.9 : motionProfile === 'calm' ? 0.55 : 0.72),
+    0,
+    1.2
+  );
+  const noiseOpacity = clamp(theme.effects?.noiseIntensity ?? (style.family === 'glyph' ? 0.18 : 0.08), 0, 1);
+  const scanlineOpacity = clamp(
+    theme.effects?.scanlineIntensity ?? (style.family === 'glyph' ? 0.16 : 0.02),
+    0,
+    1
+  );
+  const meshAnimated = theme.effects?.meshAnimated ?? motionProfile === 'energetic';
+  const overlayBlend = theme.effects?.overlayBlend ?? (style.family === 'glyph' ? 'screen' : 'soft-light');
+  const noiseOverlay = `radial-gradient(circle at 1px 1px, color-mix(in srgb, ${textPrimaryResolved} ${2 + Math.round(noiseOpacity * 10)}%, transparent) 0.7px, transparent 0.95px) 0 0 / 8px 8px`;
+  const scanlineOverlay = `repeating-linear-gradient(180deg, color-mix(in srgb, ${effectiveAccent} ${1 + Math.round(scanlineOpacity * 8)}%, transparent) 0 1px, transparent 1px 3px)`;
+  const brandOklch = colorToOklchString(effectiveBrand, theme.colors.brand);
+  const accentOklch = colorToOklchString(effectiveAccent, theme.colors.accent);
+  const borderStrong = `color-mix(in oklch, ${brandOklch} 32%, ${colorToOklchString(gray5, gray5)})`;
+  const hoverOutline = `color-mix(in oklch, ${accentOklch} 28%, ${colorToOklchString(cardSurface, cardSurface)})`;
 
   // Set CSS custom properties for brand colors
   root.style.setProperty('--theme-seed', String(themeSeed));
@@ -5202,12 +6059,17 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-style-icon-mode', style.iconMode);
   root.style.setProperty('--theme-style-control-shape', style.controlShape);
   root.style.setProperty('--theme-style-icon-shape', style.iconShape);
+  root.setAttribute('data-theme-mesh-animated', meshAnimated ? 'true' : 'false');
   root.style.setProperty('--theme-brand', effectiveBrand);
   root.style.setProperty('--theme-brand-text', getContrastTextColor(effectiveBrand));
-  root.style.setProperty('--theme-accent', theme.colors.accent);
+  root.style.setProperty('--theme-accent', effectiveAccent);
   root.style.setProperty('--theme-accent-2', secondaryAccent);
   root.style.setProperty('--theme-accent-3', tertiaryAccent);
   root.style.setProperty('--theme-highlight-accent', highlightAccent);
+  root.style.setProperty('--theme-brand-oklch', brandOklch);
+  root.style.setProperty('--theme-accent-oklch', accentOklch);
+  root.style.setProperty('--theme-border-strong', borderStrong);
+  root.style.setProperty('--theme-hover-outline', hoverOutline);
   root.style.setProperty(
     '--theme-surface-tint',
     theme.colors.surfaceTint ||
@@ -5226,6 +6088,12 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-error-soft', errorSoft);
   root.style.setProperty('--theme-highlight-soft', highlightSoft);
   root.style.setProperty('--theme-mesh-overlay', meshOverlay);
+  root.style.setProperty('--theme-mesh-opacity', String(meshOpacity));
+  root.style.setProperty('--theme-noise-overlay', noiseOverlay);
+  root.style.setProperty('--theme-noise-opacity', String(noiseOpacity));
+  root.style.setProperty('--theme-scanline-overlay', scanlineOverlay);
+  root.style.setProperty('--theme-scanline-opacity', String(scanlineOpacity));
+  root.style.setProperty('--theme-overlay-blend-mode', overlayBlend);
   root.style.setProperty('--theme-motif-overlay', motifOverlay);
   root.style.setProperty('--theme-motif-overlay-panel', motifOverlayPanel);
   root.style.setProperty('--theme-motif-overlay-input', motifOverlayInput);
@@ -5260,20 +6128,20 @@ export function applyThemeToCSS(
   // Non-text Contrast (3:1) and §2.4.13 Focus Appearance against every
   // neighbouring surface. The booster only nudges colors that originally
   // failed - high-contrast brand colors pass through untouched.
-  const accessibleSelectedBorder = ensureNonTextContrast(
-    selectedBorder,
-    [appSurface, panelSurface, cardSurface],
-    3.0
-  );
-  const focusRing = ensureNonTextContrast(
-    theme.colors.focusRing || accessibleSelectedBorder,
-    [appSurface, panelSurface, cardSurface],
-    3.0
-  );
+  const accessibleSelectedBorder = contrastGuardEnabled
+    ? ensureNonTextContrast(selectedBorder, [appSurface, panelSurface, cardSurface], 3.0)
+    : selectedBorder;
+  const focusRing = contrastGuardEnabled
+    ? ensureNonTextContrast(
+        theme.colors.focusRing || accessibleSelectedBorder,
+        [appSurface, panelSurface, cardSurface],
+        3.0
+      )
+    : normalizeHexColor(theme.colors.focusRing, accessibleSelectedBorder);
   const highlightBg =
     theme.colors.highlightBg || `color-mix(in srgb, ${theme.colors.warning} 30%, transparent)`;
   const lineHighlight = theme.colors.lineHighlight || `color-mix(in srgb, ${gray6} 50%, ${gray7})`;
-  const linkUnderline = theme.colors.linkUnderline || theme.colors.accent;
+  const linkUnderline = theme.colors.linkUnderline || effectiveAccent;
   const bracketMatch =
     theme.colors.bracketMatch || `color-mix(in srgb, ${effectiveBrand} 25%, transparent)`;
 
@@ -5353,7 +6221,7 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-dropdown-bg', dropdownBg);
 
   // Syntax highlighting colors
-  const syntaxKeyword = theme.colors.syntaxKeyword || theme.colors.accent;
+  const syntaxKeyword = theme.colors.syntaxKeyword || effectiveAccent;
   const syntaxString = theme.colors.syntaxString || theme.colors.success;
   const syntaxNumber = theme.colors.syntaxNumber || theme.colors.warning;
   const syntaxComment = theme.colors.syntaxComment || gray4;
@@ -5365,7 +6233,7 @@ export function applyThemeToCSS(
   // Gradient accent (for generate button, etc.) is applied above
 
   // Semantic colors
-  const infoColor = theme.colors.infoColor || theme.colors.accent;
+  const infoColor = theme.colors.infoColor || effectiveAccent;
   const mutedText = normalizeHexColor(theme.colors.mutedText, textSecondaryResolved);
   const disabledOpacity = theme.colors.disabledOpacity ?? 0.45;
   const interactiveBg = normalizeHexColor(theme.colors.interactiveBg, interactiveHoverSurface);
@@ -5415,7 +6283,7 @@ export function applyThemeToCSS(
   const tonePrimaryBorder = `color-mix(in srgb, ${effectiveBrand} 52%, transparent)`;
   const tonePrimaryGlow = `color-mix(in srgb, ${effectiveBrand} 40%, transparent)`;
   const toneSecondarySolid = mixHexColors(interactiveActiveSurface, panelSurface, 0.58);
-  const toneSecondaryBg = `linear-gradient(135deg, color-mix(in srgb, ${theme.colors.accent} ${Math.round(controlOverlayOpacity * 72)}%, transparent), transparent 68%), ${toneSecondarySolid}`;
+  const toneSecondaryBg = `linear-gradient(135deg, color-mix(in srgb, ${effectiveAccent} ${Math.round(controlOverlayOpacity * 72)}%, transparent), transparent 68%), ${toneSecondarySolid}`;
   const toneSecondarySoft = `color-mix(in srgb, ${gray5} 36%, transparent)`;
   const toneSecondaryBorder = `color-mix(in srgb, ${gray4} 68%, transparent)`;
   const toneSecondaryGlow = `color-mix(in srgb, ${gray4} 28%, transparent)`;
@@ -5524,20 +6392,20 @@ export function applyThemeToCSS(
     ? `color-mix(in srgb, ${effectiveBrand} 58%, black)`
     : effectiveBrand;
   const progressFillEnd = isLightMode
-    ? `color-mix(in srgb, ${theme.colors.accent} 56%, black)`
-    : `color-mix(in srgb, ${effectiveBrand} 62%, ${theme.colors.accent})`;
+    ? `color-mix(in srgb, ${effectiveAccent} 56%, black)`
+    : `color-mix(in srgb, ${effectiveBrand} 62%, ${effectiveAccent})`;
   const progressFill = `linear-gradient(90deg, ${progressFillStart}, ${progressFillEnd})`;
   const progressFillComplete = isLightMode
     ? `linear-gradient(90deg, color-mix(in srgb, ${theme.colors.success} 58%, black), color-mix(in srgb, ${theme.colors.success} 52%, black))`
-    : `linear-gradient(90deg, ${theme.colors.success}, color-mix(in srgb, ${theme.colors.success} 60%, ${theme.colors.accent}))`;
+    : `linear-gradient(90deg, ${theme.colors.success}, color-mix(in srgb, ${theme.colors.success} 60%, ${effectiveAccent}))`;
   const progressGlow = `color-mix(in srgb, ${effectiveBrand} 42%, transparent)`;
   const progressGlowComplete = `color-mix(in srgb, ${theme.colors.success} 42%, transparent)`;
   const progressStripeA = isLightMode
     ? `color-mix(in srgb, ${effectiveBrand} 70%, black)`
-    : `color-mix(in srgb, ${effectiveBrand} 82%, ${theme.colors.accent})`;
+    : `color-mix(in srgb, ${effectiveBrand} 82%, ${effectiveAccent})`;
   const progressStripeB = isLightMode
-    ? `color-mix(in srgb, ${theme.colors.accent} 66%, black)`
-    : `color-mix(in srgb, ${theme.colors.accent} 68%, ${effectiveBrand})`;
+    ? `color-mix(in srgb, ${effectiveAccent} 66%, black)`
+    : `color-mix(in srgb, ${effectiveAccent} 68%, ${effectiveBrand})`;
   const progressLabel = isLightMode
     ? `color-mix(in srgb, ${effectiveBrand} 56%, black)`
     : effectiveBrand;
@@ -5722,6 +6590,52 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-ui-letter-spacing', uiLetterSpacing);
   root.style.setProperty('--theme-ui-transform', uiTransform);
   root.style.setProperty('--theme-icon-stroke-width', iconStrokeWidth);
+
+  if (target === (document.documentElement as unknown as ThemeCssTarget)) {
+    ensureThemeFontsLoaded(theme);
+  }
+}
+
+interface BuildThemeCssExportOptions {
+  isLightMode?: boolean;
+  customAccent?: string | null;
+  shapeOverrides?: ThemeShapeOverrides;
+}
+
+function buildThemeCssExport(theme: ThemePalette, options: BuildThemeCssExportOptions = {}): string {
+  const properties = new Map<string, string>();
+  const attributes = new Map<string, string>();
+  const mockTarget: ThemeCssTarget = {
+    style: {
+      setProperty: (name: string, value: string) => {
+        properties.set(name, value);
+      },
+      getPropertyValue: (name: string) => properties.get(name) || '',
+    },
+    setAttribute: (name: string, value: string) => {
+      attributes.set(name, value);
+    },
+  };
+
+  applyThemeToCSS(
+    theme,
+    options.isLightMode ?? false,
+    options.customAccent ?? null,
+    options.shapeOverrides || {},
+    mockTarget
+  );
+
+  const selector =
+    options.isLightMode ?? false
+      ? `:root[data-theme-id="${theme.id}"][data-mantine-color-scheme="light"]`
+      : `:root[data-theme-id="${theme.id}"][data-mantine-color-scheme="dark"]`;
+  const lines = Array.from(properties.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, value]) => `  ${name}: ${value};`);
+  const metadata = Array.from(attributes.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, value]) => `/* ${name}: ${value} */`);
+  return [...metadata, `${selector} {`, ...lines, `}`].join('\n');
 }
 
 // Initialize theme on app load. Reads persisted state directly so the first paint can
@@ -5751,7 +6665,8 @@ export function initializeTheme() {
       }
       const resolved = resolveScheme(mode);
       const activeId = resolved === 'light' ? lightId : darkId;
-      const theme = THEME_PALETTES.find((t) => t.id === activeId) || THEME_PALETTES[0];
+      const allThemes = [...THEME_PALETTES, ...((state.customThemes as ThemePalette[]) || [])];
+      const theme = allThemes.find((t) => t.id === activeId) || THEME_PALETTES[0];
       applyThemeToCSS(theme, resolved === 'light', state.customAccent || null, {
         controlShape: state.controlShapeOverride || null,
         iconShape: state.iconShapeOverride || null,

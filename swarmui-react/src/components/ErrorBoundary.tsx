@@ -2,6 +2,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { Card, Title, Text, Stack, Code, Group } from '@mantine/core';
 import { IconAlertTriangle, IconCopy, IconRefresh } from '@tabler/icons-react';
 import { SwarmButton as Button } from './ui';
+import { getRecentDebugTrace } from '../utils/debugTrace';
 
 interface Props {
     children?: ReactNode;
@@ -69,6 +70,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
                             {this.state.error && (
                                 <>
+                                    {(() => {
+                                        const recentTrace = getRecentDebugTrace();
+                                        return recentTrace ? (
+                                            <>
+                                                <Text fw={500} size="sm" c="yellow.3">Recent Trace:</Text>
+                                                <Code block color="yellow" style={{ whiteSpace: 'pre-wrap', maxHeight: '220px', overflowY: 'auto', fontSize: '11px' }}>
+                                                    {recentTrace}
+                                                </Code>
+                                            </>
+                                        ) : null;
+                                    })()}
+
                                     <Text fw={500} size="sm" c="red.3">Error Message:</Text>
                                     <Code block color="red" style={{ whiteSpace: 'pre-wrap', maxHeight: '150px', overflowY: 'auto' }}>
                                         {this.state.error.toString()}
@@ -91,7 +104,7 @@ export class ErrorBoundary extends Component<Props, State> {
                                     color="gray"
                                     leftSection={<IconCopy size={16} />}
                                     onClick={() => {
-                                        const text = `Error: ${this.state.error?.toString()}\n\nStack: ${this.state.errorInfo?.componentStack}`;
+                                        const text = `Error: ${this.state.error?.toString()}\n\nTrace:\n${getRecentDebugTrace()}\n\nStack: ${this.state.errorInfo?.componentStack}`;
                                         navigator.clipboard.writeText(text);
                                         // Ideally show a toast here, but for now simple copy is fine
                                     }}

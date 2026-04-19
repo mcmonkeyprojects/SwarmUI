@@ -1,3 +1,5 @@
+import type { RuntimeMode } from '../config/runtimeEndpoints';
+
 // SwarmUI API Types
 
 export interface SessionResponse {
@@ -524,6 +526,53 @@ export interface ServerResourceInfo {
   }>;
 }
 
+export interface UpdateCommitPreview {
+  commit: string;
+  short_commit: string;
+  date_utc: string;
+  subject: string;
+}
+
+export interface RepoUpdateStatus {
+  name: string;
+  branch: string;
+  upstream: string;
+  current_commit: string;
+  upstream_commit?: string | null;
+  has_local_changes: boolean;
+  local_changes_preview: string[];
+  ahead_count: number;
+  behind_count: number;
+  has_updates: boolean;
+  is_detached: boolean;
+  is_diverged: boolean;
+  can_auto_update: boolean;
+  can_fast_forward: boolean;
+  update_preview: string[];
+  update_details: UpdateCommitPreview[];
+  warnings: string[];
+}
+
+export interface UpdateCheckResponse {
+  checked_at_utc?: string;
+  server_updates_count: number;
+  server_updates_preview: string[];
+  server_repo?: RepoUpdateStatus;
+  extension_repos?: RepoUpdateStatus[];
+  extension_updates: string[];
+  backend_updates: string[];
+  warnings?: string[];
+  can_auto_update?: boolean;
+}
+
+export interface UpdateAndRestartResponse {
+  success?: boolean;
+  error?: string;
+  result?: string;
+  updated_repositories?: string[];
+  warnings?: string[];
+}
+
 export interface KohyaStatusResponse {
   installed: boolean;
   running: boolean;
@@ -704,5 +753,85 @@ export interface LoraTrainingStatus {
   refresh_message?: string;
   refresh_requested_utc?: string;
   refresh_completed_utc?: string;
+}
+
+// === Backend Compatibility Layer Types ===
+
+export type BackendTransportKind = 'unknown' | 'rest' | 'websocket';
+
+export type BackendTransportStatus = 'idle' | 'connected' | 'reconnecting' | 'degraded' | 'offline' | 'error';
+
+export type BackendBootstrapReason =
+  | 'startup'
+  | 'reconnect'
+  | 'session-refresh'
+  | 'capability-refresh'
+  | 'manual'
+  | 'unknown';
+
+export interface BackendSessionSnapshot {
+  sessionId: string;
+  userId: string;
+  permissions: string[];
+  version: string | null;
+}
+
+export interface BackendCapabilitySnapshot {
+  id: string;
+  name: string;
+  source: 't2i-param' | 'backend' | 'model-catalog' | 'user-data' | 'runtime';
+  available: boolean;
+  type?: string | null;
+  subtype?: string | null;
+  values?: string[];
+  defaultValue?: string | number | boolean | null;
+  toggleable?: boolean;
+  advanced?: boolean;
+  priority?: number;
+  featureFlag?: string | null;
+  updatedAt: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ConnectionHealthSnapshot {
+  transport: BackendTransportKind;
+  status: BackendTransportStatus;
+  connected: boolean;
+  lastEventAt: number | null;
+  lastBootstrapAt: number | null;
+  lastReconnectAt: number | null;
+  reconnectAttempts: number;
+  activeConnections: number;
+  lastError: string | null;
+}
+
+export interface BackendBootstrapSnapshot {
+  refreshedAt: number;
+  refreshReason: BackendBootstrapReason;
+  session: BackendSessionSnapshot | null;
+  serverVersion: string | null;
+  transport: {
+    apiBaseUrl: string;
+    wsBaseUrl: string;
+    mode: RuntimeMode;
+  };
+  connectionHealth: ConnectionHealthSnapshot;
+  capabilityMap: Record<string, BackendCapabilitySnapshot>;
+  modelCatalog: Record<string, Array<Model | VAEModel>>;
+  samplerCatalog: string[];
+  extensionCatalog: BackendStatus[];
+  backendStatus: BackendStatus[];
+  t2iParams: T2IParamsResponse | null;
+  userData: UserDataResponse | null;
+  errors: string[];
+}
+
+export interface SwarmEventEnvelope<T = unknown> {
+  type: string;
+  scope: 'bootstrap' | 'transport' | 'websocket' | 'session';
+  endpoint: string;
+  timestamp: number;
+  revision?: number;
+  data: T;
 }
 

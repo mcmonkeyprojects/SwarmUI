@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Modal,
   Stack,
@@ -38,9 +39,20 @@ import {
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { swarmClient } from '../api/client';
+import { queryClient, queryKeys } from '../api/queryClient';
 import { isTauri } from '@tauri-apps/api/core';
 import { open as openTauriDialog } from '@tauri-apps/plugin-dialog';
 import { SwarmActionIcon as ActionIcon, SwarmButton as Button } from './ui';
+import {
+  type RemoteModelPreviewCacheEntry,
+  ensureDescriptionHasSourceUrl as ensureRemoteDescriptionHasSourceUrl,
+  getSourceCacheKey,
+  loadRemoteModelPreviewCache,
+  parseCivitAIUrl as parseRemoteCivitAIUrl,
+  parseHuggingFaceRepoId as parseRemoteHuggingFaceRepoId,
+  refreshRemoteModelPreviewCache,
+  type ResolvedRemoteModelSource,
+} from '../lib/remoteModelPreviewCache';
 
 // CivitAI prefixes
 const CIVITAI_PREFIX = 'https://civitai.com/';
@@ -523,6 +535,7 @@ type DesktopFolderAPI = {
 export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDownloaderProps) {
   const cancelledDownloadIdsRef = useRef<Set<string>>(new Set());
   const refreshedIndexForCurrentOpenRef = useRef(false);
+  const [isFolderIndexReady, setIsFolderIndexReady] = useState(false);
 
   // Form state
   const [url, setUrl] = useState('');
@@ -534,8 +547,6 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
   const [modelType, setModelType] = useState<string>('Stable-Diffusion');
   const [fileName, setFileName] = useState('');
   const [folder, setFolder] = useState<string | null>('(None)');
-  const [folders, setFolders] = useState<string[]>([]);
-  const [foldersUnderRoot, setFoldersUnderRoot] = useState<string[]>([]);
   const [rootFolder, setRootFolder] = useState<string>('(None)');
   const [subfolder, setSubfolder] = useState<string>('');
   const [manualFolderPath, setManualFolderPath] = useState<string>('');
@@ -594,10 +605,53 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     folderOverridesRef.current = folderOverrides;
   }, [folderOverrides]);
 
+  const folderCandidatesQuery = useQuery({
+    queryKey: queryKeys.modelDownloader.candidates(modelType),
+    queryFn: () => swarmClient.listModelFolderCandidates(modelType),
+    enabled: opened && isFolderIndexReady,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: [],
+  });
+
+  const folderCandidates = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (folderCandidatesQuery.data ?? [])
+            .map((entry) => normalizeFolderPath(entry))
+            .filter(Boolean)
+        )
+      ).sort(),
+    [folderCandidatesQuery.data]
+  );
+
+  const foldersUnderRootQuery = useQuery({
+    queryKey: queryKeys.modelDownloader.subfolders(
+      modelType,
+      rootFolder === '(None)' ? '' : rootFolder
+    ),
+    queryFn: () => swarmClient.listModelFoldersAtPath(modelType, rootFolder === '(None)' ? '' : rootFolder),
+    enabled: opened && isFolderIndexReady,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: [],
+  });
+
+  const foldersUnderRoot = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (foldersUnderRootQuery.data ?? [])
+            .map((entry) => normalizeFolderPath(entry))
+            .filter(Boolean)
+        )
+      ).sort(),
+    [foldersUnderRootQuery.data]
+  );
+
   // Can download?
   const canDownload =
     url.trim() !== '' && fileName.trim() !== '' && !isLoadingMetadata && isUrlValid;
-  const allFolderPaths = folders.filter((folderPath) => folderPath !== '(None)');
+  const allFolderPaths = folderCandidates;
   const rootFolderSet = new Set<string>();
   for (const folderPath of allFolderPaths) {
     const segments = normalizeFolderPath(folderPath)
@@ -722,20 +776,19 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     [allBrowsablePaths]
   );
 
-  // Load folders and auto-map by model type on open/type change.
-  useEffect(() => {
-    if (!opened) {
-      refreshedIndexForCurrentOpenRef.current = false;
-      return;
-    }
-  }, [opened]);
+  const refreshModelFolderQueries = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.modelDownloader.all });
+  }, []);
 
   useEffect(() => {
     if (!opened) {
+      refreshedIndexForCurrentOpenRef.current = false;
+      setIsFolderIndexReady(false);
       return;
     }
+
     let isCancelled = false;
-    const loadFolders = async () => {
+    const refreshFolderIndex = async () => {
       try {
         if (!refreshedIndexForCurrentOpenRef.current) {
           await swarmClient.triggerModelRefresh();
@@ -743,81 +796,54 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
             return;
           }
           refreshedIndexForCurrentOpenRef.current = true;
+          await refreshModelFolderQueries();
         }
-        const folderList = await swarmClient.listModelFolderCandidates(modelType);
-        if (isCancelled) {
-          return;
+        if (!isCancelled) {
+          setIsFolderIndexReady(true);
         }
-        const normalizedFolders = Array.from(
-          new Set(
-            folderList
-              .map((entry) => normalizeFolderPath(entry))
-              .filter(Boolean)
-          )
-        ).sort();
-        const nextFolders = ['(None)', ...normalizedFolders];
-        setFolders(nextFolders);
-
-        // If user already overrode this type, always keep their choice.
-        const userOverride = folderOverridesRef.current[modelType];
-        if (userOverride) {
-          const normalizedOverride = normalizeFolderPath(userOverride) || '(None)';
-          const overrideParts = deriveRootAndSubfolder(normalizedOverride);
-          const isManualOverride =
-            normalizedOverride !== '(None)' && !nextFolders.includes(normalizedOverride);
-          setFolder(normalizedOverride);
-          setRootFolder(overrideParts.root);
-          setSubfolder(overrideParts.subfolder);
-          setManualFolderPath(isManualOverride ? normalizedOverride : '');
-          setUseManualFolder(isManualOverride);
-          setIsFolderAutoMapped(false);
-          return;
-        }
-
-        // Otherwise, choose best match for type and keep manual override available.
-        const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, normalizedFolders)) || '(None)';
-        setFolder(mappedFolder);
-        setRootFolder(mappedFolder);
-        setSubfolder('');
-        setManualFolderPath('');
-        setUseManualFolder(false);
-        setIsFolderAutoMapped(mappedFolder !== '(None)');
       } catch (error) {
-        console.error('Failed to load folders:', error);
+        console.error('Failed to refresh model folders:', error);
+        if (!isCancelled) {
+          refreshedIndexForCurrentOpenRef.current = true;
+          setIsFolderIndexReady(true);
+        }
       }
     };
-    void loadFolders();
+    void refreshFolderIndex();
     return () => {
       isCancelled = true;
     };
-  }, [opened, modelType, deriveRootAndSubfolder]);
+  }, [opened, refreshModelFolderQueries]);
 
-  // Load subfolders under the current selected root path.
   useEffect(() => {
-    if (!opened) {
+    if (!opened || !isFolderIndexReady || folderCandidatesQuery.isPlaceholderData) {
       return;
     }
-    let isCancelled = false;
-    const loadFoldersUnderRoot = async () => {
-      // Clear stale entries immediately so the subfolder list reflects the selected root.
-      setFoldersUnderRoot([]);
-      try {
-        const rootPath = rootFolder === '(None)' ? '' : rootFolder;
-        const result = await swarmClient.listModelFoldersAtPath(modelType, rootPath);
-        if (!isCancelled) {
-          setFoldersUnderRoot(result);
-        }
-      } catch {
-        if (!isCancelled) {
-          setFoldersUnderRoot([]);
-        }
-      }
-    };
-    void loadFoldersUnderRoot();
-    return () => {
-      isCancelled = true;
-    };
-  }, [opened, modelType, rootFolder]);
+
+    const nextFolders = ['(None)', ...folderCandidates];
+    const userOverride = folderOverridesRef.current[modelType];
+    if (userOverride) {
+      const normalizedOverride = normalizeFolderPath(userOverride) || '(None)';
+      const overrideParts = deriveRootAndSubfolder(normalizedOverride);
+      const isManualOverride =
+        normalizedOverride !== '(None)' && !nextFolders.includes(normalizedOverride);
+      setFolder(normalizedOverride);
+      setRootFolder(overrideParts.root);
+      setSubfolder(overrideParts.subfolder);
+      setManualFolderPath(isManualOverride ? normalizedOverride : '');
+      setUseManualFolder(isManualOverride);
+      setIsFolderAutoMapped(false);
+      return;
+    }
+
+    const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, folderCandidates)) || '(None)';
+    setFolder(mappedFolder);
+    setRootFolder(mappedFolder);
+    setSubfolder('');
+    setManualFolderPath('');
+    setUseManualFolder(false);
+    setIsFolderAutoMapped(mappedFolder !== '(None)');
+  }, [opened, isFolderIndexReady, folderCandidates, folderCandidatesQuery.isPlaceholderData, modelType, deriveRootAndSubfolder]);
 
   const clearMetadataState = () => {
     setMetadata(null);
@@ -827,6 +853,81 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     setAvailableImages([]);
     setSelectedImageIndex(0);
   };
+
+  const buildMetadataFromCacheEntry = useCallback(
+    (entry: RemoteModelPreviewCacheEntry): Record<string, string> => {
+      const metadataObj: Record<string, string> = {
+        'modelspec.title': entry.title || '',
+        'modelspec.description': ensureRemoteDescriptionHasSourceUrl(
+          entry.description || '',
+          entry.sourceUrl || null
+        ),
+        'modelspec.date': entry.date || '',
+        'modelspec.author': entry.author || '',
+        'modelspec.trigger_phrase': entry.triggerPhrase || '',
+        'modelspec.tags': entry.tags || '',
+      };
+      if (entry.usageHint) {
+        metadataObj['modelspec.usage_hint'] = entry.usageHint;
+      }
+      if (entry.sourceUrl) {
+        metadataObj['modelspec.source_url'] = entry.sourceUrl;
+      }
+      if (entry.sourceType) {
+        metadataObj['modelspec.source_type'] = entry.sourceType;
+      }
+      if (entry.sourceModelId) {
+        metadataObj['modelspec.source_model_id'] = entry.sourceModelId;
+      }
+      if (entry.sourceVersionId) {
+        metadataObj['modelspec.source_version_id'] = entry.sourceVersionId;
+      }
+      if (entry.sourceRepo) {
+        metadataObj['modelspec.source_repo'] = entry.sourceRepo;
+      }
+      return metadataObj;
+    },
+    []
+  );
+
+  const applyRemoteCacheEntry = useCallback(
+    (entry: RemoteModelPreviewCacheEntry, fallbackUrl: string) => {
+      const candidateUrls = entry.previewCandidates.map((candidate) => candidate.displayUrl);
+      setMetadata(buildMetadataFromCacheEntry(entry));
+      setAvailableImages(candidateUrls);
+      setSelectedImageIndex(0);
+      setThumbnailUrl(candidateUrls[0] ?? null);
+      setThumbnailDataUrl(candidateUrls[0] ?? null);
+      if (entry.sourceType === 'civitai' && entry.civitaiModelName && entry.civitaiVersionName) {
+        setCivitaiDetails({
+          modelId: entry.sourceModelId || '',
+          modelName: entry.civitaiModelName,
+          versionName: entry.civitaiVersionName,
+          baseModel: entry.civitaiBaseModel,
+          createdAt: entry.civitaiCreatedAt,
+          modelDescription: entry.civitaiModelDescription,
+          versionDescription: entry.civitaiVersionDescription,
+          trainedWords: entry.civitaiTrainedWords,
+          sourceUrl: entry.sourceUrl,
+        });
+      } else {
+        setCivitaiDetails(null);
+      }
+      if (entry.suggestedModelType) {
+        setModelType(entry.suggestedModelType);
+      }
+      if (entry.suggestedFileName) {
+        setFileName(entry.suggestedFileName);
+      }
+      setUrl(entry.resolvedDownloadUrl || fallbackUrl);
+      setIncludeMetadata(true);
+      if (candidateUrls.length > 0) {
+        setEmbedThumbnail(true);
+      }
+      setIsUrlValid(true);
+    },
+    [buildMetadataFromCacheEntry]
+  );
 
   const isDownloadableModelFile = (name: string): boolean => {
     return /\.(safetensors|sft|gguf)$/i.test(name);
@@ -838,6 +939,68 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     const last = parts[parts.length - 1];
     return last || null;
   };
+
+  const resolveRemoteSourceFromUrl = useCallback(
+    async (inputUrl: string): Promise<ResolvedRemoteModelSource | null> => {
+      const trimmedUrl = inputUrl.trim();
+      if (!trimmedUrl) {
+        return null;
+      }
+      const parsedCivit = parseRemoteCivitAIUrl(trimmedUrl);
+      if (parsedCivit.kind === 'model' && parsedCivit.modelId) {
+        const source = {
+          sourceType: 'civitai' as const,
+          sourceUrl: parsedCivit.normalizedUrl,
+          sourceModelId: parsedCivit.modelId,
+          sourceVersionId: parsedCivit.versionId,
+          sourceRepo: null,
+          sourceHash: null,
+        };
+        return {
+          ...source,
+          cacheKey: getSourceCacheKey(source),
+        };
+      }
+      if (parsedCivit.kind === 'download' && parsedCivit.versionId) {
+        let resolvedModelId: string | null = null;
+        const versionLookup = await swarmClient.forwardMetadataRequest(
+          `${CIVITAI_PREFIX}api/v1/model-versions/${parsedCivit.versionId}`
+        );
+        if (versionLookup && !versionLookup.error) {
+          resolvedModelId = coerceIdString((versionLookup as CivitAIModelVersionLookup).modelId);
+        }
+        const source = {
+          sourceType: 'civitai' as const,
+          sourceUrl: parsedCivit.normalizedUrl,
+          sourceModelId: resolvedModelId,
+          sourceVersionId: parsedCivit.versionId,
+          sourceRepo: null,
+          sourceHash: null,
+        };
+        return {
+          ...source,
+          cacheKey: getSourceCacheKey(source),
+        };
+      }
+      const huggingFaceRepo = parseRemoteHuggingFaceRepoId(trimmedUrl);
+      if (huggingFaceRepo) {
+        const source = {
+          sourceType: 'huggingface' as const,
+          sourceUrl: trimmedUrl,
+          sourceModelId: null,
+          sourceVersionId: null,
+          sourceRepo: huggingFaceRepo,
+          sourceHash: null,
+        };
+        return {
+          ...source,
+          cacheKey: getSourceCacheKey(source),
+        };
+      }
+      return null;
+    },
+    []
+  );
 
   const parseCivitAIUrl = (inputUrl: string): ParsedCivitAIUrl => {
     let normalizedUrl = inputUrl.trim();
@@ -1052,6 +1215,11 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
       setIsConvertingThumbnail(false);
       return;
     }
+    if (thumbnailUrl.startsWith('data:image/')) {
+      setThumbnailDataUrl(thumbnailUrl);
+      setIsConvertingThumbnail(false);
+      return;
+    }
     let cancelled = false;
     setIsConvertingThumbnail(true);
     convertImageUrlToDataUrl(thumbnailUrl)
@@ -1070,183 +1238,97 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     };
   }, [thumbnailUrl, embedThumbnail, convertImageUrlToDataUrl]);
 
-  const fetchCivitAIMetadata = async (
-    modelId: string,
-    versionId: string | null
-  ): Promise<boolean> => {
-    setIsLoadingMetadata(true);
-    try {
-      const response = await swarmClient.forwardMetadataRequest(
-        `${CIVITAI_PREFIX}api/v1/models/${modelId}`
-      );
-      if (!response) {
-        setUrlStatus({ type: 'error', message: 'Failed to fetch CivitAI metadata: no response from server' });
-        setIsUrlValid(false);
-        return false;
-      }
-      if (response.error) {
-        setUrlStatus({ type: 'error', message: `Failed to fetch CivitAI metadata: ${response.error}` });
-        setIsUrlValid(false);
-        return false;
-      }
-      if (!Array.isArray(response.modelVersions) || response.modelVersions.length === 0) {
-        setUrlStatus({ type: 'error', message: 'Failed to fetch CivitAI metadata: no model versions found' });
-        setIsUrlValid(false);
+  const refreshRemoteMetadataForUrl = useCallback(
+    async (inputUrl: string): Promise<boolean> => {
+      const trimmedUrl = inputUrl.trim();
+      const isDirectCivitDownload = parseRemoteCivitAIUrl(trimmedUrl).kind === 'download';
+      const source = await resolveRemoteSourceFromUrl(trimmedUrl);
+      if (!source) {
         return false;
       }
 
-      const data = response as CivitAIMetadata;
+      const cachedEntry = await loadRemoteModelPreviewCache(source.cacheKey);
+      if (cachedEntry) {
+        applyRemoteCacheEntry(cachedEntry, trimmedUrl);
+        setUrlStatus({
+          type: 'info',
+          message: `Loaded cached ${cachedEntry.sourceType === 'civitai' ? 'CivitAI' : 'HuggingFace'} metadata. Checking for updates...`,
+        });
+      } else {
+        setUrlStatus({
+          type: 'info',
+          message:
+            source.sourceType === 'civitai'
+              ? 'Loading CivitAI metadata...'
+              : 'Loading HuggingFace metadata...',
+        });
+      }
 
-      let selectedVersion = data.modelVersions[0];
-      let selectedFile =
-        selectedVersion.files.find((f) => isDownloadableModelFile(f.name)) ??
-        selectedVersion.files[0];
-
-      if (versionId) {
-        let found = false;
-        for (const version of data.modelVersions) {
-          for (const file of version.files) {
-            const fileVersionId = extractCivitAIVersionIdFromDownloadUrl(file.downloadUrl);
-            if (fileVersionId === versionId) {
-              selectedVersion = version;
-              selectedFile = file;
-              found = true;
-              break;
-            }
-          }
-          if (found) {
-            break;
-          }
+      setIsLoadingMetadata(!cachedEntry);
+      try {
+        const refreshedEntry = await refreshRemoteModelPreviewCache(
+          swarmClient,
+          source,
+          {
+            convertImageUrlToDataUrl,
+            convertVideoUrlToDataUrl,
+          },
+          fileName || undefined
+        );
+        if (refreshedEntry) {
+          applyRemoteCacheEntry(refreshedEntry, trimmedUrl);
+          setUrlStatus({
+            type: 'success',
+            message:
+              refreshedEntry.sourceType === 'civitai'
+                ? `CivitAI: ${refreshedEntry.civitaiModelName || refreshedEntry.title || 'Metadata refreshed'}`
+                : `HuggingFace: ${refreshedEntry.title || refreshedEntry.sourceRepo || 'Metadata refreshed'}`,
+          });
+          return true;
         }
-      }
-
-      if (!isDownloadableModelFile(selectedFile.name)) {
-        const fallback = data.modelVersions
-          .flatMap((version) => version.files.map((file) => ({ version, file })))
-          .find((entry) => isDownloadableModelFile(entry.file.name));
-        if (fallback) {
-          selectedVersion = fallback.version;
-          selectedFile = fallback.file;
+        if (cachedEntry) {
+          setUrlStatus({
+            type: 'warning',
+            message: 'Using cached remote metadata. Live refresh returned no updated data.',
+          });
+          return true;
         }
-      }
-
-      if (!isDownloadableModelFile(selectedFile.name)) {
+        setUrlStatus({
+          type: 'warning',
+          message:
+            source.sourceType === 'civitai'
+              ? 'Valid CivitAI link, but metadata could not be loaded.'
+              : 'Valid HuggingFace link, but metadata could not be loaded.',
+        });
+        setIsUrlValid(source.sourceType === 'huggingface' || isDirectCivitDownload);
+        return false;
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        if (cachedEntry) {
+          setUrlStatus({
+            type: 'warning',
+            message: `Using cached remote metadata. Live refresh failed: ${detail}`,
+          });
+          return true;
+        }
         setUrlStatus({
           type: 'error',
-          message: `Cannot download: file is not safetensors or GGUF (${selectedFile.name})`,
+          message: `Failed to load remote metadata: ${detail}`,
         });
-        setIsUrlValid(false);
+        setIsUrlValid(isDirectCivitDownload);
         return false;
+      } finally {
+        setIsLoadingMetadata(false);
       }
-
-      if (data.type === 'Checkpoint') setModelType('Stable-Diffusion');
-      else if (['LORA', 'LoCon', 'LyCORIS'].includes(data.type)) setModelType('LoRA');
-      else if (data.type === 'TextualInversion') setModelType('Embedding');
-      else if (data.type === 'ControlNet') setModelType('ControlNet');
-      else if (data.type === 'VAE') setModelType('VAE');
-
-      const imageUrls =
-        selectedVersion.images?.filter((img) => img.type === 'image').map((img) => img.url) ?? [];
-      setAvailableImages(imageUrls);
-      setSelectedImageIndex(0);
-      setThumbnailUrl(imageUrls[0] ?? null);
-
-      let downloadUrl = selectedFile.downloadUrl;
-      if (selectedFile.name.endsWith('.gguf')) {
-        downloadUrl += '#.gguf';
-      }
-      setUrl(downloadUrl);
-
-      const safeName = `${data.name} - ${selectedVersion.name}`.replace(
-        /[|\\/:*?"<>|,.&![\]()]/g,
-        '-'
-      );
-      setFileName(safeName);
-
-      const selectedVersionId = coerceIdString(selectedVersion.id) || versionId;
-      const sourceUrl = selectedVersionId
-        ? `${CIVITAI_PREFIX}models/${modelId}?modelVersionId=${selectedVersionId}`
-        : `${CIVITAI_PREFIX}models/${modelId}`;
-
-      const metadataObj: Record<string, string> = {
-        'modelspec.title': `${data.name} - ${selectedVersion.name}`,
-        'modelspec.description': `From ${sourceUrl}\n${selectedVersion.description || ''}\n${data.description || ''}`,
-        'modelspec.date': selectedVersion.createdAt,
-        'modelspec.author': data.creator?.username || '',
-        'modelspec.trigger_phrase': selectedVersion.trainedWords?.join('; ') || '',
-        'modelspec.tags': data.tags?.join(', ') || '',
-      };
-      if (['Illustrious', 'Pony'].includes(selectedVersion.baseModel)) {
-        metadataObj['modelspec.usage_hint'] = selectedVersion.baseModel;
-      }
-
-      setMetadata(metadataObj);
-      setIncludeMetadata(true);
-      setEmbedThumbnail(true);
-      setCivitaiDetails({
-        modelId,
-        modelName: data.name,
-        versionName: selectedVersion.name,
-        baseModel: selectedVersion.baseModel,
-        createdAt: selectedVersion.createdAt,
-        modelDescription: data.description,
-        versionDescription: selectedVersion.description,
-        trainedWords: selectedVersion.trainedWords,
-        sourceUrl,
-      });
-
-      setUrlStatus({
-        type: 'success',
-        message: `CivitAI: ${data.name} - ${selectedVersion.name} (${selectedVersion.baseModel})`,
-      });
-      setIsUrlValid(true);
-      return true;
-    } catch (error) {
-      console.error('CivitAI metadata error:', error);
-      const detail = error instanceof Error ? error.message : String(error);
-      setUrlStatus({ type: 'error', message: `Failed to load CivitAI metadata: ${detail}` });
-      setIsUrlValid(false);
-      return false;
-    } finally {
-      setIsLoadingMetadata(false);
-    }
-  };
-
-  const fetchCivitAIMetadataByVersion = async (versionId: string): Promise<void> => {
-    setIsLoadingMetadata(true);
-    try {
-      const lookup = await swarmClient.forwardMetadataRequest(
-        `${CIVITAI_PREFIX}api/v1/model-versions/${versionId}`
-      );
-      if (!lookup || lookup.error) {
-        const detail = lookup?.error ? `: ${lookup.error}` : '';
-        setUrlStatus({
-          type: 'warning',
-          message: `Valid CivitAI download link, but metadata could not be loaded${detail}`,
-        });
-        setIsUrlValid(true);
-        return;
-      }
-      if (typeof (lookup as CivitAIModelVersionLookup).modelId !== 'number') {
-        setUrlStatus({
-          type: 'warning',
-          message: 'Valid CivitAI download link, but metadata response was missing modelId',
-        });
-        setIsUrlValid(true);
-        return;
-      }
-      await fetchCivitAIMetadata(String((lookup as CivitAIModelVersionLookup).modelId), versionId);
-    } catch (error) {
-      console.error('CivitAI version metadata error:', error);
-      setUrlStatus({
-        type: 'warning',
-        message: 'Valid CivitAI download link, but metadata could not be loaded',
-      });
-      setIsUrlValid(true);
-    } finally {
-      setIsLoadingMetadata(false);
-    }
-  };
+    },
+    [
+      applyRemoteCacheEntry,
+      convertImageUrlToDataUrl,
+      convertVideoUrlToDataUrl,
+      fileName,
+      resolveRemoteSourceFromUrl,
+    ]
+  );
 
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl);
@@ -1313,22 +1395,19 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
 
       const nameFromPath = filePathWithoutQuery.replace(/\.(safetensors|sft|gguf)$/i, '');
       setFileName(nameFromPath);
-      setIsUrlValid(true);
+      void refreshRemoteMetadataForUrl(cleanUrl).then((loaded) => {
+        if (!loaded) {
+          setIsUrlValid(true);
+        }
+      });
       return;
     }
 
     if (trimmedUrl.startsWith(CIVITAI_PREFIX) || trimmedUrl.startsWith(CIVITAI_GREEN_PREFIX)) {
       const parsed = parseCivitAIUrl(trimmedUrl);
       setUrl(parsed.normalizedUrl);
-      if (parsed.kind === 'model' && parsed.modelId) {
-        setUrlStatus({ type: 'info', message: 'Loading CivitAI metadata...' });
-        void fetchCivitAIMetadata(parsed.modelId, parsed.versionId);
-        return;
-      }
-      if (parsed.kind === 'download' && parsed.versionId) {
-        setIsUrlValid(true);
-        setUrlStatus({ type: 'info', message: 'Loading CivitAI metadata...' });
-        void fetchCivitAIMetadataByVersion(parsed.versionId);
+      if (parsed.kind === 'model' || parsed.kind === 'download') {
+        void refreshRemoteMetadataForUrl(parsed.normalizedUrl);
         return;
       }
       setUrlStatus({
@@ -2314,6 +2393,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
       const wasCancelled = scanCancelRequestedRef.current;
       if (!scanDryRun && updated > 0) {
         await withRetries(() => swarmClient.triggerModelRefresh());
+        await refreshModelFolderQueries();
       }
 
       if (wasCancelled) {
@@ -2453,8 +2533,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
     });
     folderOverridesRef.current = { ...folderOverridesRef.current };
     delete folderOverridesRef.current[modelType];
-    const normalizedFolders = folders.filter((f) => f !== '(None)');
-    const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, normalizedFolders)) || '(None)';
+    const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, folderCandidates)) || '(None)';
     setFolder(mappedFolder);
     setRootFolder(mappedFolder);
     setSubfolder('');
@@ -2792,7 +2871,12 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
             color: 'green',
             icon: <IconCheck size={16} />,
           });
-          swarmClient.triggerModelRefresh();
+          void swarmClient
+            .triggerModelRefresh()
+            .then(() => refreshModelFolderQueries())
+            .catch((error) => {
+              console.error('Failed to refresh model folders after download:', error);
+            });
           onDownloadComplete?.();
         },
         onError: (error) => {
@@ -2837,8 +2921,7 @@ export function ModelDownloader({ opened, onClose, onDownloadComplete }: ModelDo
       return next;
     });
     delete folderOverridesRef.current[modelType];
-    const normalizedFolders = folders.filter((f) => f !== '(None)');
-    const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, normalizedFolders)) || '(None)';
+    const mappedFolder = normalizeFolderPath(findAutoMappedFolder(modelType, folderCandidates)) || '(None)';
     setFolder(mappedFolder);
     setRootFolder(mappedFolder);
     setSubfolder('');

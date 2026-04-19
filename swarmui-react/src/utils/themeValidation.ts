@@ -2,7 +2,7 @@
 import { type ThemePalette, type ThemeCategory } from '../store/themeStore';
 
 const VALID_CATEGORIES: ThemeCategory[] = [
-    'default', 'app', 'editor', 'color-scheme', 'aesthetic', 'game', 'minimal', 'custom'
+    'default', 'app', 'editor', 'color-scheme', 'aesthetic', 'game', 'art', 'film', 'music', 'nature', 'minimal', 'custom'
 ];
 
 const VALID_STYLE_FAMILIES = ['classic', 'material', 'glyph'] as const;
@@ -12,6 +12,7 @@ const VALID_CONTROL_MODES = ['default', 'filled', 'outlined'] as const;
 const VALID_ICON_MODES = ['plain', 'badge', 'glyph-outline'] as const;
 const VALID_CONTROL_SHAPES = ['rounded', 'pill', 'square'] as const;
 const VALID_ICON_SHAPES = ['rounded', 'circle', 'square'] as const;
+const VALID_OVERLAY_BLENDS = ['normal', 'screen', 'overlay', 'soft-light', 'multiply'] as const;
 
 /**
  * Validates if a string is a valid hex color
@@ -170,6 +171,73 @@ export function validateTheme(theme: unknown): { valid: boolean; errors: string[
                 && (style.motifIntensity < 0 || style.motifIntensity > 1)
             ) {
                 errors.push('Theme motif intensity must be between 0 and 1');
+            }
+        }
+    }
+
+    if (candidate.effects !== undefined) {
+        if (typeof candidate.effects !== 'object' || candidate.effects === null) {
+            errors.push('Theme "effects" must be an object when provided');
+        } else {
+            const effects = candidate.effects as Record<string, unknown>;
+            const numericKeys = ['noiseIntensity', 'scanlineIntensity', 'meshIntensity'];
+            for (const key of numericKeys) {
+                const value = effects[key];
+                if (value !== undefined && (typeof value !== 'number' || Number.isNaN(value) || value < 0 || value > 1.2)) {
+                    errors.push(`Theme effect "${key}" must be a number between 0 and 1.2`);
+                }
+            }
+            if (effects.meshAnimated !== undefined && typeof effects.meshAnimated !== 'boolean') {
+                errors.push('Theme effect "meshAnimated" must be a boolean');
+            }
+            if (
+                effects.overlayBlend !== undefined &&
+                !VALID_OVERLAY_BLENDS.includes(effects.overlayBlend as typeof VALID_OVERLAY_BLENDS[number])
+            ) {
+                errors.push(`Theme overlay blend must be one of: ${VALID_OVERLAY_BLENDS.join(', ')}`);
+            }
+        }
+    }
+
+    if (candidate.adaptive !== undefined) {
+        if (typeof candidate.adaptive !== 'object' || candidate.adaptive === null) {
+            errors.push('Theme "adaptive" must be an object when provided');
+        } else {
+            const adaptive = candidate.adaptive as Record<string, unknown>;
+            const numericKeys = ['imageReactiveStrength', 'timeOfDayStrength'];
+            for (const key of numericKeys) {
+                const value = adaptive[key];
+                if (value !== undefined && (typeof value !== 'number' || Number.isNaN(value) || value < 0 || value > 1)) {
+                    errors.push(`Theme adaptive setting "${key}" must be a number between 0 and 1`);
+                }
+            }
+            if (adaptive.contrastGuard !== undefined && typeof adaptive.contrastGuard !== 'boolean') {
+                errors.push('Theme adaptive setting "contrastGuard" must be a boolean');
+            }
+        }
+    }
+
+    if (candidate.meta !== undefined) {
+        if (typeof candidate.meta !== 'object' || candidate.meta === null) {
+            errors.push('Theme "meta" must be an object when provided');
+        } else {
+            const meta = candidate.meta as Record<string, unknown>;
+            const stringKeys = ['themeSet', 'pairedModeThemeId'];
+            for (const key of stringKeys) {
+                const value = meta[key];
+                if (value !== undefined && typeof value !== 'string') {
+                    errors.push(`Theme metadata "${key}" must be a string`);
+                }
+            }
+            const listKeys = ['recommendationIds', 'tags'];
+            for (const key of listKeys) {
+                const value = meta[key];
+                if (
+                    value !== undefined &&
+                    (!Array.isArray(value) || value.some((entry) => typeof entry !== 'string'))
+                ) {
+                    errors.push(`Theme metadata "${key}" must be an array of strings`);
+                }
             }
         }
     }

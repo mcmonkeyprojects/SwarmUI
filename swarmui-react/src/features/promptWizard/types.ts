@@ -92,25 +92,3 @@ export interface PromptHealthIssue {
   detail: string;
   tone: WizardTone;
 }
-
-export type PresetCategory = 'characters' | 'scenes' | 'styles' | 'perspectives' | 'explicit';
-
-export const PRESET_CATEGORIES: PresetCategory[] = ['characters', 'scenes', 'styles', 'perspectives', 'explicit'];
-
-export const PRESET_CATEGORY_LABELS: Record<PresetCategory, string> = {
-  characters: 'Characters',
-  scenes: 'Scenes',
-  styles: 'Styles',
-  perspectives: 'Perspectives',
-  explicit: 'Explicit',
-};
-
-export interface BrowserPreset {
-  id: string;
-  name: string;
-  category: PresetCategory;
-  tagIds: string[];
-  description?: string;
-  thumbnail?: string;
-  isDefault: boolean;
-}

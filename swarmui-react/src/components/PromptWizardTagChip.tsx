@@ -102,7 +102,7 @@ export const PromptWizardTagChip = memo(function PromptWizardTagChip({
     style.textDecoration = 'line-through';
   } else if (!selected && isPairing) {
     tone = 'warning';
-    emphasis = 'light';
+    emphasis = 'soft';
     style.border = '1px solid var(--mantine-color-warning-light)';
   }
 

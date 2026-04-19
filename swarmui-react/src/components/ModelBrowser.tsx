@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useCallback, type MouseEvent } from 'react';
+import { useState, useEffect, useMemo, useCallback, type MouseEvent } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 import { logger } from '../utils/logger';
 import { Z_INDEX } from '../utils/zIndex';
@@ -39,6 +39,7 @@ import {
     IconStarFilled,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import { useQuery } from '@tanstack/react-query';
 import { swarmClient } from '../api/client';
 import type { Model } from '../api/types';
 import { LazyImage } from './LazyImage';
@@ -54,6 +55,9 @@ import {
 } from './browserThumbnailSizes';
 import { featureFlags } from '../config/featureFlags';
 import { useWorkerFilter } from '../hooks/useWorker';
+import { useBackendStarredModels } from '../hooks/useBackendBootstrap';
+import { queryClient, queryKeys } from '../api/queryClient';
+import { useDebugTrace } from '../utils/debugTrace';
 
 interface ModelBrowserProps {
     opened: boolean;
@@ -66,10 +70,50 @@ interface ModelBrowserProps {
 type ViewMode = 'cards' | 'list' | 'icons';
 
 const MODEL_SEARCH_FIELDS: (keyof Model)[] = ['name', 'title', 'description', 'architecture'];
+const MODEL_BROWSER_VIEW_MODE_OPTIONS = [
+    {
+        value: 'cards',
+        label: (
+            <Center style={{ gap: 6 }}>
+                <IconLayoutGrid size={16} />
+                <span>Cards</span>
+            </Center>
+        ),
+    },
+    {
+        value: 'list',
+        label: (
+            <Center style={{ gap: 6 }}>
+                <IconLayoutList size={16} />
+                <span>List</span>
+            </Center>
+        ),
+    },
+    {
+        value: 'icons',
+        label: (
+            <Center style={{ gap: 6 }}>
+                <IconPhoto size={16} />
+                <span>Icons</span>
+            </Center>
+        ),
+    },
+] as const;
+
+function setsEqual<T>(left: Set<T>, right: Set<T>): boolean {
+    if (left.size !== right.size) {
+        return false;
+    }
+    for (const value of left) {
+        if (!right.has(value)) {
+            return false;
+        }
+    }
+    return true;
+}
 
 export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, onClearModel }: ModelBrowserProps) {
-    const [models, setModels] = useState<Model[]>([]);
-    const [loading, setLoading] = useState(true);
+    const starredModelsQuery = useBackendStarredModels('Stable-Diffusion', { enabled: opened });
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 200);
     const [viewMode, setViewMode] = useState<ViewMode>('cards');
@@ -90,10 +134,21 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [loadedModelNames, setLoadedModelNames] = useState<Set<string>>(new Set());
     const [starredModels, setStarredModels] = useState<Set<string>>(new Set());
-
-    const [apiFolders, setApiFolders] = useState<string[]>([]);
-    const modelsCacheRef = useRef<Model[] | null>(null);
-    const apiFoldersCacheRef = useRef<string[] | null>(null);
+    const modelsQuery = useQuery({
+        queryKey: queryKeys.models.browser('', 'Stable-Diffusion'),
+        queryFn: () => swarmClient.listModelsWithFolders(),
+        staleTime: 5 * 60 * 1000,
+        enabled: opened,
+    });
+    const loadedModelsQuery = useQuery({
+        queryKey: queryKeys.models.loaded(),
+        queryFn: () => swarmClient.listLoadedModels(),
+        staleTime: 30 * 1000,
+        enabled: opened,
+    });
+    const models = modelsQuery.data?.files ?? [];
+    const apiFolders = modelsQuery.data?.folders ?? [];
+    const loading = opened && modelsQuery.isLoading && !modelsQuery.data;
 
     const sanitizeModelSnippet = (input?: string): string => {
         if (!input) return '';
@@ -150,37 +205,15 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
         setExpandedModel((prev: string | null) => prev === name ? null : name);
     };
 
-    useEffect(() => {
-        if (opened) {
-            // Use cached data if available for instant loading
-            if (modelsCacheRef.current && modelsCacheRef.current.length > 0) {
-                setModels(modelsCacheRef.current);
-                if (apiFoldersCacheRef.current) {
-                    setApiFolders(apiFoldersCacheRef.current);
-                }
-                setLoading(false);
-            } else {
-                loadModels();
-            }
-        }
-    }, [opened]);
-
-    // Note: debounce is handled by useDebounce hook above
-
     const loadModels = async () => {
-        setLoading(true);
         try {
-            const result = await swarmClient.listModelsWithFolders();
-            if (result.files.length > 0) {
-                logger.debug('[ModelBrowser] Total models:', result.files.length);
+            const result = await modelsQuery.refetch();
+            if (result.data?.files && result.data.files.length > 0) {
+                logger.debug('[ModelBrowser] Total models:', result.data.files.length);
             }
-            if (result.folders.length > 0) {
-                logger.debug('[ModelBrowser] API folders:', result.folders.length);
+            if (result.data?.folders && result.data.folders.length > 0) {
+                logger.debug('[ModelBrowser] API folders:', result.data.folders.length);
             }
-            modelsCacheRef.current = result.files;
-            apiFoldersCacheRef.current = result.folders;
-            setModels(result.files);
-            setApiFolders(result.folders);
         } catch (error) {
             console.error('Failed to load Models:', error);
             notifications.show({
@@ -188,41 +221,24 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                 message: 'Failed to load Model list',
                 color: 'red',
             });
-        } finally {
-            setLoading(false);
         }
     };
 
-    // Load which models are currently loaded in backends
-    const loadLoadedModels = useCallback(async () => {
-        try {
-            const loaded = await swarmClient.listLoadedModels();
-            setLoadedModelNames(new Set(loaded.map((m: { name: string }) => m.name)));
-        } catch {
-            // Non-critical, silently ignore
+    useEffect(() => {
+        if (!loadedModelsQuery.data) {
+            return;
         }
-    }, []);
-
-    // Load starred models from user data
-    const loadStarredModels = useCallback(async () => {
-        try {
-            const userData = await swarmClient.getMyUserData();
-            if (userData && typeof userData === 'object' && 'starred_models' in userData) {
-                const starred = (userData as { starred_models: Record<string, string[]> }).starred_models;
-                const sdStarred = starred?.['Stable-Diffusion'] || [];
-                setStarredModels(new Set(sdStarred));
-            }
-        } catch {
-            // Non-critical, silently ignore
-        }
-    }, []);
+        const nextLoadedModelNames = new Set(loadedModelsQuery.data.map((model) => model.name));
+        setLoadedModelNames((current) => setsEqual(current, nextLoadedModelNames) ? current : nextLoadedModelNames);
+    }, [loadedModelsQuery.data]);
 
     useEffect(() => {
-        if (opened) {
-            loadLoadedModels();
-            loadStarredModels();
+        if (!opened || !starredModelsQuery.data) {
+            return;
         }
-    }, [opened, loadLoadedModels, loadStarredModels]);
+        const nextStarredModels = new Set(starredModelsQuery.data);
+        setStarredModels((current) => setsEqual(current, nextStarredModels) ? current : nextStarredModels);
+    }, [opened, starredModelsQuery.data]);
 
     const handleToggleStar = async (modelName: string) => {
         const newStarred = new Set(starredModels);
@@ -271,8 +287,9 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
             } else {
                 notifications.show({ title: 'Renamed', message: `Model renamed to "${renameValue.trim()}"`, color: 'green' });
                 setRenameModalOpen(false);
-                modelsCacheRef.current = null;
-                loadModels();
+                queryClient.invalidateQueries({ queryKey: queryKeys.models.browser('', 'Stable-Diffusion') });
+                queryClient.invalidateQueries({ queryKey: queryKeys.models.loaded() });
+                await loadModels();
             }
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to rename model', color: 'red' });
@@ -296,8 +313,9 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
             } else {
                 notifications.show({ title: 'Deleted', message: `Model "${deleteModelName}" deleted`, color: 'green' });
                 setDeleteConfirmOpen(false);
-                modelsCacheRef.current = null;
-                loadModels();
+                queryClient.invalidateQueries({ queryKey: queryKeys.models.browser('', 'Stable-Diffusion') });
+                queryClient.invalidateQueries({ queryKey: queryKeys.models.loaded() });
+                await loadModels();
             }
         } catch {
             notifications.show({ title: 'Error', message: 'Failed to delete model', color: 'red' });
@@ -389,6 +407,25 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
             return matchesFolder && matchesFolderDepth;
         });
     }, [searchFilteredModels, selectedFolder, folderDepth, getFolder, normalizePath]);
+
+    useDebugTrace('ModelBrowser', {
+        opened,
+        loading,
+        modelsCount: models.length,
+        apiFoldersCount: apiFolders.length,
+        searchQuery,
+        debouncedSearch,
+        viewMode,
+        folderDepth,
+        selectedFolder,
+        thumbnailSize,
+        filteredModelsCount: filteredModels.length,
+        loadedModelNamesCount: loadedModelNames.size,
+        starredModelsCount: starredModels.size,
+        detailModalOpen,
+        renameModalOpen,
+        deleteConfirmOpen,
+    });
 
     const handleSelectModel = (modelName: string) => {
         onModelSelect(modelName);
@@ -880,35 +917,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                         <SwarmSegmentedControl
                             value={viewMode}
                             onChange={(value: string) => setViewMode(value as ViewMode)}
-                            data={[
-                                {
-                                    value: 'cards',
-                                    label: (
-                                        <Center style={{ gap: 6 }}>
-                                            <IconLayoutGrid size={16} />
-                                            <span>Cards</span>
-                                        </Center>
-                                    ),
-                                },
-                                {
-                                    value: 'list',
-                                    label: (
-                                        <Center style={{ gap: 6 }}>
-                                            <IconLayoutList size={16} />
-                                            <span>List</span>
-                                        </Center>
-                                    ),
-                                },
-                                {
-                                    value: 'icons',
-                                    label: (
-                                        <Center style={{ gap: 6 }}>
-                                            <IconPhoto size={16} />
-                                            <span>Icons</span>
-                                        </Center>
-                                    ),
-                                },
-                            ]}
+                            data={MODEL_BROWSER_VIEW_MODE_OPTIONS}
                         />
                         <NumberInput
                             label="Folder Depth"
@@ -947,10 +956,7 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                             tone="secondary"
                             emphasis="soft"
                             label="Refresh model list"
-                            onClick={() => {
-                                modelsCacheRef.current = null; // Clear cache
-                                loadModels();
-                            }}
+                            onClick={() => void loadModels()}
                             title="Refresh Models"
                         >
                             <IconRefresh size={18} />
@@ -1065,8 +1071,9 @@ export function ModelBrowser({ opened, onClose, selectedModel, onModelSelect, on
                 onClose={() => setDetailModalOpen(false)}
                 modelName={detailModelName}
                 onModelChanged={() => {
-                    modelsCacheRef.current = null;
-                    loadModels();
+                    queryClient.invalidateQueries({ queryKey: queryKeys.models.browser('', 'Stable-Diffusion') });
+                    queryClient.invalidateQueries({ queryKey: queryKeys.models.loaded() });
+                    void loadModels();
                 }}
             />
 

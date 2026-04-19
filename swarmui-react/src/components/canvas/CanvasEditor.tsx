@@ -36,6 +36,7 @@ import {
 import { swarmClient } from '../../api/client';
 import type { GenerateParams } from '../../api/types';
 import { useCanvasEditor } from '../../hooks/useCanvasEditor';
+import { useBackends } from '../../hooks/useModels';
 import { useCanvasEditorStore, type CanvasSelection, type CanvasTool } from '../../stores/canvasEditorStore';
 import { usePromptBuilderStore } from '../../stores/promptBuilderStore';
 import { compilePromptBuilder, normalizedRegionToPixels, type CanvasApplyPayload } from '../../features/promptBuilder';
@@ -289,6 +290,7 @@ export const CanvasEditor = memo(function CanvasEditor({
     const applyFromCanvas = usePromptBuilderStore((state) => state.applyFromCanvas);
     const activeRegion = regions.find((region) => region.id === activeRegionId) ?? null;
     const activeLayer = imageLayers.find((layer) => layer.id === activeImageLayerId) ?? null;
+    const backendsQuery = useBackends();
 
     const {
         canvasRef,
@@ -471,21 +473,21 @@ export const CanvasEditor = memo(function CanvasEditor({
     }, [imageLayers]);
 
     useEffect(() => {
-        let cancelled = false;
-        void swarmClient.listBackends().then((backends) => {
-            if (cancelled) {
-                return;
-            }
-            setSam2Available(backends.some((backend) => Array.isArray((backend as { features?: unknown }).features) && ((backend as { features?: unknown[] }).features ?? []).includes('sam2')));
-        }).catch(() => {
-            if (!cancelled) {
-                setSam2Available(null);
-            }
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+        if (backendsQuery.error) {
+            setSam2Available(null);
+            return;
+        }
+        if (!backendsQuery.data) {
+            return;
+        }
+        setSam2Available(
+            backendsQuery.data.some(
+                (backend) =>
+                    Array.isArray((backend as { features?: unknown }).features)
+                    && ((backend as { features?: unknown[] }).features ?? []).includes('sam2')
+            )
+        );
+    }, [backendsQuery.data, backendsQuery.error]);
 
     useEffect(() => {
         if (!imageLoaded) {

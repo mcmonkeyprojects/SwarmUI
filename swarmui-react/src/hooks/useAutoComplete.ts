@@ -11,7 +11,7 @@ import {
     type SortMode,
     type MatchMode
 } from '../stores/autoCompleteStore';
-import { swarmClient } from '../api/client';
+import { useBackendAutocompletions } from './useBackendBootstrap';
 
 export interface UseAutoCompleteOptions {
     /** Whether autocomplete is enabled */
@@ -104,18 +104,19 @@ export function useAutoComplete(options: UseAutoCompleteOptions = {}): UseAutoCo
     const isLoaded = useAutoCompleteStore(state => state.isLoaded);
     const search = useAutoCompleteStore(state => state.search);
     const storeLoad = useAutoCompleteStore(state => state.loadAutocompletions);
+    const autocompletionsQuery = useBackendAutocompletions({ enabled });
 
-    // Load autocompletions from backend
     const loadAutocompletions = useCallback(async () => {
         if (isLoaded || loadingRef.current) return;
         loadingRef.current = true;
 
         try {
-            console.debug('[useAutoComplete] Loading autocompletions from backend...');
-            const userData = await swarmClient.getMyUserData() as any;
-            if (userData?.autocompletions) {
-                console.debug(`[useAutoComplete] Received ${userData.autocompletions.length} entries`);
-                storeLoad(userData.autocompletions);
+            const result = await autocompletionsQuery.refetch();
+            const snapshot = result.data as { userData?: { autocompletions?: string[] } } | undefined;
+            const autocompletions = snapshot?.userData?.autocompletions ?? [];
+            if (autocompletions.length > 0) {
+                console.debug(`[useAutoComplete] Received ${autocompletions.length} entries`);
+                storeLoad(autocompletions);
             } else {
                 console.debug('[useAutoComplete] No autocompletions in user data. Make sure AutoCompletionsSource is configured in SwarmUI User Settings.');
             }
@@ -124,7 +125,14 @@ export function useAutoComplete(options: UseAutoCompleteOptions = {}): UseAutoCo
         } finally {
             loadingRef.current = false;
         }
-    }, [isLoaded, storeLoad]);
+    }, [autocompletionsQuery, isLoaded, storeLoad]);
+
+    useEffect(() => {
+        if (!enabled || isLoaded || !autocompletionsQuery.data || autocompletionsQuery.data.length === 0) {
+            return;
+        }
+        storeLoad(autocompletionsQuery.data);
+    }, [autocompletionsQuery.data, enabled, isLoaded, storeLoad]);
 
     // Auto-load on mount if not loaded
     useEffect(() => {

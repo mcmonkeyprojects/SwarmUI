@@ -28,6 +28,27 @@ body,
 #root {
   position: relative;
   isolation: isolate;
+  z-index: 1;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: var(--theme-overlay-blend-mode);
+}
+
+body::before {
+  background: var(--theme-noise-overlay);
+  opacity: calc(var(--theme-noise-opacity) * var(--effects-intensity));
+}
+
+body::after {
+  background: var(--theme-scanline-overlay);
+  opacity: calc(var(--theme-scanline-opacity) * var(--effects-intensity));
 }
 
 /* Global text color inheritance */
@@ -221,6 +242,16 @@ h6 {
     radial-gradient(circle at 18% 12%, var(--theme-brand-soft), transparent 56%),
     radial-gradient(circle at 80% 8%, var(--theme-accent-soft), transparent 52%),
     radial-gradient(circle at 48% 78%, var(--theme-highlight-soft), transparent 60%);
+  --theme-mesh-opacity: 0.8;
+  --theme-noise-overlay: none;
+  --theme-noise-opacity: 0;
+  --theme-scanline-overlay: none;
+  --theme-scanline-opacity: 0;
+  --theme-overlay-blend-mode: soft-light;
+  --theme-brand-oklch: oklch(0.55 0.21 295);
+  --theme-accent-oklch: oklch(0.63 0.18 250);
+  --theme-border-strong: color-mix(in oklch, var(--theme-brand-oklch) 32%, var(--theme-gray-5));
+  --theme-hover-outline: color-mix(in oklch, var(--theme-accent-oklch) 28%, var(--theme-surface-card));
   --theme-interactive-gradient: linear-gradient(
     120deg,
     var(--theme-accent-soft),
@@ -659,7 +690,13 @@ h6 {
 /* === TRANSITION UTILITY CLASSES === */
 
 .transition-all {
-  transition: all var(--transition-duration) var(--ease-in-out-smooth);
+  transition:
+    background-color var(--transition-duration) var(--ease-in-out-smooth),
+    border-color var(--transition-duration) var(--ease-in-out-smooth),
+    color var(--transition-duration) var(--ease-in-out-smooth),
+    opacity var(--transition-duration) var(--ease-in-out-smooth),
+    transform var(--transition-duration) var(--ease-in-out-smooth),
+    box-shadow var(--transition-duration) var(--ease-in-out-smooth);
 }
 
 .transition-transform {
@@ -790,7 +827,9 @@ h6 {
 [data-effects='off'] .mantine-AppShell-main::before,
 [data-effects='off'] .mantine-AppShell-main::after,
 [data-effects='off'] .ui-hero::before,
-[data-effects='off'] .ui-hero::after {
+[data-effects='off'] .ui-hero::after,
+[data-effects='off'] body::before,
+[data-effects='off'] body::after {
   animation: none !important;
   opacity: 0 !important;
 }
@@ -812,6 +851,8 @@ h6 {
 [data-ambient-motion='off'] .mantine-AppShell-main::after,
 [data-ambient-motion='off'] .ui-hero::before,
 [data-ambient-motion='off'] .ui-hero::after,
+[data-ambient-motion='off'] body::before,
+[data-ambient-motion='off'] body::after,
 [data-ambient-motion='off'] .fx-icon-float {
   animation: none !important;
 }
@@ -953,9 +994,13 @@ h1 {
   height: 360px;
   pointer-events: none;
   background: var(--theme-mesh-overlay);
-  opacity: calc(0.8 * var(--effects-intensity));
+  opacity: calc(var(--theme-mesh-opacity) * var(--effects-intensity));
   animation: ambientDrift calc(26s * var(--motion-ambient-factor)) ease-in-out infinite;
   z-index: 0;
+}
+
+[data-theme-mesh-animated='false'] .mantine-AppShell-main::before {
+  animation: none;
 }
 
 .mantine-AppShell-main::after {
@@ -974,7 +1019,8 @@ h1 {
       color-mix(in srgb, var(--theme-accent-2) 9%, transparent),
       transparent 48%
     ),
-    var(--theme-interactive-gradient);
+    var(--theme-interactive-gradient),
+    var(--theme-motif-overlay);
   background-size:
     26px 26px,
     100% 100%,
@@ -1170,7 +1216,7 @@ h1 {
 /* === CARDS, PAPER, PANELS === */
 .mantine-Card-root {
   background-color: var(--theme-surface-card) !important;
-  border: var(--theme-border-width) var(--theme-border-style) var(--theme-gray-5) !important;
+  border: var(--theme-border-width) var(--theme-border-style) var(--theme-border-strong) !important;
   border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
   background-image: linear-gradient(
     180deg,
@@ -1191,11 +1237,12 @@ h1 {
 .mantine-Card-root:hover {
   transform: translateY(calc(var(--theme-hover-lift-distance) * -1));
   box-shadow: var(--elevation-shadow-md) !important;
+  border-color: var(--theme-hover-outline) !important;
 }
 
 .mantine-Paper-root {
   background-color: var(--theme-surface-card) !important;
-  border: var(--theme-border-width) var(--theme-border-style) var(--theme-gray-5) !important;
+  border: var(--theme-border-width) var(--theme-border-style) var(--theme-border-strong) !important;
   border-radius: calc(8px * var(--theme-radius-multiplier)) !important;
   color: var(--theme-text-on-card) !important;
 }
@@ -1473,6 +1520,14 @@ hr,
 }
 
 /* Checkbox */
+.mantine-Checkbox-root,
+.mantine-Checkbox-body,
+.mantine-Checkbox-labelWrapper,
+.mantine-Checkbox-label {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
 .mantine-Checkbox-input {
   background-color: var(--theme-gray-7) !important;
   border-color: var(--theme-gray-5) !important;
@@ -1501,7 +1556,14 @@ hr,
   box-shadow:
     inset 0 1px 0 var(--theme-control-highlight),
     var(--elevation-shadow-sm) !important;
-  transition: all calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important;
+  transition:
+    background-color calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve)
+      !important,
+    border-color calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important,
+    color calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important,
+    box-shadow calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important,
+    filter calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important,
+    transform calc(100ms * var(--motion-factor)) var(--theme-family-animation-curve) !important;
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -1532,8 +1594,6 @@ hr,
 .mantine-Button-root[data-color*='Brand'],
 .mantine-Button-root[data-color*='brand'],
 .mantine-Button-root[data-color='invokeBrand'],
-[data-color='invokeBrand'],
-[style*='invokeBrand'],
 button[class*='invokeBrand'],
 .mantine-Button-root[class*='invokeBrand'] {
   background-color: var(--theme-brand) !important;
@@ -1586,7 +1646,12 @@ button[class*='invokeBrand'],
   border: 1px solid var(--theme-control-border-soft) !important;
   border-radius: var(--theme-icon-radius) !important;
   color: var(--theme-text-primary) !important;
-  transition: all 0.1s ease !important;
+  transition:
+    background-color 0.1s ease !important,
+    border-color 0.1s ease !important,
+    color 0.1s ease !important,
+    box-shadow 0.1s ease !important,
+    transform 0.1s ease !important;
   background: var(--theme-control-neutral-bg) !important;
   box-shadow:
     inset 0 1px 0 var(--theme-control-highlight),
@@ -1660,6 +1725,17 @@ button[class*='invokeBrand'],
   justify-content: center;
   gap: 6px;
   white-space: nowrap;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+}
+
+.swarm-segmented-control .mantine-SegmentedControl-innerLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: inherit;
+  line-height: 1;
 }
 
 .swarm-segmented-control--compact .mantine-SegmentedControl-label {
@@ -2082,6 +2158,13 @@ button[class*='invokeBrand'],
   transition: background-color 150ms ease !important;
 }
 
+.mantine-Accordion-control:focus-visible {
+  outline: 2px solid var(--theme-focus-ring) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 20%, transparent) !important;
+  background-color: var(--elevation-raised) !important;
+}
+
 .mantine-Accordion-control:hover {
   background-color: var(--elevation-raised) !important;
 }
@@ -2279,11 +2362,13 @@ body {
 :focus-visible {
   outline: 2px solid var(--theme-focus-ring);
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 22%, transparent);
 }
 
 /* Mantine specific focus overrides */
 .mantine-focus-auto:focus-visible {
   outline-color: var(--theme-focus-ring) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 22%, transparent) !important;
 }
 
 /* === LINE HIGHLIGHT FOR ACTIVE ITEMS === */
@@ -2995,7 +3080,7 @@ body {
 
 [data-swarm-tone].swarm-switch .mantine-Switch-input:focus-visible + .mantine-Switch-track {
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--swarm-tone-border) 28%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--swarm-tone-border) 28%, transparent),
     inset 0 1px 0 color-mix(in srgb, var(--theme-gray-0) 5%, transparent) !important;
 }
 
@@ -3031,9 +3116,12 @@ body {
 
 .swarm-slider-field__number-input:focus,
 .swarm-slider-field__number-input:focus-visible {
-  outline: none !important;
+  outline: 2px solid var(--theme-focus-ring) !important;
+  outline-offset: 2px;
   border-color: color-mix(in srgb, var(--theme-brand) 42%, transparent) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-brand) 18%, transparent) !important;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--theme-brand) 18%, transparent),
+    inset 0 1px 0 var(--theme-control-highlight) !important;
 }
 
 .swarm-slider-field__description {
@@ -3375,7 +3463,11 @@ pre,
   background: var(--theme-gray-7);
   border: 2px solid transparent;
   border-radius: 8px;
-  transition: all var(--transition-duration) var(--theme-animation-curve);
+  transition:
+    background-color var(--transition-duration) var(--theme-animation-curve),
+    border-color var(--transition-duration) var(--theme-animation-curve),
+    box-shadow var(--transition-duration) var(--theme-animation-curve),
+    transform var(--transition-duration) var(--theme-animation-curve);
 }
 
 .btn-gradient-border::before {
@@ -3591,7 +3683,17 @@ pre,
   font-weight: var(--font-semibold);
   background-color: var(--theme-gray-6);
   color: var(--theme-gray-3);
-  transition: all 0.2s var(--theme-animation-curve);
+  transition:
+    background-color 0.2s var(--theme-animation-curve),
+    color 0.2s var(--theme-animation-curve),
+    box-shadow 0.2s var(--theme-animation-curve),
+    transform 0.2s var(--theme-animation-curve);
+}
+
+.step-indicator-item:focus-visible {
+  outline: 2px solid var(--theme-focus-ring);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 20%, transparent);
 }
 
 .step-indicator-item.active {
@@ -4292,6 +4394,7 @@ pre,
 .swarm-resize-handle:focus-visible {
   outline: 2px solid var(--theme-focus-ring);
   outline-offset: -1px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 18%, transparent);
 }
 
 .swarm-resize-handle--horizontal {
@@ -4380,13 +4483,22 @@ pre,
   color: var(--theme-text-secondary);
   border-radius: calc(8px * var(--theme-radius-multiplier));
   white-space: nowrap;
+  border: 1px solid transparent;
+  background: transparent;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .swarm-server-tabs .mantine-Tabs-tab[data-active='true'] {
   color: var(--theme-text-primary);
-  background: color-mix(in srgb, var(--theme-brand) 20%, var(--theme-gray-7));
-  border: 1px solid color-mix(in srgb, var(--theme-brand) 45%, transparent);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--theme-brand) 24%, transparent);
+  background: color-mix(in srgb, var(--theme-gray-7) 88%, var(--theme-gray-6));
+  border: 1px solid color-mix(in srgb, var(--theme-gray-3) 26%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--theme-gray-1) 8%, transparent),
+    0 4px 14px color-mix(in srgb, #000 32%, transparent);
 }
 
 .swarm-resource-card {
@@ -4432,6 +4544,7 @@ pre,
   background: color-mix(in srgb, var(--theme-brand) 14%, var(--theme-gray-7)) !important;
   border-color: color-mix(in srgb, var(--theme-brand) 44%, transparent) !important;
   transform: translateY(-1px);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--theme-focus-ring) 18%, transparent);
 }
 
 .swarm-server-page {

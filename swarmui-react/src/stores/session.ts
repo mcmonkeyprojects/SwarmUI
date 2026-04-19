@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { swarmClient, type SessionChangeReason } from '../api/client';
+import { swarmBackendAdapter } from '../api/backendAdapter';
 import { useWebSocketStore } from './websocketStore';
 import { resolveRuntimeEndpoints } from '../config/runtimeEndpoints';
 import { featureFlags } from '../config/featureFlags';
@@ -29,7 +30,7 @@ function syncSessionToWebSocket(
 }
 
 function applySessionState(
-  session: { session_id: string; user_id: string; permissions?: string[] } | null
+  session: { session_id: string; user_id: string; permissions?: string[]; version?: string } | null
 ): void {
   if (!session) {
     useSessionStore.setState({
@@ -70,8 +71,10 @@ export const useSessionStore = create<SessionState>()(
 
         try {
           const response = await swarmClient.initSession('init');
+          swarmBackendAdapter.setSession(response);
           applySessionState(response);
           syncSessionToWebSocket(response.session_id, 'init');
+          await swarmBackendAdapter.getBootstrap('startup');
           console.debug('[SessionStore] Session and WebSocket initialized');
         } catch (error) {
           set({ isInitializing: false });
@@ -81,6 +84,7 @@ export const useSessionStore = create<SessionState>()(
       },
 
       clearSession: () => {
+        swarmBackendAdapter.setSession(null);
         set({
           isInitialized: false,
           isInitializing: false,
@@ -103,9 +107,22 @@ if (
   (globalThis as Record<string, unknown>)[SESSION_LISTENER_KEY] = true;
   swarmClient.onSessionChanged((session, reason) => {
     applySessionState(session);
+    if (session?.session_id) {
+      swarmBackendAdapter.setSession({
+        session_id: session.session_id,
+        user_id: session.user_id,
+        output_append_user: false,
+        version: '',
+        server_id: '',
+        permissions: session.permissions || [],
+      });
+    } else {
+      swarmBackendAdapter.setSession(null);
+    }
     if (!session?.session_id) {
       return;
     }
     syncSessionToWebSocket(session.session_id, reason);
+    void swarmBackendAdapter.getBootstrap(reason === 'refresh' ? 'session-refresh' : 'manual');
   });
 }

@@ -1,5 +1,5 @@
 import { Box } from '@mantine/core';
-import { forwardRef, type CSSProperties } from 'react';
+import { forwardRef, type CSSProperties, type MouseEventHandler } from 'react';
 
 export type ElevationLevel = 'floor' | 'table' | 'paper' | 'raised';
 
@@ -15,6 +15,7 @@ export interface ElevatedCardProps {
     children: React.ReactNode;
     className?: string;
     style?: CSSProperties;
+    onClick?: MouseEventHandler<HTMLDivElement>;
 }
 
 /**
@@ -35,6 +36,7 @@ export const ElevatedCard = forwardRef<HTMLDivElement, ElevatedCardProps>(
             children,
             style,
             className,
+            onClick,
         },
         ref
     ) {
@@ -98,6 +100,7 @@ export const ElevatedCard = forwardRef<HTMLDivElement, ElevatedCardProps>(
                 ref={ref}
                 className={`elevated-card elevated-card--${elevation} elevated-card--${tone} ${interactive ? 'fx-hover-lift' : ''} ${className || ''}`}
                 style={baseStyle}
+                onClick={onClick}
             >
                 {children}
             </Box>

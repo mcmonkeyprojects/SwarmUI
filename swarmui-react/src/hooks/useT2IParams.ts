@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { swarmClient } from '../api/client';
+import { useMemo, useCallback } from 'react';
 import { useSessionStore } from '../stores/session';
 import type { T2IParam, T2IParamGroup, T2IParamsResponse } from '../api/types';
+import { useBackendBootstrap } from './useBackendBootstrap';
 import type { SamplerOption, SchedulerOption } from '../data/samplerData';
 import {
   SAMPLER_OPTIONS as FALLBACK_SAMPLERS,
@@ -91,27 +91,17 @@ export function mergeSamplingOptions<T extends SamplingOptionLike>(
 
 export function useT2IParams(): T2IParamsState {
   const isInitialized = useSessionStore((state) => state.isInitialized);
-  const [rawResponse, setRawResponse] = useState<T2IParamsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const query = useBackendBootstrap({ enabled: isInitialized });
 
   const loadParams = useCallback(async () => {
-    if (!isInitialized) return;
-    setIsLoading(true);
     try {
-      const response = await swarmClient.listT2IParams();
-      setRawResponse(response);
+      await query.refetch();
     } catch (error) {
       logger.error('Failed to load T2I params:', error);
-    } finally {
-      setIsLoading(false);
     }
-  }, [isInitialized]);
+  }, [query]);
 
-  useEffect(() => {
-    if (isInitialized) {
-      loadParams();
-    }
-  }, [isInitialized, loadParams]);
+  const rawResponse: T2IParamsResponse | null = query.data?.t2iParams ?? null;
 
   const params = useMemo(() => rawResponse?.list ?? [], [rawResponse]);
   const groups = useMemo(() => rawResponse?.groups ?? [], [rawResponse]);
@@ -185,7 +175,7 @@ export function useT2IParams(): T2IParamsState {
     params,
     groups,
     isLoaded: rawResponse !== null,
-    isLoading,
+    isLoading: query.isLoading || query.isFetching,
     samplerOptions,
     schedulerOptions,
     paramRanges,

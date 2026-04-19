@@ -26,6 +26,8 @@ import type {
   LogType,
   LogMessage,
   ServerResourceInfo,
+  UpdateCheckResponse,
+  UpdateAndRestartResponse,
   KohyaDatasetInfo,
   KohyaStatusResponse,
   KohyaTrainedLoraInfo,
@@ -1625,21 +1627,21 @@ export class SwarmUIClient {
     return response as { success?: boolean; changed_settings?: string[]; error?: string };
   }
 
-  async checkForUpdates(): Promise<Record<string, unknown>> {
-    const response = await this.post<Record<string, unknown>>('CheckForUpdates', {});
-    return response as Record<string, unknown>;
+  async checkForUpdates(): Promise<UpdateCheckResponse> {
+    const response = await this.post<UpdateCheckResponse>('CheckForUpdates', {});
+    return response as UpdateCheckResponse;
   }
 
   async updateAndRestart(params?: {
     updateExtensions?: boolean;
     updateBackends?: boolean;
     force?: boolean;
-  }): Promise<{ success?: boolean; error?: string }> {
-    const response = await this.post<{ success?: boolean; error?: string }>(
+  }): Promise<UpdateAndRestartResponse> {
+    const response = await this.post<UpdateAndRestartResponse>(
       'UpdateAndRestart',
       params ?? {}
     );
-    return response as { success?: boolean; error?: string };
+    return response as UpdateAndRestartResponse;
   }
 
   async installExtension(extensionName: string): Promise<{ success?: boolean; error?: string }> {
@@ -2246,13 +2248,22 @@ export class SwarmUIClient {
   }
 
   async forwardMetadataImageRequest(url: string): Promise<string | null> {
+    const response = await this.forwardMetadataImageRequestDetailed(url);
+    return response.image;
+  }
+
+  async forwardMetadataImageRequestDetailed(url: string): Promise<{ image: string | null; error: string | null }> {
     const response = await this.post<{ image?: string; error?: string }>('ForwardMetadataImageRequest', {
       url,
-    });
+    }, { timeout: 15000 });
     if ('image' in response && typeof response.image === 'string' && response.image.startsWith('data:image/')) {
-      return response.image;
+      return { image: response.image, error: null };
     }
-    return null;
+    if ('error' in response && response.error) {
+      this.log('error', `ForwardMetadataImageRequest failed for ${url}: ${response.error}`);
+      return { image: null, error: response.error };
+    }
+    return { image: null, error: 'No image data returned by backend proxy.' };
   }
 
   async setModelPreviewFromMetadataUrl(params: {
@@ -2263,8 +2274,12 @@ export class SwarmUIClient {
   }): Promise<{ success?: boolean; error?: string }> {
     const response = await this.post<{ success?: boolean; error?: string }>(
       'SetModelPreviewFromMetadataUrl',
-      params
+      params,
+      { timeout: 20000 }
     );
+    if ('error' in response && response.error) {
+      this.log('error', `SetModelPreviewFromMetadataUrl failed for ${params.image_url}: ${response.error}`);
+    }
     return response as { success?: boolean; error?: string };
   }
 

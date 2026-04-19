@@ -398,3 +398,15 @@ export const useCanvasState = () => useGenerationStore(
         goToPrevImage: state.goToPrevImage,
     }))
 );
+
+/**
+ * Select only canvas navigation state used by the generation workspace.
+ */
+export const useCanvasNavigationState = () => useGenerationStore(
+    useShallow((state) => ({
+        currentImageIndex: state.currentImageIndex,
+        setCurrentImageIndex: state.setCurrentImageIndex,
+        goToNextImage: state.goToNextImage,
+        goToPrevImage: state.goToPrevImage,
+    }))
+);

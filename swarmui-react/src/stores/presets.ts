@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { swarmClient } from '../api/client';
+import { queryClient, queryKeys } from '../api/queryClient';
 import type { BackendPreset } from '../api/types';
 import type { GenerateParams } from '../api/types';
 import { logger } from '../utils/logger';
@@ -99,7 +100,10 @@ export const usePresetsStore = create<PresetsState & PresetsActions>()(
         if (get().isLoading) return;
         set({ isLoading: true });
         try {
-          const backendPresets = await swarmClient.getUserPresets();
+          const backendPresets = await queryClient.fetchQuery({
+            queryKey: queryKeys.presets.list(),
+            queryFn: () => swarmClient.getUserPresets(),
+          });
           const presets = backendPresets.map(fromBackendPreset);
           set({ presets, isLoaded: true });
         } catch (error) {
@@ -121,7 +125,7 @@ export const usePresetsStore = create<PresetsState & PresetsActions>()(
             logger.error('Failed to add preset:', response.preset_fail);
             return false;
           }
-          // Reload from backend to get authoritative state
+          await queryClient.invalidateQueries({ queryKey: queryKeys.presets.list() });
           await get().loadFromBackend();
           return true;
         } catch (error) {
@@ -134,9 +138,8 @@ export const usePresetsStore = create<PresetsState & PresetsActions>()(
         try {
           const response = await swarmClient.deletePreset(id);
           if (response.success) {
-            set((state) => ({
-              presets: state.presets.filter((p) => p.id !== id),
-            }));
+            await queryClient.invalidateQueries({ queryKey: queryKeys.presets.list() });
+            await get().loadFromBackend();
             return true;
           }
           return false;
@@ -153,7 +156,7 @@ export const usePresetsStore = create<PresetsState & PresetsActions>()(
             logger.error('Failed to duplicate preset:', response.preset_fail);
             return false;
           }
-          // Reload from backend to get the new preset with its auto-generated name
+          await queryClient.invalidateQueries({ queryKey: queryKeys.presets.list() });
           await get().loadFromBackend();
           return true;
         } catch (error) {
@@ -184,6 +187,7 @@ export const usePresetsStore = create<PresetsState & PresetsActions>()(
             logger.error('Failed to update preset:', response.preset_fail);
             return false;
           }
+          await queryClient.invalidateQueries({ queryKey: queryKeys.presets.list() });
           await get().loadFromBackend();
           return true;
         } catch (error) {

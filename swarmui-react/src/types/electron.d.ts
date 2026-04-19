@@ -10,6 +10,8 @@ interface ElectronBridge {
     restartSwarmUI?: () => Promise<{ success: boolean }>;
     shutdownApp?: () => Promise<boolean>;
     reloadWrapper?: () => Promise<boolean>;
+    selectFolder?: (startPath?: string) => Promise<string | null>;
+    version?: string;
     platform?: string;
     isElectron?: boolean;
     hasNativeSpellcheck?: () => boolean;

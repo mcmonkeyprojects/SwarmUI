@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef, type ChangeEvent } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import {
     Badge,
     Grid,
@@ -83,30 +84,6 @@ interface HistoryPageProps {
     routeState?: HistoryRouteState;
 }
 
-interface HistoryPageState {
-    folders: string[];
-    files: HistoryImageItem[];
-    nextCursor: string | null;
-    hasMore: boolean;
-    truncated: boolean;
-    totalCount: number;
-    loading: boolean;
-    loadingMore: boolean;
-    error: string | null;
-}
-
-const INITIAL_HISTORY_STATE: HistoryPageState = {
-    folders: [],
-    files: [],
-    nextCursor: null,
-    hasMore: false,
-    truncated: false,
-    totalCount: 0,
-    loading: true,
-    loadingMore: false,
-    error: null,
-};
-
 export function HistoryPage({ routeState }: HistoryPageProps) {
     const { setParams } = useGenerationStore();
     const setBatchOutputFolder = useGenerationStore((state) => state.setBatchOutputFolder);
@@ -124,7 +101,6 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
         ...DEFAULT_HISTORY_PREFERENCES,
         ...readHistoryPreferences(),
     }));
-    const [historyState, setHistoryState] = useState<HistoryPageState>(INITIAL_HISTORY_STATE);
     const [currentPath, setCurrentPath] = useState('');
     const [selectedImage, setSelectedImage] = useState<HistoryImageItem | null>(null);
     const [searchQuery, setSearchQuery, debouncedSearchQuery] = useDebouncedState('', 250);
@@ -136,7 +112,6 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     const [comparisonImages, setComparisonImages] = useState<[HistoryImageItem | null, HistoryImageItem | null]>([null, null]);
     const [lineageModalOpen, setLineageModalOpen] = useState(false);
 
-    const requestIdRef = useRef(0);
     const completedGenerationRef = useRef(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -192,6 +167,43 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
         preferences.mediaType,
     ]);
 
+    const historyListQueryKey = useMemo(() => ['history', 'list', historyQuery] as const, [historyQuery]);
+
+    const historyQueryResult = useInfiniteQuery({
+        queryKey: historyListQueryKey,
+        initialPageParam: null as string | null,
+        placeholderData: () => undefined,
+        queryFn: async ({ pageParam }) => swarmClient.listImagesV2({
+            ...historyQuery,
+            cursor: (pageParam as string | null) ?? null,
+        }),
+        getNextPageParam: (lastPage) => lastPage.next_cursor ?? undefined,
+    });
+
+    const historyPages = historyQueryResult.data?.pages ?? [];
+    const visibleImages = useMemo(() => {
+        let items: HistoryImageItem[] = [];
+
+        for (const page of historyPages) {
+            const resolved = resolveHistoryItems(page.files);
+            items = items.length > 0 ? mergeHistoryItems(items, resolved) : resolved;
+        }
+
+        return items;
+    }, [historyPages]);
+    const historyFolders = historyPages[0]?.folders ?? [];
+    const historyLastPage = historyPages[historyPages.length - 1] ?? null;
+    const historyHasMore = !!historyQueryResult.hasNextPage;
+    const historyTruncated = !!historyLastPage?.truncated;
+    const historyTotalCount = historyLastPage?.total_count ?? 0;
+    const historyLoading = historyQueryResult.isPending;
+    const historyLoadingMore = historyQueryResult.isFetchingNextPage;
+    const historyError = historyQueryResult.error instanceof Error
+        ? historyQueryResult.error.message
+        : historyQueryResult.error
+            ? String(historyQueryResult.error)
+            : null;
+
     useEffect(() => {
         writeHistoryPreferences(preferences);
     }, [preferences]);
@@ -200,97 +212,20 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
         setPreferences((prev) => ({ ...prev, ...next }));
     }, []);
 
-    const loadHistory = useCallback(async (append: boolean, cursorOverride?: string | null) => {
-        const requestId = ++requestIdRef.current;
-
-        setHistoryState((prev) => ({
-            ...prev,
-            loading: append ? prev.loading : true,
-            loadingMore: append,
-            error: null,
-        }));
-
-        try {
-            const response = await swarmClient.listImagesV2({
-                ...historyQuery,
-                cursor: append ? (cursorOverride ?? null) : null,
-            });
-
-            if (requestId !== requestIdRef.current) {
-                return;
-            }
-
-            const files = resolveHistoryItems(response.files);
-
-            setHistoryState((prev) => ({
-                folders: response.folders,
-                files: append ? mergeHistoryItems(prev.files, files) : files,
-                nextCursor: response.next_cursor,
-                hasMore: response.has_more,
-                truncated: response.truncated,
-                totalCount: response.total_count,
-                loading: false,
-                loadingMore: false,
-                error: null,
-            }));
-        } catch (error) {
-            if (requestId !== requestIdRef.current) {
-                return;
-            }
-
-            console.error('Failed to load history:', error);
-            const message = error instanceof Error ? error.message : 'Failed to load history';
-
-            setHistoryState((prev) => ({
-                ...prev,
-                loading: false,
-                loadingMore: false,
-                error: message,
-            }));
-
-            notifications.show({
-                title: 'Error',
-                message,
-                color: 'red',
-            });
-        }
-    }, [historyQuery]);
-
-    const refreshHistory = useCallback(async () => {
-        await loadHistory(false, null);
-    }, [loadHistory]);
-
     useEffect(() => {
         clearSelection();
-        void loadHistory(false, null);
-    }, [
-        preferences.viewMode,
-        currentPath,
-        debouncedSearchQuery,
-        preferences.sortBy,
-        preferences.sortReverse,
-        preferences.starredOnly,
-        preferences.mediaType,
-        preferences.currentFolderOnly,
-        clearSelection,
-        loadHistory,
-    ]);
+        setSelectedImage(null);
+    }, [clearSelection, historyListQueryKey]);
 
     useEffect(() => {
         if (generationPhase === 'complete' && generatedImageCount > 0 && generatedImageCount !== completedGenerationRef.current) {
             completedGenerationRef.current = generatedImageCount;
-            void refreshHistory();
+            void historyQueryResult.refetch();
         }
-    }, [generationPhase, generatedImageCount, refreshHistory]);
+    }, [generationPhase, generatedImageCount, historyQueryResult.refetch]);
 
     const updateLocalImage = useCallback((image: HistoryImageItem, transform: (current: HistoryImageItem) => HistoryImageItem) => {
         const selectionId = getHistorySelectionId(image);
-        setHistoryState((prev) => ({
-            ...prev,
-            files: prev.files.map((item) =>
-                getHistorySelectionId(item) === selectionId ? transform(item) : item
-            ),
-        }));
         setSelectedImage((prev) => {
             if (!prev || getHistorySelectionId(prev) !== selectionId) {
                 return prev;
@@ -303,27 +238,19 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
         onStarToggled: (image, newStarred) => {
             updateLocalImage(image as HistoryImageItem, (current) => ({ ...current, starred: newStarred }));
             void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
-            void refreshHistory();
+            void historyQueryResult.refetch();
         },
-        onDeleted: (image) => {
-            const selectionId = getHistorySelectionId(image as HistoryImageItem);
-            setHistoryState((prev) => ({
-                ...prev,
-                files: prev.files.filter((item) => getHistorySelectionId(item) !== selectionId),
-                totalCount: Math.max(0, prev.totalCount - 1),
-            }));
+        onDeleted: (_image) => {
             setSelectedImage(null);
             clearSelection();
             void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
-            void refreshHistory();
+            void historyQueryResult.refetch();
         },
         onImageAdded: () => {
             void queryClient.invalidateQueries({ queryKey: queryKeys.images.all });
-            void refreshHistory();
+            void historyQueryResult.refetch();
         },
     });
-
-    const visibleImages = historyState.files;
     const allImageIds = useMemo(() => visibleImages.map((image) => getHistorySelectionId(image)), [visibleImages]);
     const selectedImages = useMemo(
         () => visibleImages.filter((image) => selectedIds.has(getHistorySelectionId(image))),
@@ -352,6 +279,11 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     const handleImportImage = useCallback(() => {
         fileInputRef.current?.click();
     }, []);
+
+    const closeSelectedImage = useCallback(() => {
+        setSelectedImage(null);
+        navigateToHistory({ image: null });
+    }, [navigateToHistory]);
 
     const handleUseFolderForNextBatch = useCallback(() => {
         const folder = cleanHistoryFolderPath(currentPath);
@@ -443,11 +375,11 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     }, [currentPath]);
 
     const handleUpscale = useCallback((imagePath: string, metadata?: string | Record<string, unknown> | null) => {
-        setSelectedImage(null);
+        closeSelectedImage();
         setUpscaleImage(imagePath);
         setUpscaleImageMetadata(metadata || null);
         setUpscaleModal(true);
-    }, []);
+    }, [closeSelectedImage]);
 
     const handleReuseParams = useCallback((image: HistoryImageItem) => {
         if (!image.metadata) {
@@ -500,7 +432,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
             if (scheduler) params.scheduler = scheduler;
 
             setParams(params);
-            setSelectedImage(null);
+            closeSelectedImage();
 
             notifications.show({
                 title: 'Parameters Loaded',
@@ -515,7 +447,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                 color: 'red',
             });
         }
-    }, [setParams]);
+    }, [closeSelectedImage, setParams]);
 
     const handleSaveCurrentView = useCallback(() => {
         const suggestedName = [
@@ -583,7 +515,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     }, [addToCollection, selectedImages]);
 
     const handleEdit = useCallback((image: HistoryImageItem) => {
-        setSelectedImage(null);
+        closeSelectedImage();
         openCanvasWorkflow({
             imageUrl: image.src,
             metadata: image.metadata,
@@ -593,14 +525,14 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
             fallbackParams: useGenerationStore.getState().params,
             initialStep: 'mask',
         });
-    }, [openCanvasWorkflow]);
+    }, [closeSelectedImage, openCanvasWorkflow]);
 
     const handleUseAsInitImage = useCallback(async (image: HistoryImageItem) => {
         try {
             const initImageDataUrl = await imageUrlToDataUrl(image.src);
             setParams({ initimage: initImageDataUrl });
             setEnableInitImage(true);
-            setSelectedImage(null);
+            closeSelectedImage();
             navigateToGenerate();
 
             notifications.show({
@@ -615,7 +547,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                 color: 'red',
             });
         }
-    }, [navigateToGenerate, setEnableInitImage, setParams]);
+    }, [closeSelectedImage, navigateToGenerate, setEnableInitImage, setParams]);
 
     const handleSendToWorkflow = useCallback(async (image: HistoryImageItem) => {
         const summary = getHistoryMetadataSummary(image);
@@ -656,11 +588,11 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
     }, [navigateToWorkflows, setWorkflowHandoff]);
 
     const handleLoadMore = useCallback(async () => {
-        if (!historyState.hasMore || !historyState.nextCursor || historyState.loadingMore) {
+        if (!historyHasMore || historyLoadingMore) {
             return;
         }
-        await loadHistory(true, historyState.nextCursor);
-    }, [historyState.hasMore, historyState.nextCursor, historyState.loadingMore, loadHistory]);
+        await historyQueryResult.fetchNextPage();
+    }, [historyHasMore, historyLoadingMore, historyQueryResult.fetchNextPage]);
 
     const handleBulkDelete = useCallback(async () => {
         if (selectedImages.length === 0) {
@@ -673,7 +605,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
             }
 
             clearSelection();
-            await refreshHistory();
+            await historyQueryResult.refetch();
 
             notifications.show({
                 title: 'Deleted',
@@ -688,7 +620,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                 color: 'red',
             });
         }
-    }, [selectedImages, clearSelection, refreshHistory]);
+    }, [selectedImages, clearSelection, historyQueryResult.refetch]);
 
     const handleBulkStar = useCallback(async (star: boolean) => {
         if (selectedImages.length === 0) {
@@ -702,7 +634,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                 }
             }
 
-            await refreshHistory();
+            await historyQueryResult.refetch();
 
             notifications.show({
                 title: star ? 'Starred' : 'Unstarred',
@@ -717,7 +649,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                 color: 'red',
             });
         }
-    }, [selectedImages, refreshHistory]);
+    }, [selectedImages, historyQueryResult.refetch]);
 
     const handleBulkDownload = useCallback(() => {
         if (selectedImages.length === 0) {
@@ -812,7 +744,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
 
             notifications.show({
                 title: 'Export Ready',
-                message: `Prepared ZIP with ${response.count ?? (hasSelection ? selectedImages.length : historyState.totalCount)} item${(response.count ?? 1) === 1 ? '' : 's'}.`,
+                message: `Prepared ZIP with ${response.count ?? (hasSelection ? selectedImages.length : historyTotalCount)} item${(response.count ?? 1) === 1 ? '' : 's'}.`,
                 color: 'green',
             });
         } catch (error) {
@@ -823,7 +755,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                 color: 'red',
             });
         }
-    }, [historyQuery, historyState.totalCount, selectedImages, visibleImages.length]);
+    }, [historyQuery, historyTotalCount, selectedImages, visibleImages.length]);
 
     const handleCompare = useCallback(() => {
         if (selectedImages.length !== 2) {
@@ -899,7 +831,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
         toggleStar,
     ]);
 
-    const showEmptyState = !historyState.loading && visibleImages.length === 0 && historyState.folders.length === 0;
+    const showEmptyState = !historyLoading && visibleImages.length === 0 && historyFolders.length === 0;
 
     return (
         <PageScaffold
@@ -911,9 +843,9 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                         subtitle="Browse your full generation history with server-side search, sorting, and export."
                         badges={[
                             {
-                                label: historyState.hasMore
-                                    ? `${visibleImages.length}/${historyState.totalCount} loaded`
-                                    : `${historyState.totalCount} items`,
+                                label: historyHasMore
+                                    ? `${visibleImages.length}/${historyTotalCount} loaded`
+                                    : `${historyTotalCount} items`,
                                 tone: 'secondary',
                             },
                             ...(preferences.starredOnly ? [{ label: 'starred only', tone: 'warning' as const }] : []),
@@ -1039,7 +971,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                                         tone="secondary"
                                         emphasis="ghost"
                                         label="Refresh history"
-                                        onClick={() => void refreshHistory()}
+                                        onClick={() => void historyQueryResult.refetch()}
                                     >
                                         <IconRefresh size={18} />
                                     </SwarmActionIcon>
@@ -1208,26 +1140,26 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
             }
         >
             <div style={{ height: '100%', overflow: 'hidden', padding: 16 }}>
-                {historyState.loading ? (
+                {historyLoading ? (
                     <SkeletonGrid count={12} columns={6} imageHeight={180} />
-                ) : historyState.error && visibleImages.length === 0 ? (
+                ) : historyError && visibleImages.length === 0 ? (
                     <Center h="100%">
                         <Stack align="center" gap="sm">
-                            <Text c="red.4">{historyState.error}</Text>
-                            <SwarmButton tone="secondary" onClick={() => void refreshHistory()}>
+                            <Text c="red.4">{historyError}</Text>
+                            <SwarmButton tone="secondary" onClick={() => void historyQueryResult.refetch()}>
                                 Retry
                             </SwarmButton>
                         </Stack>
                     </Center>
                 ) : (
                     <Stack gap="md" style={{ height: '100%' }}>
-                        {preferences.viewMode === 'folders' && historyState.folders.length > 0 && (
+                        {preferences.viewMode === 'folders' && historyFolders.length > 0 && (
                             <Stack gap="xs">
                                 <Text size="sm" fw={600} tt="uppercase" style={{ color: 'var(--theme-gray-1)' }}>
                                     Folders
                                 </Text>
                                 <Grid gutter="xs">
-                                    {historyState.folders.map((folder) => (
+                                    {historyFolders.map((folder) => (
                                         <Grid.Col key={folder} span={{ base: 6, xs: 4, sm: 3, md: 2 }}>
                                             <Card
                                                 component="button"
@@ -1295,16 +1227,16 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                                     />
                                 </div>
 
-                                {(historyState.hasMore || historyState.loadingMore || historyState.truncated) && (
+                                {(historyHasMore || historyLoadingMore || historyTruncated) && (
                                     <Center pt="xs">
                                         <SwarmButton
                                             tone="secondary"
                                             emphasis="ghost"
-                                            leftSection={historyState.loadingMore ? <Loader size={14} /> : <IconRefresh size={14} />}
+                                            leftSection={historyLoadingMore ? <Loader size={14} /> : <IconRefresh size={14} />}
                                             onClick={() => void handleLoadMore()}
-                                            disabled={historyState.loadingMore}
+                                            disabled={historyLoadingMore}
                                         >
-                                            {historyState.loadingMore ? 'Loading...' : 'Load More'}
+                                            {historyLoadingMore ? 'Loading...' : 'Load More'}
                                         </SwarmButton>
                                     </Center>
                                 )}
@@ -1316,9 +1248,9 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
 
             <ImageDetailModal
                 image={selectedImage}
-                onClose={() => setSelectedImage(null)}
+                onClose={closeSelectedImage}
                 onToggleStar={canStar ? (image) => { void toggleStar(image); } : undefined}
-                onDelete={canDelete ? (image) => { void deleteImage(image); setSelectedImage(null); } : undefined}
+                onDelete={canDelete ? (image) => { void deleteImage(image); closeSelectedImage(); } : undefined}
                 onUpscale={canGenerate ? handleUpscale : undefined}
                 onReuseParams={canGenerate ? (image) => handleReuseParams(image as HistoryImageItem) : undefined}
                 onEdit={canGenerate ? (image) => handleEdit(image as HistoryImageItem) : undefined}
@@ -1336,7 +1268,7 @@ export function HistoryPage({ routeState }: HistoryPageProps) {
                         message: 'Image has been upscaled successfully.',
                         color: 'green',
                     });
-                    void refreshHistory();
+                    void historyQueryResult.refetch();
                 }}
             />
 
