@@ -3068,6 +3068,7 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       motionProfile: 'calm',
     },
     style: {
+      family: 'classic',
       surfaceMode: 'gradient',
     },
   },
@@ -3094,6 +3095,7 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       motionProfile: 'energetic',
     },
     style: {
+      family: 'classic',
       surfaceMode: 'gradient',
     },
   },
@@ -3120,6 +3122,7 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       motionProfile: 'calm',
     },
     style: {
+      family: 'classic',
       surfaceMode: 'gradient',
     },
   },
@@ -3146,6 +3149,7 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       motionProfile: 'energetic',
     },
     style: {
+      family: 'classic',
       surfaceMode: 'gradient',
     },
   },
@@ -3263,10 +3267,11 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       warning: '#C17F24',
       error: '#8B0000',
       motionProfile: 'calm',
-      shadowDepth: 'deep',
+      shadowDepth: 'dramatic',
       glowStrength: 0.4,
     },
     style: {
+      family: 'classic',
       surfaceMode: 'gradient',
     },
   },
@@ -3367,6 +3372,7 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       secondaryAccent: '#C9A84C',
     },
     style: {
+      family: 'classic',
       surfaceMode: 'gradient',
     },
   },
