@@ -237,6 +237,7 @@ Interpolate the 10 steps (gray0–gray9) in **OKLCH color space** for perceptual
 - **Gray scale:** gray9 `#002B36` base03 (teal-dark) → gray0 `#FDF6E3` base3 (cream)
 - **Style:** family `classic`, motionProfile `calm`
 - **Rationale:** Ethan Schoonover's classic Solarized — precise CIELAB-balanced palette, dark variant
+- **Note:** gray9 `#002B36` is teal-tinted and gray0 `#FDF6E3` is cream; OKLCH interpolation will produce teal→yellow midtones. This is the authentic Solarized palette character, not an error.
 
 ### 21. Solarized Light
 - **id:** `solarized-light`
