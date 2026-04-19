@@ -16,7 +16,10 @@ window.onunhandledrejection = (event) => {
 };
 
 // Fade out and remove the native loading spinner
+let loaderDismissed = false;
 const fadeOutLoader = () => {
+  if (loaderDismissed) return;
+  loaderDismissed = true;
   const loader = document.getElementById('app-loading');
   if (loader) {
     loader.classList.add('fade-out');
@@ -30,7 +33,7 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// Remove loader after first paint
-requestAnimationFrame(() => {
-  requestAnimationFrame(fadeOutLoader);
-});
+// Remove loader after first paint.
+// rAF is paused for hidden/background tabs, so always add a setTimeout fallback.
+requestAnimationFrame(() => requestAnimationFrame(fadeOutLoader));
+setTimeout(fadeOutLoader, 500);
