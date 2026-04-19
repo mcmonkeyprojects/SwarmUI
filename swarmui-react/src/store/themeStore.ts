@@ -3118,8 +3118,6 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       warning: '#FAB005',
       error: '#FA5252',
       motionProfile: 'calm',
-      radiusScale: 'comfortable',
-      strokeStyle: 'standard',
     },
     style: {
       surfaceMode: 'gradient',
