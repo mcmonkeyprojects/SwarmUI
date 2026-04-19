@@ -3044,6 +3044,205 @@ const BASE_THEME_PALETTES: ThemePalette[] = [
       fontMono: '"Nothing NType 82 Mono", "Cascadia Mono", "JetBrains Mono", "Consolas", monospace',
     },
   },
+  // ── App Themes ──────────────────────────────────────────────────────────────
+  {
+    id: 'claude',
+    name: 'Claude',
+    category: 'app',
+    colors: {
+      brand: '#D97757',
+      gray0: '#FAF7F5',
+      gray1: '#E8E0D8',
+      gray2: '#CEC4BA',
+      gray3: '#A89E94',
+      gray4: '#7E766C',
+      gray5: '#5A534A',
+      gray6: '#3E3830',
+      gray7: '#2C2520',
+      gray8: '#1C1916',
+      gray9: '#0F0D0C',
+      accent: '#8B7355',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+      motionProfile: 'calm',
+    },
+    style: {
+      surfaceMode: 'gradient',
+    },
+  },
+  {
+    id: 'arc',
+    name: 'Arc Browser',
+    category: 'app',
+    colors: {
+      brand: '#5B5BD6',
+      gray0: '#F0F0FF',
+      gray1: '#D4D4F0',
+      gray2: '#B4B4D8',
+      gray3: '#8E8EB4',
+      gray4: '#686890',
+      gray5: '#484870',
+      gray6: '#30304E',
+      gray7: '#1E1E38',
+      gray8: '#141426',
+      gray9: '#0C0C12',
+      accent: '#E54D2E',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+      motionProfile: 'energetic',
+    },
+    style: {
+      surfaceMode: 'gradient',
+    },
+  },
+  {
+    id: 'vercel',
+    name: 'Vercel',
+    category: 'app',
+    colors: {
+      brand: '#0070F3',
+      gray0: '#FFFFFF',
+      gray1: '#D4D4D4',
+      gray2: '#AAAAAA',
+      gray3: '#808080',
+      gray4: '#595959',
+      gray5: '#3A3A3A',
+      gray6: '#282828',
+      gray7: '#1C1C1C',
+      gray8: '#111111',
+      gray9: '#000000',
+      accent: '#7928CA',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+      motionProfile: 'calm',
+      radiusScale: 'comfortable',
+      strokeStyle: 'standard',
+    },
+    style: {
+      surfaceMode: 'gradient',
+    },
+  },
+  {
+    id: 'raycast',
+    name: 'Raycast',
+    category: 'app',
+    colors: {
+      brand: '#E55A2B',
+      gray0: '#F5F5F5',
+      gray1: '#D0D0D0',
+      gray2: '#AAAAAA',
+      gray3: '#808080',
+      gray4: '#5A5A5A',
+      gray5: '#3C3C3C',
+      gray6: '#2C2C2C',
+      gray7: '#1E1E1E',
+      gray8: '#121212',
+      gray9: '#080808',
+      accent: '#FF9F0A',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+      motionProfile: 'energetic',
+    },
+    style: {
+      surfaceMode: 'gradient',
+    },
+  },
+  {
+    id: 'warp',
+    name: 'Warp Terminal',
+    category: 'app',
+    colors: {
+      brand: '#7B4DFF',
+      gray0: '#E8E8F0',
+      gray1: '#C4C4D4',
+      gray2: '#9898B0',
+      gray3: '#70708C',
+      gray4: '#52526C',
+      gray5: '#3C3C50',
+      gray6: '#28283A',
+      gray7: '#1C1C2A',
+      gray8: '#12121E',
+      gray9: '#0A0A12',
+      accent: '#00E5CC',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+    },
+    style: {
+      family: 'glyph',
+    },
+  },
+  {
+    id: 'supabase',
+    name: 'Supabase',
+    category: 'app',
+    colors: {
+      brand: '#3ECF8E',
+      gray0: '#F8F8F8',
+      gray1: '#D4D4D4',
+      gray2: '#AEAEAE',
+      gray3: '#888888',
+      gray4: '#606060',
+      gray5: '#404040',
+      gray6: '#2C2C2C',
+      gray7: '#222222',
+      gray8: '#191919',
+      gray9: '#0F0F0F',
+      accent: '#24B47E',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+    },
+  },
+  {
+    id: 'tailwind',
+    name: 'Tailwind CSS',
+    category: 'app',
+    colors: {
+      brand: '#06B6D4',
+      gray0: '#F8FAFC',
+      gray1: '#F1F5F9',
+      gray2: '#E2E8F0',
+      gray3: '#CBD5E1',
+      gray4: '#94A3B8',
+      gray5: '#64748B',
+      gray6: '#475569',
+      gray7: '#334155',
+      gray8: '#1E293B',
+      gray9: '#0F172A',
+      accent: '#3B82F6',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+    },
+  },
+  {
+    id: 'cursor',
+    name: 'Cursor',
+    category: 'app',
+    colors: {
+      brand: '#6366F1',
+      gray0: '#F0F0F5',
+      gray1: '#C8C8D4',
+      gray2: '#A0A0B0',
+      gray3: '#787888',
+      gray4: '#585868',
+      gray5: '#3C3C4E',
+      gray6: '#2A2A3A',
+      gray7: '#1E1E2C',
+      gray8: '#14141E',
+      gray9: '#0C0C10',
+      accent: '#8B5CF6',
+      success: '#40C057',
+      warning: '#FAB005',
+      error: '#FA5252',
+      motionProfile: 'calm',
+    },
+  },
 ];
 
 const THEME_FONT_STACKS: Record<
@@ -3409,16 +3608,90 @@ function applyBuiltInThemePersonality(theme: ThemePalette): ThemePalette {
 
 export const THEME_PALETTES: ThemePalette[] = BASE_THEME_PALETTES.map(applyBuiltInThemePersonality);
 
+/**
+ * Curated theme presets surfaced by default in the AppearanceModal.
+ * The full THEME_PALETTES catalog is still available via the Advanced section.
+ */
+export const CURATED_DARK_THEMES: readonly string[] = [
+  'invoke',
+  'ayu',
+  'nord',
+  'dracula',
+  'linear',
+  'highcontrast',
+] as const;
+
+export const CURATED_LIGHT_THEMES: readonly string[] = [
+  'material-paper',
+  'jetbrains-light',
+  'catppuccin-latte',
+  'monochrome',
+] as const;
+
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type ResolvedColorScheme = 'light' | 'dark';
+
+const DEFAULT_DARK_THEME_ID = 'invoke';
+const DEFAULT_LIGHT_THEME_ID = 'material-paper';
+
+function detectSystemColorScheme(): ResolvedColorScheme {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return 'dark';
+  }
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function resolveScheme(mode: ThemeMode): ResolvedColorScheme {
+  if (mode === 'light') return 'light';
+  if (mode === 'dark') return 'dark';
+  return detectSystemColorScheme();
+}
+
+function resolveActiveThemeId(
+  mode: ThemeMode,
+  lightThemeId: string,
+  darkThemeId: string
+): string {
+  return resolveScheme(mode) === 'light' ? lightThemeId : darkThemeId;
+}
+
 interface ThemeStore {
+  /** Persisted: how the active scheme is chosen — explicit light, explicit dark, or follow OS. */
+  themeMode: ThemeMode;
+  /** Persisted: theme ID active when the resolved scheme is light. */
+  lightThemeId: string;
+  /** Persisted: theme ID active when the resolved scheme is dark. */
+  darkThemeId: string;
+  /** Derived (not persisted): scheme actually rendered after resolving system preference. */
+  resolvedColorScheme: ResolvedColorScheme;
+  /**
+   * Synchronized mirror of the currently active theme ID, kept in sync by every setter so
+   * existing consumers that read `currentTheme` continue to work without a refactor.
+   * Equivalent to `resolvedColorScheme === 'light' ? lightThemeId : darkThemeId`.
+   */
   currentTheme: string;
-  isLightMode: boolean;
   customAccent: string | null;
   controlShapeOverride: ThemeControlShape | null;
   iconShapeOverride: ThemeIconShape | null;
   customThemes: ThemePalette[];
   _hasHydrated: boolean;
+  /** New canonical setters. */
+  setThemeMode: (mode: ThemeMode) => void;
+  setThemeForScheme: (scheme: ResolvedColorScheme, themeId: string) => void;
+  /**
+   * Reapplies whichever theme the active scheme currently selects. Acts as a backwards-compatible
+   * alias for the old single-slot `setTheme(themeId)` API: it writes to the slot matching the
+   * currently resolved scheme.
+   */
   setTheme: (themeId: string) => void;
+  /**
+   * Backwards-compatible toggle. Cycles between explicit `light` and explicit `dark` modes.
+   * Prefer `setThemeMode` directly — this exists only so legacy call sites can be migrated
+   * incrementally and is removed in this same change as soon as the call sites are gone.
+   */
   toggleLightMode: () => void;
+  /** Internal: update resolvedColorScheme when the OS preference changes (system mode only). */
+  _handleSystemSchemeChange: (scheme: ResolvedColorScheme) => void;
   setCustomAccent: (color: string | null) => void;
   setControlShapeOverride: (shape: ThemeControlShape | null) => void;
   setIconShapeOverride: (shape: ThemeIconShape | null) => void;
@@ -3434,12 +3707,18 @@ interface ThemeStore {
   getAllThemes: () => ThemePalette[];
 }
 
+const INITIAL_RESOLVED_SCHEME: ResolvedColorScheme = resolveScheme('dark');
+
 export const useThemeStore = create<ThemeStore>()(
   persist(
     devtools(
       (set, get) => ({
-        currentTheme: 'invoke',
-        isLightMode: false,
+        themeMode: 'dark',
+        lightThemeId: DEFAULT_LIGHT_THEME_ID,
+        darkThemeId: DEFAULT_DARK_THEME_ID,
+        resolvedColorScheme: INITIAL_RESOLVED_SCHEME,
+        currentTheme:
+          INITIAL_RESOLVED_SCHEME === 'light' ? DEFAULT_LIGHT_THEME_ID : DEFAULT_DARK_THEME_ID,
         customAccent: null,
         controlShapeOverride: null,
         iconShapeOverride: null,
@@ -3450,25 +3729,64 @@ export const useThemeStore = create<ThemeStore>()(
           return [...THEME_PALETTES, ...get().customThemes];
         },
 
-        setTheme: (themeId: string) => {
-          console.debug('[ThemeStore] setTheme called with:', themeId);
-          set({ currentTheme: themeId });
-          // Apply CSS variables immediately - search both built-in and custom themes
+        setThemeMode: (mode: ThemeMode) => {
+          const resolved = resolveScheme(mode);
+          const { lightThemeId, darkThemeId } = get();
+          const nextThemeId = resolveActiveThemeId(mode, lightThemeId, darkThemeId);
+          set({
+            themeMode: mode,
+            resolvedColorScheme: resolved,
+            currentTheme: nextThemeId,
+          });
           const allThemes = get().getAllThemes();
-          const theme = allThemes.find((t) => t.id === themeId) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, get().isLightMode, get().customAccent, {
+          const theme = allThemes.find((t) => t.id === nextThemeId) || THEME_PALETTES[0];
+          applyThemeToCSS(theme, resolved === 'light', get().customAccent, {
             controlShape: get().controlShapeOverride,
             iconShape: get().iconShapeOverride,
           });
-          console.debug('[ThemeStore] State after set:', get().currentTheme);
+        },
+
+        setThemeForScheme: (scheme: ResolvedColorScheme, themeId: string) => {
+          const updates: Partial<ThemeStore> =
+            scheme === 'light' ? { lightThemeId: themeId } : { darkThemeId: themeId };
+          set(updates);
+          // Re-derive the active theme ID using the newly written slot.
+          const { themeMode, lightThemeId, darkThemeId } = get();
+          const nextThemeId = resolveActiveThemeId(themeMode, lightThemeId, darkThemeId);
+          set({ currentTheme: nextThemeId });
+          // Only re-apply CSS if the change affects the currently rendered scheme.
+          if (scheme === get().resolvedColorScheme) {
+            const allThemes = get().getAllThemes();
+            const theme = allThemes.find((t) => t.id === nextThemeId) || THEME_PALETTES[0];
+            applyThemeToCSS(theme, scheme === 'light', get().customAccent, {
+              controlShape: get().controlShapeOverride,
+              iconShape: get().iconShapeOverride,
+            });
+          }
+        },
+
+        setTheme: (themeId: string) => {
+          // Compatibility shim for legacy single-slot API: writes the new themeId into the slot
+          // matching the currently resolved scheme.
+          const scheme = get().resolvedColorScheme;
+          get().setThemeForScheme(scheme, themeId);
         },
 
         toggleLightMode: () => {
-          const newIsLightMode = !get().isLightMode;
-          set({ isLightMode: newIsLightMode });
+          // Compatibility shim: cycles between explicit light and explicit dark modes.
+          // System mode is opt-in via setThemeMode('system'); toggling collapses it to an explicit choice.
+          const next: ThemeMode = get().resolvedColorScheme === 'light' ? 'dark' : 'light';
+          get().setThemeMode(next);
+        },
+
+        _handleSystemSchemeChange: (scheme: ResolvedColorScheme) => {
+          if (get().themeMode !== 'system') return;
+          const { lightThemeId, darkThemeId } = get();
+          const nextThemeId = scheme === 'light' ? lightThemeId : darkThemeId;
+          set({ resolvedColorScheme: scheme, currentTheme: nextThemeId });
           const allThemes = get().getAllThemes();
-          const theme = allThemes.find((t) => t.id === get().currentTheme) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, newIsLightMode, get().customAccent, {
+          const theme = allThemes.find((t) => t.id === nextThemeId) || THEME_PALETTES[0];
+          applyThemeToCSS(theme, scheme === 'light', get().customAccent, {
             controlShape: get().controlShapeOverride,
             iconShape: get().iconShapeOverride,
           });
@@ -3476,9 +3794,10 @@ export const useThemeStore = create<ThemeStore>()(
 
         setCustomAccent: (color: string | null) => {
           set({ customAccent: color });
+          const { currentTheme, resolvedColorScheme } = get();
           const allThemes = get().getAllThemes();
-          const theme = allThemes.find((t) => t.id === get().currentTheme) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, get().isLightMode, color, {
+          const theme = allThemes.find((t) => t.id === currentTheme) || THEME_PALETTES[0];
+          applyThemeToCSS(theme, resolvedColorScheme === 'light', color, {
             controlShape: get().controlShapeOverride,
             iconShape: get().iconShapeOverride,
           });
@@ -3486,9 +3805,10 @@ export const useThemeStore = create<ThemeStore>()(
 
         setControlShapeOverride: (shape: ThemeControlShape | null) => {
           set({ controlShapeOverride: shape });
+          const { currentTheme, resolvedColorScheme } = get();
           const allThemes = get().getAllThemes();
-          const theme = allThemes.find((t) => t.id === get().currentTheme) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, get().isLightMode, get().customAccent, {
+          const theme = allThemes.find((t) => t.id === currentTheme) || THEME_PALETTES[0];
+          applyThemeToCSS(theme, resolvedColorScheme === 'light', get().customAccent, {
             controlShape: shape,
             iconShape: get().iconShapeOverride,
           });
@@ -3496,9 +3816,10 @@ export const useThemeStore = create<ThemeStore>()(
 
         setIconShapeOverride: (shape: ThemeIconShape | null) => {
           set({ iconShapeOverride: shape });
+          const { currentTheme, resolvedColorScheme } = get();
           const allThemes = get().getAllThemes();
-          const theme = allThemes.find((t) => t.id === get().currentTheme) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, get().isLightMode, get().customAccent, {
+          const theme = allThemes.find((t) => t.id === currentTheme) || THEME_PALETTES[0];
+          applyThemeToCSS(theme, resolvedColorScheme === 'light', get().customAccent, {
             controlShape: get().controlShapeOverride,
             iconShape: shape,
           });
@@ -3513,14 +3834,14 @@ export const useThemeStore = create<ThemeStore>()(
         syncThemeCSS: () => {
           const {
             currentTheme,
-            isLightMode,
+            resolvedColorScheme,
             customAccent,
             controlShapeOverride,
             iconShapeOverride,
           } = get();
           const allThemes = get().getAllThemes();
           const theme = allThemes.find((t) => t.id === currentTheme) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, isLightMode, customAccent, {
+          applyThemeToCSS(theme, resolvedColorScheme === 'light', customAccent, {
             controlShape: controlShapeOverride,
             iconShape: iconShapeOverride,
           });
@@ -3559,11 +3880,14 @@ export const useThemeStore = create<ThemeStore>()(
         },
 
         deleteCustomTheme: (themeId: string) => {
-          const { customThemes, currentTheme } = get();
+          const { customThemes, lightThemeId, darkThemeId } = get();
           set({ customThemes: customThemes.filter((t) => t.id !== themeId) });
-          // Switch to default if deleting current theme
-          if (currentTheme === themeId) {
-            get().setTheme('invoke');
+          // If the deleted theme was selected for either scheme, fall back to defaults.
+          if (lightThemeId === themeId) {
+            get().setThemeForScheme('light', DEFAULT_LIGHT_THEME_ID);
+          }
+          if (darkThemeId === themeId) {
+            get().setThemeForScheme('dark', DEFAULT_DARK_THEME_ID);
           }
         },
 
@@ -3622,7 +3946,7 @@ export const useThemeStore = create<ThemeStore>()(
     ),
     {
       name: 'swarmui-theme',
-      version: 3,
+      version: 4,
       // Explicit storage configuration
       storage: {
         getItem: (name) => {
@@ -3649,15 +3973,41 @@ export const useThemeStore = create<ThemeStore>()(
             iconShapeOverride: null,
           };
         }
+        if (version < 4) {
+          // v3 → v4: collapse `isLightMode` + single `currentTheme` into themeMode +
+          // separate light/dark slots so light and dark can each remember their own preset.
+          const legacyIsLight = Boolean(migratedState.isLightMode);
+          const legacyCurrentTheme =
+            typeof migratedState.currentTheme === 'string'
+              ? (migratedState.currentTheme as string)
+              : DEFAULT_DARK_THEME_ID;
+          const themeMode: ThemeMode = legacyIsLight ? 'light' : 'dark';
+          const lightThemeId = legacyIsLight ? legacyCurrentTheme : DEFAULT_LIGHT_THEME_ID;
+          const darkThemeId = legacyIsLight ? DEFAULT_DARK_THEME_ID : legacyCurrentTheme;
+          migratedState = {
+            ...migratedState,
+            themeMode,
+            lightThemeId,
+            darkThemeId,
+            currentTheme: legacyIsLight ? lightThemeId : darkThemeId,
+          };
+          // Drop the now-defunct flag so it doesn't shadow new state on reload.
+          delete (migratedState as Record<string, unknown>).isLightMode;
+        }
         return migratedState;
       },
-      // Re-apply theme CSS after hydration from localStorage
+      // Re-apply theme CSS after hydration from localStorage.
       onRehydrateStorage: () => (state, error) => {
         console.debug('[ThemeStore] onRehydrateStorage called, state:', state, 'error:', error);
         if (state && !error) {
+          // Resolve the actual scheme now that the system preference is known.
+          const resolved = resolveScheme(state.themeMode);
+          const activeId = resolved === 'light' ? state.lightThemeId : state.darkThemeId;
+          state.resolvedColorScheme = resolved;
+          state.currentTheme = activeId;
           const allThemes = [...THEME_PALETTES, ...(state.customThemes || [])];
-          const theme = allThemes.find((t) => t.id === state.currentTheme) || THEME_PALETTES[0];
-          applyThemeToCSS(theme, state.isLightMode, state.customAccent, {
+          const theme = allThemes.find((t) => t.id === activeId) || THEME_PALETTES[0];
+          applyThemeToCSS(theme, resolved === 'light', state.customAccent, {
             controlShape: state.controlShapeOverride,
             iconShape: state.iconShapeOverride,
           });
@@ -3665,11 +4015,12 @@ export const useThemeStore = create<ThemeStore>()(
           state.setHasHydrated(true);
         }
       },
-      // Exclude _hasHydrated from persistence - using partial type assertion
+      // Exclude _hasHydrated and derived state from persistence.
       partialize: (state) =>
         ({
-          currentTheme: state.currentTheme,
-          isLightMode: state.isLightMode,
+          themeMode: state.themeMode,
+          lightThemeId: state.lightThemeId,
+          darkThemeId: state.darkThemeId,
           customAccent: state.customAccent,
           controlShapeOverride: state.controlShapeOverride,
           iconShapeOverride: state.iconShapeOverride,
@@ -3678,6 +4029,29 @@ export const useThemeStore = create<ThemeStore>()(
     }
   )
 );
+
+/**
+ * Subscribe to OS color-scheme changes once. Only routes the change into the store when
+ * the user has chosen `themeMode === 'system'`; explicit light/dark modes ignore the OS.
+ *
+ * Idempotent — safe to call from initializeTheme and from React effects.
+ */
+let _systemSchemeListenerAttached = false;
+function attachSystemSchemeListener() {
+  if (_systemSchemeListenerAttached) return;
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+  _systemSchemeListenerAttached = true;
+  const mql = window.matchMedia('(prefers-color-scheme: light)');
+  const handler = (event: MediaQueryListEvent) => {
+    useThemeStore.getState()._handleSystemSchemeChange(event.matches ? 'light' : 'dark');
+  };
+  if (typeof mql.addEventListener === 'function') {
+    mql.addEventListener('change', handler);
+  } else if (typeof (mql as MediaQueryList & { addListener?: (cb: (e: MediaQueryListEvent) => void) => void }).addListener === 'function') {
+    // Safari < 14 fallback.
+    (mql as MediaQueryList & { addListener: (cb: (e: MediaQueryListEvent) => void) => void }).addListener(handler);
+  }
+}
 
 interface RgbColor {
   r: number;
@@ -3916,6 +4290,54 @@ function deriveReadableMutedText(
     if (getContrastRatio(candidate, surface) >= minRatio) {
       best = candidate;
       break;
+    }
+  }
+  return best;
+}
+
+/**
+ * Ensure a UI graphical color (focus ring, selected border, etc.) has at
+ * least the requested non-text contrast ratio against every neighbouring
+ * surface it can appear on. Used to honour WCAG 2.2 §1.4.11 and §2.4.13
+ * even when the theme author picked a brand color whose unmodified value
+ * is too close in luminance to one of the app/panel/card surfaces.
+ *
+ * Mixes the input toward black or white (whichever direction will
+ * actually increase contrast against the average surface luminance) until
+ * the minimum ratio is met, returning the closest passing color. Falls
+ * back to the best-found candidate if no exact pass is reachable.
+ */
+function ensureNonTextContrast(
+  fg: string,
+  surfaces: string[],
+  minRatio: number = 3.0
+): string {
+  if (surfaces.length === 0) {
+    return fg;
+  }
+
+  const minRatioAcross = (color: string) =>
+    Math.min(...surfaces.map((bg) => getContrastRatio(color, bg)));
+
+  if (minRatioAcross(fg) >= minRatio) {
+    return fg;
+  }
+
+  const avgSurfaceLuminance =
+    surfaces.reduce((sum, bg) => sum + getRelativeLuminance(bg), 0) / surfaces.length;
+  const target = avgSurfaceLuminance > 0.4 ? '#000000' : '#ffffff';
+
+  let best = fg;
+  let bestRatio = minRatioAcross(fg);
+  for (let weight = 0.05; weight <= 1.0001; weight += 0.05) {
+    const candidate = mixHexColors(target, fg, weight);
+    const candidateRatio = minRatioAcross(candidate);
+    if (candidateRatio > bestRatio) {
+      best = candidate;
+      bestRatio = candidateRatio;
+    }
+    if (candidateRatio >= minRatio) {
+      return candidate;
     }
   }
   return best;
@@ -4448,7 +4870,20 @@ export function applyThemeToCSS(
     textPrimaryResolved,
     getContrastTextColor(selectionColorHex)
   );
-  const focusRing = theme.colors.focusRing || selectedBorder;
+  // Ensure focus indicators and selection borders meet WCAG 2.2 §1.4.11
+  // Non-text Contrast (3:1) and §2.4.13 Focus Appearance against every
+  // neighbouring surface. The booster only nudges colors that originally
+  // failed - high-contrast brand colors pass through untouched.
+  const accessibleSelectedBorder = ensureNonTextContrast(
+    selectedBorder,
+    [appSurface, panelSurface, cardSurface],
+    3.0
+  );
+  const focusRing = ensureNonTextContrast(
+    theme.colors.focusRing || accessibleSelectedBorder,
+    [appSurface, panelSurface, cardSurface],
+    3.0
+  );
   const highlightBg =
     theme.colors.highlightBg || `color-mix(in srgb, ${theme.colors.warning} 30%, transparent)`;
   const lineHighlight = theme.colors.lineHighlight || `color-mix(in srgb, ${gray6} 50%, ${gray7})`;
@@ -4458,7 +4893,7 @@ export function applyThemeToCSS(
 
   root.style.setProperty('--theme-selection-bg', selectionBg);
   root.style.setProperty('--theme-selection-text', selectionText);
-  root.style.setProperty('--theme-selection-border', selectedBorder);
+  root.style.setProperty('--theme-selection-border', accessibleSelectedBorder);
   root.style.setProperty('--theme-focus-ring', focusRing);
   root.style.setProperty('--theme-highlight-bg', highlightBg);
   root.style.setProperty('--theme-line-highlight', lineHighlight);
@@ -4480,7 +4915,7 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-selected-surface', selectedSurface);
   root.style.setProperty('--theme-selected-surface-hover', selectedSurfaceHover);
   root.style.setProperty('--theme-selected-text', selectedText);
-  root.style.setProperty('--theme-selected-border', selectedBorder);
+  root.style.setProperty('--theme-selected-border', accessibleSelectedBorder);
   root.style.setProperty(
     '--theme-selected-scrim',
     colorToRgbaString(selectedSurface, isLightMode ? 0.16 : 0.24)
@@ -4903,14 +5338,35 @@ export function applyThemeToCSS(
   root.style.setProperty('--theme-icon-stroke-width', iconStrokeWidth);
 }
 
-// Initialize theme on app load
+// Initialize theme on app load. Reads persisted state directly so the first paint can
+// happen before Zustand finishes hydration. Also wires up the OS color-scheme listener.
 export function initializeTheme() {
+  attachSystemSchemeListener();
   const storedTheme = localStorage.getItem('swarmui-theme');
   if (storedTheme) {
     try {
-      const { state } = JSON.parse(storedTheme);
-      const theme = THEME_PALETTES.find((t) => t.id === state.currentTheme) || THEME_PALETTES[0];
-      applyThemeToCSS(theme, state.isLightMode || false, state.customAccent || null, {
+      const parsed = JSON.parse(storedTheme);
+      const state = parsed.state || {};
+      const version = typeof parsed.version === 'number' ? parsed.version : 0;
+      // Resolve the active theme ID under either schema (v3 single-slot or v4 dual-slot).
+      let mode: ThemeMode;
+      let lightId: string;
+      let darkId: string;
+      if (version >= 4) {
+        mode = (state.themeMode as ThemeMode) || 'dark';
+        lightId = (state.lightThemeId as string) || DEFAULT_LIGHT_THEME_ID;
+        darkId = (state.darkThemeId as string) || DEFAULT_DARK_THEME_ID;
+      } else {
+        const legacyIsLight = Boolean(state.isLightMode);
+        const legacyCurrent = (state.currentTheme as string) || DEFAULT_DARK_THEME_ID;
+        mode = legacyIsLight ? 'light' : 'dark';
+        lightId = legacyIsLight ? legacyCurrent : DEFAULT_LIGHT_THEME_ID;
+        darkId = legacyIsLight ? DEFAULT_DARK_THEME_ID : legacyCurrent;
+      }
+      const resolved = resolveScheme(mode);
+      const activeId = resolved === 'light' ? lightId : darkId;
+      const theme = THEME_PALETTES.find((t) => t.id === activeId) || THEME_PALETTES[0];
+      applyThemeToCSS(theme, resolved === 'light', state.customAccent || null, {
         controlShape: state.controlShapeOverride || null,
         iconShape: state.iconShapeOverride || null,
       });
