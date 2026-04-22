@@ -26,13 +26,18 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 ## Key Distinctions
 
 ### Ungated vs Explicit Characters
-- **Ungated** (`category: 'characters'`): Adult-themed but not pornographic — same tier as existing "Naughty Nurse", "BDSM Mistress", "Exotic Dancer". Visible without explicit toggle.
+- **Ungated** (`category: 'characters'`): Adult-themed but not pornographic — same tier as existing "Naughty Nurse", "BDSM Mistress", "Exotic Dancer". Visible without explicit toggle. Word arrays: character/appearance/occupation tags only — no explicit act tags, no nude body-state tags.
 - **Explicit** (`category: 'explicit'`): Pornographic framing — nude, actively sexual, or explicit act-first. Requires explicit toggle.
+  - **Archetype-based explicit characters**: word arrays contain nude body-state tags and explicit visual cues (e.g., `nude, collared, cum dripping, exposed`) but NOT act-in-progress tags.
+  - **Act-framed explicit characters**: word arrays contain act/position tags describing what is actively happening (e.g., `riding, cowgirl position, sex, bouncing`).
 
 ### In-the-Act Scenes vs Location Scenes
 - Existing explicit scenes (BDSM Dungeon, Love Hotel, Casting Couch) describe **locations/venues**.
 - New in-the-act scenes describe **active sexual situations** — what is happening right now, not where.
-- Word arrays for in-the-act scenes: focus on action/act/state tags, not location tags.
+- Word arrays for in-the-act scenes: action/act/state tags only — NO location tags. Location is the job of the `scenes` category.
+
+### Corrupted Paladin threshold
+"Corrupted Paladin" is placed in `explicit` (not ungated `characters`) because the framing is explicitly pornographic: armor physically torn open to expose the body, eyes glowing with lust, fallen fully into sexual corruption. This crosses the threshold from "thematically adult" into explicit visual content.
 
 ---
 
@@ -40,11 +45,13 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 
 ### Part 1 — Ungated Adult Characters (30 new, `category: 'characters'`)
 
+Emoji verified against all 210 existing presets. All are unique within the `characters` category.
+
 #### Standard Adult Archetypes (20)
 
 | Name | Thumbnail | Notes |
 |---|---|---|
-| Dominatrix / Pro Domme | 🖤 | Professional domme — polished, distinct from BDSM Mistress |
+| Dominatrix / Pro Domme | 👢 | Professional domme — polished, distinct from BDSM Mistress |
 | Pinup Model / Cheesecake | 📌 | Classic 1950s cheesecake pose archetype |
 | Burlesque Performer | 🪶 | Theatrical adult entertainer — feathers, corsets, tease |
 | Belly Dancer | 🪙 | Sensual dancer with coin belt and veil |
@@ -57,12 +64,12 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 | Cougar / Older Seductress | 🐆 | Mature seductress — predatory rather than maternal (distinct from MILF) |
 | Bath Attendant / Masseuse | 🛁 | Intimate service worker, minimal clothing |
 | Bimbo / Dumb Blonde | 💅 | Exaggerated blonde archetype — big proportions, vapid expression |
-| Sex Worker / Call Girl | 💋 | Explicit occupation archetype |
+| Sex Worker / Call Girl | 👠 | Explicit occupation archetype |
 | Lingerie Model | 🩱 | Professional underwear model shoot archetype |
-| Femme Fatale / Noir Seductress | 🕵️ | Dangerous film noir woman — distinct from Detective Noir Heroine |
+| Femme Fatale / Noir Seductress | 🕸️ | Dangerous film noir woman — distinct from Detective Noir Heroine |
 | Fantasy Concubine | 💍 | Fantasy world royal concubine — jewels, minimal drapery |
-| Seductive Villainess | 😈 | Evil female antagonist with sex appeal |
-| Stripper / Pole Dancer | 💃 | Club performer — distinct from Exotic Dancer (more specific setting) |
+| Seductive Villainess | 🦹 | Evil female antagonist with sex appeal |
+| Stripper / Pole Dancer | 🪩 | Club performer — distinct from Exotic Dancer (more specific setting) |
 | Gyaru Escort | 🌟 | Tanned gyaru in escort/companion role |
 
 #### Fantasy Adult Archetypes (10)
@@ -72,8 +79,8 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 | Dark Elf Seductress | 🌑 | Drow with explicit allure — distinct from existing Slim Elf Girl |
 | Nymph / Dryad | 🌿 | Nature spirit — semi-clothed, ethereal, forest-bound |
 | Harpy / Winged Temptress | 🦅 | Bird-woman hybrid, feathered and barely clothed |
-| Lamia / Snake Woman | 🐍 | Serpent lower body, seductive upper — classic monster girl |
-| Kitsune Courtesan | 🦊 | Fox spirit in courtesan role — distinct from Foxgirl/Kitsune |
+| Lamia / Snake Woman | 🐲 | Serpent lower body, seductive upper — classic monster girl |
+| Kitsune Courtesan | 🍵 | Fox spirit in courtesan role — distinct from Foxgirl/Kitsune |
 | Demon Queen / Lilith | 👹 | Powerful demon ruler — regal, distinct from Demon Girl/Succubus |
 | Dark Fairy / Fae Temptress | 🧚 | Malevolent fairy with seductive magic |
 | Lich / Undead Seductress | 💀 | Undead sorceress — pale, hollow eyes, dark magic |
@@ -84,13 +91,17 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 
 ### Part 2 — Explicit Characters (40 new, `category: 'explicit'`)
 
-#### Archetype-Based (22) — defined by who they are with explicit visual state implied
+Emoji verified against all 35 existing explicit presets and all 30 new Part 1 presets. All are unique within the `explicit` category.
+
+#### Archetype-Based (22) — who they are, with explicit nude/used visual state implied
+
+Word arrays: nude body-state and explicit visual cue tags. No act-in-progress tags.
 
 | Name | Thumbnail | Notes |
 |---|---|---|
-| Nude Maid | 🧹 | Naked/barely-dressed maid in service pose |
+| Nude Maid | 🪣 | Naked/barely-dressed maid in service pose |
 | Sex Slave / Naked Captive | ⛓️ | Collared, nude, bound archetype |
-| Willing Fucktoy | 🎀 | Eager submissive with explicit visual cues |
+| Willing Fucktoy | 🎁 | Eager submissive with explicit visual cues |
 | Nude Idol / Used Idol | 🎤 | K/J-pop idol in explicit exposed state |
 | Naked Pet / Human Pet | 🐾 | Human pet play — nude, collared, on all fours |
 | Broodmother / Bred Girl | 🤰 | Post-breeding, pregnant belly, satisfied |
@@ -99,37 +110,39 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 | Exposed Shrine Maiden | ⛩️ | Miko in explicit undressed state |
 | Nude Warrior (Post-Battle) | ⚔️ | Stripped after defeat — armor torn, weapons gone |
 | Ahegao Doll | 🪆 | Mind-broken, blank doll-like explicit state |
-| Creampied Mess | 💦 | Post-sex aftermath with heavy creampie framing |
-| Demon Concubine / Hell Consort | 🔥 | Demon explicitly kept as sexual companion |
-| Enslaved Succubus | 😈 | Succubus captured and used rather than doing the using |
+| Creampied Mess | 🥄 | Post-sex aftermath with heavy creampie framing |
+| Demon Concubine / Hell Consort | 🌋 | Demon explicitly kept as sexual companion |
+| Enslaved Succubus | 🔗 | Succubus captured and used rather than doing the using |
 | Dark Elf Sex Slave | 🌑 | Drow in explicit captive/collared state |
 | Dragon's Hoard Concubine | 🐉 | Kept and claimed by a dragon — treasure among treasures |
 | Goblin-Claimed Heroine | 👺 | Adventurer captured by goblins — classic fantasy scenario |
 | Tentacle Monster's Bride | 🐙 | Explicitly claimed/bonded to a tentacle creature |
-| Corrupted Paladin | ✝️ | Holy warrior fully fallen to lust — armor torn, eyes glowing |
+| Corrupted Paladin | ✝️ | Holy warrior fully fallen to lust — armor physically torn, body exposed, eyes glowing |
 | Elven Breeding Mare | 🌿 | Elf explicitly kept for breeding purposes |
 | Fairy Sex Pet | 🧚 | Tiny fairy as intimate kept companion |
-| Divine Vessel / God's Toy | ✨ | Deity's chosen consort — marked, nude, devoted |
+| Divine Vessel / God's Toy | ⭐ | Deity's chosen consort — marked, nude, devoted |
 
-#### Act-Framed (18) — defined by what they are doing
+#### Act-Framed (18) — what they are actively doing
+
+Word arrays: act/position/action tags. No location tags.
 
 | Name | Thumbnail | Notes |
 |---|---|---|
 | Girl Being Fucked (Missionary) | 🔒 | Active missionary act framing |
-| Girl Being Eaten Out | 👅 | Receiving oral sex |
-| Girl Giving Blowjob | 💋 | Performing oral |
+| Girl Being Eaten Out | 🩷 | Receiving oral sex |
+| Girl Giving Blowjob | 😮 | Performing oral |
 | Girl Riding Cowgirl | 🪑 | Active cowgirl position |
-| Girl Getting Anal | 🍑 | Active anal sex framing |
-| Gangbang Participant | 👥 | Multi-partner active framing |
+| Girl Getting Anal | 🔴 | Active anal sex framing |
+| Gangbang Participant | 🔢 | Multi-partner active framing |
 | Spitroast Subject | 🍡 | Both ends simultaneously occupied |
-| Double Penetration Subject | ✌️ | Active DP framing |
+| Double Penetration Subject | 🤜 | Active DP framing |
 | Futa Fucking Girl | ⚧️ | Futa-on-female active framing |
 | Girl Being Pegged | 🎯 | Receiving strap-on |
 | Squirting / Mid-Orgasm | 🌊 | Active climax moment |
-| Mind-Broken / Ahegao Mid-Act | 🌀 | Mid-sex dissociated state |
-| Tentacle Violation Subject | 🐙 | Active tentacle scenario |
+| Mind-Broken / Ahegao Mid-Act | 💫 | Mid-sex dissociated state |
+| Tentacle Violation Subject | 🌪️ | Active tentacle scenario |
 | Hypno Sex Slave | 🔮 | Mid-hypnosis sexual act |
-| Gloryhole Participant | 🕳️ | Active gloryhole use |
+| Gloryhole Participant | 🟣 | Active gloryhole use |
 | Cum Inflation Mid-Act | 🎈 | Active inflation in progress |
 | Lactation Mid-Extraction | 🍼 | Active milking/feeding act |
 | Oviposition Subject | 🥚 | Active egg-laying scenario |
@@ -138,45 +151,47 @@ This is a content-only pass. No schema changes, no new categories, no UI changes
 
 ### Part 3 — Explicit In-The-Act Scenes (25 new, `category: 'explicit'`)
 
-These describe active sexual situations — what is happening right now. Word arrays use action/act/state tags, NOT location tags.
+These describe active sexual situations — what is happening right now. Word arrays: action/act/state tags only, NO location tags.
+
+Emoji verified against all 35 existing explicit presets and all 40 new Part 2 presets. All are unique within the `explicit` category.
 
 #### Active Sex Scenarios (12)
 
 | Name | Thumbnail | Notes |
 |---|---|---|
-| Mid-Missionary Scene | 🔒 | Active, in-progress missionary framing |
+| Mid-Missionary Scene | 🛏️ | Active, in-progress missionary framing |
 | Mid-Doggy Style Scene | 🔙 | Active rear-entry in-progress |
-| Active Cowgirl Ride | 🪑 | Mid-riding, bouncing framing |
-| Mid-Blowjob Scene | 💋 | Active oral performance in-progress |
-| Mid-Cunnilingus Scene | 👅 | Active receiving oral in-progress |
-| Active Spitroast Scene | 🍡 | Both ends simultaneously occupied |
+| Active Cowgirl Ride | 🏇 | Mid-riding, bouncing framing |
+| Mid-Blowjob Scene | 👄 | Active oral performance in-progress |
+| Mid-Cunnilingus Scene | 🌼 | Active receiving oral in-progress |
+| Active Spitroast Scene | 🍢 | Both ends simultaneously occupied |
 | Mid-Threesome (FFM) | 🔺 | Two women, one man active |
 | Mid-Threesome (MMF) | 🔵 | Two men, one woman active |
-| Active Gangbang Scene | 👥 | Multiple partners all engaged |
-| Mid-Anal Scene | 🍑 | Active anal sex in-progress |
+| Active Gangbang Scene | 🫂 | Multiple partners all engaged |
+| Mid-Anal Scene | 🫣 | Active anal sex in-progress |
 | Mid-69 Scene | 🔀 | Simultaneous mutual oral active |
-| Active Double Penetration | ✌️ | Both openings occupied simultaneously |
+| Active Double Penetration | 🤞 | Both openings occupied simultaneously |
 
 #### Kink / Fetish In-Act Scenes (8)
 
 | Name | Thumbnail | Notes |
 |---|---|---|
-| Active Bondage Play Scene | ⛓️ | Mid-session tied/restrained with partner present |
-| Active Pet Play Scene | 🐾 | Handler and pet mid-interaction |
+| Active Bondage Play Scene | 🧲 | Mid-session tied/restrained with partner present |
+| Active Pet Play Scene | 🦴 | Handler and pet mid-interaction |
 | Mid-CNC / Ravishment Scene | ⚠️ | Consensual resistance fantasy in-progress |
-| Active Tentacle Scene | 🐙 | Tentacles actively engaged |
-| Active Pegging Scene | 🎯 | Strap-on in-progress |
+| Active Tentacle Scene | 🐚 | Tentacles actively engaged |
+| Active Pegging Scene | 🔁 | Strap-on in-progress |
 | Mid-Wax Play Scene | 🕯️ | Candle dripping, active sensation |
-| Active Hypno Scene | 🔮 | Mid-hypnosis with subject responding |
-| Gloryhole In-Use Scene | 🕳️ | Active gloryhole encounter |
+| Active Hypno Scene | 🌠 | Mid-hypnosis with subject responding |
+| Gloryhole In-Use Scene | 🪤 | Active gloryhole encounter |
 
 #### Climax / Aftermath Scenes (5)
 
 | Name | Thumbnail | Notes |
 |---|---|---|
 | Mid-Orgasm / Climax Scene | 💥 | Active climax moment — ahegao, arching |
-| Active Squirting Scene | 🌊 | Mid-female ejaculation |
-| Mid-Creampie Scene | 💦 | Active internal finish moment |
+| Active Squirting Scene | 🫧 | Mid-female ejaculation |
+| Mid-Creampie Scene | 💧 | Active internal finish moment |
 | Cum Shower Scene | 🚿 | Multiple sources covering subject simultaneously |
 | Exhausted Aftermath Scene | 😵 | Post-multiple-rounds — used, leaking, satisfied |
 
@@ -187,36 +202,73 @@ These describe active sexual situations — what is happening right now. Word ar
 - All IDs follow convention: `pl-<category>-<kebab-slug>`
 - All `isDefault: true`
 - Words arrays: 6–20 tags using standard Stable Diffusion vocabulary
-- Ungated adult characters: `category: 'characters'` — no explicit acts in word arrays
-- Explicit characters and scenes: `category: 'explicit'`
-- **In-the-act scenes word arrays:** action/act/state tags only — NO location tags (location is the job of the scenes category)
-- **Ungated character word arrays:** character/appearance tags only — NO explicit act tags
-- Run `quality-pass-preset-library.mjs` after insertion to deduplicate
+- Run `quality-pass-preset-library.mjs` after insertion to deduplicate word arrays
 
-### Emoji Collision Notes
-The following emoji appear in multiple presets across categories — this is acceptable since they're in different categories and the UI filters by category:
-- 🐙 used for Tentacle Monster's Bride (explicit char) and Tentacle Violation Subject (explicit char) and Active Tentacle Scene (explicit scene) — change Tentacle Monster's Bride to 💍 and Tentacle Violation Subject to 🌀 to avoid within-explicit collisions
-- 🎯 used for Girl Being Pegged and Active Pegging Scene — change Active Pegging Scene to 🔁
-- 🍡 used for Spitroast Subject and Active Spitroast Scene — change Active Spitroast Scene to 🍢
-- 🪑 used for Girl Riding Cowgirl and Active Cowgirl Ride — change Active Cowgirl Ride to 🏇
-- 👥 used for Gangbang Participant and Active Gangbang Scene — change Active Gangbang Scene to 🔢
-- ✌️ used for Double Penetration Subject and Active Double Penetration — change Active Double Penetration to 🤜
-- 🍑 used for Girl Getting Anal and Mid-Anal Scene — change Mid-Anal Scene to 🔴
-- 💋 used for Girl Giving Blowjob, Mid-Blowjob Scene, and Sex Worker/Call Girl — change Mid-Blowjob Scene to 🫦 and Sex Worker to 💄
-- 👅 used for Girl Being Eaten Out and Mid-Cunnilingus Scene — change Mid-Cunnilingus Scene to 🌸
-- 💦 used for Creampied Mess and Mid-Creampie Scene — change Mid-Creampie Scene to 💧
-- 🌊 used for Squirting/Mid-Orgasm and Active Squirting Scene — change Active Squirting Scene to 🫧
-- ⛩️ used for Exposed Shrine Maiden and existing Shrine Maiden/Miko (from previous plan) — change Exposed Shrine Maiden to 🏮
-- 🤰 used for Broodmother/Bred Girl and existing Breeding/Impregnation Fantasy — acceptable (different categories)
-- 😈 used for Enslaved Succubus and existing Seductive Villainess (ungated) — change Enslaved Succubus to 🔗
-- 🧚 used for Dark Fairy/Fae Temptress (ungated) and Fairy Sex Pet (explicit) — change Fairy Sex Pet to 🫧... wait 🫧 already used above. Use 🌺 instead
-- 🌑 used for Dark Elf Seductress (ungated) and Dark Elf Sex Slave (explicit) — acceptable (different categories, different tabs)
-- 🐙 already resolved above
-- 🌿 used for Nymph/Dryad (ungated) and Elven Breeding Mare (explicit) — acceptable (different categories)
-- 💀 used for Lich/Undead Seductress (ungated) and existing Body Horror/Grotesque style — acceptable (different categories)
+### Word Array Rules by Preset Type
 
-Let me consolidate these collision fixes into the spec cleanly.
+| Type | Include | Exclude |
+|---|---|---|
+| Ungated adult characters (Part 1) | Character/appearance/occupation/costume tags | Explicit acts, nude body-state tags |
+| Explicit archetype characters (Part 2a) | Nude body-state, explicit visual cues, bondage/collar state | Act-in-progress tags, location tags |
+| Explicit act-framed characters (Part 2b) | Act/position/action tags | Location tags |
+| In-the-act scenes (Part 3) | Action/act/state tags | Location tags (those belong in `scenes` category) |
 
-Actually, let me just list the final resolved emoji for each preset in the spec document. The collision notes section is getting complex. Let me update the tables with the resolved emojis.
+### Sample Tag Vocabulary Reference
 
-Actually I think it's better to just list the collision fixes clearly rather than redoing all the tables. Let me write it as a clean "resolved emoji" section.
+**Ungated character example** (Dominatrix / Pro Domme):
+`dominatrix, latex, whip, corset, high heels, leather, commanding expression, professional, dom, mistress`
+
+**Explicit archetype example** (Sex Slave / Naked Captive):
+`nude, collar, bound, restrained, slave, captive, exposed, submissive, on knees, chains`
+
+**Explicit act-framed example** (Girl Riding Cowgirl):
+`riding, cowgirl position, sex, bouncing, on top, straddling, sexual intercourse, explicit`
+
+**In-the-act scene example** (Mid-Missionary Scene):
+`missionary position, sex, intercourse, lying down, explicit, penetration, intimate, active sex`
+
+### Emoji Conflict Resolution
+
+All emoji assignments above are verified clean against the 210 existing presets. Within-category conflicts were resolved as follows (changes from initial draft):
+
+**Part 1 characters:**
+- Dominatrix: 🖤→👢 (🖤 taken by BDSM Mistress + Goth Girl in characters)
+- Femme Fatale: 🕵️→🕸️ (🕵️ taken by Detective Noir Heroine in characters)
+- Seductive Villainess: 😈→🦹 (😈 taken by Demon Girl + Succubus/Demoness in characters)
+- Stripper / Pole Dancer: 💃→🪩 (💃 taken by Exotic Dancer in characters)
+- Lamia / Snake Woman: 🐍→🐲 (🐍 taken by Monster Girl in characters)
+- Kitsune Courtesan: 🦊→🍵 (🦊 taken by Foxgirl/Kitsune in characters)
+
+**Part 2 explicit:**
+- Willing Fucktoy: 🎀→🎁 (🎀 taken by Bondage + Lingerie Adjustment in explicit)
+- Creampied Mess: 💦→🥄 (💦 taken by Facial/Cumshot in explicit)
+- Demon Concubine: 🔥→🌋 (🔥 taken by Riding in explicit)
+- Gloryhole Participant: 🕳️→🟣 (🕳️ taken by Gloryhole in explicit)
+- Girl Being Eaten Out: 👅→🩷 (👅 taken by Oral in explicit)
+- Girl Giving Blowjob: 💋→😮 (💋 taken by Suggestive Position in explicit)
+- Girl Getting Anal: 🍑→🔴 (🍑 taken by Anal Sex in explicit)
+- Gangbang Participant: 👥→🔢 (👥 taken by Threesome/Group in explicit)
+- Double Penetration Subject: ✌️→🤜 (✌️ taken by Double Penetration in explicit)
+- Mind-Broken / Ahegao Mid-Act: 🌀→💫 (🌀 taken by Mind Break/Hypnosis in explicit)
+- Tentacle Violation Subject: 🐙→🌪️ (to avoid within-new conflict with Tentacle Monster's Bride 🐙)
+
+**Part 3 explicit scenes:**
+- Mid-Missionary Scene: 🔒→🛏️ (to avoid within-new conflict with Girl Being Fucked 🔒)
+- Active Cowgirl Ride: 🪑→🏇 (to avoid within-new conflict with Girl Riding Cowgirl 🪑)
+- Mid-Blowjob Scene: 💋→👄 (💋 taken by Suggestive Position in existing explicit)
+- Mid-Cunnilingus Scene: 👅→🌼 (👅 taken by Oral in existing explicit)
+- Active Spitroast Scene: 🍡→🍢 (to avoid within-new conflict with Spitroast Subject 🍡)
+- Active Gangbang Scene: 👥→🫂 (👥 taken by Threesome/Group in existing explicit)
+- Mid-Anal Scene: 🍑→🫣 (🍑 taken by Anal Sex in existing explicit)
+- Active Double Penetration: ✌️→🤞 (✌️ taken by Double Penetration in existing explicit)
+- Active Bondage Play Scene: ⛓️→🧲 (to avoid within-new conflict with Sex Slave/Naked Captive ⛓️)
+- Active Pet Play Scene: 🐾→🦴 (to avoid within-new conflict with Naked Pet/Human Pet 🐾)
+- Active Pegging Scene: 🎯→🔁 (to avoid within-new conflict with Girl Being Pegged 🎯)
+- Active Hypno Scene: 🔮→🌠 (to avoid within-new conflict with Hypno Sex Slave 🔮)
+- Gloryhole In-Use Scene: 🕳️→🪤 (🕳️ taken by Gloryhole in existing explicit)
+- Active Squirting Scene: 🌊→🫧 (to avoid within-new conflict with Squirting/Mid-Orgasm 🌊)
+- Mid-Creampie Scene: 💦→💧 (💦 taken by Facial/Cumshot in existing explicit)
+
+## Files to Modify
+
+- `src/data/presetLibrary.json` — append 95 new preset objects
