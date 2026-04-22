@@ -5272,5 +5272,140 @@
     "description": "Post-sex oral cleanup — eating creampie or cum",
     "thumbnail": "🥄",
     "isDefault": true
+  },
+  {
+    "id": "pl-explicit-pet-play-collared-submissive",
+    "name": "Pet Play / Collared Submissive",
+    "category": "explicit",
+    "words": ["pet play","collar","leash","animal ears","crawling","submissive pet","collar and leash","on all fours","good girl"],
+    "description": "Collar, leash, and animal ears pet play with submissive framing",
+    "thumbnail": "🐾",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-latex-rubber-suit",
+    "name": "Latex / Rubber Suit",
+    "category": "explicit",
+    "words": ["latex","rubber suit","latex bodysuit","shiny latex","tight latex","pvc","rubber clothing","latex catsuit","glossy suit"],
+    "description": "Full-body shiny latex or rubber suit aesthetic",
+    "thumbnail": "🖤",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-wax-play-candle-drip",
+    "name": "Wax Play / Candle Drip",
+    "category": "explicit",
+    "words": ["wax play","candle wax","dripping wax","hot wax","candle drip","bdsm sensory","wax on skin","melted wax","sensation play"],
+    "description": "BDSM sensory play with dripping hot candle wax on skin",
+    "thumbnail": "🕯️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-breeding-impregnation-fantasy",
+    "name": "Breeding / Impregnation Fantasy",
+    "category": "explicit",
+    "words": ["breeding","impregnation","fertile","impregnation fantasy","breeding sex","fertile womb","deep inside","breed"],
+    "description": "Impregnation and breeding fantasy — distinct framing from creampie",
+    "thumbnail": "🤰",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-cum-inflation",
+    "name": "Cum Inflation",
+    "category": "explicit",
+    "words": ["cum inflation","belly inflation","cum bulge","inflated belly","belly bulge","excess cum","womb inflation","x-ray cum fill"],
+    "description": "Belly inflation from excess cum — womb bulge and inflation",
+    "thumbnail": "🎈",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-oviposition-egg-laying",
+    "name": "Oviposition / Egg Laying",
+    "category": "explicit",
+    "words": ["oviposition","egg laying","egg insertion","tentacle eggs","laying eggs","internal eggs","egg belly bulge","ovipositor"],
+    "description": "Oviposition and egg-laying kink — tentacle-adjacent niche",
+    "thumbnail": "🥚",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-ntr-cuckolding",
+    "name": "NTR / Cuckolding",
+    "category": "explicit",
+    "words": ["ntr","netorare","cuckolding","cheating","stolen","taken","cuckold","affair","infidelity","netori"],
+    "description": "NTR / netorare cuckolding scenario framing",
+    "thumbnail": "😔",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-somnophilia-sleeping",
+    "name": "Somnophilia / Sleeping",
+    "category": "explicit",
+    "words": ["somnophilia","sleeping","unconscious","asleep","eyes closed","sleeping beauty","vulnerable sleeping","sleep sex","dormant"],
+    "description": "Somnophilia — asleep or unconscious subject framing",
+    "thumbnail": "😴",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-chastity-orgasm-denial",
+    "name": "Chastity / Orgasm Denial",
+    "category": "explicit",
+    "words": ["chastity","orgasm denial","denied","edging","chastity cage","frustrated","denial play","teasing denial","no release"],
+    "description": "Chastity cage and orgasm denial play — restrained and denied",
+    "thumbnail": "🔐",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-exhibitionism-public-flashing",
+    "name": "Exhibitionism / Public Flashing",
+    "category": "explicit",
+    "words": ["exhibitionism","flashing","public nudity","aroused exhibitionist","thrill","indecent exposure","no panties","exposed"],
+    "description": "Exhibitionism and public flashing kink — act/arousal focused, not location focused",
+    "thumbnail": "🌍",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-consensual-non-consent-ravishment",
+    "name": "Consensual Non-Consent / Ravishment",
+    "category": "explicit",
+    "words": ["cnc","consensual non-consent","ravishment","forced fantasy","rough sex fantasy","resistance roleplay","held down consensual","rough roleplay"],
+    "description": "CNC ravishment fantasy — consensual resistance roleplay",
+    "thumbnail": "⚠️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-dollification-mannequin-play",
+    "name": "Dollification / Mannequin Play",
+    "category": "explicit",
+    "words": ["dollification","mannequin play","blank expression","doll eyes","objectification","posed like doll","vacant expression","human doll","puppet play"],
+    "description": "Dollification — blank doll-like expression, objectification framing",
+    "thumbnail": "🪆",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-sensory-deprivation",
+    "name": "Sensory Deprivation",
+    "category": "explicit",
+    "words": ["sensory deprivation","blindfold","restrained","unable to see","bound and blindfolded","deprived senses","no sight","bdsm restraint"],
+    "description": "Sensory deprivation — blindfolded and restrained BDSM play",
+    "thumbnail": "😶",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-gagging-drool-play",
+    "name": "Gagging / Drool Play",
+    "category": "explicit",
+    "words": ["ball gag","gag","drool","drooling","gagged","mouth gagged","saliva","drool dripping","silenced"],
+    "description": "Ball gag and drool play — mouth gagged with drool",
+    "thumbnail": "🫧",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-macro-micro-size-play",
+    "name": "Macro / Micro / Size Play",
+    "category": "explicit",
+    "words": ["macro","micro","size difference","giant","tiny","size play","giantess","shrunken","macro fantasy","size fetish"],
+    "description": "Giant/tiny size difference fantasy — macro/micro size play",
+    "thumbnail": "🔬",
+    "isDefault": true
   }
 ]
