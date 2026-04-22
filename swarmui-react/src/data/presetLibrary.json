@@ -12,7 +12,10 @@
       "long hair",
       "beautiful detailed eyes",
       "delicate features",
-      "portrait"
+      "portrait",
+      "soft lips",
+      "smooth skin",
+      "gentle expression"
     ],
     "description": "A beautiful Asian girl with long hair and delicate features",
     "thumbnail": "👧",
@@ -32,7 +35,10 @@
       "slim",
       "ethereal",
       "fantasy",
-      "beautiful detailed eyes"
+      "beautiful detailed eyes",
+      "fine features",
+      "pale skin",
+      "graceful posture"
     ],
     "description": "A slim and ethereal elf girl with pointed ears",
     "thumbnail": "🧝",
@@ -51,8 +57,11 @@
       "anthro",
       "furry",
       "furry female",
-      "animal ears",
-      "fluffy tail"
+      "silver fur",
+      "amber eyes",
+      "shaggy hair",
+      "fluffy tail",
+      "alert expression"
     ],
     "description": "An anthropomorphic wolf girl with ears and tail",
     "thumbnail": "🐺",
@@ -71,7 +80,10 @@
       "dragon wings",
       "breathing fire",
       "fantasy",
-      "sharp teeth"
+      "sharp teeth",
+      "glowing eyes",
+      "horned crest",
+      "scarred scales"
     ],
     "description": "A fierce dragon with scales, wings, and fire",
     "thumbnail": "🐉",
@@ -91,7 +103,10 @@
       "shield",
       "holding sword",
       "heroic",
-      "fantasy"
+      "fantasy",
+      "windswept hair",
+      "determined eyes",
+      "square jaw"
     ],
     "description": "A heroic knight in armor wielding a sword and shield",
     "thumbnail": "⚔️",
@@ -111,7 +126,10 @@
       "magic circle",
       "mysterious",
       "hood",
-      "fantasy"
+      "fantasy",
+      "glowing eyes",
+      "sharp features",
+      "long silver hair"
     ],
     "description": "A mysterious mage in robes wielding magic and a staff",
     "thumbnail": "🧙",
@@ -133,7 +151,9 @@
       "hooded",
       "ominous aura",
       "evil smile",
-      "dark fantasy"
+      "dark fantasy",
+      "long black hair",
+      "sharp cheekbones"
     ],
     "description": "A hooded dark sorceress wrapped in black robes, glowing eyes, and arcane magic",
     "thumbnail": "🔮",
@@ -154,7 +174,10 @@
       "collar",
       "bell",
       "smile",
-      "animal ear fluff"
+      "animal ear fluff",
+      "golden eyes",
+      "soft blush",
+      "short fluffy hair"
     ],
     "description": "A cute and playful catgirl with cat ears and tail",
     "thumbnail": "🐱",
@@ -174,7 +197,10 @@
       "elegant",
       "beautiful detailed eyes",
       "regal",
-      "fantasy"
+      "fantasy",
+      "long curled hair",
+      "soft features",
+      "porcelain skin"
     ],
     "description": "An elegant royal princess in a gown with a tiara",
     "thumbnail": "👑",
@@ -194,7 +220,10 @@
       "goggles",
       "typing",
       "computer",
-      "sci-fi"
+      "sci-fi",
+      "asymmetrical haircut",
+      "glowing eyes",
+      "focused expression"
     ],
     "description": "A cyberpunk hacker with neon accents and tech goggles",
     "thumbnail": "💻",
@@ -213,7 +242,10 @@
       "samurai armor",
       "japanese clothes",
       "warrior",
-      "stoic"
+      "stoic",
+      "topknot",
+      "sharp eyes",
+      "scar across cheek"
     ],
     "description": "A Japanese samurai warrior in armor with a katana",
     "thumbnail": "🗡️",
@@ -233,7 +265,10 @@
       "white robes",
       "divine",
       "holy",
-      "ethereal"
+      "ethereal",
+      "golden hair",
+      "gentle eyes",
+      "serene expression"
     ],
     "description": "A divine angel with wings, halo, and white robes",
     "thumbnail": "😇",
@@ -252,7 +287,10 @@
       "bat wings",
       "red eyes",
       "evil smile",
-      "dark fantasy"
+      "dark fantasy",
+      "dark hair",
+      "sharp fangs",
+      "sultry expression"
     ],
     "description": "A demon girl with horns, dark wings, and red eyes",
     "thumbnail": "😈",
@@ -273,7 +311,9 @@
       "school bag",
       "neat hairstyle",
       "blush",
-      "cute"
+      "cute",
+      "bright eyes",
+      "soft smile"
     ],
     "description": "A student in a classic school uniform with sailor collar, pleated skirt, and school accessories",
     "thumbnail": "🎒",
@@ -293,7 +333,10 @@
       "gothic",
       "blood",
       "bat wings",
-      "dark fantasy"
+      "dark fantasy",
+      "long black hair",
+      "sharp cheekbones",
+      "cold expression"
     ],
     "description": "A gothic vampire with fangs, pale skin, and red eyes",
     "thumbnail": "🧛",
@@ -312,7 +355,10 @@
       "cobblestone path",
       "medieval architecture",
       "royal stronghold",
-      "open sky"
+      "open sky",
+      "weathered stone",
+      "torchlight accents",
+      "grand scale"
     ],
     "description": "A medieval castle environment with towers, banners, cobblestone paths, and fortress stonework",
     "thumbnail": "🏰",
@@ -350,7 +396,10 @@
       "evening breeze",
       "high-rise view",
       "ambient nightlife",
-      "open terrace"
+      "open terrace",
+      "moody lighting",
+      "glass railings",
+      "luxury atmosphere"
     ],
     "description": "An elevated rooftop lounge with cocktails, city lights, terrace seating, and skyline views",
     "thumbnail": "🍹",
@@ -407,7 +456,10 @@
       "warm ambient light",
       "window curtains",
       "personal furniture",
-      "cozy domestic mood"
+      "cozy domestic mood",
+      "soft shadows",
+      "lived-in detail",
+      "intimate framing"
     ],
     "description": "A cozy bedroom interior with layered bedding, bedside lighting, and lived-in domestic detail",
     "thumbnail": "🛏️",
@@ -427,7 +479,10 @@
       "living room",
       "modern furniture",
       "soft interior lighting",
-      "cozy interior"
+      "cozy interior",
+      "clean lines",
+      "neutral palette",
+      "glass reflections"
     ],
     "description": "A cozy modern apartment interior with furniture, window light, and an urban view",
     "thumbnail": "🏢",
@@ -487,7 +542,10 @@
       "night",
       "spooky",
       "nature",
-      "outdoors"
+      "outdoors",
+      "twisted branches",
+      "cold mist",
+      "deep shadows"
     ],
     "description": "An eerie dark forest with fog, twisted trees, and moonlight",
     "thumbnail": "🌲",
@@ -563,7 +621,10 @@
       "water",
       "bioluminescent",
       "ancient",
-      "sunlight through water"
+      "sunlight through water",
+      "coral overgrowth",
+      "stone pillars",
+      "drifting particles"
     ],
     "description": "Ancient underwater temple ruins with bioluminescent ocean light",
     "thumbnail": "🏛️",
@@ -642,9 +703,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-low-light",
+    "id": "pl-lighting-low-light",
     "name": "Low Light",
-    "category": "styles",
+    "category": "lighting",
     "words": [
       "low lighting",
       "dimly lit",
@@ -659,9 +720,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-bright-light",
+    "id": "pl-lighting-bright-light",
     "name": "Bright Light",
-    "category": "styles",
+    "category": "lighting",
     "words": [
       "bright lighting",
       "well lit",
@@ -677,9 +738,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-golden-glow",
+    "id": "pl-lighting-golden-glow",
     "name": "Golden Glow",
-    "category": "styles",
+    "category": "lighting",
     "words": [
       "golden hour",
       "warm lighting",
@@ -1197,7 +1258,10 @@
       "revealing clothes",
       "seductive",
       "heart tail",
-      "nsfw"
+      "nsfw",
+      "crimson eyes",
+      "long wavy hair",
+      "sly smile"
     ],
     "description": "A seductive succubus or demoness with horns and revealing attire",
     "thumbnail": "😈",
@@ -1216,7 +1280,10 @@
       "corset",
       "high heels",
       "smug",
-      "nsfw"
+      "nsfw",
+      "sleek black hair",
+      "piercing gaze",
+      "sharp makeup"
     ],
     "description": "A dominant BDSM mistress wearing leather or latex with a whip",
     "thumbnail": "🖤",
@@ -1235,7 +1302,10 @@
       "stockings",
       "short dress",
       "syringe",
-      "nsfw"
+      "nsfw",
+      "glossy lips",
+      "soft eyes",
+      "bob haircut"
     ],
     "description": "A suggestive nurse in a revealing uniform and stockings",
     "thumbnail": "👩‍⚕️",
@@ -1254,7 +1324,10 @@
       "apron",
       "submissive",
       "bow",
-      "nsfw"
+      "nsfw",
+      "soft curls",
+      "bright eyes",
+      "gentle smile"
     ],
     "description": "A submissive French maid in a frilly, revealing maid dress",
     "thumbnail": "🧹",
@@ -1272,7 +1345,10 @@
       "high heels",
       "dancing",
       "bikini",
-      "nsfw"
+      "nsfw",
+      "long wavy hair",
+      "smoky eye makeup",
+      "confident smile"
     ],
     "description": "An exotic dancer or stripper in heels and minimal clothing",
     "thumbnail": "💃",
@@ -1291,7 +1367,10 @@
       "all fours",
       "submissive",
       "animal ears",
-      "nsfw"
+      "nsfw",
+      "doe eyes",
+      "messy hair",
+      "flushed cheeks"
     ],
     "description": "A submissive human pet wearing a collar and leash, crawling",
     "thumbnail": "🐾",
@@ -1308,7 +1387,9 @@
       "sheer clothing",
       "see-through",
       "intimate",
-      "ベッド",
+      "long dark hair",
+      "half-lidded eyes",
+      "red lips",
       "nsfw"
     ],
     "description": "An alluring temptress with a seductive gaze and sheer clothing",
@@ -2016,7 +2097,10 @@
       "mixed anatomy",
       "dickgirl",
       "1girl",
-      "nsfw"
+      "nsfw",
+      "long hair",
+      "confident gaze",
+      "toned physique"
     ],
     "description": "Futanari or hermaphrodite character with mixed anatomy",
     "thumbnail": "⚧️",
@@ -2034,7 +2118,10 @@
       "large breasts",
       "thicc",
       "1girl",
-      "nsfw"
+      "nsfw",
+      "styled hair",
+      "confident eyes",
+      "mature features"
     ],
     "description": "Older, mature woman with pronounced curves and mature features",
     "thumbnail": "👩",
@@ -2051,7 +2138,10 @@
       "abs",
       "fit",
       "biceps",
-      "toned"
+      "toned",
+      "short hair",
+      "strong jawline",
+      "confident grin"
     ],
     "description": "A fit, muscular tomboy or female athlete with defined abs",
     "thumbnail": "💪",
@@ -2071,7 +2161,10 @@
       "fantasy creature",
       "inhuman beauty",
       "clawed hands",
-      "mythic design"
+      "mythic design",
+      "glowing eyes",
+      "wild hair",
+      "unusual skin patterns"
     ],
     "description": "A fantasy monster girl blending human beauty with mythic, inhuman creature traits",
     "thumbnail": "🐍",
@@ -2089,7 +2182,10 @@
       "corrupted",
       "sacred",
       "cross",
-      "nsfw"
+      "nsfw",
+      "glowing eyes",
+      "dark lipstick",
+      "pale skin"
     ],
     "description": "A suggestive or corrupted nun with a torn or revealing habit",
     "thumbnail": "⛪",
@@ -2444,7 +2540,9 @@
       "magic",
       "flowing robes",
       "mystical aura",
-      "fantasy"
+      "fantasy",
+      "kind eyes",
+      "weathered face"
     ],
     "description": "An old wizard with a long beard, staff, flowing robes, and a mystical aura",
     "thumbnail": "🧙‍♂️",
@@ -2463,7 +2561,10 @@
       "leather jacket",
       "gun",
       "holding gun",
-      "sci-fi"
+      "sci-fi",
+      "buzz cut",
+      "cybernetic eye",
+      "scarred face"
     ],
     "description": "A gritty cyberpunk mercenary with cybernetics and a leather jacket",
     "thumbnail": "🕶️",
@@ -2484,7 +2585,10 @@
       "futuristic",
       "weapon",
       "battle-worn armor",
-      "combat stance"
+      "combat stance",
+      "visor glow",
+      "broad shoulders",
+      "scarred jaw"
     ],
     "description": "A battle-ready space marine in power armor with a weapon and combat stance",
     "thumbnail": "🪐",
@@ -2504,7 +2608,10 @@
       "tailored suit",
       "corporate",
       "confident posture",
-      "clean grooming"
+      "clean grooming",
+      "styled hair",
+      "sharp eyes",
+      "defined jawline"
     ],
     "description": "A sharply dressed office professional with a tailored suit, clean grooming, and confident posture",
     "thumbnail": "👔",
@@ -2523,7 +2630,10 @@
       "warm café lighting",
       "chalkboard menu",
       "soft chatter",
-      "cozy atmosphere"
+      "cozy atmosphere",
+      "steam from coffee",
+      "rainy window glow",
+      "lived-in warmth"
     ],
     "description": "A warm neighborhood café with mugs, pastries, window seating, and intimate ambient lighting",
     "thumbnail": "☕",
@@ -2560,7 +2670,10 @@
       "rolling clouds",
       "fresh alpine air",
       "tranquil vista",
-      "distant ridgelines"
+      "distant ridgelines",
+      "pine slopes",
+      "clear sunlight",
+      "expansive depth"
     ],
     "description": "A calm alpine vista with snow-capped peaks, open sky, and distant mountain ridgelines",
     "thumbnail": "⛰️",
@@ -2769,9 +2882,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-masterpiece",
+    "id": "pl-quality-masterpiece-quality",
     "name": "Masterpiece Quality",
-    "category": "styles",
+    "category": "quality",
     "words": [
       "masterpiece",
       "best quality",
@@ -2787,9 +2900,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-cinematic-render",
+    "id": "pl-lighting-cinematic-rendering",
     "name": "Cinematic Rendering",
-    "category": "styles",
+    "category": "lighting",
     "words": [
       "cinematic lighting",
       "dramatic shadows",
@@ -2805,9 +2918,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-photoreal-textures",
+    "id": "pl-quality-photorealistic-textures",
     "name": "Photorealistic Textures",
-    "category": "styles",
+    "category": "quality",
     "words": [
       "photorealistic textures",
       "raw photo detail",
@@ -2841,9 +2954,9 @@
     "isDefault": true
   },
   {
-    "id": "pl-styles-ethereal-glow",
+    "id": "pl-lighting-ethereal-glow",
     "name": "Ethereal Glow",
-    "category": "styles",
+    "category": "lighting",
     "words": [
       "soft lighting",
       "ethereal",
@@ -2869,7 +2982,10 @@
       "small background elements",
       "busy composition",
       "set dressing",
-      "worldbuilding detail"
+      "worldbuilding detail",
+      "ornamental surfaces",
+      "rich textures",
+      "visual storytelling"
     ],
     "description": "A richly detailed background packed with layered scenery, props, and environmental storytelling",
     "thumbnail": "🏙️",
@@ -2887,7 +3003,9 @@
       "depth of field",
       "foreground sharpness",
       "creamy blur",
-      "lens compression"
+      "lens compression",
+      "soft light orbs",
+      "cinematic focus falloff"
     ],
     "description": "A lens-driven look with strong subject isolation, creamy blur, and soft out-of-focus lights",
     "thumbnail": "🔍",
@@ -2905,7 +3023,9 @@
       "airborne debris",
       "glittering specks",
       "atmospheric haze",
-      "magic particles"
+      "magic particles",
+      "volumetric light",
+      "ambient motion"
     ],
     "description": "Environmental particles like dust, sparks, and haze that catch light and add atmosphere",
     "thumbnail": "🎇",
@@ -2923,7 +3043,10 @@
       "vines",
       "leafy background",
       "botanical abundance",
-      "humid nature"
+      "humid nature",
+      "layered greenery",
+      "organic textures",
+      "wild overgrowth"
     ],
     "description": "A dense natural setting overflowing with foliage, vines, flowers, and layered greenery",
     "thumbnail": "🌿",
@@ -2941,7 +3064,10 @@
       "cat tail",
       "fang",
       "cute",
-      "solo"
+      "solo",
+      "golden eyes",
+      "soft hair",
+      "playful smile"
     ],
     "description": "A cute catgirl with feline ears, a tail, and a playful fang.",
     "thumbnail": "🐱",
@@ -2961,7 +3087,9 @@
       "mischievous smile",
       "shrine maiden vibe",
       "mystical aura",
-      "solo"
+      "solo",
+      "amber eyes",
+      "long silky hair"
     ],
     "description": "A mystical foxgirl with multiple tails, playful charm, and a strong kitsune aura",
     "thumbnail": "🦊",
@@ -2981,7 +3109,9 @@
       "leotard",
       "cuffs",
       "fishnet stockings",
-      "playful pose"
+      "playful pose",
+      "long lashes",
+      "glossy hair"
     ],
     "description": "A playful bunnygirl with rabbit ears, fluffy tail, and classic pin-up outfit details.",
     "thumbnail": "🐰",
@@ -3021,7 +3151,9 @@
       "golden eyes",
       "mythical aura",
       "smoke breath",
-      "solo"
+      "solo",
+      "dark hair",
+      "sharp features"
     ],
     "description": "A mythical dragon girl with horns, scaled skin, and a powerful draconic presence",
     "thumbnail": "🐉",
@@ -3041,7 +3173,9 @@
       "paw hands",
       "expressive muzzle",
       "tail emphasis",
-      "solo"
+      "solo",
+      "bright eyes",
+      "thick fur markings"
     ],
     "description": "A fully anthropomorphic furry character with full fur, muzzle, paws, and digitigrade anatomy",
     "thumbnail": "🐾",
@@ -3058,7 +3192,10 @@
       "elegant dress",
       "jewelry",
       "regal",
-      "solo"
+      "solo",
+      "long flowing hair",
+      "bright eyes",
+      "graceful posture"
     ],
     "description": "A regal princess wearing an elegant ball gown, tiara, and fine jewelry.",
     "thumbnail": "👑",
@@ -3078,7 +3215,10 @@
       "fishnets",
       "black lipstick",
       "layered black clothing",
-      "solo"
+      "solo",
+      "pale skin",
+      "dark hair",
+      "brooding expression"
     ],
     "description": "A goth girl with dark makeup, layered black fashion, and strong emo styling",
     "thumbnail": "🖤",
@@ -3095,7 +3235,10 @@
       "pencil skirt",
       "glasses",
       "professional",
-      "solo"
+      "solo",
+      "neat bob haircut",
+      "sharp eyes",
+      "light makeup"
     ],
     "description": "A professional Japanese Office Lady (OL) in a tight pencil skirt suit with glasses.",
     "thumbnail": "🖇️",
@@ -3115,7 +3258,10 @@
       "fur armor",
       "leather straps",
       "warrior stance",
-      "primal strength"
+      "primal strength",
+      "wild hair",
+      "intense eyes",
+      "strong cheekbones"
     ],
     "description": "A powerful barbarian warrior with battle scars, fur armor, and a primal stance",
     "thumbnail": "🪓",
@@ -3135,7 +3281,10 @@
       "heart motifs",
       "transformation outfit",
       "cute heroic pose",
-      "solo"
+      "solo",
+      "big bright eyes",
+      "twintails",
+      "cheerful smile"
     ],
     "description": "A classic magical girl with ribbons, sparkles, and a transformation-style hero costume",
     "thumbnail": "✨",
@@ -3155,7 +3304,10 @@
       "long nails",
       "fashionable accessories",
       "flashy outfit",
-      "solo"
+      "solo",
+      "glossy lips",
+      "bright eyes",
+      "voluminous hair"
     ],
     "description": "A bold gyaru character with a deep tan, bleached hair, heavy makeup, and flashy fashion",
     "thumbnail": "🌺",
@@ -3175,7 +3327,10 @@
       "cybernetics",
       "holographic hair ornaments",
       "synth makeup",
-      "solo"
+      "solo",
+      "sharp eyes",
+      "porcelain skin",
+      "sleek black hair"
     ],
     "description": "A cyberpunk geisha mixing traditional elegance with neon fashion and visible cybernetics",
     "thumbnail": "👘",
@@ -3195,7 +3350,9 @@
       "velvet attire",
       "gothic elegance",
       "noble bearing",
-      "solo"
+      "solo",
+      "long silver hair",
+      "sharp cheekbones"
     ],
     "description": "An aristocratic vampire with pale skin, red eyes, velvet attire, and gothic elegance",
     "thumbnail": "🧛",
@@ -3215,7 +3372,9 @@
       "stage smile",
       "cute futuristic design",
       "performance pose",
-      "solo"
+      "solo",
+      "luminous eyes",
+      "sleek bob haircut"
     ],
     "description": "A futuristic android idol with glowing stagewear, synthetic features, and holographic accessories",
     "thumbnail": "🤖",
@@ -3235,7 +3394,9 @@
       "stern expression",
       "religious armor",
       "sacred aura",
-      "solo"
+      "solo",
+      "piercing eyes",
+      "windswept hair"
     ],
     "description": "A militant nun with habit, holy weaponry, and armored religious iconography",
     "thumbnail": "⛪",
@@ -3255,7 +3416,9 @@
       "windswept fabric",
       "survivalist look",
       "arid wanderer",
-      "solo"
+      "solo",
+      "kohl eyes",
+      "weathered features"
     ],
     "description": "A sand-worn desert traveler with layered fabric, survival gear, and windswept styling",
     "thumbnail": "🏜️",
@@ -3275,7 +3438,10 @@
       "weathered swagger",
       "sea rogue",
       "captain stance",
-      "solo"
+      "solo",
+      "windblown hair",
+      "sharp grin",
+      "sea-worn face"
     ],
     "description": "A swaggering pirate captain with tricorn hat, cutlass, and weathered seafaring style",
     "thumbnail": "🏴‍☠️",
@@ -3295,7 +3461,9 @@
       "determined expression",
       "sci-fi operator",
       "combat readiness",
-      "solo"
+      "solo",
+      "short hair",
+      "focused eyes"
     ],
     "description": "A focused mecha pilot with a fitted suit, cockpit tech, and combat-ready sci-fi styling",
     "thumbnail": "🛩️",
@@ -3315,7 +3483,9 @@
       "fin tail",
       "sea jewel accessories",
       "mythic aquatic aura",
-      "solo"
+      "solo",
+      "sea-green eyes",
+      "soft features"
     ],
     "description": "A mythic mermaid siren with iridescent scales, wet hair, and oceanic elegance",
     "thumbnail": "🧜",
@@ -3335,7 +3505,9 @@
       "sharp gaze",
       "city mystery mood",
       "investigator stance",
-      "solo"
+      "solo",
+      "red lipstick",
+      "wavy bob haircut"
     ],
     "description": "A noir detective heroine with trench coat, fedora, and a sharp investigative presence",
     "thumbnail": "🕵️",
@@ -3354,7 +3526,10 @@
       "umbrella stand",
       "refrigerated aisles",
       "street reflections",
-      "late-night atmosphere"
+      "late-night atmosphere",
+      "cool color cast",
+      "urban quiet",
+      "glossy pavement"
     ],
     "description": "A late-night convenience store scene with rain reflections, fluorescent aisles, and wet pavement",
     "thumbnail": "🏪",
@@ -3373,7 +3548,10 @@
       "god rays",
       "gothic ruin",
       "echoing emptiness",
-      "sacred decay"
+      "sacred decay",
+      "mossy stone",
+      "long shadows",
+      "solemn atmosphere"
     ],
     "description": "A ruined gothic cathedral filled with broken stained glass, dust, fallen stone, and sacred decay",
     "thumbnail": "🕍",
@@ -3392,7 +3570,10 @@
       "crowded gamblers",
       "ambient glamour",
       "ceiling lights",
-      "luxury vice"
+      "luxury vice",
+      "polished surfaces",
+      "warm neon glow",
+      "busy nightlife"
     ],
     "description": "A glamorous casino interior with card tables, slot machines, red carpet, and luxury vice energy",
     "thumbnail": "🎰",
@@ -3411,7 +3592,10 @@
       "coin machines",
       "electronic ambience",
       "colorful reflections",
-      "youthful energy"
+      "youthful energy",
+      "flashing lights",
+      "dense visual clutter",
+      "saturated colors"
     ],
     "description": "A neon-lit arcade hall with glowing cabinets, patterned carpet, and colorful electronic ambience",
     "thumbnail": "🕹️",
@@ -3430,7 +3614,10 @@
       "frosted trees",
       "footprints in snow",
       "japanese shrine",
-      "cold blue light"
+      "cold blue light",
+      "crisp air",
+      "powdered branches",
+      "quiet atmosphere"
     ],
     "description": "A quiet winter shrine approach with torii gates, snow-covered stone lanterns, and frosted trees",
     "thumbnail": "⛩️",
@@ -3449,7 +3636,10 @@
       "trade goods",
       "starry desert sky",
       "nomad settlement",
-      "windblown cloth"
+      "windblown cloth",
+      "warm lantern light",
+      "dry atmosphere",
+      "travel-worn detail"
     ],
     "description": "A desert caravan encampment with tents, trade goods, dunes, camel presence, and campfire glow",
     "thumbnail": "🐪",
@@ -3468,7 +3658,10 @@
       "ambient strip lighting",
       "modern wealth",
       "high-rise interior",
-      "sleek architecture"
+      "sleek architecture",
+      "polished finishes",
+      "night skyline glow",
+      "minimalist opulence"
     ],
     "description": "A sleek luxury penthouse with marble surfaces, designer furniture, and floor-to-ceiling city views",
     "thumbnail": "🏙️",
@@ -3487,7 +3680,10 @@
       "echoing passage",
       "urban edge",
       "dripping water",
-      "skate spot energy"
+      "skate spot energy",
+      "harsh shadows",
+      "wet concrete",
+      "raw texture"
     ],
     "description": "A concrete underpass full of graffiti, street grime, flickering lights, and raw urban tunnel atmosphere",
     "thumbnail": "🚇",
@@ -3887,6 +4083,591 @@
     ],
     "description": "An explicit legwear preset centered on stockings, garter belts, lace trim, and thigh emphasis",
     "thumbnail": "🧦",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-masterpiece-polish",
+    "name": "Masterpiece Polish",
+    "category": "quality",
+    "words": [
+      "masterpiece",
+      "best quality",
+      "highly detailed",
+      "ultra detailed",
+      "highres",
+      "refined detail",
+      "polished rendering",
+      "premium illustration"
+    ],
+    "description": "A general-purpose quality booster focused on premium finish, clean detail, and polished rendering",
+    "thumbnail": "✨",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-crisp-clean-render",
+    "name": "Crisp Clean Render",
+    "category": "quality",
+    "words": [
+      "sharp focus",
+      "clean rendering",
+      "crisp details",
+      "well-defined edges",
+      "clear materials",
+      "refined finish",
+      "high clarity",
+      "precision detail"
+    ],
+    "description": "A sharpness-focused preset for cleaner edges, higher clarity, and more controlled detail",
+    "thumbnail": "🔎",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-photoreal-surface-detail",
+    "name": "Photoreal Surface Detail",
+    "category": "quality",
+    "words": [
+      "photoreal detail",
+      "skin pores",
+      "fabric weave",
+      "surface imperfections",
+      "material realism",
+      "micro contrast",
+      "fine textures",
+      "camera detail"
+    ],
+    "description": "A realism-oriented quality preset emphasizing tactile surfaces, microtexture, and camera-like detail",
+    "thumbnail": "📸",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-clean-anime-finish",
+    "name": "Clean Anime Finish",
+    "category": "quality",
+    "words": [
+      "clean lineart",
+      "crisp cel shading",
+      "smooth gradients",
+      "refined anime finish",
+      "clean highlights",
+      "tidy details",
+      "high clarity anime",
+      "polished color fill"
+    ],
+    "description": "A quality preset tuned for cleaner anime outputs with sharper linework and smoother fills",
+    "thumbnail": "🎌",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-face-detail-boost",
+    "name": "Face Detail Boost",
+    "category": "quality",
+    "words": [
+      "detailed face",
+      "sharp eyes",
+      "defined eyelashes",
+      "natural lips",
+      "clean facial features",
+      "refined skin detail",
+      "expressive face",
+      "portrait detail"
+    ],
+    "description": "A portrait-focused quality preset for cleaner facial features, eyes, lips, and skin rendering",
+    "thumbnail": "🧑",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-material-definition",
+    "name": "Material Definition",
+    "category": "quality",
+    "words": [
+      "defined materials",
+      "metal texture",
+      "fabric texture",
+      "realistic reflections",
+      "surface variation",
+      "specular detail",
+      "material separation",
+      "tactile surfaces"
+    ],
+    "description": "A quality preset that helps metals, fabrics, glass, and other materials read more distinctly",
+    "thumbnail": "🧵",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-soft-window-light",
+    "name": "Soft Window Light",
+    "category": "lighting",
+    "words": [
+      "soft window light",
+      "diffused daylight",
+      "gentle shadows",
+      "natural indoor light",
+      "soft highlights",
+      "ambient glow",
+      "subtle contrast",
+      "calm atmosphere"
+    ],
+    "description": "A natural soft-light preset for flattering daylight scenes with gentle shadows and even illumination",
+    "thumbnail": "🪟",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-golden-hour-glow",
+    "name": "Golden Hour Glow",
+    "category": "lighting",
+    "words": [
+      "golden hour",
+      "warm sunlight",
+      "rim light",
+      "amber highlights",
+      "sunset glow",
+      "soft haze",
+      "warm atmosphere",
+      "radiant skin light"
+    ],
+    "description": "A warm late-day lighting preset with amber highlights, haze, and flattering sunset glow",
+    "thumbnail": "🌇",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-studio-portrait-light",
+    "name": "Studio Portrait Light",
+    "category": "lighting",
+    "words": [
+      "studio lighting",
+      "softbox light",
+      "beauty lighting",
+      "controlled highlights",
+      "clean catchlights",
+      "even exposure",
+      "flattering face light",
+      "professional portrait light"
+    ],
+    "description": "A controlled portrait-lighting preset for clean exposure, catchlights, and flattering facial illumination",
+    "thumbnail": "💡",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-cinematic-rim-light",
+    "name": "Cinematic Rim Light",
+    "category": "lighting",
+    "words": [
+      "cinematic lighting",
+      "rim light",
+      "dramatic shadows",
+      "directional light",
+      "moody contrast",
+      "backlight separation",
+      "film lighting",
+      "high drama"
+    ],
+    "description": "A dramatic lighting preset with strong separation, controlled shadows, and cinematic edge light",
+    "thumbnail": "🎬",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-neon-night-glow",
+    "name": "Neon Night Glow",
+    "category": "lighting",
+    "words": [
+      "neon glow",
+      "colored light spill",
+      "night lighting",
+      "pink and blue light",
+      "wet reflections",
+      "urban glow",
+      "electric highlights",
+      "synthetic atmosphere"
+    ],
+    "description": "A nightlife lighting preset with neon spill, colored reflections, and urban electric atmosphere",
+    "thumbnail": "🌃",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-moody-low-key",
+    "name": "Moody Low Key",
+    "category": "lighting",
+    "words": [
+      "low key lighting",
+      "deep shadows",
+      "dim light",
+      "moody atmosphere",
+      "dark contrast",
+      "shadow-heavy scene",
+      "subtle highlights",
+      "dramatic darkness"
+    ],
+    "description": "A shadow-forward low-key lighting preset for darker scenes with controlled highlights and mood",
+    "thumbnail": "🌙",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-volumetric-god-rays",
+    "name": "Volumetric God Rays",
+    "category": "lighting",
+    "words": [
+      "volumetric light",
+      "god rays",
+      "light shafts",
+      "atmospheric haze",
+      "dust in light",
+      "radiant beams",
+      "dramatic illumination",
+      "cinematic atmosphere"
+    ],
+    "description": "An atmospheric lighting preset built around visible light beams, haze, and dramatic volumetric depth",
+    "thumbnail": "🌤️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-candlelit-warmth",
+    "name": "Candlelit Warmth",
+    "category": "lighting",
+    "words": [
+      "candlelight",
+      "warm flicker",
+      "soft amber glow",
+      "intimate lighting",
+      "warm shadows",
+      "firelit skin",
+      "cozy darkness",
+      "romantic atmosphere"
+    ],
+    "description": "A warm intimate lighting preset with flickering amber tones and soft firelit shadows",
+    "thumbnail": "🕯️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-ultra-fine-linework",
+    "name": "Ultra Fine Linework",
+    "category": "quality",
+    "words": [
+      "ultra fine lines",
+      "precise linework",
+      "clean outlines",
+      "refined contours",
+      "sharp inking",
+      "controlled edges",
+      "line clarity",
+      "delicate detail"
+    ],
+    "description": "A detail preset for cleaner outlines, sharper inking, and more controlled line precision",
+    "thumbnail": "✒️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-skin-realism-pass",
+    "name": "Skin Realism Pass",
+    "category": "quality",
+    "words": [
+      "natural skin texture",
+      "soft pores",
+      "subtle skin variation",
+      "realistic complexion",
+      "fine skin detail",
+      "lifelike shading",
+      "natural highlights",
+      "tactile realism"
+    ],
+    "description": "A realism preset focused on more believable skin texture, complexion variation, and lifelike shading",
+    "thumbnail": "🫧",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-environment-detail-pass",
+    "name": "Environment Detail Pass",
+    "category": "quality",
+    "words": [
+      "detailed background",
+      "environment detail",
+      "layered scenery",
+      "small object detail",
+      "set dressing",
+      "rich texture",
+      "depth cues",
+      "world detail"
+    ],
+    "description": "A quality preset for stronger background readability, richer environments, and more layered detail",
+    "thumbnail": "🏞️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-print-ready-finish",
+    "name": "Print-Ready Finish",
+    "category": "quality",
+    "words": [
+      "clean finish",
+      "refined polish",
+      "balanced detail",
+      "high clarity",
+      "smooth gradients",
+      "professional finish",
+      "premium quality",
+      "presentation ready"
+    ],
+    "description": "A finishing preset aimed at balanced polish, smooth gradients, and presentation-ready output",
+    "thumbnail": "🖼️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-quality-depth-and-separation",
+    "name": "Depth and Separation",
+    "category": "quality",
+    "words": [
+      "strong separation",
+      "clear foreground",
+      "clear background",
+      "depth cues",
+      "spatial clarity",
+      "layered depth",
+      "subject separation",
+      "clean visual hierarchy"
+    ],
+    "description": "A quality preset that improves depth readability, subject separation, and overall visual hierarchy",
+    "thumbnail": "🧭",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-moonlit-blue-hour",
+    "name": "Moonlit Blue Hour",
+    "category": "lighting",
+    "words": [
+      "moonlight",
+      "blue hour",
+      "cool highlights",
+      "soft night glow",
+      "blue shadows",
+      "night atmosphere",
+      "silver light",
+      "quiet darkness"
+    ],
+    "description": "A cool night-lighting preset with moonlight, blue-hour tones, and soft silver highlights",
+    "thumbnail": "🌌",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-overcast-diffusion",
+    "name": "Overcast Diffusion",
+    "category": "lighting",
+    "words": [
+      "overcast light",
+      "diffused sky light",
+      "soft contrast",
+      "shadowless light",
+      "gray daylight",
+      "even illumination",
+      "muted atmosphere",
+      "soft outdoor light"
+    ],
+    "description": "A cloud-filtered daylight preset with soft contrast, even exposure, and muted atmosphere",
+    "thumbnail": "☁️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-hard-noon-sun",
+    "name": "Hard Noon Sun",
+    "category": "lighting",
+    "words": [
+      "hard sunlight",
+      "midday sun",
+      "strong shadows",
+      "bright highlights",
+      "high contrast daylight",
+      "sun overhead",
+      "crisp outdoor light",
+      "hot atmosphere"
+    ],
+    "description": "A harsh daylight preset with strong overhead sun, bright highlights, and crisp hard-edged shadows",
+    "thumbnail": "🌞",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-colored-gel-studio",
+    "name": "Colored Gel Studio",
+    "category": "lighting",
+    "words": [
+      "colored gel lighting",
+      "magenta light",
+      "cyan light",
+      "studio color wash",
+      "split-tone lighting",
+      "bold light spill",
+      "editorial lighting",
+      "stylized studio glow"
+    ],
+    "description": "A stylized studio-lighting preset with colored gels, split tones, and bold editorial spill",
+    "thumbnail": "🎨",
+    "isDefault": true
+  },
+  {
+    "id": "pl-lighting-backlit-silhouette",
+    "name": "Backlit Silhouette",
+    "category": "lighting",
+    "words": [
+      "backlighting",
+      "silhouette",
+      "strong outline",
+      "bright background",
+      "shadowed subject",
+      "graphic contrast",
+      "edge glow",
+      "dramatic backlight"
+    ],
+    "description": "A lighting preset built around strong backlight, graphic outlines, and silhouette-heavy contrast",
+    "thumbnail": "🚪",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-shrine-maiden-miko",
+    "name": "Shrine Maiden / Miko",
+    "category": "characters",
+    "words": ["miko","shrine maiden","hakama","white kimono top","red hakama","torii gate","japanese shrine","black hair","sacred","spiritual"],
+    "description": "A Japanese shrine maiden in traditional miko robes",
+    "thumbnail": "⛩️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-kunoichi-female-ninja",
+    "name": "Kunoichi / Female Ninja",
+    "category": "characters",
+    "words": ["kunoichi","female ninja","ninja outfit","black bodysuit","kunai","stealth","shadow","dark clothing","shinobi","katana"],
+    "description": "A stealthy female ninja in dark shinobi gear",
+    "thumbnail": "🥷",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-idol-pop-star",
+    "name": "Idol / Pop Star",
+    "category": "characters",
+    "words": ["idol","pop star","stage costume","microphone","colorful outfit","sparkles","stage lights","j-pop","concert","cute","energetic"],
+    "description": "A J/K-pop idol performer on stage",
+    "thumbnail": "🎤",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-delinquent-yankee-girl",
+    "name": "Delinquent / Yankee Girl",
+    "category": "characters",
+    "words": ["yankee girl","delinquent","modified school uniform","long skirt","bleached hair","sukeban","rebellious","tough expression","cigarette"],
+    "description": "A tough Japanese delinquent girl with sukeban style",
+    "thumbnail": "🚬",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-ojou-sama-heiress",
+    "name": "Ojou-sama / Heiress",
+    "category": "characters",
+    "words": ["ojou-sama","rich girl","elegant dress","curly blonde hair","pearl necklace","high society","refined","proud expression","white gloves","luxury"],
+    "description": "A refined wealthy heiress with aristocratic elegance",
+    "thumbnail": "👑",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-succubus-nun",
+    "name": "Succubus Nun",
+    "category": "characters",
+    "words": ["succubus","nun habit","demon horns","demon tail","demon wings","glowing eyes","demonic markings","black habit","seductive expression","unholy"],
+    "description": "A demon inhabiting a nun's habit, retaining horns, tail, and wings",
+    "thumbnail": "😈",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-male-rogue-assassin",
+    "name": "Male Rogue / Assassin",
+    "category": "characters",
+    "words": ["1boy","solo male","rogue","assassin","dark hood","daggers","leather armor","masked","shadow","agile build"],
+    "description": "A hooded male rogue with daggers and leather armor",
+    "thumbnail": "🗡️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-male-hunter-ranger",
+    "name": "Male Hunter / Ranger",
+    "category": "characters",
+    "words": ["1boy","solo male","hunter","ranger","bow and arrow","leather armor","quiver","cloak","rugged","outdoorsman"],
+    "description": "A rugged male hunter with bow and forest gear",
+    "thumbnail": "🏹",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-male-priest-cleric",
+    "name": "Male Priest / Cleric",
+    "category": "characters",
+    "words": ["1boy","solo male","priest","cleric","holy robes","holy symbol","divine magic","staff","religious","white robes"],
+    "description": "A holy male cleric in divine robes",
+    "thumbnail": "✝️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-male-barbarian",
+    "name": "Male Barbarian",
+    "category": "characters",
+    "words": ["1boy","solo male","barbarian","muscular male","loincloth","fur pelt","greatsword","battle-scarred","rugged","shirtless"],
+    "description": "A Conan-style male barbarian warrior, male-coded with loincloth and greatsword",
+    "thumbnail": "⚔️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-orc-half-orc",
+    "name": "Orc / Half-Orc",
+    "category": "characters",
+    "words": ["orc","green skin","tusks","muscular","tribal armor","fierce expression","fantasy creature","warrior","intimidating"],
+    "description": "A green-skinned orc or half-orc fantasy warrior",
+    "thumbnail": "🟢",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-alien-girl",
+    "name": "Alien Girl",
+    "category": "characters",
+    "words": ["alien girl","1girl","extraterrestrial","blue skin","large eyes","sci-fi","otherworldly","exotic features","space","non-human"],
+    "description": "A sci-fi alien girl with exotic non-human features",
+    "thumbnail": "👽",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-witch-occultist",
+    "name": "Witch / Occultist",
+    "category": "characters",
+    "words": ["witch","1girl","occultist","pointed hat","spell book","candles","potion","mystical","herbs","magic circle"],
+    "description": "A folk witch or occultist with candles and spell books",
+    "thumbnail": "🔮",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-cheerleader-athlete",
+    "name": "Cheerleader / Athlete",
+    "category": "characters",
+    "words": ["cheerleader","1girl","pom poms","short skirt","school uniform","energetic","sporty","ponytail","athletic","team colors"],
+    "description": "A sporty cheerleader in team colors with pom poms",
+    "thumbnail": "📣",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-egyptian-pharaoh-girl",
+    "name": "Egyptian / Pharaoh Girl",
+    "category": "characters",
+    "words": ["egyptian","1girl","gold headdress","nemes headcloth","gold jewelry","kohl eyes","white linen dress","ankh","ancient egypt","collar necklace"],
+    "description": "An ancient Egyptian pharaoh girl adorned in gold jewelry and headdress",
+    "thumbnail": "🐍",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-viking-shield-maiden",
+    "name": "Viking Shield-Maiden",
+    "category": "characters",
+    "words": ["shield maiden","1girl","viking","norse","braided hair","fur cloak","shield","axe","battle armor","warrior woman"],
+    "description": "A Norse viking shield-maiden warrior woman",
+    "thumbnail": "🛡️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-gangster-yakuza-girl",
+    "name": "Gangster / Yakuza Girl",
+    "category": "characters",
+    "words": ["yakuza","1girl","tattoos","pinstripe suit","sharp fashion","sunglasses","criminal","japanese mafia","tattoo sleeves","intimidating expression"],
+    "description": "A tattooed yakuza or gangster girl in sharp criminal fashion",
+    "thumbnail": "🔱",
     "isDefault": true
   }
 ]
