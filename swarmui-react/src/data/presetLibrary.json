@@ -5407,5 +5407,113 @@
     "description": "Giant/tiny size difference fantasy — macro/micro size play",
     "thumbnail": "🔬",
     "isDefault": true
+  },
+  {
+    "id": "pl-explicit-sweat-post-sex-glow",
+    "name": "Sweat / Post-Sex Glow",
+    "category": "explicit",
+    "words": ["sweating","post sex","glistening skin","sweat droplets","exhausted","after sex glow","shiny skin","exertion sweat","flushed and sweaty"],
+    "description": "Glistening post-sex afterglow with sweat and exhaustion",
+    "thumbnail": "😰",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-cum-covered-messy",
+    "name": "Cum Covered / Messy",
+    "category": "explicit",
+    "words": ["cum covered","covered in cum","messy","cum on body","cum dripping","cum all over","splattered","cum soaked","drenched in cum"],
+    "description": "Full body or face covered in cum — maximally messy",
+    "thumbnail": "🫙",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-arousal-drip-pussy-juice",
+    "name": "Arousal Drip / Pussy Juice",
+    "category": "explicit",
+    "words": ["arousal","wet","dripping","pussy juice","natural lubricant","aroused wet","glistening wet","love juice","dripping arousal"],
+    "description": "Visible natural arousal wetness and dripping",
+    "thumbnail": "🫦",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-erect-nipples-hard-nubs",
+    "name": "Erect Nipples / Hard Nubs",
+    "category": "explicit",
+    "words": ["erect nipples","hard nipples","nipples visible","pointed nipples","aroused nipples","stiff nipples","nipple detail","perky nipples"],
+    "description": "Erect, hard, clearly visible nipple detail",
+    "thumbnail": "🔴",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-camel-toe-fabric-bulge",
+    "name": "Camel Toe / Fabric Bulge",
+    "category": "explicit",
+    "words": ["camel toe","fabric outline","clothing impression","vulva outline through clothing","tight clothing detail","fabric pulled tight","visible outline"],
+    "description": "Camel toe or bulge visible through tight fabric",
+    "thumbnail": "🩱",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-tan-lines-bikini-lines",
+    "name": "Tan Lines / Bikini Lines",
+    "category": "explicit",
+    "words": ["tan lines","bikini tan","tan marks","untanned areas","bikini tan lines","sun tan","pale where covered","contrast skin tone","summer tan"],
+    "description": "Tan lines and bikini lines showing contrast between tanned and pale skin",
+    "thumbnail": "☀️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-intimate-piercing-jewelry",
+    "name": "Intimate Piercing / Jewelry",
+    "category": "explicit",
+    "words": ["nipple piercing","genital piercing","intimate jewelry","pierced nipples","body jewelry","intimate adornment","decorative piercing","clit piercing"],
+    "description": "Intimate body piercings — nipple, genital, and navel jewelry",
+    "thumbnail": "💍",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-bite-marks-hickeys",
+    "name": "Bite Marks / Hickeys",
+    "category": "explicit",
+    "words": ["bite marks","hickeys","love bites","passion marks","neck bite","bruise marks","suction marks","teeth marks skin","possessive marks"],
+    "description": "Bite marks and hickeys — passion marks left on skin",
+    "thumbnail": "🩹",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-ruined-makeup-teary-face",
+    "name": "Ruined Makeup / Teary Face",
+    "category": "explicit",
+    "words": ["ruined makeup","smeared mascara","teary","crying makeup","streaked eyeliner","messy makeup","post cry","mascara tears","wet cheeks makeup"],
+    "description": "Smeared mascara and ruined makeup from tears",
+    "thumbnail": "😢",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-flushed-chest-sex-flush",
+    "name": "Flushed Chest / Sex Flush",
+    "category": "explicit",
+    "words": ["sex flush","flushed chest","red blush spreading","arousal blush","chest redness","erotic flush","flushed neck","excited blush","red from arousal"],
+    "description": "Sex flush — red arousal blush spreading across chest and neck",
+    "thumbnail": "❤️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-cum-in-hair",
+    "name": "Cum in Hair",
+    "category": "explicit",
+    "words": ["cum in hair","cum on hair","hair soaked","semen in hair","messy hair cum","hair dripping cum"],
+    "description": "Cum in or on hair — distinct from full facial or cum covered",
+    "thumbnail": "💆",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-used-stretched-look",
+    "name": "Used / Stretched Look",
+    "category": "explicit",
+    "words": ["used","well used","stretched","worn out","post sex exhaustion","thoroughly used","afteruse look","disheveled post sex","creampied and used"],
+    "description": "Post-sex worn, disheveled, thoroughly-used appearance",
+    "thumbnail": "😵",
+    "isDefault": true
   }
 ]
