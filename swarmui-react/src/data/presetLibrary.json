@@ -4669,5 +4669,140 @@
     "description": "A tattooed yakuza or gangster girl in sharp criminal fashion",
     "thumbnail": "🔱",
     "isDefault": true
+  },
+  {
+    "id": "pl-scenes-classroom-school",
+    "name": "Classroom / School",
+    "category": "scenes",
+    "words": ["classroom","school interior","blackboard","school desks","chalk","windows","after school","fluorescent lighting","school chairs"],
+    "description": "A classic school classroom with desks and blackboard",
+    "thumbnail": "🏫",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-dressing-room-backstage",
+    "name": "Dressing Room / Backstage",
+    "category": "scenes",
+    "words": ["dressing room","backstage","mirror","vanity lights","makeup table","costumes hanging","changing room","intimate setting"],
+    "description": "A backstage dressing room with vanity mirror and lights",
+    "thumbnail": "🪞",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-hospital-nurses-office",
+    "name": "Hospital / Nurse's Office",
+    "category": "scenes",
+    "words": ["hospital room","nurse office","medical bed","white walls","medical equipment","clinical setting","curtains","sterile environment"],
+    "description": "A clinical hospital room or nurse's office",
+    "thumbnail": "🏥",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-greenhouse-conservatory",
+    "name": "Greenhouse / Conservatory",
+    "category": "scenes",
+    "words": ["greenhouse","conservatory","glass ceiling","tropical plants","lush greenery","sunlight through glass","botanical garden","plant pots","humid atmosphere"],
+    "description": "A lush greenhouse with glass ceiling and tropical plants",
+    "thumbnail": "🌿",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-tropical-jungle-rainforest",
+    "name": "Tropical Jungle / Rainforest",
+    "category": "scenes",
+    "words": ["tropical jungle","rainforest","dense foliage","tropical trees","dappled sunlight","exotic plants","vines","lush vegetation","waterfall"],
+    "description": "A dense tropical jungle with dappled light and exotic foliage",
+    "thumbnail": "🌴",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-ancient-ruins-temple-exterior",
+    "name": "Ancient Ruins / Temple Exterior",
+    "category": "scenes",
+    "words": ["ancient ruins","stone temple","overgrown","vines on stone","crumbling pillars","jungle ruins","moss covered stone","archaeological site","atmospheric"],
+    "description": "Overgrown ancient stone ruins with crumbling pillars",
+    "thumbnail": "🏛️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-crystal-cave-gem-grotto",
+    "name": "Crystal Cave / Gem Grotto",
+    "category": "scenes",
+    "words": ["crystal cave","gem grotto","glowing crystals","stalactites","blue light","magical underground","sparkling gems","cave interior","bioluminescent"],
+    "description": "A magical underground crystal cave with glowing gems",
+    "thumbnail": "💎",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-spaceship-interior-cockpit",
+    "name": "Spaceship Interior / Cockpit",
+    "category": "scenes",
+    "words": ["spaceship interior","cockpit","control panels","holographic displays","space view through window","sci-fi interior","futuristic technology","starship"],
+    "description": "A sci-fi spaceship cockpit with holograms and star views",
+    "thumbnail": "🚀",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-research-laboratory",
+    "name": "Research Laboratory",
+    "category": "scenes",
+    "words": ["laboratory","research lab","scientific equipment","test tubes","computer screens","white lab","neon lighting","microscopes","scientific setting"],
+    "description": "A sterile or chaotic research laboratory",
+    "thumbnail": "🧪",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-swimming-pool-poolside-night",
+    "name": "Swimming Pool / Poolside Night",
+    "category": "scenes",
+    "words": ["swimming pool","poolside","night","pool water","reflected lights","underwater pool lights","luxury pool","night sky","deck chairs"],
+    "description": "A luxury swimming pool at night with underwater lights",
+    "thumbnail": "🏊",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-strip-club-stage",
+    "name": "Strip Club Stage",
+    "category": "scenes",
+    "words": ["strip club","stage","stripper pole","neon lights","audience in shadow","red lighting","adult club","spotlight","stage performance"],
+    "description": "A dimly lit strip club stage with pole and red neon",
+    "thumbnail": "💃",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-rooftop-garden-urban-terrace",
+    "name": "Rooftop Garden / Urban Terrace",
+    "category": "scenes",
+    "words": ["rooftop garden","urban terrace","city skyline","potted plants","city view","outdoor furniture","night city","rooftop","evening"],
+    "description": "A lush rooftop garden terrace with city skyline backdrop",
+    "thumbnail": "🪴",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-autumn-forest-fall-foliage",
+    "name": "Autumn Forest / Fall Foliage",
+    "category": "scenes",
+    "words": ["autumn forest","fall foliage","orange leaves","red leaves","falling leaves","forest path","golden light","seasonal","maple trees"],
+    "description": "A vibrant autumn forest with orange and red fall foliage",
+    "thumbnail": "🍂",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-viking-hall-mead-hall",
+    "name": "Viking Hall / Mead Hall",
+    "category": "scenes",
+    "words": ["viking hall","mead hall","longhouse interior","fireplace","wooden beams","torchlight","feast table","norse interior","animal pelts"],
+    "description": "A Norse mead hall with torchlight and feast tables",
+    "thumbnail": "🍺",
+    "isDefault": true
+  },
+  {
+    "id": "pl-scenes-private-jet-interior",
+    "name": "Private Jet Interior",
+    "category": "scenes",
+    "words": ["private jet","luxury interior","leather seats","aircraft interior","clouds outside window","luxury travel","gold accents","champagne","private aircraft"],
+    "description": "A luxurious private jet interior with leather seats and gold accents",
+    "thumbnail": "✈️",
+    "isDefault": true
   }
 ]
