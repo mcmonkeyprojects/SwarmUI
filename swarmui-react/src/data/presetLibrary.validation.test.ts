@@ -32,7 +32,9 @@ describe('presetLibrary.json', () => {
 
   it('ids follow pl-<category>-<slug> convention', () => {
     for (const p of library) {
-      expect(p.id, `${p.name} id wrong format`).toMatch(/^pl-(characters|scenes|styles|perspectives|explicit)-[a-z0-9-]+$/);
+      expect(p.id, `${p.name} id wrong format`).toMatch(
+        /^pl-(characters|scenes|styles|quality|lighting|perspectives|explicit)-[a-z0-9-]+$/
+      );
     }
   });
 
@@ -40,6 +42,18 @@ describe('presetLibrary.json', () => {
     for (const p of library) {
       expect(p.words.length, `${p.id} has ${p.words.length} words`).toBeGreaterThanOrEqual(6);
       expect(p.words.length, `${p.id} has ${p.words.length} words`).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('all thumbnails are unique within category', () => {
+    const byCategory: Record<string, string[]> = {};
+    for (const p of library) {
+      if (!byCategory[p.category]) byCategory[p.category] = [];
+      byCategory[p.category].push(p.thumbnail);
+    }
+    for (const [category, thumbs] of Object.entries(byCategory)) {
+      const dupes = thumbs.filter((t, i) => thumbs.indexOf(t) !== i);
+      expect(dupes, `Duplicate thumbnails in ${category}: ${dupes.join(', ')}`).toHaveLength(0);
     }
   });
 });
