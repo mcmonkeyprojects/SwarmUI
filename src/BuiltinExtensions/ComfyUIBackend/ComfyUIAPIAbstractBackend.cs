@@ -240,7 +240,7 @@ public abstract class ComfyUIAPIAbstractBackend : AbstractT2IBackend
         metadataObj.Remove("exactbackendid");
         metadataObj["is_preview"] = true;
         metadataObj["preview_notice"] = "Image is not done generating";
-        string previewMetadata = T2IParamInput.MetadataToString(new JObject() { ["sui_image_params"] = metadataObj });
+        string previewMetadata = T2IParamInput.MetadataToString(new JObject() { ["sui_image_params"] = metadataObj, ["sui_extra_data"] = user_input.BuildExtraDataJObject() });
         int expectedNodes = workflowJson.Count;
         string id = null;
         ClientWebSocket socket = null;

@@ -376,14 +376,9 @@ public class T2IParamInput
         return output;
     }
 
-    /// <summary>Keys for <see cref="ExtraMeta"/> that identify lists of extra models to track, as a pair of (key, model-sub-type).</summary>
-    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("loras", "LoRA")];
-
-    /// <summary>Generates a metadata JSON object for this input's data.</summary>
-    public JObject GenFullMetadataObject()
+    /// <summary>Builds the basic sui_extra_data object for metadata.</summary>
+    public JObject BuildExtraDataJObject()
     {
-        JObject paramData = GenParameterMetadata();
-        paramData["swarm_version"] = Utilities.Version;
         JObject extraData = [];
         foreach ((string key, object val) in ExtraMeta)
         {
@@ -393,6 +388,18 @@ public class T2IParamInput
                 extraData[key] = token;
             }
         }
+        return extraData;
+    }
+
+    /// <summary>Keys for <see cref="ExtraMeta"/> that identify lists of extra models to track, as a pair of (key, model-sub-type).</summary>
+    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("loras", "LoRA")];
+
+    /// <summary>Generates a metadata JSON object for this input's data.</summary>
+    public JObject GenFullMetadataObject()
+    {
+        JObject paramData = GenParameterMetadata();
+        paramData["swarm_version"] = Utilities.Version;
+        JObject extraData = BuildExtraDataJObject();
         JArray unused = [];
         foreach (string key in InternalSet.ValuesInput.Keys)
         {
