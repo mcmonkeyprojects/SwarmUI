@@ -1355,7 +1355,7 @@ public partial class WorkflowGenerator
     }
 
     /// <summary>Do a video frame interpolation.</summary>
-    public JArray DoInterpolation(JArray imageIn, string method, double mult)
+    public JArray DoInterpolation(JArray imageIn, string method, int mult)
     {
         if (method == "RIFE")
         {
