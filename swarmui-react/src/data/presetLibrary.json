@@ -64,7 +64,7 @@
       "alert expression"
     ],
     "description": "An anthropomorphic wolf girl with ears and tail",
-    "thumbnail": "🐺",
+    "thumbnail": "🐕",
     "isDefault": true
   },
   {
@@ -86,7 +86,7 @@
       "scarred scales"
     ],
     "description": "A fierce dragon with scales, wings, and fire",
-    "thumbnail": "🐉",
+    "thumbnail": "🔥",
     "isDefault": true
   },
   {
@@ -178,7 +178,7 @@
       "short fluffy hair"
     ],
     "description": "A cute and playful catgirl with cat ears and tail",
-    "thumbnail": "🐱",
+    "thumbnail": "😺",
     "isDefault": true
   },
   {
@@ -201,7 +201,7 @@
       "porcelain skin"
     ],
     "description": "An elegant royal princess in a gown with a tiara",
-    "thumbnail": "👑",
+    "thumbnail": "🏰",
     "isDefault": true
   },
   {
@@ -1248,7 +1248,7 @@
       "sly smile"
     ],
     "description": "A seductive succubus or demoness with horns and revealing attire",
-    "thumbnail": "😈",
+    "thumbnail": "🦇",
     "isDefault": true
   },
   {
@@ -1454,7 +1454,7 @@
       "nsfw"
     ],
     "description": "An elegant boudoir scene with velvet, silk, ornate furniture, and plush intimate luxury",
-    "thumbnail": "🛏️",
+    "thumbnail": "🌹",
     "isDefault": true
   },
   {
@@ -1995,7 +1995,7 @@
       "nsfw"
     ],
     "description": "A shot framed through the subject's legs to create a strong foreground composition",
-    "thumbnail": "🦵",
+    "thumbnail": "🤸",
     "isDefault": true
   },
   {
@@ -2013,7 +2013,7 @@
       "nsfw"
     ],
     "description": "A first-person worm's-eye view looking up from directly beneath the subject",
-    "thumbnail": "⬆️",
+    "thumbnail": "🛋️",
     "isDefault": true
   },
   {
@@ -2067,7 +2067,7 @@
       "nsfw"
     ],
     "description": "A first-person rear-view perspective of a rider facing away and looking back",
-    "thumbnail": "🍒",
+    "thumbnail": "🤠",
     "isDefault": true
   },
   {
@@ -2148,7 +2148,7 @@
       "mythic design"
     ],
     "description": "A fantasy monster girl blending human beauty with mythic, inhuman creature traits",
-    "thumbnail": "🐍",
+    "thumbnail": "👾",
     "isDefault": true
   },
   {
@@ -2229,7 +2229,7 @@
       "nsfw"
     ],
     "description": "A Japanese bathhouse setting with steam, wooden bath details, towels, and hot-spring atmosphere",
-    "thumbnail": "♨️",
+    "thumbnail": "🛁",
     "isDefault": true
   },
   {
@@ -2341,7 +2341,7 @@
       "nsfw"
     ],
     "description": "A first-person downward shot focused tightly on chest interaction",
-    "thumbnail": "🍒",
+    "thumbnail": "🍊",
     "isDefault": true
   },
   {
@@ -2395,7 +2395,7 @@
       "nsfw"
     ],
     "description": "A trapped first-person perspective looking up while pinned beneath the subject",
-    "thumbnail": "⬇️",
+    "thumbnail": "🫷",
     "isDefault": true
   },
   {
@@ -2625,7 +2625,7 @@
       "future megacity"
     ],
     "description": "A dense cyberpunk boulevard filled with holograms, rain reflections, steam vents, and megacity traffic",
-    "thumbnail": "🌆",
+    "thumbnail": "🌉",
     "isDefault": true
   },
   {
@@ -2662,7 +2662,7 @@
       "peaceful nature"
     ],
     "description": "A bright woodland scene with sunbeams, moss, tall trees, and layered green undergrowth",
-    "thumbnail": "🌲",
+    "thumbnail": "🌞",
     "isDefault": true
   },
   {
@@ -2755,7 +2755,7 @@
       "painterly"
     ],
     "description": "Expressive watercolor concept art with paper texture, washes, and loose brushwork",
-    "thumbnail": "🎨",
+    "thumbnail": "💧",
     "isDefault": true
   },
   {
@@ -2827,7 +2827,7 @@
       "magnified view"
     ],
     "description": "An extreme close-up that magnifies tiny textures and surface detail",
-    "thumbnail": "🔍",
+    "thumbnail": "🔬",
     "isDefault": true
   },
   {
@@ -2845,7 +2845,7 @@
       "precision framing"
     ],
     "description": "A perfectly centered composition built around balance, order, and symmetry",
-    "thumbnail": "🖼️",
+    "thumbnail": "⚖️",
     "isDefault": true
   },
   {
@@ -3127,7 +3127,7 @@
       "solo"
     ],
     "description": "A fully anthropomorphic furry character with full fur, muzzle, paws, and digitigrade anatomy",
-    "thumbnail": "🐾",
+    "thumbnail": "🦝",
     "isDefault": true
   },
   {
@@ -3167,7 +3167,7 @@
       "solo"
     ],
     "description": "A goth girl with dark makeup, layered black fashion, and strong emo styling",
-    "thumbnail": "🖤",
+    "thumbnail": "💜",
     "isDefault": true
   },
   {
@@ -3289,7 +3289,7 @@
       "sharp cheekbones"
     ],
     "description": "An aristocratic vampire with pale skin, red eyes, velvet attire, and gothic elegance",
-    "thumbnail": "🧛",
+    "thumbnail": "🩸",
     "isDefault": true
   },
   {
@@ -3333,7 +3333,7 @@
       "windswept hair"
     ],
     "description": "A militant nun with habit, holy weaponry, and armored religious iconography",
-    "thumbnail": "⛪",
+    "thumbnail": "🥋",
     "isDefault": true
   },
   {
@@ -3598,7 +3598,7 @@
       "minimalist opulence"
     ],
     "description": "A sleek luxury penthouse with marble surfaces, designer furniture, and floor-to-ceiling city views",
-    "thumbnail": "🏙️",
+    "thumbnail": "🪟",
     "isDefault": true
   },
   {
@@ -3674,7 +3674,7 @@
       "museum masterpiece feel"
     ],
     "description": "A baroque oil-painting style with rich pigments, theatrical chiaroscuro, and ornate grandeur",
-    "thumbnail": "🖼️",
+    "thumbnail": "📜",
     "isDefault": true
   },
   {
@@ -3944,7 +3944,7 @@
       "nsfw"
     ],
     "description": "A teasing lingerie-focused preset built around adjusting garments, lace detail, and half-dressed posing",
-    "thumbnail": "🎀",
+    "thumbnail": "🎗️",
     "isDefault": true
   },
   {
@@ -3998,7 +3998,7 @@
       "nsfw"
     ],
     "description": "A fetish-fashion preset built around leather straps, buckles, body harnesses, and dominant styling",
-    "thumbnail": "🖤",
+    "thumbnail": "🦺",
     "isDefault": true
   },
   {
@@ -4196,7 +4196,7 @@
       "high drama"
     ],
     "description": "A dramatic lighting preset with strong separation, controlled shadows, and cinematic edge light",
-    "thumbnail": "🎬",
+    "thumbnail": "🎞️",
     "isDefault": true
   },
   {
@@ -4548,7 +4548,7 @@
       "luxury"
     ],
     "description": "A refined wealthy heiress with aristocratic elegance",
-    "thumbnail": "👑",
+    "thumbnail": "👸",
     "isDefault": true
   },
   {
@@ -4568,7 +4568,7 @@
       "unholy"
     ],
     "description": "A demon inhabiting a nun's habit, retaining horns, tail, and wings",
-    "thumbnail": "😈",
+    "thumbnail": "👿",
     "isDefault": true
   },
   {
@@ -4588,7 +4588,7 @@
       "agile build"
     ],
     "description": "A hooded male rogue with daggers and leather armor",
-    "thumbnail": "🗡️",
+    "thumbnail": "🔪",
     "isDefault": true
   },
   {
@@ -4648,7 +4648,7 @@
       "shirtless"
     ],
     "description": "A Conan-style male barbarian warrior, male-coded with loincloth and greatsword",
-    "thumbnail": "⚔️",
+    "thumbnail": "🏋️",
     "isDefault": true
   },
   {
@@ -4707,7 +4707,7 @@
       "magic circle"
     ],
     "description": "A folk witch or occultist with candles and spell books",
-    "thumbnail": "🔮",
+    "thumbnail": "🕯️",
     "isDefault": true
   },
   {
@@ -4861,7 +4861,7 @@
       "humid atmosphere"
     ],
     "description": "A lush greenhouse with glass ceiling and tropical plants",
-    "thumbnail": "🌿",
+    "thumbnail": "🌱",
     "isDefault": true
   },
   {
@@ -4899,7 +4899,7 @@
       "atmospheric"
     ],
     "description": "Overgrown ancient stone ruins with crumbling pillars",
-    "thumbnail": "🏛️",
+    "thumbnail": "🗿",
     "isDefault": true
   },
   {
@@ -4936,7 +4936,7 @@
       "starship"
     ],
     "description": "A sci-fi spaceship cockpit with holograms and star views",
-    "thumbnail": "🚀",
+    "thumbnail": "🛸",
     "isDefault": true
   },
   {
@@ -5050,7 +5050,7 @@
       "animal pelts"
     ],
     "description": "A Norse mead hall with torchlight and feast tables",
-    "thumbnail": "🍺",
+    "thumbnail": "🍻",
     "isDefault": true
   },
   {
@@ -5106,7 +5106,7 @@
       "vibrant flat fills"
     ],
     "description": "Bold cel-shaded cartoon look with thick outlines and flat fills",
-    "thumbnail": "🎨",
+    "thumbnail": "🖍️",
     "isDefault": true
   },
   {
@@ -5260,7 +5260,7 @@
       "atmospheric painting"
     ],
     "description": "Impressionist painterly style with loose brushwork and atmospheric light",
-    "thumbnail": "🖌️",
+    "thumbnail": "🌻",
     "isDefault": true
   },
   {
@@ -5279,7 +5279,7 @@
       "tag art"
     ],
     "description": "Urban street art and graffiti aesthetic with spray paint texture",
-    "thumbnail": "🎭",
+    "thumbnail": "🪣",
     "isDefault": true
   },
   {
@@ -5298,7 +5298,7 @@
       "monochrome infrared"
     ],
     "description": "Infrared photography with ghostly white foliage and dark dramatic skies",
-    "thumbnail": "📷",
+    "thumbnail": "🔭",
     "isDefault": true
   },
   {
@@ -5353,7 +5353,7 @@
       "dark fantasy horror"
     ],
     "description": "Dark body horror aesthetic in the style of Junji Ito and Cronenberg",
-    "thumbnail": "💀",
+    "thumbnail": "☠️",
     "isDefault": true
   },
   {
@@ -5488,7 +5488,7 @@
       "close up shot"
     ],
     "description": "Extreme macro close-up detail shot on the point of contact",
-    "thumbnail": "🔍",
+    "thumbnail": "🔭",
     "isDefault": true
   },
   {
@@ -5521,7 +5521,7 @@
       "explicit rear framing"
     ],
     "description": "Close-up framing focused on rear anatomy detail",
-    "thumbnail": "🍑",
+    "thumbnail": "⭕",
     "isDefault": true
   },
   {
@@ -5686,7 +5686,7 @@
       "lower body focus"
     ],
     "description": "Close framing on thighs and legs, often with stockings",
-    "thumbnail": "🦵",
+    "thumbnail": "🦿",
     "isDefault": true
   },
   {
@@ -5703,7 +5703,7 @@
       "photography composition"
     ],
     "description": "Subject offset to one side with breathing room and negative space",
-    "thumbnail": "📐",
+    "thumbnail": "📏",
     "isDefault": true
   },
   {
@@ -5788,7 +5788,7 @@
       "group intercourse"
     ],
     "description": "Group sex with multiple partners beyond a threesome",
-    "thumbnail": "👥",
+    "thumbnail": "🫂",
     "isDefault": true
   },
   {
