@@ -7523,5 +7523,337 @@
     "description": "A deity's chosen consort — nude, marked with divine symbols, devoted",
     "thumbnail": "⭐",
     "isDefault": true
+  },
+  {
+    "id": "pl-explicit-girl-being-fucked-missionary",
+    "name": "Girl Being Fucked (Missionary)",
+    "category": "explicit",
+    "words": [
+      "missionary position",
+      "sex",
+      "intercourse",
+      "lying down",
+      "penetration",
+      "explicit",
+      "being fucked",
+      "sexual intercourse"
+    ],
+    "description": "Active missionary sex framing — in-progress penetration",
+    "thumbnail": "💑",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-girl-being-eaten-out",
+    "name": "Girl Being Eaten Out",
+    "category": "explicit",
+    "words": [
+      "cunnilingus",
+      "oral sex receiving",
+      "being eaten out",
+      "moaning",
+      "explicit",
+      "legs spread",
+      "receiving oral",
+      "sexual pleasure",
+      "orgasm"
+    ],
+    "description": "Receiving oral sex — legs spread, moaning in pleasure",
+    "thumbnail": "🩷",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-girl-giving-blowjob",
+    "name": "Girl Giving Blowjob",
+    "category": "explicit",
+    "words": [
+      "fellatio",
+      "blowjob",
+      "oral sex",
+      "on knees",
+      "sucking",
+      "cock in mouth",
+      "explicit",
+      "performing oral",
+      "eye contact"
+    ],
+    "description": "Performing oral sex — on knees, cock in mouth, eye contact",
+    "thumbnail": "😮",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-girl-riding-cowgirl",
+    "name": "Girl Riding Cowgirl",
+    "category": "explicit",
+    "words": [
+      "cowgirl position",
+      "riding",
+      "on top",
+      "bouncing",
+      "straddling",
+      "sex",
+      "explicit",
+      "cowgirl sex",
+      "riding cock"
+    ],
+    "description": "Active cowgirl position — on top, bouncing, straddling",
+    "thumbnail": "🪑",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-girl-getting-anal",
+    "name": "Girl Getting Anal",
+    "category": "explicit",
+    "words": [
+      "anal sex",
+      "anal",
+      "rear entry",
+      "anal intercourse",
+      "explicit",
+      "from behind",
+      "ass up",
+      "anal penetration"
+    ],
+    "description": "Active anal sex framing — rear entry, ass up",
+    "thumbnail": "🌸",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-gangbang-participant",
+    "name": "Gangbang Participant",
+    "category": "explicit",
+    "words": [
+      "gangbang",
+      "multiple partners",
+      "group sex",
+      "multiple men",
+      "explicit",
+      "orgy",
+      "gang bang",
+      "used by many"
+    ],
+    "description": "Active gangbang — multiple partners simultaneously engaged",
+    "thumbnail": "🔢",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-spitroast-subject",
+    "name": "Spitroast Subject",
+    "category": "explicit",
+    "words": [
+      "spitroast",
+      "spit roast",
+      "oral and vaginal",
+      "two men",
+      "front and back",
+      "simultaneous",
+      "double ended",
+      "explicit spitroast"
+    ],
+    "description": "Spitroast subject — oral and penetration simultaneously from both ends",
+    "thumbnail": "🔄",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-double-penetration-subject",
+    "name": "Double Penetration Subject",
+    "category": "explicit",
+    "words": [
+      "double penetration",
+      "dp",
+      "two insertions",
+      "both holes",
+      "vaginal and anal",
+      "simultaneous",
+      "explicit dp",
+      "filled"
+    ],
+    "description": "Active double penetration — both openings filled simultaneously",
+    "thumbnail": "🤜",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-futa-fucking-girl",
+    "name": "Futa Fucking Girl",
+    "category": "explicit",
+    "words": [
+      "futanari",
+      "futa on female",
+      "futa sex",
+      "hermaphrodite",
+      "penetration",
+      "futa fucking",
+      "explicit futa",
+      "futa top"
+    ],
+    "description": "Futa-on-female active sex framing",
+    "thumbnail": "🌈",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-girl-being-pegged",
+    "name": "Girl Being Pegged",
+    "category": "explicit",
+    "words": [
+      "pegging",
+      "strap-on",
+      "anal",
+      "femdom",
+      "receiving",
+      "pegged",
+      "strap on sex",
+      "anal pegging",
+      "explicit pegging"
+    ],
+    "description": "Receiving strap-on pegging — femdom anal act",
+    "thumbnail": "🎯",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-squirting-mid-orgasm",
+    "name": "Squirting / Mid-Orgasm",
+    "category": "explicit",
+    "words": [
+      "squirting",
+      "orgasm",
+      "female ejaculation",
+      "climax",
+      "intense pleasure",
+      "explicit",
+      "gushing",
+      "ahegao",
+      "arching back"
+    ],
+    "description": "Active squirting orgasm — arching back, ahegao, female ejaculation",
+    "thumbnail": "⛲",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-mind-broken-ahegao-mid-act",
+    "name": "Mind-Broken / Ahegao Mid-Act",
+    "category": "explicit",
+    "words": [
+      "ahegao",
+      "mind broken",
+      "eyes rolled back",
+      "tongue out",
+      "during sex",
+      "dissociated",
+      "explicit",
+      "orgasm face",
+      "mind break"
+    ],
+    "description": "Mid-sex dissociated mind-break state — ahegao, eyes rolled, tongue out",
+    "thumbnail": "💫",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-tentacle-violation-subject",
+    "name": "Tentacle Violation Subject",
+    "category": "explicit",
+    "words": [
+      "tentacle",
+      "tentacle sex",
+      "penetration",
+      "tentacles inside",
+      "explicit tentacle",
+      "violated",
+      "tentacle violation",
+      "multiple tentacles"
+    ],
+    "description": "Active tentacle violation — multiple tentacles penetrating simultaneously",
+    "thumbnail": "🌪️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-hypno-sex-slave",
+    "name": "Hypno Sex Slave",
+    "category": "explicit",
+    "words": [
+      "hypnosis",
+      "hypnotized",
+      "mind controlled",
+      "sex slave",
+      "obedient",
+      "glazed eyes",
+      "hypno",
+      "controlled",
+      "explicit hypnosis"
+    ],
+    "description": "Mid-hypnosis sex slave — glazed eyes, mind controlled, obedient",
+    "thumbnail": "🔮",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-gloryhole-participant",
+    "name": "Gloryhole Participant",
+    "category": "explicit",
+    "words": [
+      "gloryhole",
+      "glory hole",
+      "through wall",
+      "anonymous",
+      "oral gloryhole",
+      "explicit",
+      "gloryhole use",
+      "on knees"
+    ],
+    "description": "Active gloryhole participant — on knees, anonymous oral",
+    "thumbnail": "🟣",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-cum-inflation-mid-act",
+    "name": "Cum Inflation Mid-Act",
+    "category": "explicit",
+    "words": [
+      "cum inflation",
+      "belly inflation",
+      "inflating",
+      "belly bulge",
+      "cum filling",
+      "explicit",
+      "inflation in progress",
+      "womb expanding"
+    ],
+    "description": "Active cum inflation in progress — belly expanding, womb filling",
+    "thumbnail": "🫃",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-lactation-mid-extraction",
+    "name": "Lactation Mid-Extraction",
+    "category": "explicit",
+    "words": [
+      "lactation",
+      "milking",
+      "breast milk",
+      "extraction",
+      "milk flowing",
+      "explicit lactation",
+      "milk spray",
+      "active milking"
+    ],
+    "description": "Active milking/lactation extraction — milk flowing, in progress",
+    "thumbnail": "🤱",
+    "isDefault": true
+  },
+  {
+    "id": "pl-explicit-oviposition-subject",
+    "name": "Oviposition Subject",
+    "category": "explicit",
+    "words": [
+      "oviposition",
+      "egg laying",
+      "eggs inside",
+      "ovipositor",
+      "explicit",
+      "egg insertion",
+      "egg filling",
+      "tentacle eggs",
+      "active oviposition"
+    ],
+    "description": "Active oviposition — eggs being laid inside, belly expanding",
+    "thumbnail": "🐣",
+    "isDefault": true
   }
 ]
