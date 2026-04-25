@@ -6483,5 +6483,605 @@
     "description": "Post-sex worn, disheveled, thoroughly-used appearance",
     "thumbnail": "😵",
     "isDefault": true
+  },
+  {
+    "id": "pl-characters-dominatrix-pro-domme",
+    "name": "Dominatrix / Pro Domme",
+    "category": "characters",
+    "words": [
+      "dominatrix",
+      "latex",
+      "whip",
+      "corset",
+      "high heels",
+      "leather",
+      "commanding expression",
+      "professional",
+      "mistress",
+      "dom"
+    ],
+    "description": "A professional dominatrix in polished latex and leather — distinct from BDSM Mistress",
+    "thumbnail": "👢",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-pinup-model-cheesecake",
+    "name": "Pinup Model / Cheesecake",
+    "category": "characters",
+    "words": [
+      "pinup",
+      "cheesecake",
+      "1950s style",
+      "retro",
+      "playful pose",
+      "red lips",
+      "victory rolls hair",
+      "classic beauty",
+      "pin-up girl",
+      "polka dot"
+    ],
+    "description": "Classic 1950s cheesecake pin-up pose with retro styling",
+    "thumbnail": "📌",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-burlesque-performer",
+    "name": "Burlesque Performer",
+    "category": "characters",
+    "words": [
+      "burlesque",
+      "corset",
+      "feather boa",
+      "fishnet stockings",
+      "top hat",
+      "theatrical",
+      "showgirl",
+      "glamorous",
+      "cabaret",
+      "stage performer"
+    ],
+    "description": "A theatrical burlesque showgirl with feathers, corset, and glamour",
+    "thumbnail": "🪶",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-belly-dancer",
+    "name": "Belly Dancer",
+    "category": "characters",
+    "words": [
+      "belly dancer",
+      "coin belt",
+      "veil",
+      "harem pants",
+      "exposed midriff",
+      "sensual dance",
+      "middle eastern costume",
+      "jewels",
+      "dancer",
+      "flowing fabric"
+    ],
+    "description": "A sensual belly dancer with coin belt, veil, and exposed midriff",
+    "thumbnail": "🪙",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-camgirl-content-creator",
+    "name": "Camgirl / Content Creator",
+    "category": "characters",
+    "words": [
+      "camgirl",
+      "ring light",
+      "webcam",
+      "lingerie",
+      "content creator",
+      "online",
+      "seductive",
+      "streamer",
+      "social media",
+      "bedroom setup"
+    ],
+    "description": "A modern adult content creator with ring light and streaming setup",
+    "thumbnail": "📱",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-harem-concubine-odalisque",
+    "name": "Harem Concubine / Odalisque",
+    "category": "characters",
+    "words": [
+      "harem",
+      "concubine",
+      "odalisque",
+      "silk clothing",
+      "jewels",
+      "bare midriff",
+      "reclining",
+      "ornate cushions",
+      "fantasy",
+      "seductive"
+    ],
+    "description": "A fantasy harem concubine reclining on ornate cushions in silks and jewels",
+    "thumbnail": "🏺",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-oiran-courtesan",
+    "name": "Oiran / Courtesan",
+    "category": "characters",
+    "words": [
+      "oiran",
+      "courtesan",
+      "japanese",
+      "elaborate kimono",
+      "elaborate hair",
+      "hair ornaments",
+      "white face makeup",
+      "edo period",
+      "high class",
+      "traditional"
+    ],
+    "description": "A high-class Japanese Edo-period oiran with elaborate kimono and hair ornaments",
+    "thumbnail": "🌸",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-sugar-baby-kept-woman",
+    "name": "Sugar Baby / Kept Woman",
+    "category": "characters",
+    "words": [
+      "sugar baby",
+      "luxury",
+      "expensive clothing",
+      "designer",
+      "pampered",
+      "kept woman",
+      "wealthy lifestyle",
+      "fashionable",
+      "spoiled",
+      "glamorous"
+    ],
+    "description": "A pampered kept woman with designer clothing and luxury aesthetic",
+    "thumbnail": "💎",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-nude-life-drawing-model",
+    "name": "Nude Life Drawing Model",
+    "category": "characters",
+    "words": [
+      "life drawing model",
+      "life drawing",
+      "figure model",
+      "classical pose",
+      "studio",
+      "tasteful",
+      "posed",
+      "art model",
+      "figure drawing",
+      "natural light"
+    ],
+    "description": "An artistic life drawing model in a tasteful classical studio pose",
+    "thumbnail": "🎨",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-sexy-librarian",
+    "name": "Sexy Librarian",
+    "category": "characters",
+    "words": [
+      "librarian",
+      "glasses",
+      "hair bun",
+      "button up shirt",
+      "pencil skirt",
+      "books",
+      "sensual",
+      "intellectual",
+      "reading glasses",
+      "prim outfit"
+    ],
+    "description": "Classic sexy librarian — glasses, hair up, prim outfit hiding allure",
+    "thumbnail": "📚",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-cougar-older-seductress",
+    "name": "Cougar / Older Seductress",
+    "category": "characters",
+    "words": [
+      "mature woman",
+      "seductive",
+      "older woman",
+      "predatory expression",
+      "elegant",
+      "confident",
+      "cougar",
+      "experienced",
+      "alluring",
+      "sophisticated"
+    ],
+    "description": "A mature, predatory seductress — confident and experienced",
+    "thumbnail": "🐆",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-bath-attendant-masseuse",
+    "name": "Bath Attendant / Masseuse",
+    "category": "characters",
+    "words": [
+      "bath attendant",
+      "masseuse",
+      "towel",
+      "minimal clothing",
+      "spa",
+      "intimate service",
+      "soft lighting",
+      "wellness",
+      "attendant",
+      "serving"
+    ],
+    "description": "An intimate bath attendant or masseuse in minimal towel clothing",
+    "thumbnail": "🛁",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-bimbo-dumb-blonde",
+    "name": "Bimbo / Dumb Blonde",
+    "category": "characters",
+    "words": [
+      "bimbo",
+      "dumb blonde",
+      "exaggerated proportions",
+      "large breasts",
+      "pink clothing",
+      "heavy makeup",
+      "vacant expression",
+      "blonde hair",
+      "tight outfit",
+      "curvaceous"
+    ],
+    "description": "Exaggerated bimbo archetype — big proportions, pink, vapid expression",
+    "thumbnail": "💅",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-sex-worker-call-girl",
+    "name": "Sex Worker / Call Girl",
+    "category": "characters",
+    "words": [
+      "sex worker",
+      "call girl",
+      "provocative clothing",
+      "seductive",
+      "escort",
+      "adult entertainment",
+      "fishnet",
+      "revealing outfit",
+      "working girl",
+      "street fashion"
+    ],
+    "description": "A sex worker or call girl in provocative revealing clothing",
+    "thumbnail": "👠",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-lingerie-model",
+    "name": "Lingerie Model",
+    "category": "characters",
+    "words": [
+      "lingerie model",
+      "lingerie",
+      "professional model",
+      "underwear shoot",
+      "studio lighting",
+      "posed",
+      "bra and panties",
+      "fashion",
+      "model",
+      "editorial"
+    ],
+    "description": "A professional lingerie model in an underwear fashion shoot",
+    "thumbnail": "🩱",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-femme-fatale-noir-seductress",
+    "name": "Femme Fatale / Noir Seductress",
+    "category": "characters",
+    "words": [
+      "femme fatale",
+      "film noir",
+      "dangerous woman",
+      "red lips",
+      "dark clothing",
+      "mysterious",
+      "seductive",
+      "1940s style",
+      "silk dress",
+      "cigarette holder"
+    ],
+    "description": "A dangerous film noir femme fatale — distinct from Detective Noir Heroine",
+    "thumbnail": "🕸️",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-fantasy-concubine",
+    "name": "Fantasy Concubine",
+    "category": "characters",
+    "words": [
+      "fantasy concubine",
+      "royal concubine",
+      "jewels",
+      "minimal drapery",
+      "silk",
+      "gold jewelry",
+      "seductive",
+      "exotic",
+      "fantasy world",
+      "palace"
+    ],
+    "description": "A fantasy world royal concubine adorned in jewels and minimal silk drapery",
+    "thumbnail": "💍",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-seductive-villainess",
+    "name": "Seductive Villainess",
+    "category": "characters",
+    "words": [
+      "villainess",
+      "evil woman",
+      "seductive",
+      "antagonist",
+      "dark clothing",
+      "manipulative expression",
+      "powerful",
+      "dangerous",
+      "alluring",
+      "evil smile"
+    ],
+    "description": "A seductive evil antagonist with dangerous allure",
+    "thumbnail": "🦹",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-stripper-pole-dancer",
+    "name": "Stripper / Pole Dancer",
+    "category": "characters",
+    "words": [
+      "stripper",
+      "pole dancer",
+      "platform heels",
+      "thong",
+      "club",
+      "dancer",
+      "tassels",
+      "adult entertainer",
+      "stage",
+      "sexy dance"
+    ],
+    "description": "A club stripper or pole dancer",
+    "thumbnail": "🪩",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-gyaru-escort",
+    "name": "Gyaru Escort",
+    "category": "characters",
+    "words": [
+      "gyaru",
+      "escort",
+      "tanned skin",
+      "bleached hair",
+      "thick makeup",
+      "fashionable",
+      "japanese street fashion",
+      "nails",
+      "accessorized",
+      "companion"
+    ],
+    "description": "A tanned gyaru in escort/companion fashion",
+    "thumbnail": "🌟",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-dark-elf-seductress",
+    "name": "Dark Elf Seductress",
+    "category": "characters",
+    "words": [
+      "dark elf",
+      "drow",
+      "purple skin",
+      "white hair",
+      "seductive",
+      "fantasy",
+      "elf ears",
+      "dark magic",
+      "alluring",
+      "underground"
+    ],
+    "description": "A drow dark elf seductress with purple skin and white hair",
+    "thumbnail": "🌑",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-nymph-dryad",
+    "name": "Nymph / Dryad",
+    "category": "characters",
+    "words": [
+      "nymph",
+      "dryad",
+      "nature spirit",
+      "leaves",
+      "semi-clothed",
+      "ethereal",
+      "forest",
+      "flowers in hair",
+      "natural beauty",
+      "spirit"
+    ],
+    "description": "A semi-clothed forest nymph or dryad nature spirit",
+    "thumbnail": "🌿",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-harpy-winged-temptress",
+    "name": "Harpy / Winged Temptress",
+    "category": "characters",
+    "words": [
+      "harpy",
+      "wings",
+      "bird woman",
+      "feathers",
+      "talons",
+      "barely clothed",
+      "flying",
+      "fantasy creature",
+      "winged",
+      "temptress"
+    ],
+    "description": "A barely-clothed bird-woman harpy with feathers and talons",
+    "thumbnail": "🦅",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-lamia-snake-woman",
+    "name": "Lamia / Snake Woman",
+    "category": "characters",
+    "words": [
+      "lamia",
+      "snake lower body",
+      "serpent",
+      "scales",
+      "female upper body",
+      "monster girl",
+      "coiled",
+      "snake tail",
+      "fantasy",
+      "seductive"
+    ],
+    "description": "A lamia with serpent lower body and seductive female upper body",
+    "thumbnail": "🐲",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-kitsune-courtesan",
+    "name": "Kitsune Courtesan",
+    "category": "characters",
+    "words": [
+      "kitsune",
+      "fox spirit",
+      "courtesan",
+      "multiple tails",
+      "fox ears",
+      "japanese",
+      "kimono",
+      "seductive",
+      "supernatural",
+      "fox woman"
+    ],
+    "description": "A fox spirit kitsune in courtesan role — distinct from Foxgirl/Kitsune",
+    "thumbnail": "🍵",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-demon-queen-lilith",
+    "name": "Demon Queen / Lilith",
+    "category": "characters",
+    "words": [
+      "demon queen",
+      "lilith",
+      "horns",
+      "wings",
+      "regal",
+      "powerful",
+      "dark magic",
+      "crown",
+      "throne",
+      "demonic royalty"
+    ],
+    "description": "A powerful regal demon queen — distinct from Demon Girl and Succubus",
+    "thumbnail": "👹",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-dark-fairy-fae-temptress",
+    "name": "Dark Fairy / Fae Temptress",
+    "category": "characters",
+    "words": [
+      "dark fairy",
+      "fae",
+      "fairy wings",
+      "malevolent",
+      "seductive magic",
+      "dark glamour",
+      "small wings",
+      "otherworldly beauty",
+      "forest spirit",
+      "dangerous"
+    ],
+    "description": "A malevolent dark fairy with seductive fae magic",
+    "thumbnail": "🧚",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-lich-undead-seductress",
+    "name": "Lich / Undead Seductress",
+    "category": "characters",
+    "words": [
+      "lich",
+      "undead",
+      "pale skin",
+      "hollow eyes",
+      "sorceress",
+      "dark magic",
+      "skeletal features",
+      "robes",
+      "necromancer",
+      "beautiful undead"
+    ],
+    "description": "A beautiful undead lich sorceress with hollow eyes and dark magic",
+    "thumbnail": "💀",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-centaur-girl",
+    "name": "Centaur Girl",
+    "category": "characters",
+    "words": [
+      "centaur",
+      "horse lower body",
+      "female upper body",
+      "hooves",
+      "fantasy",
+      "monster girl",
+      "tribal",
+      "half horse",
+      "warrior",
+      "galloping"
+    ],
+    "description": "A centaur girl with horse lower body and female upper body",
+    "thumbnail": "🐴",
+    "isDefault": true
+  },
+  {
+    "id": "pl-characters-arachne-spider-girl",
+    "name": "Arachne / Spider Girl",
+    "category": "characters",
+    "words": [
+      "arachne",
+      "spider lower body",
+      "spider legs",
+      "web",
+      "female upper body",
+      "monster girl",
+      "fantasy",
+      "eight legs",
+      "spider silk",
+      "predatory"
+    ],
+    "description": "An arachne spider-girl with spider lower body and web",
+    "thumbnail": "🕷️",
+    "isDefault": true
   }
 ]
