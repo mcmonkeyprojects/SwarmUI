@@ -101,6 +101,9 @@ class ImageEditorTool {
         return false;
     }
 
+    onBeforeHistoryUndo() {
+    }
+
     onLayerChanged(oldLayer, newLayer) {
         if (this.isMaskOnly) {
             let isMask = newLayer && newLayer.isMask;
@@ -1525,6 +1528,42 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
         // TODO: This map is a pretty iffy way to do things, probably stray persistence.
         this.layerPoints = new Map();
         this.pendingMaskUpdate = false;
+        this.lastAppliedPoints = { positive: [], negative: [] };
+    }
+
+    flushPointsUndoHistory() {
+        // Strip SAM2 point-restoration callbacks from all existing history entries.
+        // Called when the tool deactivates or the mask is cleared, so that undo operations
+        // from a previous session don't try to restore stale point state.
+        for (let entry of this.editor.editHistory) {
+            delete entry.data.onUndo;
+        }
+    }
+
+    setInactive() {
+        super.setInactive();
+        // Clear all point state and cancel any in-flight request when the tool is deactivated
+        this.layerPoints = new Map();
+        this.lastAppliedPoints = { positive: [], negative: [] };
+        this.activeRequestId = ++this.requestSerial;
+        this.maskRequestInFlight = false;
+        this.pendingMaskUpdate = false;
+        this.flushPointsUndoHistory();
+    }
+
+    onBeforeHistoryUndo() {
+        // Cancel any in-flight SAM2 request before the canvas state is restored by undo,
+        // so a delayed response can't overwrite the freshly-undone canvas contents.
+        this.activeRequestId = ++this.requestSerial;
+        this.maskRequestInFlight = false;
+        this.pendingMaskUpdate = false;
+    }
+
+    onLayerChanged(oldLayer, newLayer) {
+        super.onLayerChanged(oldLayer, newLayer);
+        // Reset lastAppliedPoints so the next request captures the correct previous-state snapshot
+        // for the new layer rather than carrying over state from the old one.
+        this.lastAppliedPoints = { positive: [], negative: [] };
     }
 
     getActivePoints() {
@@ -1557,7 +1596,9 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
         let points = this.getActivePoints();
         points.positive = [];
         points.negative = [];
+        this.lastAppliedPoints = { positive: [], negative: [] };
         this.clearMaskAndEndRequest();
+        this.flushPointsUndoHistory();
     }
 
     drawPoint(ctx, x, y, fillColor, showX) {
@@ -1689,6 +1730,8 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
         if (points.negative.length > 0) {
             genData['samnegativepoints'] = JSON.stringify(points.negative.map(p => ({ x: p.x - offX, y: p.y - offY })));
         }
+        let previousPoints = { positive: [...this.lastAppliedPoints.positive], negative: [...this.lastAppliedPoints.negative] };
+        let thisRequestPoints = { positive: [...points.positive], negative: [...points.negative] };
         makeWSRequestT2I('GenerateText2ImageWS', genData, data => {
             if (requestId != this.activeRequestId || !data.image) {
                 return;
@@ -1703,6 +1746,16 @@ class ImageEditorToolSam2Points extends ImageEditorToolSam2Base {
                     return;
                 }
                 this.applyMaskResult(newImg);
+                let maskLayer = this.editor.activeLayer;
+                let history = this.editor.editHistory;
+                if (history.length > 0) {
+                    let capturedPrevious = previousPoints;
+                    history.at(-1).data.onUndo = () => {
+                        this.layerPoints.set(maskLayer.id, { positive: [...capturedPrevious.positive], negative: [...capturedPrevious.negative] });
+                        this.lastAppliedPoints = capturedPrevious;
+                    };
+                }
+                this.lastAppliedPoints = thisRequestPoints;
                 this.editor.redraw();
                 this.finishMaskUpdate(requestId);
             };

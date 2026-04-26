@@ -320,6 +320,9 @@ class ImageEditorHistoryEntry {
             // TODO: Reinsert at proper index
             this.editor.addLayer(this.data.layer, true);
         }
+        if (this.data.onUndo) {
+            this.data.onUndo();
+        }
     }
 }
 
@@ -466,6 +469,7 @@ class ImageEditor {
 
     undoOnce() {
         if (this.editHistory.length > 0) {
+            this.activeTool.onBeforeHistoryUndo();
             let entry = this.editHistory.pop();
             entry.undo();
             this.redraw();
@@ -987,6 +991,7 @@ class ImageEditor {
         this.realHeight = img.naturalHeight;
         if (this.tools['sam2points']) {
             this.tools['sam2points'].layerPoints = new Map();
+            this.tools['sam2points'].lastAppliedPoints = { positive: [], negative: [] };
         }
         if (this.tools['sam2bbox']) {
             this.tools['sam2bbox'].bboxStartX = null;
