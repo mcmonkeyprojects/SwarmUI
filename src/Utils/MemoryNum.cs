@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Mini-struct to hold data about a memory (bytes) size number.</summary>
 public struct MemoryNum(long inBytes)

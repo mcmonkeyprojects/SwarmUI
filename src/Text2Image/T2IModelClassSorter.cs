@@ -65,6 +65,7 @@ public class T2IModelClassSorter
         CompatFlux2 = RegisterCompat(new() { ID = "flux-2", ShortCode = "Flux2", LorasTargetTextEnc = false }),
         CompatFlux2Klein4B = RegisterCompat(new() { ID = "flux-2-klein-4b", ShortCode = "Fl2K4", LorasTargetTextEnc = false }),
         CompatFlux2Klein9B = RegisterCompat(new() { ID = "flux-2-klein-9b", ShortCode = "Fl2K9", LorasTargetTextEnc = false }),
+        CompatErnieImage = RegisterCompat(new() { ID = "ernie-image", ShortCode = "Ernie", LorasTargetTextEnc = false }),
         CompatLtxv2 = RegisterCompat(new() { ID = "lightricks-ltx-video-2", ShortCode = "LTXV2", IsText2Video = true, IsImage2Video = true }),
         CompatZImage = RegisterCompat(new() { ID = "z-image", ShortCode = "ZImg", LorasTargetTextEnc = false }),
         CompatZetaChroma = RegisterCompat(new() { ID = "zeta-chroma", ShortCode = "ZChr", LorasTargetTextEnc = false }),
@@ -163,7 +164,8 @@ public class T2IModelClassSorter
         bool isLtxvVae(JObject h) => h.ContainsKey("decoder.conv_in.conv.bias") && h.ContainsKey("decoder.last_time_embedder.timestep_embedder.linear_1.bias");
         bool isLtxv2(JObject h) => hasKey(h, "transformer_blocks.1.audio_to_video_attn.k_norm.weight");
         bool isLtxv23(JObject h) => hasKey(h, "text_embedding_projection.audio_aggregate_embed.weight");
-        bool isLtxv2Lora(JObject h) => hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v");
+        bool isLtxv2Lora(JObject h) => (hasLoraKey(h, "transformer_blocks.0.attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.attn2.to_v"))
+            || (hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_k") && hasLoraKey(h, "transformer_blocks.0.audio_attn1.to_out.0") && hasLoraKey(h, "transformer_blocks.9.audio_attn1.to_v"));
         bool isSana(JObject h) => h.ContainsKey("attention_y_norm.weight") && h.ContainsKey("blocks.0.attn.proj.weight");
         bool isHunyuanVideo(JObject h) => h.ContainsKey("model.model.txt_in.individual_token_refiner.blocks.1.self_attn.qkv.weight") || h.ContainsKey("txt_in.individual_token_refiner.blocks.1.self_attn_qkv.weight");
         bool isHunyuanVideoSkyreelsImage2V(JObject h) => h.TryGetValue("img_in.proj.weight", out JToken jtok) && jtok["shape"].ToArray()[1].Value<long>() == 32;
@@ -214,6 +216,7 @@ public class T2IModelClassSorter
         bool isHyVid15Lora(JObject h) => hasKey(h, "cond_type_embedding.lora_down.weight") && hasKey(h, "byt5_in.fc1.lora_down.weight") && hasKey(h, "vision_in.proj.1.lora_down.weight");
         bool isHyImgRefiner(JObject h) => h.ContainsKey("double_blocks.0.img_attn_k_norm.weight") && h.TryGetValue("time_r_in.mlp.0.bias", out JToken timeTok) && timeTok["shape"].ToArray()[0].Value<long>() == 3328;
         bool isAuraFlow(JObject h) => h.ContainsKey("model.cond_seq_linear.weight") && h.ContainsKey("model.double_layers.0.attn.w1k.weight");
+        bool isErnie(JObject h) => hasKey(h, "layers.0.mlp.linear_fc2.weight") && hasKey(h, "x_embedder.proj.weight") && hasKey(h, "layers.0.adaLN_sa_ln.weight");
         bool isKandinsky5(JObject h) => hasKey(h, "pooled_text_embeddings.in_layer.weight") && hasKey(h, "text_transformer_blocks.0.feed_forward.in_layer.weight");
         bool tryGetKan5IdKey(JObject h, out JToken tok) => h.TryGetValue("text_embeddings.in_layer.weight", out tok);
         bool isKan5VidLite(JObject h) => tryGetKan5IdKey(h, out JToken tok) && tok["shape"].ToArray()[0].Value<long>() == 1792;
@@ -412,7 +415,7 @@ public class T2IModelClassSorter
         }});
         Register(new() { ID = "Flux.1-dev/lora", CompatClass = CompatFlux, Name = "Flux.1 LoRA", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
-            return isFluxLora(h) && !isHyVid15Lora(h);
+            return isFluxLora(h) && !isHyVid15Lora(h) && !isFlux2KleinLora(h);
         }});
         Register(new() { ID = "Flux.1-dev/depth", CompatClass = CompatFlux, Name = "Flux.1 Depth", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
         {
@@ -626,6 +629,11 @@ public class T2IModelClassSorter
         Register(new() { ID = "qwen-image/lora", CompatClass = CompatQwenImage, Name = "Qwen Image LoRA", StandardWidth = 1328, StandardHeight = 1328, IsThisModelOfClass = (m, h) =>
         {
             return isQwenImageLora(h);
+        }});
+        // ====================== Ernie Image ======================
+        Register(new() { ID = "ernie-image", CompatClass = CompatErnieImage, Name = "Ernie Image", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>
+        {
+            return isErnie(h);
         }});
         // ====================== Kandinsky5 ======================
         Register(new() { ID = "kandinsky5-image-lite", CompatClass = CompatKandinsky5ImgLite, Name = "Kandinsky5 Image Lite", StandardWidth = 1024, StandardHeight = 1024, IsThisModelOfClass = (m, h) =>

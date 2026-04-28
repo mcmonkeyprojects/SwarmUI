@@ -1,4 +1,4 @@
-﻿
+
 using SwarmUI.Utils;
 
 namespace SwarmUI.Media;

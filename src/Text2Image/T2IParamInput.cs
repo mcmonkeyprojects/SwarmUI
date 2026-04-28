@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticExtensions;
+using FreneticUtilities.FreneticExtensions;
 using FreneticUtilities.FreneticToolkit;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -154,7 +154,7 @@ public class T2IParamInput
 
     /// <summary>Dense local time with incrementer.</summary>
     public int RequestRefTime;
-    
+
     /// <summary>If true, special early load has already ran.</summary>
     public bool EarlyLoadDone = false;
 
@@ -317,8 +317,12 @@ public class T2IParamInput
 
     public static JToken MetadatableToJTok(object val)
     {
-        if (val is MediaFile)
+        if (val is MediaFile mf)
         {
+            if (!string.IsNullOrEmpty(mf.SourceFilePath))
+            {
+                return JToken.FromObject(mf.SourceFilePath);
+            }
             return null;
         }
         if (val is string str)
@@ -372,14 +376,9 @@ public class T2IParamInput
         return output;
     }
 
-    /// <summary>Keys for <see cref="ExtraMeta"/> that identify lists of extra models to track, as a pair of (key, model-sub-type).</summary>
-    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("loras", "LoRA")];
-
-    /// <summary>Generates a metadata JSON object for this input's data.</summary>
-    public JObject GenFullMetadataObject()
+    /// <summary>Builds the basic sui_extra_data object for metadata.</summary>
+    public JObject BuildExtraDataJObject()
     {
-        JObject paramData = GenParameterMetadata();
-        paramData["swarm_version"] = Utilities.Version;
         JObject extraData = [];
         foreach ((string key, object val) in ExtraMeta)
         {
@@ -389,6 +388,18 @@ public class T2IParamInput
                 extraData[key] = token;
             }
         }
+        return extraData;
+    }
+
+    /// <summary>Keys for <see cref="ExtraMeta"/> that identify lists of extra models to track, as a pair of (key, model-sub-type).</summary>
+    public static List<(string, string)> ModelListExtraKeys = [("used_embeddings", "Embedding"), ("loras", "LoRA")];
+
+    /// <summary>Generates a metadata JSON object for this input's data.</summary>
+    public JObject GenFullMetadataObject()
+    {
+        JObject paramData = GenParameterMetadata();
+        paramData["swarm_version"] = Utilities.Version;
+        JObject extraData = BuildExtraDataJObject();
         JArray unused = [];
         foreach (string key in InternalSet.ValuesInput.Keys)
         {
@@ -672,7 +683,7 @@ public class T2IParamInput
             RequiredFlags.UnionWith(param.Type.FeatureFlag.SplitFast(','));
         }
     }
-    
+
     /// <summary>Removes a param.</summary>
     public void Remove<T>(T2IRegisteredParam<T> param, int sectionId = 0)
     {

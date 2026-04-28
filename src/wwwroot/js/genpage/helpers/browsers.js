@@ -436,9 +436,10 @@ class GenPageBrowserClass {
             }
             let div = createDiv(null, `${desc.className}`);
             let popoverId = `${this.id}-${id}`;
-            if (desc.buttons.length > 0) {
+            let buttons = desc.buttons.filter(b => !b.multi_only);
+            if (buttons.length > 0) {
                 let menuDiv = createDiv(`popover_${popoverId}`, 'sui-popover sui_popover_model');
-                for (let button of desc.buttons) {
+                for (let button of buttons) {
                     let buttonElem;
                     if (button.href) {
                         buttonElem = document.createElement('a');
@@ -468,6 +469,7 @@ class GenPageBrowserClass {
             img.addEventListener('click', () => {
                 this.select(file, div);
             });
+            img.classList.add('image-block-img-inner');
             div.appendChild(img);
             if (this.format.includes('Cards')) {
                 div.className += ' model-block model-block-hoverable';
@@ -535,7 +537,7 @@ class GenPageBrowserClass {
                     div.appendChild(textBlock);
                 }
             }
-            if (desc.buttons.length > 0) {
+            if (buttons.length > 0) {
                 let menu = createDiv(null, 'model-block-menu-button');
                 menu.innerHTML = '&#x2630;';
                 menu.addEventListener('click', () => {
@@ -547,6 +549,7 @@ class GenPageBrowserClass {
                 div.addEventListener('mouseenter', () => div.title = stripHtmlToText(desc.description), { once: true });
             }
             div.dataset.name = file.name;
+            div.dataset.src = file.data.src;
             img.classList.add('lazyload');
             img.dataset.src = desc.image;
             if (desc.dragimage) {
@@ -727,7 +730,7 @@ class GenPageBrowserClass {
                     barSpot = 100; // TODO: Swipeable width
                 }
                 this.folderTreeDiv.style.width = `${barSpot}px`;
-                this.fullContentDiv.style.width = `calc(100% - ${barSpot}px - 0.6rem)`;
+                this.fullContentDiv.style.width = `calc(100% - ${barSpot + 1}px - 0.6rem)`;
                 if (this.sizeChangedEvent) {
                     this.sizeChangedEvent();
                 }

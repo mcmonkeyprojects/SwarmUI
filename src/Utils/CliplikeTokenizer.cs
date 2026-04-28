@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticToolkit;
+using FreneticUtilities.FreneticToolkit;
 using System.IO;
 using System.IO.Compression;
 using System.Text.RegularExpressions;

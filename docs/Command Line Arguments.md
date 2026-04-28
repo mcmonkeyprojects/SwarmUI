@@ -22,14 +22,16 @@ Argument | Default | Description
 `--loglevel` | `Info` | Minimum SwarmUI log level, as any of: `Debug`, `Info`, `Init`, `Warning`, `Error`, `None`. 'Info' here is the normal usage data.
 `--user_id` | `local` | Set the local user's default UserID (for running in single-user mode, not useful in shared mode).
 `--lock_settings` | `false` | If enabled, blocks in-UI editing of server settings by admins. Settings cannot be modified in this mode without editing the settings file and restarting the server.
-`--ngrok-path` | (None) | If specified, will be used as the path to an `ngrok` executable, and will automatically load and configure ngrok when launching, to share your UI instance on a publicly accessible URL.
-`--cloudflared-path` | (None) | If specified, will be used as the path to an `cloudflared` executable, and will automatically load and configure TryCloudflare when launching, to share your UI instance on a publicly accessible URL.
-`--proxy-region` | (None) | If specified, sets the proxy (ngrok/cloudflared) region. If unspecified, defaults to closest.
-`--proxy-added-args` | (None) | If specified, adds additional args to the proxy launch. Use a `.` as the first symbol (parser hackaround). For example, `--proxy-added-args ".--my-arg --arg -argy arg"`
-`--ngrok-basic-auth` | (None) | If specified, sets an ngrok basic-auth requirement to access.
+`--ngrok_path` | (None) | If specified, will be used as the path to an `ngrok` executable, and will automatically load and configure ngrok when launching, to share your UI instance on a publicly accessible URL.
+`--cloudflared_path` | (None) | If specified, will be used as the path to an `cloudflared` executable, and will automatically load and configure TryCloudflare when launching, to share your UI instance on a publicly accessible URL.
+`--proxy_region` | (None) | If specified, sets the proxy (ngrok/cloudflared) region. If unspecified, defaults to closest.
+`--proxy_added_args` | (None) | If specified, adds additional args to the proxy launch. Use a `.` as the first symbol (parser hackaround). For example, `--proxy_added_args ".--my-arg --arg -argy arg"`
+`--ngrok_basic_auth` | (None) | If specified, sets an ngrok basic-auth requirement to access.
 `--launch_mode` | `none` | Can be used to override the 'LaunchMode' server setting.
 `--require_control_within` | (None) | If specified, give a number of minutes within which a remote API server must send a `AdminTakeControl` API request, or presume the launch is bad. This is useful for auto-managed instances, such as via the AutoScalingBackend.
 `--no_persist` | `false` | If enabled, tells most systems in Swarm to avoid saving data (eg session handler will not save session data). Useful for instances with overlapping data storage especially. This may cause wasteful redundant data filling, running at least once without this set is recommended.
+`--ci_test` | `false` | Special handler, runs basic validation tests and closes quickly.
+`--ci_test_extensions` | `false` | Special handler, in CI-Test mode, download and test-compile common extensions.
 `--help` | `false` | Displays an in-CLI shortlist of CLI args and some usage hints, and stops early before running Swarm.
 
 # Environment Variables (EnvVars)

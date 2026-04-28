@@ -1,4 +1,4 @@
-﻿using FreneticUtilities.FreneticDataSyntax;
+using FreneticUtilities.FreneticDataSyntax;
 using SwarmUI.DataHolders;
 using SwarmUI.Text2Image;
 using SwarmUI.Utils;

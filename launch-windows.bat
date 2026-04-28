@@ -64,7 +64,7 @@ if exist src\bin\live_release\SwarmUI.exe (
 rem Build the program if it isn't already built
 if not exist src\bin\live_release\SwarmUI.exe (
     rem For some reason Microsoft's nonsense is missing the official nuget source? So forcibly add that to be safe.
-    dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source"
+    dotnet nuget add source https://api.nuget.org/v3/index.json --name "NuGet official package source" >nul 2>&1
 
     dotnet build src/SwarmUI.csproj --configuration Release -o src/bin/live_release
     for /f "delims=" %%i in ('git rev-parse HEAD') do set CUR_HEAD2=%%i
@@ -85,6 +85,7 @@ if not exist src\bin\live_release\SwarmUI.exe if exist src\bin\live_release_back
 rem Default env configuration, gets overwritten by the C# code's settings handler
 set ASPNETCORE_ENVIRONMENT="Production"
 set ASPNETCORE_URLS="http://*:7801"
+set DOTNET_CLI_UI_LANGUAGE="en"
 
 .\src\bin\live_release\SwarmUI.exe %*
 

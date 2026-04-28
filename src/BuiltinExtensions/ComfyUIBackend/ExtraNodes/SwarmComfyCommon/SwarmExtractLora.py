@@ -114,7 +114,11 @@ class SwarmExtractLora:
         other_data = other_model.model_state_dict()
         key_count = len(base_data.keys())
         if save_clip:
-            key_count += len(base_model_clip.get_sd().keys())
+            if base_model_clip is None or other_model_clip is None:
+                print("Warning: save_clip is True but CLIP model(s) are unavailable (model may not have embedded CLIP, e.g. Flux), skipping CLIP extraction")
+                save_clip = False
+            else:
+                key_count += len(base_model_clip.get_sd().keys())
         pbar = comfy.utils.ProgressBar(key_count)
         class Helper:
             steps = 0

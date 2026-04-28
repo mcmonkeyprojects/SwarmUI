@@ -105,6 +105,7 @@ class GenerateHandler {
                 imgElem.remove();
             }
             vid = document.createElement('video');
+            vid.classList.add('image-block-img-inner');
             vid.loop = true;
             vid.autoplay = true;
             vid.muted = true;
@@ -120,6 +121,7 @@ class GenerateHandler {
                 imgElem.remove();
             }
             imgElem = document.createElement('audio');
+            imgElem.classList.add('image-block-img-inner');
             imgElem.controls = true;
             imgElem.src = src;
             imgHolder.div.appendChild(imgElem);

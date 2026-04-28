@@ -17,10 +17,13 @@ fi
 ./src/bin/live_release/SwarmUI "$@"
 
 # Exit code 42 means restart, anything else = don't.
-if [ $? == 42 ]; then
+exitcode=$?
+if [ $exitcode == 42 ]; then
     if [ "$FORWARD_RESTART" == "true" ]; then
         exit 42
     else
         exec ./launch-linux.sh "$@"
     fi
+elif [ $exitcode != 0 ]; then
+    exit $exitcode
 fi

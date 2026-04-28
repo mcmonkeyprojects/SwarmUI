@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Media;
+namespace SwarmUI.Media;
 
 /// <summary>Base class, represents a single media data file.</summary>
 public class MediaFile
@@ -8,6 +8,9 @@ public class MediaFile
 
     /// <summary>The file type.</summary>
     public MediaType Type;
+
+    /// <summary>When this file was loaded from a user path (eg <c>inputs/my/image.png</c>), this is the original path. Otherwise null.</summary>
+    public string SourceFilePath;
 
     /// <summary>Get a Base64 string representation of the raw image data. This does a conversion on call, so use sparingly.</summary>
     public string AsBase64 => Convert.ToBase64String(RawData);

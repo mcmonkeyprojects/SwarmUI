@@ -1,4 +1,4 @@
-﻿namespace SwarmUI.Utils;
+namespace SwarmUI.Utils;
 
 /// <summary>Represents an error inside swarm with a plaintext English message to display.</summary>
 public class SwarmReadableErrorException(string message) : InvalidOperationException(message)

@@ -80,6 +80,7 @@ function updateCurrentStatusDirect(data) {
         total = 0;
     }
     getRequiredElementById('alt_interrupt_button').classList.toggle('interrupt-button-none', total == 0);
+    getRequiredElementById('simple_interrupt_button').classList.toggle('interrupt-button-none', total == 0);
     let oldInterruptButton = document.getElementById('interrupt_button');
     if (oldInterruptButton) {
         oldInterruptButton.classList.toggle('interrupt-button-none', total == 0);
@@ -524,30 +525,70 @@ function autoRevealRevision() {
     }
 }
 
+let promptImageReplaceTarget = null;
+
+function setPromptImageReplaceTarget(target) {
+    if (promptImageReplaceTarget) {
+        promptImageReplaceTarget.classList.remove('image-drop-replace-target');
+    }
+    promptImageReplaceTarget = target;
+    if (promptImageReplaceTarget) {
+        promptImageReplaceTarget.classList.add('image-drop-replace-target');
+    }
+}
+
+function getPromptImageDropReplaceTarget(e) {
+    if (uiImprover.getFileList(e.dataTransfer, e).length == 0) {
+        return null;
+    }
+    let target = e.target.closest('.alt-prompt-image-container');
+    if (!target || !target.querySelector('.alt-prompt-image')) {
+        return null;
+    }
+    return target;
+}
+
 function imagePromptAddImage(file) {
-    let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
-    let promptImageArea = getRequiredElementById('alt_prompt_image_area');
+    let replaceTarget = promptImageReplaceTarget;
+    setPromptImageReplaceTarget(null);
+    let existingImage = replaceTarget ? replaceTarget.querySelector('.alt-prompt-image') : null;
+    if (replaceTarget && !existingImage) {
+        replaceTarget = null;
+    }
     let reader = new FileReader();
     reader.onload = (e) => {
         let data = e.target.result;
-        let imageContainer = createDiv(null, 'alt-prompt-image-container');
-        let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
-        imageRemoveButton.addEventListener('click', (e) => {
-            imageContainer.remove();
-            autoRevealRevision();
-            genTabLayout.altPromptSizeHandle();
-        });
-        imageRemoveButton.title = 'Remove this image';
-        imageContainer.appendChild(imageRemoveButton);
-        let imageObject = new Image();
-        imageObject.src = data;
-        imageObject.height = 128;
-        imageObject.className = 'alt-prompt-image';
-        imageObject.dataset.filedata = data;
-        imageContainer.appendChild(imageObject);
+        if (replaceTarget && !replaceTarget.isConnected) {
+            imagePromptAddImage(file);
+            return;
+        }
+        if (existingImage) {
+            existingImage.src = data;
+            existingImage.height = 128;
+            existingImage.dataset.filedata = data;
+        }
+        else {
+            let promptImageArea = getRequiredElementById('alt_prompt_image_area');
+            let imageContainer = createDiv(null, 'alt-prompt-image-container');
+            let imageRemoveButton = createSpan(null, 'alt-prompt-image-container-remove-button', '&times;');
+            imageRemoveButton.addEventListener('click', () => {
+                imageContainer.remove();
+                autoRevealRevision();
+                genTabLayout.altPromptSizeHandle();
+            });
+            imageRemoveButton.title = 'Remove this image';
+            imageContainer.appendChild(imageRemoveButton);
+            let imageObject = new Image();
+            imageObject.src = data;
+            imageObject.height = 128;
+            imageObject.className = 'alt-prompt-image';
+            imageObject.dataset.filedata = data;
+            imageContainer.appendChild(imageObject);
+            promptImageArea.appendChild(imageContainer);
+        }
+        let clearButton = getRequiredElementById('alt_prompt_image_clear_button');
         clearButton.style.display = '';
         showRevisionInputs(true);
-        promptImageArea.appendChild(imageContainer);
         genTabLayout.altPromptSizeHandle();
     };
     reader.readAsDataURL(file);
@@ -574,6 +615,25 @@ function imagePromptInputHandler() {
             }
         }
     });
+    let updateReplaceTarget = (e) => {
+        setPromptImageReplaceTarget(getPromptImageDropReplaceTarget(e));
+    };
+    dragArea.addEventListener('dragenter', updateReplaceTarget, true);
+    dragArea.addEventListener('dragover', updateReplaceTarget, true);
+    dragArea.addEventListener('dragleave', (e) => {
+        if (!dragArea.contains(e.relatedTarget)) {
+            setPromptImageReplaceTarget(null);
+        }
+    }, true);
+    dragArea.addEventListener('drop', (e) => {
+        setPromptImageReplaceTarget(getPromptImageDropReplaceTarget(e));
+    }, true);
+    document.addEventListener('drop', () => {
+        setPromptImageReplaceTarget(null);
+    }, true);
+    document.addEventListener('dragend', () => {
+        setPromptImageReplaceTarget(null);
+    }, true);
 }
 imagePromptInputHandler();
 
